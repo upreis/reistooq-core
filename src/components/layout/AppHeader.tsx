@@ -1,4 +1,4 @@
-import { Bell, Search, Settings, User, Menu, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone } from "lucide-react";
+import { Bell, Search, Settings, User, Menu, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,9 +15,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { QuickAppsModal } from "./QuickAppsModal";
 import jonathanAvatar from "@/assets/jonathan-avatar.jpg";
 import { useAnnouncements } from "@/contexts/AnnouncementContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppHeader() {
   const { isHidden, setIsHidden, hasAnnouncements } = useAnnouncements();
+  const { user, signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
   return (
     <header className="h-16 border-b bg-card px-6 flex items-center justify-between">
       {/* Left side - Search */}
@@ -116,13 +122,13 @@ export function AppHeader() {
           <DropdownMenuContent align="end" className="w-64">
             <div className="flex items-center gap-3 p-3">
               <Avatar className="w-12 h-12">
-                <AvatarImage src={jonathanAvatar} alt="Jonathan Deo" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarImage src={jonathanAvatar} alt={user?.email || "Usuário"} />
+                <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm font-medium">Jonathan Deo</p>
-                <p className="text-xs text-muted-foreground">Admin</p>
-                <p className="text-xs text-muted-foreground">info@materialm.com</p>
+                <p className="text-sm font-medium">{user?.email || "Usuário"}</p>
+                <p className="text-xs text-muted-foreground">Usuário</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
               </div>
             </div>
             <DropdownMenuSeparator />
@@ -154,10 +160,14 @@ export function AppHeader() {
               </div>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                Sair
-              </Button>
+            <DropdownMenuItem onClick={handleSignOut} className="flex items-center gap-3 cursor-pointer">
+              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                <LogOut className="w-4 h-4 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Sair</p>
+                <p className="text-xs text-muted-foreground">Fazer logout</p>
+              </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
