@@ -35,6 +35,8 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
+import { ProductModal } from "./ProductModal";
+import { ImportModal } from "./ImportModal";
 
 interface EstoqueActionsProps {
   onNewProduct: () => void;
@@ -57,6 +59,8 @@ export function EstoqueActions({
   const [returnQuantity, setReturnQuantity] = useState<number>(0);
   const [returnReason, setReturnReason] = useState("");
   const [selectedProductForReturn, setSelectedProductForReturn] = useState<Product | null>(null);
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const { toast } = useToast();
 
   const handleReturnStock = () => {
@@ -109,7 +113,7 @@ export function EstoqueActions({
   return (
     <div className="flex flex-wrap items-center gap-3 p-4 bg-card border rounded-lg">
       {/* Botão Novo Produto */}
-      <Button onClick={onNewProduct} className="gap-2">
+      <Button onClick={() => setProductModalOpen(true)} className="gap-2">
         <Plus className="w-4 h-4" />
         Novo Produto
       </Button>
@@ -256,10 +260,29 @@ export function EstoqueActions({
       </Button>
 
       {/* Botão Upload/Import */}
-      <Button variant="outline" className="gap-2">
+      <Button variant="outline" onClick={() => setImportModalOpen(true)} className="gap-2">
         <Upload className="w-4 h-4" />
         Importar
       </Button>
+
+      {/* Modais */}
+      <ProductModal
+        open={productModalOpen}
+        onOpenChange={setProductModalOpen}
+        onSuccess={() => {
+          onRefresh();
+          setProductModalOpen(false);
+        }}
+      />
+
+      <ImportModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
+        onSuccess={() => {
+          onRefresh();
+          setImportModalOpen(false);
+        }}
+      />
     </div>
   );
 }
