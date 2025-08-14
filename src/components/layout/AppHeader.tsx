@@ -1,7 +1,6 @@
 import { Bell, Search, Settings, User, Menu, Moon, Sun, Grid3X3, Flag, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,10 +18,8 @@ import jonathanAvatar from "@/assets/jonathan-avatar.jpg";
 export function AppHeader() {
   return (
     <header className="h-16 border-b bg-card px-6 flex items-center justify-between">
-      {/* Left side - Sidebar trigger and search */}
+      {/* Left side - Search */}
       <div className="flex items-center gap-4">
-        <SidebarTrigger />
-        
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
