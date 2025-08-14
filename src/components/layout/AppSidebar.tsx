@@ -104,8 +104,8 @@ export function AppSidebar() {
           </div>
           {state !== "collapsed" && (
             <div>
-              <h1 className="text-lg font-bold text-sidebar-foreground">MaterialM</h1>
-              <p className="text-xs text-sidebar-foreground/60">React Admin</p>
+              <h1 className="text-lg font-bold text-sidebar-foreground">REISTOQ</h1>
+              <p className="text-xs text-sidebar-foreground/60">Admin Dashboard</p>
             </div>
           )}
         </div>
