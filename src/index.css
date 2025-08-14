@@ -6,85 +6,118 @@
 
 @layer base {
   :root {
-    /* Base colors - Clean white background */
-    --background: 0 0% 98%;
-    --foreground: 222.2 84% 4.9%;
+    /* MaterialM Original Colors - Exact match */
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
 
     /* Card colors */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 71.4% 4.1%;
 
-    /* Primary colors - MaterialM signature blue */
+    /* Primary colors - MaterialM Blue */
     --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
 
     /* Secondary colors */
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
 
     /* Muted colors */
-    --muted: 210 40% 94%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
 
     /* Accent colors */
-    --accent: 210 40% 94%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
 
     /* Destructive colors */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     /* Border */
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
     --ring: 221.2 83.2% 53.3%;
 
+    /* Success colors */
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 355.7 100% 97.3%;
+
+    /* Warning colors */
+    --warning: 32.4 95.6% 55.9%;
+    --warning-foreground: 355.7 100% 97.3%;
+
+    /* Info colors */
+    --info: 221.2 83.2% 53.3%;
+    --info-foreground: 210 40% 98%;
+
     /* Sidebar colors - Dark theme for sidebar */
-    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-background: 224 71.4% 4.1%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 221.2 83.2% 53.3%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent: 215 27.9% 16.9%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-border: 215 27.9% 16.9%;
     --sidebar-ring: 221.2 83.2% 53.3%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(221.2 83.2% 53.3%), hsl(234 89% 74%));
+    --gradient-success: linear-gradient(135deg, hsl(142.1 76.2% 36.3%), hsl(158 64% 52%));
+    --gradient-warning: linear-gradient(135deg, hsl(32.4 95.6% 55.9%), hsl(39 95% 67%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 84.2% 60.2%), hsl(348 83% 47%));
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(221.2 83.2% 53.3% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(221.2 83.2% 53.3% / 0.1), 0 2px 4px -1px hsl(221.2 83.2% 53.3% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(221.2 83.2% 53.3% / 0.1), 0 4px 6px -2px hsl(221.2 83.2% 53.3% / 0.05);
+    --shadow-xl: 0 20px 25px -5px hsl(221.2 83.2% 53.3% / 0.1), 0 10px 10px -5px hsl(221.2 83.2% 53.3% / 0.04);
 
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 224 71.4% 4.1%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 224 71.4% 4.1%;
     --card-foreground: 210 40% 98%;
 
     --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 222.2 84% 4.9%;
+    --primary-foreground: 224 71.4% 4.1%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 215 27.9% 16.9%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 215 27.9% 16.9%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
     --ring: 221.2 83.2% 53.3%;
 
-    --sidebar-background: 222.2 84% 4.9%;
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 144.9 80.4% 10%;
+
+    --warning: 35.5 91.7% 32.9%;
+    --warning-foreground: 20.5 90.2% 48.2%;
+
+    --info: 221.2 83.2% 53.3%;
+    --info-foreground: 210 40% 98%;
+
+    --sidebar-background: 224 71.4% 4.1%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 221.2 83.2% 53.3%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent: 215 27.9% 16.9%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-border: 215 27.9% 16.9%;
     --sidebar-ring: 221.2 83.2% 53.3%;
   }
 }

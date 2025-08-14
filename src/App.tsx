@@ -25,6 +25,14 @@ import Calendar from "./pages/Calendar";
 import Notes from "./pages/Notes";
 import CRM from "./pages/CRM";
 import Chats from "./pages/Chats";
+import FAQ from "./pages/FAQ";
+import Pricing from "./pages/Pricing";
+import Login from "./pages/Login";
+import AccountSettings from "./pages/AccountSettings";
+import Cards from "./pages/Cards";
+import Banners from "./pages/Banners";
+import Charts from "./pages/Charts";
+import SolarIcons from "./pages/SolarIcons";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +61,14 @@ const App = () => (
             <Route path="/apps/notes" element={<Notes />} />
             <Route path="/apps/chats" element={<Chats />} />
             <Route path="/dashboards/crm" element={<CRM />} />
+            <Route path="/theme-pages/faq" element={<FAQ />} />
+            <Route path="/theme-pages/pricing" element={<Pricing />} />
+            <Route path="/auth/login" element={<Login />} />
+            <Route path="/theme-pages/account-settings" element={<AccountSettings />} />
+            <Route path="/widgets/cards" element={<Cards />} />
+            <Route path="/widgets/banners" element={<Banners />} />
+            <Route path="/widgets/charts" element={<Charts />} />
+            <Route path="/icons/solar" element={<SolarIcons />} />
             <Route path="/estoque" element={<Estoque />} />
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/scanner" element={<Scanner />} />
