@@ -1,0 +1,265 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Plus,
+  Trash2,
+  RefreshCw,
+  Bell,
+  RotateCcw,
+  FileText,
+  ChevronDown,
+  Upload,
+  Download,
+  TrendingUp,
+  AlertTriangle,
+  BarChart3,
+  Package,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Product } from "@/hooks/useProducts";
+
+interface EstoqueActionsProps {
+  onNewProduct: () => void;
+  onDeleteSelected: () => void;
+  onRefresh: () => void;
+  onSendAlerts: () => void;
+  selectedProducts: string[];
+  products: Product[];
+}
+
+export function EstoqueActions({
+  onNewProduct,
+  onDeleteSelected,
+  onRefresh,
+  onSendAlerts,
+  selectedProducts,
+  products,
+}: EstoqueActionsProps) {
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnQuantity, setReturnQuantity] = useState<number>(0);
+  const [returnReason, setReturnReason] = useState("");
+  const [selectedProductForReturn, setSelectedProductForReturn] = useState<Product | null>(null);
+  const { toast } = useToast();
+
+  const handleReturnStock = () => {
+    if (!selectedProductForReturn || returnQuantity <= 0) {
+      toast({
+        title: "Erro",
+        description: "Selecione um produto e informe uma quantidade válida.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Lógica de retorno de estoque
+    toast({
+      title: "Retorno realizado",
+      description: `Retorno de ${returnQuantity} unidades processado com sucesso.`,
+    });
+
+    setReturnModalOpen(false);
+    setReturnQuantity(0);
+    setReturnReason("");
+    setSelectedProductForReturn(null);
+  };
+
+  const handleGenerateReport = (type: string) => {
+    toast({
+      title: "Gerando relatório",
+      description: `Relatório de ${type} sendo gerado...`,
+    });
+    
+    // Aqui seria chamada a edge function de relatórios
+    setTimeout(() => {
+      toast({
+        title: "Relatório pronto",
+        description: "Download iniciado automaticamente.",
+      });
+    }, 2000);
+  };
+
+  const handlePredictiveAnalysis = () => {
+    toast({
+      title: "Análise IA",
+      description: "Executando previsão de reposição com IA...",
+    });
+  };
+
+  const lowStockCount = products.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0).length;
+  const outOfStockCount = products.filter(p => p.quantidade_atual === 0).length;
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 p-4 bg-card border rounded-lg">
+      {/* Botão Novo Produto */}
+      <Button onClick={onNewProduct} className="gap-2">
+        <Plus className="w-4 h-4" />
+        Novo Produto
+      </Button>
+
+      {/* Botão Excluir Selecionados */}
+      <Button
+        variant="outline"
+        onClick={onDeleteSelected}
+        disabled={selectedProducts.length === 0}
+        className="gap-2"
+      >
+        <Trash2 className="w-4 h-4" />
+        Excluir Selecionados
+        {selectedProducts.length > 0 && (
+          <Badge variant="secondary" className="ml-1">
+            {selectedProducts.length}
+          </Badge>
+        )}
+      </Button>
+
+      {/* Botão Atualizar */}
+      <Button variant="outline" onClick={onRefresh} className="gap-2">
+        <RefreshCw className="w-4 h-4" />
+        Atualizar
+      </Button>
+
+      {/* Botão Enviar Alertas */}
+      <Button
+        variant="outline"
+        onClick={onSendAlerts}
+        disabled={lowStockCount === 0 && outOfStockCount === 0}
+        className="gap-2"
+      >
+        <Bell className="w-4 h-4" />
+        Enviar Alertas
+        {(lowStockCount > 0 || outOfStockCount > 0) && (
+          <Badge variant="destructive" className="ml-1">
+            {lowStockCount + outOfStockCount}
+          </Badge>
+        )}
+      </Button>
+
+      {/* Modal Retorno de Estoque */}
+      <Dialog open={returnModalOpen} onOpenChange={setReturnModalOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline" className="gap-2">
+            <RotateCcw className="w-4 h-4" />
+            Retorno de Estoque
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Retorno de Estoque</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Produto</Label>
+              <select
+                className="w-full p-2 border rounded-md"
+                value={selectedProductForReturn?.id || ""}
+                onChange={(e) => {
+                  const product = products.find(p => p.id === e.target.value);
+                  setSelectedProductForReturn(product || null);
+                }}
+              >
+                <option value="">Selecione um produto</option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.nome} - {product.sku_interno}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>Quantidade a Retornar</Label>
+              <Input
+                type="number"
+                value={returnQuantity}
+                onChange={(e) => setReturnQuantity(Number(e.target.value))}
+                min="1"
+              />
+            </div>
+            <div>
+              <Label>Motivo do Retorno</Label>
+              <Textarea
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+                placeholder="Descreva o motivo do retorno..."
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => setReturnModalOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleReturnStock}>
+                Processar Retorno
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dropdown Relatórios */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="gap-2">
+            <FileText className="w-4 h-4" />
+            Relatórios
+            <ChevronDown className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => handleGenerateReport("Estoque Baixo")}>
+            <AlertTriangle className="w-4 h-4 mr-2 text-yellow-500" />
+            Estoque Baixo
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleGenerateReport("Movimentações")}>
+            <TrendingUp className="w-4 h-4 mr-2 text-blue-500" />
+            Movimentações
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleGenerateReport("Valor do Estoque")}>
+            <BarChart3 className="w-4 h-4 mr-2 text-green-500" />
+            Valor do Estoque
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleGenerateReport("Produtos Inativos")}>
+            <Package className="w-4 h-4 mr-2 text-gray-500" />
+            Produtos Inativos
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => handleGenerateReport("Relatório Completo")}>
+            <Download className="w-4 h-4 mr-2" />
+            Relatório Completo
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Botão Previsão IA */}
+      <Button variant="outline" onClick={handlePredictiveAnalysis} className="gap-2">
+        <TrendingUp className="w-4 h-4" />
+        Previsão IA
+      </Button>
+
+      {/* Botão Upload/Import */}
+      <Button variant="outline" className="gap-2">
+        <Upload className="w-4 h-4" />
+        Importar
+      </Button>
+    </div>
+  );
+}

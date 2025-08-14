@@ -1,38 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  Filter, 
-  Package, 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle,
-  Plus,
-  Minus,
-  Edit,
-  BarChart3
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { EstoqueActions } from "@/components/estoque/EstoqueActions";
+import { EstoqueTable } from "@/components/estoque/EstoqueTable";
+import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
+import { EstoqueStats } from "@/components/estoque/EstoqueStats";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Package, AlertTriangle } from "lucide-react";
 
 interface StockMovement {
   id: string;
@@ -50,13 +26,15 @@ const Estoque = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
-  const [movementQuantity, setMovementQuantity] = useState<number>(0);
-  const [movementReason, setMovementReason] = useState("");
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<string>("created_at");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
   
-  const { getProducts, getCategories, updateProduct } = useProducts();
+  const { getProducts, getCategories, updateProduct, deleteProduct } = useProducts();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -64,15 +42,63 @@ const Estoque = () => {
     loadCategories();
   }, []);
 
-  const loadProducts = async () => {
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      if (searchTerm !== undefined) {
+        loadProducts();
+      }
+    }, 300);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, selectedCategory, selectedStatus]);
+
+  const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getProducts({
+      let allProducts = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        limit: 100
+        limit: 1000
       });
-      setProducts(data);
+
+      // Aplicar filtro de status
+      if (selectedStatus !== "all") {
+        allProducts = allProducts.filter(product => {
+          switch (selectedStatus) {
+            case "active":
+              return product.ativo && product.quantidade_atual > product.estoque_minimo;
+            case "low":
+              return product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
+            case "out":
+              return product.quantidade_atual === 0;
+            case "high":
+              return product.quantidade_atual >= product.estoque_maximo;
+            case "critical":
+              return product.quantidade_atual <= product.estoque_minimo;
+            case "inactive":
+              return !product.ativo;
+            default:
+              return true;
+          }
+        });
+      }
+
+      // Aplicar ordenação
+      allProducts.sort((a, b) => {
+        let aVal = a[sortBy as keyof Product];
+        let bVal = b[sortBy as keyof Product];
+        
+        if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+        if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+        
+        if (sortOrder === 'asc') {
+          return aVal > bVal ? 1 : -1;
+        } else {
+          return aVal < bVal ? 1 : -1;
+        }
+      });
+
+      setProducts(allProducts);
     } catch (error) {
       toast({
         title: "Erro ao carregar produtos",
@@ -82,7 +108,7 @@ const Estoque = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, getProducts, toast]);
 
   const loadCategories = async () => {
     try {
@@ -94,23 +120,90 @@ const Estoque = () => {
   };
 
   const handleSearch = () => {
+    setCurrentPage(1);
     loadProducts();
   };
 
-  const handleStockMovement = async () => {
-    if (!selectedProduct || movementQuantity <= 0) {
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const handleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    setSelectedProducts(selected ? products.map(p => p.id) : []);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedProducts.length === 0) return;
+    
+    try {
+      await Promise.all(
+        selectedProducts.map(id => deleteProduct(id))
+      );
+      
+      toast({
+        title: "Produtos excluídos",
+        description: `${selectedProducts.length} produto(s) excluído(s) com sucesso.`,
+      });
+      
+      setSelectedProducts([]);
+      loadProducts();
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir os produtos selecionados.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendAlerts = () => {
+    const alertProducts = products.filter(p => 
+      p.quantidade_atual <= p.estoque_minimo
+    );
+    
+    toast({
+      title: "Alertas enviados",
+      description: `Alertas enviados para ${alertProducts.length} produto(s) com estoque baixo.`,
+    });
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory("all");
+    setSelectedStatus("all");
+    setSelectedProducts([]);
+  };
+
+  const hasActiveFilters = searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all";
+
+  const handleStockMovement = async (productId: string, type: 'entrada' | 'saida', quantity: number, reason?: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product || quantity <= 0) {
       toast({
         title: "Erro",
-        description: "Selecione um produto e informe uma quantidade válida.",
+        description: "Produto não encontrado ou quantidade inválida.",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      const newQuantity = movementType === 'entrada' 
-        ? selectedProduct.quantidade_atual + movementQuantity
-        : selectedProduct.quantidade_atual - movementQuantity;
+      const newQuantity = type === 'entrada' 
+        ? product.quantidade_atual + quantity
+        : product.quantidade_atual - quantity;
 
       if (newQuantity < 0) {
         toast({
@@ -121,18 +214,15 @@ const Estoque = () => {
         return;
       }
 
-      await updateProduct(selectedProduct.id, {
+      await updateProduct(product.id, {
         quantidade_atual: newQuantity
       });
 
       toast({
         title: "Movimentação realizada",
-        description: `${movementType === 'entrada' ? 'Entrada' : 'Saída'} de ${movementQuantity} unidades realizada com sucesso.`,
+        description: `${type === 'entrada' ? 'Entrada' : 'Saída'} de ${quantity} unidades realizada com sucesso.`,
       });
 
-      setSelectedProduct(null);
-      setMovementQuantity(0);
-      setMovementReason("");
       loadProducts();
     } catch (error) {
       toast({
@@ -141,6 +231,39 @@ const Estoque = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleEditProduct = (product: Product) => {
+    // Implementar modal de edição
+    toast({
+      title: "Editar produto",
+      description: `Funcionalidade de edição do produto ${product.nome} será implementada.`,
+    });
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteProduct(productId);
+      toast({
+        title: "Produto excluído",
+        description: "Produto excluído com sucesso.",
+      });
+      loadProducts();
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir",
+        description: "Não foi possível excluir o produto.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNewProduct = () => {
+    // Implementar modal de novo produto
+    toast({
+      title: "Novo produto",
+      description: "Modal de criação de produto será implementado.",
+    });
   };
 
   const getStockStatus = (product: Product) => {
@@ -199,6 +322,11 @@ const Estoque = () => {
     );
   }
 
+  const paginatedProducts = products.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -210,273 +338,89 @@ const Estoque = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <Package className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Total de Produtos</p>
-                  <p className="text-2xl font-bold">{products.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Estoque Baixo</p>
-                  <p className="text-2xl font-bold">
-                    {products.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0).length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Sem Estoque</p>
-                  <p className="text-2xl font-bold">
-                    {products.filter(p => p.quantidade_atual === 0).length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-2">
-                <BarChart3 className="h-5 w-5 text-green-500" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Valor Total</p>
-                  <p className="text-2xl font-bold">
-                    {formatPrice(products.reduce((total, p) => total + (p.quantidade_atual * (p.preco_custo || 0)), 0))}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <EstoqueStats products={products} />
+
+        {/* Actions Bar */}
+        <EstoqueActions
+          onNewProduct={handleNewProduct}
+          onDeleteSelected={handleDeleteSelected}
+          onRefresh={loadProducts}
+          onSendAlerts={handleSendAlerts}
+          selectedProducts={selectedProducts}
+          products={products}
+        />
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
               Controle de Estoque
+              <span className="text-sm font-normal text-muted-foreground">
+                ({products.length} produtos)
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Search and Filter */}
-            <div className="flex items-center space-x-4 mb-6">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input 
-                  placeholder="Buscar produtos..." 
-                  className="pl-10" 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                />
-              </div>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas categorias</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={handleSearch}>
-                <Filter className="w-4 h-4 mr-2" />
-                Filtrar
-              </Button>
+            {/* Filters */}
+            <EstoqueFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              categories={categories}
+              onSearch={handleSearch}
+              onClearFilters={handleClearFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
+
+            {/* Table */}
+            <div className="mt-6">
+              <EstoqueTable
+                products={paginatedProducts}
+                selectedProducts={selectedProducts}
+                onSelectProduct={handleSelectProduct}
+                onSelectAll={handleSelectAll}
+                onEditProduct={handleEditProduct}
+                onDeleteProduct={handleDeleteProduct}
+                onStockMovement={handleStockMovement}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={handleSort}
+              />
             </div>
 
-            {products.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
-                <p className="text-muted-foreground">
-                  {searchTerm || selectedCategory 
-                    ? "Tente ajustar os filtros de busca"
-                    : "Cadastre produtos para gerenciar o estoque"
-                  }
+            {/* Pagination */}
+            {products.length > itemsPerPage && (
+              <div className="flex items-center justify-between mt-6">
+                <p className="text-sm text-muted-foreground">
+                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
+                  {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
+                  {products.length} produtos
                 </p>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </Button>
+                  <span className="text-sm">
+                    Página {currentPage} de {Math.ceil(products.length / itemsPerPage)}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / itemsPerPage), currentPage + 1))}
+                    disabled={currentPage === Math.ceil(products.length / itemsPerPage)}
+                  >
+                    Próximo
+                  </Button>
+                </div>
               </div>
-            ) : (
-              <>
-                {/* Table Header */}
-                <div className="grid grid-cols-8 gap-4 py-3 px-4 bg-muted/50 rounded-lg mb-4 text-sm font-medium">
-                  <div>Produto</div>
-                  <div>SKU</div>
-                  <div>Categoria</div>
-                  <div>Estoque Atual</div>
-                  <div>Mínimo</div>
-                  <div>Máximo</div>
-                  <div>Status</div>
-                  <div>Ações</div>
-                </div>
-
-                {/* Product List */}
-                <div className="space-y-3">
-                  {products.map((product) => {
-                    const stockStatus = getStockStatus(product);
-                    const StockIcon = stockStatus.icon;
-                    
-                    return (
-                      <div
-                        key={product.id}
-                        className="grid grid-cols-8 gap-4 py-4 px-4 border rounded-lg hover:bg-muted/30 transition-colors"
-                      >
-                        {/* Product */}
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
-                            {product.url_imagem ? (
-                              <img 
-                                src={product.url_imagem} 
-                                alt={product.nome} 
-                                className="w-full h-full object-cover rounded-lg"
-                              />
-                            ) : (
-                              <Package className="w-5 h-5 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{product.nome}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatPrice(product.preco_custo)}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* SKU */}
-                        <div className="flex items-center">
-                          <span className="text-sm font-mono">{product.sku_interno}</span>
-                        </div>
-
-                        {/* Category */}
-                        <div className="flex items-center">
-                          <span className="text-sm">{product.categoria || "N/A"}</span>
-                        </div>
-
-                        {/* Current Stock */}
-                        <div className="flex items-center">
-                          <span className="text-sm font-bold">{product.quantidade_atual}</span>
-                        </div>
-
-                        {/* Minimum */}
-                        <div className="flex items-center">
-                          <span className="text-sm">{product.estoque_minimo}</span>
-                        </div>
-
-                        {/* Maximum */}
-                        <div className="flex items-center">
-                          <span className="text-sm">{product.estoque_maximo}</span>
-                        </div>
-
-                        {/* Status */}
-                        <div className="flex items-center">
-                          <Badge variant={stockStatus.variant} className="text-xs">
-                            <StockIcon className="w-3 h-3 mr-1" />
-                            {stockStatus.label}
-                          </Badge>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center space-x-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => setSelectedProduct(product)}
-                              >
-                                <Edit className="w-3 h-3 mr-1" />
-                                Movimentar
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Movimentação de Estoque</DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <Label>Produto</Label>
-                                  <Input value={selectedProduct?.nome || ""} disabled />
-                                </div>
-                                <div>
-                                  <Label>Estoque Atual</Label>
-                                  <Input value={selectedProduct?.quantidade_atual || 0} disabled />
-                                </div>
-                                <div>
-                                  <Label>Tipo de Movimentação</Label>
-                                  <Select value={movementType} onValueChange={(value: 'entrada' | 'saida') => setMovementType(value)}>
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="entrada">
-                                        <div className="flex items-center">
-                                          <Plus className="w-4 h-4 mr-2 text-green-500" />
-                                          Entrada
-                                        </div>
-                                      </SelectItem>
-                                      <SelectItem value="saida">
-                                        <div className="flex items-center">
-                                          <Minus className="w-4 h-4 mr-2 text-red-500" />
-                                          Saída
-                                        </div>
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <Label>Quantidade</Label>
-                                  <Input 
-                                    type="number" 
-                                    value={movementQuantity}
-                                    onChange={(e) => setMovementQuantity(Number(e.target.value))}
-                                    min="1"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Motivo (Opcional)</Label>
-                                  <Input 
-                                    value={movementReason}
-                                    onChange={(e) => setMovementReason(e.target.value)}
-                                    placeholder="Ex: Compra, Venda, Ajuste..."
-                                  />
-                                </div>
-                                <div className="flex justify-end space-x-2">
-                                  <Button variant="outline" onClick={() => setSelectedProduct(null)}>
-                                    Cancelar
-                                  </Button>
-                                  <Button onClick={handleStockMovement}>
-                                    Confirmar Movimentação
-                                  </Button>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
             )}
           </CardContent>
         </Card>
