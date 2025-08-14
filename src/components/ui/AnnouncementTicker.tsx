@@ -36,7 +36,7 @@ const mockAnnouncements: Announcement[] = [
 
 export function AnnouncementTicker() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [announcements] = useState(mockAnnouncements.filter(a => a.active));
   
   useEffect(() => {
@@ -49,7 +49,7 @@ export function AnnouncementTicker() {
     return () => clearInterval(interval);
   }, [announcements.length]);
 
-  if (announcements.length === 0) {
+  if (isHidden || announcements.length === 0) {
     return null;
   }
 
@@ -79,33 +79,21 @@ export function AnnouncementTicker() {
   return (
     <div className={cn(
       "w-full border-b transition-all duration-300 ease-in-out",
-      getTypeStyles(currentAnnouncement.type),
-      isCollapsed && "h-10"
+      getTypeStyles(currentAnnouncement.type)
     )}>
       <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
-        {!isCollapsed && (
-          <div className="flex items-center gap-3 flex-1">
-            <Megaphone className="h-4 w-4 flex-shrink-0" />
-            
-            <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium animate-in slide-in-from-right-2 duration-300">
-                {currentAnnouncement.message}
-              </p>
-            </div>
+        <div className="flex items-center gap-3 flex-1">
+          <Megaphone className="h-4 w-4 flex-shrink-0 font-bold" strokeWidth={2.5} />
+          
+          <div className="flex-1 overflow-hidden">
+            <p className="text-sm font-bold animate-in slide-in-from-right-2 duration-300">
+              {currentAnnouncement.message}
+            </p>
           </div>
-        )}
-
-        {isCollapsed && (
-          <div className="flex items-center gap-2 flex-1">
-            <Megaphone className="h-4 w-4 flex-shrink-0" />
-            <span className="text-sm font-medium">
-              {announcements.length} anúncio{announcements.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        )}
+        </div>
 
         <div className="flex items-center gap-2 ml-4">
-          {!isCollapsed && announcements.length > 1 && (
+          {announcements.length > 1 && (
             <>
               <Button
                 variant="ghost"
@@ -113,10 +101,10 @@ export function AnnouncementTicker() {
                 onClick={prevAnnouncement}
                 className="h-6 w-6 p-0 hover:bg-white/10"
               >
-                <ChevronLeft className="h-3 w-3" />
+                <ChevronLeft className="h-3 w-3" strokeWidth={2.5} />
               </Button>
               
-              <span className="text-xs opacity-70 min-w-[3rem] text-center">
+              <span className="text-xs font-semibold min-w-[3rem] text-center">
                 {currentIndex + 1} / {announcements.length}
               </span>
               
@@ -126,7 +114,7 @@ export function AnnouncementTicker() {
                 onClick={nextAnnouncement}
                 className="h-6 w-6 p-0 hover:bg-white/10"
               >
-                <ChevronRight className="h-3 w-3" />
+                <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
               </Button>
             </>
           )}
@@ -134,14 +122,11 @@ export function AnnouncementTicker() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={() => setIsHidden(true)}
             className="h-6 w-6 p-0 hover:bg-white/10"
+            title="Ocultar anúncios"
           >
-            {isCollapsed ? (
-              <ChevronDown className="h-3 w-3" />
-            ) : (
-              <ChevronUp className="h-3 w-3" />
-            )}
+            <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
           </Button>
         </div>
       </div>
