@@ -26,7 +26,7 @@ const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const { getProducts, getCategories, deleteProduct } = useProducts();
   const { toast } = useToast();
@@ -42,7 +42,7 @@ const ProductList = () => {
       setLoading(true);
       const data = await getProducts({
         search: searchTerm || undefined,
-        categoria: selectedCategory || undefined,
+        categoria: selectedCategory === "all" ? undefined : selectedCategory,
         limit: 50
       });
       setProducts(data);
@@ -173,7 +173,7 @@ const ProductList = () => {
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas categorias</SelectItem>
+                  <SelectItem value="all">Todas categorias</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}

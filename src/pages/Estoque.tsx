@@ -49,7 +49,7 @@ const Estoque = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [movementType, setMovementType] = useState<'entrada' | 'saida'>('entrada');
@@ -69,7 +69,7 @@ const Estoque = () => {
       setLoading(true);
       const data = await getProducts({
         search: searchTerm || undefined,
-        categoria: selectedCategory || undefined,
+        categoria: selectedCategory === "all" ? undefined : selectedCategory,
         limit: 100
       });
       setProducts(data);
@@ -291,7 +291,7 @@ const Estoque = () => {
                   <SelectValue placeholder="Categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas categorias</SelectItem>
+                  <SelectItem value="all">Todas categorias</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
