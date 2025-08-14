@@ -1,42 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* MaterialM React Template - Official Colors */
+/* MaterialM React Template - Main (Dark) Variant */
 
 @layer base {
   :root {
-    /* MaterialM Original Colors - Light Mode */
-    --background: 0 0% 100%;
-    --foreground: 220 9% 11%;
+    /* MaterialM Main (Dark) - Default Colors */
+    --background: 220 16% 8%;
+    --foreground: 210 20% 98%;
 
     /* Card colors */
-    --card: 0 0% 100%;
-    --card-foreground: 220 9% 11%;
+    --card: 218 17% 11%;
+    --card-foreground: 210 20% 98%;
 
     /* Primary colors - MaterialM Blue */
     --primary: 215 100% 59%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary colors */
-    --secondary: 220 13% 91%;
-    --secondary-foreground: 220 9% 11%;
+    --secondary: 218 17% 15%;
+    --secondary-foreground: 210 20% 98%;
 
     /* Muted colors */
-    --muted: 220 13% 91%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 218 17% 15%;
+    --muted-foreground: 215 20% 65%;
 
     /* Accent colors */
-    --accent: 220 13% 91%;
-    --accent-foreground: 220 9% 11%;
+    --accent: 218 17% 15%;
+    --accent-foreground: 210 20% 98%;
 
     /* Destructive colors */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
     /* Border */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 218 17% 15%;
+    --input: 218 17% 15%;
     --ring: 215 100% 59%;
 
     /* Success colors */
@@ -52,13 +54,13 @@
     --info-foreground: 0 0% 100%;
 
     /* Sidebar colors - MaterialM Style */
-    --sidebar-background: 224 71% 4%;
-    --sidebar-foreground: 0 0% 100%;
+    --sidebar-background: 220 16% 8%;
+    --sidebar-foreground: 210 20% 98%;
     --sidebar-primary: 215 100% 59%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 13% 16%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 220 13% 16%;
+    --sidebar-accent: 218 17% 11%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 218 17% 15%;
     --sidebar-ring: 215 100% 59%;
 
     /* Gradients */
@@ -130,5 +132,11 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+  
+  /* Force dark mode by default for MaterialM */
+  html {
+    @apply dark;
   }
 }

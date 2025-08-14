@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { LayoutWrapper } from "@/components/layout/LayoutWrapper";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Analytics from "./pages/Analytics";
@@ -36,52 +37,62 @@ import SolarIcons from "./pages/SolarIcons";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="light" storageKey="materialm-theme">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/ecommerce" element={<ECommerce />} />
-            <Route path="/apps/ecommerce/shop" element={<Shop />} />
-            <Route path="/apps/ecommerce/detail/:id" element={<ProductDetail />} />
-            <Route path="/apps/ecommerce/list" element={<ProductList />} />
-            <Route path="/apps/ecommerce/checkout" element={<Checkout />} />
-            <Route path="/apps/ecommerce/addproduct" element={<AddProduct />} />
-            <Route path="/apps/ecommerce/editproduct" element={<EditProduct />} />
-            <Route path="/apps/user-profile/profile" element={<UserProfile />} />
-            <Route path="/apps/user-profile/followers" element={<UserProfile />} />
-            <Route path="/apps/user-profile/friends" element={<UserProfile />} />
-            <Route path="/apps/user-profile/gallery" element={<UserProfile />} />
-            <Route path="/apps/calendar" element={<Calendar />} />
-            <Route path="/apps/notes" element={<Notes />} />
-            <Route path="/apps/chats" element={<Chats />} />
-            <Route path="/dashboards/crm" element={<CRM />} />
-            <Route path="/theme-pages/faq" element={<FAQ />} />
-            <Route path="/theme-pages/pricing" element={<Pricing />} />
-            <Route path="/auth/login" element={<Login />} />
-            <Route path="/theme-pages/account-settings" element={<AccountSettings />} />
-            <Route path="/widgets/cards" element={<Cards />} />
-            <Route path="/widgets/banners" element={<Banners />} />
-            <Route path="/widgets/charts" element={<Charts />} />
-            <Route path="/icons/solar" element={<SolarIcons />} />
-            <Route path="/estoque" element={<Estoque />} />
-            <Route path="/pedidos" element={<Pedidos />} />
-            <Route path="/scanner" element={<Scanner />} />
-            <Route path="/de-para" element={<DePara />} />
-            <Route path="/alertas" element={<Alertas />} />
-            <Route path="/historico" element={<Historico />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Load theme tokens
+  import("@/theme/materialm/tokens").then(() => {
+    console.log('Theme: MaterialM(main) loaded');
+    console.log('Font: Plus Jakarta Sans');
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark" storageKey="materialm-theme">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <LayoutWrapper>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/ecommerce" element={<ECommerce />} />
+                <Route path="/apps/ecommerce/shop" element={<Shop />} />
+                <Route path="/apps/ecommerce/detail/:id" element={<ProductDetail />} />
+                <Route path="/apps/ecommerce/list" element={<ProductList />} />
+                <Route path="/apps/ecommerce/checkout" element={<Checkout />} />
+                <Route path="/apps/ecommerce/addproduct" element={<AddProduct />} />
+                <Route path="/apps/ecommerce/editproduct" element={<EditProduct />} />
+                <Route path="/apps/user-profile/profile" element={<UserProfile />} />
+                <Route path="/apps/user-profile/followers" element={<UserProfile />} />
+                <Route path="/apps/user-profile/friends" element={<UserProfile />} />
+                <Route path="/apps/user-profile/gallery" element={<UserProfile />} />
+                <Route path="/apps/calendar" element={<Calendar />} />
+                <Route path="/apps/notes" element={<Notes />} />
+                <Route path="/apps/chats" element={<Chats />} />
+                <Route path="/dashboards/crm" element={<CRM />} />
+                <Route path="/theme-pages/faq" element={<FAQ />} />
+                <Route path="/theme-pages/pricing" element={<Pricing />} />
+                <Route path="/auth/login" element={<Login />} />
+                <Route path="/theme-pages/account-settings" element={<AccountSettings />} />
+                <Route path="/widgets/cards" element={<Cards />} />
+                <Route path="/widgets/banners" element={<Banners />} />
+                <Route path="/widgets/charts" element={<Charts />} />
+                <Route path="/icons/solar" element={<SolarIcons />} />
+                <Route path="/estoque" element={<Estoque />} />
+                <Route path="/pedidos" element={<Pedidos />} />
+                <Route path="/scanner" element={<Scanner />} />
+                <Route path="/de-para" element={<DePara />} />
+                <Route path="/alertas" element={<Alertas />} />
+                <Route path="/historico" element={<Historico />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </LayoutWrapper>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
