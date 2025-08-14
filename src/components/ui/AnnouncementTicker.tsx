@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Megaphone, ChevronLeft, ChevronRight } from "lucide-react";
+import { Megaphone, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 
@@ -36,7 +36,7 @@ const mockAnnouncements: Announcement[] = [
 
 export function AnnouncementTicker() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [announcements] = useState(mockAnnouncements.filter(a => a.active));
   
   useEffect(() => {
@@ -49,7 +49,7 @@ export function AnnouncementTicker() {
     return () => clearInterval(interval);
   }, [announcements.length]);
 
-  if (!isVisible || announcements.length === 0) {
+  if (announcements.length === 0) {
     return null;
   }
 
@@ -79,21 +79,33 @@ export function AnnouncementTicker() {
   return (
     <div className={cn(
       "w-full border-b transition-all duration-300 ease-in-out",
-      getTypeStyles(currentAnnouncement.type)
+      getTypeStyles(currentAnnouncement.type),
+      isCollapsed && "h-10"
     )}>
       <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 flex-1">
-          <Megaphone className="h-4 w-4 flex-shrink-0" />
-          
-          <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-medium animate-in slide-in-from-right-2 duration-300">
-              {currentAnnouncement.message}
-            </p>
+        {!isCollapsed && (
+          <div className="flex items-center gap-3 flex-1">
+            <Megaphone className="h-4 w-4 flex-shrink-0" />
+            
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-medium animate-in slide-in-from-right-2 duration-300">
+                {currentAnnouncement.message}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
+
+        {isCollapsed && (
+          <div className="flex items-center gap-2 flex-1">
+            <Megaphone className="h-4 w-4 flex-shrink-0" />
+            <span className="text-sm font-medium">
+              {announcements.length} anúncio{announcements.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
 
         <div className="flex items-center gap-2 ml-4">
-          {announcements.length > 1 && (
+          {!isCollapsed && announcements.length > 1 && (
             <>
               <Button
                 variant="ghost"
@@ -122,10 +134,14 @@ export function AnnouncementTicker() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsVisible(false)}
+            onClick={() => setIsCollapsed(!isCollapsed)}
             className="h-6 w-6 p-0 hover:bg-white/10"
           >
-            <X className="h-3 w-3" />
+            {isCollapsed ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronUp className="h-3 w-3" />
+            )}
           </Button>
         </div>
       </div>
