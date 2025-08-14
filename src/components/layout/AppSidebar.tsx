@@ -154,7 +154,7 @@ export function AppSidebar({ className }: MaterialMSidebarProps) {
                         )}
                         aria-expanded={isGroupOpen}
                       >
-                        <Icon className="h-4 w-4 shrink-0" />
+                        <Icon className="h-5 w-5 shrink-0 font-bold stroke-[2.5]" />
                         <span className={cn(
                           'truncate transition-opacity duration-200',
                           collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'
@@ -197,7 +197,7 @@ export function AppSidebar({ className }: MaterialMSidebarProps) {
                                   : 'hover:bg-[hsl(var(--sidebar-accent))]'
                               )}
                             >
-                              <ChildIcon className="h-4 w-4 shrink-0" />
+                              <ChildIcon className="h-4 w-4 shrink-0 font-bold stroke-[2.5]" />
                               <span className={cn(
                                 'truncate transition-opacity duration-200',
                                 collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'
@@ -230,7 +230,7 @@ export function AppSidebar({ className }: MaterialMSidebarProps) {
                         : 'hover:bg-[hsl(var(--sidebar-accent))]'
                     )}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className="h-5 w-5 shrink-0 font-bold stroke-[2.5]" />
                     <span className={cn(
                       'truncate transition-opacity duration-200',
                       collapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'
