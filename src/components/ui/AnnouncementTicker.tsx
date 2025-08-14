@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Megaphone, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
+import { Megaphone, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
+import { useAnnouncements } from "@/contexts/AnnouncementContext";
 
 interface Announcement {
   id: string;
@@ -36,9 +37,13 @@ const mockAnnouncements: Announcement[] = [
 
 export function AnnouncementTicker() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isHidden, setIsHidden] = useState(false);
+  const { isHidden, setIsHidden, setHasAnnouncements } = useAnnouncements();
   const [announcements] = useState(mockAnnouncements.filter(a => a.active));
   
+  useEffect(() => {
+    setHasAnnouncements(announcements.length > 0);
+  }, [announcements.length, setHasAnnouncements]);
+
   useEffect(() => {
     if (announcements.length <= 1) return;
     
