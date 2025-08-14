@@ -1,4 +1,4 @@
-import { Bell, Search, Settings, User, Menu, Moon, Sun } from "lucide-react";
+import { Bell, Search, Settings, User, Menu, Moon, Sun, Grid3X3, Flag, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -12,6 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { QuickAppsModal } from "./QuickAppsModal";
+import jonathanAvatar from "@/assets/jonathan-avatar.jpg";
 
 export function AppHeader() {
   return (
@@ -23,7 +26,7 @@ export function AppHeader() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar produtos, pedidos..."
+            placeholder="Search here..."
             className="pl-10 w-80"
           />
         </div>
@@ -31,6 +34,14 @@ export function AppHeader() {
 
       {/* Right side - Actions and user menu */}
       <div className="flex items-center gap-3">
+        {/* Language/Country Flag */}
+        <Button variant="ghost" size="icon">
+          <Flag className="h-5 w-5" />
+        </Button>
+        
+        {/* Quick Apps */}
+        <QuickAppsModal />
+        
         {/* Theme Toggle */}
         <ThemeToggle />
         
@@ -43,60 +54,99 @@ export function AppHeader() {
                 variant="destructive" 
                 className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
               >
-                3
+                4
               </Badge>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notificações</DropdownMenuLabel>
+            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Estoque baixo</p>
-                <p className="text-xs text-muted-foreground">Produto ABC123 com apenas 5 unidades</p>
+                <p className="text-sm font-medium">New message received</p>
+                <p className="text-xs text-muted-foreground">From John about project update</p>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Novo pedido</p>
-                <p className="text-xs text-muted-foreground">Pedido #1234 aguardando processamento</p>
+                <p className="text-sm font-medium">Task completed</p>
+                <p className="text-xs text-muted-foreground">Development phase finished</p>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Sincronização ML</p>
-                <p className="text-xs text-muted-foreground">Produtos atualizados com sucesso</p>
+                <p className="text-sm font-medium">New user registered</p>
+                <p className="text-xs text-muted-foreground">Welcome aboard!</p>
               </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Settings */}
+        {/* Plus/Add Button */}
         <Button variant="ghost" size="icon">
-          <Settings className="h-5 w-5" />
+          <Plus className="h-5 w-5" />
         </Button>
 
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-white" />
-              </div>
-              <div className="text-left">
-                <p className="text-sm font-medium">João Silva</p>
-                <p className="text-xs text-muted-foreground">Administrador</p>
+            <Button variant="ghost" className="flex items-center gap-2 h-auto p-2">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={jonathanAvatar} alt="Jonathan Deo" />
+                <AvatarFallback>JD</AvatarFallback>
+              </Avatar>
+              <div className="text-left hidden sm:block">
+                <p className="text-sm font-medium">Jonathan Deo</p>
+                <p className="text-xs text-muted-foreground">Admin</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-64">
+            <div className="flex items-center gap-3 p-3">
+              <Avatar className="w-12 h-12">
+                <AvatarImage src={jonathanAvatar} alt="Jonathan Deo" />
+                <AvatarFallback>JD</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium">Jonathan Deo</p>
+                <p className="text-xs text-muted-foreground">Admin</p>
+                <p className="text-xs text-muted-foreground">info@materialm.com</p>
+              </div>
+            </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Configurações</DropdownMenuItem>
-            <DropdownMenuItem>Suporte</DropdownMenuItem>
+            <DropdownMenuItem className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                <User className="w-4 h-4 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">My Profile</p>
+                <p className="text-xs text-muted-foreground">Account settings</p>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                <Settings className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">My Notes</p>
+                <p className="text-xs text-muted-foreground">My Daily Notes</p>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Bell className="w-4 h-4 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">My Tasks</p>
+                <p className="text-xs text-muted-foreground">To-do and Daily tasks</p>
+              </div>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Sair</DropdownMenuItem>
+            <DropdownMenuItem>
+              <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                Logout
+              </Button>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
