@@ -16,28 +16,28 @@ const AddProduct = () => {
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
           <span>🏠</span>
           <span>/</span>
-          <span className="text-primary">Add Product</span>
+          <span className="text-primary">Adicionar Produto</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">
-            {/* General Information */}
+            {/* Informações Gerais */}
             <Card>
               <CardHeader>
-                <CardTitle>General</CardTitle>
+                <CardTitle>Informações Gerais</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="productName">Product Name *</Label>
-                  <Input id="productName" placeholder="Product Name" />
+                  <Label htmlFor="productName">Nome do Produto *</Label>
+                  <Input id="productName" placeholder="Nome do Produto" />
                   <p className="text-sm text-muted-foreground">
-                    A product name is required and recommended to be unique.
+                    O nome do produto é obrigatório e recomenda-se que seja único.
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">Descrição</Label>
                   <div className="border rounded-lg">
                     <div className="flex items-center space-x-2 p-3 border-b bg-muted/50">
                       <Button variant="ghost" size="sm">B</Button>
@@ -49,30 +49,30 @@ const AddProduct = () => {
                     </div>
                     <Textarea 
                       className="border-0 min-h-[100px]" 
-                      placeholder="Start typing..."
+                      placeholder="Comece a digitar..."
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Output</Label>
+                  <Label>Resultado</Label>
                   <div className="p-3 border rounded-lg bg-muted/50 text-sm text-muted-foreground">
-                    Set a description to the product for better visibility.
+                    Defina uma descrição para o produto para melhor visibilidade.
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Media */}
+            {/* Mídia */}
             <Card>
               <CardHeader>
-                <CardTitle>Media</CardTitle>
+                <CardTitle>Mídia</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-12 text-center">
                   <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground mb-2">Click to upload or drag and drop</p>
-                  <p className="text-sm text-muted-foreground">SVG, PNG, JPG or GIF (MAX. 800x400px)</p>
+                  <p className="text-muted-foreground mb-2">Clique para fazer upload ou arraste e solte</p>
+                  <p className="text-sm text-muted-foreground">SVG, PNG, JPG ou GIF (MÁX. 800x400px)</p>
                 </div>
               </CardContent>
             </Card>
@@ -80,18 +80,18 @@ const AddProduct = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Thumbnail */}
+            {/* Miniatura */}
             <Card>
               <CardHeader>
-                <CardTitle>Thumbnail</CardTitle>
+                <CardTitle>Miniatura</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="border-2 border-dashed border-primary/50 rounded-lg p-8 text-center bg-primary/5">
                   <Upload className="w-8 h-8 mx-auto mb-2 text-primary" />
-                  <p className="text-sm text-primary">Drop Thumbnail here to upload</p>
+                  <p className="text-sm text-primary">Arraste a miniatura aqui para fazer upload</p>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Set the product thumbnail image. Only *.png, *.jpg and *.jpeg image files are accepted
+                  Defina a imagem de miniatura do produto. Apenas arquivos *.png, *.jpg e *.jpeg são aceitos
                 </p>
               </CardContent>
             </Card>
@@ -106,48 +106,48 @@ const AddProduct = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Tax Class *</Label>
+                  <Label>Status de Publicação *</Label>
                   <Select>
                     <SelectTrigger>
-                      <SelectValue placeholder="Publish" />
+                      <SelectValue placeholder="Publicado" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="publish">Publish</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="private">Private</SelectItem>
+                      <SelectItem value="publish">Publicado</SelectItem>
+                      <SelectItem value="draft">Rascunho</SelectItem>
+                      <SelectItem value="private">Privado</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-sm text-muted-foreground">Set the product status.</p>
+                  <p className="text-sm text-muted-foreground">Defina o status do produto.</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Product Details */}
+            {/* Detalhes do Produto */}
             <Card>
               <CardHeader>
-                <CardTitle>Product Details</CardTitle>
+                <CardTitle>Detalhes do Produto</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Categories *</Label>
+                  <Label>Categorias *</Label>
                   <div className="border rounded-lg p-3 text-sm text-muted-foreground">
-                    Add product to a category.
+                    Adicione o produto a uma categoria.
                   </div>
                   <Button variant="outline" size="sm" className="text-primary">
-                    + Add selected category
+                    + Adicionar categoria selecionada
                   </Button>
                 </div>
 
                 <div className="space-y-2">
                   <Label>Tags</Label>
                   <div className="border rounded-lg p-3 text-sm text-muted-foreground">
-                    Add tags for product.
+                    Adicione tags para o produto.
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Button className="w-full">Save Product</Button>
+            <Button className="w-full">Salvar Produto</Button>
           </div>
         </div>
       </div>
