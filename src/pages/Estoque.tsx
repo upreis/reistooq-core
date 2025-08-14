@@ -1,3 +1,4 @@
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,8 @@ import { Package, AlertTriangle, TrendingUp, Search, Plus, Filter } from "lucide
 
 const Estoque = () => {
   return (
-    <div className="p-6 space-y-6">
+    <DashboardLayout>
+      <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Gestão de Estoque</h1>
@@ -178,6 +180,7 @@ const Estoque = () => {
           </CardContent>
         </Card>
       </div>
+    </DashboardLayout>
   );
 };
 

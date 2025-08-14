@@ -1,3 +1,4 @@
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +46,8 @@ const paymentsData = [
 
 const Index = () => {
   return (
-    <div className="space-y-6 p-6">
+    <DashboardLayout>
+      <div className="space-y-6">
         {/* Welcome Section */}
         <WelcomeCard />
 
@@ -262,6 +264,7 @@ const Index = () => {
           </Card>
         </div>
       </div>
+    </DashboardLayout>
   );
 };
 
