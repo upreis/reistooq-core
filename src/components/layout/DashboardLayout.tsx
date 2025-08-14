@@ -1,6 +1,7 @@
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { ThemeCustomizer } from "./ThemeCustomizer";
+import { AnnouncementTicker } from "@/components/ui/AnnouncementTicker";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <AppSidebar />
       <div className="flex-1 flex flex-col">
         <AppHeader />
+        <AnnouncementTicker />
         <main className="flex-1 overflow-auto p-6">
           {children}
         </main>
