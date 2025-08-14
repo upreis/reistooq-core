@@ -2,312 +2,267 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Package, 
-  ShoppingCart, 
-  TrendingUp, 
-  AlertTriangle,
-  BarChart3,
-  Users
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { 
+  TrendingUp,
+  ShoppingCart,
+  DollarSign,
+  Users,
+  Package,
+  MoreHorizontal,
+  ArrowUp,
+  ArrowDown
+} from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
+
+const salesData = [
+  { month: 'Aug', profit: 30, expense: 20 },
+  { month: 'Sep', profit: 35, expense: 25 },
+  { month: 'Oct', profit: 25, expense: 30 },
+  { month: 'Nov', profit: 40, expense: 35 },
+  { month: 'Dec', profit: 60, expense: 45 },
+  { month: 'Jan', profit: 55, expense: 40 },
+  { month: 'Feb', profit: 70, expense: 50 },
+  { month: 'Mar', profit: 65, expense: 45 },
+  { month: 'Apr', profit: 80, expense: 55 },
+];
+
+const productSalesData = [
+  { name: 'Modernize', value: 36, color: '#ff9f43' },
+  { name: 'Ample', value: 22, color: '#1e88e5' },
+  { name: 'Spike', value: 17, color: '#00c851' },
+  { name: 'MaterialM', value: 31, color: '#ff5722' },
+];
+
+const paymentsData = [
+  { day: 'M', value: 20 },
+  { day: 'T', value: 35 },
+  { day: 'W', value: 45 },
+  { day: 'T', value: 25 },
+  { day: 'F', value: 60 },
+  { day: 'S', value: 40 },
+  { day: 'S', value: 30 },
+];
 
 const Index = () => {
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         {/* Welcome Section */}
         <WelcomeCard />
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="p-6 bg-gradient-to-br from-pink-100 to-pink-200 border-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Sales</p>
-                <p className="text-2xl font-bold text-gray-900">2358</p>
-                <p className="text-xs text-green-600">+23%</p>
-              </div>
-              <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-6 bg-gradient-to-br from-purple-100 to-purple-200 border-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Refunds</p>
-                <p className="text-2xl font-bold text-gray-900">434</p>
-                <p className="text-xs text-red-600">-12%</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-                <ShoppingCart className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </Card>
-          
-          <Card className="p-6 bg-gradient-to-br from-emerald-100 to-emerald-200 border-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Earnings</p>
-                <p className="text-2xl font-bold text-gray-900">$245k</p>
-                <p className="text-xs text-green-600">+8%</p>
-              </div>
-              <div className="w-12 h-12 bg-emerald-500 rounded-lg flex items-center justify-center">
-                <Package className="w-6 h-6 text-white" />
-              </div>
-            </div>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatsCard
+            title="Sales"
+            value="2358"
+            change="+23%"
+            changeType="positive"
+            icon={TrendingUp}
+            gradient="primary"
+          />
+          <StatsCard
+            title="Refunds"
+            value="434"
+            change="-12%"
+            changeType="negative"
+            icon={ShoppingCart}
+            gradient="warning"
+          />
+          <StatsCard
+            title="Earnings"
+            value="$245k"
+            change="+8%"
+            changeType="positive"
+            icon={DollarSign}
+            gradient="success"
+          />
         </div>
 
-        {/* Charts and Data */}
+        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sales Chart */}
+          {/* Sales Profit Chart */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg">Sales Profit</CardTitle>
-                <div className="flex gap-4 mt-2">
-                  <span className="text-sm text-muted-foreground">Profit</span>
-                  <span className="text-sm text-muted-foreground">Expenses</span>
+                <CardTitle className="text-lg font-semibold">Sales Profit</CardTitle>
+                <div className="flex items-center space-x-4 mt-2">
+                  <div className="flex items-center space-x-1">
+                    <div className="w-3 h-3 bg-primary rounded-full"></div>
+                    <span className="text-sm text-muted-foreground">Profit</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-3 h-3 bg-muted rounded-full"></div>
+                    <span className="text-sm text-muted-foreground">Expenses</span>
+                  </div>
                 </div>
               </div>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-                <div className="text-center">
-                  <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Sales chart visualization</p>
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={salesData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Line type="monotone" dataKey="profit" stroke="hsl(var(--primary))" strokeWidth={2} />
+                    <Line type="monotone" dataKey="expense" stroke="hsl(var(--muted-foreground))" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
               <div className="flex justify-between items-center mt-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <div>
-                    <div className="text-2xl font-bold">$63,489.50</div>
-                    <div className="text-sm text-green-600">+8% Profit this year</div>
+                <div>
+                  <div className="flex items-center space-x-1">
+                    <ArrowUp className="h-4 w-4 text-success" />
+                    <span className="text-2xl font-bold">$63,489.50</span>
                   </div>
+                  <p className="text-sm text-muted-foreground">+8% Profit this year</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold">$38,496.00</div>
-                    <div className="text-sm text-muted-foreground">Profit last year</div>
+                <div>
+                  <div className="flex items-center space-x-1">
+                    <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-2xl font-bold">$38,496.00</span>
                   </div>
+                  <p className="text-sm text-muted-foreground">Profit last year</p>
                 </div>
-                <Button className="bg-blue-500 hover:bg-blue-600">
-                  View Details
-                </Button>
+                <Button>View Details</Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Product Sales Donut Chart */}
+          {/* Product Sales Chart */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Product Sales</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg font-semibold">Product Sales</CardTitle>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-center h-64">
-                <div className="relative">
-                  <div className="w-48 h-48 rounded-full border-8 border-gray-200 relative">
-                    {/* Donut chart simulation */}
-                    <div className="absolute inset-0 rounded-full border-8 border-orange-500" style={{
-                      background: `conic-gradient(
-                        #f97316 0deg 130deg,
-                        #3b82f6 130deg 210deg,
-                        #8b5cf6 210deg 290deg,
-                        #ef4444 290deg 360deg
-                      )`,
-                      WebkitMask: 'radial-gradient(circle at center, transparent 40%, black 41%)',
-                      mask: 'radial-gradient(circle at center, transparent 40%, black 41%)'
-                    }}></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="text-3xl font-bold">8364</div>
-                        <div className="text-sm text-green-600">✓ Best Seller</div>
-                      </div>
-                    </div>
+              <div className="h-64 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={productSalesData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      dataKey="value"
+                    >
+                      {productSalesData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute text-center">
+                  <div className="text-2xl font-bold">8364</div>
+                  <div className="text-sm text-muted-foreground">Best Seller</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                {productSalesData.map((item, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                    <span className="text-sm">{item.value}% {item.name}</span>
                   </div>
-                </div>
+                ))}
               </div>
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm">36% Modernize</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
-                  <span className="text-sm">17% Spike</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">22% Ample</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm">31% MaterialM</span>
-                </div>
-              </div>
-              <p className="text-center text-xs text-muted-foreground mt-4">
+              <p className="text-sm text-muted-foreground mt-4">
                 This is overview of the sales happened this month for the material website
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Bottom Row Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Marketing Report */}
+        {/* Bottom Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Marketing Report</CardTitle>
+              <CardTitle className="text-lg font-semibold">Marketing Report</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <TrendingUp className="h-4 w-4 text-red-600" />
+                  </div>
+                  <span className="text-sm">Google Ads</span>
+                </div>
+                <span className="font-semibold">+2.9k</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <ArrowUp className="h-4 w-4 text-green-600" />
+                  </div>
+                  <span className="text-sm">Referral</span>
+                </div>
+                <span className="font-semibold">1.22</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                    <Package className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <span className="text-sm">Organic</span>
+                </div>
+                <span className="font-semibold">24.3k</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg font-semibold">Payments</CardTitle>
+              <Button variant="ghost" size="sm">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold mb-1">12,389</div>
+              <p className="text-sm text-destructive mb-4">-3.8% Last 7 days</p>
+              <div className="h-24">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={paymentsData}>
+                    <Bar dataKey="value" fill="hsl(var(--primary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold">Annual Profit</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-4 h-4 text-pink-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Google Ads</p>
-                    <p className="text-lg font-bold">+2.9k</p>
-                  </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Conversion Rate</p>
+                  <div className="text-2xl font-bold">18.4%</div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                    <Users className="w-4 h-4 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Referral</p>
-                    <p className="text-lg font-bold">1.22</p>
-                  </div>
+                <div className="h-16">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={salesData.slice(-5)}>
+                      <Line type="monotone" dataKey="profit" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="w-4 h-4 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Organic</p>
-                    <p className="text-lg font-bold">24.3K</p>
-                  </div>
+                <div className="flex justify-between text-sm">
+                  <span>Added to cart: $21,120.70 <span className="text-success">+13.2%</span></span>
                 </div>
-              </div>
-              <div className="mt-4 text-center">
-                <p className="text-xs text-muted-foreground mb-2">Learn insigs how to manage</p>
-                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 rounded-full w-8 h-8">
-                  <span className="text-xs">▶</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payments */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Payments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center mb-4">
-                <div className="text-2xl font-bold">12,389</div>
-                <div className="text-sm text-red-600">-3.8%</div>
-                <div className="text-xs text-muted-foreground">Last 7 days</div>
-              </div>
-              
-              {/* Bar chart simulation */}
-              <div className="flex items-end justify-center gap-1 h-20 mb-4">
-                {[40, 60, 35, 80, 45, 90, 55].map((height, i) => (
-                  <div key={i} className="bg-orange-500 w-6 rounded-t" style={{height: `${height}%`}}></div>
-                ))}
-              </div>
-              
-              <div className="flex justify-between text-xs text-muted-foreground mb-4">
-                <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span className="text-sm">Paypal</span>
-                  </div>
-                  <span className="text-sm">52%</span>
+                <div className="flex justify-between text-sm">
+                  <span>Reached to checkout: $16,100.00 <span className="text-destructive">-7.4%</span></span>
                 </div>
-                <div className="flex justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span className="text-sm">Credit Card</span>
-                  </div>
-                  <span className="text-sm">48%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Annual Profit */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Annual Profit</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4">
-                <div className="text-sm text-muted-foreground">Conversion Rate</div>
-                <div className="text-2xl font-bold">18.4%</div>
-              </div>
-              
-              {/* Wave chart simulation */}
-              <div className="h-20 flex items-end justify-center mb-4">
-                <svg viewBox="0 0 200 50" className="w-full h-full">
-                  <path d="M 0 25 Q 50 10 100 25 T 200 25" stroke="#f97316" strokeWidth="2" fill="none"/>
-                </svg>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Added to Cart</span>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">$21,120.70</div>
-                    <div className="text-xs text-green-600">+13.2%</div>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">5 clicks</div>
-                
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Reached to Checkout</span>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">$16,100.00</div>
-                    <div className="text-xs text-red-600">-7.4%</div>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">12 clicks</div>
               </div>
             </CardContent>
           </Card>
         </div>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Ações Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
-                <Package className="w-6 h-6" />
-                <span>Adicionar Produto</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
-                <ShoppingCart className="w-6 h-6" />
-                <span>Novo Pedido</span>
-              </Button>
-              <Button variant="outline" className="h-20 flex flex-col gap-2">
-                <Users className="w-6 h-6" />
-                <span>Relatório de Vendas</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </DashboardLayout>
   );
