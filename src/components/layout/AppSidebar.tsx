@@ -72,38 +72,38 @@ export function AppSidebar() {
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive 
-      ? "bg-sidebar-accent text-sidebar-primary font-medium border-r-2 border-sidebar-primary" 
-      : "hover:bg-sidebar-accent/50 text-sidebar-foreground";
+      ? "bg-primary/10 text-primary font-medium rounded-lg" 
+      : "hover:bg-sidebar-accent text-sidebar-foreground rounded-lg";
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="border-b border-sidebar-border p-6">
+      <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <Package className="w-5 h-5 text-white" />
           </div>
           {state !== "collapsed" && (
             <div>
-              <h1 className="text-lg font-bold text-sidebar-foreground">REISTOQ</h1>
-              <p className="text-xs text-sidebar-foreground/60">Gestão de Estoque</p>
+              <h1 className="text-lg font-bold text-sidebar-foreground">MaterialM</h1>
+              <p className="text-xs text-sidebar-foreground/60">React Admin</p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4">
+      <SidebarContent className="px-4 py-2">
         {/* Dashboards Section */}
         <Collapsible open={dashboardsOpen} onOpenChange={setDashboardsOpen}>
           <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center justify-between text-sidebar-foreground/80 uppercase tracking-wider text-xs font-semibold">
+            <SidebarGroupLabel className="flex items-center justify-between text-sidebar-foreground/60 uppercase tracking-wider text-xs font-semibold px-2 py-2">
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="p-0 h-auto font-semibold text-sidebar-foreground/80 hover:text-sidebar-foreground"
+                  className="p-0 h-auto font-semibold text-sidebar-foreground/60 hover:text-sidebar-foreground text-xs"
                 >
                   <span>Dashboards</span>
-                  <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${dashboardsOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${dashboardsOpen ? 'rotate-180' : ''}`} />
                 </Button>
               </CollapsibleTrigger>
             </SidebarGroupLabel>
@@ -115,7 +115,7 @@ export function AppSidebar() {
                       <SidebarMenuButton asChild>
                         <NavLink to={item.url} end className={getNavCls}>
                           <item.icon className="h-4 w-4" />
-                          {state !== "collapsed" && <span>{item.title}</span>}
+                          {state !== "collapsed" && <span className="text-sm">{item.title}</span>}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -129,15 +129,15 @@ export function AppSidebar() {
         {/* Apps Section */}
         <Collapsible open={appsOpen} onOpenChange={setAppsOpen}>
           <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center justify-between text-sidebar-foreground/80 uppercase tracking-wider text-xs font-semibold">
+            <SidebarGroupLabel className="flex items-center justify-between text-sidebar-foreground/60 uppercase tracking-wider text-xs font-semibold px-2 py-2">
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="p-0 h-auto font-semibold text-sidebar-foreground/80 hover:text-sidebar-foreground"
+                  className="p-0 h-auto font-semibold text-sidebar-foreground/60 hover:text-sidebar-foreground text-xs"
                 >
                   <span>Apps</span>
-                  <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${appsOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${appsOpen ? 'rotate-180' : ''}`} />
                 </Button>
               </CollapsibleTrigger>
             </SidebarGroupLabel>
@@ -149,7 +149,7 @@ export function AppSidebar() {
                       <SidebarMenuButton asChild>
                         <NavLink to={item.url} className={getNavCls}>
                           <item.icon className="h-4 w-4" />
-                          {state !== "collapsed" && <span>{item.title}</span>}
+                          {state !== "collapsed" && <span className="text-sm">{item.title}</span>}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -161,15 +161,15 @@ export function AppSidebar() {
         </Collapsible>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-medium">U</span>
+          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+            <span className="text-white text-sm font-medium">J</span>
           </div>
           {state !== "collapsed" && (
             <div className="flex-1">
-              <p className="text-sm font-medium text-sidebar-foreground">Usuário</p>
-              <p className="text-xs text-sidebar-foreground/60">Admin</p>
+              <p className="text-sm font-medium text-sidebar-foreground">Jonathan Deo</p>
+              <p className="text-xs text-sidebar-foreground/60">Designer</p>
             </div>
           )}
         </div>
