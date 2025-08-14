@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -128,8 +127,7 @@ export default function Shop() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -327,6 +325,5 @@ export default function Shop() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

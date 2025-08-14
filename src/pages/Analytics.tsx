@@ -1,12 +1,10 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { BarChart3, TrendingUp, Users, DollarSign } from "lucide-react";
 
 const Analytics = () => {
   return (
-    <DashboardLayout>
-      <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Analytics</h1>
@@ -79,7 +77,6 @@ const Analytics = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
   );
 };
 

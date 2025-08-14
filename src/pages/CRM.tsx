@@ -1,4 +1,3 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,8 +30,7 @@ const CRM = () => {
   ];
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6 p-6">
         {/* Top Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
@@ -392,7 +390,6 @@ const CRM = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
   );
 };
 
