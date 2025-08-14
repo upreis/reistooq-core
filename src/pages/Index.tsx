@@ -46,7 +46,8 @@ const paymentsData = [
 
 const Index = () => {
   return (
-    <div className="space-y-6">
+    <DashboardLayout>
+      <div className="space-y-6">
         {/* Welcome Section */}
         <WelcomeCard />
 
@@ -262,7 +263,8 @@ const Index = () => {
             </CardContent>
           </Card>
         </div>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 
