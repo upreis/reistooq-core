@@ -20,39 +20,45 @@ const Index = () => {
         <WelcomeCard />
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard
-            title="Total de Produtos"
-            value="2.358"
-            change="+12% vs mês anterior"
-            changeType="positive"
-            icon={Package}
-            gradient="primary"
-          />
-          <StatsCard
-            title="Pedidos Pendentes"
-            value="434"
-            change="-3% vs ontem"
-            changeType="negative"
-            icon={ShoppingCart}
-            gradient="warning"
-          />
-          <StatsCard
-            title="Faturamento"
-            value="R$ 245.8K"
-            change="+8% vs mês anterior"
-            changeType="positive"
-            icon={TrendingUp}
-            gradient="success"
-          />
-          <StatsCard
-            title="Alertas de Estoque"
-            value="23"
-            change="5 críticos"
-            changeType="negative"
-            icon={AlertTriangle}
-            gradient="danger"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-pink-100 to-pink-200 border-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Sales</p>
+                <p className="text-2xl font-bold text-gray-900">2358</p>
+                <p className="text-xs text-green-600">+23%</p>
+              </div>
+              <div className="w-12 h-12 bg-pink-500 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-100 to-purple-200 border-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Refunds</p>
+                <p className="text-2xl font-bold text-gray-900">434</p>
+                <p className="text-xs text-red-600">-12%</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                <ShoppingCart className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-emerald-100 to-emerald-200 border-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Earnings</p>
+                <p className="text-2xl font-bold text-gray-900">$245k</p>
+                <p className="text-xs text-green-600">+8%</p>
+              </div>
+              <div className="w-12 h-12 bg-emerald-500 rounded-lg flex items-center justify-center">
+                <Package className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Charts and Data */}
