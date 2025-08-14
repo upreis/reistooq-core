@@ -26,7 +26,7 @@ export function AppHeader() {
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search here..."
+            placeholder="Pesquisar..."
             className="pl-10 w-80"
           />
         </div>
@@ -59,24 +59,24 @@ export function AppHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+            <DropdownMenuLabel>Notificações</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">New message received</p>
-                <p className="text-xs text-muted-foreground">From John about project update</p>
+                <p className="text-sm font-medium">Nova mensagem recebida</p>
+                <p className="text-xs text-muted-foreground">De João sobre atualização do projeto</p>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">Task completed</p>
-                <p className="text-xs text-muted-foreground">Development phase finished</p>
+                <p className="text-sm font-medium">Tarefa concluída</p>
+                <p className="text-xs text-muted-foreground">Fase de desenvolvimento finalizada</p>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem>
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">New user registered</p>
-                <p className="text-xs text-muted-foreground">Welcome aboard!</p>
+                <p className="text-sm font-medium">Novo usuário registrado</p>
+                <p className="text-xs text-muted-foreground">Bem-vindo ao time!</p>
               </div>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -119,8 +119,8 @@ export function AppHeader() {
                 <User className="w-4 h-4 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm font-medium">My Profile</p>
-                <p className="text-xs text-muted-foreground">Account settings</p>
+                <p className="text-sm font-medium">Meu Perfil</p>
+                <p className="text-xs text-muted-foreground">Configurações da conta</p>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem className="flex items-center gap-3">
@@ -128,8 +128,8 @@ export function AppHeader() {
                 <Settings className="w-4 h-4 text-emerald-600" />
               </div>
               <div>
-                <p className="text-sm font-medium">My Notes</p>
-                <p className="text-xs text-muted-foreground">My Daily Notes</p>
+                <p className="text-sm font-medium">Minhas Notas</p>
+                <p className="text-xs text-muted-foreground">Notas diárias</p>
               </div>
             </DropdownMenuItem>
             <DropdownMenuItem className="flex items-center gap-3">
@@ -137,14 +137,14 @@ export function AppHeader() {
                 <Bell className="w-4 h-4 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm font-medium">My Tasks</p>
-                <p className="text-xs text-muted-foreground">To-do and Daily tasks</p>
+                <p className="text-sm font-medium">Minhas Tarefas</p>
+                <p className="text-xs text-muted-foreground">Lista de tarefas diárias</p>
               </div>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                Logout
+                Sair
               </Button>
             </DropdownMenuItem>
           </DropdownMenuContent>

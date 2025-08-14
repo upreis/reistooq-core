@@ -1,26 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
-import {
-  BarChart3,
-  Package,
-  ShoppingCart,
-  Scan,
-  History,
-  Settings,
-  Users,
-  FileText,
-  Calendar,
-  Mail,
-  Ticket,
-  Layers,
-  ChevronDown,
-  Home,
-  TrendingUp,
-  ArrowLeftRight,
-  AlertTriangle,
-  MessageSquare,
-  CreditCard
-} from "lucide-react";
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -30,79 +11,116 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
   SidebarHeader,
-  SidebarFooter
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { NAV_ITEMS } from "@/config/nav";
 
-const dashboards = [
-  { title: "Dashboard", url: "/", icon: Home },
-  { title: "Analytics", url: "/analytics", icon: TrendingUp },
-  { title: "eCommerce", url: "/ecommerce", icon: ShoppingCart },
-  { title: "CRM", url: "/dashboards/crm", icon: Users },
-];
+// Helper function to get icon component from string name
+const getIconComponent = (iconName: string) => {
+  const IconComponent = (LucideIcons as any)[iconName];
+  return IconComponent || LucideIcons.Package;
+};
 
-const apps = [
-  { 
-    title: "eCommerce", 
-    icon: ShoppingCart,
-    children: [
-      { title: "Shop", url: "/apps/ecommerce/shop", icon: ShoppingCart },
-      { title: "Details", url: "/apps/ecommerce/detail/1", icon: FileText },
-      { title: "List", url: "/apps/ecommerce/list", icon: Package },
-      { title: "Checkout", url: "/apps/ecommerce/checkout", icon: CreditCard },
-      { title: "Add Product", url: "/apps/ecommerce/addproduct", icon: Package },
-      { title: "Edit Product", url: "/apps/ecommerce/editproduct", icon: Settings },
-    ]
-  },
-  { 
-    title: "User Profile", 
-    icon: Users,
-    children: [
-      { title: "Profile", url: "/apps/user-profile/profile", icon: Users },
-      { title: "Followers", url: "/apps/user-profile/followers", icon: Users },
-      { title: "Friends", url: "/apps/user-profile/friends", icon: Users },
-      { title: "Gallery", url: "/apps/user-profile/gallery", icon: Users },
-    ]
-  },
-  { title: "Calendar", url: "/apps/calendar", icon: Calendar },
-  { title: "Notes", url: "/apps/notes", icon: FileText },
-  { title: "Chats", url: "/apps/chats", icon: MessageSquare },
-  { title: "Gestão de Estoque", url: "/estoque", icon: Package },
-  { title: "Pedidos", url: "/pedidos", icon: ShoppingCart },
-  { title: "Scanner", url: "/scanner", icon: Scan },
-  { title: "De-Para", url: "/de-para", icon: ArrowLeftRight },
-  { title: "Alertas", url: "/alertas", icon: AlertTriangle },
-  { title: "Histórico", url: "/historico", icon: History },
-];
+interface NavItem {
+  label: string;
+  path?: string;
+  icon: string;
+  children?: NavItem[];
+}
+
+interface NavigationItemProps {
+  item: NavItem;
+  collapsed: boolean;
+  currentPath: string;
+}
+
+function NavigationItem({ item, collapsed, currentPath }: NavigationItemProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const Icon = getIconComponent(item.icon);
+  const hasChildren = item.children && item.children.length > 0;
+  
+  // Check if any child is active
+  const isChildActive = hasChildren && item.children?.some(child => 
+    child.path === currentPath || (child.path && currentPath.startsWith(child.path))
+  );
+  
+  const isActive = item.path === currentPath || isChildActive;
+
+  if (hasChildren) {
+    return (
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <SidebarMenuButton 
+            className={`w-full justify-between ${isChildActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
+          >
+            <div className="flex items-center gap-3">
+              <Icon className="h-4 w-4 shrink-0" />
+              {!collapsed && <span>{item.label}</span>}
+            </div>
+            {!collapsed && (
+              <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+            )}
+          </SidebarMenuButton>
+        </CollapsibleTrigger>
+        {!collapsed && (
+          <CollapsibleContent className="ml-6">
+            <SidebarMenu>
+              {item.children?.map((child) => (
+                <SidebarMenuItem key={child.path || child.label}>
+                  <SidebarMenuButton asChild>
+                    <NavLink 
+                      to={child.path || '#'} 
+                      className={({ isActive }) => 
+                        isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : ''
+                      }
+                    >
+                      {(() => {
+                        const ChildIcon = getIconComponent(child.icon);
+                        return <ChildIcon className="h-4 w-4" />;
+                      })()}
+                      <span>{child.label}</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    );
+  }
+
+  return (
+    <SidebarMenuButton asChild>
+      <NavLink 
+        to={item.path || '#'} 
+        className={({ isActive }) => 
+          isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : ''
+        }
+      >
+        <Icon className="h-4 w-4" />
+        {!collapsed && <span>{item.label}</span>}
+      </NavLink>
+    </SidebarMenuButton>
+  );
+}
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
-  
-  const [dashboardsOpen, setDashboardsOpen] = useState(true);
-  const [appsOpen, setAppsOpen] = useState(true);
-  const [ecommerceOpen, setEcommerceOpen] = useState(true);
-  const [userProfileOpen, setUserProfileOpen] = useState(true);
-
-  const isActive = (path: string) => currentPath === path;
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? "bg-primary/10 text-primary font-medium rounded-lg" 
-      : "hover:bg-sidebar-accent text-sidebar-foreground rounded-lg";
+  const collapsed = state === "collapsed";
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
+    <Sidebar className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Package className="w-5 h-5 text-white" />
+            <LucideIcons.Package className="w-5 h-5 text-white" />
           </div>
-          {state !== "collapsed" && (
+          {!collapsed && (
             <div>
               <h1 className="text-lg font-bold text-sidebar-foreground">REISTOQ</h1>
               <p className="text-xs text-sidebar-foreground/60">Admin Dashboard</p>
@@ -112,116 +130,29 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-4 py-2">
-        {/* Dashboards Section */}
-        <Collapsible open={dashboardsOpen} onOpenChange={setDashboardsOpen}>
-          <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center justify-between text-sidebar-foreground/60 uppercase tracking-wider text-xs font-semibold px-2 py-2">
-              <CollapsibleTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="p-0 h-auto font-semibold text-sidebar-foreground/60 hover:text-sidebar-foreground text-xs"
-                >
-                  <span>Dashboards</span>
-                  <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${dashboardsOpen ? 'rotate-180' : ''}`} />
-                </Button>
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {dashboards.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <NavLink to={item.url} end className={getNavCls}>
-                          <item.icon className="h-4 w-4" />
-                          {state !== "collapsed" && <span className="text-sm">{item.title}</span>}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
+        {NAV_ITEMS.map((section) => (
+          <SidebarGroup key={section.group}>
+            {!collapsed && (
+              <SidebarGroupLabel className="text-xs font-medium text-sidebar-foreground/70 uppercase tracking-wider mb-2">
+                {section.group}
+              </SidebarGroupLabel>
+            )}
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1">
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.path || item.label}>
+                    <NavigationItem 
+                      item={item} 
+                      collapsed={collapsed} 
+                      currentPath={currentPath} 
+                    />
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
           </SidebarGroup>
-        </Collapsible>
-
-        {/* Apps Section */}
-        <Collapsible open={appsOpen} onOpenChange={setAppsOpen}>
-          <SidebarGroup>
-            <SidebarGroupLabel className="flex items-center justify-between text-sidebar-foreground/60 uppercase tracking-wider text-xs font-semibold px-2 py-2">
-              <CollapsibleTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="p-0 h-auto font-semibold text-sidebar-foreground/60 hover:text-sidebar-foreground text-xs"
-                >
-                  <span>Apps</span>
-                  <ChevronDown className={`ml-auto h-3 w-3 transition-transform ${appsOpen ? 'rotate-180' : ''}`} />
-                </Button>
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
-            <CollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {apps.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      {item.children ? (
-                        <Collapsible open={item.title === 'eCommerce' ? ecommerceOpen : userProfileOpen} onOpenChange={item.title === 'eCommerce' ? setEcommerceOpen : setUserProfileOpen}>
-                          <CollapsibleTrigger asChild>
-                            <SidebarMenuButton className="flex items-center justify-between w-full">
-                              <div className="flex items-center">
-                                <item.icon className="h-4 w-4" />
-                                {state !== "collapsed" && <span className="text-sm ml-2">{item.title}</span>}
-                              </div>
-                              {state !== "collapsed" && <ChevronDown className={`h-3 w-3 transition-transform ${(item.title === 'eCommerce' ? ecommerceOpen : userProfileOpen) ? 'rotate-180' : ''}`} />}
-                            </SidebarMenuButton>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <SidebarMenu className="ml-4 mt-1">
-                              {item.children.map((child) => (
-                                <SidebarMenuItem key={child.title}>
-                                  <SidebarMenuButton asChild>
-                                    <NavLink to={child.url} className={getNavCls}>
-                                      <child.icon className="h-3 w-3" />
-                                      {state !== "collapsed" && <span className="text-xs">{child.title}</span>}
-                                    </NavLink>
-                                  </SidebarMenuButton>
-                                </SidebarMenuItem>
-                              ))}
-                            </SidebarMenu>
-                          </CollapsibleContent>
-                        </Collapsible>
-                      ) : (
-                        <SidebarMenuButton asChild>
-                          <NavLink to={item.url} className={getNavCls}>
-                            <item.icon className="h-4 w-4" />
-                            {state !== "collapsed" && <span className="text-sm">{item.title}</span>}
-                          </NavLink>
-                        </SidebarMenuButton>
-                      )}
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </CollapsibleContent>
-          </SidebarGroup>
-        </Collapsible>
+        ))}
       </SidebarContent>
-
-      <SidebarFooter className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-medium">J</span>
-          </div>
-          {state !== "collapsed" && (
-            <div className="flex-1">
-              <p className="text-sm font-medium text-sidebar-foreground">Jonathan Deo</p>
-              <p className="text-xs text-sidebar-foreground/60">Designer</p>
-            </div>
-          )}
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
 }
