@@ -69,15 +69,16 @@ const App = () => {
                 <Route path="/apps/calendar" element={<Calendar />} />
                 <Route path="/apps/notes" element={<Notes />} />
                 <Route path="/apps/chats" element={<Chats />} />
-                <Route path="/dashboards/crm" element={<CRM />} />
-                <Route path="/theme-pages/faq" element={<FAQ />} />
-                <Route path="/theme-pages/pricing" element={<Pricing />} />
-                <Route path="/auth/login" element={<Login />} />
-                <Route path="/theme-pages/account-settings" element={<AccountSettings />} />
-                <Route path="/widgets/cards" element={<Cards />} />
-                <Route path="/widgets/banners" element={<Banners />} />
-                <Route path="/widgets/charts" element={<Charts />} />
-                <Route path="/icons/solar" element={<SolarIcons />} />
+                <Route path="/crm" element={<CRM />} />
+                {/* Demo routes - moved under _demo for reference */}
+                <Route path="/_demo/faq" element={<FAQ />} />
+                <Route path="/_demo/pricing" element={<Pricing />} />
+                <Route path="/_demo/login" element={<Login />} />
+                <Route path="/_demo/account-settings" element={<AccountSettings />} />
+                <Route path="/_demo/cards" element={<Cards />} />
+                <Route path="/_demo/banners" element={<Banners />} />
+                <Route path="/_demo/charts" element={<Charts />} />
+                <Route path="/_demo/icons" element={<SolarIcons />} />
                 <Route path="/estoque" element={<Estoque />} />
                 <Route path="/pedidos" element={<Pedidos />} />
                 <Route path="/scanner" element={<Scanner />} />
