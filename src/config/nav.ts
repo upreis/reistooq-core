@@ -37,6 +37,7 @@ export const NAV_ITEMS = [
       { label: 'Scanner',           path: '/scanner',         icon: 'Scan' },
       { label: 'De-Para',           path: '/de-para',         icon: 'ArrowLeftRight' },
       { label: 'Alertas',           path: '/alertas',         icon: 'Bell' },
+      { label: 'Configurações',     path: '/configuracoes',   icon: 'Settings' },
       { label: 'Histórico',         path: '/historico',       icon: 'History' },
     ],
   },

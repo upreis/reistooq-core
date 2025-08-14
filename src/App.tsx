@@ -13,6 +13,7 @@ import Pedidos from "./pages/Pedidos";
 import Scanner from "./pages/Scanner";
 import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
+import Configuracoes from "./pages/Configuracoes";
 import Historico from "./pages/Historico";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/de-para" element={<DePara />} />
             <Route path="/alertas" element={<Alertas />} />
+            <Route path="/configuracoes" element={<Configuracoes />} />
             <Route path="/historico" element={<Historico />} />
 
             {/* Demo Routes (hidden from nav) */}
