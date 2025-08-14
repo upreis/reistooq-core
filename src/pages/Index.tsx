@@ -3,18 +3,21 @@ import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useProducts } from "@/hooks/useProducts";
 import { 
   TrendingUp,
   ShoppingCart,
   DollarSign,
-  Users,
   Package,
+  AlertTriangle,
   MoreHorizontal,
   ArrowUp,
   ArrowDown
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 
+// Mock data for charts (will be replaced with real data later)
 const salesData = [
   { month: 'Aug', profit: 30, expense: 20 },
   { month: 'Sep', profit: 35, expense: 25 },
@@ -28,10 +31,10 @@ const salesData = [
 ];
 
 const productSalesData = [
-  { name: 'Modernize', value: 36, color: '#ff9f43' },
-  { name: 'Ample', value: 22, color: '#1e88e5' },
-  { name: 'Spike', value: 17, color: '#00c851' },
-  { name: 'MaterialM', value: 31, color: '#ff5722' },
+  { name: 'Eletrônicos', value: 36, color: '#ff9f43' },
+  { name: 'Roupas', value: 22, color: '#1e88e5' },
+  { name: 'Casa & Jardim', value: 17, color: '#00c851' },
+  { name: 'Brinquedos', value: 25, color: '#ff5722' },
 ];
 
 const paymentsData = [
@@ -45,6 +48,50 @@ const paymentsData = [
 ];
 
 const Index = () => {
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    lowStockProducts: 0,
+    outOfStockProducts: 0,
+    totalStockValue: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const { getProductStats } = useProducts();
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const data = await getProductStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Carregando dashboard...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -52,26 +99,34 @@ const Index = () => {
         <WelcomeCard />
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatsCard
-            title="Sales"
-            value="2358"
-            change="+23%"
-            changeType="positive"
-            icon={TrendingUp}
+            title="Total de Produtos"
+            value={stats.totalProducts.toString()}
+            change={stats.totalProducts > 0 ? "+100%" : "0%"}
+            changeType="neutral"
+            icon={Package}
             gradient="primary"
           />
           <StatsCard
-            title="Refunds"
-            value="434"
-            change="-12%"
-            changeType="negative"
+            title="Estoque Baixo"
+            value={stats.lowStockProducts.toString()}
+            change={stats.lowStockProducts > 0 ? "Atenção!" : "OK"}
+            changeType={stats.lowStockProducts > 0 ? "negative" : "positive"}
+            icon={AlertTriangle}
+            gradient="warning"
+          />
+          <StatsCard
+            title="Sem Estoque"
+            value={stats.outOfStockProducts.toString()}
+            change={stats.outOfStockProducts > 0 ? "Urgente!" : "OK"}
+            changeType={stats.outOfStockProducts > 0 ? "negative" : "positive"}
             icon={ShoppingCart}
             gradient="warning"
           />
           <StatsCard
-            title="Earnings"
-            value="$245k"
+            title="Valor do Estoque"
+            value={formatCurrency(stats.totalStockValue)}
             change="+8%"
             changeType="positive"
             icon={DollarSign}
@@ -85,15 +140,15 @@ const Index = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-lg font-semibold">Sales Profit</CardTitle>
+                <CardTitle className="text-lg font-semibold">Vendas vs Custos</CardTitle>
                 <div className="flex items-center space-x-4 mt-2">
                   <div className="flex items-center space-x-1">
                     <div className="w-3 h-3 bg-primary rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Profit</span>
+                    <span className="text-sm text-muted-foreground">Vendas</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <div className="w-3 h-3 bg-muted rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Expenses</span>
+                    <span className="text-sm text-muted-foreground">Custos</span>
                   </div>
                 </div>
               </div>
@@ -117,26 +172,26 @@ const Index = () => {
                 <div>
                   <div className="flex items-center space-x-1">
                     <ArrowUp className="h-4 w-4 text-success" />
-                    <span className="text-2xl font-bold">$63,489.50</span>
+                    <span className="text-2xl font-bold">{formatCurrency(stats.totalStockValue)}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">+8% Profit this year</p>
+                  <p className="text-sm text-muted-foreground">Valor total em estoque</p>
                 </div>
                 <div>
                   <div className="flex items-center space-x-1">
-                    <ArrowDown className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-2xl font-bold">$38,496.00</span>
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-2xl font-bold">{stats.totalProducts}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">Profit last year</p>
+                  <p className="text-sm text-muted-foreground">Produtos cadastrados</p>
                 </div>
-                <Button>View Details</Button>
+                <Button>Ver Relatório</Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Product Sales Chart */}
+          {/* Product Categories Chart */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Product Sales</CardTitle>
+              <CardTitle className="text-lg font-semibold">Produtos por Categoria</CardTitle>
               <Button variant="ghost" size="sm">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
@@ -160,8 +215,8 @@ const Index = () => {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="absolute text-center">
-                  <div className="text-2xl font-bold">8364</div>
-                  <div className="text-sm text-muted-foreground">Best Seller</div>
+                  <div className="text-2xl font-bold">{stats.totalProducts}</div>
+                  <div className="text-sm text-muted-foreground">Total</div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 mt-4">
@@ -173,7 +228,7 @@ const Index = () => {
                 ))}
               </div>
               <p className="text-sm text-muted-foreground mt-4">
-                This is overview of the sales happened this month for the material website
+                Distribuição dos produtos cadastrados por categoria no sistema
               </p>
             </CardContent>
           </Card>
@@ -183,49 +238,49 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">Marketing Report</CardTitle>
+              <CardTitle className="text-lg font-semibold">Status do Estoque</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <TrendingUp className="h-4 w-4 text-red-600" />
-                  </div>
-                  <span className="text-sm">Google Ads</span>
-                </div>
-                <span className="font-semibold">+2.9k</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <ArrowUp className="h-4 w-4 text-green-600" />
+                    <Package className="h-4 w-4 text-green-600" />
                   </div>
-                  <span className="text-sm">Referral</span>
+                  <span className="text-sm">Em Estoque</span>
                 </div>
-                <span className="font-semibold">1.22</span>
+                <span className="font-semibold">{stats.totalProducts - stats.outOfStockProducts}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                    <Package className="h-4 w-4 text-orange-600" />
+                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
                   </div>
-                  <span className="text-sm">Organic</span>
+                  <span className="text-sm">Estoque Baixo</span>
                 </div>
-                <span className="font-semibold">24.3k</span>
+                <span className="font-semibold">{stats.lowStockProducts}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <ShoppingCart className="h-4 w-4 text-red-600" />
+                  </div>
+                  <span className="text-sm">Sem Estoque</span>
+                </div>
+                <span className="font-semibold">{stats.outOfStockProducts}</span>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Payments</CardTitle>
+              <CardTitle className="text-lg font-semibold">Movimentações</CardTitle>
               <Button variant="ghost" size="sm">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold mb-1">12,389</div>
-              <p className="text-sm text-destructive mb-4">-3.8% Last 7 days</p>
+              <div className="text-2xl font-bold mb-1">124</div>
+              <p className="text-sm text-success mb-4">+12% Últimos 7 dias</p>
               <div className="h-24">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={paymentsData}>
@@ -238,13 +293,13 @@ const Index = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold">Annual Profit</CardTitle>
+              <CardTitle className="text-lg font-semibold">Resumo Financeiro</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Conversion Rate</p>
-                  <div className="text-2xl font-bold">18.4%</div>
+                  <p className="text-sm text-muted-foreground">Valor Total do Estoque</p>
+                  <div className="text-2xl font-bold">{formatCurrency(stats.totalStockValue)}</div>
                 </div>
                 <div className="h-16">
                   <ResponsiveContainer width="100%" height="100%">
@@ -254,10 +309,12 @@ const Index = () => {
                   </ResponsiveContainer>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Added to cart: $21,120.70 <span className="text-success">+13.2%</span></span>
+                  <span>Produtos: {stats.totalProducts} <span className="text-success">+{stats.totalProducts > 0 ? '100%' : '0%'}</span></span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Reached to checkout: $16,100.00 <span className="text-destructive">-7.4%</span></span>
+                  <span>Alertas: {stats.lowStockProducts + stats.outOfStockProducts} <span className="text-destructive">
+                    {stats.lowStockProducts + stats.outOfStockProducts > 0 ? 'Atenção' : 'OK'}
+                  </span></span>
                 </div>
               </div>
             </CardContent>
