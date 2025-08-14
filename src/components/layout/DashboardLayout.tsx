@@ -1,6 +1,5 @@
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
-import { ThemeCustomizer } from "./ThemeCustomizer";
 import { AnnouncementTicker } from "@/components/ui/AnnouncementTicker";
 import { AnnouncementProvider } from "@/contexts/AnnouncementContext";
 
@@ -20,7 +19,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {children}
           </main>
         </div>
-        <ThemeCustomizer />
       </div>
     </AnnouncementProvider>
   );
