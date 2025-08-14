@@ -14,6 +14,7 @@ import Scanner from "./pages/Scanner";
 import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
 import Historico from "./pages/Historico";
+import Shop from "./pages/Shop";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/ecommerce" element={<ECommerce />} />
+            <Route path="/apps/ecommerce/shop" element={<Shop />} />
             <Route path="/estoque" element={<Estoque />} />
             <Route path="/pedidos" element={<Pedidos />} />
             <Route path="/scanner" element={<Scanner />} />
