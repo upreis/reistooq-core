@@ -14,18 +14,18 @@ import {
   BarcodeFormat
 } from '../types/scanner.types';
 import { BarcodeDecoder } from './BarcodeDecoder';
-import { ProductLookup } from './ProductLookup';
+import { ProductLookupService } from './ProductLookup';
 
 export class ScannerService {
   private decoder: BarcodeDecoder;
-  private productLookup: ProductLookup;
+  private productLookup: ProductLookupService;
   private scanHistory: ScanHistory[] = [];
   private sessionStats: ScannerSessionStats;
   private sessionId: string;
 
   constructor() {
     this.decoder = new BarcodeDecoder();
-    this.productLookup = new ProductLookup();
+    this.productLookup = new ProductLookupService();
     this.sessionId = crypto.randomUUID();
     this.sessionStats = this.initializeSessionStats();
     

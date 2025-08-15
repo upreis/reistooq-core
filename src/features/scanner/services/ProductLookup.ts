@@ -5,7 +5,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { 
   ScannedProduct, 
-  ProductLookupService, 
+  ProductLookupService as IProductLookupService, 
   MovementRequest, 
   BatchMovement,
   ProductSearchFilters,
@@ -14,7 +14,7 @@ import {
   ScannerCache
 } from '../types/scanner.types';
 
-export class ProductLookup implements ProductLookupService {
+export class ProductLookupService implements IProductLookupService {
   private cache: ScannerCache;
   private readonly CACHE_TTL_MINUTES = 60;
   private readonly MAX_CACHE_SIZE = 500;
