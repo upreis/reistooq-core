@@ -10,10 +10,10 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <AnnouncementProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <AnnouncementTicker />
+      <div className="min-h-screen flex w-full bg-background pt-12">
         <AppSidebar />
         <div className="flex-1 flex flex-col">
-          <AnnouncementTicker />
           <AppHeader />
           <main className="flex-1 overflow-auto p-6">
             {children}

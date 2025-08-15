@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Megaphone, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
+import { Megaphone, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { useAnnouncements } from "@/contexts/AnnouncementContext";
@@ -37,6 +37,7 @@ const mockAnnouncements: Announcement[] = [
 
 export function AnnouncementTicker() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const { isHidden, setIsHidden, setHasAnnouncements } = useAnnouncements();
   const [announcements] = useState(mockAnnouncements.filter(a => a.active));
   
@@ -60,17 +61,9 @@ export function AnnouncementTicker() {
 
   const currentAnnouncement = announcements[currentIndex];
 
-  const getTypeStyles = (type: Announcement['type']) => {
-    switch (type) {
-      case 'error':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
-      case 'warning':
-        return 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20';
-      case 'success':
-        return 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20';
-      default:
-        return 'bg-primary/10 text-primary border-primary/20';
-    }
+  // Usando o estilo do banner de debug
+  const getDebugBannerStyle = () => {
+    return 'bg-amber-500/10 border border-amber-500/30 text-amber-200';
   };
 
   const nextAnnouncement = () => {
@@ -83,28 +76,39 @@ export function AnnouncementTicker() {
 
   return (
     <div className={cn(
-      "w-full border-b transition-all duration-300 ease-in-out",
-      getTypeStyles(currentAnnouncement.type)
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out",
+      getDebugBannerStyle(),
+      isCollapsed ? "h-10" : "h-auto"
     )}>
-      <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-3 flex-1">
-          <Megaphone className="h-4 w-4 flex-shrink-0 font-bold" strokeWidth={2.5} />
+          <Megaphone className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} />
           
-          <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-bold animate-in slide-in-from-right-2 duration-300">
-              {currentAnnouncement.message}
-            </p>
-          </div>
+          {!isCollapsed && (
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-medium animate-in slide-in-from-right-2 duration-300">
+                {currentAnnouncement.message}
+              </p>
+            </div>
+          )}
+          
+          {isCollapsed && (
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-medium truncate">
+                {announcements.length} aviso{announcements.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 ml-4">
-          {announcements.length > 1 && (
+          {!isCollapsed && announcements.length > 1 && (
             <>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={prevAnnouncement}
-                className="h-6 w-6 p-0 hover:bg-white/10"
+                className="h-6 w-6 p-0 hover:bg-amber-500/20"
               >
                 <ChevronLeft className="h-3 w-3" strokeWidth={2.5} />
               </Button>
@@ -117,7 +121,7 @@ export function AnnouncementTicker() {
                 variant="ghost"
                 size="sm"
                 onClick={nextAnnouncement}
-                className="h-6 w-6 p-0 hover:bg-white/10"
+                className="h-6 w-6 p-0 hover:bg-amber-500/20"
               >
                 <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
               </Button>
@@ -127,11 +131,25 @@ export function AnnouncementTicker() {
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="h-6 w-6 p-0 hover:bg-amber-500/20"
+            title={isCollapsed ? "Expandir anúncios" : "Recolher anúncios"}
+          >
+            {isCollapsed ? (
+              <ChevronDown className="h-3 w-3" strokeWidth={2.5} />
+            ) : (
+              <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
+            )}
+          </Button>
+          
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setIsHidden(true)}
-            className="h-6 w-6 p-0 hover:bg-white/10"
+            className="h-6 w-6 p-0 hover:bg-amber-500/20"
             title="Ocultar anúncios"
           >
-            <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
+            ×
           </Button>
         </div>
       </div>
