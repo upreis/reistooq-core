@@ -2,6 +2,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { SkuMapping, SkuMappingFilters, SkuMappingResponse, BulkActions } from "@/types/sku-mapping.types";
 
 export class SkuMappingService {
+  private static orgId: string | null = null;
+
+  private static async getCurrentOrgId(): Promise<string> {
+    if (this.orgId) return this.orgId;
+    const { data, error } = await supabase.rpc('get_current_org_id');
+    if (error || !data) {
+      throw new Error('Não foi possível obter a organização atual.');
+    }
+    this.orgId = data as unknown as string;
+    return this.orgId;
+  }
   static async getSkuMappings(filters: SkuMappingFilters): Promise<SkuMappingResponse> {
     let query = supabase
       .from('mapeamentos_depara')
@@ -56,16 +67,21 @@ export class SkuMappingService {
   }
 
   static async createSkuMapping(mapping: Omit<SkuMapping, 'id' | 'created_at' | 'updated_at'>): Promise<SkuMapping> {
+    const orgId = await this.getCurrentOrgId();
+
+    const payload = {
+      sku_pedido: mapping.sku_pedido,
+      sku_correspondente: mapping.sku_correspondente,
+      sku_simples: mapping.sku_simples,
+      quantidade: mapping.quantidade ?? 1,
+      ativo: mapping.ativo ?? true,
+      observacoes: mapping.observacoes,
+      organization_id: orgId,
+    };
+
     const { data, error } = await supabase
       .from('mapeamentos_depara')
-      .insert({
-        sku_pedido: mapping.sku_pedido,
-        sku_correspondente: mapping.sku_correspondente,
-        sku_simples: mapping.sku_simples,
-        quantidade: mapping.quantidade,
-        ativo: mapping.ativo,
-        observacoes: mapping.observacoes,
-      })
+      .insert(payload)
       .select()
       .single();
 
@@ -92,10 +108,12 @@ export class SkuMappingService {
   }
 
   static async deleteSkuMapping(id: string): Promise<void> {
+    const orgId = await this.getCurrentOrgId();
     const { error } = await supabase
       .from('mapeamentos_depara')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('organization_id', orgId);
 
     if (error) {
       throw new Error(error.message);
@@ -103,11 +121,13 @@ export class SkuMappingService {
   }
 
   static async bulkActions(actions: BulkActions): Promise<void> {
+    const orgId = await this.getCurrentOrgId();
     if (actions.action === 'delete') {
       const { error } = await supabase
         .from('mapeamentos_depara')
         .delete()
-        .in('id', actions.ids);
+        .in('id', actions.ids)
+        .eq('organization_id', orgId);
 
       if (error) {
         throw new Error(error.message);
@@ -116,7 +136,8 @@ export class SkuMappingService {
       const { error } = await supabase
         .from('mapeamentos_depara')
         .update({ ativo: actions.action === 'activate' })
-        .in('id', actions.ids);
+        .in('id', actions.ids)
+        .eq('organization_id', orgId);
 
       if (error) {
         throw new Error(error.message);
