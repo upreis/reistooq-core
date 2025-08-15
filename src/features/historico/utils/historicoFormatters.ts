@@ -1,6 +1,12 @@
 // Formatadores de dados para o histórico
 import { HISTORICO_CONSTANTS } from './historicoConstants';
 
+// Exportar funções individuais para compatibilidade
+export const formatCurrency = (value: number): string => HistoricoFormatters.currency(value);
+export const formatNumber = (value: number): string => HistoricoFormatters.number(value);
+export const formatPercent = (value: number): string => HistoricoFormatters.percentage(value);
+export const formatDateTime = (value: string): string => HistoricoFormatters.datetime(value);
+
 export class HistoricoFormatters {
   // Formatação de moeda
   static currency(value: number | null | undefined): string {

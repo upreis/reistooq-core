@@ -122,7 +122,7 @@ export class HistoricoDataService {
       const cacheKey = `venda_${id}`;
       const cached = this.cache.get(cacheKey);
       if (cached) {
-        return cached;
+      return cached as HistoricoVenda;
       }
 
       const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
@@ -161,7 +161,7 @@ export class HistoricoDataService {
       const cacheKey = 'filter_options';
       const cached = this.cache.get(cacheKey);
       if (cached) {
-        return cached;
+      return cached as { status: string[]; cidades: string[]; ufs: string[]; situacoes: string[]; };
       }
 
       // Buscar opções de forma paralela
@@ -200,7 +200,7 @@ export class HistoricoDataService {
       const cacheKey = `quick_stats_${JSON.stringify(filters || {})}`;
       const cached = this.cache.get(cacheKey);
       if (cached) {
-        return cached;
+        return cached as { totalVendas: number; valorTotal: number; ticketMedio: number; crescimentoMensal: number; };
       }
 
       // Para demonstração, usar dados mock

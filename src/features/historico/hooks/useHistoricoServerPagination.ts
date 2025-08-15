@@ -1,182 +1,155 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+// Hook otimizado para paginação server-side do histórico
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { HistoricoQueryService } from '../services/historicoQueryService';
+import { HistoricoDataService } from '../services/HistoricoDataService';
 import { 
-  HistoricoVenda, 
   HistoricoFilters, 
-  HistoricoResponse,
+  HistoricoResponse, 
   SortableFields 
 } from '../types/historicoTypes';
 
-interface UseHistoricoServerPaginationOptions {
+export interface UseHistoricoServerPaginationOptions {
   initialFilters?: HistoricoFilters;
   initialPage?: number;
   initialLimit?: number;
-  initialSort?: {
-    field: SortableFields;
-    order: 'asc' | 'desc';
-  };
+  initialSortBy?: SortableFields;
+  initialSortOrder?: 'asc' | 'desc';
   enableRealtime?: boolean;
 }
 
-export const useHistoricoServerPagination = (
-  options: UseHistoricoServerPaginationOptions = {}
-) => {
+export function useHistoricoServerPagination(options: UseHistoricoServerPaginationOptions = {}) {
   const {
     initialFilters = {},
     initialPage = 1,
-    initialLimit = 20,
-    initialSort = { field: 'data_pedido', order: 'desc' },
+    initialLimit = 50,
+    initialSortBy = 'data_pedido',
+    initialSortOrder = 'desc',
     enableRealtime = false
   } = options;
 
-  const queryClient = useQueryClient();
-
-  // Estados de paginação e filtros
+  // Estados
   const [filters, setFilters] = useState<HistoricoFilters>(initialFilters);
   const [page, setPage] = useState(initialPage);
   const [limit, setLimit] = useState(initialLimit);
-  const [sortBy, setSortBy] = useState<SortableFields>(initialSort.field);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialSort.order);
+  const [sortBy, setSortBy] = useState<SortableFields>(initialSortBy);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(initialSortOrder);
 
-  // Chave da query para cache inteligente
-  const queryKey = useMemo(() => [
-    'historico-vendas',
-    filters,
-    page,
-    limit,
-    sortBy,
-    sortOrder
-  ], [filters, page, limit, sortBy, sortOrder]);
+  const queryClient = useQueryClient();
 
   // Query principal
+  const queryKey = ['historico-vendas', filters, page, limit, sortBy, sortOrder];
+  
   const {
     data: response,
     isLoading,
-    isError,
-    error,
     isFetching,
+    error,
     refetch
   } = useQuery<HistoricoResponse>({
     queryKey,
-    queryFn: () => HistoricoQueryService.getHistoricoVendas(
-      filters,
-      page,
-      limit,
-      sortBy,
+    queryFn: () => HistoricoDataService.getHistoricoVendas(
+      filters, 
+      page, 
+      limit, 
+      sortBy, 
       sortOrder
     ),
-    retry: (failureCount, err: any) => !(err?.code === 401 || err?.code === 403 || err?.code === 404),
+    retry: 2,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchInterval: false,
-    staleTime: 60_000, // 1 minute
-    gcTime: 5 * 60 * 1000
+    staleTime: 30 * 1000, // 30s
+    gcTime: 5 * 60 * 1000, // 5min
   });
 
-  // Prefetch da próxima página
-  useEffect(() => {
-    if (response?.pagination.hasNextPage) {
-      const nextPageKey = [
-        'historico-vendas',
-        filters,
-        page + 1,
-        limit,
-        sortBy,
-        sortOrder
-      ];
+  const vendas = response?.data || [];
+  const pagination = response?.pagination;
+  const summary = response?.summary;
 
-      queryClient.prefetchQuery({
-        queryKey: nextPageKey,
-        queryFn: () => HistoricoQueryService.getHistoricoVendas(
-          filters,
-          page + 1,
-          limit,
-          sortBy,
-          sortOrder
-        ),
-        staleTime: 5 * 60 * 1000
-      });
-    }
-  }, [response, filters, page, limit, sortBy, sortOrder, queryClient]);
-
-  // Handlers com debounce automático
+  // Handlers otimizados
   const updateFilters = useCallback((newFilters: Partial<HistoricoFilters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
-    setPage(1); // Reset para primeira página ao filtrar
+    setPage(1);
   }, []);
 
   const clearFilters = useCallback(() => {
-    setFilters(initialFilters);
+    setFilters({});
     setPage(1);
-  }, [initialFilters]);
+  }, []);
 
   const updateSort = useCallback((field: SortableFields, order?: 'asc' | 'desc') => {
     setSortBy(field);
     setSortOrder(order || (sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc'));
-    setPage(1); // Reset para primeira página ao ordenar
+    setPage(1);
   }, [sortBy, sortOrder]);
 
   const goToPage = useCallback((newPage: number) => {
-    if (newPage >= 1 && (!response || newPage <= response.pagination.totalPages)) {
+    if (newPage >= 1 && (!pagination || newPage <= pagination.totalPages)) {
       setPage(newPage);
     }
-  }, [response]);
+  }, [pagination]);
+
+  const nextPage = useCallback(() => {
+    if (pagination?.hasNextPage) {
+      goToPage(page + 1);
+    }
+  }, [pagination?.hasNextPage, page, goToPage]);
+
+  const prevPage = useCallback(() => {
+    if (pagination?.hasPrevPage) {
+      goToPage(page - 1);
+    }
+  }, [pagination?.hasPrevPage, page, goToPage]);
 
   const changePageSize = useCallback((newLimit: number) => {
     setLimit(newLimit);
-    setPage(1); // Reset para primeira página ao mudar tamanho
+    setPage(1);
   }, []);
 
-  // Invalidar cache quando necessário
-  const invalidateCache = useCallback(() => {
+  const invalidateCache = useCallback((pattern?: string) => {
+    HistoricoDataService.invalidateCache(pattern);
     queryClient.invalidateQueries({
       queryKey: ['historico-vendas']
     });
   }, [queryClient]);
 
   // Estados computados
-  const hasFilters = useMemo(() => {
-    return Object.values(filters).some(value => {
-      if (Array.isArray(value)) return value.length > 0;
-      return value !== undefined && value !== null && value !== '';
-    });
-  }, [filters]);
+  const hasFilters = Object.keys(filters).some(key => 
+    filters[key as keyof HistoricoFilters] !== undefined &&
+    filters[key as keyof HistoricoFilters] !== '' &&
+    (Array.isArray(filters[key as keyof HistoricoFilters]) ? 
+      (filters[key as keyof HistoricoFilters] as any[]).length > 0 : true)
+  );
 
   const isLoadingFirstPage = isLoading && page === 1;
   const isLoadingNextPage = isFetching && !isLoading;
-
-  // Utilitários de navegação
-  const canGoNext = response?.pagination.hasNextPage ?? false;
-  const canGoPrev = response?.pagination.hasPrevPage ?? false;
-
-  const nextPage = useCallback(() => {
-    if (canGoNext) goToPage(page + 1);
-  }, [canGoNext, goToPage, page]);
-
-  const prevPage = useCallback(() => {
-    if (canGoPrev) goToPage(page - 1);
-  }, [canGoPrev, goToPage, page]);
+  const canGoNext = pagination?.hasNextPage && !isFetching;
+  const canGoPrev = pagination?.hasPrevPage && !isFetching;
 
   return {
     // Dados
-    vendas: response?.data ?? [],
-    pagination: response?.pagination,
-    summary: response?.summary,
-
-    // Estados de loading
-    isLoading: isLoadingFirstPage,
-    isLoadingMore: isLoadingNextPage,
-    isError,
-    error,
-
-    // Filtros e ordenação
+    vendas,
+    pagination,
+    summary,
+    
+    // Estados
     filters,
+    page,
+    limit,
     sortBy,
     sortOrder,
+    
+    // Loading/Error
+    isLoading: isLoadingFirstPage,
+    isFetching,
+    isLoadingNextPage,
+    isLoadingMore: isLoadingNextPage,
+    error,
+    
+    // Computados
     hasFilters,
-
-    // Ações
+    canGoNext,
+    canGoPrev,
+    
+    // Actions
     updateFilters,
     clearFilters,
     updateSort,
@@ -184,13 +157,7 @@ export const useHistoricoServerPagination = (
     nextPage,
     prevPage,
     changePageSize,
-    refetch,
     invalidateCache,
-
-    // Estados de navegação
-    canGoNext,
-    canGoPrev,
-    currentPage: page,
-    pageSize: limit
+    refetch
   };
-};
+}
