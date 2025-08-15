@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts } from "@/hooks/useProducts";
+import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from 'xlsx';
 
 interface ImportModalProps {
@@ -162,14 +163,23 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
         return;
       }
 
-      // Verificar SKUs existentes no sistema - buscar TODOS os produtos sem limite
-      const existingProducts = await getProducts({ limit: 10000 }); // Aumentar limite
-      const existingSkus = existingProducts.map(p => p.sku_interno);
+      // Verificar SKUs existentes no sistema - buscar TODOS os produtos sem filtros RLS
+      const { data: allExistingProducts, error: existingError } = await supabase
+        .from('produtos')
+        .select('sku_interno')
+        .not('sku_interno', 'is', null);
+        
+      if (existingError) {
+        console.error('Erro ao buscar produtos existentes:', existingError);
+        throw new Error('Erro ao verificar produtos existentes');
+      }
+      
+      const existingSkus = (allExistingProducts || []).map(p => p.sku_interno);
       const conflictingSkus = skus.filter(sku => existingSkus.includes(sku));
       const warnings: string[] = [];
       
       console.log('SKUs no arquivo:', skus);
-      console.log('SKUs existentes no sistema:', existingSkus);
+      console.log('TODOS SKUs existentes no sistema:', existingSkus);
       console.log('SKUs em conflito:', conflictingSkus);
       
       if (conflictingSkus.length > 0) {
