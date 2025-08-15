@@ -1,7 +1,5 @@
 import { HistoricoPageLayout } from "@/features/historico/components/HistoricoPageLayout";
 
-const Historico = () => {
+export default function Historico() {
   return <HistoricoPageLayout />;
-};
-
-export default Historico;
+}

@@ -24,8 +24,11 @@ export const HistoricoDataTable: React.FC<HistoricoDataTableProps> = ({
   vendas,
   pagination,
   isLoading,
-  onPageChange
+  onPageChange,
+  onRefresh
 }) => {
+  // Log de montagem temporário
+  React.useEffect(() => { console.debug("mounted: HistoricoDataTable"); }, []);
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -46,6 +49,24 @@ export const HistoricoDataTable: React.FC<HistoricoDataTableProps> = ({
           ))}
         </div>
       </CardContent>
+    );
+  }
+
+  // Estado vazio claro
+  if (!isLoading && (vendas?.length ?? 0) === 0) {
+    return (
+      <>
+        <CardHeader>
+          <CardTitle>Histórico de Vendas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border bg-card p-8 text-center">
+            <div className="text-lg font-medium">Sem registros</div>
+            <div className="mt-1 text-muted-foreground">Ajuste os filtros ou tente atualizar.</div>
+            <Button className="mt-4" onClick={onRefresh}>Atualizar</Button>
+          </div>
+        </CardContent>
+      </>
     );
   }
 

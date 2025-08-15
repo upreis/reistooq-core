@@ -27,6 +27,8 @@ export const HistoricoFileManager: React.FC<HistoricoFileManagerProps> = ({
   onImportComplete,
   onExportComplete
 }) => {
+  // Log de montagem temporário
+  React.useEffect(() => { console.debug("mounted: HistoricoFileManager"); }, []);
   const [activeTab, setActiveTab] = useState('templates');
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);

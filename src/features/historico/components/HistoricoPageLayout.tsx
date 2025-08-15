@@ -14,6 +14,9 @@ import { HistoricoAdvancedAnalytics } from './HistoricoAdvancedAnalytics';
 import { History, TrendingUp, Filter, Download, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 
 export const HistoricoPageLayout: React.FC = () => {
+  // Log de montagem temporário
+  React.useEffect(() => { console.debug("mounted: HistoricoPageLayout"); }, []);
+
   // Hooks para filtros e paginação
   const filtersHook = useHistoricoFilters({
     persistKey: 'historico-vendas-filters',
@@ -169,24 +172,8 @@ export const HistoricoPageLayout: React.FC = () => {
             />
           </Card>
 
-          {/* File Management */}
-          <Card>
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">📂 Gerenciamento de Arquivos</h3>
-              <p className="text-sm text-blue-700 mb-4">Templates, Import/Export e Upload de dados</p>
-              <div className="flex gap-2">
-                <button className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
-                  📥 Download Template
-                </button>
-                <button className="px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700">
-                  📤 Importar Dados
-                </button>
-                <button className="px-3 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700">
-                  📊 Exportar Relatório
-                </button>
-              </div>
-            </div>
-          </Card>
+          {/* File Management – real */}
+          <HistoricoFileManager />
 
           {/* Ações em Lote */}
           <HistoricoBulkActions

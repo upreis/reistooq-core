@@ -61,6 +61,8 @@ export const HistoricoSearchFilters: React.FC<HistoricoSearchFiltersProps> = ({
   isSearching,
   activeFilters
 }) => {
+  // Log de montagem temporário
+  React.useEffect(() => { console.debug("mounted: HistoricoSearchFilters"); }, []);
   const [isExpanded, setIsExpanded] = useState(false);
   const [openPopover, setOpenPopover] = useState<string | null>(null);
 
