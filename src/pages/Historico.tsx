@@ -1,7 +1,7 @@
 // src/pages/Historico.tsx
-import { HistoricoPageLayout } from "@/features/historico/components/HistoricoPageLayout";
+import { HistoricoNewPageLayout } from "@/features/historico/components/HistoricoNewPageLayout";
 
 export default function Historico() {
-  console.info('HISTORICO live', new Date().toISOString());
-  return <HistoricoPageLayout />; 
+  console.info('HISTORICO refatorado', new Date().toISOString());
+  return <HistoricoNewPageLayout />; 
 }

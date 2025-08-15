@@ -177,7 +177,7 @@ export function HistoricoAdvancedDashboard({
                 <YAxis yAxisId="right" orientation="right" />
                 <Tooltip 
                   formatter={(value, name) => [
-                    name === 'vendas' ? formatNumber(value) : formatCurrency(value),
+                    name === 'vendas' ? formatNumber(Number(value)) : formatCurrency(Number(value)),
                     name === 'vendas' ? 'Vendas' : 'Receita'
                   ]}
                 />
@@ -218,7 +218,7 @@ export function HistoricoAdvancedDashboard({
                 <YAxis />
                 <Tooltip 
                   formatter={(value, name) => [
-                    name === 'quantidade' ? formatNumber(value) : formatCurrency(value),
+                    name === 'quantidade' ? formatNumber(Number(value)) : formatCurrency(Number(value)),
                     name === 'quantidade' ? 'Quantidade' : 'Valor'
                   ]}
                 />
