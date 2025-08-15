@@ -166,16 +166,17 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
       const existingProducts = await getProducts();
       const existingSkus = existingProducts.map(p => p.sku_interno);
       const conflictingSkus = skus.filter(sku => existingSkus.includes(sku));
+      const warnings: string[] = [];
       if (conflictingSkus.length > 0) {
-        allErrors.push(`SKUs já existem no sistema: ${conflictingSkus.join(', ')}`);
-        setResult({ success: 0, errors: allErrors, warnings: [] });
-        return;
+        warnings.push(`${conflictingSkus.length} SKUs já existem e serão ignorados: ${conflictingSkus.join(', ')}`);
       }
 
-      // Validar cada linha
+      // Validar cada linha (ignorar SKUs duplicados)
       mappedData.forEach((row, index) => {
         const rowErrors = validateRow(row, index);
-        if (rowErrors.length === 0) {
+        const isSkuDuplicate = existingSkus.includes(row.sku_interno);
+        
+        if (rowErrors.length === 0 && !isSkuDuplicate) {
           validRows.push({
             sku_interno: row.sku_interno.trim(),
             nome: row.nome.trim(),
@@ -219,7 +220,7 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
       setResult({
         success: successCount,
         errors: processingErrors,
-        warnings: []
+        warnings: warnings
       });
 
       if (successCount > 0) {
