@@ -1,80 +1,80 @@
 import { supabase } from "@/integrations/supabase/client";
 
-interface HealthCheckResult {
-  session: any;
-  user: any;
-  lastApiError: any;
-  envCheck: {
-    url: string;
-    anonKey: string;
+export type ProbeResult = {
+  table: string;
+  ok: boolean;
+  count?: number | null;
+  code?: string | number;
+  message?: string;
+  hint?: string;
+  details?: string;
+  path?: string;
+};
+
+export async function runSupabaseHealthCheck(context: string) {
+  // Session and user
+  const { data: sessionData } = await supabase.auth.getSession();
+  const session = sessionData?.session ?? null;
+  const user = session?.user ?? null;
+
+  // Env masking (Lovable does not use VITE_* envs; show placeholders)
+  const mask = (v: string) => (v && v.length > 8 ? `${v.slice(0, 4)}…${v.slice(-4)}` : v);
+  const env = {
+    url: mask('https://supabase-client-config'),
+    anon: mask('anon-key-client-config')
+  };
+
+  // Optional org id from global context if available
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const orgId = (window as any)?.__ORG_ID__ ?? null;
+
+  async function probe(table: string, withOrg?: boolean): Promise<ProbeResult> {
+    const path = `/rest/v1/${table}`;
+    try {
+      let q: any = (supabase as any).from(table).select('id', { head: true, count: 'exact' }).limit(1);
+      if (withOrg && orgId) q = q.eq('organization_id', orgId);
+      const { error, count } = await q;
+      if (error) {
+        const code: any = (error as any).code ?? (error as any).status ?? undefined;
+        const message = (error as any).message as string | undefined;
+        const hint = (error as any).hint as string | undefined;
+        const details = (error as any).details as string | undefined;
+        return { table, ok: false, code, message, hint, details, path };
+      }
+      return { table, ok: true, count: count ?? null, path };
+    } catch (e: any) {
+      return { table, ok: false, code: e?.code, message: e?.message || String(e), path };
+    }
+  }
+
+  const probes = await Promise.all([
+    probe('historico_vendas', true),
+    probe('mapeamentos_depara', true),
+    probe('depara', true),
+    probe('pedidos', true),
+    probe('produtos', true),
+    probe('movimentacoes_estoque', true),
+    probe('itens_pedidos', true),
+    probe('te_estoque_minimo', true),
+    probe('profiles', true),
+    probe('estoque', true)
+  ]);
+
+  return {
+    context,
+    sessionOk: !!session,
+    user: user ? { id: user.id, email: (user as any).email } : null,
+    env,
+    orgId: orgId ?? 'NULL',
+    probes,
   };
 }
 
-export const runSupabaseHealthCheck = async (context: string): Promise<HealthCheckResult> => {
-  console.debug(`🔍 Supabase Health Check - Context: ${context}`);
-  
-  // 1. Check session and user
-  const { data: session, error: sessionError } = await supabase.auth.getSession();
-  const user = session?.session?.user || null;
-  
-  console.debug('Supabase session:', {
-    user: user ? { id: user.id, email: user.email } : null,
-    sessionError: sessionError?.message
-  });
-
-  // 2. Check environment variables (masked)
-  const supabaseUrl = 'https://tdjyfqnxvjgossuncpwm.supabase.co';
-  const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkanlmcW54dmpnb3NzdW5jcHdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4OTczNTMsImV4cCI6MjA2OTQ3MzM1M30.qrEBpARgfuWF74zHoRzGJyWjgxN_oCG5DdKjPVGJYxk';
-  
-  const envCheck = {
-    url: `${supabaseUrl.substring(0, 8)}...${supabaseUrl.substring(supabaseUrl.length - 3)}`,
-    anonKey: `${anonKey.substring(0, 3)}...${anonKey.substring(anonKey.length - 3)}`
-  };
-  
-  console.debug('SUPABASE_URL (masked):', envCheck.url);
-  console.debug('ANON_KEY (masked):', envCheck.anonKey);
-
-  // 3. Test probe - try to access mapeamentos_depara table
-  let lastApiError = null;
-  try {
-    const { data, error, count } = await supabase
-      .from('mapeamentos_depara')
-      .select('id', { head: true, count: 'exact' })
-      .limit(1);
-    
-    if (error) {
-      lastApiError = error;
-      console.error('Probe mapeamentos_depara error:', {
-        code: error.code,
-        message: error.message,
-        hint: error.hint,
-        details: error.details
-      });
-    } else {
-      console.debug('Probe mapeamentos_depara: success, count =', count);
-    }
-  } catch (err: any) {
-    lastApiError = err;
-    console.error('Probe mapeamentos_depara exception:', err);
-  }
-
-  return {
-    session: session?.session,
-    user,
-    lastApiError,
-    envCheck
-  };
-};
-
-export const isRLSError = (error: any): boolean => {
-  return error && (error.code === '401' || error.code === '403' || error.code === 42501);
-};
+export const isRLSError = (code?: any) => code === '401' || code === '403' || code === 401 || code === 403 || code === 42501;
 
 export const getRLSErrorMessage = (error: any): string => {
   if (!error) return 'Erro desconhecido';
-  
   const code = error.code || 'N/A';
   const message = error.message || error.hint || error.details || 'sem detalhes';
-  
   return `${code} – ${message}`;
 };

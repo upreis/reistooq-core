@@ -3,6 +3,8 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HistoricoAnalyticsDashboard } from './HistoricoAnalyticsDashboard';
 import { HistoricoSearchFilters } from './HistoricoSearchFilters';
 import { HistoricoDataTable } from './HistoricoDataTable';
@@ -21,10 +23,14 @@ export const HistoricoPageLayout: React.FC = () => {
   
   // Health check state
   const [healthCheck, setHealthCheck] = React.useState<any>(null);
+  const [debugOpen, setDebugOpen] = React.useState(true);
   
   // Run health check on mount
   React.useEffect(() => {
-    runSupabaseHealthCheck('historico').then(setHealthCheck);
+    runSupabaseHealthCheck('historico').then((result) => {
+      console.debug('HC result:', result);
+      setHealthCheck(result);
+    });
   }, []);
 
   // Hooks para filtros e paginação
@@ -138,15 +144,69 @@ export const HistoricoPageLayout: React.FC = () => {
 
         {/* Conteúdo principal */}
         <div className="flex-1 container py-6 space-y-6">
-          {/* RLS Error Banner */}
-          {healthCheck?.lastApiError && isRLSError(healthCheck.lastApiError) && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Acesso negado (RLS):</strong> {getRLSErrorMessage(healthCheck.lastApiError)}
-              </AlertDescription>
-            </Alert>
-          )}
+          {/* Debug — Supabase */}
+          <Card className="p-4">
+            <Collapsible open={debugOpen} onOpenChange={setDebugOpen}>
+              <div className="flex items-center justify-between">
+                <div className="font-semibold">Debug — Supabase</div>
+                <CollapsibleTrigger asChild>
+                  <button className="text-sm underline">{debugOpen ? 'Fechar' : 'Abrir'}</button>
+                </CollapsibleTrigger>
+              </div>
+              <CollapsibleContent className="mt-4 space-y-3">
+                <div className="text-sm">
+                  Session: {healthCheck?.sessionOk ? 'OK' : 'NULL'} — User: {healthCheck?.user?.email || '—'} ({healthCheck?.user?.id || '—'}) — Org: {healthCheck?.orgId}
+                </div>
+                <div className="text-sm">
+                  ENV: URL={healthCheck?.env?.url} ANON={healthCheck?.env?.anon}
+                </div>
+
+                {(healthCheck?.probes || []).some((p: any) => isRLSError(p.code)) && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Acesso negado (RLS). Verifique policies de leitura.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {(healthCheck?.probes || []).some((p: any) => p?.code === 404 || p?.code === '404') && (
+                  <Alert>
+                    <AlertDescription>
+                      Recurso não existe: verifique o nome da tabela/view no frontend ou crie uma view compatível.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tabela</TableHead>
+                        <TableHead>OK</TableHead>
+                        <TableHead>Count</TableHead>
+                        <TableHead>Code</TableHead>
+                        <TableHead>Message</TableHead>
+                        <TableHead>Hint</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(healthCheck?.probes || []).map((p: any, i: number) => (
+                        <TableRow key={i}>
+                          <TableCell>{p.table}</TableCell>
+                          <TableCell>{p.ok ? 'Sim' : 'Não'}</TableCell>
+                          <TableCell>{p.count ?? '—'}</TableCell>
+                          <TableCell>{p.code ?? '—'}</TableCell>
+                          <TableCell>{p.message ?? '—'}</TableCell>
+                          <TableCell>{p.hint ?? '—'}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
           {/* Dashboard de Analytics */}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
