@@ -10,6 +10,7 @@ import { HistoricoFileManager } from './HistoricoFileManager';
 import { useHistoricoServerPagination } from '../hooks/useHistoricoServerPagination';
 import { useHistoricoFilters } from '../hooks/useHistoricoFilters';
 import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
+import { HistoricoAdvancedAnalytics } from './HistoricoAdvancedAnalytics';
 import { History, TrendingUp, Filter, Download, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 
 export const HistoricoPageLayout: React.FC = () => {
@@ -168,14 +169,6 @@ export const HistoricoPageLayout: React.FC = () => {
             />
           </Card>
 
-          {/* Ações em Lote */}
-          <HistoricoBulkActions
-            selectedCount={0} // Implementar seleção
-            onBulkAction={handleBulkAction}
-            isLoading={paginationHook.isLoadingMore}
-            totalItems={paginationHook.summary?.totalVendas || 0}
-          />
-
           {/* File Management */}
           <HistoricoFileManager
             onImportComplete={() => {
@@ -186,6 +179,14 @@ export const HistoricoPageLayout: React.FC = () => {
                 console.log('Export completed successfully');
               }
             }}
+          />
+
+          {/* Ações em Lote */}
+          <HistoricoBulkActions
+            selectedCount={0} // Implementar seleção
+            onBulkAction={handleBulkAction}
+            isLoading={paginationHook.isLoadingMore}
+            totalItems={paginationHook.summary?.totalVendas || 0}
           />
 
           {/* Tabela de Dados */}
@@ -202,6 +203,18 @@ export const HistoricoPageLayout: React.FC = () => {
               onPageSizeChange={paginationHook.changePageSize}
               onRefresh={paginationHook.refetch}
               onBulkAction={handleBulkAction}
+            />
+          </Card>
+
+          {/* Analytics Avançado */}
+          <Card className="p-6">
+            <HistoricoAdvancedAnalytics 
+              vendas={paginationHook.vendas}
+              summary={paginationHook.summary}
+              dateRange={{
+                start: filtersHook.filters.dataInicio,
+                end: filtersHook.filters.dataFim
+              }}
             />
           </Card>
         </div>
