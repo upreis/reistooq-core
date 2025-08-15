@@ -63,7 +63,11 @@ export const HistoricoPageLayout: React.FC = () => {
   ];
 
   return (
-    <DashboardLayout>
+    <>
+      <div data-testid="hv-banner" className="mb-2 rounded bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-200">
+        HISTÓRICO — componente correto montado
+      </div>
+      <DashboardLayout>
       <div className="flex flex-col min-h-screen bg-background">
         {/* Header fixo */}
         <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -215,6 +219,7 @@ export const HistoricoPageLayout: React.FC = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
+      </DashboardLayout>
+    </>
   );
 };
