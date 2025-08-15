@@ -104,6 +104,45 @@ export type Database = {
         }
         Relationships: []
       }
+      categorias_produtos: {
+        Row: {
+          ativo: boolean | null
+          cor: string | null
+          created_at: string
+          descricao: string | null
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number | null
+          organization_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number | null
+          organization_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean | null
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number | null
+          organization_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       configuracoes: {
         Row: {
           chave: string
@@ -211,6 +250,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      historico_importacoes: {
+        Row: {
+          created_at: string
+          dados_originais: Json | null
+          detalhes_erro: Json | null
+          id: string
+          nome_arquivo: string
+          organization_id: string
+          produtos_erro: number | null
+          produtos_processados: number | null
+          produtos_sucesso: number | null
+          tipo_operacao: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          dados_originais?: Json | null
+          detalhes_erro?: Json | null
+          id?: string
+          nome_arquivo: string
+          organization_id: string
+          produtos_erro?: number | null
+          produtos_processados?: number | null
+          produtos_sucesso?: number | null
+          tipo_operacao: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          dados_originais?: Json | null
+          detalhes_erro?: Json | null
+          id?: string
+          nome_arquivo?: string
+          organization_id?: string
+          produtos_erro?: number | null
+          produtos_processados?: number | null
+          produtos_sucesso?: number | null
+          tipo_operacao?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
       }
       historico_vendas: {
         Row: {
@@ -911,10 +992,115 @@ export type Database = {
           },
         ]
       }
+      produto_imagens: {
+        Row: {
+          created_at: string
+          id: string
+          nome_arquivo: string | null
+          ordem: number | null
+          principal: boolean | null
+          produto_id: string
+          tamanho_arquivo: number | null
+          tipo_mime: string | null
+          updated_at: string
+          url_imagem: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_arquivo?: string | null
+          ordem?: number | null
+          principal?: boolean | null
+          produto_id: string
+          tamanho_arquivo?: number | null
+          tipo_mime?: string | null
+          updated_at?: string
+          url_imagem: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_arquivo?: string | null
+          ordem?: number | null
+          principal?: boolean | null
+          produto_id?: string
+          tamanho_arquivo?: number | null
+          tipo_mime?: string | null
+          updated_at?: string
+          url_imagem?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_produto_imagens_produto"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produto_tag_relacionamentos: {
+        Row: {
+          created_at: string
+          produto_id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          produto_id: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          produto_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_produto_tag_produto"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_produto_tag_tag"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "produto_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produto_tags: {
+        Row: {
+          cor: string | null
+          created_at: string
+          id: string
+          nome: string
+          organization_id: string
+        }
+        Insert: {
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          organization_id: string
+        }
+        Update: {
+          cor?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          organization_id?: string
+        }
+        Relationships: []
+      }
       produtos: {
         Row: {
           ativo: boolean
           categoria: string | null
+          categoria_id: string | null
           codigo_barras: string | null
           created_at: string
           descricao: string | null
@@ -927,16 +1113,20 @@ export type Database = {
           organization_id: string | null
           preco_custo: number | null
           preco_venda: number | null
+          produto_origem_id: string | null
           quantidade_atual: number
+          sku_gerado_automaticamente: boolean | null
           sku_interno: string
           status: string
           ultima_movimentacao: string | null
           updated_at: string
           url_imagem: string | null
+          versao: number | null
         }
         Insert: {
           ativo?: boolean
           categoria?: string | null
+          categoria_id?: string | null
           codigo_barras?: string | null
           created_at?: string
           descricao?: string | null
@@ -949,16 +1139,20 @@ export type Database = {
           organization_id?: string | null
           preco_custo?: number | null
           preco_venda?: number | null
+          produto_origem_id?: string | null
           quantidade_atual?: number
+          sku_gerado_automaticamente?: boolean | null
           sku_interno: string
           status?: string
           ultima_movimentacao?: string | null
           updated_at?: string
           url_imagem?: string | null
+          versao?: number | null
         }
         Update: {
           ativo?: boolean
           categoria?: string | null
+          categoria_id?: string | null
           codigo_barras?: string | null
           created_at?: string
           descricao?: string | null
@@ -971,12 +1165,15 @@ export type Database = {
           organization_id?: string | null
           preco_custo?: number | null
           preco_venda?: number | null
+          produto_origem_id?: string | null
           quantidade_atual?: number
+          sku_gerado_automaticamente?: boolean | null
           sku_interno?: string
           status?: string
           ultima_movimentacao?: string | null
           updated_at?: string
           url_imagem?: string | null
+          versao?: number | null
         }
         Relationships: [
           {
@@ -1412,6 +1609,10 @@ export type Database = {
           id: string
           token: string
         }[]
+      }
+      gerar_sku_automatico: {
+        Args: { org_id: string; prefixo?: string }
+        Returns: string
       }
       get_current_org_id: {
         Args: Record<PropertyKey, never>
