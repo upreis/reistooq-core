@@ -1,6 +1,7 @@
 // src/pages/Historico.tsx
-import { HistoricoDebugFrame } from "@/features/historico/DebugFrame";
+import { HistoricoPageLayout } from "@/features/historico/components/HistoricoPageLayout";
 
-export default function Historico() { 
-  return <HistoricoDebugFrame />; 
+export default function Historico() {
+  console.info('HISTORICO live', new Date().toISOString());
+  return <HistoricoPageLayout />; 
 }

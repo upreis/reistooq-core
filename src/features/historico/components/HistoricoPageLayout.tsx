@@ -1,6 +1,7 @@
 import React from 'react';
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -15,15 +16,19 @@ import { useHistoricoFilters } from '../hooks/useHistoricoFilters';
 import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
 import { HistoricoAdvancedAnalytics } from './HistoricoAdvancedAnalytics';
 import { runSupabaseHealthCheck, isRLSError, getRLSErrorMessage } from '@/debug/supabaseHealth';
+import { downloadTemplate } from '../services/historicoQuery';
+import { useToast } from '@/hooks/use-toast';
 import { History, TrendingUp, Filter, Download, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 
 export const HistoricoPageLayout: React.FC = () => {
+  const { toast } = useToast();
+  
   // Log de montagem temporário
   React.useEffect(() => { console.debug("mounted: HistoricoPageLayout"); }, []);
   
   // Health check state
   const [healthCheck, setHealthCheck] = React.useState<any>(null);
-  const [debugOpen, setDebugOpen] = React.useState(true);
+  const [debugOpen, setDebugOpen] = React.useState(false); // collapsed por padrão
   
   // Run health check on mount
   React.useEffect(() => {
@@ -150,7 +155,7 @@ export const HistoricoPageLayout: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="font-semibold">Debug — Supabase</div>
                 <CollapsibleTrigger asChild>
-                  <button className="text-sm underline">{debugOpen ? 'Fechar' : 'Abrir'}</button>
+                  <Button variant="ghost" size="sm">{debugOpen ? 'Fechar' : 'Debug'}</Button>
                 </CollapsibleTrigger>
               </div>
               <CollapsibleContent className="mt-4 space-y-3">
@@ -256,8 +261,53 @@ export const HistoricoPageLayout: React.FC = () => {
           </Card>
 
           {/* File Management – sempre visível */}
-          <Card>
-            <HistoricoFileManager data-testid="hv-file-manager" />
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Download className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">📂 Gerenciamento de Arquivos</h2>
+            </div>
+            
+            <section data-testid="hv-file-manager">
+              <div className="flex flex-wrap gap-4">
+                <Button 
+                  onClick={async () => {
+                    try {
+                      const csvContent = await downloadTemplate();
+                      const blob = new Blob([csvContent], { type: 'text/csv' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'template-historico-vendas.csv';
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      toast({title:"Template", description:"Download template realizado com sucesso"});
+                    } catch (error) {
+                      console.error('Erro no download:', error);
+                      toast({title:"Erro", description:"Falha ao gerar template", variant: "destructive"});
+                    }
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  📥 Download Template
+                </Button>
+                <Button 
+                  onClick={() => toast({title:"Importar", description:"Abrir wizard (stub)"})}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  📤 Importar Dados
+                </Button>
+                <Button 
+                  onClick={() => toast({title:"Exportar", description:"Export filtrado (stub)"})}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  📊 Exportar
+                </Button>
+              </div>
+            </section>
           </Card>
 
           {/* Ações em Lote */}
