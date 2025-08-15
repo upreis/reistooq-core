@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Scan, Search, Package, Plus, Check, Zap, BarChart3 } from "lucide-react";
 import { toast } from 'sonner';
+import { InstallPrompt } from "@/components/ui/InstallPrompt";
+import { stockMovementService } from "@/features/scanner/services/StockMovementService";
 
 // Scanner Feature Imports
 import { useScannerCore } from "@/features/scanner/hooks/useScannerCore";
@@ -63,36 +65,94 @@ const Scanner = () => {
     setActiveView('scanner');
   }, []);
 
-  // Handle scanner actions
-  const handleScannerAction = useCallback((action: ScanAction, data?: any) => {
+  // Handle scanner actions with real stock integration
+  const handleScannerAction = useCallback(async (action: ScanAction, data?: any) => {
     console.log('🎯 Scanner action:', action, data);
+    
+    if (!selectedProduct) {
+      toast.warning('Selecione um produto primeiro');
+      return;
+    }
     
     switch (action) {
       case ScanAction.VIEW:
         // Navigate to product detail
-        toast.info('Abrindo detalhes do produto...');
+        window.open(`/produtos/${selectedProduct.id}`, '_blank');
         break;
       
       case ScanAction.EDIT_PRODUCT:
         // Navigate to product edit
-        toast.info('Abrindo edição do produto...');
+        window.open(`/produtos/${selectedProduct.id}/edit`, '_blank');
         break;
       
       case ScanAction.STOCK_IN:
+        const quantity = prompt('Quantidade para entrada:', '1');
+        if (quantity && parseInt(quantity) > 0) {
+          const result = await stockMovementService.processStockIn({
+            produto_id: selectedProduct.id,
+            tipo: 'entrada',
+            quantidade: parseInt(quantity),
+            motivo: 'Entrada via Scanner',
+            observacoes: 'Processado via scanner mobile'
+          });
+          
+          if (result.success) {
+            toast.success('Entrada de estoque registrada!');
+          } else {
+            toast.error(result.error || 'Erro ao processar entrada');
+          }
+        }
+        break;
+      
       case ScanAction.STOCK_OUT:
+        const outQuantity = prompt('Quantidade para saída:', '1');
+        if (outQuantity && parseInt(outQuantity) > 0) {
+          const result = await stockMovementService.processStockOut({
+            produto_id: selectedProduct.id,
+            tipo: 'saida',
+            quantidade: parseInt(outQuantity),
+            motivo: 'Saída via Scanner',
+            observacoes: 'Processado via scanner mobile'
+          });
+          
+          if (result.success) {
+            toast.success('Saída de estoque registrada!');
+          } else {
+            toast.error(result.error || 'Erro ao processar saída');
+          }
+        }
+        break;
+      
       case ScanAction.STOCK_ADJUST:
-        // Process stock movement
-        toast.success('Movimentação processada com sucesso!');
+        const newQuantity = prompt('Nova quantidade:', '0');
+        if (newQuantity !== null) {
+          const result = await stockMovementService.processStockAdjustment({
+            produto_id: selectedProduct.id,
+            tipo: 'ajuste',
+            quantidade: parseInt(newQuantity),
+            motivo: 'Ajuste via Scanner',
+            observacoes: 'Ajuste realizado via scanner mobile'
+          });
+          
+          if (result.success) {
+            toast.success('Ajuste de estoque realizado!');
+          } else {
+            toast.error(result.error || 'Erro ao processar ajuste');
+          }
+        }
         break;
       
       default:
         console.log('Unknown action:', action);
     }
-  }, []);
+  }, [selectedProduct]);
 
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
+        {/* PWA Install Prompt */}
+        <InstallPrompt />
+        
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
