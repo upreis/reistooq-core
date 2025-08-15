@@ -159,12 +159,14 @@ export const useProducts = () => {
       .select('*', { count: 'exact', head: true })
       .eq('ativo', true);
 
-    // Produtos com estoque baixo
-    const { count: lowStockProducts } = await supabase
-      .from('produtos')
-      .select('*', { count: 'exact', head: true })
-      .eq('ativo', true)
-      .filter('quantidade_atual', 'lte', 'estoque_minimo');
+    // Produtos com estoque baixo - usar RPC function para comparação entre colunas
+    const { count: lowStockProducts, error: lowStockError } = await supabase
+      .rpc('get_low_stock_products_count')
+      .single();
+    
+    if (lowStockError) {
+      console.warn('Erro ao buscar produtos com estoque baixo:', lowStockError);
+    }
 
     // Produtos sem estoque
     const { count: outOfStockProducts } = await supabase
