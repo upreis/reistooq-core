@@ -163,62 +163,76 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
         return;
       }
 
-      // Verificar SKUs existentes no sistema - buscar TODOS os produtos sem filtros RLS
-      const { data: allExistingProducts, error: existingError } = await supabase
+      // Verificar SKUs existentes no banco (apenas da organização atual, respeitando RLS)
+      const uniqueSkus = Array.from(new Set(skus));
+      const { data: existingProducts, error: existingError } = await supabase
         .from('produtos')
-        .select('sku_interno')
-        .not('sku_interno', 'is', null);
+        .select('id, sku_interno, ativo')
+        .in('sku_interno', uniqueSkus);
         
       if (existingError) {
         console.error('Erro ao buscar produtos existentes:', existingError);
         throw new Error('Erro ao verificar produtos existentes');
       }
       
-      const existingSkus = (allExistingProducts || []).map(p => p.sku_interno);
-      const conflictingSkus = skus.filter(sku => existingSkus.includes(sku));
+      const existingMap: Record<string, { id: string; sku_interno: string; ativo: boolean }>
+        = Object.fromEntries((existingProducts || []).map((p: any) => [p.sku_interno, p]));
+      const existingActiveSkus = (existingProducts || []).filter((p: any) => p.ativo).map((p: any) => p.sku_interno);
       const warnings: string[] = [];
       
       console.log('SKUs no arquivo:', skus);
-      console.log('TODOS SKUs existentes no sistema:', existingSkus);
-      console.log('SKUs em conflito:', conflictingSkus);
+      console.log('SKUs existentes (ativos):', existingActiveSkus);
       
-      if (conflictingSkus.length > 0) {
-        warnings.push(`${conflictingSkus.length} SKUs já existem e serão ignorados: ${conflictingSkus.join(', ')}`);
+      if (existingActiveSkus.length > 0) {
+        const conflicts = skus.filter((sku) => existingActiveSkus.includes(sku));
+        if (conflicts.length > 0) {
+          warnings.push(`${conflicts.length} SKUs já existem ativos e serão ignorados: ${conflicts.join(', ')}`);
+        }
       }
 
-      // Validar cada linha (ignorar SKUs duplicados)
+      // Validar e preparar ações (criação x reativação)
+      const rowsToCreate: any[] = [];
+      const rowsToReactivate: { id: string; data: any }[] = [];
+
       mappedData.forEach((row, index) => {
         const rowErrors = validateRow(row, index);
-        const isSkuDuplicate = existingSkus.includes(row.sku_interno);
+        const existing = existingMap[row.sku_interno];
+        const isActiveDuplicate = !!existing && existing.ativo === true;
         
-        console.log(`Linha ${index + 1}: SKU=${row.sku_interno}, Duplicado=${isSkuDuplicate}, Erros=${rowErrors.length}`);
+        console.log(
+          `Linha ${index + 1}: SKU=${row.sku_interno}, existente=${!!existing}, ativo=${existing?.ativo}, erros=${rowErrors.length}`
+        );
         
-        if (rowErrors.length === 0 && !isSkuDuplicate) {
-          validRows.push({
-            sku_interno: row.sku_interno.trim(),
-            nome: row.nome.trim(),
-            categoria: row.categoria?.trim() || null,
-            descricao: row.descricao?.trim() || null,
-            quantidade_atual: Number(row.quantidade_atual) || 0,
-            estoque_minimo: Number(row.estoque_minimo) || 0,
-            estoque_maximo: Number(row.estoque_maximo) || 0,
-            preco_custo: Number(row.preco_custo) || null,
-            preco_venda: Number(row.preco_venda) || null,
-            codigo_barras: row.codigo_barras?.trim() || null,
-            localizacao: row.localizacao?.trim() || null,
-            status: 'ativo',
-            ativo: true,
-          });
+        const normalized = {
+          sku_interno: row.sku_interno?.trim(),
+          nome: row.nome?.trim(),
+          categoria: row.categoria?.trim() || null,
+          descricao: row.descricao?.trim() || null,
+          quantidade_atual: Number(row.quantidade_atual) || 0,
+          estoque_minimo: Number(row.estoque_minimo) || 0,
+          estoque_maximo: Number(row.estoque_maximo) || 0,
+          preco_custo: row.preco_custo !== '' && row.preco_custo !== undefined ? Number(row.preco_custo) : null,
+          preco_venda: row.preco_venda !== '' && row.preco_venda !== undefined ? Number(row.preco_venda) : null,
+          codigo_barras: row.codigo_barras?.trim() || null,
+          localizacao: row.localizacao?.trim() || null,
+          status: 'ativo',
+          ativo: true,
+        };
+        
+        if (rowErrors.length === 0) {
+          if (!existing) {
+            rowsToCreate.push(normalized);
+          } else if (!existing.ativo) {
+            rowsToReactivate.push({ id: existing.id, data: normalized });
+          } else if (isActiveDuplicate) {
+            // duplicado ativo -> apenas aviso (já adicionado acima)
+          }
         } else {
           allErrors.push(...rowErrors);
-          if (isSkuDuplicate) {
-            console.log(`SKU duplicado ignorado: ${row.sku_interno}`);
-          }
         }
       });
 
-      console.log(`Total produtos válidos para importar: ${validRows.length}`);
-      console.log('Produtos que serão importados:', validRows.map(p => p.sku_interno));
+      console.log(`A reativar: ${rowsToReactivate.length} | A criar: ${rowsToCreate.length}`);
 
       if (allErrors.length > 0) {
         setResult({ success: 0, errors: allErrors, warnings: [] });
@@ -230,25 +244,49 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
       let errorCount = 0;
       const processingErrors: string[] = [];
 
-      console.log(`Iniciando processamento de ${validRows.length} produtos...`);
+      const totalToProcess = rowsToReactivate.length + rowsToCreate.length;
+      let processed = 0;
 
-      for (let i = 0; i < validRows.length; i++) {
+      console.log(`Iniciando processamento: reativar=${rowsToReactivate.length}, criar=${rowsToCreate.length}`);
+
+      // Reativar produtos existentes inativos
+      for (let i = 0; i < rowsToReactivate.length; i++) {
+        const { id, data: updates } = rowsToReactivate[i];
         try {
-          console.log(`Criando produto ${i + 1}/${validRows.length}: ${validRows[i].sku_interno}`);
-          await createProduct(validRows[i]);
+          console.log(`Reativando produto ${i + 1}/${rowsToReactivate.length}: ${updates.sku_interno}`);
+          const { error } = await supabase
+            .from('produtos')
+            .update({ ...updates, ativo: true, status: 'ativo' })
+            .eq('id', id);
+          if (error) throw error;
           successCount++;
-          console.log(`✅ Produto ${validRows[i].sku_interno} criado com sucesso`);
-          setProgress(((i + 1) / validRows.length) * 100);
         } catch (error: any) {
           errorCount++;
-          console.error(`❌ Erro ao criar produto ${validRows[i].sku_interno}:`, error);
-          
+          processingErrors.push(`Erro ao reativar produto ${rowsToReactivate[i].data.sku_interno}: ${error.message || 'Erro desconhecido'}`);
+        } finally {
+          processed++;
+          setProgress((processed / Math.max(1, totalToProcess)) * 100);
+        }
+      }
+
+      // Criar novos produtos
+      for (let i = 0; i < rowsToCreate.length; i++) {
+        try {
+          console.log(`Criando produto ${i + 1}/${rowsToCreate.length}: ${rowsToCreate[i].sku_interno}`);
+          await createProduct(rowsToCreate[i]);
+          successCount++;
+        } catch (error: any) {
+          errorCount++;
+          console.error(`❌ Erro ao criar produto ${rowsToCreate[i].sku_interno}:`, error);
           if (error.code === '23505') {
-            console.log(`SKU duplicado detectado durante criação: ${validRows[i].sku_interno}`);
-            // Ignora erro de SKU duplicado silenciosamente
+            // Chave duplicada
+            // Mantemos como aviso silencioso
           } else {
-            processingErrors.push(`Erro ao criar produto ${validRows[i].sku_interno}: ${error.message || 'Erro desconhecido'}`);
+            processingErrors.push(`Erro ao criar produto ${rowsToCreate[i].sku_interno}: ${error.message || 'Erro desconhecido'}`);
           }
+        } finally {
+          processed++;
+          setProgress((processed / Math.max(1, totalToProcess)) * 100);
         }
       }
 
@@ -261,7 +299,7 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
       if (successCount > 0) {
         toast({
           title: "Importação concluída",
-          description: `${successCount} produto(s) importado(s) com sucesso.`,
+          description: `${successCount} produto(s) importado(s)/reativado(s) com sucesso.`,
         });
         onSuccess();
       }
