@@ -75,10 +75,10 @@ export function AnnouncementTicker() {
 
   return (
     <div className={cn(
-      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out",
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out h-12",
       getDebugBannerStyle()
     )}>
-      <div className="flex items-center justify-between px-3 py-2">
+      <div className="flex items-center justify-between px-3 py-2 h-full">
         <div className="flex items-center gap-3 flex-1">
           <Megaphone className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} />
           
