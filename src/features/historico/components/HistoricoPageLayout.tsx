@@ -6,9 +6,11 @@ import { HistoricoAnalyticsDashboard } from './HistoricoAnalyticsDashboard';
 import { HistoricoSearchFilters } from './HistoricoSearchFilters';
 import { HistoricoDataTable } from './HistoricoDataTable';
 import { HistoricoBulkActions } from './HistoricoBulkActions';
+import { HistoricoFileManager } from './HistoricoFileManager';
 import { useHistoricoServerPagination } from '../hooks/useHistoricoServerPagination';
 import { useHistoricoFilters } from '../hooks/useHistoricoFilters';
-import { History, TrendingUp, Filter, Download } from 'lucide-react';
+import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
+import { History, TrendingUp, Filter, Download, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 
 export const HistoricoPageLayout: React.FC = () => {
   // Hooks para filtros e paginação
@@ -21,6 +23,17 @@ export const HistoricoPageLayout: React.FC = () => {
     initialFilters: filtersHook.filters,
     initialLimit: 20,
     enableRealtime: false
+  });
+
+  // Real-time updates
+  const realtimeHook = useHistoricoRealtime({
+    enabled: true,
+    debounceMs: 1000,
+    batchUpdates: true,
+    onUpdate: () => {
+      // Refresh data when real-time updates are received
+      paginationHook.refetch();
+    }
   });
 
   // Sincronizar filtros
@@ -64,7 +77,32 @@ export const HistoricoPageLayout: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-4">
+                {/* Real-time status indicator */}
+                <div className="flex items-center gap-2">
+                  {realtimeHook.isConnected ? (
+                    <div className="flex items-center gap-1 text-green-600">
+                      <Wifi className="h-4 w-4" />
+                      <span className="text-xs">Online</span>
+                    </div>
+                  ) : realtimeHook.isConnecting ? (
+                    <div className="flex items-center gap-1 text-yellow-600">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                      <span className="text-xs">Conectando...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-red-600">
+                      <WifiOff className="h-4 w-4" />
+                      <span className="text-xs">Offline</span>
+                    </div>
+                  )}
+                  {realtimeHook.updateCount > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      {realtimeHook.updateCount} atualizações
+                    </span>
+                  )}
+                </div>
+
                 <div className="text-right text-sm">
                   <div className="font-medium">
                     {paginationHook.summary?.totalVendas.toLocaleString() || 0} vendas
@@ -136,6 +174,18 @@ export const HistoricoPageLayout: React.FC = () => {
             onBulkAction={handleBulkAction}
             isLoading={paginationHook.isLoadingMore}
             totalItems={paginationHook.summary?.totalVendas || 0}
+          />
+
+          {/* File Management */}
+          <HistoricoFileManager
+            onImportComplete={() => {
+              paginationHook.refetch();
+            }}
+            onExportComplete={(success) => {
+              if (success) {
+                console.log('Export completed successfully');
+              }
+            }}
           />
 
           {/* Tabela de Dados */}
