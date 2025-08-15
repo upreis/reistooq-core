@@ -106,7 +106,7 @@ export const HistoricoPageLayout: React.FC = () => {
 
                 <div className="text-right text-sm">
                   <div className="font-medium">
-                    {paginationHook.summary?.totalVendas.toLocaleString() || 0} vendas
+                    {(paginationHook.summary?.totalVendas ?? 0).toLocaleString()} vendas
                   </div>
                   <div className="text-muted-foreground">
                     R$ {(paginationHook.summary?.valorTotalVendas || 0).toLocaleString('pt-BR', {
