@@ -181,6 +181,8 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
         const rowErrors = validateRow(row, index);
         const isSkuDuplicate = existingSkus.includes(row.sku_interno);
         
+        console.log(`Linha ${index + 1}: SKU=${row.sku_interno}, Duplicado=${isSkuDuplicate}, Erros=${rowErrors.length}`);
+        
         if (rowErrors.length === 0 && !isSkuDuplicate) {
           validRows.push({
             sku_interno: row.sku_interno.trim(),
@@ -199,8 +201,14 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
           });
         } else {
           allErrors.push(...rowErrors);
+          if (isSkuDuplicate) {
+            console.log(`SKU duplicado ignorado: ${row.sku_interno}`);
+          }
         }
       });
+
+      console.log(`Total produtos válidos para importar: ${validRows.length}`);
+      console.log('Produtos que serão importados:', validRows.map(p => p.sku_interno));
 
       if (allErrors.length > 0) {
         setResult({ success: 0, errors: allErrors, warnings: [] });
@@ -209,16 +217,28 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
 
       // Processar produtos válidos
       let successCount = 0;
+      let errorCount = 0;
       const processingErrors: string[] = [];
+
+      console.log(`Iniciando processamento de ${validRows.length} produtos...`);
 
       for (let i = 0; i < validRows.length; i++) {
         try {
+          console.log(`Criando produto ${i + 1}/${validRows.length}: ${validRows[i].sku_interno}`);
           await createProduct(validRows[i]);
           successCount++;
+          console.log(`✅ Produto ${validRows[i].sku_interno} criado com sucesso`);
           setProgress(((i + 1) / validRows.length) * 100);
-        } catch (error) {
-          console.error('Erro ao criar produto:', error);
-          processingErrors.push(`Erro ao criar produto ${validRows[i].sku_interno}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+        } catch (error: any) {
+          errorCount++;
+          console.error(`❌ Erro ao criar produto ${validRows[i].sku_interno}:`, error);
+          
+          if (error.code === '23505') {
+            console.log(`SKU duplicado detectado durante criação: ${validRows[i].sku_interno}`);
+            // Ignora erro de SKU duplicado silenciosamente
+          } else {
+            processingErrors.push(`Erro ao criar produto ${validRows[i].sku_interno}: ${error.message || 'Erro desconhecido'}`);
+          }
         }
       }
 
