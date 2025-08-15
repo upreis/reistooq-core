@@ -1,4 +1,4 @@
-import { Bell, Search, Settings, User, Menu, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut } from "lucide-react";
+import { Bell, Search, Settings, User, Menu, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -101,7 +101,7 @@ export function AppHeader() {
             title="Expandir anúncios"
             className="text-amber-400 hover:text-amber-300"
           >
-            <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+            <TriangleAlert className="h-4 w-4" strokeWidth={2.5} />
           </Button>
         )}
 
