@@ -162,11 +162,16 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
         return;
       }
 
-      // Verificar SKUs existentes no sistema
-      const existingProducts = await getProducts();
+      // Verificar SKUs existentes no sistema - buscar TODOS os produtos sem limite
+      const existingProducts = await getProducts({ limit: 10000 }); // Aumentar limite
       const existingSkus = existingProducts.map(p => p.sku_interno);
       const conflictingSkus = skus.filter(sku => existingSkus.includes(sku));
       const warnings: string[] = [];
+      
+      console.log('SKUs no arquivo:', skus);
+      console.log('SKUs existentes no sistema:', existingSkus);
+      console.log('SKUs em conflito:', conflictingSkus);
+      
       if (conflictingSkus.length > 0) {
         warnings.push(`${conflictingSkus.length} SKUs já existem e serão ignorados: ${conflictingSkus.join(', ')}`);
       }
