@@ -60,7 +60,7 @@ export const HistoricoDataTable: React.FC<HistoricoDataTableProps> = ({
           <CardTitle>Histórico de Vendas</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border bg-card p-8 text-center">
+          <div data-testid="hv-empty" className="rounded-lg border bg-card p-8 text-center">
             <div className="text-lg font-medium">Sem registros</div>
             <div className="mt-1 text-muted-foreground">Ajuste os filtros ou tente atualizar.</div>
             <Button className="mt-4" onClick={onRefresh}>Atualizar</Button>

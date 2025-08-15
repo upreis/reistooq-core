@@ -173,7 +173,9 @@ export const HistoricoPageLayout: React.FC = () => {
           </Card>
 
           {/* File Management – real */}
-          <HistoricoFileManager />
+          <section data-testid="hv-file-manager" className="mt-4">
+            <HistoricoFileManager />
+          </section>
 
           {/* Ações em Lote */}
           <HistoricoBulkActions
