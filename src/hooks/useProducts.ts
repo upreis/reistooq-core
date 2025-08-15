@@ -40,6 +40,8 @@ export const useProducts = () => {
       .eq('ativo', true)
       .order('created_at', { ascending: false });
 
+    console.log('🔍 Buscando produtos no banco...');
+
     if (filters?.search) {
       query = query.or(`nome.ilike.%${filters.search}%,sku_interno.ilike.%${filters.search}%,codigo_barras.ilike.%${filters.search}%`);
     }
@@ -67,6 +69,7 @@ export const useProducts = () => {
       throw error;
     }
     
+    console.log(`✅ Produtos encontrados: ${data?.length || 0}`);
     return data as Product[];
   };
 
