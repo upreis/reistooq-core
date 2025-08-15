@@ -170,16 +170,23 @@ export const HistoricoPageLayout: React.FC = () => {
           </Card>
 
           {/* File Management */}
-          <HistoricoFileManager
-            onImportComplete={() => {
-              paginationHook.refetch();
-            }}
-            onExportComplete={(success) => {
-              if (success) {
-                console.log('Export completed successfully');
-              }
-            }}
-          />
+          <Card>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="font-medium text-blue-900 mb-2">📂 Gerenciamento de Arquivos</h3>
+              <p className="text-sm text-blue-700 mb-4">Templates, Import/Export e Upload de dados</p>
+              <div className="flex gap-2">
+                <button className="px-3 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+                  📥 Download Template
+                </button>
+                <button className="px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700">
+                  📤 Importar Dados
+                </button>
+                <button className="px-3 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700">
+                  📊 Exportar Relatório
+                </button>
+              </div>
+            </div>
+          </Card>
 
           {/* Ações em Lote */}
           <HistoricoBulkActions
