@@ -4,13 +4,15 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
-import { History, TrendingUp, Filter, Download, RefreshCw } from 'lucide-react';
+import { History, TrendingUp, Filter, Download, RefreshCw, FileSpreadsheet, Upload } from 'lucide-react';
 
 // Componentes modularizados
 import { HistoricoVirtualTable } from './HistoricoVirtualTable';
 import { HistoricoSmartFilters } from './HistoricoSmartFilters';
 import { HistoricoAdvancedDashboard } from './HistoricoAdvancedDashboard';
+import { HistoricoFileManager } from './HistoricoFileManager';
 import { useHistoricoServerPagination } from '../hooks/useHistoricoServerPagination';
 import { HistoricoVenda } from '../types/historicoTypes';
 
@@ -86,6 +88,31 @@ export function HistoricoNewPageLayout() {
               </div>
               
               <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                {/* Botões de Template, Upload e Download */}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Gerenciar Arquivos
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Gerenciamento de Arquivos</DialogTitle>
+                    </DialogHeader>
+                    <HistoricoFileManager
+                      onImportComplete={(result) => {
+                        console.log('Import completed:', result);
+                        refetch();
+                      }}
+                      onExportComplete={(success) => {
+                        console.log('Export completed:', success);
+                      }}
+                    />
+                  </DialogContent>
+                </Dialog>
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -95,6 +122,7 @@ export function HistoricoNewPageLayout() {
                   <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
                   Atualizar
                 </Button>
+              </div>
                 
                 <div className="text-right text-sm">
                   <div className="font-medium">
@@ -129,28 +157,90 @@ export function HistoricoNewPageLayout() {
             </CardContent>
           </Card>
 
-          {/* Filtros Inteligentes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filtros Avançados
-                {hasFilters && (
-                  <Badge variant="secondary" className="ml-2">
-                    Ativos
-                  </Badge>
-                )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <HistoricoSmartFilters
-                filters={filters}
-                onFiltersChange={updateFilters}
-                onClearFilters={clearFilters}
-                isLoading={isLoading}
-              />
-            </CardContent>
-          </Card>
+          {/* Filtros Inteligentes + Botões de Arquivo */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Filter className="h-5 w-5" />
+                    Filtros Avançados
+                    {hasFilters && (
+                      <Badge variant="secondary" className="ml-2">
+                        Ativos
+                      </Badge>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <HistoricoSmartFilters
+                    filters={filters}
+                    onFiltersChange={updateFilters}
+                    onClearFilters={clearFilters}
+                    isLoading={isLoading}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Ações Rápidas de Arquivo */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileSpreadsheet className="h-5 w-5" />
+                    Ações Rápidas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Template
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Baixar Template</DialogTitle>
+                      </DialogHeader>
+                      <HistoricoFileManager />
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Importar Dados
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Importar Dados</DialogTitle>
+                      </DialogHeader>
+                      <HistoricoFileManager
+                        onImportComplete={(result) => {
+                          console.log('Import completed:', result);
+                          refetch();
+                        }}
+                      />
+                    </DialogContent>
+                  </Dialog>
+
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => handleBulkAction('export_all', [])}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar Tudo
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
           {/* Ações em Lote */}
           {selectedIds.size > 0 && (
