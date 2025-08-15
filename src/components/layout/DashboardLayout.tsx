@@ -2,6 +2,7 @@ import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 import { AnnouncementTicker } from "@/components/ui/AnnouncementTicker";
 import { AnnouncementProvider } from "@/contexts/AnnouncementContext";
+import { GlobalNoticeHost } from "@/components/system/GlobalNoticeHost";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <AnnouncementProvider>
+      <GlobalNoticeHost />
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col">

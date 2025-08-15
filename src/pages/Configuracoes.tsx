@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Settings, Bell, Shield, Key, Database, Webhook, Mail, Smartphone, Megaphone, Plus, Trash2, Edit } from "lucide-react";
+import { NoticeConfigSection } from "@/components/system/NoticeConfigSection";
 
 const Configuracoes = () => {
   return (
@@ -30,9 +31,9 @@ const Configuracoes = () => {
               <Bell className="h-4 w-4" />
               Alertas
             </TabsTrigger>
-            <TabsTrigger value="anuncios" className="flex items-center gap-2">
+            <TabsTrigger value="avisos" className="flex items-center gap-2">
               <Megaphone className="h-4 w-4" />
-              Anúncios
+              Avisos do Sistema
             </TabsTrigger>
             <TabsTrigger value="tokens" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
@@ -142,145 +143,9 @@ const Configuracoes = () => {
             </Card>
           </TabsContent>
 
-          {/* Gerenciar Anúncios */}
-          <TabsContent value="anuncios" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Megaphone className="h-5 w-5" />
-                  Gerenciar Anúncios
-                </CardTitle>
-                <CardDescription>
-                  Configure anúncios que aparecerão na barra de notificação do sistema
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Add New Announcement */}
-                <Card className="border-dashed">
-                  <CardContent className="p-4">
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="announcement-message">Mensagem do Anúncio</Label>
-                          <Textarea 
-                            id="announcement-message"
-                            placeholder="Digite sua mensagem aqui..."
-                            className="mt-1"
-                            rows={2}
-                          />
-                        </div>
-                        <div className="space-y-4">
-                          <div>
-                            <Label htmlFor="announcement-type">Tipo</Label>
-                            <select id="announcement-type" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background">
-                              <option value="info">Informação</option>
-                              <option value="success">Sucesso</option>
-                              <option value="warning">Aviso</option>
-                              <option value="error">Erro</option>
-                            </select>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Switch id="announcement-active" defaultChecked />
-                            <Label htmlFor="announcement-active">Ativo</Label>
-                          </div>
-                        </div>
-                      </div>
-                      <Button className="w-full">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar Anúncio
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Existing Announcements */}
-                <div className="space-y-3">
-                  <h4 className="font-medium">Anúncios Ativos</h4>
-                  
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-1 text-xs rounded-full bg-green-500/10 text-green-700 dark:text-green-400">
-                              Sucesso
-                            </span>
-                            <span className="px-2 py-1 text-xs rounded-full bg-green-500/10 text-green-700 dark:text-green-400">
-                              Ativo
-                            </span>
-                          </div>
-                          <p className="text-sm">🎉 Nova funcionalidade: Scanner de código de barras disponível!</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-1 text-xs rounded-full bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
-                              Aviso
-                            </span>
-                            <span className="px-2 py-1 text-xs rounded-full bg-green-500/10 text-green-700 dark:text-green-400">
-                              Ativo
-                            </span>
-                          </div>
-                          <p className="text-sm">⚠️ Manutenção programada hoje às 02:00 - Sistema ficará indisponível por 30 minutos</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
-                              Informação
-                            </span>
-                            <span className="px-2 py-1 text-xs rounded-full bg-green-500/10 text-green-700 dark:text-green-400">
-                              Ativo
-                            </span>
-                          </div>
-                          <p className="text-sm">📢 Integração com Tiny ERP configurada com sucesso - Sincronização automática ativa</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <Button className="w-full md:w-auto">
-                  Salvar Configurações de Anúncios
-                </Button>
-              </CardContent>
-            </Card>
+          {/* Avisos do Sistema */}
+          <TabsContent value="avisos" className="space-y-6">
+            <NoticeConfigSection />
           </TabsContent>
 
           {/* Tokens e APIs */}
