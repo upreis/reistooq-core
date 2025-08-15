@@ -35,20 +35,23 @@ export function SkuMapActions({ selectedItems, onClearSelection }: SkuMapActions
       icon: CheckCircle,
       variant: "default" as const,
       color: "text-success",
+      label: "Ativar",
     },
     deactivate: {
-      title: "Desativar mapeamentos",
+      title: "Desativar mapeamentos", 
       description: `Tem certeza que deseja desativar ${selectedItems.length} mapeamento(s)?`,
       icon: XCircle,
       variant: "outline" as const,
       color: "text-warning",
+      label: "Desativar",
     },
     delete: {
       title: "Excluir mapeamentos",
       description: `Tem certeza que deseja excluir ${selectedItems.length} mapeamento(s)? Esta ação não pode ser desfeita.`,
       icon: Trash2,
       variant: "destructive" as const,
-      color: "text-destructive",
+      color: "text-destructive", 
+      label: "Excluir",
     },
   };
 
@@ -75,9 +78,7 @@ export function SkuMapActions({ selectedItems, onClearSelection }: SkuMapActions
                         onClick={() => setPendingAction(action)}
                       >
                         <Icon className={`w-4 h-4 mr-2 ${config.color}`} />
-                        {action === "activate" && "Ativar"}
-                        {action === "deactivate" && "Desativar"}
-                        {action === "delete" && "Excluir"}
+                        {config.label}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>

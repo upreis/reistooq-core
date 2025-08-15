@@ -5,11 +5,15 @@ import { SkuMapFilters } from "./SkuMapFilters";
 import { SkuMapActions } from "./SkuMapActions";
 import { SkuMapForm } from "./SkuMapForm";
 import { SkuMapStats } from "./SkuMapStats";
+import { SkuMapHistory } from "./SkuMapHistory";
+import { SavedFiltersManager } from "./SavedFiltersManager";
+import { BulkEditModal } from "./BulkEditModal";
 import { ImportWizard } from "./import/ImportWizard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload } from "lucide-react";
 import { useSkuFilters } from "@/hooks/useSkuFilters";
+import { useSkuMapShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SkuMapping } from "@/types/sku-mapping.types";
 
 export function SkuMapPage() {
@@ -27,6 +31,26 @@ export function SkuMapPage() {
     setShowCreateForm(false);
     setEditingItem(null);
   };
+
+  const handleSelectAll = () => {
+    // This will be implemented by the list component
+  };
+
+  const handleBulkEdit = () => {
+    // Bulk edit is handled by the modal
+  };
+
+  const handleDelete = () => {
+    // Delete selected items
+  };
+
+  // Setup keyboard shortcuts
+  useSkuMapShortcuts({
+    onNew: () => setShowCreateForm(true),
+    onSelectAll: handleSelectAll,
+    onBulkEdit: handleBulkEdit,
+    onDelete: handleDelete,
+  });
 
   return (
     <DashboardLayout>
@@ -66,20 +90,47 @@ export function SkuMapPage() {
 
         {/* Bulk Actions */}
         {selectedItems.length > 0 && (
-          <SkuMapActions
-            selectedItems={selectedItems}
-            onClearSelection={() => setSelectedItems([])}
-          />
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <SkuMapActions
+                selectedItems={selectedItems}
+                onClearSelection={() => setSelectedItems([])}
+              />
+            </div>
+            <BulkEditModal
+              selectedItems={selectedItems}
+              onClose={() => setSelectedItems([])}
+              onSuccess={() => setSelectedItems([])}
+            />
+          </div>
         )}
 
-        {/* List */}
-        <SkuMapList
-          filters={filters}
-          selectedItems={selectedItems}
-          onSelectionChange={setSelectedItems}
-          onEdit={handleEdit}
-          onFiltersChange={updateFilters}
-        />
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* List */}
+            <SkuMapList
+              filters={filters}
+              selectedItems={selectedItems}
+              onSelectionChange={setSelectedItems}
+              onEdit={handleEdit}
+              onFiltersChange={updateFilters}
+            />
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Saved Filters */}
+            <SavedFiltersManager
+              currentFilters={filters}
+              onLoadFilters={updateFilters}
+            />
+
+            {/* History */}
+            <SkuMapHistory />
+          </div>
+        </div>
 
         {/* Create/Edit Form Dialog */}
         <Dialog 
