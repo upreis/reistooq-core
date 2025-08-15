@@ -4,6 +4,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { BrowserMultiFormatReader, DecodeHintType } from '@zxing/library';
+import { CircuitBreaker, retryWithBackoff, ErrorTracker } from '@/utils/errorHandling';
 
 // Types para Mobile Scanner
 interface CameraDevice {
@@ -380,7 +381,7 @@ export const useMobileBarcodeScanner = () => {
     }
   }, [isScanning]);
 
-  // 10) INICIAR SCAN CONTÍNUO
+  // 10) INICIAR SCAN CONTÍNUO COM ERROR HANDLING ROBUSTO
   const startScanning = useCallback(() => {
     if (!codeReaderRef.current || !videoRef.current) {
       return;
@@ -388,27 +389,64 @@ export const useMobileBarcodeScanner = () => {
 
     setIsScanning(true);
     
-    // Iniciar decodificação contínua
-    codeReaderRef.current.decodeFromVideoDevice(
-      selectedCameraId || undefined,
-      videoRef.current,
-      (result, error) => {
-        if (result) {
-          const code = result.getText();
-          onScanResult?.(code);
-          
-          // Feedback háptico para mobile
-          if (navigator.vibrate) {
-            navigator.vibrate([100]);
-          }
-        }
+    // Usar circuit breaker para prevenir falhas em cascata
+    const circuitBreaker = new CircuitBreaker();
+    const errorTracker = ErrorTracker.getInstance();
+    
+    // Iniciar decodificação contínua com retry e timeout
+    const startDecodeWithRetry = async () => {
+      try {
+        await circuitBreaker.execute(async () => {
+          return new Promise<void>((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+              reject(new Error('Scanner decode timeout'));
+            }, 30000);
+
+            codeReaderRef.current!.decodeFromVideoDevice(
+              selectedCameraId || undefined,
+              videoRef.current!,
+              (result, error) => {
+                clearTimeout(timeoutId);
+                
+                if (result) {
+                  const code = result.getText();
+                  onScanResult?.(code);
+                  
+                  // Feedback háptico para mobile
+                  if (navigator.vibrate) {
+                    navigator.vibrate([100]);
+                  }
+                  resolve();
+                } else if (error && error.name !== 'NotFoundException') {
+                  errorTracker.track(error, 'scanner-decode');
+                  console.warn('Scan error:', error);
+                  
+                  // Só rejeita em casos críticos
+                  if (error.name === 'NotAllowedError' || error.name === 'NotReadableError') {
+                    reject(error);
+                  }
+                }
+              }
+            ).catch(reject);
+          });
+        });
+      } catch (error: any) {
+        errorTracker.track(error, 'scanner-circuit-breaker');
+        console.error('Scanner failed with circuit breaker:', error);
         
-        if (error && error.name !== 'NotFoundException') {
-          console.warn('Scan error:', error);
+        // Retry após delay se não for erro crítico
+        if (!circuitBreaker.isOpen && error.name !== 'NotAllowedError') {
+          setTimeout(() => {
+            if (isScanning) {
+              startDecodeWithRetry();
+            }
+          }, 2000);
         }
       }
-    );
-  }, [selectedCameraId]);
+    };
+
+    startDecodeWithRetry();
+  }, [selectedCameraId, isScanning]);
 
   // 11) PARAR SCANNING
   const stopScanning = useCallback(() => {

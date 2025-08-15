@@ -39,30 +39,87 @@ export class BarcodeDecoder {
     try {
       console.log('🎥 [BarcodeDecoder] Starting continuous decoding...');
       
-      await this.reader.decodeFromVideoDevice(
-        deviceId,
-        videoElement,
-        (result: any | null, error?: any) => {
-          if (result) {
-            const scanResult: ScanResult = {
-              code: result.getText(),
-              format: this.mapZXingFormat(result.getBarcodeFormat()),
-              timestamp: new Date(),
-              found: true,
-              confidence: 1.0
-            };
-            
-            console.log('✅ [BarcodeDecoder] Scan successful:', scanResult.code);
-            onResult(scanResult);
-          } else if (error) {
-            console.warn('⚠️ [BarcodeDecoder] Scan error:', error);
-            onError(ScannerError.SCAN_TIMEOUT);
+      // Implementar timeout e retry mechanism para resolver message port errors
+      const decodeWithTimeout = (timeout = 30000): Promise<void> => {
+        return new Promise((resolve, reject) => {
+          let isResolved = false;
+          
+          const timeoutId = setTimeout(() => {
+            if (!isResolved) {
+              isResolved = true;
+              console.warn('⏰ [BarcodeDecoder] Decode timeout - implementing retry');
+              reject(new Error('Decode timeout'));
+            }
+          }, timeout);
+
+          const cleanup = () => {
+            if (!isResolved) {
+              isResolved = true;
+              clearTimeout(timeoutId);
+            }
+          };
+
+          try {
+            this.reader.decodeFromVideoDevice(
+              deviceId,
+              videoElement,
+              (result: any | null, error?: any) => {
+                if (isResolved) return; // Previne callback duplicado
+                
+                if (result) {
+                  cleanup();
+                  const scanResult: ScanResult = {
+                    code: result.getText(),
+                    format: this.mapZXingFormat(result.getBarcodeFormat()),
+                    timestamp: new Date(),
+                    found: true,
+                    confidence: 1.0
+                  };
+                  
+                  console.log('✅ [BarcodeDecoder] Scan successful:', scanResult.code);
+                  onResult(scanResult);
+                  resolve();
+                } else if (error && error.name !== 'NotFoundException') {
+                  console.warn('⚠️ [BarcodeDecoder] Scan error:', error);
+                  // Não considera NotFoundException como erro crítico
+                  if (error.name === 'NotAllowedError' || error.name === 'NotReadableError') {
+                    cleanup();
+                    onError(ScannerError.CAMERA_ACCESS_FAILED);
+                    reject(error);
+                  }
+                }
+              }
+            ).then(() => {
+              if (!isResolved) {
+                cleanup();
+                resolve();
+              }
+            }).catch((err) => {
+              cleanup();
+              reject(err);
+            });
+          } catch (syncError) {
+            cleanup();
+            reject(syncError);
           }
-        }
-      );
-    } catch (error) {
+        });
+      };
+
+      await decodeWithTimeout();
+    } catch (error: any) {
       console.error('❌ [BarcodeDecoder] Failed to start decoding:', error);
-      onError(ScannerError.CAMERA_ACCESS_FAILED);
+      
+      // Implementar retry mechanism para resolver problemas de Web Workers
+      if (error.message === 'Decode timeout') {
+        console.log('🔄 [BarcodeDecoder] Attempting retry after timeout...');
+        setTimeout(() => {
+          if (this.isInitialized) {
+            this.startContinuousDecoding(videoElement, onResult, onError, deviceId);
+          }
+        }, 1000);
+      } else {
+        onError(ScannerError.CAMERA_ACCESS_FAILED);
+      }
     }
   }
 

@@ -1721,6 +1721,39 @@ export type Database = {
           refresh_token: string
         }[]
       }
+      get_low_stock_products: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ativo: boolean
+          categoria: string | null
+          categoria_id: string | null
+          codigo_barras: string | null
+          created_at: string
+          descricao: string | null
+          estoque_maximo: number
+          estoque_minimo: number
+          id: string
+          integration_account_id: string | null
+          localizacao: string | null
+          nome: string
+          organization_id: string | null
+          preco_custo: number | null
+          preco_venda: number | null
+          produto_origem_id: string | null
+          quantidade_atual: number
+          sku_gerado_automaticamente: boolean | null
+          sku_interno: string
+          status: string
+          ultima_movimentacao: string | null
+          updated_at: string
+          url_imagem: string | null
+          versao: number | null
+        }[]
+      }
+      get_low_stock_products_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       get_pedidos_masked: {
         Args: {
           _end?: string
