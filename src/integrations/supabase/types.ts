@@ -621,6 +621,44 @@ export type Database = {
         }
         Relationships: []
       }
+      invitation_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          invitation_id: string | null
+          ip_address: unknown | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          invitation_id?: string | null
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          invitation_id?: string | null
+          ip_address?: unknown | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_audit_log_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "invitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -1547,6 +1585,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation_secure: {
+        Args: { _token: string }
+        Returns: Json
+      }
       accept_invite: {
         Args: { _token: string }
         Returns: Json
