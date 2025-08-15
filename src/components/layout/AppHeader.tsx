@@ -18,7 +18,7 @@ import { useAnnouncements } from "@/contexts/AnnouncementContext";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function AppHeader() {
-  const { isHidden, setIsHidden, hasAnnouncements } = useAnnouncements();
+  const { isHidden, setIsHidden, hasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -91,6 +91,19 @@ export function AppHeader() {
         <Button variant="ghost" size="icon">
           <Plus className="h-5 w-5" />
         </Button>
+
+        {/* Banner Expand Button - only show when collapsed and has announcements */}
+        {hasAnnouncements && isCollapsed && (
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setIsCollapsed(false)}
+            title="Expandir anúncios"
+            className="text-amber-400 hover:text-amber-300"
+          >
+            <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+          </Button>
+        )}
 
         {/* Announcement Expand Button - only show when hidden and has announcements */}
         {isHidden && hasAnnouncements && (

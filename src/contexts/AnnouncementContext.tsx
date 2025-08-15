@@ -5,6 +5,8 @@ interface AnnouncementContextType {
   setIsHidden: (hidden: boolean) => void;
   hasAnnouncements: boolean;
   setHasAnnouncements: (has: boolean) => void;
+  isCollapsed: boolean;
+  setIsCollapsed: (collapsed: boolean) => void;
 }
 
 const AnnouncementContext = createContext<AnnouncementContextType | undefined>(undefined);
@@ -12,13 +14,16 @@ const AnnouncementContext = createContext<AnnouncementContextType | undefined>(u
 export function AnnouncementProvider({ children }: { children: ReactNode }) {
   const [isHidden, setIsHidden] = useState(false);
   const [hasAnnouncements, setHasAnnouncements] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
     <AnnouncementContext.Provider value={{
       isHidden,
       setIsHidden,
       hasAnnouncements,
-      setHasAnnouncements
+      setHasAnnouncements,
+      isCollapsed,
+      setIsCollapsed
     }}>
       {children}
     </AnnouncementContext.Provider>

@@ -37,8 +37,7 @@ const mockAnnouncements: Announcement[] = [
 
 export function AnnouncementTicker() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const { isHidden, setIsHidden, setHasAnnouncements } = useAnnouncements();
+  const { isHidden, setIsHidden, setHasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const [announcements] = useState(mockAnnouncements.filter(a => a.active));
   
   useEffect(() => {
@@ -55,7 +54,7 @@ export function AnnouncementTicker() {
     return () => clearInterval(interval);
   }, [announcements.length]);
 
-  if (isHidden || announcements.length === 0) {
+  if (isHidden || announcements.length === 0 || isCollapsed) {
     return null;
   }
 
@@ -77,32 +76,21 @@ export function AnnouncementTicker() {
   return (
     <div className={cn(
       "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out",
-      getDebugBannerStyle(),
-      isCollapsed ? "h-10" : "h-auto"
+      getDebugBannerStyle()
     )}>
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-3 flex-1">
           <Megaphone className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} />
           
-          {!isCollapsed && (
-            <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium animate-in slide-in-from-right-2 duration-300">
-                {currentAnnouncement.message}
-              </p>
-            </div>
-          )}
-          
-          {isCollapsed && (
-            <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium truncate">
-                {announcements.length} aviso{announcements.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          )}
+          <div className="flex-1 overflow-hidden">
+            <p className="text-sm font-medium animate-in slide-in-from-right-2 duration-300">
+              {currentAnnouncement.message}
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 ml-4">
-          {!isCollapsed && announcements.length > 1 && (
+          {announcements.length > 1 && (
             <>
               <Button
                 variant="ghost"
@@ -131,15 +119,11 @@ export function AnnouncementTicker() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={() => setIsCollapsed(true)}
             className="h-6 w-6 p-0 hover:bg-amber-500/20"
-            title={isCollapsed ? "Expandir anúncios" : "Recolher anúncios"}
+            title="Recolher anúncios"
           >
-            {isCollapsed ? (
-              <ChevronDown className="h-3 w-3" strokeWidth={2.5} />
-            ) : (
-              <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
-            )}
+            <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
           </Button>
         </div>
       </div>
