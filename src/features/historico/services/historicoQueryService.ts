@@ -26,14 +26,31 @@ export class HistoricoQueryService {
 
       console.log('🔍 Buscando histórico de vendas...', { filters, page, limit: validatedLimit, sortBy, sortOrder });
 
-      // Usar a função RPC otimizada que já existe
-      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
-        _search: filters.search || null,
-        _start: filters.dataInicio || null,
-        _end: filters.dataFim || null,
-        _limit: validatedLimit,
-        _offset: offset
-      });
+      // Query the real historico_vendas table
+      let query = supabase
+        .from('historico_vendas')
+        .select('*', { count: 'exact' });
+
+      // Apply date filters
+      if (filters.dataInicio) {
+        query = query.gte('data_pedido', filters.dataInicio);
+      }
+      if (filters.dataFim) {
+        query = query.lte('data_pedido', filters.dataFim);
+      }
+
+      // Apply search filter
+      if (filters.search && filters.search.trim()) {
+        query = query.or(`numero_pedido.ilike.%${filters.search}%,sku_produto.ilike.%${filters.search}%,descricao.ilike.%${filters.search}%,cliente_nome.ilike.%${filters.search}%`);
+      }
+
+      // Apply sorting
+      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+      // Apply pagination
+      query = query.range(offset, offset + validatedLimit - 1);
+
+      const { data, error, count } = await query;
 
       if (error) {
         console.error('❌ Erro ao buscar histórico:', error);
@@ -95,17 +112,15 @@ export class HistoricoQueryService {
         return sortOrder === 'asc' ? comparison : -comparison;
       });
 
-      // Calcular total para paginação (simulado)
-      const totalEstimated = filteredVendas.length < validatedLimit ? 
-        offset + filteredVendas.length : 
-        offset + validatedLimit + 1; // Estimativa
+      // Use the exact count from Supabase
+      const totalRecords = count || 0;
 
       const pagination: HistoricoPagination = {
         page,
         limit: validatedLimit,
-        total: totalEstimated,
-        totalPages: Math.ceil(totalEstimated / validatedLimit),
-        hasNextPage: filteredVendas.length === validatedLimit,
+        total: totalRecords,
+        totalPages: Math.ceil(totalRecords / validatedLimit),
+        hasNextPage: page < Math.ceil(totalRecords / validatedLimit),
         hasPrevPage: page > 1
       };
 
@@ -140,19 +155,22 @@ export class HistoricoQueryService {
 
   static async getHistoricoById(id: string): Promise<HistoricoVenda | null> {
     try {
-      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
-        _search: id,
-        _limit: 1,
-        _offset: 0
-      });
+      const { data, error } = await supabase
+        .from('historico_vendas')
+        .select('*')
+        .or(`id.eq.${id},id_unico.eq.${id}`)
+        .single();
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows found
+          return null;
+        }
         console.error('❌ Erro ao buscar venda por ID:', error);
         throw new Error(`Erro ao buscar venda: ${error.message}`);
       }
 
-      const vendas = (data || []) as HistoricoVenda[];
-      return vendas.find(v => v.id === id || v.id_unico === id) || null;
+      return data as HistoricoVenda;
 
     } catch (error) {
       console.error('❌ Erro ao buscar venda por ID:', error);

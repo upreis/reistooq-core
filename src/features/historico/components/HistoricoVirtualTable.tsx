@@ -10,8 +10,10 @@ import {
 import { HistoricoVenda } from '../types/historicoTypes';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDateTime } from '../utils/historicoFormatters';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Copy, MoreHorizontal } from 'lucide-react';
 
 interface HistoricoVirtualTableProps {
   data: HistoricoVenda[];
@@ -130,30 +132,143 @@ export function HistoricoVirtualTable({
       size: 120,
     },
     {
-      accessorKey: 'status',
-      header: 'Status',
+      accessorKey: 'uf',
+      header: 'UF',
+      cell: ({ getValue }) => (
+        <span className="text-sm font-mono">{getValue() as string}</span>
+      ),
+      size: 60,
+    },
+    {
+      accessorKey: 'situacao',
+      header: 'Situação',
       cell: ({ getValue }) => {
-        const status = getValue() as string;
-        const variant = status === 'concluida' ? 'default' : 
-                      status === 'cancelada' ? 'destructive' : 
-                      status === 'pendente' ? 'secondary' : 'outline';
+        const situacao = getValue() as string;
         return (
-          <Badge variant={variant} className="text-xs">
-            {status}
+          <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+            {situacao}
           </Badge>
         );
       },
       size: 100,
     },
     {
-      accessorKey: 'cidade',
-      header: 'Cidade',
-      cell: ({ getValue, row }) => (
-        <span className="text-sm text-muted-foreground">
-          {getValue() as string}, {row.original.uf}
-        </span>
+      accessorKey: 'numero_venda',
+      header: 'Número da Venda',
+      cell: ({ getValue }) => (
+        <span className="font-mono text-xs">{getValue() as string}</span>
       ),
       size: 140,
+    },
+    {
+      accessorKey: 'sku_estoque',
+      header: 'SKU Estoque (Mapeado)',
+      cell: ({ getValue }) => {
+        const value = getValue() as string;
+        return value ? (
+          <span className="font-mono text-xs bg-blue-50 px-2 py-1 rounded">
+            {value}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        );
+      },
+      size: 160,
+    },
+    {
+      accessorKey: 'sku_kit',
+      header: 'SKU KIT (Mapeado)',
+      cell: ({ getValue }) => {
+        const value = getValue() as string;
+        return value ? (
+          <span className="font-mono text-xs bg-purple-50 px-2 py-1 rounded">
+            {value}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        );
+      },
+      size: 160,
+    },
+    {
+      accessorKey: 'qtd_kit',
+      header: 'QTD KIT (Mapeado)',
+      cell: ({ getValue }) => {
+        const value = getValue() as number;
+        return (
+          <span className="text-center font-medium">
+            {value || '-'}
+          </span>
+        );
+      },
+      size: 120,
+    },
+    {
+      accessorKey: 'total_itens',
+      header: 'Total de Itens',
+      cell: ({ getValue }) => (
+        <span className="text-center font-medium">{getValue() as number}</span>
+      ),
+      size: 100,
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      cell: ({ getValue }) => {
+        const status = getValue() as string;
+        let variant: "default" | "destructive" | "secondary" | "outline" = 'default';
+        let className = '';
+        
+        if (status === 'Pronto p/ baixar') {
+          variant = 'default';
+          className = 'bg-blue-100 text-blue-800';
+        } else if (status === 'Sem estoque') {
+          variant = 'destructive';
+          className = 'bg-red-100 text-red-800';
+        } else if (status === 'concluida') {
+          variant = 'default';
+          className = 'bg-green-100 text-green-800';
+        }
+        
+        return (
+          <Badge variant={variant} className={`text-xs ${className}`}>
+            {status}
+          </Badge>
+        );
+      },
+      size: 120,
+    },
+    {
+      id: 'actions',
+      header: 'Ações',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Handle copy action
+              navigator.clipboard.writeText(row.original.id_unico);
+            }}
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Handle more actions
+            }}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      size: 100,
     },
   ], [data, selectedIds, onSelectionChange]);
 
