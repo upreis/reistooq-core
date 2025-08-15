@@ -2,6 +2,7 @@ import React from 'react';
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { HistoricoAnalyticsDashboard } from './HistoricoAnalyticsDashboard';
 import { HistoricoSearchFilters } from './HistoricoSearchFilters';
 import { HistoricoDataTable } from './HistoricoDataTable';
@@ -11,11 +12,20 @@ import { useHistoricoServerPagination } from '../hooks/useHistoricoServerPaginat
 import { useHistoricoFilters } from '../hooks/useHistoricoFilters';
 import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
 import { HistoricoAdvancedAnalytics } from './HistoricoAdvancedAnalytics';
+import { runSupabaseHealthCheck, isRLSError, getRLSErrorMessage } from '@/debug/supabaseHealth';
 import { History, TrendingUp, Filter, Download, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 
 export const HistoricoPageLayout: React.FC = () => {
   // Log de montagem temporário
   React.useEffect(() => { console.debug("mounted: HistoricoPageLayout"); }, []);
+  
+  // Health check state
+  const [healthCheck, setHealthCheck] = React.useState<any>(null);
+  
+  // Run health check on mount
+  React.useEffect(() => {
+    runSupabaseHealthCheck('historico').then(setHealthCheck);
+  }, []);
 
   // Hooks para filtros e paginação
   const filtersHook = useHistoricoFilters({
@@ -128,6 +138,15 @@ export const HistoricoPageLayout: React.FC = () => {
 
         {/* Conteúdo principal */}
         <div className="flex-1 container py-6 space-y-6">
+          {/* RLS Error Banner */}
+          {healthCheck?.lastApiError && isRLSError(healthCheck.lastApiError) && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Acesso negado (RLS):</strong> {getRLSErrorMessage(healthCheck.lastApiError)}
+              </AlertDescription>
+            </Alert>
+          )}
           {/* Dashboard de Analytics */}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -176,10 +195,10 @@ export const HistoricoPageLayout: React.FC = () => {
             />
           </Card>
 
-          {/* File Management – real */}
-          <section data-testid="hv-file-manager" className="mt-4">
-            <HistoricoFileManager />
-          </section>
+          {/* File Management – sempre visível */}
+          <Card>
+            <HistoricoFileManager data-testid="hv-file-manager" />
+          </Card>
 
           {/* Ações em Lote */}
           <HistoricoBulkActions
