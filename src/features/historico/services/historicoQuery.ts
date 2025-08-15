@@ -35,7 +35,7 @@ export async function fetchHistorico(params: FetchHistoricoParams): Promise<Fetc
   try {
     console.log('🔍 Fetching histórico:', params);
 
-    // Query base (server-side, com count)
+    // Query base (server-side, com count) - no additional probes
     let query = supabase
       .from('historico_vendas')
       .select('id, numero_pedido, sku_produto, descricao, quantidade, valor_unitario, valor_total, data_pedido, status, cliente_nome', { count: 'exact' });

@@ -66,10 +66,12 @@ export const useHistoricoServerPagination = (
       sortBy,
       sortOrder
     ),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 30 * 60 * 1000,   // 30 minutos
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    retry: (failureCount, err: any) => !(err?.code === 401 || err?.code === 403 || err?.code === 404),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
+    staleTime: 60_000, // 1 minute
+    gcTime: 5 * 60 * 1000
   });
 
   // Prefetch da próxima página

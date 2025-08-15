@@ -15,7 +15,8 @@ import { useHistoricoServerPagination } from '../hooks/useHistoricoServerPaginat
 import { useHistoricoFilters } from '../hooks/useHistoricoFilters';
 import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
 import { HistoricoAdvancedAnalytics } from './HistoricoAdvancedAnalytics';
-import { runSupabaseHealthCheck, isRLSError, getRLSErrorMessage } from '@/debug/supabaseHealth';
+import { runSupabaseHealthCheck, HC_ENABLED } from '@/features/historico/utils/supabase-health';
+import { isRLSError, getRLSErrorMessage } from '@/debug/supabaseHealth';
 import { downloadTemplate } from '../services/historicoQuery';
 import { useToast } from '@/hooks/use-toast';
 import { History, TrendingUp, Filter, Download, Wifi, WifiOff, AlertCircle } from 'lucide-react';
@@ -29,14 +30,17 @@ export const HistoricoPageLayout: React.FC = () => {
   // Health check state
   const [healthCheck, setHealthCheck] = React.useState<any>(null);
   const [debugOpen, setDebugOpen] = React.useState(false); // collapsed por padrão
+  const hasRunRef = React.useRef(false);
   
-  // Run health check on mount
+  // Run health check only when debug panel opens
   React.useEffect(() => {
+    if (!debugOpen || hasRunRef.current || !HC_ENABLED) return;
+    hasRunRef.current = true;
     runSupabaseHealthCheck('historico').then((result) => {
       console.debug('HC result:', result);
       setHealthCheck(result);
     });
-  }, []);
+  }, [debugOpen]);
 
   // Hooks para filtros e paginação
   const filtersHook = useHistoricoFilters({
