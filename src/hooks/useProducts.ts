@@ -27,6 +27,14 @@ export interface Product {
 export const useProducts = () => {
   const { user } = useAuth();
 
+  const getCurrentOrgId = async (): Promise<string> => {
+    const { data, error } = await supabase.rpc('get_current_org_id');
+    if (error || !data) {
+      throw new Error('Não foi possível obter a organização atual.');
+    }
+    return data as unknown as string;
+  };
+
   const getProducts = async (filters?: {
     search?: string;
     categoria?: string;
@@ -89,9 +97,16 @@ export const useProducts = () => {
   };
 
   const createProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'>) => {
+    const orgId = await getCurrentOrgId();
+
+    const payload = {
+      ...product,
+      organization_id: orgId,
+    };
+
     const { data, error } = await supabase
       .from('produtos')
-      .insert([product])
+      .insert([payload])
       .select()
       .single();
 
@@ -104,10 +119,13 @@ export const useProducts = () => {
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>) => {
+    const orgId = await getCurrentOrgId();
+
     const { data, error } = await supabase
       .from('produtos')
       .update(updates)
       .eq('id', id)
+      .eq('organization_id', orgId)
       .select()
       .single();
 
@@ -120,10 +138,13 @@ export const useProducts = () => {
   };
 
   const deleteProduct = async (id: string) => {
+    const orgId = await getCurrentOrgId();
+
     const { error } = await supabase
       .from('produtos')
       .update({ ativo: false })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('organization_id', orgId);
 
     if (error) {
       console.error('Error deleting product:', error);
