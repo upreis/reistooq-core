@@ -1761,6 +1761,15 @@ export type Database = {
         Args: { _target_roles: string[]; _target_users: string[] }
         Returns: boolean
       }
+      validate_invitation_token: {
+        Args: { _token: string }
+        Returns: {
+          expires_at: string
+          is_valid: boolean
+          organization_name: string
+          role_name: string
+        }[]
+      }
     }
     Enums: {
       integration_provider: "tiny" | "shopee" | "mercadolivre"
