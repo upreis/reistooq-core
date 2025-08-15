@@ -265,7 +265,7 @@ const Estoque = () => {
       description: "Modal de criação de produto será implementado.",
     });
   };
-
+  const handleRefresh = () => loadProducts();
   const getStockStatus = (product: Product) => {
     if (product.quantidade_atual === 0) {
       return {
@@ -344,7 +344,7 @@ const Estoque = () => {
         <EstoqueActions
           onNewProduct={handleNewProduct}
           onDeleteSelected={handleDeleteSelected}
-          onRefresh={loadProducts}
+          onRefresh={handleRefresh}
           onSendAlerts={handleSendAlerts}
           selectedProducts={selectedProducts}
           products={products}
