@@ -141,16 +141,6 @@ export function AnnouncementTicker() {
               <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
             )}
           </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsHidden(true)}
-            className="h-6 w-6 p-0 hover:bg-amber-500/20"
-            title="Ocultar anúncios"
-          >
-            ×
-          </Button>
         </div>
       </div>
     </div>
