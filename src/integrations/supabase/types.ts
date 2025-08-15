@@ -1787,6 +1787,19 @@ export type Database = {
           valor_total: number
         }[]
       }
+      get_profile_safe: {
+        Args: { profile_id: string }
+        Returns: {
+          avatar_url: string
+          cargo: string
+          created_at: string
+          departamento: string
+          id: string
+          nome_completo: string
+          nome_exibicao: string
+          organizacao_id: string
+        }[]
+      }
       get_user_permissions: {
         Args: Record<PropertyKey, never>
         Returns: string[]
