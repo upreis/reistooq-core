@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { BarcodeFormat, ScanResult, ScannerError } from '../types/scanner.types';
-import { BrowserMultiFormatReader, NotFoundException } from '@zxing/browser';
+import { BrowserMultiFormatReader } from '@zxing/browser';
 
 export class BarcodeDecoder {
   private reader: BrowserMultiFormatReader;
@@ -115,7 +115,7 @@ export class BarcodeDecoder {
 
   stopDecoding(): void {
     try {
-      this.reader.stopAndReset();
+      // Stop any active decoding
       
       if (this.currentStream) {
         this.currentStream.getTracks().forEach(track => track.stop());
