@@ -32,6 +32,10 @@ export const HistoricoPageLayout: React.FC = () => {
   const [debugOpen, setDebugOpen] = React.useState(false); // collapsed por padrão
   const hasRunRef = React.useRef(false);
   
+  // Realtime toggle (desligado por padrão)
+  const [realtimeOn, setRealtimeOn] = React.useState(false);
+  useHistoricoRealtime({ enabled: realtimeOn });
+  
   // Run health check only when debug panel opens
   React.useEffect(() => {
     if (!debugOpen || hasRunRef.current || !HC_ENABLED) return;
@@ -44,25 +48,13 @@ export const HistoricoPageLayout: React.FC = () => {
 
   // Hooks para filtros e paginação
   const filtersHook = useHistoricoFilters({
-    persistKey: 'historico-vendas-filters',
-    debounceMs: 300
+    persistKey: 'historico-vendas-filters'
   });
 
   const paginationHook = useHistoricoServerPagination({
     initialFilters: filtersHook.filters,
     initialLimit: 20,
     enableRealtime: false
-  });
-
-  // Real-time updates
-  const realtimeHook = useHistoricoRealtime({
-    enabled: true,
-    debounceMs: 1000,
-    batchUpdates: true,
-    onUpdate: () => {
-      // Refresh data when real-time updates are received
-      paginationHook.refetch();
-    }
   });
 
   // Sincronizar filtros
@@ -111,30 +103,16 @@ export const HistoricoPageLayout: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-4">
-                {/* Real-time status indicator */}
-                <div className="flex items-center gap-2">
-                  {realtimeHook.isConnected ? (
-                    <div className="flex items-center gap-1 text-green-600">
-                      <Wifi className="h-4 w-4" />
-                      <span className="text-xs">Online</span>
-                    </div>
-                  ) : realtimeHook.isConnecting ? (
-                    <div className="flex items-center gap-1 text-yellow-600">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                      <span className="text-xs">Conectando...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1 text-red-600">
-                      <WifiOff className="h-4 w-4" />
-                      <span className="text-xs">Offline</span>
-                    </div>
-                  )}
-                  {realtimeHook.updateCount > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {realtimeHook.updateCount} atualizações
-                    </span>
-                  )}
-                </div>
+                {/* Realtime toggle */}
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={realtimeOn}
+                    onChange={(e) => setRealtimeOn(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  Atualização em tempo real
+                </label>
 
                 <div className="text-right text-sm">
                   <div className="font-medium">
