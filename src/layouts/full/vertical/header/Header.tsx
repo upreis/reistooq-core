@@ -20,7 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarUI } from "@/context/SidebarUIContext";
 
 export default function Header() {
-  const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useSidebarUI();
+  const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed } = useSidebarUI();
   const { isHidden, setIsHidden, hasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { user, signOut } = useAuth();
 
@@ -42,6 +42,20 @@ export default function Header() {
         >
           {/* ícone hamburger */}
           <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor" strokeWidth="2"/></svg>
+        </button>
+
+        {/* Desktop Sidebar Toggle */}
+        <button
+          type="button"
+          className="hidden md:inline-flex items-center justify-center rounded p-2 border ml-2"
+          aria-label={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          data-testid="sidebar-desktop-toggle"
+        >
+          {/* icon sidebar toggle */}
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12h18M3 6h18M3 18h18" fill="none" stroke="currentColor" strokeWidth="2"/>
+          </svg>
         </button>
 
         {/* Search */}

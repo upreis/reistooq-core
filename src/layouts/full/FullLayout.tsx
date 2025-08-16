@@ -10,12 +10,14 @@ import { useLayoutSingleton } from "@/layouts/guards/LayoutSingleton";
 const CollapsedReopenTab: React.FC = () => {
   const { setIsSidebarCollapsed } = useSidebarUI();
   return (
-    <div className="fixed left-0 top-0 hidden md:flex h-screen w-4 z-40 items-center justify-center pointer-events-none">
+    <div className="fixed left-0 top-16 hidden md:flex h-screen w-4 z-50 items-center justify-center" style={{ pointerEvents: 'none' }}>
       <button
         type="button"
         aria-label="Expandir menu"
         onClick={() => setIsSidebarCollapsed(false)}
-        className="pointer-events-auto rounded-full border bg-background shadow p-1 hover:shadow-md focus:outline-none focus:ring"
+        className="rounded-full border bg-background shadow p-1 hover:shadow-md focus:outline-none focus:ring"
+        style={{ pointerEvents: 'auto' }}
+        data-testid="sidebar-rail"
       >
         {/* chevron-right */}
         <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2"/></svg>

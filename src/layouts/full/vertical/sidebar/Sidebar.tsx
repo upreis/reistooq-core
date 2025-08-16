@@ -83,22 +83,7 @@ export default function Sidebar() {
             <h1 className="text-lg font-bold text-[hsl(var(--sidebar-foreground))] truncate">REISTOQ</h1>
             <p className="text-xs text-[hsl(var(--sidebar-foreground))]/60 truncate">Admin Dashboard</p>
           </div>
-          {!isMobile && (
-            <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className={cn(
-                'ml-auto p-1.5 rounded-md hover:bg-[hsl(var(--sidebar-accent))] transition-colors',
-                'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--sidebar-ring))]',
-                isSidebarCollapsed && 'mx-auto'
-              )}
-              aria-label={isSidebarCollapsed ? 'Expandir sidebar' : 'Recolher sidebar'}
-            >
-              <ChevronDown className={cn(
-                'h-4 w-4 transition-transform',
-                isSidebarCollapsed ? '-rotate-90' : 'rotate-90'
-              )} />
-            </button>
-          )}
+          {/* Logo e título apenas, sem toggle */}
           {isMobile && (
             <button
               onClick={() => setIsMobileSidebarOpen(false)}
