@@ -24,6 +24,17 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
+      "no-restricted-imports": [
+        "error",
+        {
+          "patterns": [
+            {
+              "group": ["@/layouts/**", "**/layouts/**"],
+              "message": "Layouts (FullLayout/Header/Sidebar) devem ser usados só nas rotas, não dentro de páginas/feature."
+            }
+          ]
+        }
+      ]
     },
   }
 );
