@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 type SidebarUIState = {
   isSidebarCollapsed: boolean;          // desktop
@@ -10,7 +10,7 @@ type SidebarUIState = {
 const SidebarUIContext = createContext<SidebarUIState | null>(null);
 const LS_KEY = "ui.sidebar.collapsed";
 
-export function SidebarUIProvider({ children }: { children: ReactNode }) {
+export function SidebarUIProvider({ children }: { children: React.ReactNode }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
