@@ -2,9 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { SidebarUIProvider } from "@/context/SidebarUIContext";
+import FullLayout from "@/layouts/full/FullLayout";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Analytics from "./pages/Analytics";
@@ -44,68 +46,72 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Rota pública de autenticação */}
-            <Route path="/auth" element={<Auth />} />
-            
-            {/* Todas as outras rotas são protegidas */}
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-            <Route path="/ecommerce" element={<ProtectedRoute><ECommerce /></ProtectedRoute>} />
-            <Route path="/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
-            
-            {/* eCommerce App Routes */}
-            <Route path="/apps/ecommerce/shop" element={<ProtectedRoute><Shop /></ProtectedRoute>} />
-            <Route path="/apps/ecommerce/detail/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
-            <Route path="/apps/ecommerce/list" element={<ProtectedRoute><ProductList /></ProtectedRoute>} />
-            <Route path="/apps/ecommerce/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-            <Route path="/apps/ecommerce/addproduct" element={<ProtectedRoute><AddProduct /></ProtectedRoute>} />
-            <Route path="/apps/ecommerce/editproduct" element={<ProtectedRoute><EditProduct /></ProtectedRoute>} />
-            
-            {/* User Profile App Routes */}
-            <Route path="/apps/user-profile/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-            <Route path="/apps/user-profile/followers" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-            <Route path="/apps/user-profile/friends" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-            <Route path="/apps/user-profile/gallery" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-            
-            {/* Other App Routes */}
-            <Route path="/apps/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
-            <Route path="/apps/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
-            <Route path="/apps/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
-            
-            {/* Custom Business Routes */}
-            <Route path="/estoque" element={<ProtectedRoute><Estoque /></ProtectedRoute>} />
-            <Route path="/pedidos" element={<ProtectedRoute><Pedidos /></ProtectedRoute>} />
-            <Route path="/scanner" element={<ProtectedRoute><Scanner /></ProtectedRoute>} />
-            <Route path="/de-para" element={<ProtectedRoute><DePara /></ProtectedRoute>} />
-            <Route path="/alertas" element={<ProtectedRoute><Alertas /></ProtectedRoute>} />
-            <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
-            <Route path="/historico" element={<ProtectedRoute><Historico /></ProtectedRoute>} />
+        <SidebarUIProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Rota pública de autenticação */}
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Todas as outras rotas são protegidas com novo layout */}
+              <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
+                <Route path="/" element={<Index />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/ecommerce" element={<ECommerce />} />
+                <Route path="/crm" element={<CRM />} />
+                
+                {/* eCommerce App Routes */}
+                <Route path="/apps/ecommerce/shop" element={<Shop />} />
+                <Route path="/apps/ecommerce/detail/:id" element={<ProductDetail />} />
+                <Route path="/apps/ecommerce/list" element={<ProductList />} />
+                <Route path="/apps/ecommerce/checkout" element={<Checkout />} />
+                <Route path="/apps/ecommerce/addproduct" element={<AddProduct />} />
+                <Route path="/apps/ecommerce/editproduct" element={<EditProduct />} />
+                
+                {/* User Profile App Routes */}
+                <Route path="/apps/user-profile/profile" element={<UserProfile />} />
+                <Route path="/apps/user-profile/followers" element={<UserProfile />} />
+                <Route path="/apps/user-profile/friends" element={<UserProfile />} />
+                <Route path="/apps/user-profile/gallery" element={<UserProfile />} />
+                
+                {/* Other App Routes */}
+                <Route path="/apps/calendar" element={<Calendar />} />
+                <Route path="/apps/notes" element={<Notes />} />
+                <Route path="/apps/chats" element={<Chats />} />
+                
+                {/* Custom Business Routes */}
+                <Route path="/estoque" element={<Estoque />} />
+                <Route path="/pedidos" element={<Pedidos />} />
+                <Route path="/scanner" element={<Scanner />} />
+                <Route path="/de-para" element={<DePara />} />
+                <Route path="/alertas" element={<Alertas />} />
+                <Route path="/configuracoes" element={<Configuracoes />} />
+                <Route path="/historico" element={<Historico />} />
 
-            {/* Demo Routes (protected) */}
-            <Route path="/_demo/faq" element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
-            <Route path="/_demo/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
-            <Route path="/_demo/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
-            <Route path="/_demo/cards" element={<ProtectedRoute><Cards /></ProtectedRoute>} />
-            <Route path="/_demo/banners" element={<ProtectedRoute><Banners /></ProtectedRoute>} />
-            <Route path="/_demo/charts" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
-            <Route path="/_demo/icons" element={<ProtectedRoute><SolarIcons /></ProtectedRoute>} />
+                {/* Demo Routes (protected) */}
+                <Route path="/_demo/faq" element={<FAQ />} />
+                <Route path="/_demo/pricing" element={<Pricing />} />
+                <Route path="/_demo/account-settings" element={<AccountSettings />} />
+                <Route path="/_demo/cards" element={<Cards />} />
+                <Route path="/_demo/banners" element={<Banners />} />
+                <Route path="/_demo/charts" element={<Charts />} />
+                <Route path="/_demo/icons" element={<SolarIcons />} />
 
-            {/* Legacy redirects (protected) */}
-            <Route path="/dashboards/crm" element={<ProtectedRoute><CRM /></ProtectedRoute>} />
-            <Route path="/theme-pages/faq" element={<ProtectedRoute><FAQ /></ProtectedRoute>} />
-            <Route path="/theme-pages/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
-            <Route path="/theme-pages/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
-            <Route path="/widgets/cards" element={<ProtectedRoute><Cards /></ProtectedRoute>} />
-            <Route path="/widgets/banners" element={<ProtectedRoute><Banners /></ProtectedRoute>} />
-            <Route path="/widgets/charts" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
-            <Route path="/icons/solar" element={<ProtectedRoute><SolarIcons /></ProtectedRoute>} />
-            
-            {/* Catch all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+                {/* Legacy redirects (protected) */}
+                <Route path="/dashboards/crm" element={<CRM />} />
+                <Route path="/theme-pages/faq" element={<FAQ />} />
+                <Route path="/theme-pages/pricing" element={<Pricing />} />
+                <Route path="/theme-pages/account-settings" element={<AccountSettings />} />
+                <Route path="/widgets/cards" element={<Cards />} />
+                <Route path="/widgets/banners" element={<Banners />} />
+                <Route path="/widgets/charts" element={<Charts />} />
+                <Route path="/icons/solar" element={<SolarIcons />} />
+              </Route>
+              
+              {/* Catch all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </SidebarUIProvider>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
