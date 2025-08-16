@@ -5,6 +5,7 @@ import Sidebar from "./vertical/sidebar/Sidebar";
 import Header from "./vertical/header/Header";
 import { AnnouncementTicker } from "@/components/ui/AnnouncementTicker";
 import { AnnouncementProvider, useAnnouncements } from "@/contexts/AnnouncementContext";
+import { useLayoutSingleton } from "@/layouts/guards/LayoutSingleton";
 
 const CollapsedReopenTab: React.FC = () => {
   const { setIsSidebarCollapsed } = useSidebarUI();
@@ -72,9 +73,23 @@ const InnerLayout = () => {
 };
 
 export default function FullLayout() {
+  const { ref, mode, key } = useLayoutSingleton("FullLayout");
+
+  // Se este FullLayout estiver DENTRO de outro, não renderiza header/sidebar
+  if (mode === "nested") {
+    return (
+      <div ref={ref} data-layout-root={key} className="min-h-screen">
+        <Outlet />
+      </div>
+    );
+  }
+
+  // Instância primária (única) do layout
   return (
-    <AnnouncementProvider>
-      <InnerLayout />
-    </AnnouncementProvider>
+    <div ref={ref} data-layout-root={key}>
+      <AnnouncementProvider>
+        <InnerLayout />
+      </AnnouncementProvider>
+    </div>
   );
 }
