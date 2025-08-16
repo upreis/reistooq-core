@@ -48,7 +48,7 @@ const InnerLayout = () => {
         {/* Sidebar */}
         <Sidebar />
 
-        {/* Overlay mobile */}
+        {/* Overlay mobile - única instância */}
         {isMobileSidebarOpen && (
           <div
             className="fixed inset-0 bg-black/40 md:hidden z-30"
