@@ -80,56 +80,52 @@ export const HistoricoPageLayout: React.FC = () => {
   ];
 
   return (
-    <>
-      <div data-testid="hv-banner" className="mb-2 rounded bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-amber-200">
-        HISTÓRICO — componente correto montado
-      </div>
-      <div className="flex flex-col min-h-screen bg-background">
-        {/* Header fixo */}
-        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-          <div className="container py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <History className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold">Histórico de Vendas</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Análise completa das vendas e métricas de performance
-                  </p>
-                </div>
+    <div className="flex flex-col min-h-screen bg-background">
+      {/* Content header */}
+      <section className="mb-4">
+        <div className="container py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <History className="h-6 w-6 text-primary" />
               </div>
-              
-              <div className="flex items-center gap-4">
-                {/* Realtime toggle */}
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={realtimeOn}
-                    onChange={(e) => setRealtimeOn(e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  Atualização em tempo real
-                </label>
+              <div>
+                <h1 className="text-2xl font-bold">Histórico de Vendas</h1>
+                <p className="text-sm text-muted-foreground">
+                  Análise completa das vendas e métricas de performance
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {/* Realtime toggle */}
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={realtimeOn}
+                  onChange={(e) => setRealtimeOn(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Atualização em tempo real
+              </label>
 
-                <div className="text-right text-sm">
-                  <div className="font-medium">
-                    {(paginationHook.summary?.totalVendas ?? 0).toLocaleString()} vendas
-                  </div>
-                  <div className="text-muted-foreground">
-                    R$ {(paginationHook.summary?.valorTotalVendas || 0).toLocaleString('pt-BR', {
-                      minimumFractionDigits: 2
-                    })}
-                  </div>
+              <div className="text-right text-sm">
+                <div className="font-medium">
+                  {(paginationHook.summary?.totalVendas ?? 0).toLocaleString()} vendas
+                </div>
+                <div className="text-muted-foreground">
+                  R$ {(paginationHook.summary?.valorTotalVendas || 0).toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2
+                  })}
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Conteúdo principal */}
-        <div className="flex-1 container py-6 space-y-6">
+      {/* Conteúdo principal */}
+      <div className="flex-1 container py-6 space-y-6">
           {/* Debug — Supabase */}
           <Card className="p-4">
             <Collapsible open={debugOpen} onOpenChange={setDebugOpen}>
@@ -328,7 +324,6 @@ export const HistoricoPageLayout: React.FC = () => {
             />
           </Card>
         </div>
-      </div>
-    </>
+    </div>
   );
 };

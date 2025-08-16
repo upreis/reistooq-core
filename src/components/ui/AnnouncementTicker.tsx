@@ -60,8 +60,8 @@ export function AnnouncementTicker() {
 
   const currentAnnouncement = announcements[currentIndex];
 
-  // Usando o estilo do banner de debug
-  const getDebugBannerStyle = () => {
+  // Announcement banner styling
+  const getAnnouncementStyle = () => {
     return 'bg-amber-500/10 border border-amber-500/30 text-amber-200';
   };
 
@@ -76,7 +76,7 @@ export function AnnouncementTicker() {
   return (
     <div className={cn(
       "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out h-12",
-      getDebugBannerStyle()
+      getAnnouncementStyle()
     )}>
       <div className="flex items-center justify-between px-3 py-2 h-full">
         <div className="flex items-center gap-3 flex-1">
