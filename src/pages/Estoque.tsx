@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EstoqueActions } from "@/components/estoque/EstoqueActions";
 import { EstoqueTable } from "@/components/estoque/EstoqueTable";
@@ -311,14 +311,14 @@ const Estoque = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <>
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-muted-foreground">Carregando estoque...</p>
           </div>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
@@ -328,7 +328,7 @@ const Estoque = () => {
   );
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -425,7 +425,7 @@ const Estoque = () => {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

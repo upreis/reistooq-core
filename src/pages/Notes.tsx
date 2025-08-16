@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,7 @@ const Notes = () => {
   const currentNote = notes.find(note => note.id === selectedNote);
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -142,7 +142,7 @@ const Notes = () => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Search, Send, Paperclip, Smile, Phone, Video, MoreVertical } from "lucide-react";
-import { useState } from "react";
 
 const Chats = () => {
   const [selectedChat, setSelectedChat] = useState(1);
@@ -84,7 +83,7 @@ const Chats = () => {
   const currentContact = contacts.find(contact => contact.id === selectedChat);
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -237,7 +236,7 @@ const Chats = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +20,7 @@ const ProductDetail = () => {
   ];
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -163,7 +163,7 @@ const ProductDetail = () => {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

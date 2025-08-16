@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { Upload } from "lucide-react";
 
 const EditProduct = () => {
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -157,7 +157,7 @@ const EditProduct = () => {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

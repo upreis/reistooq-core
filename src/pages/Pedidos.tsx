@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { ShoppingCart, Clock, CheckCircle, XCircle, Search, Plus, Filter } from 
 
 const Pedidos = () => {
   return (
-    <DashboardLayout>
+    <>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -216,7 +216,7 @@ const Pedidos = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -148,7 +148,7 @@ const Scanner = () => {
   }, [selectedProduct]);
 
   return (
-    <DashboardLayout>
+    <>
       <div className="p-6 space-y-6">
         {/* PWA Install Prompt */}
         <InstallPrompt />
@@ -386,7 +386,7 @@ const Scanner = () => {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

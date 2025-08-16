@@ -1,12 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Package, TrendingUp, Users } from "lucide-react";
 
 const ECommerce = () => {
   return (
-    <DashboardLayout>
+    <>
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -120,7 +119,7 @@ const ECommerce = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

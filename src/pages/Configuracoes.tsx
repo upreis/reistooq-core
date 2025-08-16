@@ -6,12 +6,12 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { Settings, Bell, Shield, Key, Database, Webhook, Mail, Smartphone, Megaphone, Plus, Trash2, Edit } from "lucide-react";
 
 const Configuracoes = () => {
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -546,7 +546,7 @@ const Configuracoes = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

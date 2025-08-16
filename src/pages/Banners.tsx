@@ -6,7 +6,7 @@ import { ArrowRight, Play, Star, TrendingUp, Users, Zap } from "lucide-react";
 
 const Banners = () => {
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -199,7 +199,7 @@ const Banners = () => {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 
