@@ -150,9 +150,11 @@ export function EstoqueTable({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Table Header */}
-      <div className="grid grid-cols-12 gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium">
+    <div className="w-full overflow-x-auto -mx-4 sm:mx-0">
+      <div className="min-w-[720px] md:min-w-full">
+        <div className="space-y-4">
+          {/* Table Header */}
+          <div className="grid grid-cols-12 gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium">
         <div className="flex items-center">
           <Checkbox
             checked={allSelected}
@@ -418,6 +420,8 @@ export function EstoqueTable({
           </div>
         </DialogContent>
       </Dialog>
+        </div>
+      </div>
     </div>
   );
 }

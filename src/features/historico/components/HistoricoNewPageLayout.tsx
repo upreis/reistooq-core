@@ -153,7 +153,7 @@ export function HistoricoNewPageLayout() {
       </Card>
 
       {/* Filtros Inteligentes + Botões de Arquivo */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
           <Card>
             <CardHeader>
@@ -295,18 +295,19 @@ export function HistoricoNewPageLayout() {
 
       {/* Paginação */}
       {pagination && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="text-sm text-muted-foreground">
             Página {pagination.page} de {pagination.totalPages}
             ({pagination.total} total)
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => goToPage(pagination.page - 1)}
               disabled={!pagination.hasPrevPage || isFetching}
+              className="w-full sm:w-auto"
             >
               Anterior
             </Button>
@@ -314,7 +315,7 @@ export function HistoricoNewPageLayout() {
             <select
               value={pagination.limit}
               onChange={(e) => changePageSize(Number(e.target.value))}
-              className="px-3 py-1 border rounded text-sm"
+              className="px-3 py-1 border rounded text-sm w-full sm:w-auto"
             >
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -326,6 +327,7 @@ export function HistoricoNewPageLayout() {
               size="sm"
               onClick={() => goToPage(pagination.page + 1)}
               disabled={!pagination.hasNextPage || isFetching}
+              className="w-full sm:w-auto"
             >
               Próximo
             </Button>

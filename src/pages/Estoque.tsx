@@ -393,22 +393,23 @@ const Estoque = () => {
 
             {/* Pagination */}
             {products.length > itemsPerPage && (
-              <div className="flex items-center justify-between mt-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
                 <p className="text-sm text-muted-foreground">
                   Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
                   {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
                   {products.length} produtos
                 </p>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                     disabled={currentPage === 1}
+                    className="w-full sm:w-auto"
                   >
                     Anterior
                   </Button>
-                  <span className="text-sm">
+                  <span className="text-sm text-center">
                     Página {currentPage} de {Math.ceil(products.length / itemsPerPage)}
                   </span>
                   <Button
@@ -416,6 +417,7 @@ const Estoque = () => {
                     size="sm"
                     onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / itemsPerPage), currentPage + 1))}
                     disabled={currentPage === Math.ceil(products.length / itemsPerPage)}
+                    className="w-full sm:w-auto"
                   >
                     Próximo
                   </Button>

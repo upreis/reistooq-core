@@ -15,19 +15,19 @@ const Pedidos = () => {
             <h1 className="text-3xl font-bold">Pedidos</h1>
             <p className="text-muted-foreground">Gerencie todos os seus pedidos em um só lugar</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Filter className="w-4 h-4 mr-2" />
               Filtros
             </Button>
-            <Button>
+            <Button className="w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Novo Pedido
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard
             title="Pedidos Hoje"
             value="89"

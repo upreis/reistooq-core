@@ -200,7 +200,7 @@ const Scanner = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Left Column - Scanner/Search/History */}
           <div className="lg:col-span-2">
             {activeView === 'scanner' && (
@@ -239,7 +239,7 @@ const Scanner = () => {
                       <label className="text-sm font-medium">
                         Digite o código de barras manualmente:
                       </label>
-                      <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-2">
                         <Input
                           placeholder="Digite o código de barras..."
                           value={manualCode}
@@ -249,11 +249,13 @@ const Scanner = () => {
                               handleManualSearch();
                             }
                           }}
+                          className="w-full sm:flex-1"
                         />
                         <Button
                           variant="outline"
                           onClick={handleManualSearch}
                           disabled={!manualCode.trim() || scanner.state.isLoading}
+                          className="w-full sm:w-auto"
                         >
                           <Search className="w-4 h-4" />
                         </Button>
@@ -290,7 +292,7 @@ const Scanner = () => {
             <CardTitle>Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <Button 
                 variant="outline" 
                 className="h-20 flex flex-col gap-2"
@@ -354,7 +356,7 @@ const Scanner = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-muted/50 rounded-lg">
                 <div className="text-2xl font-bold text-primary">
                   {scanner.state.sessionStats.scans_attempted}

@@ -12,10 +12,17 @@ export default {
 	theme: {
 		container: {
 			center: true,
-			padding: '2rem',
+			padding: '1rem',
 			screens: {
 				'2xl': '1400px'
 			}
+		},
+		screens: {
+			sm: '640px',
+			md: '768px', 
+			lg: '1024px',
+			xl: '1280px',
+			'2xl': '1536px'
 		},
 		extend: {
 			fontFamily: {
@@ -126,5 +133,5 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [require("tailwindcss-animate"), require("@tailwindcss/forms")],
 } satisfies Config;
