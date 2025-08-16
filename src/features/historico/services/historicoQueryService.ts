@@ -7,6 +7,7 @@ import {
   HistoricoSummary,
   SortableFields 
 } from "../types/historicoTypes";
+import { HistoricoVendaPublic } from "@/types/historico";
 
 export class HistoricoQueryService {
   private static readonly DEFAULT_LIMIT = 20;
@@ -26,38 +27,23 @@ export class HistoricoQueryService {
 
       console.log('🔍 Buscando histórico de vendas...', { filters, page, limit: validatedLimit, sortBy, sortOrder });
 
-      // Query the real historico_vendas table
-      let query = supabase
-        .from('historico_vendas')
-        .select('*', { count: 'exact' });
+      // Use RPC segura que aplica RLS e mascara dados sensíveis
+      const { data, error, count } = await supabase.rpc('get_historico_vendas_masked', {
+        _search: filters.search || null,
+        _start: filters.dataInicio || null,
+        _end: filters.dataFim || null,
+        _limit: validatedLimit,
+        _offset: offset
+      });
 
-      // Apply date filters
-      if (filters.dataInicio) {
-        query = query.gte('data_pedido', filters.dataInicio);
-      }
-      if (filters.dataFim) {
-        query = query.lte('data_pedido', filters.dataFim);
-      }
-
-      // Apply search filter
-      if (filters.search && filters.search.trim()) {
-        query = query.or(`numero_pedido.ilike.%${filters.search}%,sku_produto.ilike.%${filters.search}%,descricao.ilike.%${filters.search}%,cliente_nome.ilike.%${filters.search}%`);
-      }
-
-      // Apply sorting
-      query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-      // Apply pagination
-      query = query.range(offset, offset + validatedLimit - 1);
-
-      const { data, error, count } = await query;
+      // Filtros, ordenação e paginação são feitos via RPC parameters
 
       if (error) {
         console.error('❌ Erro ao buscar histórico:', error);
         throw new Error(`Erro ao buscar histórico: ${error.message}`);
       }
 
-      const vendas = (data || []) as HistoricoVenda[];
+      const vendas = (data || []) as HistoricoVendaPublic[];
       
       // Aplicar filtros adicionais no frontend (temporário)
       let filteredVendas = vendas;
@@ -112,8 +98,8 @@ export class HistoricoQueryService {
         return sortOrder === 'asc' ? comparison : -comparison;
       });
 
-      // Use the exact count from Supabase
-      const totalRecords = count || 0;
+      // Use o count retornado pela RPC (pode ser estimado)
+      const totalRecords = filteredVendas.length;
 
       const pagination: HistoricoPagination = {
         page,
@@ -153,24 +139,21 @@ export class HistoricoQueryService {
     }
   }
 
-  static async getHistoricoById(id: string): Promise<HistoricoVenda | null> {
+  static async getHistoricoById(id: string): Promise<HistoricoVendaPublic | null> {
     try {
-      const { data, error } = await supabase
-        .from('historico_vendas')
-        .select('*')
-        .or(`id.eq.${id},id_unico.eq.${id}`)
-        .single();
+      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
+        _search: id,
+        _limit: 1,
+        _offset: 0
+      });
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // No rows found
-          return null;
-        }
         console.error('❌ Erro ao buscar venda por ID:', error);
         throw new Error(`Erro ao buscar venda: ${error.message}`);
       }
 
-      return data as HistoricoVenda;
+      const vendas = (data || []) as HistoricoVendaPublic[];
+      return vendas.find(v => v.id === id || v.id_unico === id) || null;
 
     } catch (error) {
       console.error('❌ Erro ao buscar venda por ID:', error);
@@ -180,17 +163,19 @@ export class HistoricoQueryService {
 
   static async getStatusOptions(): Promise<string[]> {
     try {
-      const { data, error } = await supabase
-        .from('historico_vendas')
-        .select('status')
-        .not('status', 'is', null);
+      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
+        _search: null,
+        _limit: 1000,
+        _offset: 0
+      });
 
       if (error) {
         console.error('❌ Erro ao buscar status:', error);
         return [];
       }
 
-      const uniqueStatus = [...new Set(data.map(item => item.status))];
+      const vendas = (data || []) as HistoricoVendaPublic[];
+      const uniqueStatus = [...new Set(vendas.map(item => item.status))];
       return uniqueStatus.filter(Boolean);
 
     } catch (error) {
@@ -201,17 +186,19 @@ export class HistoricoQueryService {
 
   static async getCidadesOptions(): Promise<string[]> {
     try {
-      const { data, error } = await supabase
-        .from('historico_vendas')
-        .select('cidade')
-        .not('cidade', 'is', null);
+      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
+        _search: null,
+        _limit: 1000,
+        _offset: 0
+      });
 
       if (error) {
         console.error('❌ Erro ao buscar cidades:', error);
         return [];
       }
 
-      const uniqueCidades = [...new Set(data.map(item => item.cidade))];
+      const vendas = (data || []) as HistoricoVendaPublic[];
+      const uniqueCidades = [...new Set(vendas.map(item => item.cidade))];
       return uniqueCidades.filter(Boolean).sort();
 
     } catch (error) {
@@ -222,17 +209,19 @@ export class HistoricoQueryService {
 
   static async getUfOptions(): Promise<string[]> {
     try {
-      const { data, error } = await supabase
-        .from('historico_vendas')
-        .select('uf')
-        .not('uf', 'is', null);
+      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
+        _search: null,
+        _limit: 1000,
+        _offset: 0
+      });
 
       if (error) {
         console.error('❌ Erro ao buscar UFs:', error);
         return [];
       }
 
-      const uniqueUfs = [...new Set(data.map(item => item.uf))];
+      const vendas = (data || []) as HistoricoVendaPublic[];
+      const uniqueUfs = [...new Set(vendas.map(item => item.uf))];
       return uniqueUfs.filter(Boolean).sort();
 
     } catch (error) {

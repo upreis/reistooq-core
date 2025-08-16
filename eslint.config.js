@@ -34,6 +34,13 @@ export default tseslint.config(
             }
           ]
         }
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "CallExpression[callee.property.name='select'] Literal[value='*']",
+          "message": "Proibido select('*'). Use lista explícita de colunas ou RPC/view segura."
+        }
       ]
     },
   }

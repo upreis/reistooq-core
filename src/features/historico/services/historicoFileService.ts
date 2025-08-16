@@ -500,10 +500,12 @@ export class HistoricoFileService {
     }
 
     try {
+      // Para inserção, usar inserção direta com lista explícita de colunas 
+      // (a RPC insert_historico_vendas_safe ainda não existe)
       const { data: insertData, error } = await supabase
         .from('historico_vendas')
         .insert(data)
-        .select();
+        .select('id, numero_pedido, sku_produto, status, data_pedido, valor_total');
 
       if (error) {
         throw error;
@@ -511,7 +513,7 @@ export class HistoricoFileService {
 
       return {
         success: true,
-        processed: insertData?.length || 0,
+        processed: Array.isArray(insertData) ? insertData.length : 0,
         errors: [],
         warnings: validation.warnings
       };
