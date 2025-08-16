@@ -75,7 +75,7 @@ export class HistoricoValidators {
         return {
           isValid: false,
           data: null,
-          errors: error.errors.map(e => ({
+          errors: error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -100,7 +100,7 @@ export class HistoricoValidators {
         return {
           isValid: false,
           data: null,
-          errors: error.errors.map(e => ({
+          errors: error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -136,7 +136,7 @@ export class HistoricoValidators {
         return {
           isValid: false,
           data: null,
-          errors: error.errors.map(e => ({
+          errors: error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -168,7 +168,7 @@ export class HistoricoValidators {
         return {
           isValid: false,
           data: null,
-          errors: error.errors.map(e => ({
+          errors: error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -292,7 +292,7 @@ export class HistoricoValidators {
         return {
           isValid: false,
           data: null,
-          errors: error.errors.map(e => ({
+          errors: error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))
@@ -364,7 +364,7 @@ export class HistoricoValidators {
         return {
           isValid: false,
           data: null,
-          errors: error.errors.map(e => ({
+          errors: error.issues.map(e => ({
             field: e.path.join('.'),
             message: e.message
           }))

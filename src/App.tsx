@@ -17,6 +17,7 @@ import Scanner from "./pages/Scanner";
 import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
 import Configuracoes from "./pages/Configuracoes";
+import IntegracoesPage from "./pages/configuracoes/IntegracoesPage";
 import Historico from "./pages/Historico";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -85,6 +86,7 @@ const App = () => (
                 <Route path="/de-para" element={<DePara />} />
                 <Route path="/alertas" element={<Alertas />} />
                 <Route path="/configuracoes" element={<Configuracoes />} />
+                <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
                 <Route path="/historico" element={<Historico />} />
 
                 {/* Demo Routes (protected) */}
