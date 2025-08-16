@@ -83,7 +83,7 @@ export default function Sidebar() {
             <h1 className="text-lg font-bold text-[hsl(var(--sidebar-foreground))] truncate">REISTOQ</h1>
             <p className="text-xs text-[hsl(var(--sidebar-foreground))]/60 truncate">Admin Dashboard</p>
           </div>
-          {/* Logo e título apenas, sem toggle */}
+          {/* DO NOT add desktop collapse/expand buttons here. Desktop toggle lives in Header; rail lives in FullLayout. */}
           {isMobile && (
             <button
               onClick={() => setIsMobileSidebarOpen(false)}

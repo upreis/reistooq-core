@@ -52,10 +52,15 @@ export default function Header() {
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           data-testid="sidebar-desktop-toggle"
         >
-          {/* icon sidebar toggle */}
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 12h18M3 6h18M3 18h18" fill="none" stroke="currentColor" strokeWidth="2"/>
-          </svg>
+          {isSidebarCollapsed ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" strokeWidth="2" />
+            </svg>
+          )}
         </button>
 
         {/* Search */}
