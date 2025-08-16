@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -81,247 +81,243 @@ const Index = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Carregando dashboard...</p>
-          </div>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Carregando dashboard...</p>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Welcome Section */}
-        <WelcomeCard />
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <WelcomeCard />
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatsCard
-            title="Total de Produtos"
-            value={stats.totalProducts.toString()}
-            change={stats.totalProducts > 0 ? "+100%" : "0%"}
-            changeType="neutral"
-            icon={Package}
-            gradient="primary"
-          />
-          <StatsCard
-            title="Estoque Baixo"
-            value={stats.lowStockProducts.toString()}
-            change={stats.lowStockProducts > 0 ? "Atenção!" : "OK"}
-            changeType={stats.lowStockProducts > 0 ? "negative" : "positive"}
-            icon={AlertTriangle}
-            gradient="warning"
-          />
-          <StatsCard
-            title="Sem Estoque"
-            value={stats.outOfStockProducts.toString()}
-            change={stats.outOfStockProducts > 0 ? "Urgente!" : "OK"}
-            changeType={stats.outOfStockProducts > 0 ? "negative" : "positive"}
-            icon={ShoppingCart}
-            gradient="warning"
-          />
-          <StatsCard
-            title="Valor do Estoque"
-            value={formatCurrency(stats.totalStockValue)}
-            change="+8%"
-            changeType="positive"
-            icon={DollarSign}
-            gradient="success"
-          />
-        </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <StatsCard
+          title="Total de Produtos"
+          value={stats.totalProducts.toString()}
+          change={stats.totalProducts > 0 ? "+100%" : "0%"}
+          changeType="neutral"
+          icon={Package}
+          gradient="primary"
+        />
+        <StatsCard
+          title="Estoque Baixo"
+          value={stats.lowStockProducts.toString()}
+          change={stats.lowStockProducts > 0 ? "Atenção!" : "OK"}
+          changeType={stats.lowStockProducts > 0 ? "negative" : "positive"}
+          icon={AlertTriangle}
+          gradient="warning"
+        />
+        <StatsCard
+          title="Sem Estoque"
+          value={stats.outOfStockProducts.toString()}
+          change={stats.outOfStockProducts > 0 ? "Urgente!" : "OK"}
+          changeType={stats.outOfStockProducts > 0 ? "negative" : "positive"}
+          icon={ShoppingCart}
+          gradient="warning"
+        />
+        <StatsCard
+          title="Valor do Estoque"
+          value={formatCurrency(stats.totalStockValue)}
+          change="+8%"
+          changeType="positive"
+          icon={DollarSign}
+          gradient="success"
+        />
+      </div>
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Sales Profit Chart */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold">Vendas vs Custos</CardTitle>
-                <div className="flex items-center space-x-4 mt-2">
-                  <div className="flex items-center space-x-1">
-                    <div className="w-3 h-3 bg-primary rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Vendas</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <div className="w-3 h-3 bg-muted rounded-full"></div>
-                    <span className="text-sm text-muted-foreground">Custos</span>
-                  </div>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Sales Profit Chart */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg font-semibold">Vendas vs Custos</CardTitle>
+              <div className="flex items-center space-x-4 mt-2">
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-primary rounded-full"></div>
+                  <span className="text-sm text-muted-foreground">Vendas</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-muted rounded-full"></div>
+                  <span className="text-sm text-muted-foreground">Custos</span>
                 </div>
               </div>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
+            </div>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={salesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Line type="monotone" dataKey="profit" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  <Line type="monotone" dataKey="expense" stroke="hsl(var(--muted-foreground))" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex justify-between items-center mt-4">
+              <div>
+                <div className="flex items-center space-x-1">
+                  <ArrowUp className="h-4 w-4 text-success" />
+                  <span className="text-2xl font-bold">{formatCurrency(stats.totalStockValue)}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Valor total em estoque</p>
+              </div>
+              <div>
+                <div className="flex items-center space-x-1">
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-2xl font-bold">{stats.totalProducts}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Produtos cadastrados</p>
+              </div>
+              <Button>Ver Relatório</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Product Categories Chart */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-semibold">Produtos por Categoria</CardTitle>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={productSalesData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    dataKey="value"
+                  >
+                    {productSalesData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="absolute text-center">
+                <div className="text-2xl font-bold">{stats.totalProducts}</div>
+                <div className="text-sm text-muted-foreground">Total</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {productSalesData.map((item, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+                  <span className="text-sm">{item.value}% {item.name}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground mt-4">
+              Distribuição dos produtos cadastrados por categoria no sistema
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bottom Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Status do Estoque</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <Package className="h-4 w-4 text-green-600" />
+                </div>
+                <span className="text-sm">Em Estoque</span>
+              </div>
+              <span className="font-semibold">{stats.totalProducts - stats.outOfStockProducts}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                </div>
+                <span className="text-sm">Estoque Baixo</span>
+              </div>
+              <span className="font-semibold">{stats.lowStockProducts}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <ShoppingCart className="h-4 w-4 text-red-600" />
+                </div>
+                <span className="text-sm">Sem Estoque</span>
+              </div>
+              <span className="font-semibold">{stats.outOfStockProducts}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-semibold">Movimentações</CardTitle>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold mb-1">124</div>
+            <p className="text-sm text-success mb-4">+12% Últimos 7 dias</p>
+            <div className="h-24">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={paymentsData}>
+                  <Bar dataKey="value" fill="hsl(var(--primary))" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Resumo Financeiro</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Valor Total do Estoque</p>
+                <div className="text-2xl font-bold">{formatCurrency(stats.totalStockValue)}</div>
+              </div>
+              <div className="h-16">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={salesData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Line type="monotone" dataKey="profit" stroke="hsl(var(--primary))" strokeWidth={2} />
-                    <Line type="monotone" dataKey="expense" stroke="hsl(var(--muted-foreground))" strokeWidth={2} />
+                  <LineChart data={salesData.slice(-5)}>
+                    <Line type="monotone" dataKey="profit" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex justify-between items-center mt-4">
-                <div>
-                  <div className="flex items-center space-x-1">
-                    <ArrowUp className="h-4 w-4 text-success" />
-                    <span className="text-2xl font-bold">{formatCurrency(stats.totalStockValue)}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Valor total em estoque</p>
-                </div>
-                <div>
-                  <div className="flex items-center space-x-1">
-                    <Package className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-2xl font-bold">{stats.totalProducts}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Produtos cadastrados</p>
-                </div>
-                <Button>Ver Relatório</Button>
+              <div className="flex justify-between text-sm">
+                <span>Produtos: {stats.totalProducts} <span className="text-success">+{stats.totalProducts > 0 ? '100%' : '0%'}</span></span>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Product Categories Chart */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Produtos por Categoria</CardTitle>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={productSalesData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      dataKey="value"
-                    >
-                      {productSalesData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="absolute text-center">
-                  <div className="text-2xl font-bold">{stats.totalProducts}</div>
-                  <div className="text-sm text-muted-foreground">Total</div>
-                </div>
+              <div className="flex justify-between text-sm">
+                <span>Alertas: {stats.lowStockProducts + stats.outOfStockProducts} <span className="text-destructive">
+                  {stats.lowStockProducts + stats.outOfStockProducts > 0 ? 'Atenção' : 'OK'}
+                </span></span>
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                {productSalesData.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-sm">{item.value}% {item.name}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-sm text-muted-foreground mt-4">
-                Distribuição dos produtos cadastrados por categoria no sistema
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Bottom Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Status do Estoque</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <Package className="h-4 w-4 text-green-600" />
-                  </div>
-                  <span className="text-sm">Em Estoque</span>
-                </div>
-                <span className="font-semibold">{stats.totalProducts - stats.outOfStockProducts}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  </div>
-                  <span className="text-sm">Estoque Baixo</span>
-                </div>
-                <span className="font-semibold">{stats.lowStockProducts}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                    <ShoppingCart className="h-4 w-4 text-red-600" />
-                  </div>
-                  <span className="text-sm">Sem Estoque</span>
-                </div>
-                <span className="font-semibold">{stats.outOfStockProducts}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Movimentações</CardTitle>
-              <Button variant="ghost" size="sm">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold mb-1">124</div>
-              <p className="text-sm text-success mb-4">+12% Últimos 7 dias</p>
-              <div className="h-24">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={paymentsData}>
-                    <Bar dataKey="value" fill="hsl(var(--primary))" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Resumo Financeiro</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Valor Total do Estoque</p>
-                  <div className="text-2xl font-bold">{formatCurrency(stats.totalStockValue)}</div>
-                </div>
-                <div className="h-16">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={salesData.slice(-5)}>
-                      <Line type="monotone" dataKey="profit" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Produtos: {stats.totalProducts} <span className="text-success">+{stats.totalProducts > 0 ? '100%' : '0%'}</span></span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Alertas: {stats.lowStockProducts + stats.outOfStockProducts} <span className="text-destructive">
-                    {stats.lowStockProducts + stats.outOfStockProducts > 0 ? 'Atenção' : 'OK'}
-                  </span></span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };
 
