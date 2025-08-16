@@ -146,39 +146,18 @@ export class ConfigService {
   }
 
   // Bulk update configurations
-  async bulkUpdateConfigs(configs: Partial<ProviderConfig>): Promise<void> {
+  async bulkUpdateConfigs(newConfigs: Partial<ProviderConfig>): Promise<void> {
     try {
-      const updates: Record<string, any> = {
-        id: 1,
-        updated_at: new Date().toISOString(),
-      };
-
-      // Encrypt each config
-      for (const [provider, config] of Object.entries(configs)) {
+      // Save each config individually
+      for (const [provider, config] of Object.entries(newConfigs)) {
         if (config) {
-          const columnName = `${provider}_config`;
-          updates[columnName] = this.encryptSensitiveData(config);
+          await this.saveConfig(provider as Provider, config);
         }
       }
-
-      const { error } = await supabase
-        .from('configuracoes')
-        .upsert(updates);
-
-      if (error) {
-        throw new Error(`Failed to bulk update configs: ${error.message}`);
-      }
-
-      // Clear cache
-      this.cache.delete('all_configs');
-      Object.keys(configs).forEach(provider => {
-        this.cache.delete(`config_${provider}`);
-      });
-
-      // Log bulk update
-      await this.logBulkConfigUpdate(Object.keys(configs) as Provider[]);
-
+      
+      console.log('Bulk configs updated successfully');
     } catch (error) {
+      console.error('Failed to bulk update configs:', error);
       throw new Error(`Failed to bulk update configurations: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -186,15 +165,10 @@ export class ConfigService {
   // Delete configuration for specific provider
   async deleteConfig(provider: Provider): Promise<void> {
     try {
-      const columnName = `${provider}_config`;
-      
       const { error } = await supabase
         .from('configuracoes')
-        .update({
-          [columnName]: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', 1);
+        .delete()
+        .eq('chave', `${provider}_config`);
 
       if (error) {
         throw new Error(`Failed to delete ${provider} config: ${error.message}`);

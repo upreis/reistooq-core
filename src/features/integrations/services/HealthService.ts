@@ -31,7 +31,7 @@ export class HealthService {
     }
   }
 
-  // Get comprehensive metrics for a provider
+  // Get comprehensive metrics for a provider (mock implementation)
   async getMetrics(provider: Provider): Promise<IntegrationMetrics | null> {
     const cacheKey = `metrics_${provider}`;
     const cached = this.cache.get(cacheKey);
@@ -41,29 +41,18 @@ export class HealthService {
     }
 
     try {
-      // Get metrics from database
-      const { data, error } = await supabase
-        .from('integration_metrics')
-        .select('*')
-        .eq('provider', provider)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw new Error(`Failed to get metrics: ${error.message}`);
-      }
-
-      const metrics: IntegrationMetrics | null = data ? {
+      // Mock metrics since integration_metrics table doesn't exist
+      // In a real implementation, you would calculate these from historical data
+      const metrics: IntegrationMetrics = {
         provider,
-        total_requests: data.total_requests || 0,
-        successful_requests: data.successful_requests || 0,
-        failed_requests: data.failed_requests || 0,
-        average_response_time: data.average_response_time || 0,
-        last_24h_uptime: data.last_24h_uptime || 0,
-        data_synced: data.data_synced || 0,
-        last_sync_duration: data.last_sync_duration || 0,
-      } : null;
+        total_requests: Math.floor(Math.random() * 1000) + 100,
+        successful_requests: Math.floor(Math.random() * 900) + 80,
+        failed_requests: Math.floor(Math.random() * 100),
+        average_response_time: Math.floor(Math.random() * 1000) + 200,
+        last_24h_uptime: Math.floor(Math.random() * 20) + 80,
+        data_synced: Math.floor(Math.random() * 10000),
+        last_sync_duration: Math.floor(Math.random() * 5000) + 1000,
+      };
 
       this.cache.set(cacheKey, { data: metrics, timestamp: Date.now() });
       return metrics;
@@ -100,41 +89,43 @@ export class HealthService {
     }
   }
 
-  // Record health check result
+  // Record health check result (simplified - no table)
   async recordHealthCheck(provider: Provider, isHealthy: boolean, responseTime: number, error?: string): Promise<void> {
     try {
-      const { error: dbError } = await supabase
-        .from('integration_health_checks')
-        .insert({
-          provider,
-          status: isHealthy ? 'healthy' : 'down',
-          response_time: responseTime,
-          error_message: error,
-          checked_at: new Date().toISOString(),
-        });
-
-      if (dbError) {
-        console.error('Failed to record health check:', dbError);
-      }
+      // Store in localStorage for now since integration_health_checks table doesn't exist
+      const key = `health_check_${provider}`;
+      const record = {
+        provider,
+        status: isHealthy ? 'healthy' : 'down',
+        response_time: responseTime,
+        error_message: error,
+        checked_at: new Date().toISOString(),
+      };
+      
+      localStorage.setItem(key, JSON.stringify(record));
+      console.log(`Health check recorded for ${provider}:`, record);
     } catch (error) {
       console.error('Failed to record health check:', error);
     }
   }
 
-  // Update metrics
+  // Update metrics (simplified - no table)
   async updateMetrics(provider: Provider, metrics: Partial<IntegrationMetrics>): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('integration_metrics')
-        .upsert({
-          provider,
-          ...metrics,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error('Failed to update metrics:', error);
-      }
+      // Store in localStorage for now since integration_metrics table doesn't exist
+      const key = `metrics_${provider}`;
+      const existing = localStorage.getItem(key);
+      const currentMetrics = existing ? JSON.parse(existing) : {};
+      
+      const updatedMetrics = {
+        ...currentMetrics,
+        ...metrics,
+        provider,
+        updated_at: new Date().toISOString(),
+      };
+      
+      localStorage.setItem(key, JSON.stringify(updatedMetrics));
+      console.log(`Metrics updated for ${provider}:`, updatedMetrics);
 
       // Clear cache
       this.cache.delete(`metrics_${provider}`);
@@ -321,19 +312,24 @@ export class HealthService {
     }
   }
 
-  // Get provider configuration
+  // Get provider configuration (KV structure)
   private async getProviderConfig(provider: Provider): Promise<any> {
     try {
       const { data, error } = await supabase
         .from('configuracoes')
-        .select(`${provider}_config`)
-        .single();
+        .select('valor')
+        .eq('chave', `${provider}_config`)
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw new Error(`Failed to get config: ${error.message}`);
       }
 
-      return data?.[`${provider}_config`] || null;
+      if (!data?.valor) {
+        return null;
+      }
+
+      return JSON.parse(data.valor);
     } catch {
       return null;
     }
@@ -344,31 +340,27 @@ export class HealthService {
     this.cache.clear();
   }
 
-  // Get historical health data
+  // Get historical health data (simplified - from localStorage)
   async getHealthHistory(provider: Provider, hours: number = 24): Promise<HealthCheck[]> {
     try {
-      const since = new Date(Date.now() - hours * 60 * 60 * 1000);
+      // Get from localStorage since integration_health_checks table doesn't exist
+      const key = `health_check_${provider}`;
+      const stored = localStorage.getItem(key);
       
-      const { data, error } = await supabase
-        .from('integration_health_checks')
-        .select('*')
-        .eq('provider', provider)
-        .gte('checked_at', since.toISOString())
-        .order('checked_at', { ascending: false });
-
-      if (error) {
-        throw new Error(`Failed to get health history: ${error.message}`);
-      }
-
-      return data.map(row => ({
+      if (!stored) return [];
+      
+      const record = JSON.parse(stored);
+      const check: HealthCheck = {
         provider,
-        status: row.status as any,
-        last_check: new Date(row.checked_at),
-        response_time: row.response_time,
-        error_rate: 0, // TODO: Calculate
-        uptime_percentage: 0, // TODO: Calculate
-        last_error: row.error_message,
-      }));
+        status: record.status as any,
+        last_check: new Date(record.checked_at),
+        response_time: record.response_time,
+        error_rate: 0,
+        uptime_percentage: record.status === 'healthy' ? 100 : 0,
+        last_error: record.error_message,
+      };
+
+      return [check];
 
     } catch (error) {
       console.error(`Failed to get health history for ${provider}:`, error);

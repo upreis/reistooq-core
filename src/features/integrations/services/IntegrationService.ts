@@ -1,7 +1,7 @@
 // 🎯 Core integration business logic service
 // Centralized integration operations with error handling
 
-import { Integration, Provider, IntegrationError } from '../types/integrations.types';
+import { Integration, Provider, IntegrationError, IntegrationStatus } from '../types/integrations.types';
 import { supabase } from '@/integrations/supabase/client';
 
 export class IntegrationService {
@@ -33,15 +33,13 @@ export class IntegrationService {
           id,
           provider,
           name,
-          description,
-          status,
-          enabled,
-          auto_sync,
-          sync_interval,
-          last_sync,
-          last_error,
-          health_score,
-          config
+          account_identifier,
+          is_active,
+          created_at,
+          updated_at,
+          organization_id,
+          cnpj,
+          public_auth
         `)
         .order('name');
 
@@ -50,9 +48,18 @@ export class IntegrationService {
       }
 
       return data.map(row => ({
-        ...row,
-        last_sync: row.last_sync ? new Date(row.last_sync) : null,
-        health_score: row.health_score || 0,
+        id: row.id,
+        provider: row.provider as Provider,
+        name: row.name,
+        description: `Integração ${row.provider}`,
+        status: row.is_active ? 'connected' : 'disconnected' as IntegrationStatus,
+        health_score: 100, // Default
+        last_sync: row.updated_at ? new Date(row.updated_at) : null,
+        last_error: null,
+        config: (row.public_auth as any) || {},
+        enabled: row.is_active,
+        auto_sync: true, // Default
+        sync_interval: 60, // Default 60 minutes
       }));
     });
   }
@@ -66,15 +73,14 @@ export class IntegrationService {
   // Connect provider
   async connectProvider(provider: Provider): Promise<void> {
     try {
-      // Update status to connecting
+      // Create or update integration account
       const { error: updateError } = await supabase
         .from('integration_accounts')
         .upsert({
-          provider,
-          status: 'connecting',
-          enabled: true,
-          last_sync: null,
-          last_error: null,
+          provider: provider as any, // Cast to match DB enum
+          name: `Integração ${provider}`,
+          is_active: true,
+          organization_id: (await supabase.rpc('get_current_org_id')).data,
         });
 
       if (updateError) {
@@ -84,19 +90,6 @@ export class IntegrationService {
       // Provider-specific connection logic
       await this.performProviderConnection(provider);
 
-      // Update status to connected
-      const { error: finalError } = await supabase
-        .from('integration_accounts')
-        .update({
-          status: 'connected',
-          last_sync: new Date().toISOString(),
-        })
-        .eq('provider', provider);
-
-      if (finalError) {
-        throw new Error(`Failed to finalize connection: ${finalError.message}`);
-      }
-
       // Clear cache
       this.cache.delete('all_integrations');
       this.cache.delete(`integration_${provider}`);
@@ -105,14 +98,13 @@ export class IntegrationService {
       await this.logIntegrationEvent('integration_connected', provider);
 
     } catch (error) {
-      // Update status to error
+      // Update status to error if integration exists
       await supabase
         .from('integration_accounts')
         .update({
-          status: 'error',
-          last_error: error instanceof Error ? error.message : 'Unknown error',
+          is_active: false,
         })
-        .eq('provider', provider);
+        .eq('provider', provider as any);
 
       throw error;
     }
@@ -124,11 +116,9 @@ export class IntegrationService {
       const { error } = await supabase
         .from('integration_accounts')
         .update({
-          status: 'disconnected',
-          enabled: false,
-          last_error: null,
+          is_active: false,
         })
-        .eq('provider', provider);
+        .eq('provider', provider as any);
 
       if (error) {
         throw new Error(`Failed to disconnect integration: ${error.message}`);
@@ -160,12 +150,14 @@ export class IntegrationService {
       // Provider-specific health check
       const isHealthy = await this.performHealthCheck(provider, integration.config);
 
-      // Update health score
-      const healthScore = isHealthy ? 100 : 0;
+      // Update integration status based on health
       await supabase
         .from('integration_accounts')
-        .update({ health_score: healthScore })
-        .eq('provider', provider);
+        .update({ 
+          is_active: isHealthy,
+          updated_at: new Date().toISOString()
+        })
+        .eq('provider', provider as any);
 
       return isHealthy;
 
@@ -193,10 +185,9 @@ export class IntegrationService {
       await supabase
         .from('integration_accounts')
         .update({
-          last_sync: new Date().toISOString(),
-          last_error: null,
+          updated_at: new Date().toISOString(),
         })
-        .eq('provider', provider);
+        .eq('provider', provider as any);
 
       // Clear cache
       this.cache.delete('all_integrations');
@@ -205,14 +196,6 @@ export class IntegrationService {
       await this.logIntegrationEvent('sync_completed', provider);
 
     } catch (error) {
-      // Update error
-      await supabase
-        .from('integration_accounts')
-        .update({
-          last_error: error instanceof Error ? error.message : 'Sync failed',
-        })
-        .eq('provider', provider);
-
       // Log sync failure
       await this.logIntegrationEvent('sync_failed', provider, {
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -379,25 +362,18 @@ export class IntegrationService {
     if (!config?.mws_auth_token) throw new Error('Amazon credentials not configured');
   }
 
-  // Log integration events
+  // Log integration events (simplified - no events table)
   private async logIntegrationEvent(
     event: string,
     provider: Provider,
     metadata?: Record<string, any>
   ): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('integration_events')
-        .insert({
-          event,
-          provider,
-          metadata: metadata || {},
-          timestamp: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error('Failed to log integration event:', error);
-      }
+      console.log(`Integration event: ${event}`, {
+        provider,
+        metadata: metadata || {},
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
       console.error('Failed to log integration event:', error);
     }

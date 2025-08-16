@@ -76,7 +76,7 @@ export class OAuthService {
         ? new Date(Date.now() + tokenData.expires_in * 1000)
         : null;
 
-      // Update integration config with tokens
+      // Update integration config with tokens in the KV structure
       const config = {
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
@@ -88,9 +88,10 @@ export class OAuthService {
       const { error } = await supabase
         .from('configuracoes')
         .upsert({
-          id: 1,
-          [`${provider}_config`]: config,
-          updated_at: new Date().toISOString(),
+          chave: `${provider}_oauth_tokens`,
+          valor: JSON.stringify(config),
+          tipo: 'oauth',
+          descricao: `Tokens OAuth do ${provider}`,
         });
 
       if (error) {
@@ -123,18 +124,19 @@ export class OAuthService {
 
       const { data, error } = await supabase
         .from('configuracoes')
-        .select(`${provider}_config`)
-        .single();
+        .select('valor')
+        .eq('chave', `${provider}_oauth_tokens`)
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw new Error(`Failed to get tokens: ${error.message}`);
       }
 
-      const config = data?.[`${provider}_config`];
-      if (!config?.access_token) {
+      if (!data?.valor) {
         return null;
       }
 
+      const config = JSON.parse(data.valor);
       const tokenData: TokenData = {
         access_token: config.access_token,
         refresh_token: config.refresh_token,
@@ -221,11 +223,8 @@ export class OAuthService {
       // Clear tokens from database
       const { error } = await supabase
         .from('configuracoes')
-        .update({
-          [`${provider}_config`]: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', 1);
+        .delete()
+        .eq('chave', `${provider}_oauth_tokens`);
 
       if (error) {
         throw new Error(`Failed to clear tokens: ${error.message}`);
@@ -292,19 +291,19 @@ export class OAuthService {
   private async getProviderConfig(provider: Provider): Promise<any> {
     const { data, error } = await supabase
       .from('configuracoes')
-      .select(`${provider}_config`)
-      .single();
+      .select('valor')
+      .eq('chave', `${provider}_config`)
+      .maybeSingle();
 
     if (error) {
       throw new Error(`Failed to get provider config: ${error.message}`);
     }
 
-    const config = data?.[`${provider}_config`];
-    if (!config) {
+    if (!data?.valor) {
       throw new Error(`Configuration not found for ${provider}`);
     }
 
-    return config;
+    return JSON.parse(data.valor);
   }
 
   // Revoke token on provider side
@@ -330,25 +329,18 @@ export class OAuthService {
     }
   }
 
-  // Log OAuth events
+  // Log OAuth events (simplified - no events table)
   private async logOAuthEvent(
     event: string,
     provider: Provider,
     metadata?: Record<string, any>
   ): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('integration_events')
-        .insert({
-          event,
-          provider,
-          metadata: metadata || {},
-          timestamp: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error('Failed to log OAuth event:', error);
-      }
+      console.log(`OAuth event: ${event}`, {
+        provider,
+        metadata: metadata || {},
+        timestamp: new Date().toISOString(),
+      });
     } catch (error) {
       console.error('Failed to log OAuth event:', error);
     }
