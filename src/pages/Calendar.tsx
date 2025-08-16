@@ -1,9 +1,8 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date(2025, 7)); // August 2025
@@ -84,66 +83,64 @@ const Calendar = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <span>🏠</span>
-          <span>/</span>
-          <span className="text-primary">Calendar</span>
-        </div>
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <span>🏠</span>
+        <span>/</span>
+        <span className="text-primary">Calendar</span>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <Button variant="outline" size="sm">Today</Button>
-                <Button variant="ghost" size="sm" onClick={() => navigateMonth('prev')}>
-                  <ChevronLeft className="w-4 h-4" />
-                  Back
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => navigateMonth('next')}>
-                  Next
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-
-              <h2 className="text-xl font-bold text-primary">
-                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-              </h2>
-
-              <div className="flex items-center space-x-2">
-                {["Month", "Week", "Day", "Agenda"].map((mode) => (
-                  <Button
-                    key={mode}
-                    variant={viewMode === mode ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setViewMode(mode as typeof viewMode)}
-                  >
-                    {mode}
-                  </Button>
-                ))}
-              </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" size="sm">Today</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigateMonth('prev')}>
+                <ChevronLeft className="w-4 h-4" />
+                Back
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigateMonth('next')}>
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            {/* Calendar Header */}
-            <div className="grid grid-cols-7 mb-2">
-              {dayNames.map((day) => (
-                <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
-                  {day}
-                </div>
+
+            <h2 className="text-xl font-bold text-primary">
+              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </h2>
+
+            <div className="flex items-center space-x-2">
+              {["Month", "Week", "Day", "Agenda"].map((mode) => (
+                <Button
+                  key={mode}
+                  variant={viewMode === mode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode(mode as typeof viewMode)}
+                >
+                  {mode}
+                </Button>
               ))}
             </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Calendar Header */}
+          <div className="grid grid-cols-7 mb-2">
+            {dayNames.map((day) => (
+              <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+                {day}
+              </div>
+            ))}
+          </div>
 
-            {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-0 border border-muted rounded-lg overflow-hidden">
-              {renderCalendarDays()}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardLayout>
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-0 border border-muted rounded-lg overflow-hidden">
+            {renderCalendarDays()}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

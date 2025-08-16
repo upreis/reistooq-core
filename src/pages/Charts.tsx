@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   LineChart, 
