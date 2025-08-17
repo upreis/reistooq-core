@@ -9,7 +9,14 @@ import { toast } from 'sonner';
 import { InstallPrompt } from "@/components/ui/InstallPrompt";
 import { stockMovementService } from "@/features/scanner/services/StockMovementService";
 
-// Scanner Feature Imports
+// Feature Flags
+import { FEATURES } from "@/config/features";
+
+// Scanner V2 Components  
+import { ScannerV2 } from "@/components/scanner/ScannerV2";
+import { ScannerFallback } from "@/components/scanner/ScannerFallback";
+
+// Legacy Scanner Imports (fallback)
 import { useScannerCore } from "@/features/scanner/hooks/useScannerCore";
 import { ScannerCore } from "@/features/scanner/components/ScannerCore";
 import { ScannerSearch } from "@/features/scanner/components/ScannerSearch";
@@ -21,6 +28,7 @@ const Scanner = () => {
   const [manualCode, setManualCode] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<ScannedProduct | null>(null);
   const [activeView, setActiveView] = useState<'scanner' | 'search' | 'history'>('scanner');
+  const [scannerInitFailed, setScannerInitFailed] = useState(false);
 
   // Main scanner hook
   const scanner = useScannerCore({
@@ -205,64 +213,71 @@ const Scanner = () => {
           <div className="lg:col-span-2">
             {activeView === 'scanner' && (
               <div className="space-y-6">
-                {/* Scanner Core */}
-                <ScannerCore
-                  onScan={(result) => {
-                    if (result.product) {
-                      setSelectedProduct(result.product);
-                    }
-                  }}
-                  onError={(error) => {
-                    console.error('Scanner error:', error);
-                    toast.error('Erro no scanner');
-                  }}
-                  isActive={scanner.state.isActive}
-                  onToggle={() => {
-                    if (scanner.state.isActive) {
-                      scanner.actions.stopScanning();
-                    } else {
-                      scanner.actions.startScanning();
-                    }
-                  }}
-                />
+                {/* Scanner V2 or Fallback */}
+                {FEATURES.SCANNER_V2 && !scannerInitFailed ? (
+                  <ScannerV2
+                    onProductFound={(product) => {
+                      setSelectedProduct(product);
+                    }}
+                    onError={(error) => {
+                      console.error('Scanner V2 error:', error);
+                      // If initialization fails, switch to fallback
+                      if (error.includes('inicializar') || error.includes('câmera')) {
+                        setScannerInitFailed(true);
+                        toast.warning('Usando modo alternativo do scanner');
+                      }
+                    }}
+                  />
+                ) : (
+                  <ScannerFallback
+                    onProductFound={(product) => {
+                      setSelectedProduct(product);
+                    }}
+                    onError={(error) => {
+                      console.error('Scanner fallback error:', error);
+                    }}
+                  />
+                )}
 
-                {/* Manual Input */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Search className="w-5 h-5" />
-                      Busca Manual
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Digite o código de barras manualmente:
-                      </label>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                        <Input
-                          placeholder="Digite o código de barras..."
-                          value={manualCode}
-                          onChange={(e) => setManualCode(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleManualSearch();
-                            }
-                          }}
-                          className="w-full sm:flex-1"
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={handleManualSearch}
-                          disabled={!manualCode.trim() || scanner.state.isLoading}
-                          className="w-full sm:w-auto"
-                        >
-                          <Search className="w-4 h-4" />
-                        </Button>
+                {/* Manual Input - Legacy fallback */}
+                {scannerInitFailed && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Search className="w-5 h-5" />
+                        Busca Manual (Alternativa)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          Digite o código de barras manualmente:
+                        </label>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                          <Input
+                            placeholder="Digite o código de barras..."
+                            value={manualCode}
+                            onChange={(e) => setManualCode(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleManualSearch();
+                              }
+                            }}
+                            className="w-full sm:flex-1"
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={handleManualSearch}
+                            disabled={!manualCode.trim()}
+                            className="w-full sm:w-auto"
+                          >
+                            <Search className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
 
