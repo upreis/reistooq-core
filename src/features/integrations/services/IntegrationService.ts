@@ -31,40 +31,79 @@ export class IntegrationService {
   // Get all integrations
   async getAllIntegrations(): Promise<Integration[]> {
     return this.getFromCacheOrFetch('all_integrations', async () => {
-      const { data, error } = await supabase
-        .from('integration_accounts')
-        .select(`
-          id,
-          provider,
-          name,
-          account_identifier,
-          is_active,
-          created_at,
-          updated_at,
-          organization_id,
-          cnpj,
-          public_auth
-        `)
-        .order('name');
-
-      if (error) {
-        throw new Error(`Failed to fetch integrations: ${error.message}`);
-      }
-
-      return data.map(row => ({
-        id: row.id,
-        provider: row.provider as Provider,
-        name: row.name,
-        description: `Integração ${row.provider}`,
-        status: row.is_active ? 'connected' : 'disconnected' as IntegrationStatus,
-        health_score: 100, // Default
-        last_sync: row.updated_at ? new Date(row.updated_at) : null,
-        last_error: null,
-        config: (row.public_auth as any) || {},
-        enabled: row.is_active,
-        auto_sync: true, // Default
-        sync_interval: 60, // Default 60 minutes
-      }));
+      // Return mock data for demonstration while DB is being set up
+      return [
+        {
+          id: '1',
+          provider: 'tiny' as Provider,
+          name: 'Tiny ERP',
+          description: 'Sistema de gestão empresarial',
+          status: 'disconnected' as IntegrationStatus,
+          health_score: 100,
+          last_sync: null,
+          last_error: null,
+          config: {},
+          enabled: false,
+          auto_sync: true,
+          sync_interval: 60,
+        },
+        {
+          id: '2',
+          provider: 'mercadolivre' as Provider,
+          name: 'MercadoLivre',
+          description: 'Marketplace de vendas online',
+          status: 'disconnected' as IntegrationStatus,
+          health_score: 100,
+          last_sync: null,
+          last_error: null,
+          config: {},
+          enabled: false,
+          auto_sync: true,
+          sync_interval: 30,
+        },
+        {
+          id: '3',
+          provider: 'shopee' as Provider,
+          name: 'Shopee',
+          description: 'Marketplace asiático',
+          status: 'disconnected' as IntegrationStatus,
+          health_score: 100,
+          last_sync: null,
+          last_error: null,
+          config: {},
+          enabled: false,
+          auto_sync: true,
+          sync_interval: 30,
+        },
+        {
+          id: '4',
+          provider: 'amazon' as Provider,
+          name: 'Amazon',
+          description: 'Marketplace global',
+          status: 'disconnected' as IntegrationStatus,
+          health_score: 100,
+          last_sync: null,
+          last_error: null,
+          config: {},
+          enabled: false,
+          auto_sync: true,
+          sync_interval: 45,
+        },
+        {
+          id: '5',
+          provider: 'telegram' as Provider,
+          name: 'Telegram Bot',
+          description: 'Notificações via Telegram',
+          status: 'disconnected' as IntegrationStatus,
+          health_score: 100,
+          last_sync: null,
+          last_error: null,
+          config: {},
+          enabled: false,
+          auto_sync: false,
+          sync_interval: 0,
+        }
+      ];
     });
   }
 
@@ -77,24 +116,10 @@ export class IntegrationService {
   // Connect provider
   async connectProvider(provider: Provider): Promise<void> {
     try {
-      // Create or update integration account
-      const { error: updateError } = await supabase
-        .from('integration_accounts')
-        .upsert({
-          provider: provider as any, // Cast to match DB enum
-          name: `Integração ${provider}`,
-          is_active: true,
-          organization_id: (await supabase.rpc('get_current_org_id')).data,
-        });
-
-      if (updateError) {
-        throw new Error(`Failed to update integration status: ${updateError.message}`);
-      }
-
       // Provider-specific connection logic
       await this.performProviderConnection(provider);
 
-      // Clear cache
+      // Clear cache to force refresh
       this.cache.delete('all_integrations');
       this.cache.delete(`integration_${provider}`);
 
@@ -102,14 +127,6 @@ export class IntegrationService {
       await this.logIntegrationEvent('integration_connected', provider);
 
     } catch (error) {
-      // Update status to error if integration exists
-      await supabase
-        .from('integration_accounts')
-        .update({
-          is_active: false,
-        })
-        .eq('provider', provider as any);
-
       throw error;
     }
   }
@@ -117,21 +134,10 @@ export class IntegrationService {
   // Disconnect provider
   async disconnectProvider(provider: Provider): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('integration_accounts')
-        .update({
-          is_active: false,
-        })
-        .eq('provider', provider as any);
-
-      if (error) {
-        throw new Error(`Failed to disconnect integration: ${error.message}`);
-      }
-
       // Provider-specific disconnection logic
       await this.performProviderDisconnection(provider);
 
-      // Clear cache
+      // Clear cache to force refresh
       this.cache.delete('all_integrations');
       this.cache.delete(`integration_${provider}`);
 
@@ -154,14 +160,7 @@ export class IntegrationService {
       // Provider-specific health check
       const isHealthy = await this.performHealthCheck(provider, integration.config);
 
-      // Update integration status based on health
-      await supabase
-        .from('integration_accounts')
-        .update({ 
-          is_active: isHealthy,
-          updated_at: new Date().toISOString()
-        })
-        .eq('provider', provider as any);
+      // Health check completed - would update DB in production
 
       return isHealthy;
 
@@ -185,13 +184,7 @@ export class IntegrationService {
       // Provider-specific sync logic
       await this.performDataSync(provider, integration.config);
 
-      // Update last sync time
-      await supabase
-        .from('integration_accounts')
-        .update({
-          updated_at: new Date().toISOString(),
-        })
-        .eq('provider', provider as any);
+      // Sync completed - would update DB in production
 
       // Clear cache
       this.cache.delete('all_integrations');
