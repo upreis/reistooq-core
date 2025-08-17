@@ -1,5 +1,9 @@
 // 🎯 Core integration business logic service
 // Centralized integration operations with error handling
+// ⚠️ SECURITY NOTE: Never access integration_secrets directly from client code
+// All secret operations must be done through Edge Functions using:
+// - encrypt_integration_secret() 
+// - decrypt_integration_secret()
 
 import { Integration, Provider, IntegrationError, IntegrationStatus } from '../types/integrations.types';
 import { supabase } from '@/integrations/supabase/client';

@@ -1,5 +1,7 @@
 // 🎯 Configuration persistence service
 // Secure config storage with encryption and validation
+// ⚠️ SECURITY NOTE: Integration secrets are now encrypted and stored separately
+// Use Edge Functions for secret management with encrypt_integration_secret/decrypt_integration_secret
 
 import { ProviderConfig, Provider } from '../types/integrations.types';
 import { supabase } from '@/integrations/supabase/client';
