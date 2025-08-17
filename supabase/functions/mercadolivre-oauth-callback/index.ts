@@ -79,8 +79,8 @@ serve(async (req) => {
       ?.split('=')[1];
 
     if (!cookieState || cookieState !== state) {
-      console.error('OAuth state cookie invalid or missing', { cookiePresent: !!cookieState, queryState: state });
-      throw new Error('Invalid OAuth state (cookie)');
+      console.warn('OAuth state cookie missing or mismatch; proceeding with DB validation only', { cookiePresent: !!cookieState, queryState: state });
+      // Do not throw here; fall back to DB validation below to reduce third-party cookie issues
     }
 
     // Create service role client for server-side operations
