@@ -18,9 +18,6 @@ import { OAuthModal } from '../OAuthModal/OAuthModal';
 import { HealthMini } from '../HealthDashboard/HealthMini';
 import { AnnouncementManager } from '../../../announcements/components/AnnouncementManager';
 import { AdminDashboard } from '../../../admin/components/AdminDashboard';
-import { ProductTagsManager } from '../../../products/components/ProductTagsManager';
-import { CategoryManager } from '../../../products/components/CategoryManager';
-import { AdvancedAnalytics } from '../../../analytics/components/AdvancedAnalytics';
 
 export const IntegrationsHub: React.FC = () => {
   const {
@@ -121,7 +118,7 @@ export const IntegrationsHub: React.FC = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="integrations" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Integrações
@@ -133,15 +130,6 @@ export const IntegrationsHub: React.FC = () => {
           <TabsTrigger value="admin" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Administração
-          </TabsTrigger>
-          <TabsTrigger value="products" className="flex items-center gap-2">
-            Products
-          </TabsTrigger>
-          <TabsTrigger value="categories" className="flex items-center gap-2">
-            Categorias
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -191,20 +179,6 @@ export const IntegrationsHub: React.FC = () => {
           <AdminDashboard />
         </TabsContent>
 
-        {/* Products Tags Tab */}
-        <TabsContent value="products">
-          <ProductTagsManager />
-        </TabsContent>
-
-        {/* Categories Tab */}
-        <TabsContent value="categories">
-          <CategoryManager />
-        </TabsContent>
-
-        {/* Analytics Tab */}
-        <TabsContent value="analytics">
-          <AdvancedAnalytics />
-        </TabsContent>
       </Tabs>
 
       {/* Configuration Panel */}
