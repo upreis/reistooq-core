@@ -1985,15 +1985,6 @@ export type Database = {
           role_name: string
         }[]
       }
-      verify_view_security: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          assessment: string
-          is_security_definer: boolean
-          uses_security_definer_functions: boolean
-          view_name: string
-        }[]
-      }
     }
     Enums: {
       integration_provider: "tiny" | "shopee" | "mercadolivre"
