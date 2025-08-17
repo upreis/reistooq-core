@@ -37,7 +37,7 @@ serve(async (req) => {
 
     // ML OAuth URLs for Brazil
     const ML_AUTH_DOMAIN = 'https://auth.mercadolivre.com.br';
-    const ML_REDIRECT_URI = `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-oauth-callback`;
+    const ML_REDIRECT_URI = `${new URL(req.url).origin}/api/mercadolivre/oauth/callback`;
 
     // Generate secure state for CSRF protection
     const state = crypto.randomUUID();
@@ -47,7 +47,7 @@ serve(async (req) => {
       .from('oauth_states')
       .insert({
         id: state,
-        user_id: JSON.parse(atob(authHeader.replace('Bearer ', '').split('.')[1])).sub, // Decode JWT for user ID
+        user_id: authHeader.split(' ')[1], // Extract user ID from JWT
         code_verifier: state, // Using state as verifier for simplicity
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       });

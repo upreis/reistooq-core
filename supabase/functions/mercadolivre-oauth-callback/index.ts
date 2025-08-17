@@ -60,7 +60,7 @@ serve(async (req) => {
       throw new Error('ML credentials not configured');
     }
 
-    const ML_REDIRECT_URI = `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-oauth-callback`;
+    const ML_REDIRECT_URI = `${new URL(req.url).origin}/api/mercadolivre/oauth/callback`;
 
     // Exchange code for tokens - following ML specs
     const tokenResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
