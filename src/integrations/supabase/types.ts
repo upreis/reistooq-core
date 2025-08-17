@@ -1588,8 +1588,11 @@ export type Database = {
       historico_vendas_safe: {
         Row: {
           cidade: string | null
+          cliente_documento: string | null
+          cliente_nome: string | null
           codigo_barras: string | null
           codigo_rastreamento: string | null
+          cpf_cnpj: string | null
           created_at: string | null
           data_pedido: string | null
           data_prevista: string | null
