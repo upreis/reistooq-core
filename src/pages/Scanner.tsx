@@ -30,6 +30,15 @@ const Scanner = () => {
   const [activeView, setActiveView] = useState<'scanner' | 'search' | 'history'>('scanner');
   const [scannerInitFailed, setScannerInitFailed] = useState(false);
 
+  // Debug do ambiente
+  console.log('🎯 Scanner Page - Ambiente:', {
+    isSecureContext: window.isSecureContext,
+    hasMediaDevices: !!navigator.mediaDevices,
+    hasGetUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+    userAgent: navigator.userAgent,
+    protocol: window.location.protocol
+  });
+
   // Main scanner hook
   const scanner = useScannerCore({
     enableContinuousMode: true,
@@ -211,16 +220,52 @@ const Scanner = () => {
           <div className="lg:col-span-2">
             {activeView === 'scanner' && (
               <div className="space-y-6">
+                {/* Teste de Câmera Debug */}
+                <Card className="bg-yellow-50 border-yellow-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                      <span className="text-sm font-medium">Teste de Câmera</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        console.log('🎯 Testando acesso à câmera...');
+                        try {
+                          const stream = await navigator.mediaDevices.getUserMedia({ 
+                            video: { 
+                              facingMode: 'environment',
+                              width: { ideal: 1920 },
+                              height: { ideal: 1080 }
+                            } 
+                          });
+                          console.log('✅ Câmera acessada com sucesso!', stream);
+                          toast.success('Câmera funcionando!');
+                          stream.getTracks().forEach(track => track.stop());
+                        } catch (error) {
+                          console.error('❌ Erro ao acessar câmera:', error);
+                          toast.error(`Erro na câmera: ${error.message}`);
+                        }
+                      }}
+                    >
+                      Testar Câmera
+                    </Button>
+                  </CardContent>
+                </Card>
                 {/* Scanner V2 or Fallback */}
                 {FEATURES.SCANNER_V2 && !scannerInitFailed ? (
                   <ScannerV2
                     onProductFound={(product) => {
+                      console.log('✅ Product found via Scanner V2:', product);
                       setSelectedProduct(product);
                     }}
                     onError={(error) => {
-                      console.error('Scanner V2 error:', error);
+                      console.error('❌ Scanner V2 error:', error);
+                      toast.error(`Erro no scanner: ${error}`);
                       // If initialization fails, switch to fallback
-                      if (error.includes('inicializar') || error.includes('câmera')) {
+                      if (error.includes('inicializar') || error.includes('câmera') || error.includes('permission')) {
+                        console.log('🔄 Switching to fallback scanner');
                         setScannerInitFailed(true);
                         toast.warning('Usando modo alternativo do scanner');
                       }
@@ -229,10 +274,12 @@ const Scanner = () => {
                 ) : (
                   <ScannerFallback
                     onProductFound={(product) => {
+                      console.log('✅ Product found via Fallback:', product);
                       setSelectedProduct(product);
                     }}
                     onError={(error) => {
-                      console.error('Scanner fallback error:', error);
+                      console.error('❌ Scanner fallback error:', error);
+                      toast.error(`Erro no scanner alternativo: ${error}`);
                     }}
                   />
                 )}

@@ -24,7 +24,7 @@ export class ProfileService {
   static async getOrganizationProfiles() {
     try {
       const { data, error } = await supabase
-        .from('profiles_safe')
+        .from('profiles')
         .select('*')
         .order('nome_completo');
 

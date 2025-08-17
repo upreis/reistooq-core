@@ -45,7 +45,7 @@ export class SecureProfileService {
   static async getOrganizationProfiles() {
     try {
       const { data, error } = await supabase
-        .from('profiles_safe')
+        .from('profiles')
         .select('*')
         .order('nome_completo');
 
@@ -94,7 +94,7 @@ export class SecureProfileService {
   static async searchOrganizationProfiles(query: string) {
     try {
       const { data, error } = await supabase
-        .from('profiles_safe')
+        .from('profiles')
         .select('*')
         .or(`nome_completo.ilike.%${query}%,nome_exibicao.ilike.%${query}%,cargo.ilike.%${query}%`)
         .order('nome_completo');
