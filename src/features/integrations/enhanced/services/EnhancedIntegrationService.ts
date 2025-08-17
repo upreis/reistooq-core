@@ -112,6 +112,40 @@ export class EnhancedIntegrationService {
     }
   }
 
+  async disconnectProvider(provider: Provider): Promise<void> {
+    const startTime = Date.now();
+    const correlationId = this.generateCorrelationId();
+
+    try {
+      this.logger.info(`Disconnecting provider ${provider}`, { correlationId });
+
+      // 1. Update integration status
+      await this.updateIntegrationStatus(provider, 'disconnected');
+
+      // 2. Perform provider-specific disconnection
+      await this.performProviderDisconnection(provider);
+
+      // 3. Record metrics
+      this.metricsCollector.recordConnectionEvent(provider, 'success', Date.now() - startTime);
+
+      // 4. Clear cache
+      this.invalidateCache(['all_integrations', `integration_${provider}`]);
+
+      this.logger.info(`Provider ${provider} disconnected successfully`, { 
+        correlationId,
+        duration: Date.now() - startTime
+      });
+
+    } catch (error) {
+      this.metricsCollector.recordConnectionEvent(provider, 'error', Date.now() - startTime);
+      this.logger.error(`Failed to disconnect provider ${provider}`, { 
+        correlationId,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
+  }
+
   async testConnection(provider: Provider, config?: any): Promise<ConnectionTestResult> {
     const startTime = Date.now();
     
@@ -482,6 +516,19 @@ export class EnhancedIntegrationService {
         dry_run: options.dry_run || false
       }
     };
+  }
+
+  private async performProviderDisconnection(provider: Provider): Promise<void> {
+    switch (provider) {
+      case 'mercadolivre':
+      case 'shopee':
+        // Revoke OAuth tokens if needed
+        // This would be handled by the OAuth service
+        break;
+      default:
+        // Most providers don't need special disconnection logic
+        break;
+    }
   }
 
   private async storeProviderConfig(provider: Provider, config: any): Promise<void> {
