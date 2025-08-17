@@ -158,8 +158,6 @@ const Scanner = () => {
   return (
     <>
       <div className="p-6 space-y-6">
-        {/* PWA Install Prompt */}
-        <InstallPrompt />
         
         {/* Header */}
         <div className="flex items-center justify-between">
