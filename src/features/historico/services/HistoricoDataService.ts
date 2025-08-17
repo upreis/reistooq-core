@@ -166,9 +166,9 @@ export class HistoricoDataService {
 
       // Buscar opções de forma paralela
       const [statusData, cidadesData, ufsData] = await Promise.all([
-        supabase.from('historico_vendas').select('status').not('status', 'is', null),
-        supabase.from('historico_vendas').select('cidade').not('cidade', 'is', null),
-        supabase.from('historico_vendas').select('uf').not('uf', 'is', null)
+        supabase.from('historico_vendas_safe').select('status').not('status', 'is', null),
+        supabase.from('historico_vendas_safe').select('cidade').not('cidade', 'is', null),
+        supabase.from('historico_vendas_safe').select('uf').not('uf', 'is', null)
       ]);
 
       const options = {

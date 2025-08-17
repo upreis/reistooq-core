@@ -535,6 +535,7 @@ export type Database = {
           payload: Json | null
           provider: string
           refresh_token: string | null
+          secret_enc: string | null
           updated_at: string
         }
         Insert: {
@@ -552,6 +553,7 @@ export type Database = {
           payload?: Json | null
           provider: string
           refresh_token?: string | null
+          secret_enc?: string | null
           updated_at?: string
         }
         Update: {
@@ -569,6 +571,7 @@ export type Database = {
           payload?: Json | null
           provider?: string
           refresh_token?: string | null
+          secret_enc?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1582,7 +1585,59 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_safe: {
+        Row: {
+          avatar_url: string | null
+          cargo: string | null
+          configuracoes_notificacao: Json | null
+          created_at: string | null
+          departamento: string | null
+          id: string | null
+          nome_completo: string | null
+          nome_exibicao: string | null
+          onboarding_banner_dismissed: boolean | null
+          organizacao_id: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          cargo?: string | null
+          configuracoes_notificacao?: Json | null
+          created_at?: string | null
+          departamento?: string | null
+          id?: string | null
+          nome_completo?: string | null
+          nome_exibicao?: string | null
+          onboarding_banner_dismissed?: boolean | null
+          organizacao_id?: string | null
+          telefone?: never
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          cargo?: string | null
+          configuracoes_notificacao?: Json | null
+          created_at?: string | null
+          departamento?: string | null
+          id?: string | null
+          nome_completo?: string | null
+          nome_exibicao?: string | null
+          onboarding_banner_dismissed?: boolean | null
+          organizacao_id?: string | null
+          telefone?: never
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organizacao_id_fkey"
+            columns: ["organizacao_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation_secure: {
@@ -1651,6 +1706,28 @@ export type Database = {
           id: string
           token: string
         }[]
+      }
+      decrypt_integration_secret: {
+        Args: {
+          p_account_id: string
+          p_encryption_key: string
+          p_provider: string
+        }
+        Returns: Json
+      }
+      encrypt_integration_secret: {
+        Args: {
+          p_access_token?: string
+          p_account_id: string
+          p_client_id?: string
+          p_client_secret?: string
+          p_encryption_key?: string
+          p_expires_at?: string
+          p_payload?: Json
+          p_provider: string
+          p_refresh_token?: string
+        }
+        Returns: string
       }
       gerar_sku_automatico: {
         Args: { org_id: string; prefixo?: string }
@@ -1822,6 +1899,10 @@ export type Database = {
       }
       mask_name: {
         Args: { full_name: string }
+        Returns: string
+      }
+      mask_phone: {
+        Args: { txt: string }
         Returns: string
       }
       revoke_invitation: {

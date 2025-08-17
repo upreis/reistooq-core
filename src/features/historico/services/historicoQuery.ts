@@ -36,9 +36,10 @@ export async function fetchHistorico(params: FetchHistoricoParams): Promise<Fetc
     console.log('🔍 Fetching histórico:', params);
 
     // Query base (server-side, com count) - no additional probes
+    // Use safe view instead of direct table access due to RLS hardening
     let query = supabase
-      .from('historico_vendas')
-      .select('id, numero_pedido, sku_produto, descricao, quantidade, valor_unitario, valor_total, data_pedido, status, cliente_nome', { count: 'exact' });
+      .from('historico_vendas_safe')
+      .select('id, numero_pedido, sku_produto, descricao, quantidade, valor_unitario, valor_total, data_pedido, status', { count: 'exact' });
 
     // Aplicar filtros de busca
     if (search.trim()) {

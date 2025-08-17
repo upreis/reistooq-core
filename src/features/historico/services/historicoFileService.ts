@@ -502,10 +502,11 @@ export class HistoricoFileService {
     try {
       // Para inserção, usar inserção direta com lista explícita de colunas 
       // (a RPC insert_historico_vendas_safe ainda não existe)
-      const { data: insertData, error } = await supabase
-        .from('historico_vendas')
-        .insert(data)
-        .select('id, numero_pedido, sku_produto, status, data_pedido, valor_total');
+      // NOTE: Direct insertion not allowed due to RLS hardening
+      // Use RPC function instead for secure insertion
+      const { data: insertData, error } = await supabase.rpc('insert_historico_vendas_batch', {
+        records: data
+      });
 
       if (error) {
         throw error;
