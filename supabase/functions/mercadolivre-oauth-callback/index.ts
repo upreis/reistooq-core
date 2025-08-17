@@ -70,10 +70,23 @@ serve(async (req) => {
       });
     }
 
+    // Validate state using cookie first (CSRF protection)
+    const cookieHeader = req.headers.get('Cookie') || '';
+    const cookieState = cookieHeader
+      .split(';')
+      .map((c) => c.trim())
+      .find((c) => c.startsWith('ml_oauth_state='))
+      ?.split('=')[1];
+
+    if (!cookieState || cookieState !== state) {
+      console.error('OAuth state cookie invalid or missing', { cookiePresent: !!cookieState, queryState: state });
+      throw new Error('Invalid OAuth state (cookie)');
+    }
+
     // Create service role client for server-side operations
     const serviceClient = makeClient('Bearer ' + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
 
-    // Validate state to prevent CSRF attacks
+    // Validate state in database to prevent CSRF attacks (double check)
     const { data: storedState, error: stateError } = await serviceClient
       .from('oauth_states')
       .select('*')
@@ -287,7 +300,7 @@ serve(async (req) => {
       </body>
       </html>
     `, {
-      headers: { 'Content-Type': 'text/html' },
+      headers: { 'Content-Type': 'text/html', 'Set-Cookie': 'ml_oauth_state=; Path=/; SameSite=Lax; Secure; HttpOnly; Max-Age=0' },
     });
 
   } catch (error) {

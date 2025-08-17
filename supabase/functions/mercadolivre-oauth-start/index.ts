@@ -63,13 +63,15 @@ serve(async (req) => {
     const authUrl = new URL(`${ML_AUTH_DOMAIN}/authorization`);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('client_id', ML_CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', encodeURIComponent(ML_REDIRECT_URI));
+    // IMPORTANT: do NOT pre-encode, URLSearchParams will encode correctly
+    authUrl.searchParams.set('redirect_uri', ML_REDIRECT_URI);
     authUrl.searchParams.set('state', state);
 
     console.log('OAuth flow initiated:', {
       organization_id,
       state,
       redirect_uri: ML_REDIRECT_URI,
+      authorization_url: authUrl.toString(),
       timestamp: new Date().toISOString(),
     });
 
