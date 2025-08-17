@@ -21,6 +21,8 @@ export interface NavSection {
 export interface SidebarState {
   expanded: boolean;
   openGroups: Record<string, boolean>;
+  expandedGroups: Set<string>;
+  pinnedFlyouts: Map<string, { expiry: number }>;
   hoveredItem: string | null;
   activeRoute: string;
   searchQuery: string;
@@ -72,6 +74,12 @@ export interface SidebarContextValue {
     toggleExpanded: () => void;
     setExpanded: (expanded: boolean) => void;
     toggleGroup: (groupId: string) => void;
+    openGroup: (groupId: string) => void;
+    closeGroup: (groupId: string) => void;
+    isGroupOpen: (groupId: string) => boolean;
+    openFlyout: (itemId: string, options?: { pinned?: boolean; ttlMs?: number }) => void;
+    closeFlyout: (itemId: string) => void;
+    isFlyoutOpen: (itemId: string) => boolean;
     setHoveredItem: (itemId: string | null) => void;
     setSearchQuery: (query: string) => void;
   };

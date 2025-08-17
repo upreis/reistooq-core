@@ -12,6 +12,7 @@ interface SidebarFlyoutProps {
   onClose: () => void;
   isActive: (path: string) => boolean;
   pointerType: 'mouse' | 'touch' | 'pen';
+  isPinned?: boolean;
 }
 
 const getIconComponent = (iconName: string) => {
@@ -25,7 +26,8 @@ export function SidebarFlyout({
   items, 
   onClose, 
   isActive,
-  pointerType 
+  pointerType,
+  isPinned = false
 }: SidebarFlyoutProps) {
   const flyoutRef = useRef<HTMLDivElement>(null);
   const [isMouseInside, setIsMouseInside] = useState(false);
@@ -43,9 +45,11 @@ export function SidebarFlyout({
     };
 
     const handleMouseLeave = () => {
+      if (isPinned) return; // Don't close on mouse leave if pinned
+      
       setIsMouseInside(false);
       closeTimeoutRef.current = setTimeout(() => {
-        if (!isMouseInside) {
+        if (!isMouseInside && !isPinned) {
           onClose();
         }
       }, 200);
@@ -130,7 +134,8 @@ export function SidebarFlyout({
       className={cn(
         'fixed bg-[hsl(var(--popover))] border border-[hsl(var(--border))] rounded-lg shadow-lg',
         'min-w-[200px] py-2 animate-in fade-in-0 zoom-in-95 slide-in-from-left-2 duration-200',
-        'z-[70] focus:outline-none'
+        'z-[80] focus:outline-none',
+        isPinned && 'ring-2 ring-[hsl(var(--primary))] ring-opacity-50'
       )}
       style={{
         top: position.top,
@@ -182,5 +187,6 @@ export function SidebarFlyout({
     </div>
   );
 
-  return createPortal(flyout, document.body);
+  const portalRoot = document.getElementById('portal-root') || document.body;
+  return createPortal(flyout, portalRoot);
 }

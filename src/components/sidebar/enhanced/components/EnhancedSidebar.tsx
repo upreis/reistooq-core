@@ -129,10 +129,6 @@ const SidebarSection = memo(({
                 item={item}
                 isCollapsed={isCollapsed}
                 isMobile={isMobile}
-                isOpen={sidebarState.openGroups[item.id || item.label] || false}
-                hasActiveChild={hasActiveChild(item)}
-                isActive={isActive}
-                onToggle={() => actions.toggleGroup(item.id || item.label)}
                 pointerType={utils.getPointerType()}
                 calculateFlyoutPosition={utils.calculateFlyoutPosition}
               />

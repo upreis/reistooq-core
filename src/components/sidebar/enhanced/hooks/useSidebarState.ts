@@ -17,45 +17,36 @@ export function useSidebarState(config: Partial<SidebarConfig> = {}) {
   const location = useLocation();
 
   // Core state
-  const [state, setState] = useState<SidebarState>(() => ({
-    expanded: (() => {
-      try {
-        const stored = localStorage.getItem(finalConfig.persistKey);
-        return stored ? JSON.parse(stored) : true;
-      } catch {
-        return true;
-      }
-    })(),
-    openGroups: (() => {
-      try {
-        const stored = localStorage.getItem(`${finalConfig.persistKey}.groups`);
-        return stored ? JSON.parse(stored) : {};
-      } catch {
-        return {};
-      }
-    })(),
-    hoveredItem: null,
-    activeRoute: location.pathname,
-    searchQuery: ''
-  }));
+  const [state, setState] = useState<SidebarState>(() => {
+    const stored = localStorage.getItem(`${finalConfig.persistKey}.expanded`);
+    const storedGroups = localStorage.getItem(`${finalConfig.persistKey}.openGroups`);
+    const storedExpandedGroups = localStorage.getItem(`${finalConfig.persistKey}.expandedGroups`);
+    
+    return {
+      expanded: stored ? JSON.parse(stored) : true,
+      openGroups: storedGroups ? JSON.parse(storedGroups) : {},
+      expandedGroups: new Set(storedExpandedGroups ? JSON.parse(storedExpandedGroups) : []),
+      pinnedFlyouts: new Map(),
+      hoveredItem: null,
+      activeRoute: location.pathname,
+      searchQuery: ''
+    };
+  });
 
   // Persist expanded state
   useEffect(() => {
-    try {
-      localStorage.setItem(finalConfig.persistKey, JSON.stringify(state.expanded));
-    } catch {
-      // Fail silently
-    }
+    localStorage.setItem(`${finalConfig.persistKey}.expanded`, JSON.stringify(state.expanded));
   }, [state.expanded, finalConfig.persistKey]);
 
-  // Persist groups state
+  // Persist open groups
   useEffect(() => {
-    try {
-      localStorage.setItem(`${finalConfig.persistKey}.groups`, JSON.stringify(state.openGroups));
-    } catch {
-      // Fail silently
-    }
+    localStorage.setItem(`${finalConfig.persistKey}.openGroups`, JSON.stringify(state.openGroups));
   }, [state.openGroups, finalConfig.persistKey]);
+
+  // Persist expanded groups
+  useEffect(() => {
+    localStorage.setItem(`${finalConfig.persistKey}.expandedGroups`, JSON.stringify(Array.from(state.expandedGroups)));
+  }, [state.expandedGroups, finalConfig.persistKey]);
 
   // Update active route
   useEffect(() => {
@@ -67,11 +58,11 @@ export function useSidebarState(config: Partial<SidebarConfig> = {}) {
     toggleExpanded: () => {
       setState(prev => ({ ...prev, expanded: !prev.expanded }));
     },
-
+    
     setExpanded: (expanded: boolean) => {
       setState(prev => ({ ...prev, expanded }));
     },
-
+    
     toggleGroup: (groupId: string) => {
       setState(prev => ({
         ...prev,
@@ -82,14 +73,77 @@ export function useSidebarState(config: Partial<SidebarConfig> = {}) {
       }));
     },
 
+    openGroup: (groupId: string) => {
+      setState(prev => {
+        const newExpandedGroups = new Set(prev.expandedGroups);
+        newExpandedGroups.add(groupId);
+        return {
+          ...prev,
+          expandedGroups: newExpandedGroups,
+          openGroups: { ...prev.openGroups, [groupId]: true }
+        };
+      });
+    },
+
+    closeGroup: (groupId: string) => {
+      setState(prev => {
+        const newExpandedGroups = new Set(prev.expandedGroups);
+        newExpandedGroups.delete(groupId);
+        return {
+          ...prev,
+          expandedGroups: newExpandedGroups,
+          openGroups: { ...prev.openGroups, [groupId]: false }
+        };
+      });
+    },
+
+    isGroupOpen: (groupId: string) => {
+      return state.expandedGroups.has(groupId) || state.openGroups[groupId] || false;
+    },
+
+    openFlyout: (itemId: string, options?: { pinned?: boolean; ttlMs?: number }) => {
+      setState(prev => {
+        const newPinnedFlyouts = new Map(prev.pinnedFlyouts);
+        if (options?.pinned && options?.ttlMs) {
+          newPinnedFlyouts.set(itemId, { expiry: Date.now() + options.ttlMs });
+        }
+        return { ...prev, pinnedFlyouts: newPinnedFlyouts };
+      });
+    },
+
+    closeFlyout: (itemId: string) => {
+      setState(prev => {
+        const newPinnedFlyouts = new Map(prev.pinnedFlyouts);
+        newPinnedFlyouts.delete(itemId);
+        return { ...prev, pinnedFlyouts: newPinnedFlyouts };
+      });
+    },
+
+    isFlyoutOpen: (itemId: string) => {
+      const flyout = state.pinnedFlyouts.get(itemId);
+      if (!flyout) return false;
+      if (Date.now() > flyout.expiry) {
+        // Clean up expired flyout
+        setTimeout(() => {
+          setState(prev => {
+            const newPinnedFlyouts = new Map(prev.pinnedFlyouts);
+            newPinnedFlyouts.delete(itemId);
+            return { ...prev, pinnedFlyouts: newPinnedFlyouts };
+          });
+        }, 0);
+        return false;
+      }
+      return true;
+    },
+    
     setHoveredItem: (itemId: string | null) => {
       setState(prev => ({ ...prev, hoveredItem: itemId }));
     },
-
+    
     setSearchQuery: (query: string) => {
       setState(prev => ({ ...prev, searchQuery: query }));
     }
-  }), []);
+  }), [state.expandedGroups, state.openGroups, state.pinnedFlyouts]);
 
   // Utilities
   const utils = useMemo(() => ({
