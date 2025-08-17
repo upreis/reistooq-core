@@ -1471,6 +1471,30 @@ export type Database = {
         }
         Relationships: []
       }
+      tiny_v3_audit: {
+        Row: {
+          action: string
+          actor: string | null
+          at: string
+          detail: Json
+          id: number
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          at?: string
+          detail: Json
+          id?: number
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          at?: string
+          detail?: Json
+          id?: number
+        }
+        Relationships: []
+      }
       tiny_v3_credentials: {
         Row: {
           client_id: string
@@ -1999,6 +2023,23 @@ export type Database = {
       }
       set_integration_secret: {
         Args: { _key: string; _provider: string; _value: string }
+        Returns: undefined
+      }
+      tiny3_get_credentials: {
+        Args: { _org_id: string }
+        Returns: {
+          client_id: string
+          client_secret: string
+          redirect_uri: string
+        }[]
+      }
+      tiny3_set_credentials: {
+        Args: {
+          _client_id: string
+          _client_secret: string
+          _org_id: string
+          _redirect_uri?: string
+        }
         Returns: undefined
       }
       update_integration_secret_secure: {
