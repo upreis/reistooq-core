@@ -1643,19 +1643,14 @@ export type Database = {
           | { _limit?: number; _offset?: number; _search?: string }
           | { _search?: string }
         Returns: {
-          avatar_url: string | null
-          bio: string | null
-          cargo: string | null
-          configuracoes_notificacao: Json | null
+          cargo: string
           created_at: string
-          departamento: string | null
+          departamento: string
           id: string
-          nome_completo: string | null
-          nome_exibicao: string | null
-          onboarding_banner_dismissed: boolean
-          organizacao_id: string | null
-          telefone: string | null
-          updated_at: string
+          nome_completo: string
+          nome_exibicao: string
+          organizacao_id: string
+          telefone: string
         }[]
       }
       backfill_config_for_current_org: {
