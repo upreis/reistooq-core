@@ -37,18 +37,16 @@ export class SecureProfileService {
   }
 
   /**
-   * Get profile by ID (masked data via safe view)
+   * Get profile by ID (secure RPC with proper data masking)
    */
   static async getById(id: string) {
     try {
-      const { data, error } = await supabase
-        .from('profiles_safe')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await supabase.rpc('get_profiles_safe');
 
       if (error) throw error;
-      return data;
+      // Find the specific profile by ID
+      const profile = data?.find(p => p.id === id);
+      return profile || null;
     } catch (error) {
       console.error('Error fetching profile by ID:', error);
       throw error;
@@ -56,17 +54,15 @@ export class SecureProfileService {
   }
 
   /**
-   * Get organization profiles (masked view for privacy)
+   * Get organization profiles (secure RPC with proper data masking)
    */
   static async getOrganizationProfiles() {
     try {
-      const { data, error } = await supabase
-        .from('profiles_safe')
-        .select('*')
-        .order('nome_completo');
+      const { data, error } = await supabase.rpc('get_profiles_safe');
 
       if (error) throw error;
-      return data;
+      // Sort by nome_completo like the original
+      return data?.sort((a, b) => a.nome_completo?.localeCompare(b.nome_completo || '') || 0) || [];
     } catch (error) {
       console.error('Error fetching organization profiles:', error);
       throw error;
@@ -101,18 +97,22 @@ export class SecureProfileService {
   }
 
   /**
-   * Search organization profiles (returns masked data)
+   * Search organization profiles (secure RPC with proper data masking)
    */
   static async searchOrganizationProfiles(query: string) {
     try {
-      const { data, error } = await supabase
-        .from('profiles_safe')
-        .select('*')
-        .or(`nome_completo.ilike.%${query}%,nome_exibicao.ilike.%${query}%,cargo.ilike.%${query}%`)
-        .order('nome_completo');
+      const { data, error } = await supabase.rpc('get_profiles_safe');
 
       if (error) throw error;
-      return data;
+      
+      // Apply client-side search filtering
+      const filteredData = data?.filter(profile => 
+        profile.nome_completo?.toLowerCase().includes(query.toLowerCase()) ||
+        profile.nome_exibicao?.toLowerCase().includes(query.toLowerCase()) ||
+        profile.cargo?.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      return filteredData?.sort((a, b) => a.nome_completo?.localeCompare(b.nome_completo || '') || 0) || [];
     } catch (error) {
       console.error('Error searching profiles:', error);
       throw error;

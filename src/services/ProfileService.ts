@@ -33,14 +33,11 @@ export class ProfileService {
   }
 
   /**
-   * Get organization profiles (masked view for privacy)
+   * Get organization profiles (secure RPC with proper data masking)
    */
   static async getOrganizationProfiles() {
     try {
-      const { data, error } = await supabase
-        .from('profiles_safe')
-        .select('*')
-        .order('nome_completo');
+      const { data, error } = await supabase.rpc('get_profiles_safe');
 
       if (error) throw error;
       return data;
