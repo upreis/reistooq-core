@@ -22,6 +22,7 @@ export class ProfileService {
           onboarding_banner_dismissed,
           configuracoes_notificacao
         `)
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
       if (error) throw error;
@@ -66,6 +67,7 @@ export class ProfileService {
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .select()
         .single();
 

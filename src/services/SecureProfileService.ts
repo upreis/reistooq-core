@@ -26,6 +26,7 @@ export class SecureProfileService {
           onboarding_banner_dismissed,
           configuracoes_notificacao
         `)
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
       if (error) throw error;
@@ -87,6 +88,7 @@ export class SecureProfileService {
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
         .select()
         .single();
 
