@@ -1585,6 +1585,43 @@ export type Database = {
       }
     }
     Views: {
+      historico_vendas_safe: {
+        Row: {
+          cidade: string | null
+          codigo_barras: string | null
+          codigo_rastreamento: string | null
+          created_at: string | null
+          data_pedido: string | null
+          data_prevista: string | null
+          descricao: string | null
+          id: string | null
+          id_unico: string | null
+          ncm: string | null
+          numero_ecommerce: string | null
+          numero_pedido: string | null
+          numero_venda: string | null
+          obs: string | null
+          obs_interna: string | null
+          observacoes: string | null
+          pedido_id: string | null
+          qtd_kit: number | null
+          quantidade: number | null
+          situacao: string | null
+          sku_estoque: string | null
+          sku_kit: string | null
+          sku_produto: string | null
+          status: string | null
+          total_itens: number | null
+          uf: string | null
+          updated_at: string | null
+          url_rastreamento: string | null
+          valor_desconto: number | null
+          valor_frete: number | null
+          valor_total: number | null
+          valor_unitario: number | null
+        }
+        Relationships: []
+      }
       profiles_safe: {
         Row: {
           avatar_url: string | null
