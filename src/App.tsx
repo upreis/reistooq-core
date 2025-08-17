@@ -85,8 +85,7 @@ const App = () => (
                 <Route path="/scanner" element={<Scanner />} />
                 <Route path="/de-para" element={<DePara />} />
                 <Route path="/alertas" element={<Alertas />} />
-                <Route path="/configuracoes" element={<Configuracoes />} />
-                <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
+                <Route path="/configuracoes" element={<IntegracoesPage />} />
                 <Route path="/historico" element={<Historico />} />
 
                 {/* Demo Routes (protected) */}
