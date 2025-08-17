@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, AlertTriangle, Settings, Megaphone } from 'lucide-react';
+import { Loader2, AlertTriangle, Settings, Megaphone, Shield } from 'lucide-react';
 
 import { useIntegrationCore } from '../../hooks/useIntegrationCore';
 import { useOAuthFlow } from '../../hooks/useOAuthFlow';
@@ -17,6 +17,7 @@ import { ConfigurationPanel } from '../ConfigurationPanel/ConfigurationPanel';
 import { OAuthModal } from '../OAuthModal/OAuthModal';
 import { HealthMini } from '../HealthDashboard/HealthMini';
 import { AnnouncementManager } from '../../../announcements/components/AnnouncementManager';
+import { AdminDashboard } from '../../../admin/components/AdminDashboard';
 
 export const IntegrationsHub: React.FC = () => {
   const {
@@ -117,7 +118,7 @@ export const IntegrationsHub: React.FC = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="integrations" className="space-y-6">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Integrações
@@ -125,6 +126,10 @@ export const IntegrationsHub: React.FC = () => {
           <TabsTrigger value="announcements" className="flex items-center gap-2">
             <Megaphone className="h-4 w-4" />
             Anúncios
+          </TabsTrigger>
+          <TabsTrigger value="admin" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Administração
           </TabsTrigger>
         </TabsList>
 
@@ -167,6 +172,11 @@ export const IntegrationsHub: React.FC = () => {
         {/* Anúncios Tab */}
         <TabsContent value="announcements">
           <AnnouncementManager />
+        </TabsContent>
+
+        {/* Administração Tab */}
+        <TabsContent value="admin">
+          <AdminDashboard />
         </TabsContent>
       </Tabs>
 
