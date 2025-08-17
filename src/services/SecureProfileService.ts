@@ -54,15 +54,17 @@ export class SecureProfileService {
   }
 
   /**
-   * Get organization profiles (secure RPC with proper data masking)
+   * Get organization profiles (secure view with phone masking)
    */
   static async getOrganizationProfiles() {
     try {
-      const { data, error } = await supabase.rpc('get_profiles_safe');
+      const { data, error } = await supabase
+        .from('profiles_safe')
+        .select('*')
+        .order('nome_completo');
 
       if (error) throw error;
-      // Sort by nome_completo like the original
-      return data?.sort((a, b) => a.nome_completo?.localeCompare(b.nome_completo || '') || 0) || [];
+      return data || [];
     } catch (error) {
       console.error('Error fetching organization profiles:', error);
       throw error;
@@ -97,22 +99,18 @@ export class SecureProfileService {
   }
 
   /**
-   * Search organization profiles (secure RPC with proper data masking)
+   * Search organization profiles (secure view with filtering)
    */
   static async searchOrganizationProfiles(query: string) {
     try {
-      const { data, error } = await supabase.rpc('get_profiles_safe');
+      const { data, error } = await supabase
+        .from('profiles_safe')
+        .select('*')
+        .or(`nome_completo.ilike.%${query}%,nome_exibicao.ilike.%${query}%,cargo.ilike.%${query}%`)
+        .order('nome_completo');
 
       if (error) throw error;
-      
-      // Apply client-side search filtering
-      const filteredData = data?.filter(profile => 
-        profile.nome_completo?.toLowerCase().includes(query.toLowerCase()) ||
-        profile.nome_exibicao?.toLowerCase().includes(query.toLowerCase()) ||
-        profile.cargo?.toLowerCase().includes(query.toLowerCase())
-      );
-      
-      return filteredData?.sort((a, b) => a.nome_completo?.localeCompare(b.nome_completo || '') || 0) || [];
+      return data || [];
     } catch (error) {
       console.error('Error searching profiles:', error);
       throw error;

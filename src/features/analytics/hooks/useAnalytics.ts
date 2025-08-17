@@ -56,9 +56,9 @@ export const useAnalytics = (timeRange: string = '30d') => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      // Basic metrics from sales history
+      // Basic metrics from secure sales history view
       const { data: salesData } = await supabase
-        .from('historico_vendas')
+        .from('historico_vendas_safe')
         .select('valor_total, quantidade, data_pedido')
         .gte('data_pedido', startDate.toISOString().split('T')[0]);
 

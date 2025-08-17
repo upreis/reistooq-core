@@ -127,7 +127,7 @@ export class AnnouncementService {
 
   async getUsers(): Promise<Array<{id: string, name: string, email: string}>> {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('profiles_safe')
       .select('id, nome_completo, nome_exibicao')
       .order('nome_completo');
 
