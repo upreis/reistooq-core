@@ -1,0 +1,277 @@
+// 🎯 MercadoLibre Connection Component
+// UI for connecting and managing ML integration
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
+import { ShoppingCart, User, Calendar, ExternalLink, Unplug, RefreshCw } from 'lucide-react';
+import { mercadoLivreService, type MLAccount } from '@/services/MercadoLivreService';
+
+interface MercadoLivreConnectionProps {
+  onOrdersSync?: (accountId: string) => void;
+}
+
+export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
+  onOrdersSync,
+}) => {
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState<string | null>(null);
+  const [accounts, setAccounts] = useState<MLAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load connected accounts
+  useEffect(() => {
+    loadAccounts();
+  }, []);
+
+  const loadAccounts = async () => {
+    try {
+      setLoading(true);
+      const connectedAccounts = await mercadoLivreService.getConnectedAccounts();
+      setAccounts(connectedAccounts);
+    } catch (error) {
+      console.error('Failed to load ML accounts:', error);
+      toast.error('Erro ao carregar contas do MercadoLibre');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConnect = async () => {
+    try {
+      setIsConnecting(true);
+      const result = await mercadoLivreService.initiateOAuth();
+      
+      if (result.success && result.authorization_url) {
+        // Open ML authorization in popup
+        const popup = window.open(
+          result.authorization_url,
+          'ml_oauth',
+          'width=600,height=700,scrollbars=yes,resizable=yes'
+        );
+        
+        if (!popup) {
+          throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
+        }
+
+        // Monitor popup for completion
+        const checkClosed = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            setIsConnecting(false);
+            
+            // Reload accounts after potential connection
+            setTimeout(() => {
+              loadAccounts();
+              toast.success('MercadoLibre conectado com sucesso!');
+            }, 1000);
+          }
+        }, 1000);
+      } else {
+        throw new Error(result.error || 'Falha ao iniciar conexão OAuth');
+      }
+    } catch (error) {
+      console.error('ML connection failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Falha ao conectar MercadoLibre');
+      setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async (accountId: string) => {
+    try {
+      const success = await mercadoLivreService.disconnect(accountId);
+      if (success) {
+        toast.success('MercadoLibre desconectado com sucesso');
+        await loadAccounts();
+      } else {
+        toast.error('Falha ao desconectar MercadoLibre');
+      }
+    } catch (error) {
+      console.error('ML disconnect failed:', error);
+      toast.error('Erro ao desconectar MercadoLibre');
+    }
+  };
+
+  const handleSyncOrders = async (accountId: string) => {
+    try {
+      setIsSyncing(accountId);
+      
+      const result = await mercadoLivreService.syncOrders(accountId, {
+        since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Last 30 days
+      });
+
+      if (result.synced > 0) {
+        toast.success(`${result.synced} pedidos sincronizados com sucesso`);
+        onOrdersSync?.(accountId);
+      } else {
+        toast.info('Nenhum pedido novo encontrado');
+      }
+
+      if (result.errors.length > 0) {
+        console.warn('Sync errors:', result.errors);
+        toast.error(`${result.errors.length} erros durante a sincronização`);
+      }
+    } catch (error) {
+      console.error('Orders sync failed:', error);
+      toast.error('Erro ao sincronizar pedidos');
+    } finally {
+      setIsSyncing(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+            Carregando...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5" />
+          MercadoLibre
+        </CardTitle>
+        <CardDescription>
+          Conecte sua conta do MercadoLibre para sincronizar pedidos automaticamente
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {accounts.length === 0 ? (
+          <div className="text-center py-4">
+            <p className="text-muted-foreground mb-4">
+              Nenhuma conta do MercadoLibre conectada
+            </p>
+            <Button 
+              onClick={handleConnect} 
+              disabled={isConnecting}
+              className="w-full"
+            >
+              {isConnecting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Conectando...
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Conectar MercadoLibre
+                </>
+              )}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {accounts.map((account) => (
+              <div key={account.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="font-medium">{account.nickname}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {account.site_id}
+                    </Badge>
+                  </div>
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    Conectado
+                  </Badge>
+                </div>
+
+                {account.email && (
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {account.email}
+                  </p>
+                )}
+
+                {account.last_sync && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
+                    <Calendar className="h-3 w-3" />
+                    Última sincronização: {new Date(account.last_sync).toLocaleString('pt-BR')}
+                  </div>
+                )}
+
+                <Separator className="my-3" />
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSyncOrders(account.id)}
+                    disabled={isSyncing === account.id}
+                    className="flex-1"
+                  >
+                    {isSyncing === account.id ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Sincronizando...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Sincronizar Pedidos
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDisconnect(account.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Unplug className="h-4 w-4 mr-2" />
+                    Desconectar
+                  </Button>
+                </div>
+
+                {account.permalink && (
+                  <div className="mt-2">
+                    <a
+                      href={account.permalink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Ver perfil no MercadoLibre
+                    </a>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            <Button 
+              variant="outline"
+              onClick={handleConnect}
+              disabled={isConnecting}
+              className="w-full"
+            >
+              {isConnecting ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Conectando...
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Conectar Outra Conta
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

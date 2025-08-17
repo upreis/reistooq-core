@@ -84,8 +84,30 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = React.memo(({
     onConfigure(integration.provider);
   }, [onConfigure, integration.provider]);
 
-  const handleOAuth = useCallback(() => {
-    if (onOAuth) {
+  const handleOAuth = useCallback(async () => {
+    if (integration.provider === 'mercadolivre') {
+      try {
+        const { mercadoLivreService } = await import('@/services/MercadoLivreService');
+        const result = await mercadoLivreService.initiateOAuth();
+        
+        if (result.success && result.authorization_url) {
+          // Open ML authorization in popup
+          const popup = window.open(
+            result.authorization_url,
+            'ml_oauth',
+            'width=600,height=700,scrollbars=yes,resizable=yes'
+          );
+          
+          if (!popup) {
+            throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
+          }
+        } else {
+          throw new Error(result.error || 'Failed to start OAuth flow');
+        }
+      } catch (error) {
+        console.error('ML OAuth failed:', error);
+      }
+    } else if (onOAuth) {
       onOAuth(integration.provider);
     }
   }, [onOAuth, integration.provider]);

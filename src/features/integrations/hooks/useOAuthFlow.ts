@@ -5,6 +5,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { UseOAuthFlowReturn, Provider, OAuthState, OAuthConfig } from '../types/integrations.types';
 import { OAuthService } from '../services/OAuthService';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // OAuth configurations for each provider (public URLs only - credentials handled by Edge Functions)
 const getOAuthConfigs = (): Record<Provider, OAuthConfig | null> => {
@@ -13,13 +14,13 @@ const getOAuthConfigs = (): Record<Provider, OAuthConfig | null> => {
   
   return {
     mercadolivre: {
-      client_id: '', // Will be fetched from Edge Function
+      client_id: 'configured_via_edge_function', // Handled by Edge Function
       client_secret: '', // Handled securely by Edge Function
-      authorization_url: 'https://auth.mercadolibre.com.ar/authorization',
+      authorization_url: 'https://auth.mercadolivre.com.br/authorization',
       token_url: 'https://api.mercadolibre.com/oauth/token',
-      redirect_uri: `${baseUrl}/oauth/callback/mercadolivre`,
+      redirect_uri: `${baseUrl}/functions/v1/mercadolivre-oauth-callback`,
       scopes: ['read', 'write'],
-      use_pkce: true,
+      use_pkce: false, // ML doesn't use PKCE
     },
     shopee: {
       client_id: '', // Will be fetched from Edge Function
@@ -90,10 +91,52 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
       setIsAuthenticating(true);
       setAuthError(null);
       
-      // For now, OAuth credentials need to be configured via Edge Functions
-      // This prevents the process.env error and maintains security
-      if (!config.client_id) {
-        setAuthError(`${provider} não está configurado. Configure as credenciais OAuth nas Edge Functions.`);
+      // OAuth flow now handled by dedicated Edge Functions
+      try {
+        setIsAuthenticating(true);
+        setAuthError(null);
+
+        // Call OAuth start edge function
+        const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
+          body: {
+            organization_id: 'current', // Will be resolved by Edge Function
+            provider,
+          },
+        });
+
+        if (error || !data.success) {
+          throw new Error(data?.error || 'Failed to start OAuth flow');
+        }
+
+        // Open authorization URL
+        const popup = window.open(
+          data.authorization_url,
+          `oauth_${provider}`,
+          'width=600,height=700,scrollbars=yes,resizable=yes'
+        );
+
+        if (!popup) {
+          throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
+        }
+
+        // Monitor popup for completion
+        const checkClosed = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            setIsAuthenticating(false);
+            
+            // Check for success by looking for updated integration
+            toast({
+              title: "Autenticação concluída",
+              description: `${provider} foi conectado com sucesso`,
+            });
+          }
+        }, 1000);
+
+        return;
+      } catch (error) {
+        console.error(`OAuth initiation failed for ${provider}:`, error);
+        setAuthError(error instanceof Error ? error.message : 'Falha na autenticação');
         setIsAuthenticating(false);
         return;
       }
