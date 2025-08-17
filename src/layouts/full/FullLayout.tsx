@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useSidebarUI } from "@/context/SidebarUIContext";
-import Sidebar from "./vertical/sidebar/Sidebar";
+import { EnhancedSidebar, SidebarProvider } from "@/components/sidebar/enhanced";
+import { ENHANCED_NAV_ITEMS } from "@/config/enhanced-nav";
 import Header from "./vertical/header/Header";
 import { AnnouncementTicker } from "@/components/ui/AnnouncementTicker";
 import { AnnouncementProvider, useAnnouncements } from "@/contexts/AnnouncementContext";
@@ -27,7 +28,7 @@ const CollapsedReopenTab: React.FC = () => {
 };
 
 const InnerLayout = () => {
-  const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed } = useSidebarUI();
+  const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useSidebarUI();
   const { isHidden, isCollapsed } = useAnnouncements();
   const location = useLocation();
 
@@ -36,19 +37,16 @@ const InnerLayout = () => {
   // Fechar drawer mobile ao trocar de rota
   useEffect(() => { setIsMobileSidebarOpen(false); }, [location.pathname, setIsMobileSidebarOpen]);
 
-  // Fechar drawer mobile com ESC
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setIsMobileSidebarOpen(false); }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [setIsMobileSidebarOpen]);
-
   return (
-    <>
+    <SidebarProvider>
       <AnnouncementTicker />
       <div className={`flex min-h-screen w-full bg-background ${offset}`}>
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Enhanced Sidebar */}
+        <EnhancedSidebar 
+          navItems={ENHANCED_NAV_ITEMS}
+          isMobile={isMobileSidebarOpen}
+          onMobileClose={() => setIsMobileSidebarOpen(false)}
+        />
 
         {/* Overlay mobile - única instância */}
         {isMobileSidebarOpen && (
@@ -59,9 +57,6 @@ const InnerLayout = () => {
           />
         )}
 
-        {/* Aba fixa para reabrir quando colapsado (desktop) */}
-        {isSidebarCollapsed && <CollapsedReopenTab />}
-
         {/* Conteúdo */}
         <div className="flex-1 min-w-0 flex flex-col">
           <Header />
@@ -70,7 +65,7 @@ const InnerLayout = () => {
           </main>
         </div>
       </div>
-    </>
+    </SidebarProvider>
   );
 };
 
