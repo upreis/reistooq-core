@@ -1731,6 +1731,52 @@ export type Database = {
           valor_unitario: number
         }[]
       }
+      get_historico_vendas_safe: {
+        Args: {
+          _end?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _start?: string
+        }
+        Returns: {
+          cidade: string
+          cliente_documento: string
+          cliente_nome: string
+          codigo_barras: string
+          codigo_rastreamento: string
+          cpf_cnpj: string
+          created_at: string
+          data_pedido: string
+          data_prevista: string
+          descricao: string
+          id: string
+          id_unico: string
+          ncm: string
+          numero_ecommerce: string
+          numero_pedido: string
+          numero_venda: string
+          obs: string
+          obs_interna: string
+          observacoes: string
+          pedido_id: string
+          qtd_kit: number
+          quantidade: number
+          situacao: string
+          sku_estoque: string
+          sku_kit: string
+          sku_produto: string
+          status: string
+          total_itens: number
+          uf: string
+          updated_at: string
+          url_rastreamento: string
+          valor_desconto: number
+          valor_frete: number
+          valor_total: number
+          valor_unitario: number
+        }[]
+      }
       get_integration_secret_secure: {
         Args: {
           account_id: string
