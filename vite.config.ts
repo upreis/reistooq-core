@@ -30,14 +30,16 @@ export default defineConfig(({ mode }) => ({
     ],
   },
   optimizeDeps: {
-    include: [
+    exclude: [
       "react",
       "react-dom",
+      "react-router",
+      "react-router-dom",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
       "scheduler"
     ],
-    force: true, // Force re-optimization to clear cached deps
+    force: true,
   },
   build: {
     rollupOptions: {
