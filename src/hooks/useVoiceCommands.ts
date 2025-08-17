@@ -1,7 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useMobile } from '@/contexts/MobileContext';
-import '@/types/speech-recognition';
-import { useMobile } from '@/contexts/MobileContext';
 
 interface VoiceCommandsHook {
   isListening: boolean;
@@ -29,13 +27,13 @@ export const useVoiceCommands = (): VoiceCommandsHook => {
   const [commands, setCommands] = useState<VoiceCommand[]>([]);
   const { vibrate, showNotification } = useMobile();
   
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
+      const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognitionClass();
       
       if (recognitionRef.current) {
         recognitionRef.current.continuous = false;

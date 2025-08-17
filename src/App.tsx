@@ -48,8 +48,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <SidebarUIProvider>
-          <BrowserRouter>
+        <BrowserRouter>
             <Routes>
               {/* Rota pública de autenticação */}
               <Route path="/auth" element={<Auth />} />
@@ -116,10 +115,9 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-        </SidebarUIProvider>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
 );
 
 export default App;

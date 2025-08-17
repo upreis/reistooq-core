@@ -1,8 +1,8 @@
 import React from 'react';
-import { MobileExperienceDashboard } from '@/components/mobile/MobileExperienceDashboard';
+import { SimpleMobileExperience } from '@/components/mobile/SimpleMobileExperience';
 
 const MobileExperience: React.FC = () => {
-  return <MobileExperienceDashboard />;
+  return <SimpleMobileExperience />;
 };
 
 export default MobileExperience;

@@ -1,8 +1,8 @@
 {
-  "name": "REISTOQ - Scanner & Estoque",
-  "short_name": "REISTOQ Scanner",
-  "description": "Scanner de códigos de barras e gestão de estoque profissional",
-  "start_url": "/scanner",
+  "name": "REISTOQ - Sistema de Gestão",
+  "short_name": "REISTOQ",
+  "description": "Sistema completo de gestão de estoque e e-commerce",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#6366f1",
@@ -91,6 +91,13 @@
       "description": "Visualizar estoque",
       "url": "/estoque",
       "icons": [{ "src": "/icons/inventory-shortcut.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mobile Experience",
+      "short_name": "Mobile", 
+      "description": "Experiência mobile completa",
+      "url": "/mobile-experience",
+      "icons": [{ "src": "/icons/mobile-shortcut.png", "sizes": "96x96" }]
     }
   ]
 }
