@@ -1959,6 +1959,24 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_my_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          cargo: string | null
+          configuracoes_notificacao: Json | null
+          created_at: string
+          departamento: string | null
+          id: string
+          nome_completo: string | null
+          nome_exibicao: string | null
+          onboarding_banner_dismissed: boolean
+          organizacao_id: string | null
+          telefone: string | null
+          updated_at: string
+        }[]
+      }
       get_pedidos_masked: {
         Args: {
           _end?: string

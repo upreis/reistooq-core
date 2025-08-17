@@ -56,11 +56,15 @@ export const useAnalytics = (timeRange: string = '30d') => {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      // Basic metrics from secure sales history view
+      // Basic metrics from secure sales history RPC
       const { data: salesData } = await supabase
-        .from('historico_vendas_safe')
-        .select('valor_total, quantidade, data_pedido')
-        .gte('data_pedido', startDate.toISOString().split('T')[0]);
+        .rpc('get_historico_vendas_masked', {
+          _start: startDate.toISOString().split('T')[0],
+          _end: null,
+          _search: null,
+          _limit: 1000,
+          _offset: 0
+        });
 
       // Product metrics
       const { data: productsData } = await supabase

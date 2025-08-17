@@ -7,22 +7,7 @@ export class ProfileService {
   static async getCurrentProfile() {
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          nome_completo,
-          nome_exibicao,
-          telefone,
-          cargo,
-          departamento,
-          organizacao_id,
-          avatar_url,
-          created_at,
-          updated_at,
-          onboarding_banner_dismissed,
-          configuracoes_notificacao
-        `)
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .rpc('get_my_profile')
         .single();
 
       if (error) throw error;
@@ -64,10 +49,13 @@ export class ProfileService {
     configuracoes_notificacao: any;
   }>) {
     try {
+      const user = await supabase.auth.getUser();
+      if (!user.data.user?.id) throw new Error('User not authenticated');
+      
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('id', user.data.user.id)
         .select()
         .single();
 
