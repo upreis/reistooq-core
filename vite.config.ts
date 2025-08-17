@@ -37,5 +37,14 @@ export default defineConfig(({ mode }) => ({
       "react/jsx-dev-runtime",
       "scheduler"
     ],
+    force: true, // Force re-optimization to clear cached deps
   },
+  build: {
+    rollupOptions: {
+      external: (id) => {
+        // Don't externalize React in dev mode, but ensure it's properly resolved
+        return false;
+      }
+    }
+  }
 }));
