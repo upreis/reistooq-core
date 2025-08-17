@@ -1814,6 +1814,10 @@ export type Database = {
           valor_unitario: number
         }[]
       }
+      get_integration_secret: {
+        Args: { _key: string; _provider: string }
+        Returns: string
+      }
       get_integration_secret_secure: {
         Args: {
           account_id: string
@@ -1991,6 +1995,10 @@ export type Database = {
       }
       seed_admin_role_for_org: {
         Args: { _org_id: string; _user_id: string }
+        Returns: undefined
+      }
+      set_integration_secret: {
+        Args: { _key: string; _provider: string; _value: string }
         Returns: undefined
       }
       update_integration_secret_secure: {
