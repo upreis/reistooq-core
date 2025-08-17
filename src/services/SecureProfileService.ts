@@ -2,13 +2,13 @@ import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Secure Profile Service
- * Handles profile access with proper security boundaries
+ * Uses only safe views and proper security boundaries
  */
 export class SecureProfileService {
   /**
-   * Get current user's profile (unmasked - owner sees their own data)
+   * Get current user's profile (my own data - unmasked via RLS)
    */
-  static async getCurrentProfile() {
+  static async getMe() {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -31,14 +31,32 @@ export class SecureProfileService {
       if (error) throw error;
       return data;
     } catch (error) {
-      console.error('Error fetching current profile:', error);
+      console.error('Error fetching own profile:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get profile by ID (masked data via safe view)
+   */
+  static async getById(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles_safe')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching profile by ID:', error);
       throw error;
     }
   }
 
   /**
    * Get organization profiles (masked view for privacy)
-   * Phone numbers are masked for other users
    */
   static async getOrganizationProfiles() {
     try {
@@ -56,9 +74,9 @@ export class SecureProfileService {
   }
 
   /**
-   * Update current user's profile
+   * Update display/personal data (own profile only)
    */
-  static async updateCurrentProfile(updates: Partial<{
+  static async updateDisplay(updates: Partial<{
     nome_completo: string;
     nome_exibicao: string;
     telefone: string;
