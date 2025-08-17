@@ -104,6 +104,48 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          organization_id: string
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id: string
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          organization_id?: string
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       categorias_produtos: {
         Row: {
           ativo: boolean | null
@@ -1888,6 +1930,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_user_organization_id: {
+        Args: { target_user_id: string }
+        Returns: string
+      }
       get_user_permissions: {
         Args: Record<PropertyKey, never>
         Returns: string[]
@@ -1902,6 +1948,16 @@ export type Database = {
       }
       hv_delete_many: {
         Args: { _ids: string[] }
+        Returns: undefined
+      }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_new_values?: Json
+          p_old_values?: Json
+          p_resource_id?: string
+          p_resource_type: string
+        }
         Returns: undefined
       }
       mask_document: {
