@@ -212,31 +212,13 @@ export class AdminService {
   }
 
   async updateUser(id: string, data: Partial<UserProfile>): Promise<UserProfile> {
-    const { data: user, error } = await supabase
-      .from('profiles')
-      .update(data)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating user:', error);
-      throw new Error(`Failed to update user: ${error.message}`);
-    }
-
-    return user as UserProfile;
+    // Admin users can update profiles through service role backend only
+    throw new Error('User updates must be performed through secure backend operations');
   }
 
   async deleteUser(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting user:', error);
-      throw new Error(`Failed to delete user: ${error.message}`);
-    }
+    // Admin users can delete profiles through service role backend only
+    throw new Error('User deletions must be performed through secure backend operations');
   }
 
   async assignRole(userId: string, roleId: string): Promise<void> {
