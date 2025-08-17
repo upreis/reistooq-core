@@ -7,29 +7,34 @@ import { OAuthService } from '../services/OAuthService';
 import { useToast } from '@/hooks/use-toast';
 
 // OAuth configurations for each provider (public URLs only - credentials handled by Edge Functions)
-const OAUTH_CONFIGS: Record<Provider, OAuthConfig | null> = {
-  mercadolivre: {
-    client_id: '', // Will be fetched from Edge Function
-    client_secret: '', // Handled securely by Edge Function
-    authorization_url: 'https://auth.mercadolibre.com.ar/authorization',
-    token_url: 'https://api.mercadolibre.com/oauth/token',
-    redirect_uri: `${window.location.origin}/oauth/callback/mercadolivre`,
-    scopes: ['read', 'write'],
-    use_pkce: true,
-  },
-  shopee: {
-    client_id: '', // Will be fetched from Edge Function
-    client_secret: '', // Handled securely by Edge Function
-    authorization_url: 'https://partner.shopeemobile.com/api/v2/shop/auth_partner',
-    token_url: 'https://partner.shopeemobile.com/api/v2/auth/token/get',
-    redirect_uri: `${window.location.origin}/oauth/callback/shopee`,
-    scopes: ['item.base', 'item.fullinfo', 'order.base'],
-    use_pkce: false,
-  },
-  // Providers without OAuth
-  tiny: null,
-  amazon: null,
-  telegram: null,
+const getOAuthConfigs = (): Record<Provider, OAuthConfig | null> => {
+  // Safely get the origin - this ensures no process references are used
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8080';
+  
+  return {
+    mercadolivre: {
+      client_id: '', // Will be fetched from Edge Function
+      client_secret: '', // Handled securely by Edge Function
+      authorization_url: 'https://auth.mercadolibre.com.ar/authorization',
+      token_url: 'https://api.mercadolibre.com/oauth/token',
+      redirect_uri: `${baseUrl}/oauth/callback/mercadolivre`,
+      scopes: ['read', 'write'],
+      use_pkce: true,
+    },
+    shopee: {
+      client_id: '', // Will be fetched from Edge Function
+      client_secret: '', // Handled securely by Edge Function
+      authorization_url: 'https://partner.shopeemobile.com/api/v2/shop/auth_partner',
+      token_url: 'https://partner.shopeemobile.com/api/v2/auth/token/get',
+      redirect_uri: `${baseUrl}/oauth/callback/shopee`,
+      scopes: ['item.base', 'item.fullinfo', 'order.base'],
+      use_pkce: false,
+    },
+    // Providers without OAuth
+    tiny: null,
+    amazon: null,
+    telegram: null,
+  };
 };
 
 export const useOAuthFlow = (): UseOAuthFlowReturn => {
@@ -74,6 +79,7 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
 
   // Initiate OAuth flow
   const initiateFlow = useCallback(async (provider: Provider) => {
+    const OAUTH_CONFIGS = getOAuthConfigs();
     const config = OAUTH_CONFIGS[provider];
     if (!config) {
       setAuthError(`OAuth não disponível para ${provider}`);
@@ -162,6 +168,7 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
 
   // Handle OAuth callback
   const handleCallback = useCallback(async (provider: Provider, params: URLSearchParams) => {
+    const OAUTH_CONFIGS = getOAuthConfigs();
     const config = OAUTH_CONFIGS[provider];
     const storedState = oauthStates[provider];
 
