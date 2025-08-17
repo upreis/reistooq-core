@@ -80,9 +80,7 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
 
   // Initiate OAuth flow
   const initiateFlow = useCallback(async (provider: Provider) => {
-    const OAUTH_CONFIGS = getOAuthConfigs();
-    const config = OAUTH_CONFIGS[provider];
-    if (!config) {
+    if (provider !== 'mercadolivre') {
       setAuthError(`OAuth não disponível para ${provider}`);
       return;
     }
@@ -90,124 +88,109 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
     try {
       setIsAuthenticating(true);
       setAuthError(null);
-      
-      // OAuth flow now handled by dedicated Edge Functions
-      try {
-        setIsAuthenticating(true);
-        setAuthError(null);
 
-        // Call OAuth start edge function
-        const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
-          body: {
-            organization_id: 'current', // Will be resolved by Edge Function
-            provider,
-          },
-        });
+      console.log('Iniciando fluxo OAuth para MercadoLibre...');
 
-        if (error || !data.success) {
-          throw new Error(data?.error || 'Failed to start OAuth flow');
-        }
+      // Call OAuth start edge function
+      const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
+        body: {
+          organization_id: 'current', // Will be resolved by Edge Function
+        },
+      });
 
-        // Open authorization URL
-        const popup = window.open(
-          data.authorization_url,
-          `oauth_${provider}`,
-          'width=600,height=700,scrollbars=yes,resizable=yes'
-        );
-
-        if (!popup) {
-          throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
-        }
-
-        // Monitor popup for completion
-        const checkClosed = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkClosed);
-            setIsAuthenticating(false);
-            
-            // Check for success by looking for updated integration
-            toast({
-              title: "Autenticação concluída",
-              description: `${provider} foi conectado com sucesso`,
-            });
-          }
-        }, 1000);
-
-        return;
-      } catch (error) {
-        console.error(`OAuth initiation failed for ${provider}:`, error);
-        setAuthError(error instanceof Error ? error.message : 'Falha na autenticação');
-        setIsAuthenticating(false);
-        return;
+      if (error) {
+        console.error('Edge Function error:', error);
+        throw new Error(`Erro na função: ${error.message}`);
       }
 
-      const state = generateRandomString();
-      const codeVerifier = config.use_pkce ? generateRandomString(128) : undefined;
-      const codeChallenge = config.use_pkce && codeVerifier 
-        ? await generateCodeChallenge(codeVerifier) 
-        : undefined;
-
-      // Store OAuth state
-      const oauthState: OAuthState = {
-        provider,
-        state,
-        code_verifier: codeVerifier,
-        redirect_uri: config.redirect_uri,
-        expires_at: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
-        scopes: config.scopes,
-      };
-
-      setOAuthStates(prev => ({ ...prev, [provider]: oauthState }));
-
-      // Build authorization URL
-      const authUrl = new URL(config.authorization_url);
-      authUrl.searchParams.set('client_id', config.client_id);
-      authUrl.searchParams.set('response_type', 'code');
-      authUrl.searchParams.set('redirect_uri', config.redirect_uri);
-      authUrl.searchParams.set('scope', config.scopes.join(' '));
-      authUrl.searchParams.set('state', state);
-
-      if (config.use_pkce && codeChallenge) {
-        authUrl.searchParams.set('code_challenge', codeChallenge);
-        authUrl.searchParams.set('code_challenge_method', 'S256');
+      if (!data || !data.success) {
+        console.error('OAuth start failed:', data);
+        throw new Error(data?.error || 'Failed to start OAuth flow');
       }
 
-      // Open OAuth window
+      console.log('Authorization URL gerada:', data.authorization_url);
+
+      // Open authorization URL in popup
       const popup = window.open(
-        authUrl.toString(),
+        data.authorization_url,
         `oauth_${provider}`,
-        'width=500,height=600,scrollbars=yes,resizable=yes'
+        'width=600,height=700,scrollbars=yes,resizable=yes,location=yes'
       );
 
       if (!popup) {
         throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
       }
 
-      // Monitor popup
+      let completed = false;
+
+      // Monitor popup for completion or manual close
       const checkClosed = setInterval(() => {
-        if (popup.closed) {
+        try {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            if (!completed) {
+              setIsAuthenticating(false);
+              console.log('Popup fechado pelo usuário');
+              // Don't show error if user manually closed
+            }
+          }
+        } catch (e) {
+          // Popup might be on different domain, ignore access errors
+        }
+      }, 500);
+
+      // Set a timeout for the auth process
+      const authTimeout = setTimeout(() => {
+        if (!completed && !popup.closed) {
+          popup.close();
           clearInterval(checkClosed);
           setIsAuthenticating(false);
-          
-          // Check if we got the callback
-          const currentState = oauthStates[provider];
-          if (currentState) {
-            setAuthError('Autenticação cancelada ou falhou');
-          }
+          setAuthError('Timeout na autenticação. Tente novamente.');
         }
-      }, 1000);
+      }, 300000); // 5 minutes timeout
+
+      // Listen for successful completion via window messaging or storage
+      const checkForCompletion = setInterval(async () => {
+        try {
+          // Check if integration was created successfully
+          const { data: accounts } = await supabase
+            .from('integration_accounts')
+            .select('id')
+            .eq('provider', 'mercadolivre')
+            .eq('is_active', true);
+
+          if (accounts && accounts.length > 0) {
+            completed = true;
+            clearInterval(checkClosed);
+            clearInterval(checkForCompletion);
+            clearTimeout(authTimeout);
+            setIsAuthenticating(false);
+            
+            if (!popup.closed) {
+              popup.close();
+            }
+
+            toast({
+              title: "✅ Autenticação concluída",
+              description: "MercadoLibre foi conectado com sucesso!",
+            });
+          }
+        } catch (e) {
+          // Ignore errors during check
+        }
+      }, 2000);
 
       toast({
-        title: "Abrindo autenticação",
-        description: `Redirecionando para ${provider}...`,
+        title: "🔐 Abrindo autenticação",
+        description: "Redirecionando para MercadoLibre...",
       });
 
     } catch (error) {
-      console.error(`OAuth initiation failed for ${provider}:`, error);
+      console.error('OAuth initiation failed:', error);
       setAuthError(error instanceof Error ? error.message : 'Falha na autenticação');
       setIsAuthenticating(false);
     }
-  }, [oauthStates, generateRandomString, generateCodeChallenge, toast]);
+  }, [toast]);
 
   // Handle OAuth callback
   const handleCallback = useCallback(async (provider: Provider, params: URLSearchParams) => {
@@ -319,20 +302,44 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
     return () => clearInterval(cleanup);
   }, []);
 
-  // Listen for OAuth callback messages
+  // Listen for OAuth callback messages from popup
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      // Allow messages from the same origin or from our callback domain
+      const allowedOrigins = [
+        window.location.origin,
+        'https://tdjyfqnxvjgossuncpwm.supabase.co'
+      ];
+      
+      if (!allowedOrigins.includes(event.origin)) return;
 
-      const { type, provider, params } = event.data;
-      if (type === 'oauth_callback' && provider && params) {
-        handleCallback(provider, new URLSearchParams(params));
+      const { type, provider, user, error } = event.data;
+      
+      if (type === 'oauth_success' && provider === 'mercadolivre') {
+        console.log('OAuth success received:', user);
+        setIsAuthenticating(false);
+        setAuthError(null);
+        
+        toast({
+          title: "✅ Conectado com sucesso!",
+          description: `Conta MercadoLibre ${user.nickname} foi conectada.`,
+        });
+      } else if (type === 'oauth_error' && provider === 'mercadolivre') {
+        console.error('OAuth error received:', error);
+        setIsAuthenticating(false);
+        setAuthError(error);
+        
+        toast({
+          title: "❌ Erro na autenticação",
+          description: error,
+          variant: "destructive",
+        });
       }
     };
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [handleCallback]);
+  }, [toast]);
 
   return {
     isAuthenticating,

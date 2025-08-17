@@ -19,12 +19,6 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Authorization header required');
-    }
-
-    const client = makeClient(authHeader);
     const url = new URL(req.url);
     
     // Extract callback parameters
@@ -37,11 +31,36 @@ serve(async (req) => {
     }
 
     if (!code || !state) {
-      throw new Error('Missing required OAuth parameters');
+      // Return error page for missing parameters
+      return new Response(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>OAuth Error</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
+            .error { color: #dc3545; }
+          </style>
+        </head>
+        <body>
+          <h1 class="error">Erro de Autenticação</h1>
+          <p>Parâmetros OAuth ausentes.</p>
+          <script>
+            setTimeout(() => window.close(), 3000);
+          </script>
+        </body>
+        </html>
+      `, {
+        headers: { 'Content-Type': 'text/html' },
+        status: 400,
+      });
     }
 
+    // Create service role client for server-side operations
+    const serviceClient = makeClient('Bearer ' + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
+
     // Validate state to prevent CSRF attacks
-    const { data: storedState, error: stateError } = await client
+    const { data: storedState, error: stateError } = await serviceClient
       .from('oauth_states')
       .select('*')
       .eq('id', state)
@@ -108,7 +127,7 @@ serve(async (req) => {
       : new Date(Date.now() + 6 * 60 * 60 * 1000); // Default 6 hours
 
     // Get organization ID from current user
-    const { data: profile } = await client
+    const { data: profile } = await serviceClient
       .from('profiles')
       .select('organizacao_id')
       .eq('id', storedState.user_id)
@@ -119,7 +138,7 @@ serve(async (req) => {
     }
 
     // Store/update integration account
-    const { data: account, error: accountError } = await client
+    const { data: account, error: accountError } = await serviceClient
       .from('integration_accounts')
       .upsert({
         organization_id: profile.organizacao_id,
@@ -147,7 +166,7 @@ serve(async (req) => {
     }
 
     // Store tokens securely using existing integration_secrets table
-    const { error: secretError } = await client.rpc('encrypt_integration_secret', {
+    const { error: secretError } = await serviceClient.rpc('encrypt_integration_secret', {
       p_account_id: account.id,
       p_provider: 'mercadolivre',
       p_client_id: ML_CLIENT_ID,
@@ -170,7 +189,7 @@ serve(async (req) => {
     }
 
     // Clean up OAuth state
-    await client
+    await serviceClient
       .from('oauth_states')
       .delete()
       .eq('id', state);
@@ -183,28 +202,132 @@ serve(async (req) => {
       timestamp: new Date().toISOString(),
     });
 
-    // Return success response
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'MercadoLibre connected successfully',
-      data: {
-        user_id: userData.id,
-        nickname: userData.nickname,
-        site_id: userData.site_id,
-        account_id: account.id,
-      },
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Return success page that closes the popup
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Autenticação Concluída</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            padding: 40px; 
+            text-align: center; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+          }
+          .success { 
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+          }
+          .icon { font-size: 3em; margin-bottom: 20px; }
+          h1 { margin: 0 0 10px 0; }
+          p { margin: 5px 0; opacity: 0.9; }
+        </style>
+      </head>
+      <body>
+        <div class="success">
+          <div class="icon">✅</div>
+          <h1>Conectado com Sucesso!</h1>
+          <p>Sua conta MercadoLibre foi conectada.</p>
+          <p>Fechando janela...</p>
+        </div>
+        <script>
+          // Notify parent window of success
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'oauth_success',
+              provider: 'mercadolivre',
+              user: {
+                id: ${userData.id},
+                nickname: '${userData.nickname}',
+                site_id: '${userData.site_id}'
+              }
+            }, '*');
+          }
+          
+          // Close popup after a short delay
+          setTimeout(() => {
+            window.close();
+          }, 2000);
+        </script>
+      </body>
+      </html>
+    `, {
+      headers: { 'Content-Type': 'text/html' },
     });
 
   } catch (error) {
     console.error('OAuth callback error:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: error.message || 'OAuth callback failed',
-    }), {
+    
+    // Return error page
+    return new Response(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Erro de Autenticação</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            padding: 40px; 
+            text-align: center; 
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+          }
+          .error { 
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+          }
+          .icon { font-size: 3em; margin-bottom: 20px; }
+          h1 { margin: 0 0 10px 0; }
+          p { margin: 5px 0; opacity: 0.9; }
+        </style>
+      </head>
+      <body>
+        <div class="error">
+          <div class="icon">❌</div>
+          <h1>Erro na Autenticação</h1>
+          <p>${error.message || 'Falha na autenticação'}</p>
+          <p>Fechando janela...</p>
+        </div>
+        <script>
+          // Notify parent window of error
+          if (window.opener) {
+            window.opener.postMessage({
+              type: 'oauth_error',
+              provider: 'mercadolivre',
+              error: '${error.message || 'Falha na autenticação'}'
+            }, '*');
+          }
+          
+          // Close popup after a delay
+          setTimeout(() => {
+            window.close();
+          }, 3000);
+        </script>
+      </body>
+      </html>
+    `, {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/html' },
     });
   }
 });
