@@ -1,8 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import FullLayout from "@/layouts/full/FullLayout";
@@ -39,84 +38,78 @@ import Charts from "./pages/Charts";
 import SolarIcons from "./pages/SolarIcons";
 import MobileExperience from "./pages/MobileExperience";
 
-const queryClient = new QueryClient();
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-            <Routes>
-              {/* Rota pública de autenticação */}
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Todas as outras rotas são protegidas com novo layout */}
-              <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
-                <Route path="/" element={<Index />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/ecommerce" element={<ECommerce />} />
-                <Route path="/crm" element={<CRM />} />
-                
-                {/* eCommerce App Routes */}
-                <Route path="/apps/ecommerce/shop" element={<Shop />} />
-                <Route path="/apps/ecommerce/detail/:id" element={<ProductDetail />} />
-                <Route path="/apps/ecommerce/list" element={<ProductList />} />
-                <Route path="/apps/ecommerce/checkout" element={<Checkout />} />
-                <Route path="/apps/ecommerce/addproduct" element={<AddProduct />} />
-                <Route path="/apps/ecommerce/editproduct" element={<EditProduct />} />
-                
-                {/* User Profile App Routes */}
-                <Route path="/apps/user-profile/profile" element={<UserProfile />} />
-                <Route path="/apps/user-profile/followers" element={<UserProfile />} />
-                <Route path="/apps/user-profile/friends" element={<UserProfile />} />
-                <Route path="/apps/user-profile/gallery" element={<UserProfile />} />
-                
-                {/* Other App Routes */}
-                <Route path="/apps/calendar" element={<Calendar />} />
-                <Route path="/apps/notes" element={<Notes />} />
-                <Route path="/apps/chats" element={<Chats />} />
-                
-                {/* Custom Business Routes */}
-                <Route path="/estoque" element={<Estoque />} />
-                <Route path="/pedidos" element={<Pedidos />} />
-                <Route path="/scanner" element={<Scanner />} />
-                <Route path="/de-para" element={<DePara />} />
-                <Route path="/alertas" element={<Alertas />} />
-                <Route path="/configuracoes" element={<IntegracoesPage />} />
-                {/* Redirect legacy nested path to main settings */}
-                  <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
-                  <Route path="/mobile-experience" element={<MobileExperience />} />
-                <Route path="/historico" element={<Historico />} />
+  <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <Routes>
+        {/* Rota pública de autenticação */}
+        <Route path="/auth" element={<Auth />} />
+        
+        {/* Todas as outras rotas são protegidas com novo layout */}
+        <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
+          <Route path="/" element={<Index />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/ecommerce" element={<ECommerce />} />
+          <Route path="/crm" element={<CRM />} />
+          
+          {/* eCommerce App Routes */}
+          <Route path="/apps/ecommerce/shop" element={<Shop />} />
+          <Route path="/apps/ecommerce/detail/:id" element={<ProductDetail />} />
+          <Route path="/apps/ecommerce/list" element={<ProductList />} />
+          <Route path="/apps/ecommerce/checkout" element={<Checkout />} />
+          <Route path="/apps/ecommerce/addproduct" element={<AddProduct />} />
+          <Route path="/apps/ecommerce/editproduct" element={<EditProduct />} />
+          
+          {/* User Profile App Routes */}
+          <Route path="/apps/user-profile/profile" element={<UserProfile />} />
+          <Route path="/apps/user-profile/followers" element={<UserProfile />} />
+          <Route path="/apps/user-profile/friends" element={<UserProfile />} />
+          <Route path="/apps/user-profile/gallery" element={<UserProfile />} />
+          
+          {/* Other App Routes */}
+          <Route path="/apps/calendar" element={<Calendar />} />
+          <Route path="/apps/notes" element={<Notes />} />
+          <Route path="/apps/chats" element={<Chats />} />
+          
+          {/* Custom Business Routes */}
+          <Route path="/estoque" element={<Estoque />} />
+          <Route path="/pedidos" element={<Pedidos />} />
+          <Route path="/scanner" element={<Scanner />} />
+          <Route path="/de-para" element={<DePara />} />
+          <Route path="/alertas" element={<Alertas />} />
+          <Route path="/configuracoes" element={<IntegracoesPage />} />
+          {/* Redirect legacy nested path to main settings */}
+          <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
+          <Route path="/mobile-experience" element={<MobileExperience />} />
+          <Route path="/historico" element={<Historico />} />
 
-                {/* Demo Routes (protected) */}
-                <Route path="/_demo/faq" element={<FAQ />} />
-                <Route path="/_demo/pricing" element={<Pricing />} />
-                <Route path="/_demo/account-settings" element={<AccountSettings />} />
-                <Route path="/_demo/cards" element={<Cards />} />
-                <Route path="/_demo/banners" element={<Banners />} />
-                <Route path="/_demo/charts" element={<Charts />} />
-                <Route path="/_demo/icons" element={<SolarIcons />} />
+          {/* Demo Routes (protected) */}
+          <Route path="/_demo/faq" element={<FAQ />} />
+          <Route path="/_demo/pricing" element={<Pricing />} />
+          <Route path="/_demo/account-settings" element={<AccountSettings />} />
+          <Route path="/_demo/cards" element={<Cards />} />
+          <Route path="/_demo/banners" element={<Banners />} />
+          <Route path="/_demo/charts" element={<Charts />} />
+          <Route path="/_demo/icons" element={<SolarIcons />} />
 
-                {/* Legacy redirects (protected) */}
-                <Route path="/dashboards/crm" element={<CRM />} />
-                <Route path="/theme-pages/faq" element={<FAQ />} />
-                <Route path="/theme-pages/pricing" element={<Pricing />} />
-                <Route path="/theme-pages/account-settings" element={<AccountSettings />} />
-                <Route path="/widgets/cards" element={<Cards />} />
-                <Route path="/widgets/banners" element={<Banners />} />
-                <Route path="/widgets/charts" element={<Charts />} />
-                <Route path="/icons/solar" element={<SolarIcons />} />
-              </Route>
-              
-              {/* Catch all */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+          {/* Legacy redirects (protected) */}
+          <Route path="/dashboards/crm" element={<CRM />} />
+          <Route path="/theme-pages/faq" element={<FAQ />} />
+          <Route path="/theme-pages/pricing" element={<Pricing />} />
+          <Route path="/theme-pages/account-settings" element={<AccountSettings />} />
+          <Route path="/widgets/cards" element={<Cards />} />
+          <Route path="/widgets/banners" element={<Banners />} />
+          <Route path="/widgets/charts" element={<Charts />} />
+          <Route path="/icons/solar" element={<SolarIcons />} />
+        </Route>
+        
+        {/* Catch all */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </TooltipProvider>
+  </ThemeProvider>
 );
 
 export default App;
