@@ -38,6 +38,7 @@ import Cards from "./pages/Cards";
 import Banners from "./pages/Banners";
 import Charts from "./pages/Charts";
 import SolarIcons from "./pages/SolarIcons";
+import MobileExperience from "./pages/MobileExperience";
 
 const queryClient = new QueryClient();
 
@@ -87,7 +88,8 @@ const App = () => (
                 <Route path="/alertas" element={<Alertas />} />
                 <Route path="/configuracoes" element={<IntegracoesPage />} />
                 {/* Redirect legacy nested path to main settings */}
-                <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
+                  <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
+                  <Route path="/mobile-experience" element={<MobileExperience />} />
                 <Route path="/historico" element={<Historico />} />
 
                 {/* Demo Routes (protected) */}

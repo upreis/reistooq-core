@@ -185,6 +185,22 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'History' 
       }
     ]
+  },
+  {
+    id: 'mobile-tools',
+    group: 'Mobile',
+    items: [
+      {
+        id: 'mobile-experience',
+        label: 'Experiência Mobile',
+        path: '/mobile-experience',
+        icon: 'Smartphone',
+        badge: {
+          content: 'NOVO',
+          variant: 'default'
+        }
+      }
+    ]
   }
 ];
 

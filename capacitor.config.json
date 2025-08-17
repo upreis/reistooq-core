@@ -1,0 +1,23 @@
+{
+  "appId": "app.lovable.258a105bdecd40bab5d1b7ec18beb5b0",
+  "appName": "reistooq-core",
+  "webDir": "dist",
+  "server": {
+    "url": "https://258a105b-decd-40ba-b5d1-b7ec18beb5b0.lovableproject.com?forceHideBadge=true",
+    "cleartext": true
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#1a1a1a",
+      "showSpinner": true,
+      "spinnerColor": "#ffffff"
+    },
+    "StatusBar": {
+      "style": "dark"
+    }
+  }
+}
