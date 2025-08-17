@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: User | null;
@@ -18,7 +18,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -30,16 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Handle auth events
         if (event === 'SIGNED_IN') {
-          toast({
-            title: "Login realizado com sucesso!",
-            description: "Bem-vindo ao REISTOQ",
-          });
+          toast.success("Login realizado com sucesso! Bem-vindo ao REISTOQ");
         } else if (event === 'SIGNED_OUT') {
-          toast({
-            title: "Logout realizado",
-            description: "Até logo!",
-            variant: "destructive",
-          });
+          toast.error("Logout realizado. Até logo!");
         }
       }
     );
@@ -52,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, [toast]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -62,20 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       
       if (error) {
-        toast({
-          title: "Erro no login",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast.error(`Erro no login: ${error.message}`);
       }
       
       return { error };
     } catch (error: any) {
-      toast({
-        title: "Erro no login",
-        description: "Ocorreu um erro inesperado",
-        variant: "destructive",
-      });
+      toast.error("Erro no login: Ocorreu um erro inesperado");
       return { error };
     }
   };
@@ -95,32 +79,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         if (error.message.includes("already registered")) {
-          toast({
-            title: "Email já cadastrado",
-            description: "Este email já possui uma conta. Tente fazer login.",
-            variant: "destructive",
-          });
+          toast.error("Email já cadastrado: Este email já possui uma conta. Tente fazer login.");
         } else {
-          toast({
-            title: "Erro no cadastro",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast.error(`Erro no cadastro: ${error.message}`);
         }
       } else {
-        toast({
-          title: "Cadastro realizado!",
-          description: "Verifique seu email para confirmar a conta.",
-        });
+        toast.success("Cadastro realizado! Verifique seu email para confirmar a conta.");
       }
       
       return { error };
     } catch (error: any) {
-      toast({
-        title: "Erro no cadastro",
-        description: "Ocorreu um erro inesperado",
-        variant: "destructive",
-      });
+      toast.error("Erro no cadastro: Ocorreu um erro inesperado");
       return { error };
     }
   };
