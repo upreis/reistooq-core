@@ -239,7 +239,7 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
 
   // Use external collapsed state if provided, otherwise use internal state
   const collapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : !state.expanded;
-  const desktopWidth = collapsed ? "w-[72px]" : "w-[264px]";
+  const desktopWidth = collapsed ? "md:w-[72px]" : "md:w-72";
 
   return (
     <aside className={cn(
