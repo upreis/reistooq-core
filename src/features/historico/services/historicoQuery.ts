@@ -54,9 +54,9 @@ export async function fetchHistorico(params: FetchHistoricoParams): Promise<Fetc
       };
     }
 
-    // Código original mantido para compatibilidade (não funcionará com RLS)
+    // Fallback para view segura
     let query = supabase
-      .from('historico_vendas')
+      .from('historico_vendas_safe')
       .select('id, numero_pedido, sku_produto, descricao, quantidade, valor_unitario, valor_total, data_pedido, status', { count: 'exact' });
 
     // Aplicar filtros de busca
