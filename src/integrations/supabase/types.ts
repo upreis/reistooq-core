@@ -944,6 +944,10 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          organization_id: string | null
+          provider: string | null
+          state_value: string | null
+          used: boolean | null
           user_id: string
         }
         Insert: {
@@ -951,6 +955,10 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          organization_id?: string | null
+          provider?: string | null
+          state_value?: string | null
+          used?: boolean | null
           user_id: string
         }
         Update: {
@@ -958,9 +966,21 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          organization_id?: string | null
+          provider?: string | null
+          state_value?: string | null
+          used?: boolean | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "oauth_states_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       organizacoes: {
         Row: {
