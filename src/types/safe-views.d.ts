@@ -53,22 +53,5 @@ export interface HistoricoVendasSafeRow {
   total_itens: number | null;
 }
 
-// Extend the Supabase Database type to include safe views
-declare module '@/integrations/supabase/types' {
-  interface Database {
-    public: {
-      Tables: {
-        profiles_safe: {
-          Row: ProfilesSafeRow;
-          Insert: never; // Safe views are read-only
-          Update: never;
-        };
-        historico_vendas_safe: {
-          Row: HistoricoVendasSafeRow;
-          Insert: never;
-          Update: never;
-        };
-      };
-    };
-  }
-}
+// Note: Safe views are now automatically included in the generated Supabase types
+// These interfaces can be used for explicit typing when needed
