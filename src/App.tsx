@@ -86,6 +86,8 @@ const App = () => (
                 <Route path="/de-para" element={<DePara />} />
                 <Route path="/alertas" element={<Alertas />} />
                 <Route path="/configuracoes" element={<IntegracoesPage />} />
+                {/* Redirect legacy nested path to main settings */}
+                <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
                 <Route path="/historico" element={<Historico />} />
 
                 {/* Demo Routes (protected) */}
