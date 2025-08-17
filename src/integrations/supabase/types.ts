@@ -1527,33 +1527,30 @@ export type Database = {
       }
       tiny_v3_tokens: {
         Row: {
-          access_token: string
-          expires_at: string
+          access_token: string | null
+          client_id: string
+          created_at: string
+          expires_at: string | null
           id: string
-          organization_id: string
-          refresh_token: string
-          scope: string | null
-          token_type: string | null
+          refresh_token: string | null
           updated_at: string
         }
         Insert: {
-          access_token: string
-          expires_at: string
+          access_token?: string | null
+          client_id: string
+          created_at?: string
+          expires_at?: string | null
           id?: string
-          organization_id: string
-          refresh_token: string
-          scope?: string | null
-          token_type?: string | null
+          refresh_token?: string | null
           updated_at?: string
         }
         Update: {
-          access_token?: string
-          expires_at?: string
+          access_token?: string | null
+          client_id?: string
+          created_at?: string
+          expires_at?: string | null
           id?: string
-          organization_id?: string
-          refresh_token?: string
-          scope?: string | null
-          token_type?: string | null
+          refresh_token?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2026,19 +2023,43 @@ export type Database = {
         Returns: undefined
       }
       tiny3_get_credentials: {
-        Args: { _org_id: string }
+        Args: { _client_id: string } | { _org_id: string }
         Returns: {
           client_id: string
           client_secret: string
           redirect_uri: string
         }[]
       }
+      tiny3_get_tokens: {
+        Args: { _client_id: string }
+        Returns: {
+          access_token: string
+          client_id: string
+          expires_at: string
+          refresh_token: string
+        }[]
+      }
       tiny3_set_credentials: {
+        Args:
+          | {
+              _client_id: string
+              _client_secret: string
+              _org_id: string
+              _redirect_uri?: string
+            }
+          | {
+              _client_id: string
+              _client_secret: string
+              _redirect_uri?: string
+            }
+        Returns: undefined
+      }
+      tiny3_set_tokens: {
         Args: {
+          _access_token: string
           _client_id: string
-          _client_secret: string
-          _org_id: string
-          _redirect_uri?: string
+          _expires_at: string
+          _refresh_token: string
         }
         Returns: undefined
       }
