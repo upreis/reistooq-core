@@ -21,10 +21,24 @@ serve(async (req) => {
   try {
     const url = new URL(req.url);
     
+    // Get ML_REDIRECT_URI from environment
+    const ML_REDIRECT_URI = Deno.env.get('ML_REDIRECT_URI');
+    if (!ML_REDIRECT_URI) {
+      throw new Error('ML_REDIRECT_URI not configured');
+    }
+    
     // Extract callback parameters
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     const error = url.searchParams.get('error');
+    
+    console.log('OAuth callback received:', {
+      redirect_uri_used: ML_REDIRECT_URI,
+      has_code: !!code,
+      has_state: !!state,
+      error: error,
+      timestamp: new Date().toISOString(),
+    });
 
     if (error) {
       throw new Error(`OAuth error: ${error}`);
@@ -79,9 +93,13 @@ serve(async (req) => {
       throw new Error('ML credentials not configured');
     }
 
-    const ML_REDIRECT_URI = `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-oauth-callback`;
+    // Exchange code for tokens - following ML specs with proper redirect_uri
+    console.log('Exchanging code for tokens:', {
+      redirect_uri: ML_REDIRECT_URI,
+      client_id: ML_CLIENT_ID,
+      has_code: !!code,
+    });
 
-    // Exchange code for tokens - following ML specs
     const tokenResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
       method: 'POST',
       headers: {
@@ -99,6 +117,12 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
+      console.error('Token exchange failed:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        error: errorText,
+        redirect_uri_used: ML_REDIRECT_URI,
+      });
       throw new Error(`Token exchange failed: ${tokenResponse.status} - ${errorText}`);
     }
 

@@ -31,13 +31,14 @@ serve(async (req) => {
 
     // Get ML credentials from secrets
     const ML_CLIENT_ID = Deno.env.get('ML_CLIENT_ID');
+    const ML_REDIRECT_URI = Deno.env.get('ML_REDIRECT_URI');
+    
     if (!ML_CLIENT_ID) {
       throw new Error('ML_CLIENT_ID not configured');
     }
-
-    // ML OAuth URLs for Brazil
-    const ML_AUTH_DOMAIN = 'https://auth.mercadolivre.com.br';
-    const ML_REDIRECT_URI = `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-oauth-callback`;
+    if (!ML_REDIRECT_URI) {
+      throw new Error('ML_REDIRECT_URI not configured');
+    }
 
     // Generate secure state for CSRF protection
     const state = crypto.randomUUID();
@@ -47,8 +48,8 @@ serve(async (req) => {
       .from('oauth_states')
       .insert({
         id: state,
-        user_id: JSON.parse(atob(authHeader.replace('Bearer ', '').split('.')[1])).sub, // Decode JWT for user ID
-        code_verifier: state, // Using state as verifier for simplicity
+        user_id: JSON.parse(atob(authHeader.replace('Bearer ', '').split('.')[1])).sub,
+        code_verifier: state,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       });
 
@@ -57,11 +58,12 @@ serve(async (req) => {
       throw new Error('Failed to initialize OAuth flow');
     }
 
-    // Build authorization URL following ML specs
+    // Build authorization URL following ML specs using environment variable
+    const ML_AUTH_DOMAIN = 'https://auth.mercadolivre.com.br';
     const authUrl = new URL(`${ML_AUTH_DOMAIN}/authorization`);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('client_id', ML_CLIENT_ID);
-    authUrl.searchParams.set('redirect_uri', ML_REDIRECT_URI);
+    authUrl.searchParams.set('redirect_uri', encodeURIComponent(ML_REDIRECT_URI));
     authUrl.searchParams.set('state', state);
 
     console.log('OAuth flow initiated:', {
@@ -71,12 +73,19 @@ serve(async (req) => {
       timestamp: new Date().toISOString(),
     });
 
+    // Set secure cookie with state for validation
+    const cookieOptions = 'Path=/; SameSite=Lax; Secure; HttpOnly; Max-Age=600'; // 10 minutes
+    
     return new Response(JSON.stringify({
       success: true,
       authorization_url: authUrl.toString(),
       state,
     }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json',
+        'Set-Cookie': `ml_oauth_state=${state}; ${cookieOptions}`
+      },
     });
 
   } catch (error) {
