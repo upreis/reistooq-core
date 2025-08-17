@@ -18,6 +18,7 @@ import { OAuthModal } from '../OAuthModal/OAuthModal';
 import { HealthMini } from '../HealthDashboard/HealthMini';
 import { AnnouncementManager } from '../../../announcements/components/AnnouncementManager';
 import { AdminDashboard } from '../../../admin/components/AdminDashboard';
+import { MercadoLivreConnection } from '@/components/integrations/MercadoLivreConnection';
 
 export const IntegrationsHub: React.FC = () => {
   const {
@@ -136,6 +137,8 @@ export const IntegrationsHub: React.FC = () => {
         {/* Integrações Tab */}
         <TabsContent value="integrations">
           <div className="space-y-6">
+            {/* MercadoLibre Integration */}
+            <MercadoLivreConnection />
             {/* Integrations Grid */}
             {integrations.length === 0 ? (
               <Card>
