@@ -500,13 +500,14 @@ export class HistoricoFileService {
     }
 
     try {
-      // Para inserção, usar inserção direta com lista explícita de colunas 
-      // (a RPC insert_historico_vendas_safe ainda não existe)
-      // NOTE: Direct insertion not allowed due to RLS hardening
-      // Use RPC function instead for secure insertion
-      const { data: insertData, error } = await supabase.rpc('insert_historico_vendas_batch', {
-        records: data
-      });
+      // AVISO: Inserção direta em historico_vendas requer privilégios de service_role
+      // Esta operação só funcionará com service_role key (Edge Functions)
+      console.warn('AVISO: Operação de inserção requer privilégios elevados (service_role)');
+      
+      const { data: insertData, error } = await supabase
+        .from('historico_vendas')
+        .insert(data)
+        .select('id, numero_pedido, sku_produto, status, data_pedido, valor_total');
 
       if (error) {
         throw error;

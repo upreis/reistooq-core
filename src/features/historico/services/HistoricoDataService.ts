@@ -164,17 +164,17 @@ export class HistoricoDataService {
       return cached as { status: string[]; cidades: string[]; ufs: string[]; situacoes: string[]; };
       }
 
-      // Buscar opções de forma paralela
-      const [statusData, cidadesData, ufsData] = await Promise.all([
-        supabase.from('historico_vendas_safe').select('status').not('status', 'is', null),
-        supabase.from('historico_vendas_safe').select('cidade').not('cidade', 'is', null),
-        supabase.from('historico_vendas_safe').select('uf').not('uf', 'is', null)
+      // Buscar opções usando RPC segura que já aplica RLS
+      const [statusResult, cidadesResult, ufsResult] = await Promise.all([
+        supabase.rpc('get_historico_vendas_masked', { _limit: 1000 }),
+        supabase.rpc('get_historico_vendas_masked', { _limit: 1000 }),
+        supabase.rpc('get_historico_vendas_masked', { _limit: 1000 })
       ]);
 
       const options = {
-        status: [...new Set(statusData.data?.map(item => item.status) || [])].filter(Boolean).sort(),
-        cidades: [...new Set(cidadesData.data?.map(item => item.cidade) || [])].filter(Boolean).sort(),
-        ufs: [...new Set(ufsData.data?.map(item => item.uf) || [])].filter(Boolean).sort(),
+        status: [...new Set((statusResult.data || []).map(item => item.status).filter(Boolean))].sort(),
+        cidades: [...new Set((cidadesResult.data || []).map(item => item.cidade).filter(Boolean))].sort(),
+        ufs: [...new Set((ufsResult.data || []).map(item => item.uf).filter(Boolean))].sort(),
         situacoes: ['pendente', 'processando', 'concluida', 'cancelada', 'devolvida'] // Estático por enquanto
       };
 

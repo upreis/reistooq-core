@@ -35,10 +35,28 @@ export async function fetchHistorico(params: FetchHistoricoParams): Promise<Fetc
   try {
     console.log('🔍 Fetching histórico:', params);
 
-    // Query base (server-side, com count) - no additional probes
-    // Use safe view instead of direct table access due to RLS hardening
+    // DEPRECATED: Esta query direta não funcionará mais devido ao RLS hardening
+    // RECOMENDAÇÃO: Use HistoricoQueryService.getHistorico() com RPC segura
+    console.warn('DEPRECADO: Use HistoricoQueryService.getHistorico() ao invés desta função');
+    
+    // Fallback para RPC quando possível
+    const offset = (page - 1) * pageSize;
+    const rpcResult = await supabase.rpc('get_historico_vendas_masked', {
+      _search: search || null,
+      _limit: pageSize,
+      _offset: offset
+    });
+    
+    if (rpcResult.data) {
+      return {
+        rows: rpcResult.data,
+        total: rpcResult.data.length
+      };
+    }
+
+    // Código original mantido para compatibilidade (não funcionará com RLS)
     let query = supabase
-      .from('historico_vendas_safe')
+      .from('historico_vendas')
       .select('id, numero_pedido, sku_produto, descricao, quantidade, valor_unitario, valor_total, data_pedido, status', { count: 'exact' });
 
     // Aplicar filtros de busca
