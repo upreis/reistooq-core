@@ -139,8 +139,12 @@ export function useOrdersQuery(options: UseOrdersQueryOptions = {}): UseOrdersQu
     mutate,
   } = useSWR(
     queryKey,
-    ([, filters, pagination, sorting]) => 
-      OrdersQueryService.getInstance().getOrdersPaginated(filters as OrderFiltersState, pagination, sorting),
+    ([, filtersParam, paginationParam, sortingParam]) => {
+      const filters = filtersParam as OrderFiltersState;
+      const pagination = paginationParam as OrderPaginationState;
+      const sorting = sortingParam as OrderSortState;
+      return OrdersQueryService.getInstance().getOrdersPaginated(filters, pagination, sorting);
+    },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
