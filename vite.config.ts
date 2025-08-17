@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => ({
       // Force single React instance across the app to avoid invalid hook calls
       react: path.resolve(__dirname, "node_modules/react"),
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(__dirname, "node_modules/react/jsx-runtime.js"),
+      "react/jsx-dev-runtime": path.resolve(__dirname, "node_modules/react/jsx-dev-runtime.js"),
     },
     dedupe: [
       "react",
@@ -30,7 +32,7 @@ export default defineConfig(({ mode }) => ({
     ],
   },
   optimizeDeps: {
-    exclude: [
+    include: [
       "react",
       "react-dom",
       "react-router",
@@ -41,12 +43,4 @@ export default defineConfig(({ mode }) => ({
     ],
     force: true,
   },
-  build: {
-    rollupOptions: {
-      external: (id) => {
-        // Don't externalize React in dev mode, but ensure it's properly resolved
-        return false;
-      }
-    }
-  }
 }));
