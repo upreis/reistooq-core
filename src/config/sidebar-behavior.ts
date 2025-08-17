@@ -1,10 +1,13 @@
 export const SIDEBAR_BEHAVIOR = {
-  // 'toggle' => click no pai expande/fecha; 'navigateFirst' => navega para o primeiro filho
   groupClick: 'toggle' as 'toggle' | 'navigateFirst',
+  hoverOpenDelayMs: 120,
+  hoverCloseDelayMs: 200,
+  pinOnClickMs: 1500,
+  tooltipDelayMs: 200,
+  flyoutZIndex: 80,
   collapsed: {
     clickOpensFlyout: true,
     hoverOpensFlyout: true,
-    pinOnClickMs: 1500 // mantém flyout aberto por 1.5s após clique no pai
-  },
-  tooltipDelayMs: 200
-};
+    pinOnClickMs: 1500
+  }
+} as const;

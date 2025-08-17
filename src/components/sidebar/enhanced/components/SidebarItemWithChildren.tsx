@@ -94,13 +94,14 @@ export function SidebarItemWithChildren({
   }, [isCollapsed, isFlyoutPinned]);
 
   const handleParentClick = useCallback((e: React.MouseEvent) => {
-    // Only prevent default for items with children
-    if (item.children && item.children.length > 0) {
+    // Prevent navigation for items WITH children only
+    const hasChildren = item.children && item.children.length > 0;
+    if (hasChildren) {
       e.preventDefault();
     }
     
     if (isCollapsed && !isMobile) {
-      if (SIDEBAR_BEHAVIOR.collapsed.clickOpensFlyout) {
+      if (SIDEBAR_BEHAVIOR.collapsed.clickOpensFlyout && hasChildren) {
         if (buttonRef.current) {
           const position = calculateFlyoutPosition(buttonRef.current);
           setFlyoutPosition(position);
@@ -109,22 +110,24 @@ export function SidebarItemWithChildren({
           // Pin the flyout when clicked
           actions.openFlyout(item.id, { 
             pinned: true, 
-            ttlMs: SIDEBAR_BEHAVIOR.collapsed.pinOnClickMs 
+            ttlMs: SIDEBAR_BEHAVIOR.pinOnClickMs 
           });
         }
       }
       return;
     }
 
-    // When expanded
-    const firstChild = item.children?.[0];
-    if (SIDEBAR_BEHAVIOR.groupClick === 'navigateFirst' && firstChild?.path) {
-      navigate(firstChild.path);
-      return;
+    // When expanded - only for items with children
+    if (hasChildren) {
+      const firstChild = item.children?.[0];
+      if (SIDEBAR_BEHAVIOR.groupClick === 'navigateFirst' && firstChild?.path) {
+        navigate(firstChild.path);
+        return;
+      }
+      
+      // Default toggle behavior
+      actions.toggleGroup(item.id);
     }
-    
-    // Default toggle behavior
-    actions.toggleGroup(item.id);
   }, [isCollapsed, isMobile, item.children, item.id, calculateFlyoutPosition, actions, navigate]);
 
   const handleFocus = useCallback(() => {
@@ -140,17 +143,32 @@ export function SidebarItemWithChildren({
       e.preventDefault();
       handleParentClick(e as any);
     }
-    if (e.key === 'ArrowRight' && !isCollapsed) {
-      actions.openGroup(item.id);
+    if (e.key === 'ArrowRight') {
+      if (isCollapsed) {
+        // Open flyout when collapsed
+        if (buttonRef.current) {
+          const position = calculateFlyoutPosition(buttonRef.current);
+          setFlyoutPosition(position);
+          setFlyoutOpen(true);
+        }
+      } else {
+        // Open group when expanded
+        actions.openGroup(item.id);
+      }
     }
-    if (e.key === 'ArrowLeft' && !isCollapsed) {
-      actions.closeGroup(item.id);
+    if (e.key === 'ArrowLeft') {
+      if (isCollapsed) {
+        setFlyoutOpen(false);
+        actions.closeFlyout(item.id);
+      } else {
+        actions.closeGroup(item.id);
+      }
     }
     if (e.key === 'Escape') {
       actions.closeFlyout(item.id);
       setFlyoutOpen(false);
     }
-  }, [handleParentClick, isCollapsed, actions, item.id]);
+  }, [handleParentClick, isCollapsed, actions, item.id, calculateFlyoutPosition]);
 
   const closeFlyout = useCallback(() => {
     setFlyoutOpen(false);

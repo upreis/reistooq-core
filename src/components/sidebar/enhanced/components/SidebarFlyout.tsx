@@ -68,7 +68,7 @@ export function SidebarFlyout({
         }
       };
     }
-  }, [isOpen, isMouseInside, onClose, pointerType]);
+  }, [isOpen, isMouseInside, onClose, pointerType, isPinned]);
 
   // Handle click outside and escape key
   useEffect(() => {
@@ -134,14 +134,15 @@ export function SidebarFlyout({
       className={cn(
         'fixed bg-[hsl(var(--popover))] border border-[hsl(var(--border))] rounded-lg shadow-lg',
         'min-w-[200px] py-2 animate-in fade-in-0 zoom-in-95 slide-in-from-left-2 duration-200',
-        'z-[80] focus:outline-none',
+        'focus:outline-none',
         isPinned && 'ring-2 ring-[hsl(var(--primary))] ring-opacity-50'
       )}
       style={{
         top: position.top,
         left: position.left,
         maxHeight: position.maxHeight,
-        overflowY: 'auto'
+        overflowY: 'auto',
+        zIndex: 80
       }}
     >
       {items.map((item) => {

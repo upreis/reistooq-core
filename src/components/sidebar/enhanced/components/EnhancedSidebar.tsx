@@ -77,7 +77,7 @@ const SidebarSingleItem = memo(({
   );
 
   return !isMobile && isCollapsed ? (
-    <SidebarTooltip content={item.label}>
+    <SidebarTooltip content={item.label} disabled={!isCollapsed}>
       {link}
     </SidebarTooltip>
   ) : (
