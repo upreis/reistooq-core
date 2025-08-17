@@ -1,8 +1,5 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Lint check
 npm run lint
-
-# Guard against select('*') usage
-./scripts/guard-select.sh
+npm run guard:sidebar
