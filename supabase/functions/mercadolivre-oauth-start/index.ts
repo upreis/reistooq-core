@@ -40,8 +40,19 @@ serve(async (req) => {
       throw new Error('ML_REDIRECT_URI not configured');
     }
 
-    // Generate secure state for CSRF protection
+    // Generate secure state for CSRF protection and PKCE code verifier/challenge
     const state = crypto.randomUUID();
+    const encoder = new TextEncoder();
+    const toBase64Url = (bytes: Uint8Array | ArrayBuffer) => {
+      const arr = bytes instanceof ArrayBuffer ? new Uint8Array(bytes) : bytes;
+      let str = '';
+      for (let i = 0; i < arr.byteLength; i++) str += String.fromCharCode(arr[i]);
+      return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    };
+    const random = crypto.getRandomValues(new Uint8Array(64));
+    const code_verifier = toBase64Url(random);
+    const digest = await crypto.subtle.digest('SHA-256', encoder.encode(code_verifier));
+    const code_challenge = toBase64Url(digest);
     
     // Store OAuth state temporarily (expires in 10 minutes)
     const { error: stateError } = await client
@@ -49,7 +60,7 @@ serve(async (req) => {
       .insert({
         id: state,
         user_id: JSON.parse(atob(authHeader.replace('Bearer ', '').split('.')[1])).sub,
-        code_verifier: state,
+        code_verifier,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       });
 
@@ -66,6 +77,9 @@ serve(async (req) => {
     // IMPORTANT: do NOT pre-encode, URLSearchParams will encode correctly
     authUrl.searchParams.set('redirect_uri', ML_REDIRECT_URI);
     authUrl.searchParams.set('state', state);
+    // PKCE parameters
+    authUrl.searchParams.set('code_challenge_method', 'S256');
+    authUrl.searchParams.set('code_challenge', code_challenge);
 
     console.log('OAuth flow initiated:', {
       organization_id,
