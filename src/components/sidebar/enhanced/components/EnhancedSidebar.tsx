@@ -12,6 +12,7 @@ interface EnhancedSidebarProps {
   navItems: NavSection[];
   isMobile?: boolean;
   onMobileClose?: () => void;
+  isCollapsed?: boolean; // Allow external control from SidebarUIProvider
 }
 
 const getIconComponent = (iconName: string) => {
@@ -156,14 +157,17 @@ SidebarSection.displayName = 'SidebarSection';
 const SidebarContent = memo(({ 
   navItems, 
   isMobile = false, 
-  onMobileClose 
+  onMobileClose,
+  externalIsCollapsed 
 }: { 
   navItems: NavSection[]; 
   isMobile?: boolean; 
   onMobileClose?: () => void;
+  externalIsCollapsed?: boolean;
 }) => {
   const { state, actions, utils } = useSidebarState();
-  const isCollapsed = !isMobile && state.expanded === false;
+  // Use external collapsed state if provided (from SidebarUIProvider)
+  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : (!isMobile && state.expanded === false);
 
   return (
     <div className="flex flex-col h-full">
@@ -218,7 +222,7 @@ const SidebarContent = memo(({
 
 SidebarContent.displayName = 'SidebarContent';
 
-export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose }: EnhancedSidebarProps) => {
+export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isCollapsed: externalIsCollapsed }: EnhancedSidebarProps) => {
   const { state } = useSidebarState();
   
   if (isMobile) {
@@ -233,7 +237,9 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose }: Enha
     );
   }
 
-  const desktopWidth = state.expanded ? "w-[264px]" : "w-[72px]";
+  // Use external collapsed state if provided, otherwise use internal state
+  const collapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : !state.expanded;
+  const desktopWidth = collapsed ? "w-[72px]" : "w-[264px]";
 
   return (
     <aside className={cn(
@@ -241,7 +247,7 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose }: Enha
       "transition-[width] duration-200 overflow-visible", // changed from overflow-y-auto to overflow-visible
       desktopWidth
     )}>
-      <SidebarContent navItems={navItems} isMobile={false} />
+      <SidebarContent navItems={navItems} isMobile={false} externalIsCollapsed={externalIsCollapsed} />
     </aside>
   );
 });

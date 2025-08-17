@@ -18,11 +18,9 @@ import jonathanAvatar from "@/assets/jonathan-avatar.jpg";
 import { useAnnouncements } from "@/contexts/AnnouncementContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarUI } from "@/context/SidebarUIContext";
-import { useSidebar } from "@/components/sidebar/enhanced";
 
 export default function Header() {
-  const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useSidebarUI();
-  const { state, actions } = useSidebar();
+  const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed } = useSidebarUI();
   const { isHidden, setIsHidden, hasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { user, signOut } = useAuth();
 
@@ -50,11 +48,11 @@ export default function Header() {
         <button
           type="button"
           className="hidden md:inline-flex items-center justify-center rounded p-2 border ml-2"
-          aria-label={state.expanded ? "Recolher menu" : "Expandir menu"}
-          onClick={actions.toggleExpanded}
+          aria-label={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           data-testid="sidebar-desktop-toggle"
         >
-          {!state.expanded ? (
+          {isSidebarCollapsed ? (
             <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" />
             </svg>

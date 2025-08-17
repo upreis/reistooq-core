@@ -194,7 +194,7 @@ export const SIDEBAR_CONFIG = {
   collapsedWidth: 72,
   hoverOpenDelay: 120,
   hoverCloseDelay: 200,
-  zIndexFlyout: 70,
+  zIndexFlyout: 80,
   persistKey: 'ui.sidebar.expanded',
   animationDuration: 200
 };

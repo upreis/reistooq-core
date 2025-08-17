@@ -28,7 +28,7 @@ const CollapsedReopenTab: React.FC = () => {
 };
 
 const InnerLayout = () => {
-  const { isMobileSidebarOpen, setIsMobileSidebarOpen } = useSidebarUI();
+  const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed } = useSidebarUI();
   const { isHidden, isCollapsed } = useAnnouncements();
   const location = useLocation();
 
@@ -41,11 +41,12 @@ const InnerLayout = () => {
     <SidebarProvider>
       <AnnouncementTicker />
       <div className={`flex min-h-screen w-full bg-background ${offset}`}>
-        {/* Enhanced Sidebar */}
+        {/* Enhanced Sidebar - integrated with SidebarUIProvider */}
         <EnhancedSidebar 
           navItems={ENHANCED_NAV_ITEMS}
           isMobile={isMobileSidebarOpen}
           onMobileClose={() => setIsMobileSidebarOpen(false)}
+          isCollapsed={isSidebarCollapsed}
         />
 
         {/* Overlay mobile - única instância */}
@@ -56,6 +57,9 @@ const InnerLayout = () => {
             aria-hidden="true"
           />
         )}
+
+        {/* Rail button when collapsed */}
+        {isSidebarCollapsed && <CollapsedReopenTab />}
 
         {/* Conteúdo */}
         <div className="flex-1 min-w-0 flex flex-col">
