@@ -80,6 +80,10 @@ serve(async (req) => {
     // PKCE parameters
     authUrl.searchParams.set('code_challenge_method', 'S256');
     authUrl.searchParams.set('code_challenge', code_challenge);
+    // Add required scopes for offline access and orders
+    authUrl.searchParams.set('scope', 'offline_access read write');
+    // Force consent to ensure refresh token is issued
+    authUrl.searchParams.set('prompt', 'consent');
 
     console.log('OAuth flow initiated:', {
       organization_id,

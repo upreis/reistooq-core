@@ -25,3 +25,6 @@ verify_jwt = false
 
 [functions.mercadolivre-orders]
 verify_jwt = true
+
+[functions.mercadolivre-refresh-token]
+verify_jwt = true

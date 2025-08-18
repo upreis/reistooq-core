@@ -91,6 +91,63 @@ class MercadoLivreService {
   }
 
   /**
+   * Get valid access token for integration account (with auto-refresh)
+   */
+  async getValidAccessToken(accountId: string): Promise<string | null> {
+    try {
+      // Get current token data
+      const { data, error } = await supabase.rpc('get_integration_secret_secure', {
+        account_id: accountId,
+        provider_name: 'mercadolivre',
+        requesting_function: 'get_valid_token'
+      });
+
+      if (error || !data || data.length === 0 || !data[0]?.access_token) {
+        console.error('Failed to get access token:', error);
+        return null;
+      }
+
+      const tokenData = data[0];
+
+      // Check if token is expired or expires within 5 minutes
+      const expiresAt = tokenData.expires_at ? new Date(tokenData.expires_at) : null;
+      const now = new Date();
+      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+
+      if (!expiresAt || expiresAt <= fiveMinutesFromNow) {
+        console.log('Token expired or expires soon, attempting refresh...', {
+          expires_at: expiresAt?.toISOString(),
+          current_time: now.toISOString()
+        });
+
+        // Attempt to refresh token
+        const refreshResult = await supabase.functions.invoke('mercadolivre-refresh-token', {
+          body: { integration_account_id: accountId }
+        });
+
+        if (refreshResult.error || !refreshResult.data?.success) {
+          console.error('Token refresh failed:', refreshResult.error);
+          
+          // If refresh token is expired, return null to trigger re-auth
+          if (refreshResult.data?.code === 'REFRESH_TOKEN_EXPIRED') {
+            return null;
+          }
+          
+          // For other errors, try using current token anyway
+          return tokenData.access_token;
+        }
+
+        return refreshResult.data.access_token;
+      }
+
+      return tokenData.access_token;
+    } catch (error) {
+      console.error('Error getting valid access token:', error);
+      return null;
+    }
+  }
+
+  /**
    * Initiate MercadoLibre OAuth flow
    */
   async initiateOAuth(): Promise<{ success: boolean; authorization_url?: string; error?: string }> {

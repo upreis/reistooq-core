@@ -57,17 +57,38 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
           throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
         }
 
-        // Monitor popup for completion
+        // Listen for OAuth completion messages
+        const handleMessage = (event: MessageEvent) => {
+          // Accept messages from Supabase edge functions
+          if (!event.origin.includes('supabase.co') && event.origin !== window.location.origin) {
+            return;
+          }
+
+          if (event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre') {
+            popup.close();
+            window.removeEventListener('message', handleMessage);
+            setIsConnecting(false);
+            
+            toast.success('Mercado Livre conectado com sucesso!');
+            loadAccounts();
+            
+          } else if (event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre') {
+            popup.close();
+            window.removeEventListener('message', handleMessage);
+            setIsConnecting(false);
+            
+            toast.error(`Erro na autenticação: ${event.data.error || 'Falha desconhecida'}`);
+          }
+        };
+
+        window.addEventListener('message', handleMessage);
+
+        // Monitor popup for manual closure
         const checkClosed = setInterval(() => {
           if (popup.closed) {
             clearInterval(checkClosed);
+            window.removeEventListener('message', handleMessage);
             setIsConnecting(false);
-            
-            // Reload accounts after potential connection
-            setTimeout(() => {
-              loadAccounts();
-              toast.success('MercadoLibre conectado com sucesso!');
-            }, 1000);
           }
         }, 1000);
       } else {
@@ -75,7 +96,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       }
     } catch (error) {
       console.error('ML connection failed:', error);
-      toast.error(error instanceof Error ? error.message : 'Falha ao conectar MercadoLibre');
+      toast.error(error instanceof Error ? error.message : 'Falha ao conectar Mercado Livre');
       setIsConnecting(false);
     }
   };
