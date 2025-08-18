@@ -17,6 +17,12 @@ refresh_token_rotation_enabled = true
 security_update_password_require_reauthentication = true
 manual_linking_enabled = false
 
+[functions.mercadolivre-oauth-start]
+verify_jwt = true
+
+[functions.mercadolivre-oauth-callback]
+verify_jwt = false
+
 [functions.mercadolivre-oauth]
 verify_jwt = true
 

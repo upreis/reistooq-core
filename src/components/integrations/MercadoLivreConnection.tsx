@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { ShoppingCart, User, Calendar, ExternalLink, Unplug, RefreshCw } from 'lucide-react';
 import { mercadoLivreService, type MLAccount } from '@/services/MercadoLivreService';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MercadoLivreConnectionProps {
   onOrdersSync?: (accountId: string) => void;
@@ -43,70 +44,77 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
-      const result = await mercadoLivreService.initiateOAuth();
+
+      // Start OAuth via Edge Function that uses ML_REDIRECT_URI (POST)
+      const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
+        body: { organization_id: 'current' },
+      });
+
+      if (error || !data?.success || !data?.authorization_url) {
+        console.error('ML OAuth start failed:', { error, data });
+        throw new Error(data?.error || error?.message || 'Falha ao iniciar conexão OAuth');
+      }
+
+      const authUrl: string = data.authorization_url as string;
+
+      // Open ML authorization in popup
+      const popup = window.open(
+        authUrl,
+        'ml_oauth',
+        'width=600,height=700,scrollbars=yes,resizable=yes'
+      );
       
-      if (result.success && result.authorization_url) {
-        // Open ML authorization in popup
-        const popup = window.open(
-          result.authorization_url,
-          'ml_oauth',
-          'width=600,height=700,scrollbars=yes,resizable=yes'
-        );
-        
-        if (!popup) {
-          throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
+      if (!popup) {
+        throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
+      }
+
+      // Listen for OAuth completion messages
+      const handleMessage = (event: MessageEvent) => {
+        // Accept messages from Supabase edge functions
+        if (!event.origin.includes('supabase.co') && event.origin !== window.location.origin) {
+          return;
         }
 
-        // Listen for OAuth completion messages
-        const handleMessage = (event: MessageEvent) => {
-          // Accept messages from Supabase edge functions
-          if (!event.origin.includes('supabase.co') && event.origin !== window.location.origin) {
-            return;
+        const successV1 = event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre';
+        const successLegacy = event.data?.source === 'mercadolivre-oauth' && event.data?.connected === true;
+        const errorV1 = event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre';
+
+        if (successV1 || successLegacy) {
+          popup.close();
+          window.removeEventListener('message', handleMessage);
+          setIsConnecting(false);
+          
+          toast.success('Mercado Livre conectado com sucesso!');
+          loadAccounts();
+          
+        } else if (errorV1) {
+          popup.close();
+          window.removeEventListener('message', handleMessage);
+          setIsConnecting(false);
+          
+          const errorMsg = event.data.error || 'Falha desconhecida';
+          
+          // Handle specific error types with better user messages
+          if (errorMsg.includes('OPERATOR_REQUIRED')) {
+            toast.error('Erro: Use uma conta com permissões de administrador no MercadoLibre para realizar integrações.');
+          } else if (errorMsg.includes('invalid_grant') || errorMsg.includes('expirado')) {
+            toast.error('Código de autorização expirado. Tente conectar novamente.');
+          } else {
+            toast.error(`Erro na autenticação: ${errorMsg}`);
           }
+        }
+      };
 
-          const successV1 = event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre';
-          const successLegacy = event.data?.source === 'mercadolivre-oauth' && event.data?.connected === true;
-          const errorV1 = event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre';
+      window.addEventListener('message', handleMessage);
 
-          if (successV1 || successLegacy) {
-            popup.close();
-            window.removeEventListener('message', handleMessage);
-            setIsConnecting(false);
-            
-            toast.success('Mercado Livre conectado com sucesso!');
-            loadAccounts();
-            
-          } else if (errorV1) {
-            popup.close();
-            window.removeEventListener('message', handleMessage);
-            setIsConnecting(false);
-            
-            const errorMsg = event.data.error || 'Falha desconhecida';
-            
-            // Handle specific error types with better user messages
-            if (errorMsg.includes('OPERATOR_REQUIRED')) {
-              toast.error('Erro: Use uma conta com permissões de administrador no MercadoLibre para realizar integrações.');
-            } else if (errorMsg.includes('invalid_grant') || errorMsg.includes('expirado')) {
-              toast.error('Código de autorização expirado. Tente conectar novamente.');
-            } else {
-              toast.error(`Erro na autenticação: ${errorMsg}`);
-            }
-          }
-        };
-
-        window.addEventListener('message', handleMessage);
-
-        // Monitor popup for manual closure
-        const checkClosed = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkClosed);
-            window.removeEventListener('message', handleMessage);
-            setIsConnecting(false);
-          }
-        }, 1000);
-      } else {
-        throw new Error(result.error || 'Falha ao iniciar conexão OAuth');
-      }
+      // Monitor popup for manual closure
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', handleMessage);
+          setIsConnecting(false);
+        }
+      }, 1000);
     } catch (error) {
       console.error('ML connection failed:', error);
       
