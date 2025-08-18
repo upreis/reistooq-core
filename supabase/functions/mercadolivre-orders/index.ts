@@ -102,11 +102,23 @@ serve(async (req) => {
       });
 
       if (!userResponse.ok) {
-        throw new Error('Failed to get user info from MercadoLibre');
+        const errorText = await userResponse.text();
+        console.error('Failed to get ML user info:', {
+          status: userResponse.status,
+          error: errorText,
+          account_id: params.integration_account_id,
+        });
+        throw new Error(`Failed to get user info from MercadoLibre: ${userResponse.status}`);
       }
 
       const userData = await userResponse.json();
       sellerId = userData.id.toString();
+      
+      console.log('ML user info retrieved:', {
+        seller_id: sellerId,
+        nickname: userData.nickname,
+        site_id: userData.site_id,
+      });
     }
 
     // Build orders search URL following ML API specs
@@ -138,16 +150,70 @@ serve(async (req) => {
       ordersUrl.searchParams.set('offset', params.offset.toString());
     }
 
-    // Fetch orders from MercadoLibre API
-    const ordersResponse = await fetch(ordersUrl.toString(), {
+    // Fetch orders from MercadoLibre API with retry logic
+    let ordersResponse = await fetch(ordersUrl.toString(), {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json',
       },
     });
 
+    // Retry once on 401 (token might be stale) or 429 (rate limit)
+    if (!ordersResponse.ok && (ordersResponse.status === 401 || ordersResponse.status === 429)) {
+      console.log('API call failed, attempting retry:', {
+        status: ordersResponse.status,
+        account_id: params.integration_account_id,
+      });
+      
+      // Wait briefly for rate limit
+      if (ordersResponse.status === 429) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      
+      // Force token refresh on 401
+      if (ordersResponse.status === 401 && secrets.refresh_token) {
+        const refreshResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+          body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            client_id: secrets.client_id,
+            client_secret: secrets.client_secret,
+            refresh_token: secrets.refresh_token,
+          }),
+        });
+
+        if (refreshResponse.ok) {
+          const newTokenData = await refreshResponse.json();
+          accessToken = newTokenData.access_token;
+          console.log('Token refreshed for retry');
+        }
+      }
+      
+      // Retry the request
+      ordersResponse = await fetch(ordersUrl.toString(), {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+        },
+      });
+    }
+
     if (!ordersResponse.ok) {
       const errorText = await ordersResponse.text();
+      
+      // Handle specific ML API errors
+      if (ordersResponse.status === 403) {
+        throw new Error('INSUFFICIENT_PERMISSIONS: Sua conta não tem permissão para acessar pedidos. Verifique se é uma conta de vendedor ativa.');
+      }
+      
+      if (ordersResponse.status === 429) {
+        throw new Error('RATE_LIMIT: Muitas requisições. Tente novamente em alguns minutos.');
+      }
+      
       throw new Error(`ML API error: ${ordersResponse.status} - ${errorText}`);
     }
 

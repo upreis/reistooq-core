@@ -159,8 +159,14 @@ class MercadoLivreService {
       });
 
       if (error || !data.success) {
-        throw new Error(data?.error || 'Failed to start OAuth flow');
+        console.error('ML OAuth start failed:', { error, data });
+        throw new Error(data?.error || error?.message || 'Failed to start OAuth flow');
       }
+
+      console.log('ML OAuth flow started successfully:', {
+        has_auth_url: !!data.authorization_url,
+        state: data.state,
+      });
 
       return {
         success: true,
@@ -225,13 +231,36 @@ class MercadoLivreService {
         throw new Error('Integration account ID is required');
       }
 
+      console.log('Fetching ML orders:', {
+        account_id: params.integration_account_id,
+        since: params.since,
+        until: params.until,
+        limit: params.limit,
+      });
+
       const { data, error } = await supabase.functions.invoke('mercadolivre-orders', {
         body: params,
       });
 
       if (error || !data.success) {
-        throw new Error(data?.error || 'Failed to fetch orders from MercadoLibre');
+        const errorMsg = data?.error || error?.message || 'Failed to fetch orders from MercadoLibre';
+        
+        // Handle specific error types
+        if (errorMsg.includes('INSUFFICIENT_PERMISSIONS')) {
+          throw new Error('Sua conta não tem permissão para acessar pedidos. Verifique se é uma conta de vendedor ativa no MercadoLibre.');
+        }
+        
+        if (errorMsg.includes('RATE_LIMIT')) {
+          throw new Error('Muitas requisições ao MercadoLibre. Tente novamente em alguns minutos.');
+        }
+        
+        throw new Error(errorMsg);
       }
+
+      console.log('ML orders fetched successfully:', {
+        total_orders: data.data?.paging?.total || 0,
+        returned_orders: data.data?.results?.length || 0,
+      });
 
       return data.data;
     } catch (error) {

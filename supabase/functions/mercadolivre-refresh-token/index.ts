@@ -92,11 +92,21 @@ serve(async (req) => {
         status: refreshResponse.status,
         statusText: refreshResponse.statusText,
         error: errorText,
+        account_id: integration_account_id,
       });
       
-      // If refresh fails with invalid_grant, the refresh token is expired/invalid
-      if (refreshResponse.status === 400 && errorText.includes('invalid_grant')) {
-        throw new Error('REFRESH_TOKEN_EXPIRED');
+      // Handle specific refresh errors
+      if (refreshResponse.status === 400) {
+        if (errorText.includes('invalid_grant')) {
+          throw new Error('REFRESH_TOKEN_EXPIRED');
+        }
+        if (errorText.includes('invalid_client')) {
+          throw new Error('INVALID_CLIENT_CREDENTIALS');
+        }
+      }
+      
+      if (refreshResponse.status === 401) {
+        throw new Error('UNAUTHORIZED_CLIENT');
       }
       
       throw new Error(`Token refresh failed: ${refreshResponse.status} - ${errorText}`);

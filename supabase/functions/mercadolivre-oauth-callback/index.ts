@@ -153,6 +153,18 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
+      
+      // Handle specific ML OAuth errors
+      if (errorText.includes('invalid_operator_user_id')) {
+        console.error('ML OAuth operator error:', { error: errorText, user_id: storedState.user_id });
+        throw new Error('OPERATOR_REQUIRED: Esta conta precisa ter permissões de administrador no MercadoLibre para realizar integrações. Use uma conta com acesso completo à loja.');
+      }
+      
+      if (errorText.includes('invalid_grant')) {
+        console.error('ML OAuth invalid grant:', { error: errorText, state });
+        throw new Error('Código de autorização inválido ou expirado. Tente fazer login novamente.');
+      }
+      
       console.error('Token exchange failed:', {
         status: tokenResponse.status,
         statusText: tokenResponse.statusText,
@@ -176,7 +188,13 @@ serve(async (req) => {
     });
 
     if (!userResponse.ok) {
-      throw new Error('Failed to get user info from MercadoLibre');
+      const userErrorText = await userResponse.text();
+      console.error('Failed to get ML user info:', {
+        status: userResponse.status,
+        error: userErrorText,
+        user_id: storedState.user_id,
+      });
+      throw new Error(`Failed to get user info from MercadoLibre: ${userResponse.status}`);
     }
 
     const userData = await userResponse.json();
@@ -267,10 +285,13 @@ serve(async (req) => {
       .eq('id', storedState.id);
 
     console.log('ML OAuth completed successfully:', {
-      user_id: userData.id,
+      ml_user_id: userData.id,
       nickname: userData.nickname,
       site_id: userData.site_id,
       organization_id: profile.organizacao_id,
+      account_id: account.id,
+      has_refresh_token: !!tokenData.refresh_token,
+      expires_at: expiresAt.toISOString(),
       timestamp: new Date().toISOString(),
     });
 

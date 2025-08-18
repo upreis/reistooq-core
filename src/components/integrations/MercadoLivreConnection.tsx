@@ -77,7 +77,16 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
             window.removeEventListener('message', handleMessage);
             setIsConnecting(false);
             
-            toast.error(`Erro na autenticação: ${event.data.error || 'Falha desconhecida'}`);
+            const errorMsg = event.data.error || 'Falha desconhecida';
+            
+            // Handle specific error types with better user messages
+            if (errorMsg.includes('OPERATOR_REQUIRED')) {
+              toast.error('Erro: Use uma conta com permissões de administrador no MercadoLibre para realizar integrações.');
+            } else if (errorMsg.includes('invalid_grant') || errorMsg.includes('expirado')) {
+              toast.error('Código de autorização expirado. Tente conectar novamente.');
+            } else {
+              toast.error(`Erro na autenticação: ${errorMsg}`);
+            }
           }
         };
 
@@ -96,7 +105,16 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       }
     } catch (error) {
       console.error('ML connection failed:', error);
-      toast.error(error instanceof Error ? error.message : 'Falha ao conectar Mercado Livre');
+      
+      const errorMsg = error instanceof Error ? error.message : 'Falha ao conectar Mercado Livre';
+      
+      // Handle specific error types
+      if (errorMsg.includes('Failed to start OAuth flow')) {
+        toast.error('Erro ao iniciar conexão. Verifique sua internet e tente novamente.');
+      } else {
+        toast.error(errorMsg);
+      }
+      
       setIsConnecting(false);
     }
   };
@@ -137,7 +155,17 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       }
     } catch (error) {
       console.error('Orders sync failed:', error);
-      toast.error('Erro ao sincronizar pedidos');
+      
+      const errorMsg = error instanceof Error ? error.message : 'Erro ao sincronizar pedidos';
+      
+      // Handle specific sync errors
+      if (errorMsg.includes('INSUFFICIENT_PERMISSIONS')) {
+        toast.error('Sua conta não tem permissão para acessar pedidos no MercadoLibre.');
+      } else if (errorMsg.includes('RATE_LIMIT')) {
+        toast.error('Muitas requisições. Aguarde alguns minutos antes de sincronizar novamente.');
+      } else {
+        toast.error(errorMsg);
+      }
     } finally {
       setIsSyncing(null);
     }

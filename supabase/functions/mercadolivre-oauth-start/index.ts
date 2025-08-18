@@ -130,9 +130,12 @@ serve(async (req) => {
 
     console.log('OAuth flow initiated:', {
       organization_id,
+      user_id: userId,
       state,
       redirect_uri: ML_REDIRECT_URI,
       authorization_url: authUrl.toString(),
+      pkce_enabled: true,
+      scopes: 'offline_access read write',
       timestamp: new Date().toISOString(),
     });
 
