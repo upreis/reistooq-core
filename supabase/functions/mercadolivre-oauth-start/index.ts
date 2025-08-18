@@ -73,12 +73,12 @@ serve(async (req) => {
 
     let organizationId: string | null = null;
     if (userId) {
-      const { data: prof } = await client
-        .from('profiles')
-        .select('organizacao_id')
-        .eq('id', userId)
-        .single();
-      organizationId = prof?.organizacao_id ?? null;
+      const { data: orgId, error: orgError } = await serviceClient
+        .rpc('get_user_organization_id', { target_user_id: userId });
+      if (orgError) {
+        console.error('Organization lookup error (start):', orgError);
+      }
+      organizationId = orgId ?? null;
     }
 
     // Store OAuth state temporarily (expires in 10 minutes)

@@ -32,14 +32,15 @@ serve(async (req) => {
     // Get current user from JWT
     const userId = JSON.parse(atob(authHeader.replace('Bearer ', '').split('.')[1])).sub;
 
-    // Get organization ID from user profile
-    const { data: profile } = await client
-      .from('profiles')
-      .select('organizacao_id')
-      .eq('id', userId)
-      .single();
-
-    if (!profile?.organizacao_id) {
+    // Get organization ID securely via RPC (bypasses RLS safely)
+    const serviceClient = makeClient(null);
+    const { data: organizationId, error: orgError } = await serviceClient
+      .rpc('get_user_organization_id', { target_user_id: userId });
+    if (orgError) {
+      console.error('Organization lookup error (refresh):', orgError);
+      throw new Error('User organization not found');
+    }
+    if (!organizationId) {
       throw new Error('User organization not found');
     }
 
