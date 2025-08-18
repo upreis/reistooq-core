@@ -64,7 +64,11 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
             return;
           }
 
-          if (event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre') {
+          const successV1 = event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre';
+          const successLegacy = event.data?.source === 'mercadolivre-oauth' && event.data?.connected === true;
+          const errorV1 = event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre';
+
+          if (successV1 || successLegacy) {
             popup.close();
             window.removeEventListener('message', handleMessage);
             setIsConnecting(false);
@@ -72,7 +76,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
             toast.success('Mercado Livre conectado com sucesso!');
             loadAccounts();
             
-          } else if (event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre') {
+          } else if (errorV1) {
             popup.close();
             window.removeEventListener('message', handleMessage);
             setIsConnecting(false);
