@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
       .from('oauth_states')
       .select('*')
       .eq('state_value', state)
-      .eq('provider', 'mercadolivre')
+      .eq('provider', 'mercadolivre_v2')
       .eq('used', false)
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
@@ -335,7 +335,7 @@ Deno.serve(async (req) => {
     // Store encrypted secrets
     const { error: secretError } = await supabase.rpc('encrypt_integration_secret', {
       p_account_id: userInfo.id.toString(),
-      p_provider: 'mercadolivre',
+      p_provider: 'mercadolivre_v2',
       p_client_id: ML_CLIENT_ID,
       p_client_secret: ML_CLIENT_SECRET,
       p_access_token: tokenData.access_token,

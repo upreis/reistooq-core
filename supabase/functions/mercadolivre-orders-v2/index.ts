@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
     const { data: secretData, error: secretError } = await supabase
       .rpc('get_integration_secret_secure', {
         account_id: mlAccount.ml_user_id,
-        provider_name: 'mercadolivre',
+        provider_name: 'mercadolivre_v2',
         requesting_function: 'mercadolivre-orders-v2'
       })
       .maybeSingle();
