@@ -28,6 +28,8 @@ serve(async (req) => {
     if (!authHeader) {
       throw new Error('Authorization header required');
     }
+    
+    console.log('Processing ML orders request at:', new Date().toISOString());
 
     const client = makeClient(authHeader);
     const params: OrdersRequest = await req.json();
