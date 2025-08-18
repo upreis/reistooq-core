@@ -152,7 +152,7 @@ class MercadoLivreService {
    */
   async initiateOAuth(): Promise<{ success: boolean; authorization_url?: string; error?: string }> {
     try {
-      const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
+      const { data, error } = await supabase.functions.invoke('mercadolivre-oauth', {
         body: {
           organization_id: 'current', // Will be resolved by Edge Function
         },
@@ -238,7 +238,7 @@ class MercadoLivreService {
         limit: params.limit,
       });
 
-      const { data, error } = await supabase.functions.invoke('mercadolivre-orders', {
+      const { data, error } = await supabase.functions.invoke('mercadolivre-orders-proxy', {
         body: params,
       });
 
