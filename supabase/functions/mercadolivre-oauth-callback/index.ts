@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { makeClient } from "../_shared/client.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -84,7 +84,21 @@ serve(async (req) => {
     }
 
     // Create service role client for server-side operations
-    const serviceClient = makeClient('Bearer ' + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      return new Response(
+        JSON.stringify({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('[ML OAuth Callback] Using service role:', !!supabaseServiceRoleKey);
+
+    const serviceClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: { persistSession: false }
+    });
 
     // Validate state in database to prevent CSRF attacks (double check)
     const nowIso = new Date().toISOString();
