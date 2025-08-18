@@ -4,7 +4,7 @@ export function makeClient(authHeader: string | null) {
   const url = Deno.env.get("SUPABASE_URL")!;
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   return createClient(url, key, {
-    global: { headers: { Authorization: authHeader ?? "" } }
+    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
   });
 }
 
