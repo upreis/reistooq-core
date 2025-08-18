@@ -87,12 +87,14 @@ serve(async (req) => {
     const serviceClient = makeClient('Bearer ' + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
 
     // Validate state in database to prevent CSRF attacks (double check)
+    const nowIso = new Date().toISOString();
     const { data: storedState, error: stateError } = await serviceClient
       .from('oauth_states')
       .select('*')
-      .eq('state_value', state)
-      .gt('expires_at', new Date().toISOString())
+      .or(`state_value.eq.${state},id.eq.${state}`)
+      .gt('expires_at', nowIso)
       .maybeSingle();
+
 
     if (stateError) {
       console.error('State validation error:', stateError);

@@ -23,6 +23,7 @@ serve(async (req) => {
     }
 
     const client = makeClient(authHeader);
+    const serviceClient = makeClient(null); // service role for DB writes without RLS friction
     const { organization_id }: OAuthStartRequest = await req.json();
 
     if (!organization_id) {
@@ -63,7 +64,8 @@ serve(async (req) => {
     }
 
     // Store OAuth state temporarily (expires in 10 minutes)
-    const { error: stateError } = await client
+    let finalError: any = null;
+    const { error: se1 } = await serviceClient
       .from('oauth_states')
       .insert({
         state_value: state,
@@ -73,8 +75,21 @@ serve(async (req) => {
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       });
 
-    if (stateError) {
-      console.error('Failed to store OAuth state:', stateError);
+    if (se1) {
+      console.error('Primary oauth_states insert failed (state_value schema). Falling back to legacy schema...', se1);
+      // Fallback for legacy schema that uses id column and no provider/state_value
+      const { error: se2 } = await serviceClient
+        .from('oauth_states')
+        .insert({
+          id: state,
+          user_id: userId,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        });
+      finalError = se2;
+    }
+
+    if (finalError) {
+      console.error('Failed to store OAuth state (all attempts):', finalError);
       throw new Error('Failed to initialize OAuth flow');
     }
 
