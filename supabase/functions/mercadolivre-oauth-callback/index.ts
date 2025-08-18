@@ -173,14 +173,26 @@ serve(async (req) => {
       : new Date(Date.now() + 6 * 60 * 60 * 1000); // Default 6 hours
 
     // Get organization ID from current user
-    const { data: profile } = await serviceClient
+    const { data: profile, error: profileError } = await serviceClient
       .from('profiles')
       .select('organizacao_id')
       .eq('id', storedState.user_id)
       .single();
 
+    console.log('Profile lookup:', {
+      user_id: storedState.user_id,
+      profile_found: !!profile,
+      organization_id: profile?.organizacao_id,
+      error: profileError
+    });
+
+    if (profileError) {
+      console.error('Profile query error:', profileError);
+      throw new Error(`Profile lookup failed: ${profileError.message}`);
+    }
+
     if (!profile?.organizacao_id) {
-      throw new Error('User organization not found');
+      throw new Error(`User organization not found for user_id: ${storedState.user_id}`);
     }
 
     // Store/update integration account
