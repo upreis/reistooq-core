@@ -1698,59 +1698,7 @@ export type Database = {
       }
     }
     Views: {
-      profiles_safe: {
-        Row: {
-          avatar_url: string | null
-          cargo: string | null
-          configuracoes_notificacao: Json | null
-          created_at: string | null
-          departamento: string | null
-          id: string | null
-          nome_completo: string | null
-          nome_exibicao: string | null
-          onboarding_banner_dismissed: boolean | null
-          organizacao_id: string | null
-          telefone: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          cargo?: string | null
-          configuracoes_notificacao?: Json | null
-          created_at?: string | null
-          departamento?: string | null
-          id?: string | null
-          nome_completo?: string | null
-          nome_exibicao?: string | null
-          onboarding_banner_dismissed?: boolean | null
-          organizacao_id?: string | null
-          telefone?: never
-          updated_at?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          cargo?: string | null
-          configuracoes_notificacao?: Json | null
-          created_at?: string | null
-          departamento?: string | null
-          id?: string | null
-          nome_completo?: string | null
-          nome_exibicao?: string | null
-          onboarding_banner_dismissed?: boolean | null
-          organizacao_id?: string | null
-          telefone?: never
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_organizacao_id_fkey"
-            columns: ["organizacao_id"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       accept_invitation_secure: {
@@ -2045,6 +1993,19 @@ export type Database = {
         }[]
       }
       get_profile_safe: {
+        Args: { profile_id: string }
+        Returns: {
+          avatar_url: string
+          cargo: string
+          created_at: string
+          departamento: string
+          id: string
+          nome_completo: string
+          nome_exibicao: string
+          organizacao_id: string
+        }[]
+      }
+      get_profile_secure: {
         Args: { profile_id: string }
         Returns: {
           avatar_url: string

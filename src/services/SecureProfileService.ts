@@ -27,12 +27,10 @@ export class SecureProfileService {
    */
   static async getById(id: string) {
     try {
-      const { data, error } = await supabase.rpc('get_profiles_safe');
+      const { data, error } = await supabase.rpc('get_profile_secure', { profile_id: id });
 
       if (error) throw error;
-      // Find the specific profile by ID
-      const profile = data?.find(p => p.id === id);
-      return profile || null;
+      return data?.[0] || null;
     } catch (error) {
       console.error('Error fetching profile by ID:', error);
       throw error;
