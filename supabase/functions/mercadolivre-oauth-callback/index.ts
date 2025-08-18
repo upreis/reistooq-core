@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { makeClient } from "../_shared/client.ts"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,9 +48,10 @@ serve(async (req) => {
       // Return error page for missing parameters
       return new Response(`
         <!DOCTYPE html>
-        <html>
-        <head>
-          <title>OAuth Error</title>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>OAuth Error</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
             .error { color: #dc3545; }
@@ -84,21 +85,8 @@ serve(async (req) => {
     }
 
     // Create service role client for server-side operations
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      return new Response(
-        JSON.stringify({ error: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY' }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('[ML OAuth Callback] Using service role:', !!supabaseServiceRoleKey);
-
-    const serviceClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: { persistSession: false }
-    });
+    console.log('[ML OAuth Callback] Using service role via makeClient');
+    const serviceClient = makeClient(null); // service role without user auth headers
 
     // Validate state in database to prevent CSRF attacks (double check)
     const nowIso = new Date().toISOString();
@@ -204,26 +192,22 @@ serve(async (req) => {
       ? new Date(Date.now() + tokenData.expires_in * 1000)
       : new Date(Date.now() + 6 * 60 * 60 * 1000); // Default 6 hours
 
-    // Get organization ID from current user
-    const { data: profile, error: profileError } = await serviceClient
-      .from('profiles')
-      .select('organizacao_id')
-      .eq('id', storedState.user_id)
-      .maybeSingle();
+    // Get organization ID using secure RPC function
+    const { data: organizationId, error: orgError } = await serviceClient
+      .rpc('get_user_organization_id', { target_user_id: storedState.user_id });
 
-    console.log('Profile lookup:', {
+    console.log('Organization lookup:', {
       user_id: storedState.user_id,
-      profile_found: !!profile,
-      organization_id: profile?.organizacao_id,
-      error: profileError
+      organization_id: organizationId,
+      error: orgError
     });
 
-    if (profileError) {
-      console.error('Profile query error:', profileError);
-      throw new Error(`Profile lookup failed: ${profileError.message}`);
+    if (orgError) {
+      console.error('Organization lookup error:', orgError);
+      throw new Error(`Organization lookup failed: ${orgError.message}`);
     }
 
-    if (!profile?.organizacao_id) {
+    if (!organizationId) {
       throw new Error(`User organization not found for user_id: ${storedState.user_id}`);
     }
 
@@ -231,7 +215,7 @@ serve(async (req) => {
     const { data: account, error: accountError } = await serviceClient
       .from('integration_accounts')
       .upsert({
-        organization_id: profile.organizacao_id,
+        organization_id: organizationId,
         provider: 'mercadolivre',
         name: userData.nickname || userData.first_name || 'MercadoLibre Account',
         account_identifier: userData.id.toString(),
@@ -288,7 +272,7 @@ serve(async (req) => {
       ml_user_id: userData.id,
       nickname: userData.nickname,
       site_id: userData.site_id,
-      organization_id: profile.organizacao_id,
+      organization_id: organizationId,
       account_id: account.id,
       has_refresh_token: !!tokenData.refresh_token,
       expires_at: expiresAt.toISOString(),
@@ -300,6 +284,7 @@ serve(async (req) => {
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="utf-8">
         <title>Autenticação Concluída</title>
         <style>
           body { 
@@ -367,6 +352,7 @@ serve(async (req) => {
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="utf-8">
         <title>Erro de Autenticação</title>
         <style>
           body { 
