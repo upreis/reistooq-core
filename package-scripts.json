@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "check:routers": "bash scripts/check-routers.sh",
+    "check:security": "bash scripts/auto-avaliacao.sh",
+    "auto-eval": "bash scripts/auto-avaliacao.sh",
+    "pre-commit": "npm run check:routers && npm run type-check",
+    "validate": "npm run auto-eval && npm run lint && npm run type-check"
+  }
+}

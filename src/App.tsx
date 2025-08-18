@@ -9,6 +9,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarUIProvider } from "@/context/SidebarUIContext";
 import { MobileProvider } from "@/contexts/MobileContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { useSystemValidator } from "@/utils/SystemValidator";
 import FullLayout from "@/layouts/full/FullLayout";
 
 // Import pages
@@ -47,6 +48,9 @@ import MobileExperience from "./pages/MobileExperience";
 const queryClient = new QueryClient();
 
 function App() {
+  // 🛡️ Sistema de validação automática
+  const validator = useSystemValidator();
+  
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
