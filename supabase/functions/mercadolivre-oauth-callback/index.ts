@@ -129,7 +129,7 @@ serve(async (req) => {
         client_secret: ML_CLIENT_SECRET,
         code,
         redirect_uri: ML_REDIRECT_URI,
-        code_verifier: storedState.code_verifier, // PKCE S256 code verifier
+        // code_verifier: storedState.code_verifier, // PKCE not implemented yet
       }),
     });
 
