@@ -37,3 +37,6 @@ verify_jwt = false
 
 [functions.mercadolivre-orders-v2]
 verify_jwt = false
+
+[functions.mercadolivre-orders-v2]
+verify_jwt = false

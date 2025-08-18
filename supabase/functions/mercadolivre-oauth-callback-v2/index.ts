@@ -7,154 +7,106 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 }
 
+interface TokenResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  scope: string;
+  user_id: number;
+  refresh_token: string;
+}
+
+interface MLUser {
+  id: number;
+  nickname: string;
+  site_id: string;
+  email?: string;
+}
+
 Deno.serve(async (req) => {
   try {
     // Handle CORS preflight requests
     if (req.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders });
+      return new Response(null, { status: 204, headers: corsHeaders });
     }
+
+    console.log('[ML OAuth Callback v2] Processing callback...');
 
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     const error = url.searchParams.get('error');
 
-    console.log('OAuth callback v2 received:', {
-      redirect_uri_used: req.url,
-      has_code: !!code,
-      has_state: !!state,
-      error: error,
-      timestamp: new Date().toISOString()
-    });
-
-    // Handle OAuth errors
     if (error) {
-      console.error('OAuth error from ML:', error);
+      console.error('[ML OAuth Callback v2] OAuth error:', error);
       return new Response(`
-        <!DOCTYPE html>
         <html>
-        <head>
-          <title>Erro de Autenticação</title>
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              padding: 40px; 
-              text-align: center; 
-              background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-              color: white;
-              margin: 0;
-              min-height: 100vh;
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-            }
-            .error { 
-              background: rgba(255,255,255,0.1);
-              padding: 30px;
-              border-radius: 10px;
-              backdrop-filter: blur(10px);
-              border: 1px solid rgba(255,255,255,0.2);
-            }
-            .icon { font-size: 3em; margin-bottom: 20px; }
-            h1 { margin: 0 0 10px 0; }
-            p { margin: 5px 0; opacity: 0.9; }
-          </style>
-        </head>
-        <body>
-          <div class="error">
-            <div class="icon">⚠️</div>
-            <h1>Erro na Autenticação</h1>
-            <p>Erro: ${error}</p>
-            <p>Fechando janela...</p>
-          </div>
-          <script>
-            if (window.opener) {
-              window.opener.postMessage({
-                type: 'oauth_error',
-                provider: 'mercadolivre',
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'MERCADOLIVRE_OAUTH_ERROR',
                 error: '${error}'
               }, '*');
-            }
-            setTimeout(() => window.close(), 3000);
-          </script>
-        </body>
+              window.close();
+            </script>
+          </body>
         </html>
       `, {
-        headers: { 
-          'Content-Type': 'text/html', 
-          'Set-Cookie': 'ml_oauth_state_v2=; Path=/; SameSite=None; Secure; HttpOnly; Max-Age=0' 
-        },
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
       });
     }
 
-    // Validate required parameters
     if (!code || !state) {
-      console.error('Missing required parameters:', { code: !!code, state: !!state });
+      console.error('[ML OAuth Callback v2] Missing code or state');
       return new Response(`
-        <!DOCTYPE html>
         <html>
-        <head>
-          <title>Erro de Autenticação</title>
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              padding: 40px; 
-              text-align: center; 
-              background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-              color: white;
-              margin: 0;
-              min-height: 100vh;
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-            }
-            .error { 
-              background: rgba(255,255,255,0.1);
-              padding: 30px;
-              border-radius: 10px;
-              backdrop-filter: blur(10px);
-              border: 1px solid rgba(255,255,255,0.2);
-            }
-            .icon { font-size: 3em; margin-bottom: 20px; }
-            h1 { margin: 0 0 10px 0; }
-            p { margin: 5px 0; opacity: 0.9; }
-          </style>
-        </head>
-        <body>
-          <div class="error">
-            <div class="icon">❌</div>
-            <h1>Erro na Autenticação</h1>
-            <p>Parâmetros inválidos ou ausentes</p>
-            <p>Fechando janela...</p>
-          </div>
-          <script>
-            if (window.opener) {
-              window.opener.postMessage({
-                type: 'oauth_error',
-                provider: 'mercadolivre',
-                error: 'Parâmetros inválidos ou ausentes'
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'MERCADOLIVRE_OAUTH_ERROR',
+                error: 'Missing authorization code or state'
               }, '*');
-            }
-            setTimeout(() => window.close(), 3000);
-          </script>
-        </body>
+              window.close();
+            </script>
+          </body>
         </html>
       `, {
-        headers: { 
-          'Content-Type': 'text/html', 
-          'Set-Cookie': 'ml_oauth_state_v2=; Path=/; SameSite=None; Secure; HttpOnly; Max-Age=0' 
-        },
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
       });
     }
 
-    // Create Supabase client with service role
+    // Get ML credentials from environment
+    const ML_CLIENT_ID = Deno.env.get('ML_CLIENT_ID');
+    const ML_CLIENT_SECRET = Deno.env.get('ML_CLIENT_SECRET');
+    const ML_REDIRECT_URI = Deno.env.get('ML_REDIRECT_URI') || 
+      `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolivre-oauth-callback-v2`;
+
+    if (!ML_CLIENT_ID || !ML_CLIENT_SECRET) {
+      console.error('[ML OAuth Callback v2] Missing ML credentials');
+      return new Response(`
+        <html>
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'MERCADOLIVRE_OAUTH_ERROR',
+                error: 'Credenciais MercadoLibre não configuradas'
+              }, '*');
+              window.close();
+            </script>
+          </body>
+        </html>
+      `, {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
+      });
+    }
+
+    // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    console.log('[ML OAuth Callback v2] Using service role for secure operations');
 
     // Validate OAuth state
     const { data: oauthState, error: stateError } = await supabase
@@ -167,70 +119,24 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (stateError || !oauthState) {
-      console.error('Invalid or expired OAuth state:', { stateError, found: !!oauthState });
+      console.error('[ML OAuth Callback v2] Invalid state:', stateError);
       return new Response(`
-        <!DOCTYPE html>
         <html>
-        <head>
-          <title>Erro de Autenticação</title>
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              padding: 40px; 
-              text-align: center; 
-              background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-              color: white;
-              margin: 0;
-              min-height: 100vh;
-              display: flex;
-              flex-direction: column;
-              justify-content: center;
-              align-items: center;
-            }
-            .error { 
-              background: rgba(255,255,255,0.1);
-              padding: 30px;
-              border-radius: 10px;
-              backdrop-filter: blur(10px);
-              border: 1px solid rgba(255,255,255,0.2);
-            }
-            .icon { font-size: 3em; margin-bottom: 20px; }
-            h1 { margin: 0 0 10px 0; }
-            p { margin: 5px 0; opacity: 0.9; }
-          </style>
-        </head>
-        <body>
-          <div class="error">
-            <div class="icon">🔒</div>
-            <h1>Erro na Autenticação</h1>
-            <p>Estado OAuth inválido ou expirado</p>
-            <p>Fechando janela...</p>
-          </div>
-          <script>
-            if (window.opener) {
-              window.opener.postMessage({
-                type: 'oauth_error',
-                provider: 'mercadolivre',
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'MERCADOLIVRE_OAUTH_ERROR',
                 error: 'Estado OAuth inválido ou expirado'
               }, '*');
-            }
-            setTimeout(() => window.close(), 3000);
-          </script>
-        </body>
+              window.close();
+            </script>
+          </body>
         </html>
       `, {
-        headers: { 
-          'Content-Type': 'text/html', 
-          'Set-Cookie': 'ml_oauth_state_v2=; Path=/; SameSite=None; Secure; HttpOnly; Max-Age=0' 
-        },
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
       });
     }
-
-    console.log('OAuth state validated:', {
-      user_id: oauthState.user_id,
-      organization_id: oauthState.organization_id,
-      code_verifier_present: !!oauthState.code_verifier
-    });
 
     // Mark state as used
     await supabase
@@ -238,27 +144,17 @@ Deno.serve(async (req) => {
       .update({ used: true })
       .eq('id', oauthState.id);
 
-    // Get ML credentials
-    const ML_CLIENT_ID = Deno.env.get('ML_CLIENT_ID');
-    const ML_CLIENT_SECRET = Deno.env.get('ML_CLIENT_SECRET');
-    const ML_REDIRECT_URI = Deno.env.get('ML_REDIRECT_URI') || `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolivre-oauth-callback-v2`;
-
-    if (!ML_CLIENT_ID || !ML_CLIENT_SECRET || !ML_REDIRECT_URI) {
-      console.error('Missing ML credentials for token exchange');
-      throw new Error('ML credentials not configured');
-    }
-
-    console.log('Exchanging code for tokens:', {
-      redirect_uri: ML_REDIRECT_URI,
-      client_id: ML_CLIENT_ID,
-      has_code: !!code,
-      has_code_verifier: !!oauthState.code_verifier
+    console.log('[ML OAuth Callback v2] State validated:', {
+      state: state.substring(0, 8) + '...',
+      user_id: oauthState.user_id,
+      organization_id: oauthState.organization_id
     });
 
-    // Exchange code for tokens
+    // Exchange code for access token
     const tokenResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
       method: 'POST',
       headers: {
+        'Accept': 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
@@ -267,69 +163,111 @@ Deno.serve(async (req) => {
         client_secret: ML_CLIENT_SECRET,
         code: code,
         redirect_uri: ML_REDIRECT_URI,
-        code_verifier: oauthState.code_verifier
-      }).toString(),
+        code_verifier: oauthState.code_verifier,
+      }),
     });
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error('Token exchange failed:', {
+      console.error('[ML OAuth Callback v2] Token exchange failed:', {
         status: tokenResponse.status,
-        statusText: tokenResponse.statusText,
         error: errorText
       });
-      throw new Error(`Token exchange failed: ${tokenResponse.status} ${errorText}`);
+      return new Response(`
+        <html>
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'MERCADOLIVRE_OAUTH_ERROR',
+                error: 'Falha na troca de token com MercadoLibre'
+              }, '*');
+              window.close();
+            </script>
+          </body>
+        </html>
+      `, {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
+      });
     }
 
-    const tokenData = await tokenResponse.json();
-    console.log('Token exchange successful:', {
-      access_token_present: !!tokenData.access_token,
-      refresh_token_present: !!tokenData.refresh_token,
+    const tokenData: TokenResponse = await tokenResponse.json();
+    console.log('[ML OAuth Callback v2] Token obtained successfully:', {
       user_id: tokenData.user_id,
       expires_in: tokenData.expires_in
     });
 
-    // Get user info from MercadoLibre
-    const userInfoResponse = await fetch(`https://api.mercadolibre.com/users/me`, {
+    // Get user information from MercadoLibre
+    const userResponse = await fetch(`https://api.mercadolibre.com/users/me`, {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`
       }
     });
 
-    if (!userInfoResponse.ok) {
-      console.error('Failed to get user info from ML');
-      throw new Error('Failed to get user info from MercadoLibre');
+    if (!userResponse.ok) {
+      console.error('[ML OAuth Callback v2] Failed to get user info');
+      return new Response(`
+        <html>
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'MERCADOLIVRE_OAUTH_ERROR',
+                error: 'Falha ao obter informações do usuário'
+              }, '*');
+              window.close();
+            </script>
+          </body>
+        </html>
+      `, {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
+      });
     }
 
-    const userInfo = await userInfoResponse.json();
-    console.log('User info retrieved:', {
+    const userInfo: MLUser = await userResponse.json();
+    console.log('[ML OAuth Callback v2] User info obtained:', {
       id: userInfo.id,
       nickname: userInfo.nickname,
-      email: userInfo.email,
-      site_id: userInfo.site_id,
-      country_id: userInfo.country_id
+      site_id: userInfo.site_id
     });
 
-    // Store ML account
+    // Store ML account in database
+    const accountData = {
+      ml_user_id: userInfo.id.toString(),
+      user_id: oauthState.user_id,
+      organization_id: oauthState.organization_id,
+      nickname: userInfo.nickname,
+      site_id: userInfo.site_id,
+      email: userInfo.email || null,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
     const { error: accountError } = await supabase
       .from('ml_accounts_v2')
-      .upsert({
-        organization_id: oauthState.organization_id,
-        user_id: oauthState.user_id,
-        ml_user_id: userInfo.id.toString(),
-        nickname: userInfo.nickname,
-        email: userInfo.email,
-        site_id: userInfo.site_id,
-        country_id: userInfo.country_id,
-        is_active: true,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'organization_id,ml_user_id'
+      .upsert(accountData, {
+        onConflict: 'ml_user_id,organization_id'
       });
 
     if (accountError) {
-      console.error('Failed to store ML account:', accountError);
-      throw new Error('Failed to store MercadoLibre account');
+      console.error('[ML OAuth Callback v2] Failed to store account:', accountError);
+      return new Response(`
+        <html>
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'MERCADOLIVRE_OAUTH_ERROR',
+                error: 'Falha ao salvar conta MercadoLibre'
+              }, '*');
+              window.close();
+            </script>
+          </body>
+        </html>
+      `, {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
+      });
     }
 
     // Store encrypted secrets
@@ -340,145 +278,79 @@ Deno.serve(async (req) => {
       p_client_secret: ML_CLIENT_SECRET,
       p_access_token: tokenData.access_token,
       p_refresh_token: tokenData.refresh_token,
-      p_expires_at: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString(),
-      p_payload: {
-        user_id: userInfo.id,
-        nickname: userInfo.nickname,
-        site_id: userInfo.site_id
-      }
+      p_expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+      p_payload: JSON.stringify({
+        user_id: tokenData.user_id,
+        scope: tokenData.scope,
+        token_type: tokenData.token_type
+      })
     });
 
     if (secretError) {
-      console.error('Failed to store secrets:', secretError);
-      throw new Error('Failed to store authentication secrets');
+      console.error('[ML OAuth Callback v2] Failed to store secrets:', secretError);
+      return new Response(`
+        <html>
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'MERCADOLIVRE_OAUTH_ERROR',
+                error: 'Falha ao armazenar credenciais'
+              }, '*');
+              window.close();
+            </script>
+          </body>
+        </html>
+      `, {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'text/html' },
+      });
     }
 
-    console.log('OAuth v2 callback completed successfully:', {
+    console.log('[ML OAuth Callback v2] OAuth completed successfully:', {
       user_id: oauthState.user_id,
-      organization_id: oauthState.organization_id,
       ml_user_id: userInfo.id,
       nickname: userInfo.nickname
     });
 
-    // Success response
+    // Return success response
     return new Response(`
-      <!DOCTYPE html>
       <html>
-      <head>
-        <title>Autenticação Concluída</title>
-        <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            padding: 40px; 
-            text-align: center; 
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-          }
-          .success { 
-            background: rgba(255,255,255,0.1);
-            padding: 30px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-          }
-          .icon { font-size: 3em; margin-bottom: 20px; }
-          h1 { margin: 0 0 10px 0; }
-          p { margin: 5px 0; opacity: 0.9; }
-        </style>
-      </head>
-      <body>
-        <div class="success">
-          <div class="icon">✅</div>
-          <h1>Autenticação Concluída</h1>
-          <p>Conta MercadoLibre conectada com sucesso!</p>
-          <p>Fechando janela...</p>
-        </div>
-        <script>
-          if (window.opener) {
-            window.opener.postMessage({
-              type: 'oauth_success',
-              provider: 'mercadolivre',
+        <body>
+          <script>
+            window.opener?.postMessage({
+              type: 'MERCADOLIVRE_OAUTH_SUCCESS',
               data: {
-                user_id: '${userInfo.id}',
                 nickname: '${userInfo.nickname}',
+                user_id: '${userInfo.id}',
                 site_id: '${userInfo.site_id}'
               }
             }, '*');
-          }
-          setTimeout(() => window.close(), 2000);
-        </script>
-      </body>
+            window.close();
+          </script>
+        </body>
       </html>
     `, {
-      headers: { 
-        'Content-Type': 'text/html', 
-        'Set-Cookie': 'ml_oauth_state_v2=; Path=/; SameSite=None; Secure; HttpOnly; Max-Age=0' 
-      },
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'text/html' },
     });
 
   } catch (error) {
-    console.error('OAuth callback v2 error:', error);
+    console.error('[ML OAuth Callback v2] Error:', error);
     return new Response(`
-      <!DOCTYPE html>
       <html>
-      <head>
-        <title>Erro de Autenticação</title>
-        <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            padding: 40px; 
-            text-align: center; 
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-            color: white;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-          }
-          .error { 
-            background: rgba(255,255,255,0.1);
-            padding: 30px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-          }
-          .icon { font-size: 3em; margin-bottom: 20px; }
-          h1 { margin: 0 0 10px 0; }
-          p { margin: 5px 0; opacity: 0.9; }
-        </style>
-      </head>
-      <body>
-        <div class="error">
-          <div class="icon">⚠️</div>
-          <h1>Erro na Autenticação</h1>
-          <p>${error.message}</p>
-          <p>Fechando janela...</p>
-        </div>
-        <script>
-          if (window.opener) {
-            window.opener.postMessage({
-              type: 'oauth_error',
-              provider: 'mercadolivre',
-              error: '${error.message}'
+        <body>
+          <script>
+            window.opener?.postMessage({
+              type: 'MERCADOLIVRE_OAUTH_ERROR',
+              error: 'Erro interno do servidor'
             }, '*');
-          }
-          setTimeout(() => window.close(), 3000);
-        </script>
-      </body>
+            window.close();
+          </script>
+        </body>
       </html>
     `, {
-      headers: { 
-        'Content-Type': 'text/html', 
-        'Set-Cookie': 'ml_oauth_state_v2=; Path=/; SameSite=None; Secure; HttpOnly; Max-Age=0' 
-      },
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'text/html' },
     });
   }
 });
