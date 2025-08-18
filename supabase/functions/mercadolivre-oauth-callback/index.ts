@@ -209,7 +209,7 @@ serve(async (req) => {
       .from('profiles')
       .select('organizacao_id')
       .eq('id', storedState.user_id)
-      .single();
+      .maybeSingle();
 
     console.log('Profile lookup:', {
       user_id: storedState.user_id,
