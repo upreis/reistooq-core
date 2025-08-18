@@ -346,7 +346,7 @@ serve(async (req) => {
       </body>
       </html>
     `, {
-      headers: { 'Content-Type': 'text/html', 'Set-Cookie': 'ml_oauth_state=; Path=/; SameSite=Lax; Secure; HttpOnly; Max-Age=0' },
+      headers: { 'Content-Type': 'text/html', 'Set-Cookie': 'ml_oauth_state=; Path=/; SameSite=None; Secure; HttpOnly; Max-Age=0' },
     });
 
   } catch (error) {
