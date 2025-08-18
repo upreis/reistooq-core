@@ -1,6 +1,7 @@
 
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
+import { IntelligentDashboard } from "@/features/dashboard/components/IntelligentDashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -92,7 +93,10 @@ const Index = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
+      {/* Dashboard Inteligente */}
+      <IntelligentDashboard />
+      
+      {/* Welcome Section - Mantido para compatibilidade */}
       <WelcomeCard />
 
       {/* Stats Grid */}
