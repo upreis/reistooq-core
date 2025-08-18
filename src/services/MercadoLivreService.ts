@@ -152,30 +152,20 @@ class MercadoLivreService {
    */
   async initiateOAuth(): Promise<{ success: boolean; authorization_url?: string; error?: string }> {
     try {
-      // We must call this function with GET and a valid JWT
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('Usuário não autenticado');
-      }
-
-      const fnUrl = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-oauth?action=auth-url';
-      const res = await fetch(fnUrl, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          'x-app-origin': window.location.origin,
-        },
+      // Use the correct OAuth start function
+      const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
+        body: { organization_id: 'current' },
       });
 
-      const json = await res.json().catch(() => ({} as any));
-      if (!res.ok || !json?.url) {
-        const errMsg = json?.error || 'Failed to get authorization URL';
+      if (error || !data?.success || !data?.authorization_url) {
+        console.error('ML OAuth start failed:', { error, data });
+        const errMsg = data?.error || error?.message || 'Failed to start OAuth flow';
         throw new Error(errMsg);
       }
 
       return {
         success: true,
-        authorization_url: json.url as string,
+        authorization_url: data.authorization_url,
       };
     } catch (error) {
       console.error('ML OAuth initiation failed:', error);
