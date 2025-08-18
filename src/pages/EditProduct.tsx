@@ -16,7 +16,7 @@ const EditProduct = () => {
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
           <span>🏠</span>
           <span>/</span>
-          <span className="text-primary">Edit Product</span>
+          <span className="text-primary">Editar Produto</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -25,19 +25,19 @@ const EditProduct = () => {
             {/* General Information */}
             <Card>
               <CardHeader>
-                <CardTitle>General</CardTitle>
+                <CardTitle>Geral</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="productName">Product Name *</Label>
-                  <Input id="productName" defaultValue="Derma-E Vitamin C Daily Cleansing Paste" />
+                  <Label htmlFor="productName">Nome do Produto *</Label>
+                  <Input id="productName" defaultValue="Produto de Exemplo" />
                   <p className="text-sm text-muted-foreground">
-                    A product name is required and recommended to be unique.
+                    O nome do produto é obrigatório e recomendado ser único.
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">Descrição</Label>
                   <div className="border rounded-lg">
                     <div className="flex items-center space-x-2 p-3 border-b bg-muted/50">
                       <Button variant="ghost" size="sm">B</Button>
@@ -49,7 +49,7 @@ const EditProduct = () => {
                     </div>
                     <Textarea 
                       className="border-0 min-h-[100px]" 
-                      defaultValue="This gentle daily cleanser effectively removes makeup, dirt, and impurities while nourishing the skin with Vitamin C."
+                      defaultValue="Descrição detalhada do produto com suas características e benefícios."
                     />
                   </div>
                 </div>

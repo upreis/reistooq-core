@@ -27,7 +27,7 @@ const AccountSettings = () => {
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>🏠</span>
         <span>/</span>
-        <span className="text-primary">Account Setting</span>
+        <span className="text-primary">Configurações da Conta</span>
       </div>
 
       {/* Settings Tabs */}
@@ -35,19 +35,19 @@ const AccountSettings = () => {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="account" className="flex items-center space-x-2">
             <div className="w-4 h-4 bg-primary rounded-full"></div>
-            <span>Account</span>
+            <span>Conta</span>
           </TabsTrigger>
           <TabsTrigger value="notification" className="flex items-center space-x-2">
             <Bell className="w-4 h-4" />
-            <span>Notification</span>
+            <span>Notificações</span>
           </TabsTrigger>
           <TabsTrigger value="bills" className="flex items-center space-x-2">
             <CreditCard className="w-4 h-4" />
-            <span>Bills</span>
+            <span>Cobrança</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center space-x-2">
             <Shield className="w-4 h-4" />
-            <span>Security</span>
+            <span>Segurança</span>
           </TabsTrigger>
         </TabsList>
 
@@ -56,8 +56,8 @@ const AccountSettings = () => {
             {/* Change Profile */}
             <Card>
               <CardHeader>
-                <CardTitle>Change Profile</CardTitle>
-                <p className="text-sm text-muted-foreground">Change your profile picture from here</p>
+                <CardTitle>Alterar Perfil</CardTitle>
+                <p className="text-sm text-muted-foreground">Altere sua foto de perfil aqui</p>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex flex-col items-center space-y-4">
@@ -85,11 +85,11 @@ const AccountSettings = () => {
                   </div>
                   
                   <div className="flex space-x-2">
-                    <Button size="sm">Upload</Button>
-                    <Button variant="outline" size="sm">Reset</Button>
+                    <Button size="sm">Fazer Upload</Button>
+                    <Button variant="outline" size="sm">Redefinir</Button>
                   </div>
                   <p className="text-xs text-muted-foreground text-center">
-                    Allowed JPG, GIF or PNG. Max size of 800K
+                    Permitido JPG, GIF ou PNG. Tamanho máximo de 800KB
                   </p>
                 </div>
               </CardContent>
@@ -98,23 +98,23 @@ const AccountSettings = () => {
             {/* Change Password */}
             <Card>
               <CardHeader>
-                <CardTitle>Change Password</CardTitle>
-                <p className="text-sm text-muted-foreground">To change your password please confirm here</p>
+                <CardTitle>Alterar Senha</CardTitle>
+                <p className="text-sm text-muted-foreground">Para alterar sua senha, confirme aqui</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Label htmlFor="currentPassword">Senha Atual</Label>
                   <Input id="currentPassword" type="password" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
+                  <Label htmlFor="newPassword">Nova Senha</Label>
                   <Input id="newPassword" type="password" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">Confirmar Senha</Label>
                   <Input id="confirmPassword" type="password" />
                 </div>
-                <Button className="w-full">Update Password</Button>
+                <Button className="w-full">Atualizar Senha</Button>
               </CardContent>
             </Card>
           </div>
@@ -122,60 +122,60 @@ const AccountSettings = () => {
           {/* Personal Details */}
           <Card>
             <CardHeader>
-              <CardTitle>Personal Details</CardTitle>
-              <p className="text-sm text-muted-foreground">To change your personal detail, edit and save from here</p>
+              <CardTitle>Dados Pessoais</CardTitle>
+              <p className="text-sm text-muted-foreground">Para alterar seus dados pessoais, edite e salve aqui</p>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="yourName">Your Name</Label>
-                  <Input id="yourName" defaultValue="Mathew Anderson" />
+                  <Label htmlFor="yourName">Seu Nome</Label>
+                  <Input id="yourName" defaultValue="João Silva" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="storeName">Store Name</Label>
-                  <Input id="storeName" defaultValue="Macima Studio" />
+                  <Label htmlFor="storeName">Nome da Loja</Label>
+                  <Input id="storeName" defaultValue="Minha Empresa" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Select defaultValue="us">
+                  <Label htmlFor="location">Localização</Label>
+                  <Select defaultValue="br">
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="us">United States</SelectItem>
-                      <SelectItem value="br">Brazil</SelectItem>
-                      <SelectItem value="ca">Canada</SelectItem>
+                      <SelectItem value="br">Brasil</SelectItem>
+                      <SelectItem value="us">Estados Unidos</SelectItem>
+                      <SelectItem value="ca">Canadá</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select defaultValue="inr">
+                  <Label htmlFor="currency">Moeda</Label>
+                  <Select defaultValue="brl">
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="inr">India (INR)</SelectItem>
-                      <SelectItem value="usd">USA (USD)</SelectItem>
-                      <SelectItem value="eur">Europe (EUR)</SelectItem>
+                      <SelectItem value="brl">Brasil (BRL)</SelectItem>
+                      <SelectItem value="usd">Estados Unidos (USD)</SelectItem>
+                      <SelectItem value="eur">Europa (EUR)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue="info@MatDash.com" />
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input id="email" type="email" defaultValue="usuario@reistoq.com" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input id="phone" defaultValue="+91 1234567895" />
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input id="phone" defaultValue="+55 11 99999-9999" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input id="address" defaultValue="814 Howard Street, 120065, India" />
+                  <Label htmlFor="address">Endereço</Label>
+                  <Input id="address" defaultValue="Rua das Flores, 123, São Paulo, SP" />
                 </div>
               </div>
               <div className="flex justify-end mt-6">
-                <Button>Save Changes</Button>
+                <Button>Salvar Alterações</Button>
               </div>
             </CardContent>
           </Card>
@@ -184,11 +184,11 @@ const AccountSettings = () => {
         <TabsContent value="notification" className="space-y-6 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
-              <p className="text-sm text-muted-foreground">Manage your notification preferences</p>
+              <CardTitle>Configurações de Notificação</CardTitle>
+              <p className="text-sm text-muted-foreground">Gerencie suas preferências de notificação</p>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Notification settings content would go here...</p>
+              <p className="text-muted-foreground">Conteúdo das configurações de notificação...</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -196,11 +196,11 @@ const AccountSettings = () => {
         <TabsContent value="bills" className="space-y-6 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Billing Information</CardTitle>
-              <p className="text-sm text-muted-foreground">Manage your billing and payment methods</p>
+              <CardTitle>Informações de Cobrança</CardTitle>
+              <p className="text-sm text-muted-foreground">Gerencie seus métodos de cobrança e pagamento</p>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Billing information content would go here...</p>
+              <p className="text-muted-foreground">Informações de cobrança...</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -208,11 +208,11 @@ const AccountSettings = () => {
         <TabsContent value="security" className="space-y-6 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <p className="text-sm text-muted-foreground">Manage your security and privacy settings</p>
+              <CardTitle>Configurações de Segurança</CardTitle>
+              <p className="text-sm text-muted-foreground">Gerencie suas configurações de segurança e privacidade</p>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">Security settings content would go here...</p>
+              <p className="text-muted-foreground">Configurações de segurança...</p>
             </CardContent>
           </Card>
         </TabsContent>
