@@ -138,7 +138,7 @@ export const IntegrationsHub: React.FC = () => {
         {/* Integrações Tab */}
         <TabsContent value="integrations">
           <div className="space-y-6">
-            {/* MercadoLibre Integration - Feature Flag Controlled */}
+            {/* Mercado Livre Integration - Feature Flag Controlled */}
             {FEATURES.MERCADO_LIVRE ? (
               <MercadoLivreConnection />
             ) : (
@@ -146,13 +146,13 @@ export const IntegrationsHub: React.FC = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Settings className="h-5 w-5" />
-                    MercadoLibre
+                    Mercado Livre
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="p-4 border rounded bg-muted/30">
                     <p className="text-sm text-muted-foreground">
-                      🚧 Integração MercadoLibre temporariamente desabilitada para manutenção.
+                      🚧 Integração Mercado Livre temporariamente desabilitada para manutenção.
                     </p>
                   </div>
                 </CardContent>

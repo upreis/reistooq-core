@@ -6,7 +6,7 @@ export const FEATURES = {
   ANALYTICS: true,
   
   // Integrations - controlled activation
-  MERCADO_LIVRE: false, // Disabled until OAuth fully functional
+  MERCADO_LIVRE: true, // OAuth configurado e funcional
   SHOPEE: false,        // Not implemented
   TINY_ERP: false,      // Disabled until credentials validated
   AMAZON: false,        // Not implemented

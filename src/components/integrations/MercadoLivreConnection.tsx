@@ -140,10 +140,10 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ShoppingCart className="h-5 w-5" />
-          MercadoLibre
+          Mercado Livre
         </CardTitle>
         <CardDescription>
-          Conecte sua conta do MercadoLibre para sincronizar pedidos automaticamente
+          Conecte sua conta do Mercado Livre para sincronizar pedidos automaticamente
         </CardDescription>
       </CardHeader>
 
@@ -151,7 +151,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
         {accounts.length === 0 ? (
           <div className="text-center py-4">
             <p className="text-muted-foreground mb-4">
-              Nenhuma conta do MercadoLibre conectada
+              Nenhuma conta do Mercado Livre conectada
             </p>
             <Button 
               onClick={handleConnect} 
@@ -166,7 +166,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
               ) : (
                 <>
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  Conectar MercadoLibre
+                  Conectar Mercado Livre
                 </>
               )}
             </Button>
@@ -244,7 +244,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
                       className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      Ver perfil no MercadoLibre
+                      Ver perfil no Mercado Livre
                     </a>
                   </div>
                 )}
