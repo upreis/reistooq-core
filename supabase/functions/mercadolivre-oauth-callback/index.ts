@@ -90,12 +90,18 @@ serve(async (req) => {
     const { data: storedState, error: stateError } = await serviceClient
       .from('oauth_states')
       .select('*')
-      .eq('id', state)
+      .eq('state_value', state)
       .gt('expires_at', new Date().toISOString())
       .maybeSingle();
 
-    if (stateError || !storedState) {
-      throw new Error('Invalid or expired OAuth state');
+    if (stateError) {
+      console.error('State validation error:', stateError);
+      throw new Error('Error validating OAuth state');
+    }
+
+    if (!storedState) {
+      console.error('No valid OAuth state found:', { state, current_time: new Date().toISOString() });
+      throw new Error('Estado OAuth inválido ou expirado. Tente fazer login novamente.');
     }
 
     // Get ML credentials
@@ -230,7 +236,7 @@ serve(async (req) => {
     await serviceClient
       .from('oauth_states')
       .delete()
-      .eq('id', state);
+      .eq('id', storedState.id);
 
     console.log('ML OAuth completed successfully:', {
       user_id: userData.id,
