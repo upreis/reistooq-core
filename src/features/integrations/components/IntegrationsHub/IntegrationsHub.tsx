@@ -19,6 +19,7 @@ import { HealthMini } from '../HealthDashboard/HealthMini';
 import { AnnouncementManager } from '../../../announcements/components/AnnouncementManager';
 import { AdminDashboard } from '../../../admin/components/AdminDashboard';
 import { MercadoLivreConnection } from '@/components/integrations/MercadoLivreConnection';
+import { FEATURES } from '@/config/features';
 
 export const IntegrationsHub: React.FC = () => {
   const {
@@ -137,8 +138,48 @@ export const IntegrationsHub: React.FC = () => {
         {/* Integrações Tab */}
         <TabsContent value="integrations">
           <div className="space-y-6">
-            {/* MercadoLibre Integration */}
-            <MercadoLivreConnection />
+            {/* MercadoLibre Integration - Feature Flag Controlled */}
+            {FEATURES.MERCADO_LIVRE ? (
+              <MercadoLivreConnection />
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    MercadoLibre
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 border rounded bg-muted/30">
+                    <p className="text-sm text-muted-foreground">
+                      🚧 Integração MercadoLibre temporariamente desabilitada para manutenção.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Other Integrations Placeholder */}
+            {!FEATURES.SHOPEE && !FEATURES.TINY_ERP && !FEATURES.AMAZON && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Outras Integrações</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 border rounded bg-muted/30">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      📋 Integrações adicionais em desenvolvimento:
+                    </p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• Shopee - Em planejamento</li>
+                      <li>• Tiny ERP - Aguardando configuração</li>
+                      <li>• Amazon - Em análise</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             {/* Integrations Grid */}
             {integrations.length === 0 ? (
               <Card>
