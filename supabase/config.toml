@@ -23,11 +23,8 @@ verify_jwt = true
 [functions.mercadolivre-oauth-callback]
 verify_jwt = false
 
-[functions.mercadolivre-orders-proxy]
+[functions.mercadolivre-orders]
 verify_jwt = true
-
-[functions.mercadolivre-webhook]
-verify_jwt = false
 
 [functions.mercadolivre-refresh-token]
 verify_jwt = true

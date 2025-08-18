@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface OAuthStartRequest {
-  organization_id: string;
+  organization_id?: string;
 }
 
 serve(async (req) => {
@@ -17,14 +17,19 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting ML OAuth process at:', new Date().toISOString());
+    
     const { organization_id } = await req.json() as OAuthStartRequest;
     
-    // Get environment variables
+    // Get environment variables from Supabase secrets
     const ML_CLIENT_ID = Deno.env.get("ML_CLIENT_ID");
     const ML_REDIRECT_URI = Deno.env.get("ML_REDIRECT_URI");
     
     if (!ML_CLIENT_ID || !ML_REDIRECT_URI) {
-      console.error("Missing ML credentials:", { ML_CLIENT_ID: !!ML_CLIENT_ID, ML_REDIRECT_URI: !!ML_REDIRECT_URI });
+      console.error("Missing ML credentials:", { 
+        ML_CLIENT_ID: !!ML_CLIENT_ID, 
+        ML_REDIRECT_URI: !!ML_REDIRECT_URI 
+      });
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -37,7 +42,7 @@ serve(async (req) => {
       );
     }
 
-    // Generate secure state for CSRF protection
+    // Generate secure state for CSRF protection (seguindo recomendações da doc)
     const state = crypto.randomUUID();
     
     // Get user ID from Authorization header
@@ -55,10 +60,12 @@ serve(async (req) => {
       if (organization_id === 'current' && userId) {
         const { data } = await supabase.rpc('get_current_org_id');
         organizationId = data || null;
+      } else if (organization_id) {
+        organizationId = organization_id;
       }
     }
 
-    // Store OAuth state in database
+    // Store OAuth state in database for security validation
     try {
       const { error: stateError } = await supabase
         .from('oauth_states')
@@ -67,7 +74,7 @@ serve(async (req) => {
           provider: 'mercadolivre',
           user_id: userId,
           organization_id: organizationId,
-          expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
+          expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
           used: false
         });
 
@@ -80,13 +87,14 @@ serve(async (req) => {
       // Continue anyway
     }
 
-    // Build MercadoLibre authorization URL
-    const authUrl = new URL("https://auth.mercadolivre.com.br/authorization");
+    // Build MercadoLibre authorization URL following official documentation
+    const authUrl = new URL("https://auth.mercadolibre.com.br/authorization");
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("client_id", ML_CLIENT_ID);
     authUrl.searchParams.set("redirect_uri", ML_REDIRECT_URI);
     authUrl.searchParams.set("state", state);
-    authUrl.searchParams.set("scope", "read write offline_access");
+    // Solicitar offline_access para obter refresh_token (conforme documentação)
+    authUrl.searchParams.set("scope", "offline_access read write");
 
     console.log("OAuth URL generated successfully:", {
       client_id: ML_CLIENT_ID,
@@ -96,8 +104,7 @@ serve(async (req) => {
       timestamp: new Date().toISOString()
     });
 
-    // Set secure cookie with state
-    const response = new Response(
+    return new Response(
       JSON.stringify({
         success: true,
         authorization_url: authUrl.toString(),
@@ -107,13 +114,10 @@ serve(async (req) => {
         status: 200,
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json',
-          'Set-Cookie': `ml_oauth_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`
+          'Content-Type': 'application/json'
         }
       }
     );
-
-    return response;
 
   } catch (error) {
     console.error("OAuth start error:", error);

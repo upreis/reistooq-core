@@ -1,16 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { makeClient } from "../_shared/client.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { makeClient, ENC_KEY } from "../_shared/client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface CallbackParams {
-  code?: string;
-  state?: string;
-  error?: string;
-}
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
