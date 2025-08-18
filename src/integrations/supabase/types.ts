@@ -621,6 +621,48 @@ export type Database = {
           },
         ]
       }
+      integration_secrets_access_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          integration_account_id: string
+          ip_address: unknown | null
+          provider: string
+          requesting_function: string | null
+          success: boolean | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          integration_account_id: string
+          ip_address?: unknown | null
+          provider: string
+          requesting_function?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          integration_account_id?: string
+          ip_address?: unknown | null
+          provider?: string
+          requesting_function?: string | null
+          success?: boolean | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       integration_secrets_audit: {
         Row: {
           account_id: string
@@ -1656,7 +1698,59 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_safe: {
+        Row: {
+          avatar_url: string | null
+          cargo: string | null
+          configuracoes_notificacao: Json | null
+          created_at: string | null
+          departamento: string | null
+          id: string | null
+          nome_completo: string | null
+          nome_exibicao: string | null
+          onboarding_banner_dismissed: boolean | null
+          organizacao_id: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          cargo?: string | null
+          configuracoes_notificacao?: Json | null
+          created_at?: string | null
+          departamento?: string | null
+          id?: string | null
+          nome_completo?: string | null
+          nome_exibicao?: string | null
+          onboarding_banner_dismissed?: boolean | null
+          organizacao_id?: string | null
+          telefone?: never
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          cargo?: string | null
+          configuracoes_notificacao?: Json | null
+          created_at?: string | null
+          departamento?: string | null
+          id?: string | null
+          nome_completo?: string | null
+          nome_exibicao?: string | null
+          onboarding_banner_dismissed?: boolean | null
+          organizacao_id?: string | null
+          telefone?: never
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organizacao_id_fkey"
+            columns: ["organizacao_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation_secure: {
@@ -1687,6 +1781,10 @@ export type Database = {
         Returns: Json
       }
       cleanup_expired_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_expired_sensitive_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
@@ -2006,8 +2104,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_secret_access: {
+        Args: {
+          p_account_id: string
+          p_action: string
+          p_error?: string
+          p_function?: string
+          p_provider: string
+          p_success?: boolean
+        }
+        Returns: undefined
+      }
       mask_document: {
         Args: { doc: string }
+        Returns: string
+      }
+      mask_email: {
+        Args: { email_input: string }
         Returns: string
       }
       mask_name: {
@@ -2016,6 +2129,10 @@ export type Database = {
       }
       mask_phone: {
         Args: { txt: string }
+        Returns: string
+      }
+      mask_phone_secure: {
+        Args: { phone_input: string }
         Returns: string
       }
       revoke_invitation: {
