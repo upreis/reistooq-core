@@ -19,7 +19,6 @@ import { HealthMini } from '../HealthDashboard/HealthMini';
 import { AnnouncementManager } from '../../../announcements/components/AnnouncementManager';
 import { AdminDashboard } from '../../../admin/components/AdminDashboard';
 import { MercadoLivreConnection } from '@/components/integrations/MercadoLivreConnection';
-import { MercadoLivreConnectionV2 } from '@/components/integrations/MercadoLivreConnectionV2';
 import { FEATURES } from '@/config/features';
 
 export const IntegrationsHub: React.FC = () => {
@@ -139,10 +138,7 @@ export const IntegrationsHub: React.FC = () => {
         {/* Integrações Tab */}
         <TabsContent value="integrations">
           <div className="space-y-6">
-            {/* Mercado Livre Integration V2 - Nova versão isolada */}
-            <MercadoLivreConnectionV2 />
-            
-            {/* Mercado Livre Integration - Feature Flag Controlled */}
+            {/* Mercado Livre Integration - Versão estável (v1) */}
             {FEATURES.MERCADO_LIVRE ? (
               <MercadoLivreConnection />
             ) : (
