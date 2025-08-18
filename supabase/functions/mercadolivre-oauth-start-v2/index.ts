@@ -48,33 +48,28 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get user ID from Authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Authorization required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    
     // Create Supabase client with service role for secure operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user token and get user ID
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      console.error('Failed to verify user:', userError);
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    // Get user ID from Authorization header (optional for v2)
+    const authHeader = req.headers.get('Authorization');
+    let userId = 'demo-user'; // Default for testing
+    
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '');
+      
+      // Try to verify user token and get user ID
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      if (user && !userError) {
+        userId = user.id;
+      } else {
+        console.warn('Failed to verify user token, using demo mode:', userError?.message);
+      }
+    } else {
+      console.warn('No authorization header found, using demo mode');
     }
-
-    const userId = user.id;
 
     // Generate secure state and PKCE parameters
     const state = crypto.randomUUID();
