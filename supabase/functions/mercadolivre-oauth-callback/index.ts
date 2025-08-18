@@ -192,19 +192,24 @@ serve(async (req) => {
       ? new Date(Date.now() + tokenData.expires_in * 1000)
       : new Date(Date.now() + 6 * 60 * 60 * 1000); // Default 6 hours
 
-    // Get organization ID using secure RPC function
-    const { data: organizationId, error: orgError } = await serviceClient
-      .rpc('get_user_organization_id', { target_user_id: storedState.user_id });
+    // Resolve organization without touching profiles directly
+    let organizationId: string | null = storedState.organization_id || null;
+    if (!organizationId) {
+      const { data: orgId, error: orgError } = await serviceClient
+        .rpc('get_user_organization_id', { target_user_id: storedState.user_id });
 
-    console.log('Organization lookup:', {
-      user_id: storedState.user_id,
-      organization_id: organizationId,
-      error: orgError
-    });
+      console.log('Organization resolution via RPC:', {
+        user_id: storedState.user_id,
+        stored_state_org: storedState.organization_id,
+        org_via_rpc: orgId,
+        error: orgError,
+      });
 
-    if (orgError) {
-      console.error('Organization lookup error:', orgError);
-      throw new Error(`Organization lookup failed: ${orgError.message}`);
+      if (orgError) {
+        console.error('Organization lookup error:', orgError);
+        throw new Error(`Organization lookup failed: ${orgError.message}`);
+      }
+      organizationId = orgId ?? null;
     }
 
     if (!organizationId) {
