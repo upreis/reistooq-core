@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 // 🔧 SISTEMA DE VALIDAÇÃO AUTOMÁTICA REISTOQ
 // Detecta problemas em tempo real durante desenvolvimento
@@ -190,6 +190,10 @@ class SystemValidator {
     return this.validationResults;
   }
 
+  public getIsEnabled(): boolean {
+    return this.isEnabled;
+  }
+
   // 🔔 MONITORAMENTO CONTÍNUO
   public startContinuousMonitoring(): void {
     if (!this.isEnabled) return;
@@ -218,17 +222,20 @@ class SystemValidator {
 // 🎯 HOOK PARA USAR O VALIDATOR EM COMPONENTES
 export function useSystemValidator() {
   const validator = SystemValidator.getInstance();
-  
-  useEffect(() => {
-    // Iniciar monitoramento quando o componente monta
+  // Iniciar monitoramento quando o componente monta
+  React.useEffect(() => {
     validator.startContinuousMonitoring();
+    
+    return () => {
+      // Cleanup se necessário
+    };
   }, [validator]);
 
   return {
     runValidation: () => validator.runValidation(),
-    getResults: () => validator.getResults(),
     enable: () => validator.enable(),
-    disable: () => validator.disable()
+    disable: () => validator.disable(),
+    isEnabled: validator.getIsEnabled()
   };
 }
 
