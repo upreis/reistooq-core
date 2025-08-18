@@ -44,6 +44,24 @@ serve(async (req) => {
     // Generate secure state for CSRF protection
     const state = crypto.randomUUID();
 
+    // PKCE S256: generate code_verifier and derive code_challenge
+    const makeCodeVerifier = () => {
+      const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~';
+      const random = new Uint8Array(64);
+      crypto.getRandomValues(random);
+      return Array.from(random).map(b => charset[b % charset.length]).join('');
+    };
+
+    const toBase64Url = (bytes: Uint8Array) => {
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+/g, '');
+    };
+
+    const code_verifier = makeCodeVerifier();
+    const challengeBytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code_verifier)));
+    const code_challenge = toBase64Url(challengeBytes);
+
     // Resolve user and organization
     const jwt = authHeader.replace('Bearer ', '');
     let userId: string | null = null;
@@ -72,8 +90,10 @@ serve(async (req) => {
         provider: 'mercadolivre',
         user_id: userId,
         organization_id: organizationId,
+        code_verifier: code_verifier,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       });
+
 
     if (se1) {
       console.error('Primary oauth_states insert failed (state_value schema). Falling back to legacy schema...', se1);
@@ -82,7 +102,8 @@ serve(async (req) => {
         .from('oauth_states')
         .insert({
           id: state,
-          user_id: userId,
+          user_id: userId!,
+          code_verifier: code_verifier,
           expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
         });
       finalError = se2;
@@ -101,10 +122,11 @@ serve(async (req) => {
     // IMPORTANT: do NOT pre-encode, URLSearchParams will encode correctly
     authUrl.searchParams.set('redirect_uri', ML_REDIRECT_URI);
     authUrl.searchParams.set('state', state);
-    // Add required scopes for offline access and orders
+    // Add required scopes and PKCE for offline access and orders
     authUrl.searchParams.set('scope', 'offline_access read write');
-    // Force consent to ensure refresh token is issued
     authUrl.searchParams.set('prompt', 'consent');
+    authUrl.searchParams.set('code_challenge', code_challenge);
+    authUrl.searchParams.set('code_challenge_method', 'S256');
 
     console.log('OAuth flow initiated:', {
       organization_id,
