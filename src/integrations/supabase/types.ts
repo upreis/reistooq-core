@@ -924,6 +924,51 @@ export type Database = {
           },
         ]
       }
+      ml_accounts_v2: {
+        Row: {
+          country_id: string
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          last_sync: string | null
+          ml_user_id: string
+          nickname: string
+          organization_id: string
+          site_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          country_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          ml_user_id: string
+          nickname: string
+          organization_id: string
+          site_id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          last_sync?: string | null
+          ml_user_id?: string
+          nickname?: string
+          organization_id?: string
+          site_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       movimentacoes_estoque: {
         Row: {
           created_at: string
@@ -1963,6 +2008,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_org_id_from_oauth_state: {
+        Args: { p_state_value: string }
+        Returns: string
+      }
       get_pedidos_masked: {
         Args: {
           _end?: string
@@ -2079,6 +2128,10 @@ export type Database = {
           p_success?: boolean
         }
         Returns: undefined
+      }
+      mark_oauth_state_used: {
+        Args: { p_state_value: string }
+        Returns: boolean
       }
       mask_document: {
         Args: { doc: string }
