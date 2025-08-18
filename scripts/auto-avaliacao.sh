@@ -14,14 +14,27 @@ echo "📋 FASE 1: VERIFICAÇÕES PRÉ-IMPLEMENTAÇÃO"
 
 # 1. Verificar Routers duplicados
 echo "🔍 Verificando Routers duplicados..."
-ROUTER_COUNT=$(find src -name "*.tsx" -o -name "*.ts" | xargs grep -l "BrowserRouter\|<Router" | wc -l)
-if [ "$ROUTER_COUNT" -gt 1 ]; then
-    echo "❌ ERRO CRÍTICO: $ROUTER_COUNT Routers encontrados! Máximo permitido: 1"
-    echo "📍 Locais encontrados:"
-    find src -name "*.tsx" -o -name "*.ts" | xargs grep -l "BrowserRouter\|<Router"
+
+# Verificar imports de BrowserRouter (deve ter apenas 1 em main.tsx)
+BROWSER_ROUTER_FILES=$(find src -name "*.tsx" -o -name "*.ts" | xargs grep -l "BrowserRouter")
+BROWSER_ROUTER_COUNT=$(echo "$BROWSER_ROUTER_FILES" | grep -v "^$" | wc -l)
+
+echo "📍 Arquivos com BrowserRouter:"
+echo "$BROWSER_ROUTER_FILES"
+
+if [ "$BROWSER_ROUTER_COUNT" -gt 1 ]; then
+    echo "❌ ERRO CRÍTICO: $BROWSER_ROUTER_COUNT arquivos com BrowserRouter! Máximo permitido: 1 (main.tsx)"
     exit 1
+elif [ "$BROWSER_ROUTER_COUNT" -eq 1 ]; then
+    if echo "$BROWSER_ROUTER_FILES" | grep -q "main.tsx"; then
+        echo "✅ BrowserRouter apenas em main.tsx (correto)"
+    else
+        echo "❌ ERRO: BrowserRouter não está em main.tsx"
+        exit 1
+    fi
 else
-    echo "✅ Router único confirmado"
+    echo "❌ ERRO: Nenhum BrowserRouter encontrado"
+    exit 1
 fi
 
 # 2. Verificar hooks condicionais
