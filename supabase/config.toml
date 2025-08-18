@@ -30,10 +30,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.mercadolivre-oauth-start-v2]
-verify_jwt = true
+verify_jwt = false
 
 [functions.mercadolivre-oauth-callback-v2]
 verify_jwt = false
 
 [functions.mercadolivre-orders-v2]
-verify_jwt = true
+verify_jwt = false
