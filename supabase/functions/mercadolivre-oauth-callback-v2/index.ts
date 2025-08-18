@@ -239,7 +239,7 @@ Deno.serve(async (req) => {
     // Get ML credentials
     const ML_CLIENT_ID = Deno.env.get('ML_CLIENT_ID');
     const ML_CLIENT_SECRET = Deno.env.get('ML_CLIENT_SECRET');
-    const ML_REDIRECT_URI = Deno.env.get('ML_REDIRECT_URI');
+    const ML_REDIRECT_URI = Deno.env.get('ML_REDIRECT_URI') || `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolivre-oauth-callback-v2`;
 
     if (!ML_CLIENT_ID || !ML_CLIENT_SECRET || !ML_REDIRECT_URI) {
       console.error('Missing ML credentials for token exchange');
