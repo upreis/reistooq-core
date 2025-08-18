@@ -26,49 +26,55 @@ Deno.serve(async (req) => {
       });
     }
 
+    console.log('[ML OAuth v2] Starting OAuth flow...');
+
     // Parse request body
     const { organization_id } = await req.json() as OAuthStartRequest;
 
     if (!organization_id) {
-      return new Response(JSON.stringify({ error: 'Organization ID is required' }), {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Organization ID is required' 
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Get ML credentials from environment
+    // Get ML credentials from environment/secrets
     const ML_CLIENT_ID = Deno.env.get('ML_CLIENT_ID');
-    const ML_REDIRECT_URI = Deno.env.get('ML_REDIRECT_URI') || `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolivre-oauth-callback-v2`;
+    const ML_REDIRECT_URI = Deno.env.get('ML_REDIRECT_URI') || 
+      `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolivre-oauth-callback-v2`;
 
-    if (!ML_CLIENT_ID || !ML_REDIRECT_URI) {
-      console.error('Missing ML credentials:', { ML_CLIENT_ID: !!ML_CLIENT_ID, ML_REDIRECT_URI: !!ML_REDIRECT_URI });
-      return new Response(JSON.stringify({ error: 'ML credentials not configured' }), {
+    if (!ML_CLIENT_ID) {
+      console.error('[ML OAuth v2] Missing ML_CLIENT_ID');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Credenciais MercadoLibre não configuradas. Configure ML_CLIENT_ID.' 
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Create Supabase client with service role for secure operations
+    // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user ID from Authorization header (optional for v2)
+    // Get user ID from Authorization header (optional for demo)
     const authHeader = req.headers.get('Authorization');
-    let userId = 'demo-user'; // Default for testing
+    let userId = 'demo-user-v2';
     
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.replace('Bearer ', '');
-      
-      // Try to verify user token and get user ID
       const { data: { user }, error: userError } = await supabase.auth.getUser(token);
       if (user && !userError) {
         userId = user.id;
+        console.log('[ML OAuth v2] User authenticated:', user.id);
       } else {
-        console.warn('Failed to verify user token, using demo mode:', userError?.message);
+        console.warn('[ML OAuth v2] User auth failed, using demo mode:', userError?.message);
       }
-    } else {
-      console.warn('No authorization header found, using demo mode');
     }
 
     // Generate secure state and PKCE parameters
@@ -90,14 +96,17 @@ Deno.serve(async (req) => {
         user_id: userId,
         organization_id: organization_id,
         code_verifier: codeVerifier,
-        provider: 'mercadolivre',
-        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+        provider: 'mercadolivre_v2',
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         used: false
       });
 
     if (stateError) {
-      console.error('Failed to store OAuth state:', stateError);
-      return new Response(JSON.stringify({ error: 'Failed to initialize OAuth' }), {
+      console.error('[ML OAuth v2] Failed to store OAuth state:', stateError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Failed to initialize OAuth' 
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -110,19 +119,15 @@ Deno.serve(async (req) => {
     authUrl.searchParams.set('redirect_uri', ML_REDIRECT_URI);
     authUrl.searchParams.set('state', state);
     authUrl.searchParams.set('scope', 'offline_access read write');
-    authUrl.searchParams.set('prompt', 'consent');
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
 
-    console.log('OAuth v2 flow initiated:', {
+    console.log('[ML OAuth v2] OAuth flow initialized successfully:', {
       user_id: userId,
       organization_id,
-      state,
+      state: state.substring(0, 8) + '...',
       redirect_uri: ML_REDIRECT_URI,
-      authorization_url: authUrl.toString(),
-      pkce_enabled: true,
-      scopes: 'offline_access read write',
-      timestamp: new Date().toISOString()
+      client_id: ML_CLIENT_ID.substring(0, 8) + '...'
     });
 
     // Return authorization URL
@@ -140,8 +145,9 @@ Deno.serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('OAuth start v2 error:', error);
+    console.error('[ML OAuth v2] Error:', error);
     return new Response(JSON.stringify({ 
+      success: false,
       error: 'Internal server error',
       details: error.message 
     }), {
