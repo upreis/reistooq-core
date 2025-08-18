@@ -92,7 +92,8 @@ serve(async (req) => {
       client_id: ML_CLIENT_ID,
       redirect_uri: ML_REDIRECT_URI,
       state: state.substring(0, 8) + "...",
-      user_id: userId?.substring(0, 8) + "..." || "anonymous"
+      user_id: userId?.substring(0, 8) + "..." || "anonymous",
+      timestamp: new Date().toISOString()
     });
 
     // Set secure cookie with state
