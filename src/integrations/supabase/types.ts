@@ -1736,6 +1736,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_oauth_states: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       complete_onboarding: {
         Args: {
           org_cnpj: string
