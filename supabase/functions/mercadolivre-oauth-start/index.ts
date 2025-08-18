@@ -139,8 +139,8 @@ serve(async (req) => {
       timestamp: new Date().toISOString(),
     });
 
-    // Set secure cookie with state for validation
-    const cookieOptions = 'Path=/; SameSite=Lax; Secure; HttpOnly; Max-Age=600'; // 10 minutes
+    // Set secure cookie with state for validation (Cross-origin OAuth requires SameSite=None)
+    const cookieOptions = 'Path=/; SameSite=None; Secure; HttpOnly; Max-Age=600'; // 10 minutes
     
     return new Response(JSON.stringify({
       success: true,
