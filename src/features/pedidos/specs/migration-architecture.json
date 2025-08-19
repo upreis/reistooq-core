@@ -1,0 +1,229 @@
+{
+  "migration_spec": {
+    "version": "2.0.0",
+    "target_architecture": "layered_with_ddd",
+    "performance_requirements": {
+      "first_contentful_paint": "< 1.5s",
+      "time_to_interactive": "< 3s", 
+      "large_list_rendering": "< 100ms",
+      "search_debounce": "300ms"
+    },
+    "components": {
+      "page_component": {
+        "name": "PedidosPage",
+        "responsibilities": ["Layout", "Route management", "Error boundaries"],
+        "dependencies": ["usePedidosPageLogic"],
+        "performance": {
+          "code_splitting": true,
+          "lazy_loading": true,
+          "error_boundary": true
+        }
+      },
+      "data_table": {
+        "name": "PedidosDataTable", 
+        "features": [
+          "Virtual scrolling",
+          "Column sorting",
+          "Row selection",
+          "Infinite loading",
+          "Keyboard navigation",
+          "Accessibility compliant"
+        ],
+        "dependencies": ["@tanstack/react-table", "@tanstack/react-virtual"]
+      },
+      "filters": {
+        "name": "PedidosFiltersAdvanced",
+        "features": [
+          "Real-time search",
+          "Date range picker",
+          "Multi-select dropdowns", 
+          "Saved filter presets",
+          "Filter history",
+          "URL state sync"
+        ]
+      },
+      "bulk_actions": {
+        "name": "BulkActionsToolbar",
+        "features": [
+          "Multi-step workflows",
+          "Progress tracking",
+          "Rollback capability",
+          "Batch processing",
+          "Async operations queue"
+        ]
+      }
+    },
+    "hooks_architecture": {
+      "data_fetching": {
+        "usePedidosInfinite": {
+          "purpose": "Infinite scroll with cache",
+          "caching_strategy": "stale-while-revalidate",
+          "background_refetch": true,
+          "optimistic_updates": false
+        },
+        "useMapeamentosVerification": {
+          "purpose": "Batch SKU mapping verification", 
+          "batch_size": 50,
+          "cache_duration": "5m",
+          "retry_strategy": "exponential_backoff"
+        }
+      },
+      "business_logic": {
+        "useBaixaEstoqueWorkflow": {
+          "purpose": "Multi-step stock reduction workflow",
+          "steps": ["validate", "preview", "execute", "confirm"],
+          "rollback_support": true,
+          "audit_logging": true
+        }
+      },
+      "state_management": {
+        "usePedidosStore": {
+          "state": ["items", "pagination", "loading_states"],
+          "actions": ["fetch", "filter", "select", "bulk_operations"],
+          "persistence": false
+        },
+        "useFiltersStore": {
+          "state": ["active_filters", "saved_presets", "history"],
+          "persistence": "url_and_local_storage",
+          "sync_strategy": "debounced"
+        },
+        "useSelectionStore": {
+          "state": ["selected_items", "selection_mode", "bulk_actions"],
+          "actions": ["select", "select_all", "clear", "toggle"],
+          "max_selection": 1000
+        }
+      }
+    },
+    "services_architecture": {
+      "repositories": {
+        "PedidosRepository": {
+          "methods": [
+            "findMany",
+            "findById", 
+            "findWithFilters",
+            "countTotal",
+            "batchUpdate"
+          ],
+          "caching": "query-based",
+          "error_handling": "structured_errors"
+        },
+        "MapeamentosRepository": {
+          "methods": [
+            "verifyBatch",
+            "findBySkus",
+            "getStats",
+            "createMapping"
+          ]
+        },
+        "EstoqueRepository": {
+          "methods": [
+            "reduceStock",
+            "checkAvailability", 
+            "batchReduce",
+            "getMovements"
+          ],
+          "transaction_support": true,
+          "rollback_capability": true
+        }
+      },
+      "validation": {
+        "schemas": {
+          "PedidoSchema": "Zod validation for pedido objects",
+          "FiltersSchema": "Runtime validation for filters",
+          "BulkActionSchema": "Validation for batch operations"
+        }
+      }
+    },
+    "ui_enhancements": {
+      "design_system": {
+        "components": [
+          "DataTable with sorting/filtering",
+          "StatusBadge with color coding", 
+          "LoadingStates with skeletons",
+          "EmptyStates with illustrations",
+          "ErrorBoundaries with retry",
+          "ProgressIndicators for async ops"
+        ]
+      },
+      "interactions": {
+        "keyboard_shortcuts": {
+          "ctrl+a": "Select all visible",
+          "ctrl+shift+a": "Select all pages", 
+          "escape": "Clear selection",
+          "ctrl+f": "Focus search"
+        },
+        "drag_and_drop": {
+          "files": "Import CSV/Excel",
+          "rows": "Reorder selection"
+        }
+      },
+      "accessibility": {
+        "screen_reader": "Full ARIA support",
+        "keyboard_navigation": "Complete tab flow",
+        "color_contrast": "WCAG AA compliant",
+        "focus_management": "Proper focus trapping"
+      }
+    },
+    "performance_optimizations": {
+      "rendering": {
+        "virtualization": "React Virtual for large lists",
+        "memoization": "React.memo for expensive components",
+        "code_splitting": "Route-based and component-based",
+        "lazy_loading": "Images and heavy components"
+      },
+      "data": {
+        "infinite_scroll": "Paginated loading",
+        "query_batching": "Combine similar requests", 
+        "cache_strategies": "Stale-while-revalidate",
+        "debouncing": "Search and filters"
+      }
+    },
+    "testing_strategy": {
+      "unit_tests": {
+        "hooks": "Testing Library hooks",
+        "utilities": "Jest unit tests",
+        "repositories": "Mock Supabase calls"
+      },
+      "integration_tests": {
+        "workflows": "Multi-step process testing",
+        "api_integration": "Real Supabase calls"
+      },
+      "e2e_tests": {
+        "user_journeys": "Playwright scenarios",
+        "performance": "Lighthouse CI"
+      }
+    }
+  },
+  "implementation_phases": {
+    "phase_1_mvp": {
+      "duration": "2-3 weeks",
+      "deliverables": [
+        "Refactored component architecture",
+        "Basic data fetching with React Query",
+        "Improved filters with URL state",
+        "Enhanced table with sorting"
+      ],
+      "priority": "high"
+    },
+    "phase_2_advanced": {
+      "duration": "3-4 weeks", 
+      "deliverables": [
+        "Infinite scroll implementation",
+        "Bulk operations workflow",
+        "Advanced search and filters",
+        "Performance optimizations"
+      ],
+      "priority": "medium"
+    },
+    "phase_3_premium": {
+      "duration": "2-3 weeks",
+      "deliverables": [
+        "Real-time updates",
+        "Advanced analytics",
+        "Export/import workflows", 
+        "Mobile-optimized experience"
+      ],
+      "priority": "low"
+    }
+  }
+}
