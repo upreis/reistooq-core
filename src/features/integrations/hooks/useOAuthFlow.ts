@@ -92,7 +92,7 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
       console.log('Iniciando fluxo OAuth para MercadoLibre...');
 
       // Call OAuth start edge function
-      const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
+      const { data, error } = await supabase.functions.invoke('hyper-function', {
         body: {
           organization_id: 'current', // Will be resolved by Edge Function
         },

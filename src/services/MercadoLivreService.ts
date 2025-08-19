@@ -121,7 +121,7 @@ class MercadoLivreService {
         });
 
         // Attempt to refresh token
-        const refreshResult = await supabase.functions.invoke('mercadolivre-refresh-token', {
+        const refreshResult = await supabase.functions.invoke('smart-responder', {
           body: { integration_account_id: accountId }
         });
 
@@ -153,7 +153,7 @@ class MercadoLivreService {
   async initiateOAuth(): Promise<{ success: boolean; authorization_url?: string; error?: string }> {
     try {
       // Use the correct OAuth start function
-      const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
+      const { data, error } = await supabase.functions.invoke('hyper-function', {
         body: { organization_id: 'current' },
       });
 
@@ -233,7 +233,7 @@ class MercadoLivreService {
         limit: params.limit,
       });
 
-      const { data, error } = await supabase.functions.invoke('mercadolivre-orders-proxy', {
+      const { data, error } = await supabase.functions.invoke('rapid-responder', {
         body: params,
       });
 

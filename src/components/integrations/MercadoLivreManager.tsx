@@ -72,7 +72,7 @@ export function MercadoLivreManager({ onAccountsUpdate }: MercadoLivreManagerPro
       setConnecting(true);
       
       // Iniciar fluxo OAuth
-      const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
+      const { data, error } = await supabase.functions.invoke('hyper-function', {
         body: { organization_id: 'current' }
       });
 
@@ -149,7 +149,7 @@ export function MercadoLivreManager({ onAccountsUpdate }: MercadoLivreManagerPro
     try {
       setRefreshing(accountId);
       
-      const { data, error } = await supabase.functions.invoke('mercadolivre-refresh-token', {
+      const { data, error } = await supabase.functions.invoke('smart-responder', {
         body: { integration_account_id: accountId }
       });
 

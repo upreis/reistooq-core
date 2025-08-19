@@ -46,7 +46,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       setIsConnecting(true);
 
       // Start OAuth via Edge Function that uses ML_REDIRECT_URI (POST)
-      const { data, error } = await supabase.functions.invoke('mercadolivre-oauth-start', {
+      const { data, error } = await supabase.functions.invoke('hyper-function', {
         body: { organization_id: 'current' },
       });
 
