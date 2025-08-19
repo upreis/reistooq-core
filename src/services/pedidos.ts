@@ -9,6 +9,12 @@ export interface ListPedidosParams {
   pageSize?: number;
   search?: string;
   situacao?: string;
+  dataInicio?: string; // YYYY-MM-DD
+  dataFim?: string; // YYYY-MM-DD
+  cidade?: string;
+  uf?: string;
+  valorMin?: number;
+  valorMax?: number;
 }
 
 export async function listPedidos({
@@ -16,7 +22,13 @@ export async function listPedidos({
   page = 1,
   pageSize = 25,
   search,
-  situacao
+  situacao,
+  dataInicio,
+  dataFim,
+  cidade,
+  uf,
+  valorMin,
+  valorMax
 }: ListPedidosParams): Promise<PedidosResponse> {
   let query = supabase
     .from('pedidos')
@@ -56,6 +68,30 @@ export async function listPedidos({
 
   if (situacao) {
     query = query.eq('situacao', situacao);
+  }
+
+  if (dataInicio) {
+    query = query.gte('data_pedido', dataInicio);
+  }
+
+  if (dataFim) {
+    query = query.lte('data_pedido', dataFim);
+  }
+
+  if (cidade) {
+    query = query.ilike('cidade', `%${cidade}%`);
+  }
+
+  if (uf) {
+    query = query.eq('uf', uf);
+  }
+
+  if (valorMin !== undefined) {
+    query = query.gte('valor_total', valorMin);
+  }
+
+  if (valorMax !== undefined) {
+    query = query.lte('valor_total', valorMax);
   }
 
   // Apply pagination
@@ -136,6 +172,12 @@ export interface UsePedidosHybridParams {
   pageSize?: number;
   search?: string;
   situacao?: string;
+  dataInicio?: string;
+  dataFim?: string;
+  cidade?: string;
+  uf?: string;
+  valorMin?: number;
+  valorMax?: number;
   forceFonte?: FontePedidos; // Para forçar uma fonte específica
 }
 
@@ -145,6 +187,12 @@ export function usePedidosHybrid({
   pageSize = 25,
   search,
   situacao,
+  dataInicio,
+  dataFim,
+  cidade,
+  uf,
+  valorMin,
+  valorMax,
   forceFonte
 }: UsePedidosHybridParams): PedidosHybridResult {
   const [rows, setRows] = useState<Pedido[]>([]);
@@ -175,7 +223,13 @@ export function usePedidosHybrid({
         page,
         pageSize,
         search,
-        situacao
+        situacao,
+        dataInicio,
+        dataFim,
+        cidade,
+        uf,
+        valorMin,
+        valorMax
       });
       
       if (bancoResult.error) {
@@ -200,7 +254,7 @@ export function usePedidosHybrid({
     } finally {
       setLoading(false);
     }
-  }, [integrationAccountId, page, pageSize, search, situacao, forceFonte]);
+  }, [integrationAccountId, page, pageSize, search, situacao, dataInicio, dataFim, cidade, uf, valorMin, valorMax, forceFonte]);
 
   const fetchFromUnifiedOrders = async () => {
     try {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { listPedidos } from '@/services/pedidos';
 import { Pedido } from '@/types/pedido';
+import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { CopyButton } from './CopyButton';
 import { LinkButton } from './LinkButton';
@@ -34,6 +35,9 @@ interface PedidosTableProps {
     refetch: () => void;
   };
   onSelectionChange?: (selectedRows: Pedido[]) => void;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
+  mapeamentosVerificacao?: Map<string, MapeamentoVerificacao>;
 }
 
 function getSituacaoVariant(situacao: string): "default" | "secondary" | "destructive" | "outline" {
@@ -72,12 +76,36 @@ function TruncatedCell({ content, maxLength = 50 }: { content?: string | null; m
   );
 }
 
-export function PedidosTable({ integrationAccountId, hybridData, onSelectionChange }: PedidosTableProps) {
+export function PedidosTable({ 
+  integrationAccountId, 
+  hybridData, 
+  onSelectionChange, 
+  currentPage = 1, 
+  onPageChange,
+  mapeamentosVerificacao = new Map()
+}: PedidosTableProps) {
   // Estados locais para quando não usar hybridData
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(currentPage);
+
+  // Sincronizar página externa com interna
+  useEffect(() => {
+    setPage(currentPage);
+  }, [currentPage]);
+
+  // Função para verificar se pedido tem mapeamento
+  const pedidoTemMapeamento = (pedido: Pedido): boolean => {
+    if (pedido.obs) {
+      // Para ML, verificar nos títulos dos produtos
+      return pedido.obs.split(', ').some(sku => 
+        mapeamentosVerificacao.get(sku.trim())?.temMapeamento
+      );
+    }
+    // Para banco, verificar pelo número do pedido como fallback
+    return mapeamentosVerificacao.get(pedido.numero)?.temMapeamento || false;
+  };
   const [totalCount, setTotalCount] = useState(0);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const pageSize = 25;
@@ -235,20 +263,41 @@ export function PedidosTable({ integrationAccountId, hybridData, onSelectionChan
             </TableRow>
           </TableHeader>
           <TableBody>
-            {finalPedidos.map((pedido) => (
-              <TableRow key={pedido.id}>
-                <TableCell>
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.has(pedido.id)}
-                    onChange={(e) => handleRowSelection(pedido.id, e.target.checked)}
-                    className="rounded border-border"
-                  />
-                </TableCell>
-                <TableCell className="font-mono text-xs">
-                  {pedido.id ? pedido.id.substring(0, 8) + '...' : '—'}
-                </TableCell>
-                <TableCell>{pedido.numero || '—'}</TableCell>
+            {finalPedidos.map((pedido) => {
+              const temMapeamento = pedidoTemMapeamento(pedido);
+              return (
+                <TableRow 
+                  key={pedido.id}
+                  className={temMapeamento 
+                    ? "bg-green-50 hover:bg-green-100 border-l-4 border-l-green-400" 
+                    : "bg-orange-50 hover:bg-orange-100 border-l-4 border-l-orange-400"
+                  }
+                >
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.has(pedido.id)}
+                      onChange={(e) => handleRowSelection(pedido.id, e.target.checked)}
+                      className="rounded border-border"
+                    />
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">
+                    {pedido.id ? pedido.id.substring(0, 8) + '...' : '—'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span>{pedido.numero || '—'}</span>
+                      {temMapeamento ? (
+                        <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
+                          Mapeado
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-orange-100 text-orange-800 text-xs">
+                          Sem Map.
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
                 <TableCell>{pedido.nome_cliente || '—'}</TableCell>
                 <TableCell>{maskCpfCnpj(pedido.cpf_cnpj)}</TableCell>
                 <TableCell>{formatDate(pedido.data_pedido)}</TableCell>
@@ -292,10 +341,11 @@ export function PedidosTable({ integrationAccountId, hybridData, onSelectionChan
                 <TableCell className="font-mono text-xs">
                   {pedido.integration_account_id?.substring(0, 8) || '—'}...
                 </TableCell>
-                <TableCell>{formatDate(pedido.created_at, true)}</TableCell>
-                <TableCell>{formatDate(pedido.updated_at, true)}</TableCell>
-              </TableRow>
-            ))}
+                  <TableCell>{formatDate(pedido.created_at, true)}</TableCell>
+                  <TableCell>{formatDate(pedido.updated_at, true)}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -310,7 +360,11 @@ export function PedidosTable({ integrationAccountId, hybridData, onSelectionChan
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => Math.max(1, p - 1))}
+            onClick={() => {
+              const newPage = Math.max(1, page - 1);
+              setPage(newPage);
+              onPageChange?.(newPage);
+            }}
             disabled={page <= 1}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -324,7 +378,11 @@ export function PedidosTable({ integrationAccountId, hybridData, onSelectionChan
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => {
+              const newPage = Math.min(totalPages, page + 1);
+              setPage(newPage);
+              onPageChange?.(newPage);
+            }}
             disabled={page >= totalPages}
           >
             Próxima
