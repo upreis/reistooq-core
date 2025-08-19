@@ -82,9 +82,9 @@ export function MercadoLivreManager({ onAccountsUpdate }: MercadoLivreManagerPro
       // Abrir popup para autorização
       const rawUrl: string = data.authorization_url as string;
       const authUrl = rawUrl
-        .replace('auth.mercadolivre.com/authorization', 'auth.mercadolivre.com.br/authorization')
-        .replace('auth.mercadolivre.com.ar/authorization', 'auth.mercadolivre.com.br/authorization')
-        .replace('auth.mercadolivre.com.br/authorization', 'auth.mercadolivre.com.br/authorization');
+        .replace('auth.mercadolibre.com/authorization', 'auth.mercadolivre.com.br/authorization')
+        .replace('auth.mercadolibre.com.ar/authorization', 'auth.mercadolivre.com.br/authorization')
+        .replace('auth.mercadolibre.com.br/authorization', 'auth.mercadolivre.com.br/authorization');
 
       const popup = window.open(
         authUrl,

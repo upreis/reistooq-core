@@ -272,7 +272,7 @@ export class OAuthService {
   // Provider-specific token URLs
   private getTokenUrl(provider: Provider): string {
     const urls = {
-      mercadolivre: 'https://api.mercadolivre.com/oauth/token',
+      mercadolivre: 'https://api.mercadolibre.com/oauth/token',
       shopee: 'https://partner.shopeemobile.com/api/v2/auth/token/get',
       tiny: '', // Not OAuth
       amazon: '', // Different auth method
