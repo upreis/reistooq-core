@@ -51,12 +51,12 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
         body: { usePkce: true },
       });
 
-      if (error || !data?.ok || !data?.url) {
+      if (error || !data?.ok || !(data?.url || data?.authorization_url)) {
         console.error('ML OAuth start failed:', { error, data });
         throw new Error(data?.error || error?.message || 'Falha ao iniciar conexão OAuth');
       }
 
-      const rawUrl: string = data.url as string;
+      const rawUrl: string = (data.url || data.authorization_url) as string;
       // Normalize domain to PT-BR as per official docs
       const authUrl = rawUrl
         .replace('auth.mercadolivre.com/authorization', 'auth.mercadolivre.com.br/authorization')
@@ -219,8 +219,9 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       });
       
       const hyperData = await hyperResponse.json();
+      const hyperAuthUrl: string | undefined = hyperData.url || hyperData.authorization_url;
       
-      if (!hyperData.ok || !hyperData.url || !hyperData.url.startsWith("https://auth.mercadolivre.com.br/authorization")) {
+      if (!hyperData.ok || !hyperAuthUrl || !hyperAuthUrl.startsWith("https://auth.mercadolivre.com.br/authorization")) {
         toast.error("❌ hyper-function não está gerando URL válida");
         console.error("hyper-function response:", hyperData);
         return;
