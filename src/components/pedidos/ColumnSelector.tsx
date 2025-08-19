@@ -125,8 +125,8 @@ export function ColumnSelector({ columns, onColumnsChange }: ColumnSelectorProps
           </SheetDescription>
         </SheetHeader>
         
-        <div className="mt-6 space-y-6">
-          <div className="flex justify-between items-center">
+        <div className="flex flex-col h-full">
+          <div className="flex justify-between items-center mb-6">
             <span className="text-sm font-medium">
               {visibleColumnsCount} de {columns.length} colunas visíveis
             </span>
@@ -135,61 +135,72 @@ export function ColumnSelector({ columns, onColumnsChange }: ColumnSelectorProps
             </Button>
           </div>
 
-          {Object.entries(groupedColumns).map(([category, cols]) => {
-            const visibleInCategory = cols.filter(col => col.visible).length;
-            const allVisible = visibleInCategory === cols.length;
-            const someVisible = visibleInCategory > 0 && visibleInCategory < cols.length;
+          <div className="flex-1 overflow-y-auto pr-2 space-y-6">
+            {Object.entries(groupedColumns).map(([category, cols]) => {
+              const visibleInCategory = cols.filter(col => col.visible).length;
+              const allVisible = visibleInCategory === cols.length;
+              const someVisible = visibleInCategory > 0 && visibleInCategory < cols.length;
 
-            return (
-              <div key={category} className="space-y-3">
-                <div className="flex items-center space-x-2 border-b pb-2">
-                  <input
-                    type="checkbox"
-                    id={`category-${category}`}
-                    checked={allVisible}
-                    ref={(el) => {
-                      if (el) el.indeterminate = someVisible;
-                    }}
-                    onChange={(e) => 
-                      handleCategoryToggle(category, e.target.checked)
-                    }
-                    className="rounded border-border"
-                  />
-                  <label 
-                    htmlFor={`category-${category}`}
-                    className="text-sm font-medium cursor-pointer"
-                  >
-                    {categoryLabels[category as keyof typeof categoryLabels]} 
-                    <span className="text-muted-foreground ml-1">
-                      ({visibleInCategory}/{cols.length})
-                    </span>
-                  </label>
+              return (
+                <div key={category} className="space-y-3">
+                  <div className="flex items-center space-x-2 border-b pb-2">
+                    <input
+                      type="checkbox"
+                      id={`category-${category}`}
+                      checked={allVisible}
+                      ref={(el) => {
+                        if (el) el.indeterminate = someVisible;
+                      }}
+                      onChange={(e) => 
+                        handleCategoryToggle(category, e.target.checked)
+                      }
+                      className="rounded border-border"
+                    />
+                    <label 
+                      htmlFor={`category-${category}`}
+                      className="text-sm font-medium cursor-pointer"
+                    >
+                      {categoryLabels[category as keyof typeof categoryLabels]} 
+                      <span className="text-muted-foreground ml-1">
+                        ({visibleInCategory}/{cols.length})
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-2 ml-6">
+                    {cols.map((col) => (
+                      <div key={col.key} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={col.key}
+                          checked={col.visible}
+                          onChange={(e) => 
+                            handleColumnToggle(col.key, e.target.checked)
+                          }
+                          className="rounded border-border"
+                        />
+                        <label 
+                          htmlFor={col.key}
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          {col.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 gap-2 ml-6">
-                  {cols.map((col) => (
-                    <div key={col.key} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={col.key}
-                        checked={col.visible}
-                        onChange={(e) => 
-                          handleColumnToggle(col.key, e.target.checked)
-                        }
-                        className="rounded border-border"
-                      />
-                      <label 
-                        htmlFor={col.key}
-                        className="text-sm cursor-pointer flex-1"
-                      >
-                        {col.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsOpen(false)}
+            >
+              Fechar
+            </Button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
