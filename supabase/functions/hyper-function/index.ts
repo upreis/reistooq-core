@@ -55,7 +55,7 @@ serve(async (req) => {
       });
     }
     
-    // Get ML secrets from vault
+    // Get ML secrets from environment variables
     const clientId = Deno.env.get('ML_CLIENT_ID');
     const redirectUri = Deno.env.get('ML_REDIRECT_URI');
 
