@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { PedidosTable } from '@/components/pedidos/PedidosTable';
 import { BaixaEstoqueModal } from '@/components/pedidos/BaixaEstoqueModal';
 import { PedidosFilters, PedidosFiltersState } from '@/components/pedidos/PedidosFilters';
+import { ColumnSelector, DEFAULT_COLUMNS, ColumnConfig } from '@/components/pedidos/ColumnSelector';
 import { usePedidosHybrid, FontePedidos } from '@/services/pedidos';
 import { usePedidosFilters } from '@/hooks/usePedidosFilters';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
@@ -24,6 +25,7 @@ export default function Pedidos() {
   const [pedidosSelecionados, setPedidosSelecionados] = useState<Pedido[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [mapeamentosVerificacao, setMapeamentosVerificacao] = useState<Map<string, MapeamentoVerificacao>>(new Map());
+  const [visibleColumns, setVisibleColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   
   const { filters, setFilters, clearFilters, apiParams } = usePedidosFilters();
   
@@ -187,6 +189,11 @@ export default function Pedidos() {
             Verificar Mapeamentos
           </Button>
           
+          <ColumnSelector
+            columns={visibleColumns}
+            onColumnsChange={setVisibleColumns}
+          />
+          
           {pedidosSelecionados.length > 0 && (
             <BaixaEstoqueModal 
               pedidos={pedidosSelecionados}
@@ -232,6 +239,7 @@ export default function Pedidos() {
         currentPage={currentPage}
         onPageChange={setCurrentPage}
         mapeamentosVerificacao={mapeamentosVerificacao}
+        visibleColumns={visibleColumns}
       />
     </div>
   );

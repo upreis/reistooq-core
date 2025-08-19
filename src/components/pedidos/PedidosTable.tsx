@@ -21,6 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { ColumnConfig } from './ColumnSelector';
 
 interface PedidosTableProps {
   integrationAccountId: string;
@@ -36,6 +37,7 @@ interface PedidosTableProps {
   currentPage?: number;
   onPageChange?: (page: number) => void;
   mapeamentosVerificacao?: Map<string, MapeamentoVerificacao>;
+  visibleColumns: ColumnConfig[];
 }
 
 function getSituacaoVariant(situacao: string): "default" | "secondary" | "destructive" | "outline" {
@@ -80,7 +82,8 @@ export function PedidosTable({
   onSelectionChange, 
   currentPage = 1, 
   onPageChange,
-  mapeamentosVerificacao = new Map()
+  mapeamentosVerificacao = new Map(),
+  visibleColumns
 }: PedidosTableProps) {
   // Estados locais para quando não usar hybridData
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -219,9 +222,11 @@ export function PedidosTable({
     );
   }
 
+  const visibleColumnConfigs = visibleColumns.filter(col => col.visible);
+
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border">
+      <div className="rounded-lg border overflow-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -236,28 +241,11 @@ export function PedidosTable({
                   className="rounded border-border"
                 />
               </TableHead>
-              <TableHead>Id Único</TableHead>
-              <TableHead>Número</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>CPF/CNPJ</TableHead>
-              <TableHead>Data Pedido</TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Quantidade</TableHead>
-              <TableHead>Situação</TableHead>
-              <TableHead>Valor Total</TableHead>
-              <TableHead>Valor Frete</TableHead>
-              <TableHead>Valor Desconto</TableHead>
-              <TableHead>Nº eCommerce</TableHead>
-              <TableHead>Nº Venda</TableHead>
-              <TableHead>Empresa</TableHead>
-              <TableHead>Cidade</TableHead>
-              <TableHead>UF</TableHead>
-              <TableHead>Obs</TableHead>
-              <TableHead>SKU Estoque</TableHead>
-              <TableHead>SKU Kit</TableHead>
-              <TableHead>QTD Kit</TableHead>
-              <TableHead>Total Itens</TableHead>
-              <TableHead>Status</TableHead>
+              {visibleColumnConfigs.map((col) => (
+                <TableHead key={col.key} className="whitespace-nowrap">
+                  {col.label}
+                </TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -279,62 +267,141 @@ export function PedidosTable({
                       className="rounded border-border"
                     />
                   </TableCell>
-                  <TableCell className="font-mono text-xs">
-                    {pedido.id_unico || `${pedido.obs?.split(',')[0]?.trim() || 'SKU'}-${pedido.numero}`}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span>{pedido.numero || '—'}</span>
-                      {temMapeamento ? (
-                        <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
-                          Mapeado
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-orange-100 text-orange-800 text-xs">
-                          Sem Map.
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                <TableCell>{pedido.nome_cliente || '—'}</TableCell>
-                <TableCell>{maskCpfCnpj(pedido.cpf_cnpj)}</TableCell>
-                <TableCell>{formatDate(pedido.data_pedido)}</TableCell>
-                <TableCell>
-                  <TruncatedCell content={pedido.obs?.split(',')[0]?.trim() || '—'} maxLength={20} />
-                </TableCell>
-                <TableCell>{pedido.total_itens || pedido.obs?.split(',').length || 1}</TableCell>
-                <TableCell>
-                  <Badge variant={getSituacaoVariant(pedido.situacao)}>
-                    {pedido.situacao || '—'}
-                  </Badge>
-                </TableCell>
-                <TableCell>{formatMoney(pedido.valor_total)}</TableCell>
-                <TableCell>{formatMoney(pedido.valor_frete)}</TableCell>
-                <TableCell>{formatMoney(pedido.valor_desconto)}</TableCell>
-                <TableCell>{pedido.numero_ecommerce || '—'}</TableCell>
-                <TableCell>{pedido.numero_venda || '—'}</TableCell>
-                <TableCell>{pedido.empresa || '—'}</TableCell>
-                <TableCell>{pedido.cidade || '—'}</TableCell>
-                <TableCell>{pedido.uf || '—'}</TableCell>
-                <TableCell>
-                  <TruncatedCell content={pedido.obs} />
-                </TableCell>
-                <TableCell>{pedido.sku_estoque || '—'}</TableCell>
-                <TableCell>{pedido.sku_kit || '—'}</TableCell>
-                <TableCell>{pedido.qtd_kit || '—'}</TableCell>
-                <TableCell>{pedido.total_itens || '—'}</TableCell>
-                <TableCell>
-                  <Badge 
-                    variant={
-                      pedido.status_estoque === 'pronto_baixar' ? 'default' :
-                      pedido.status_estoque === 'sem_estoque' ? 'destructive' : 'secondary'
-                    }
-                  >
-                    {pedido.status_estoque === 'pronto_baixar' ? 'Pronto p/ baixar' :
-                     pedido.status_estoque === 'sem_estoque' ? 'Sem estoque' :
-                     pedido.status_estoque === 'pedido_baixado' ? 'Pedido baixado' : 'Pronto p/ baixar'}
-                  </Badge>
-                </TableCell>
+                  
+                  {/* Special handling for numero column to show mapping badge */}
+                  {visibleColumnConfigs.map((col) => (
+                    col.key === 'numero' ? (
+                      <TableCell key={col.key}>
+                        <div className="flex items-center gap-2">
+                          <span>{pedido.numero || '—'}</span>
+                          {temMapeamento ? (
+                            <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
+                              Mapeado
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-orange-100 text-orange-800 text-xs">
+                              Sem Map.
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                    ) : (
+                      <TableCell key={col.key}>
+                        {(() => {
+                          switch (col.key) {
+                            case 'id_unico':
+                              return (
+                                <div className="font-mono text-xs">
+                                  {pedido.id_unico || `${pedido.obs?.split(',')[0]?.trim() || 'SKU'}-${pedido.numero}`}
+                                </div>
+                              );
+                            case 'nome_cliente':
+                              return pedido.nome_cliente || '—';
+                            case 'cpf_cnpj':
+                              return maskCpfCnpj(pedido.cpf_cnpj);
+                            case 'data_pedido':
+                              return formatDate(pedido.data_pedido);
+                            case 'sku':
+                              return (
+                                <TruncatedCell content={pedido.obs?.split(',')[0]?.trim() || '—'} maxLength={20} />
+                              );
+                            case 'quantidade':
+                              return pedido.total_itens || pedido.obs?.split(',').length || 1;
+                            case 'situacao':
+                              return (
+                                <Badge variant={getSituacaoVariant(pedido.situacao)}>
+                                  {pedido.situacao || '—'}
+                                </Badge>
+                              );
+                            case 'valor_total':
+                              return formatMoney(pedido.valor_total);
+                            case 'valor_frete':
+                              return formatMoney(pedido.valor_frete);
+                            case 'valor_desconto':
+                              return formatMoney(pedido.valor_desconto);
+                            case 'paid_amount':
+                              return pedido.paid_amount ? formatMoney(pedido.paid_amount) : '—';
+                            case 'currency_id':
+                              return pedido.currency_id || '—';
+                            case 'coupon_amount':
+                              return pedido.coupon?.amount ? formatMoney(pedido.coupon.amount) : '—';
+                            case 'numero_ecommerce':
+                              return pedido.numero_ecommerce || '—';
+                            case 'numero_venda':
+                              return pedido.numero_venda || '—';
+                            case 'empresa':
+                              return pedido.empresa || '—';
+                            case 'cidade':
+                              return pedido.cidade || '—';
+                            case 'uf':
+                              return pedido.uf || '—';
+                            case 'obs':
+                              return <TruncatedCell content={pedido.obs} />;
+                            case 'sku_estoque':
+                              return pedido.sku_estoque || '—';
+                            case 'sku_kit':
+                              return pedido.sku_kit || '—';
+                            case 'qtd_kit':
+                              return pedido.qtd_kit || '—';
+                            case 'total_itens':
+                              return pedido.total_itens || '—';
+                            case 'status_estoque':
+                              return (
+                                <Badge 
+                                  variant={
+                                    pedido.status_estoque === 'pronto_baixar' ? 'default' :
+                                    pedido.status_estoque === 'sem_estoque' ? 'destructive' : 'secondary'
+                                  }
+                                >
+                                  {pedido.status_estoque === 'pronto_baixar' ? 'Pronto p/ baixar' :
+                                   pedido.status_estoque === 'sem_estoque' ? 'Sem estoque' :
+                                   pedido.status_estoque === 'pedido_baixado' ? 'Pedido baixado' : 'Pronto p/ baixar'}
+                                </Badge>
+                              );
+                            case 'date_created':
+                              return pedido.date_created ? formatDate(pedido.date_created) : '—';
+                            case 'date_closed':
+                              return pedido.date_closed ? formatDate(pedido.date_closed) : '—';
+                            case 'last_updated':
+                              return pedido.last_updated ? formatDate(pedido.last_updated) : '—';
+                            case 'pack_id':
+                              return pedido.pack_id || '—';
+                            case 'pickup_id':
+                              return pedido.pickup_id || '—';
+                            case 'manufacturing_ending_date':
+                              return pedido.manufacturing_ending_date ? formatDate(pedido.manufacturing_ending_date) : '—';
+                            case 'comment':
+                              return <TruncatedCell content={pedido.comment} maxLength={30} />;
+                            case 'status_detail':
+                              return pedido.status_detail || '—';
+                            case 'tags':
+                              return pedido.tags?.length ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {pedido.tags.slice(0, 2).map((tag, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                  {pedido.tags.length > 2 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      +{pedido.tags.length - 2}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : '—';
+                            case 'buyer_id':
+                              return pedido.buyer?.id || '—';
+                            case 'seller_id':
+                              return pedido.seller?.id || '—';
+                            case 'shipping_id':
+                              return pedido.shipping?.id || '—';
+                            default:
+                              return '—';
+                          }
+                        })()}
+                      </TableCell>
+                    )
+                  ))}
                 </TableRow>
               );
             })}
