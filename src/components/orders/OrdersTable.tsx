@@ -38,11 +38,15 @@ const getStatusBadge = (status: string) => {
   return statusConfig[status as keyof typeof statusConfig] || { variant: 'outline' as const, className: '' };
 };
 
-// Platform badge configuration  
+// Platform badge configuration - updated for ML integration
 const getPlatformBadge = (empresa: string | null, numeroEcommerce: string | null) => {
   if (!empresa && !numeroEcommerce) return { text: 'Interno', className: 'bg-muted text-muted-foreground' };
   
-  if (numeroEcommerce?.startsWith('ML')) return { text: 'Mercado Livre', className: 'bg-yellow-100 text-yellow-800' };
+  // Check for MercadoLibre orders (prioritize empresa field for reliability)
+  if (empresa === 'mercadolivre' || numeroEcommerce?.startsWith('ML') || empresa?.toLowerCase().includes('mercado')) {
+    return { text: 'Mercado Livre', className: 'bg-yellow-100 text-yellow-800' };
+  }
+  
   if (numeroEcommerce?.startsWith('SP')) return { text: 'Shopee', className: 'bg-orange-100 text-orange-800' };
   if (empresa?.toLowerCase().includes('tiny')) return { text: 'Tiny', className: 'bg-blue-100 text-blue-800' };
   

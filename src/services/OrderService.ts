@@ -123,7 +123,7 @@ export class OrderService {
   }
 
   /**
-   * List orders with filters and pagination
+   * List orders with filters and pagination - now supports unified sources
    */
   async list(params: OrderListParams): Promise<{ data: Order[]; count: number }> {
     const validation = safeParseWithIssues(OrderListParamsSchema, params);
@@ -133,12 +133,12 @@ export class OrderService {
 
     const validParams = validation.data;
 
-    // Edge function with RPC fallback
+    // Use unified orders edge function with RPC fallback
     return this.tryEdgeFunctionWithFallback(
-      'sync-pedidos-rapido',
+      'unified-orders',
       validParams,
       async () => {
-        // RPC fallback - explicit column selection
+        // RPC fallback - only internal orders for now
         const { data, error, count } = await supabase
         .rpc('get_pedidos_masked', {
           _start: validParams.startDate || null,
@@ -260,32 +260,66 @@ export class OrderService {
   }
 
   /**
-   * Get order statistics
+   * Get order statistics - now includes all sources
    */
   async getStats(): Promise<OrderStats> {
-    // Use edge function with fallback to basic counts
-    return this.tryEdgeFunctionWithFallback(
-      'pedidos-estatisticas',
-      {},
-      async () => {
-        // Simple fallback counts
-        const today = new Date().toISOString().split('T')[0];
-        
-        const [todayResult, pendingResult, completedResult, cancelledResult] = await Promise.allSettled([
-          supabase.from('pedidos').select('id', { count: 'exact', head: true }).gte('data_pedido', today),
-          supabase.from('pedidos').select('id', { count: 'exact', head: true }).in('situacao', ['Pendente', 'Aguardando']),
-          supabase.from('pedidos').select('id', { count: 'exact', head: true }).in('situacao', ['Concluído', 'Entregue']),
-          supabase.from('pedidos').select('id', { count: 'exact', head: true }).eq('situacao', 'Cancelado'),
-        ]);
+    // Use unified orders to get comprehensive stats
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Get today's orders from all sources
+      const todayOrders = await this.list({
+        fonte: 'interno', // Default fonte is required
+        startDate: today,
+        endDate: today,
+        limit: 1000,
+        offset: 0,
+      });
 
-        return {
-          today: todayResult.status === 'fulfilled' ? (todayResult.value.count || 0) : 0,
-          pending: pendingResult.status === 'fulfilled' ? (pendingResult.value.count || 0) : 0,
-          completed: completedResult.status === 'fulfilled' ? (completedResult.value.count || 0) : 0,
-          cancelled: cancelledResult.status === 'fulfilled' ? (cancelledResult.value.count || 0) : 0,
-        };
-      }
-    );
+      // Get all recent orders to calculate stats
+      const recentOrders = await this.list({
+        fonte: 'interno', // Default fonte is required
+        limit: 1000,
+        offset: 0,
+      });
+
+      const allOrders = recentOrders.data;
+      
+      // Calculate stats from unified data
+      const stats = {
+        today: todayOrders.data.length,
+        pending: allOrders.filter(order => 
+          ['Pendente', 'Aguardando', 'Aguardando Pagamento', 'Processando Pagamento'].includes(order.situacao)
+        ).length,
+        completed: allOrders.filter(order => 
+          ['Concluído', 'Entregue', 'Pago', 'Enviado'].includes(order.situacao)
+        ).length,
+        cancelled: allOrders.filter(order => 
+          ['Cancelado', 'Inválido'].includes(order.situacao)
+        ).length,
+      };
+
+      return stats;
+    } catch (error) {
+      console.error('Error calculating unified stats, falling back to basic counts:', error);
+      
+      // Fallback to basic internal counts only
+      const today = new Date().toISOString().split('T')[0];
+      
+      const [todayResult, pendingResult, completedResult, cancelledResult] = await Promise.allSettled([
+        supabase.from('pedidos').select('id', { count: 'exact', head: true }).gte('data_pedido', today),
+        supabase.from('pedidos').select('id', { count: 'exact', head: true }).in('situacao', ['Pendente', 'Aguardando']),
+        supabase.from('pedidos').select('id', { count: 'exact', head: true }).in('situacao', ['Concluído', 'Entregue']),
+        supabase.from('pedidos').select('id', { count: 'exact', head: true }).eq('situacao', 'Cancelado'),
+      ]);
+
+      return {
+        today: todayResult.status === 'fulfilled' ? (todayResult.value.count || 0) : 0,
+        pending: pendingResult.status === 'fulfilled' ? (pendingResult.value.count || 0) : 0,
+        completed: completedResult.status === 'fulfilled' ? (completedResult.value.count || 0) : 0,
+        cancelled: cancelledResult.status === 'fulfilled' ? (cancelledResult.value.count || 0) : 0,
+      };
+    }
   }
 
   /**

@@ -10,6 +10,7 @@ import { useBulkStock } from '@/hooks/useBulkStock';
 import { OrdersTable } from '@/components/orders/OrdersTable';
 import { OrdersFilters } from '@/components/orders/OrdersFilters';
 import { BulkActionsBar } from '@/components/orders/BulkActionsBar';
+import { OrdersSyncStatus } from '@/components/orders/OrdersSyncStatus';
 import { Order } from '@/services/OrderService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -178,13 +179,16 @@ const Pedidos = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Pedidos</h1>
-          <p className="text-muted-foreground">Gerencie todos os seus pedidos em um só lugar</p>
+          <p className="text-muted-foreground">Gerencie pedidos de todas as plataformas em um só lugar</p>
         </div>
         <Button className="gap-2">
           <Plus className="w-4 h-4" />
           Novo Pedido
         </Button>
       </div>
+
+      {/* Integration Status */}
+      <OrdersSyncStatus />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
