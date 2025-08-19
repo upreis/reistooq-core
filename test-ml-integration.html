@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste MercadoLibre Integration</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 10px 0; font-size: 16px; }
+        #results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Integração MercadoLibre</h1>
+    <p>Este teste verifica se as Edge Functions estão funcionando corretamente.</p>
+    
+    <button onclick="runTests()">▶️ Executar Testes</button>
+    <button onclick="clearResults()">🗑️ Limpar Resultados</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const SUPABASE_URL = "https://tdjyfqnxvjgossuncpwm.supabase.co";
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testSmoothService() {
+            log("🧪 Teste 1: Validando smooth-service com parâmetros de teste...");
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/smooth-service?code=TEST&state=TEST`);
+                const text = await response.text();
+                
+                if (text.includes("Missing code or state") || text.includes("Invalid or expired state")) {
+                    log("✅ smooth-service está funcionando corretamente (retornou erro esperado para parâmetros de teste)", 'success');
+                    return true;
+                } else {
+                    log("❌ smooth-service não retornou o erro esperado", 'error');
+                    log("Resposta: " + text.substring(0, 200) + "...", 'error');
+                    return false;
+                }
+            } catch (error) {
+                log("❌ Erro ao testar smooth-service: " + error.message, 'error');
+                return false;
+            }
+        }
+
+        async function testHyperFunction() {
+            log("🧪 Teste 2: Validando hyper-function (sem autenticação)...");
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/hyper-function`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ usePkce: true }),
+                });
+
+                const data = await response.json();
+                
+                if (response.status === 401) {
+                    log("✅ hyper-function está funcionando corretamente (requer autenticação)", 'success');
+                    return true;
+                }
+                
+                if (data.ok && data.url && data.url.startsWith("https://auth.mercadolivre.com.br/authorization")) {
+                    log("✅ hyper-function retornou URL válida do MercadoLibre", 'success');
+                    log("URL gerada: " + data.url.substring(0, 80) + "...", 'info');
+                    return true;
+                } else {
+                    log("❌ hyper-function não retornou URL válida", 'error');
+                    log("Resposta: " + JSON.stringify(data, null, 2), 'error');
+                    return false;
+                }
+            } catch (error) {
+                log("❌ Erro ao testar hyper-function: " + error.message, 'error');
+                return false;
+            }
+        }
+
+        async function testEdgeFunctionsAvailability() {
+            log("🧪 Teste 3: Verificando disponibilidade das Edge Functions...");
+            
+            const functions = ['hyper-function', 'smooth-service', 'smart-responder', 'rapid-responder'];
+            let allAvailable = true;
+            
+            for (const func of functions) {
+                try {
+                    const response = await fetch(`${SUPABASE_URL}/functions/v1/${func}`, {
+                        method: 'OPTIONS'
+                    });
+                    
+                    if (response.status === 200 || response.status === 204) {
+                        log(`✅ ${func} está disponível`, 'success');
+                    } else {
+                        log(`❌ ${func} retornou status ${response.status}`, 'error');
+                        allAvailable = false;
+                    }
+                } catch (error) {
+                    log(`❌ ${func} não está disponível: ${error.message}`, 'error');
+                    allAvailable = false;
+                }
+            }
+            
+            return allAvailable;
+        }
+
+        async function runTests() {
+            clearResults();
+            log("🚀 Iniciando testes de integração do MercadoLibre...", 'info');
+            log("", 'info');
+            
+            const results = [];
+            
+            results.push(await testEdgeFunctionsAvailability());
+            log("", 'info');
+            
+            results.push(await testSmoothService());
+            log("", 'info');
+            
+            results.push(await testHyperFunction());
+            log("", 'info');
+            
+            const allPassed = results.every(result => result);
+            
+            log("📊 Resumo dos testes:", 'info');
+            log(`✅ Passou: ${results.filter(r => r).length}/${results.length}`, 'success');
+            log(`❌ Falhou: ${results.filter(r => !r).length}/${results.length}`, results.filter(r => !r).length > 0 ? 'error' : 'success');
+            
+            if (allPassed) {
+                log("🎉 Todos os testes passaram! A integração está pronta.", 'success');
+                log("Próximos passos:", 'info');
+                log("1. Configure as secrets no Supabase: ML_CLIENT_ID, ML_CLIENT_SECRET, ML_REDIRECT_URI", 'info');
+                log("2. Registre a URL de callback no MercadoLibre: https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service", 'info');
+                log("3. Teste a integração completa através da interface do usuário", 'info');
+            } else {
+                log("⚠️ Alguns testes falharam. Verifique a configuração.", 'error');
+            }
+        }
+    </script>
+</body>
+</html>
