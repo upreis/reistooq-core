@@ -71,3 +71,36 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## MercadoLibre API - Scripts Curl
+
+### OAuth Flow
+```bash
+# 1. Iniciar OAuth
+curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-oauth-start \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{"organization_id": "current"}'
+
+# 2. Refresh Token
+curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-refresh-token \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{"integration_account_id": "ACCOUNT_ID"}'
+```
+
+### Orders API
+```bash
+# 3. Buscar Pedidos (com paginação)
+curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-orders \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -d '{
+    "integration_account_id": "ACCOUNT_ID",
+    "limit": 50,
+    "offset": 0,
+    "date_created_from": "2024-01-01T00:00:00.000-00:00",
+    "sort": "date_created",
+    "order": "desc"
+  }'
+```

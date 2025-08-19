@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { makeClient } from "../_shared/client.ts"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,301 +7,293 @@ const corsHeaders = {
 }
 
 interface OrdersRequest {
-  integration_account_id: string;
-  seller_id?: string;
-  status?: string;
-  since?: string;
-  until?: string;
-  sort?: 'date_asc' | 'date_desc';
-  limit?: number;
-  offset?: number;
+  integration_account_id: string
+  seller_id?: string
+  limit?: number
+  offset?: number
+  sort?: string
+  order?: string
+  date_created_from?: string
+  date_created_to?: string
+  last_updated_from?: string
+  last_updated_to?: string
+  order_status?: string
+}
+
+function makeClient(req: Request) {
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        headers: {
+          authorization: req.headers.get('authorization') ?? '',
+          'x-client-info': req.headers.get('x-client-info') ?? '',
+          apikey: req.headers.get('apikey') ?? '',
+        }
+      }
+    }
+  )
+}
+
+async function getValidAccessToken(supabase: any, integration_account_id: string): Promise<string | null> {
+  try {
+    const { data: secretData, error } = await supabase.rpc('get_integration_secret_secure', {
+      account_id: integration_account_id,
+      provider_name: 'mercadolivre',
+      requesting_function: 'mercadolivre-orders'
+    })
+
+    if (error || !secretData || secretData.length === 0) {
+      console.error('❌ Erro ao obter tokens:', error?.message)
+      return null
+    }
+
+    const tokenInfo = secretData[0]
+    
+    // Verificar se token está próximo do vencimento (próximos 5 minutos)
+    const expiresAt = new Date(tokenInfo.expires_at)
+    const now = new Date()
+    const timeUntilExpiry = expiresAt.getTime() - now.getTime()
+    const fiveMinutes = 5 * 60 * 1000
+
+    if (timeUntilExpiry < fiveMinutes) {
+      console.log('🔄 Token próximo do vencimento, fazendo refresh')
+      
+      // Fazer refresh automático
+      const refreshResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolivre-refresh-token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+        },
+        body: JSON.stringify({ integration_account_id })
+      })
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json()
+        console.log('✅ Token renovado automaticamente')
+        return refreshData.access_token
+      } else {
+        console.error('❌ Falha no refresh automático')
+        return tokenInfo.access_token // Tentar com token atual
+      }
+    }
+
+    return tokenInfo.access_token
+  } catch (error) {
+    console.error('❌ Erro ao obter access token:', error)
+    return null
+  }
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Authorization header required');
-    }
+    console.log('📦 Buscando pedidos MercadoLibre')
     
-    console.log('Processing ML orders request at:', new Date().toISOString());
-
-    const client = makeClient(authHeader);
-    const params: OrdersRequest = await req.json();
-
-    if (!params.integration_account_id) {
-      throw new Error('integration_account_id is required');
-    }
-
-    // Get valid access token (with auto-refresh)
-    const { data: secrets } = await client.rpc('get_integration_secret_secure', {
-      account_id: params.integration_account_id,
-      provider_name: 'mercadolivre',
-      requesting_function: 'mercadolivre-orders',
-    });
-
-    if (!secrets || !secrets.access_token) {
-      throw new Error('MercadoLibre not connected or tokens expired');
-    }
-
-    // Check if token needs refresh (expires in less than 5 minutes)
-    let accessToken = secrets.access_token;
-    if (secrets.expires_at) {
-      const expiresAt = new Date(secrets.expires_at);
-      const now = new Date();
-      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-      
-      if (expiresAt < fiveMinutesFromNow && secrets.refresh_token) {
-        // Refresh token
-        const refreshResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-          },
-          body: new URLSearchParams({
-            grant_type: 'refresh_token',
-            client_id: secrets.client_id,
-            client_secret: secrets.client_secret,
-            refresh_token: secrets.refresh_token,
-          }),
-        });
-
-        if (refreshResponse.ok) {
-          const newTokenData = await refreshResponse.json();
-          accessToken = newTokenData.access_token;
-          
-          // Update stored tokens
-          const newExpiresAt = newTokenData.expires_in 
-            ? new Date(Date.now() + newTokenData.expires_in * 1000)
-            : new Date(Date.now() + 6 * 60 * 60 * 1000);
-
-          await client.rpc('update_integration_secret_secure', {
-            account_id: params.integration_account_id,
-            provider_name: 'mercadolivre',
-            new_access_token: newTokenData.access_token,
-            new_refresh_token: newTokenData.refresh_token || secrets.refresh_token,
-            new_expires_at: newExpiresAt.toISOString(),
-          });
-
-          console.log('ML token refreshed successfully');
+    const requestData = await req.json() as OrdersRequest
+    const { 
+      integration_account_id,
+      seller_id,
+      limit = 50,
+      offset = 0,
+      sort = 'date_created',
+      order = 'desc',
+      date_created_from,
+      date_created_to,
+      last_updated_from,
+      last_updated_to,
+      order_status
+    } = requestData
+    
+    if (!integration_account_id) {
+      return new Response(
+        JSON.stringify({ error: 'integration_account_id é obrigatório' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      }
+      )
     }
 
-    // Get user info to extract seller_id if not provided
-    let sellerId = params.seller_id;
-    if (!sellerId) {
-      const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
+    const supabase = makeClient(req)
+    
+    // Verificar autenticação
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      console.error('❌ Usuário não autenticado')
+      return new Response(
+        JSON.stringify({ error: 'Usuário não autenticado' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
-      if (!userResponse.ok) {
-        const errorText = await userResponse.text();
-        console.error('Failed to get ML user info:', {
-          status: userResponse.status,
-          error: errorText,
-          account_id: params.integration_account_id,
-        });
-        throw new Error(`Failed to get user info from MercadoLibre: ${userResponse.status}`);
-      }
+    // Obter access token válido
+    const accessToken = await getValidAccessToken(supabase, integration_account_id)
+    
+    if (!accessToken) {
+      console.error('❌ Access token não disponível')
+      return new Response(
+        JSON.stringify({ error: 'Token de acesso não disponível' }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
-      const userData = await userResponse.json();
-      sellerId = userData.id.toString();
+    // Se seller_id não fornecido, obter do /users/me
+    let finalSellerId = seller_id
+    if (!finalSellerId) {
+      console.log('🔍 Obtendo seller_id do /users/me')
       
-      console.log('ML user info retrieved:', {
-        seller_id: sellerId,
-        nickname: userData.nickname,
-        site_id: userData.site_id,
-      });
+      const meResponse = await fetch('https://api.mercadolibre.com/users/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      })
+
+      if (!meResponse.ok) {
+        console.error('❌ Erro ao obter seller_id')
+        return new Response(
+          JSON.stringify({ error: 'Erro ao obter informações do usuário' }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+
+      const meData = await meResponse.json()
+      finalSellerId = meData.id
+      console.log('✅ Seller ID obtido:', finalSellerId)
     }
 
-    // Build orders search URL following ML API specs
-    const ordersUrl = new URL('https://api.mercadolibre.com/orders/search');
-    ordersUrl.searchParams.set('seller', sellerId);
+    // Construir URL de busca de pedidos com paginação
+    const ordersUrl = new URL('https://api.mercadolibre.com/orders/search')
+    ordersUrl.searchParams.set('seller', finalSellerId.toString())
+    ordersUrl.searchParams.set('limit', Math.min(limit, 200).toString()) // ML permite máximo 200
+    ordersUrl.searchParams.set('offset', offset.toString())
+    ordersUrl.searchParams.set('sort', sort)
+    ordersUrl.searchParams.set('order', order)
     
-    if (params.status) {
-      ordersUrl.searchParams.set('order.status', params.status);
+    // Filtros opcionais
+    if (date_created_from) {
+      ordersUrl.searchParams.set('order.date_created.from', date_created_from)
     }
-    
-    if (params.since) {
-      ordersUrl.searchParams.set('order.date_created.from', params.since);
+    if (date_created_to) {
+      ordersUrl.searchParams.set('order.date_created.to', date_created_to)
     }
-    
-    if (params.until) {
-      ordersUrl.searchParams.set('order.date_created.to', params.until);
+    if (last_updated_from) {
+      ordersUrl.searchParams.set('order.date_last_updated.from', last_updated_from)
     }
-    
-    if (params.sort) {
-      const sortValue = params.sort === 'date_desc' ? 'date_desc' : 'date_asc';
-      ordersUrl.searchParams.set('sort', sortValue);
+    if (last_updated_to) {
+      ordersUrl.searchParams.set('order.date_last_updated.to', last_updated_to)
     }
-    
-    if (params.limit) {
-      ordersUrl.searchParams.set('limit', Math.min(params.limit, 50).toString()); // ML max is 50
-    }
-    
-    if (params.offset) {
-      ordersUrl.searchParams.set('offset', params.offset.toString());
+    if (order_status) {
+      ordersUrl.searchParams.set('order.status', order_status)
     }
 
-    // Fetch orders from MercadoLibre API with retry logic
-    let ordersResponse = await fetch(ordersUrl.toString(), {
+    console.log('🌐 Fazendo chamada para ML Orders API')
+    
+    const ordersResponse = await fetch(ordersUrl.toString(), {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json',
-      },
-    });
-
-    // Retry once on 401 (token might be stale) or 429 (rate limit)
-    if (!ordersResponse.ok && (ordersResponse.status === 401 || ordersResponse.status === 429)) {
-      console.log('API call failed, attempting retry:', {
-        status: ordersResponse.status,
-        account_id: params.integration_account_id,
-      });
-      
-      // Wait briefly for rate limit
-      if (ordersResponse.status === 429) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        'Accept': 'application/json'
       }
-      
-      // Force token refresh on 401
-      if (ordersResponse.status === 401 && secrets.refresh_token) {
-        const refreshResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-          },
-          body: new URLSearchParams({
-            grant_type: 'refresh_token',
-            client_id: secrets.client_id,
-            client_secret: secrets.client_secret,
-            refresh_token: secrets.refresh_token,
-          }),
-        });
-
-        if (refreshResponse.ok) {
-          const newTokenData = await refreshResponse.json();
-          accessToken = newTokenData.access_token;
-          console.log('Token refreshed for retry');
-        }
-      }
-      
-      // Retry the request
-      ordersResponse = await fetch(ordersUrl.toString(), {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json',
-        },
-      });
-    }
+    })
 
     if (!ordersResponse.ok) {
-      const errorText = await ordersResponse.text();
+      const errorText = await ordersResponse.text()
+      console.error('❌ Erro na API do ML:', ordersResponse.status, errorText)
       
-      // Handle specific ML API errors
-      if (ordersResponse.status === 403) {
-        throw new Error('INSUFFICIENT_PERMISSIONS: Sua conta não tem permissão para acessar pedidos. Verifique se é uma conta de vendedor ativa.');
+      if (ordersResponse.status === 401 || ordersResponse.status === 403) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Token expirado ou inválido',
+            requires_reauth: true 
+          }),
+          { 
+            status: 401, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
       }
       
       if (ordersResponse.status === 429) {
-        throw new Error('RATE_LIMIT: Muitas requisições. Tente novamente em alguns minutos.');
+        return new Response(
+          JSON.stringify({ 
+            error: 'Rate limit excedido',
+            message: 'Muitas requisições. Tente novamente em alguns minutos.' 
+          }),
+          { 
+            status: 429, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
       }
       
-      throw new Error(`ML API error: ${ordersResponse.status} - ${errorText}`);
+      return new Response(
+        JSON.stringify({ error: 'Erro na API do MercadoLibre' }),
+        { 
+          status: ordersResponse.status, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
-    const ordersData = await ordersResponse.json();
+    const ordersData = await ordersResponse.json()
+    console.log(`✅ ${ordersData.results?.length || 0} pedidos obtidos com sucesso`)
 
-    // Process and normalize orders data
-    const processedOrders = ordersData.results?.map((order: any) => ({
-      ml_order_id: order.id,
-      status: order.status,
-      date_created: order.date_created,
-      date_closed: order.date_closed,
-      currency_id: order.currency_id,
-      total_amount: order.total_amount,
-      paid_amount: order.paid_amount,
-      buyer: {
-        id: order.buyer?.id,
-        nickname: order.buyer?.nickname,
-        email: order.buyer?.email,
-      },
-      seller: {
-        id: order.seller?.id,
-        nickname: order.seller?.nickname,
-      },
-      shipping: order.shipping ? {
-        id: order.shipping.id,
-        status: order.shipping.status,
-        mode: order.shipping.mode,
-        tracking_number: order.shipping.tracking_number,
-        tracking_method: order.shipping.tracking_method,
-      } : null,
-      order_items: order.order_items?.map((item: any) => ({
-        item_id: item.item?.id,
-        title: item.item?.title,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        full_unit_price: item.full_unit_price,
-      })) || [],
-      payments: order.payments?.map((payment: any) => ({
-        id: payment.id,
-        status: payment.status,
-        payment_method_id: payment.payment_method_id,
-        payment_type: payment.payment_type,
-        total_paid_amount: payment.total_paid_amount,
-      })) || [],
-      feedback: order.feedback,
-      context: order.context,
-      mediations: order.mediations,
-    })) || [];
-
-    console.log('ML orders fetched successfully:', {
-      seller_id: sellerId,
-      total_orders: ordersData.paging?.total || 0,
-      returned_orders: processedOrders.length,
-      timestamp: new Date().toISOString(),
-    });
-
-    return new Response(JSON.stringify({
+    // Estrutura de resposta padronizada com paginação
+    const response = {
       success: true,
       data: {
-        results: processedOrders,
-        paging: ordersData.paging || {
-          total: processedOrders.length,
-          offset: params.offset || 0,
-          limit: params.limit || 50,
+        results: ordersData.results || [],
+        paging: {
+          total: ordersData.paging?.total || 0,
+          limit: ordersData.paging?.limit || limit,
+          offset: ordersData.paging?.offset || offset,
+          primary_results: ordersData.paging?.primary_results || 0
         },
-        sort: ordersData.sort,
-        available_sorts: ordersData.available_sorts,
-        available_filters: ordersData.available_filters,
+        seller_id: finalSellerId,
+        query: ordersData.query || {},
+        sort: ordersData.sort || { id: sort, name: sort }
       },
       metadata: {
-        seller_id: sellerId,
-        fetched_at: new Date().toISOString(),
-        source: 'mercadolibre_api',
-      },
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+        request_time: new Date().toISOString(),
+        integration_account_id,
+        api_endpoint: ordersUrl.toString().replace(accessToken, '***') // Log sem vazar token
+      }
+    }
+
+    return new Response(
+      JSON.stringify(response),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
 
   } catch (error) {
-    console.error('ML orders fetch error:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      error: error.message || 'Failed to fetch MercadoLibre orders',
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('❌ Erro ao buscar pedidos:', error)
+    return new Response(
+      JSON.stringify({ error: 'Erro interno do servidor' }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
   }
-});
+})

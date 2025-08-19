@@ -1,31 +1,26 @@
 project_id = "tdjyfqnxvjgossuncpwm"
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "graphql_public"]
-extra_search_path = ["public", "extensions"]
-max_rows = 1000
-
 [auth]
 enabled = true
-port = 54324
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://258a105b-decd-40ba-b5d1-b7ec18beb5b0.lovableproject.com"]
-jwt_expiry = 3600
-refresh_token_rotation_enabled = true
-security_update_password_require_reauthentication = true
-manual_linking_enabled = false
+external_email_providers = ["gmail"]
 
-[functions.hyper-function]
+[api]
+enabled = true
+
+[db]
+enabled = true
+
+[edge_runtime]
+enabled = true
+
+[functions.mercadolivre-oauth-start]
 verify_jwt = true
 
-[functions.smooth-service]
+[functions.mercadolivre-oauth-callback]  
 verify_jwt = false
 
-[functions.smart-responder]
+[functions.mercadolivre-refresh-token]
 verify_jwt = true
 
-[functions.rapid-responder]
+[functions.mercadolivre-orders]
 verify_jwt = true
-
