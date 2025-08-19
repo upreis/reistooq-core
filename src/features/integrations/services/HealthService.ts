@@ -166,7 +166,7 @@ export class HealthService {
       const startTime = Date.now();
       
       // Simulate ML API call
-      const response = await fetch('https://api.mercadolibre.com/sites/MLB', {
+      const response = await fetch('https://api.mercadolivre.com/sites/MLB', {
         headers: {
           'Authorization': `Bearer ${config.access_token}`,
         },
