@@ -13,14 +13,14 @@ enabled = true
 [edge_runtime]
 enabled = true
 
-[functions.mercadolivre-oauth-start]
+[functions.hyper-function]
 verify_jwt = true
 
-[functions.mercadolivre-oauth-callback]  
+[functions.smooth-service]  
 verify_jwt = false
 
-[functions.mercadolivre-refresh-token]
+[functions.smart-responder]
 verify_jwt = true
 
-[functions.mercadolivre-orders]
+[functions.rapid-responder]
 verify_jwt = true

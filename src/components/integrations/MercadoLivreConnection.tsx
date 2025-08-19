@@ -76,7 +76,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
         }
 
         const successV1 = event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre';
-        const successLegacy = event.data?.source === 'mercadolivre-oauth' && event.data?.connected === true;
+        const successLegacy = event.data?.source === 'smooth-service' && event.data?.connected === true;
         const errorV1 = event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre';
 
         if (successV1 || successLegacy) {

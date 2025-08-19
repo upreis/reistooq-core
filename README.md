@@ -76,14 +76,14 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ### OAuth Flow
 ```bash
-# 1. Iniciar OAuth
-curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-oauth-start \
+# 1. Iniciar OAuth (hyper-function)
+curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/hyper-function \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -d '{"organization_id": "current"}'
 
-# 2. Refresh Token
-curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-refresh-token \
+# 2. Refresh Token (smart-responder)
+curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smart-responder \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -d '{"integration_account_id": "ACCOUNT_ID"}'
@@ -91,8 +91,8 @@ curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-
 
 ### Orders API
 ```bash
-# 3. Buscar Pedidos (com paginação)
-curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-orders \
+# 3. Buscar Pedidos (rapid-responder)
+curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/rapid-responder \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -d '{
