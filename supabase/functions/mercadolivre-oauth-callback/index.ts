@@ -80,12 +80,13 @@ serve(async (req) => {
       organizationId = prof?.organizacao_id ?? null;
     }
 
-    // Secrets
-    const { data: clientId } = await serviceClient.rpc('get_secret', { name: 'ML_CLIENT_ID' });
-    const { data: clientSecret } = await serviceClient.rpc('get_secret', { name: 'ML_CLIENT_SECRET' });
-    const { data: redirectUri } = await serviceClient.rpc('get_secret', { name: 'ML_REDIRECT_URI' });
+    // Get ML secrets from environment variables
+    const clientId = Deno.env.get('ML_CLIENT_ID');
+    const clientSecret = Deno.env.get('ML_CLIENT_SECRET');
+    const redirectUri = Deno.env.get('ML_REDIRECT_URI');
+    
     if (!clientId || !clientSecret || !redirectUri) {
-      console.error('Missing ML secrets');
+      console.error('Missing ML secrets:', { clientId: !!clientId, clientSecret: !!clientSecret, redirectUri: !!redirectUri });
       return new Response(`
         <html><body><script>
         window.opener?.postMessage({ type: 'oauth_error', provider: 'mercadolivre', error: 'Missing ML configuration' }, '*');
@@ -93,6 +94,8 @@ serve(async (req) => {
         </script></body></html>
       `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
     }
+    
+    console.log('[ML OAuth Callback] Secrets loaded successfully');
 
     // Token exchange (PKCE if verifier exists)
     const tokenParams = new URLSearchParams({
