@@ -1,5 +1,29 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient, getMlConfig, ok, fail, corsHeaders } from "../_shared/client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Local helpers (no cross-file imports to avoid deploy errors)
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+function makeClient(authHeader: string | null) {
+  const url = Deno.env.get('SUPABASE_URL')!;
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  return createClient(url, key, {
+    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
+  });
+}
+
+function getMlConfig() {
+  const clientId = Deno.env.get('ML_CLIENT_ID');
+  const clientSecret = Deno.env.get('ML_CLIENT_SECRET');
+  const redirectUri = Deno.env.get('ML_REDIRECT_URI');
+  if (!clientId || !clientSecret || !redirectUri) {
+    throw new Error('Missing ML secrets: ML_CLIENT_ID, ML_CLIENT_SECRET, ML_REDIRECT_URI');
+  }
+  return { clientId, clientSecret, redirectUri };
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -25,6 +49,7 @@ serve(async (req) => {
         </script></body></html>
       `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
     }
+
     if (!code || !state) {
       console.error('Missing code or state');
       return new Response(`
@@ -44,6 +69,7 @@ serve(async (req) => {
       .eq('used', false)
       .gt('expires_at', new Date().toISOString())
       .single();
+
     if (stateErr || !stateData) {
       console.error('Invalid state:', stateErr);
       return new Response(`
@@ -69,7 +95,6 @@ serve(async (req) => {
 
     // Get ML config (will throw if secrets are missing)
     const { clientId, clientSecret, redirectUri } = getMlConfig();
-    
     console.log('[ML OAuth Callback] Secrets loaded successfully');
 
     // Token exchange (PKCE if verifier exists)
@@ -136,6 +161,7 @@ serve(async (req) => {
       })
       .select()
       .single();
+
     if (accErr) {
       console.error('Failed to store integration account:', accErr);
       return new Response(`
@@ -167,7 +193,7 @@ serve(async (req) => {
         </script></body></html>
       `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
     }
-    
+
     console.log('ML OAuth completed successfully for account:', account.id);
 
     // Success

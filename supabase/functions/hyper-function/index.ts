@@ -1,5 +1,41 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient, getMlConfig, ok, fail, corsHeaders } from "../_shared/client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Local helpers (no cross-file imports to avoid deploy errors)
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+function makeClient(authHeader: string | null) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(url, key, {
+    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
+  });
+}
+
+function ok(data: any) {
+  return new Response(JSON.stringify({ ok: true, ...data }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function fail(error: string, status = 400) {
+  return new Response(JSON.stringify({ ok: false, error }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function getMlConfig() {
+  const clientId = Deno.env.get('ML_CLIENT_ID');
+  const redirectUri = Deno.env.get('ML_REDIRECT_URI');
+  if (!clientId || !redirectUri) {
+    throw new Error('Missing ML secrets: ML_CLIENT_ID and ML_REDIRECT_URI are required');
+  }
+  return { clientId, redirectUri };
+}
 
 // PKCE helper functions
 function generateCodeVerifier() {
@@ -33,35 +69,35 @@ serve(async (req) => {
 
   try {
     const supabase = makeClient(req.headers.get("Authorization"));
-    
+
     // Get current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error('User not authenticated:', userError);
       return fail("Usuário não autenticado", 401);
     }
-    
+
     // Get ML config (will throw if secrets are missing)
     const { clientId, redirectUri } = getMlConfig();
-    
+
     console.log('[ML OAuth] Config loaded, starting OAuth flow');
-    
+
     const body = await req.json();
     const { integration_account_id, usePkce = true } = body;
-    
+
     if (!integration_account_id) {
       return fail("integration_account_id é obrigatório");
     }
-    
+
     // Generate PKCE parameters
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
-    
+
     // Generate state for security
     const state = crypto.randomUUID();
-    
+
     console.log('Generated PKCE code_challenge for user:', user.id);
-    
+
     // Store state and code_verifier in database for validation
     const { error: stateError } = await supabase
       .from('oauth_states')
@@ -86,7 +122,7 @@ serve(async (req) => {
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('state', state);
     authUrl.searchParams.set('scope', 'offline_access read write');
-    
+
     // Add PKCE parameters if requested
     if (usePkce) {
       authUrl.searchParams.set('code_challenge', codeChallenge);
@@ -95,7 +131,7 @@ serve(async (req) => {
 
     console.log('[ML OAuth] Authorization URL generated successfully');
 
-    return ok({ 
+    return ok({
       url: authUrl.toString(),
       state: state,
       integration_account_id
