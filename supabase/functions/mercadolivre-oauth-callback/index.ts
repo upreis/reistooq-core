@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient } from "../_shared/client.ts";
+import { makeClient, getMlConfig, ok, fail, corsHeaders } from "../_shared/client.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -72,20 +68,8 @@ serve(async (req) => {
       organizationId = prof?.organizacao_id ?? null;
     }
 
-    // Get ML secrets from environment variables
-    const clientId = Deno.env.get('ML_CLIENT_ID');
-    const clientSecret = Deno.env.get('ML_CLIENT_SECRET');
-    const redirectUri = Deno.env.get('ML_REDIRECT_URI');
-    
-    if (!clientId || !clientSecret || !redirectUri) {
-      console.error('Missing ML secrets:', { clientId: !!clientId, clientSecret: !!clientSecret, redirectUri: !!redirectUri });
-      return new Response(`
-        <html><body><script>
-        window.opener?.postMessage({ type: 'oauth_error', provider: 'mercadolivre', error: 'Missing ML configuration' }, '*');
-        window.close();
-        </script></body></html>
-      `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
-    }
+    // Get ML config (will throw if secrets are missing)
+    const { clientId, clientSecret, redirectUri } = getMlConfig();
     
     console.log('[ML OAuth Callback] Secrets loaded successfully');
 
