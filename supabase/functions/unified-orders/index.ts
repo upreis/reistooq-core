@@ -222,12 +222,18 @@ serve(async (req) => {
       try {
         console.log('[Unified Orders] Fetching ML orders...');
 
-        // Get all active ML integration accounts
-        const { data: mlAccounts, error: accountsError } = await supabase
+        // Get ML integration accounts (filter by integration_account_id if provided)
+        let accountQuery = supabase
           .from('integration_accounts')
           .select('id, name, account_identifier')
           .eq('provider', 'mercadolivre')
           .eq('is_active', true);
+
+        if (body.integration_account_id) {
+          accountQuery = accountQuery.eq('id', body.integration_account_id);
+        }
+
+        const { data: mlAccounts, error: accountsError } = await accountQuery;
 
         if (accountsError) {
           console.error('[Unified Orders] ML accounts error:', accountsError);
@@ -237,47 +243,126 @@ serve(async (req) => {
           // Fetch orders from each ML account
           for (const account of mlAccounts) {
             try {
-              const mlOrdersResponse = await supabase.functions.invoke('rapid-responder', {
-                body: {
-                  integration_account_id: account.id,
-                  date_from: body.startDate,
-                  date_to: body.endDate,
-                  limit: 50, // Reasonable limit per account
-                }
+              // Decrypt integration secrets
+              const { data: secrets, error: secretsError } = await supabase.rpc('decrypt_integration_secret', {
+                p_account_id: account.id,
+                p_provider: 'mercadolivre',
+                p_encryption_key: Deno.env.get('APP_ENCRYPTION_KEY') || ''
               });
 
-              if (mlOrdersResponse.error) {
-                console.error(`[Unified Orders] ML orders error for account ${account.id}:`, mlOrdersResponse.error);
+              if (secretsError || !secrets) {
+                console.error(`[Unified Orders] Failed to get secrets for account ${account.id}:`, secretsError);
                 continue;
               }
 
-              const mlData = mlOrdersResponse.data;
-              if (mlData.ok && mlData.orders) {
-                const mappedOrders = mlData.orders.map((mlOrder: MLOrder) => 
+              let accessToken = secrets.access_token;
+              const refreshToken = secrets.refresh_token;
+              const expiresAt = secrets.expires_at;
+
+              // Check if token needs refresh (less than 5 minutes remaining)
+              if (expiresAt && new Date(expiresAt) < new Date(Date.now() + 5 * 60 * 1000)) {
+                console.log(`[Unified Orders] Token expires soon for account ${account.id}, refreshing...`);
+                
+                try {
+                  const refreshResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                      grant_type: 'refresh_token',
+                      client_id: secrets.client_id,
+                      client_secret: secrets.client_secret,
+                      refresh_token: refreshToken
+                    })
+                  });
+
+                  if (refreshResponse.ok) {
+                    const refreshData = await refreshResponse.json();
+                    accessToken = refreshData.access_token;
+                    
+                    // Store refreshed token
+                    await supabase.rpc('encrypt_integration_secret', {
+                      p_account_id: account.id,
+                      p_provider: 'mercadolivre',
+                      p_client_id: secrets.client_id,
+                      p_client_secret: secrets.client_secret,
+                      p_access_token: refreshData.access_token,
+                      p_refresh_token: refreshData.refresh_token || refreshToken,
+                      p_expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
+                      p_payload: secrets.payload,
+                      p_encryption_key: Deno.env.get('APP_ENCRYPTION_KEY') || ''
+                    });
+                    
+                    console.log(`[Unified Orders] Token refreshed for account ${account.id}`);
+                  }
+                } catch (refreshError) {
+                  console.warn(`[Unified Orders] Token refresh failed for account ${account.id}, continuing with existing token:`, refreshError);
+                }
+              }
+
+              // Get seller_id (fallback to payload.user_id, then fetch from /users/me)
+              let sellerId = secrets.payload?.user_id;
+              if (!sellerId) {
+                try {
+                  const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                  });
+                  if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    sellerId = userData.id;
+                  }
+                } catch (error) {
+                  console.warn(`[Unified Orders] Failed to get seller_id from /users/me for account ${account.id}:`, error);
+                }
+              }
+
+              if (!sellerId) {
+                console.error(`[Unified Orders] No seller_id available for account ${account.id}`);
+                continue;
+              }
+
+              // Build ML orders search URL with all filters
+              const params = new URLSearchParams();
+              params.append('seller', sellerId.toString());
+              if (body.status) params.append('order.status', body.status);
+              if (body.startDate || body.date_from) params.append('order.date_created.from', body.startDate || body.date_from!);
+              if (body.endDate || body.date_to) params.append('order.date_created.to', body.endDate || body.date_to!);
+              if (body.date_last_updated_from) params.append('order.date_last_updated.from', body.date_last_updated_from);
+              if (body.date_last_updated_to) params.append('order.date_last_updated.to', body.date_last_updated_to);
+              if (body.q || body.search) params.append('q', body.q || body.search!);
+              if (body.tags) params.append('tags', body.tags);
+              if (body.sort) params.append('sort', body.sort);
+              params.append('limit', (body.limit || 50).toString());
+              params.append('offset', (body.offset || 0).toString());
+
+              const mlUrl = `https://api.mercadolibre.com/orders/search?${params.toString()}`;
+              
+              if (body.debug) {
+                console.log(`[Unified Orders] ML URL for account ${account.id}:`, mlUrl);
+              }
+
+              // Fetch orders from MercadoLibre API
+              const mlResponse = await fetch(mlUrl, {
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                }
+              });
+
+              if (!mlResponse.ok) {
+                console.error(`[Unified Orders] ML API error for account ${account.id}:`, mlResponse.status, await mlResponse.text());
+                continue;
+              }
+
+              const mlData = await mlResponse.json();
+              if (mlData.results && mlData.results.length > 0) {
+                const mappedOrders = mlData.results.map((mlOrder: MLOrder) => 
                   mapMLOrderToUnified(mlOrder, account.id)
                 );
 
-                // Apply search filter to ML orders if specified
-                let filteredMLOrders = mappedOrders;
-                if (body.search) {
-                  const searchLower = body.search.toLowerCase();
-                  filteredMLOrders = mappedOrders.filter((order: UnifiedOrder) =>
-                    order.numero.toLowerCase().includes(searchLower) ||
-                    order.nome_cliente.toLowerCase().includes(searchLower) ||
-                    order.numero_ecommerce?.toLowerCase().includes(searchLower)
-                  );
-                }
-
-                // Apply status filter if specified
-                if (body.situacoes && body.situacoes.length > 0) {
-                  filteredMLOrders = filteredMLOrders.filter((order: UnifiedOrder) =>
-                    body.situacoes!.includes(order.situacao)
-                  );
-                }
-
-                allOrders.push(...filteredMLOrders);
-                console.log(`[Unified Orders] Added ${filteredMLOrders.length} orders from ML account ${account.name}`);
+                allOrders.push(...mappedOrders);
+                console.log(`[Unified Orders] Added ${mappedOrders.length} orders from ML account ${account.name}`);
               }
+              
             } catch (error) {
               console.error(`[Unified Orders] Exception fetching ML orders for account ${account.id}:`, error);
             }

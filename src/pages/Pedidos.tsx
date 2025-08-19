@@ -9,6 +9,7 @@ import { OrdersList } from '@/features/orders/components/list/OrdersList';
 import { OrdersFilters } from '@/components/orders/OrdersFilters';
 import { BulkActionsBar } from '@/components/orders/BulkActionsBar';
 import { OrdersSyncStatus } from '@/components/orders/OrdersSyncStatus';
+import MeliOrders from '@/components/MeliOrders';
 import { Order } from '@/features/orders/types/Orders.types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -193,6 +194,12 @@ const PedidosContent = () => {
 
       {/* Integration Status */}
       <OrdersSyncStatus onSyncNow={handleRefresh} autoSyncEnabled={autoSyncEnabled} onToggleAutoSync={setAutoSyncEnabled} />
+
+      {/* Mercado Livre Orders */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Pedidos do Mercado Livre</h2>
+        <MeliOrders />
+      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
