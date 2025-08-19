@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { makeClient, getMlConfig, ok, fail, corsHeaders } from "../_shared/client.ts";
 
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -10,7 +9,7 @@ serve(async (req) => {
   try {
     // Service role client
     const serviceClient = makeClient(null);
-    console.log('[ML OAuth Callback] Using service role client');
+    console.log('[ML OAuth Callback] Using service role: true');
 
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
