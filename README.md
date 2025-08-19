@@ -72,35 +72,71 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
-## MercadoLibre API - Scripts Curl
+## MercadoLibre Integration Setup
 
-### OAuth Flow
+### 1. Cadastrar Aplicação no MercadoLibre
+
+1. Acesse [MercadoLibre Developers](https://developers.mercadolibre.com/)
+2. Faça login e crie uma nova aplicação
+3. Configure as URLs de redirecionamento:
+   - **URL de callback**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service`
+4. Anote o `CLIENT_ID` e `CLIENT_SECRET`
+
+### 2. Configurar Secrets no Supabase
+
+Acesse [Edge Functions Secrets](https://supabase.com/dashboard/project/tdjyfqnxvjgossuncpwm/settings/functions) e configure:
+
+```
+ML_CLIENT_ID = seu_client_id_aqui
+ML_CLIENT_SECRET = seu_client_secret_aqui  
+ML_REDIRECT_URI = https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service
+ML_SITE_ID = MLB
+APP_ENCRYPTION_KEY = sua_chave_de_criptografia_segura
+```
+
+### 3. Testar a Integração
+
+Execute o script de teste:
 ```bash
-# 1. Iniciar OAuth (hyper-function)
+node scripts/test-mercadolivre-integration.js
+```
+
+### 4. Fluxo de Uso
+
+**Iniciar OAuth:**
+```bash
 curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/hyper-function \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -d '{"organization_id": "current"}'
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"usePkce": true}'
+```
 
-# 2. Refresh Token (smart-responder)
+**Renovar Token:**
+```bash
 curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smart-responder \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -d '{"integration_account_id": "ACCOUNT_ID"}'
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"integration_account_id": "uuid-here"}'
 ```
 
-### Orders API
+**Buscar Pedidos:**
 ```bash
-# 3. Buscar Pedidos (rapid-responder)
 curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/rapid-responder \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
-    "integration_account_id": "ACCOUNT_ID",
-    "limit": 50,
-    "offset": 0,
-    "date_created_from": "2024-01-01T00:00:00.000-00:00",
-    "sort": "date_created",
-    "order": "desc"
+    "integration_account_id": "uuid-here",
+    "seller_id": 123456789,
+    "date_from": "2024-01-01T00:00:00.000Z",
+    "date_to": "2024-12-31T23:59:59.999Z",
+    "order_status": "paid",
+    "limit": 50
   }'
 ```
+
+### 5. URLs das Funções
+
+- **OAuth Start**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/hyper-function`
+- **OAuth Callback**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service`
+- **Token Refresh**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smart-responder`
+- **Orders API**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/rapid-responder`

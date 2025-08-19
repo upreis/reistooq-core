@@ -83,11 +83,9 @@ serve(async (req) => {
     console.log('[ML OAuth] Config loaded, starting OAuth flow');
 
     const body = await req.json();
-    const { integration_account_id, usePkce = true } = body;
+    const { usePkce = true } = body;
 
-    if (!integration_account_id) {
-      return fail("integration_account_id é obrigatório");
-    }
+    console.log('[ML OAuth] Starting OAuth flow with PKCE:', usePkce);
 
     // Generate PKCE parameters
     const codeVerifier = generateCodeVerifier();
@@ -133,8 +131,7 @@ serve(async (req) => {
 
     return ok({
       url: authUrl.toString(),
-      state: state,
-      integration_account_id
+      state: state
     });
   } catch (e) {
     console.error('Error in hyper-function:', e);

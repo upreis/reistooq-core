@@ -102,7 +102,6 @@ class MercadoLivreService {
       
       const { data, error } = await supabase.functions.invoke('hyper-function', {
         body: { 
-          integration_account_id: 'temp',
           usePkce: true 
         }
       });

@@ -25,5 +25,5 @@ verify_jwt = true
 [functions.rapid-responder]
 verify_jwt = true
 
-[functions.mercadolivre-oauth-callback]
+[functions.smooth-service]
 verify_jwt = false
