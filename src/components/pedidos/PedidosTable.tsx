@@ -33,6 +33,7 @@ interface PedidosTableProps {
     error: string | null;
     refetch: () => void;
   };
+  onSelectionChange?: (selectedRows: Pedido[]) => void;
 }
 
 function getSituacaoVariant(situacao: string): "default" | "secondary" | "destructive" | "outline" {
@@ -71,13 +72,14 @@ function TruncatedCell({ content, maxLength = 50 }: { content?: string | null; m
   );
 }
 
-export function PedidosTable({ integrationAccountId, hybridData }: PedidosTableProps) {
+export function PedidosTable({ integrationAccountId, hybridData, onSelectionChange }: PedidosTableProps) {
   // Estados locais para quando não usar hybridData
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const pageSize = 25;
 
   const loadPedidos = async () => {
@@ -117,6 +119,36 @@ export function PedidosTable({ integrationAccountId, hybridData }: PedidosTableP
   const finalError = hybridData ? hybridData.error : error;
   const finalTotalCount = hybridData ? hybridData.total : totalCount;
   const finalRefresh = hybridData ? hybridData.refetch : loadPedidos;
+
+  // Gerenciar seleção
+  const handleRowSelection = (pedidoId: string, selected: boolean) => {
+    const newSelection = new Set(selectedRows);
+    if (selected) {
+      newSelection.add(pedidoId);
+    } else {
+      newSelection.delete(pedidoId);
+    }
+    setSelectedRows(newSelection);
+    
+    // Notificar componente pai
+    if (onSelectionChange) {
+      const selectedPedidos = finalPedidos.filter(p => newSelection.has(p.id));
+      onSelectionChange(selectedPedidos);
+    }
+  };
+
+  const handleSelectAll = (selected: boolean) => {
+    const newSelection = selected ? new Set(finalPedidos.map(p => p.id)) : new Set<string>();
+    setSelectedRows(newSelection);
+    
+    if (onSelectionChange) {
+      const selectedPedidos = selected ? finalPedidos : [];
+      onSelectionChange(selectedPedidos);
+    }
+  };
+
+  const isAllSelected = finalPedidos.length > 0 && selectedRows.size === finalPedidos.length;
+  const isSomeSelected = selectedRows.size > 0 && selectedRows.size < finalPedidos.length;
 
   const totalPages = Math.ceil(finalTotalCount / pageSize);
   const startItem = (page - 1) * pageSize + 1;
@@ -167,6 +199,17 @@ export function PedidosTable({ integrationAccountId, hybridData }: PedidosTableP
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">
+                <input
+                  type="checkbox"
+                  checked={isAllSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = isSomeSelected;
+                  }}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="rounded border-border"
+                />
+              </TableHead>
               <TableHead className="font-mono text-xs">ID</TableHead>
               <TableHead>Número</TableHead>
               <TableHead>Cliente</TableHead>
@@ -194,6 +237,14 @@ export function PedidosTable({ integrationAccountId, hybridData }: PedidosTableP
           <TableBody>
             {finalPedidos.map((pedido) => (
               <TableRow key={pedido.id}>
+                <TableCell>
+                  <input
+                    type="checkbox"
+                    checked={selectedRows.has(pedido.id)}
+                    onChange={(e) => handleRowSelection(pedido.id, e.target.checked)}
+                    className="rounded border-border"
+                  />
+                </TableCell>
                 <TableCell className="font-mono text-xs">
                   {pedido.id ? pedido.id.substring(0, 8) + '...' : '—'}
                 </TableCell>
