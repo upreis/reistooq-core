@@ -188,7 +188,7 @@ const Pedidos = () => {
       </div>
 
       {/* Integration Status */}
-      <OrdersSyncStatus />
+      <OrdersSyncStatus onSyncComplete={orders.refresh} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

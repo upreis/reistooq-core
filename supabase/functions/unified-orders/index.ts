@@ -150,7 +150,7 @@ serve(async (req) => {
           _search: body.search || null,
           _start: body.startDate || null,
           _end: body.endDate || null,
-          _limit: body.limite || 100,
+          _limit: body.limit || 100,
           _offset: body.offset || 0,
         });
 

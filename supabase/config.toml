@@ -25,5 +25,17 @@ verify_jwt = true
 [functions.rapid-responder]
 verify_jwt = true
 
-[functions.smooth-service]
+[functions.unified-orders]
+verify_jwt = true
+
+[functions.ml-token-refresh-cron]
+verify_jwt = true
+
+[functions.integrations-get-secret]
+verify_jwt = true
+
+[functions.integrations-store-secret]
+verify_jwt = true
+
+[functions.mercadolivre-oauth-callback]
 verify_jwt = false

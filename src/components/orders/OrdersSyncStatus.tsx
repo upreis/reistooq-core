@@ -7,9 +7,10 @@ import { useToast } from '@/hooks/use-toast';
 
 interface OrdersSyncStatusProps {
   className?: string;
+  onSyncComplete?: () => void;
 }
 
-export const OrdersSyncStatus: React.FC<OrdersSyncStatusProps> = ({ className }) => {
+export const OrdersSyncStatus: React.FC<OrdersSyncStatusProps> = ({ className, onSyncComplete }) => {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
@@ -24,6 +25,9 @@ export const OrdersSyncStatus: React.FC<OrdersSyncStatusProps> = ({ className })
         title: "Sincronização concluída",
         description: "Pedidos do Mercado Livre foram sincronizados com sucesso.",
       });
+      
+      // Trigger refresh callback
+      onSyncComplete?.();
     } catch (error) {
       toast({
         title: "Erro na sincronização",
