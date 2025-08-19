@@ -16,11 +16,11 @@ const getOAuthConfigs = (): Record<Provider, OAuthConfig | null> => {
     mercadolivre: {
       client_id: 'configured_via_edge_function', // Handled by Edge Function
       client_secret: '', // Handled securely by Edge Function
-      authorization_url: 'https://auth.mercadolibre.com.ar/authorization',
+      authorization_url: 'https://auth.mercadolibre.com/authorization',
       token_url: 'https://api.mercadolibre.com/oauth/token',
       redirect_uri: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service`,
-      scopes: ['read', 'write'],
-      use_pkce: false, // ML doesn't use PKCE
+      scopes: ['offline_access', 'read', 'write'],
+      use_pkce: true,
     },
     shopee: {
       client_id: '', // Will be fetched from Edge Function

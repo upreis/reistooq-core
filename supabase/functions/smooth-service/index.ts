@@ -233,17 +233,19 @@ serve(async (req) => {
       .from('integration_accounts')
       .insert({
         provider: 'mercadolivre',
-        external_account_id: userData.id.toString(),
-        account_name: userData.nickname || userData.first_name,
-        account_email: userData.email,
+        name: userData.nickname || userData.first_name,
+        account_identifier: userData.id.toString(),
         is_active: true,
-        organization_id: stateData.organization_id, // From oauth_states
+        organization_id: stateData.organization_id,
         public_auth: {
+          user_id: userData.id,
+          nickname: userData.nickname,
+          email: userData.email,
           site_id: userData.site_id,
-          user_type: userData.user_type,
           country_id: userData.country_id,
-          status: userData.status?.site_status,
-          permalink: userData.permalink
+          user_type: userData.user_type,
+          permalink: userData.permalink,
+          status: userData.status?.site_status
         }
       })
       .select()
