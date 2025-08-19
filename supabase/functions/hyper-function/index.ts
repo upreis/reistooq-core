@@ -1,10 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient } from "../_shared/client.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { makeClient, getMlConfig, ok, fail, corsHeaders } from "../_shared/client.ts";
 
 // PKCE helper functions
 function generateCodeVerifier() {
@@ -33,10 +28,7 @@ serve(async (req) => {
   }
 
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { 
-      status: 405, 
-      headers: corsHeaders 
-    });
+    return fail("Method Not Allowed", 405);
   }
 
   try {
@@ -46,31 +38,20 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error('User not authenticated:', userError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Usuário não autenticado" 
-      }), { 
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return fail("Usuário não autenticado", 401);
     }
     
-    // Get ML secrets from environment variables
-    const clientId = Deno.env.get('ML_CLIENT_ID');
-    const redirectUri = Deno.env.get('ML_REDIRECT_URI');
-
-    if (!clientId || !redirectUri) {
-      console.error('Missing ML secrets:', { clientId: !!clientId, redirectUri: !!redirectUri });
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Configuração do MercadoLibre não encontrada. Configure ML_CLIENT_ID e ML_REDIRECT_URI nos secrets." 
-      }), { 
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
+    // Get ML config (will throw if secrets are missing)
+    const { clientId, redirectUri } = getMlConfig();
     
-    console.log('[ML OAuth] Env secrets present:', { clientId: true, redirectUri: true });
+    console.log('[ML OAuth] Config loaded, starting OAuth flow');
+    
+    const body = await req.json();
+    const { integration_account_id, usePkce = true } = body;
+    
+    if (!integration_account_id) {
+      return fail("integration_account_id é obrigatório");
+    }
     
     // Generate PKCE parameters
     const codeVerifier = generateCodeVerifier();
@@ -89,19 +70,13 @@ serve(async (req) => {
         code_verifier: codeVerifier,
         provider: 'mercadolivre',
         expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes
-        user_id: user.id, // Current authenticated user
+        user_id: user.id,
         organization_id: null // Will be set by trigger
       });
 
     if (stateError) {
       console.error('Failed to store state:', stateError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Erro interno de segurança" 
-      }), { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return fail("Erro interno de segurança", 500);
     }
 
     // Build authorization URL with PKCE support (Brasil domain per docs)
@@ -112,29 +87,21 @@ serve(async (req) => {
     authUrl.searchParams.set('state', state);
     authUrl.searchParams.set('scope', 'offline_access read write');
     
-    // Add PKCE parameters
-    authUrl.searchParams.set('code_challenge', codeChallenge);
-    authUrl.searchParams.set('code_challenge_method', 'S256');
+    // Add PKCE parameters if requested
+    if (usePkce) {
+      authUrl.searchParams.set('code_challenge', codeChallenge);
+      authUrl.searchParams.set('code_challenge_method', 'S256');
+    }
 
-    console.log('[ML OAuth] Authorization URL:', authUrl.toString());
+    console.log('[ML OAuth] Authorization URL generated successfully');
 
-    console.log('ML OAuth URL generated:', authUrl.toString());
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      authorization_url: authUrl.toString(),
-      state: state
-    }), { 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    return ok({ 
+      url: authUrl.toString(),
+      state: state,
+      integration_account_id
     });
   } catch (e) {
     console.error('Error in hyper-function:', e);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: String(e?.message ?? e) 
-    }), { 
-      status: 500, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
-    });
+    return fail(String(e?.message ?? e), 500);
   }
 });

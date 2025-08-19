@@ -1,10 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { makeClient, getMlConfig, ENC_KEY, corsHeaders } from "../_shared/client.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,33 +8,7 @@ serve(async (req) => {
   }
 
   try {
-    // Use service role for database operations (fixes permission denied)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-      return new Response(`
-        <html>
-          <body>
-            <script>
-              window.opener?.postMessage({
-                type: 'oauth_error',
-                provider: 'mercadolivre',
-                error: 'Server configuration error'
-              }, '*');
-              window.close();
-            </script>
-          </body>
-        </html>
-      `, {
-        headers: { ...corsHeaders, "Content-Type": "text/html" }
-      });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: { persistSession: false }
-    });
+    const supabase = makeClient(null); // Service role
 
     console.log('[ML OAuth Callback] Using service role:', !!supabaseServiceRoleKey);
     const url = new URL(req.url);
@@ -126,30 +95,8 @@ serve(async (req) => {
       .update({ used: true })
       .eq('id', stateData.id);
 
-    // Get ML credentials
-    const { data: clientId } = await supabase.rpc('get_secret', { name: 'ML_CLIENT_ID' });
-    const { data: clientSecret } = await supabase.rpc('get_secret', { name: 'ML_CLIENT_SECRET' });
-    const { data: redirectUri } = await supabase.rpc('get_secret', { name: 'ML_REDIRECT_URI' });
-
-    if (!clientId || !clientSecret || !redirectUri) {
-      console.error('Missing ML credentials for token exchange');
-      return new Response(`
-        <html>
-          <body>
-            <script>
-              window.opener?.postMessage({
-                type: 'oauth_error',
-                provider: 'mercadolivre',
-                error: 'Missing MercadoLibre configuration'
-              }, '*');
-              window.close();
-            </script>
-          </body>
-        </html>
-      `, {
-        headers: { ...corsHeaders, "Content-Type": "text/html" }
-      });
-    }
+    // Get ML credentials (will throw if missing)
+    const { clientId, clientSecret, redirectUri } = getMlConfig();
 
     // Exchange code for token (with PKCE support)
     const tokenParams = new URLSearchParams({
@@ -282,21 +229,25 @@ serve(async (req) => {
       });
     }
 
-    // Store encrypted tokens using the secure function
+    // Store tokens securely
     const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000));
     
-    const { error: secretError } = await supabase.functions.invoke('integrations-store-secret', {
-      body: {
-        integration_account_id: accountData.id,
-        provider: 'mercadolivre',
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        expires_at: expiresAt.toISOString(),
-        payload: {
-          user_id: tokenData.user_id,
-          scope: tokenData.scope
-        }
-      }
+    const { error: secretError } = await supabase.rpc('encrypt_integration_secret', {
+      p_account_id: accountData.id,
+      p_provider: 'mercadolivre',
+      p_client_id: clientId,
+      p_client_secret: clientSecret,
+      p_access_token: tokenData.access_token,
+      p_refresh_token: tokenData.refresh_token,
+      p_expires_at: expiresAt.toISOString(),
+      p_payload: {
+        user_id: tokenData.user_id,
+        scope: tokenData.scope,
+        site: userData.site_id || 'MLB',
+        nickname: userData.nickname,
+        email: userData.email,
+      },
+      p_encryption_key: ENC_KEY,
     });
 
     if (secretError) {
@@ -329,8 +280,8 @@ serve(async (req) => {
             window.opener?.postMessage({
               type: 'oauth_success',
               provider: 'mercadolivre',
-              account_id: '${accountData.id}',
-              account_name: '${userData.nickname || userData.first_name}'
+              integration_account_id: '${accountData.id}',
+              user_id: ${tokenData.user_id}
             }, '*');
             window.close();
           </script>

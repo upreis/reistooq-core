@@ -1,88 +1,89 @@
-// 🎯 MercadoLibre API Service
-// Comprehensive service for ML OAuth and orders integration
-
 import { supabase } from '@/integrations/supabase/client';
 
+export interface MLOrdersParams {
+  integration_account_id: string;
+  seller_id?: number;
+  date_from?: string;
+  date_to?: string;
+  order_status?: string;
+  limit?: number;
+  offset?: number;
+}
+
 export interface MLOrder {
-  ml_order_id: string;
-  status: string;
+  id: number;
   date_created: string;
   date_closed?: string;
+  last_updated: string;
+  status: string;
+  status_detail?: string;
   currency_id: string;
+  order_items: Array<{
+    item: {
+      id: string;
+      title: string;
+      variation_id?: number;
+    };
+    quantity: number;
+    unit_price: number;
+    full_unit_price: number;
+  }>;
   total_amount: number;
-  paid_amount: number;
   buyer: {
     id: number;
     nickname: string;
     email?: string;
+    phone?: {
+      area_code: string;
+      number: string;
+    };
   };
   seller: {
     id: number;
     nickname: string;
   };
   shipping?: {
-    id: string;
+    id: number;
     status: string;
-    mode: string;
     tracking_number?: string;
     tracking_method?: string;
   };
-  order_items: Array<{
-    item_id: string;
-    title: string;
-    quantity: number;
-    unit_price: number;
-    full_unit_price: number;
-  }>;
-  payments: Array<{
-    id: string;
+  payments?: Array<{
+    id: number;
     status: string;
+    transaction_amount: number;
     payment_method_id: string;
-    payment_type: string;
-    total_paid_amount: number;
   }>;
-  feedback?: any;
-  context?: any;
-  mediations?: any[];
 }
 
 export interface MLOrdersResponse {
-  results: MLOrder[];
+  orders: MLOrder[];
   paging: {
     total: number;
     offset: number;
     limit: number;
   };
-  sort?: string;
-  available_sorts?: string[];
-  available_filters?: any;
-}
-
-export interface MLOrdersParams {
-  integration_account_id: string;
-  seller_id?: string;
-  status?: string;
-  since?: string;
-  until?: string;
-  sort?: 'date_asc' | 'date_desc';
-  limit?: number;
-  offset?: number;
+  seller_id: number;
 }
 
 export interface MLAccount {
   id: string;
-  nickname: string;
-  email?: string;
-  site_id: string;
-  user_id: number;
-  permalink?: string;
-  is_connected: boolean;
-  last_sync?: string;
+  name: string;
+  account_identifier: string;
+  public_auth: {
+    user_id: number;
+    nickname: string;
+    email?: string;
+    site_id: string;
+    country_id: string;
+  };
+  is_active: boolean;
+  updated_at: string;
 }
 
 class MercadoLivreService {
   private static instance: MercadoLivreService;
-  
+
   static getInstance(): MercadoLivreService {
     if (!MercadoLivreService.instance) {
       MercadoLivreService.instance = new MercadoLivreService();
@@ -91,269 +92,177 @@ class MercadoLivreService {
   }
 
   /**
-   * Get valid access token for integration account (with auto-refresh)
+   * Inicia o fluxo OAuth do MercadoLibre
    */
-  async getValidAccessToken(accountId: string): Promise<string | null> {
+  async startOAuth(): Promise<{ success: boolean; authorization_url?: string; error?: string }> {
     try {
-      // Get current token data
-      const { data, error } = await supabase.rpc('get_integration_secret_secure', {
-        account_id: accountId,
-        provider_name: 'mercadolivre',
-        requesting_function: 'get_valid_token'
-      });
-
-      if (error || !data || data.length === 0 || !data[0]?.access_token) {
-        console.error('Failed to get access token:', error);
-        return null;
-      }
-
-      const tokenData = data[0];
-
-      // Check if token is expired or expires within 5 minutes
-      const expiresAt = tokenData.expires_at ? new Date(tokenData.expires_at) : null;
-      const now = new Date();
-      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
-
-      if (!expiresAt || expiresAt <= fiveMinutesFromNow) {
-        console.log('Token expired or expires soon, attempting refresh...', {
-          expires_at: expiresAt?.toISOString(),
-          current_time: now.toISOString()
-        });
-
-        // Attempt to refresh token
-        const refreshResult = await supabase.functions.invoke('smart-responder', {
-          body: { integration_account_id: accountId }
-        });
-
-        if (refreshResult.error || !refreshResult.data?.success) {
-          console.error('Token refresh failed:', refreshResult.error);
-          
-          // If refresh token is expired, return null to trigger re-auth
-          if (refreshResult.data?.code === 'REFRESH_TOKEN_EXPIRED') {
-            return null;
-          }
-          
-          // For other errors, try using current token anyway
-          return tokenData.access_token;
-        }
-
-        return refreshResult.data.access_token;
-      }
-
-      return tokenData.access_token;
-    } catch (error) {
-      console.error('Error getting valid access token:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Initiate MercadoLibre OAuth flow
-   */
-  async initiateOAuth(): Promise<{ success: boolean; authorization_url?: string; error?: string }> {
-    try {
-      // Use the correct OAuth start function
+      console.log('[ML Service] Starting OAuth flow...');
+      
       const { data, error } = await supabase.functions.invoke('hyper-function', {
-        body: { organization_id: 'current' },
+        body: { 
+          integration_account_id: 'temp',
+          usePkce: true 
+        }
       });
 
-      if (error || !data?.success || !data?.authorization_url) {
-        console.error('ML OAuth start failed:', { error, data });
-        const errMsg = data?.error || error?.message || 'Failed to start OAuth flow';
-        throw new Error(errMsg);
+      if (error) {
+        console.error('[ML Service] OAuth start failed:', error);
+        return { success: false, error: error.message || 'Falha ao iniciar OAuth' };
       }
 
-      return {
-        success: true,
-        authorization_url: data.authorization_url,
+      if (!data.ok) {
+        console.error('[ML Service] OAuth start returned error:', data.error);
+        return { success: false, error: data.error };
+      }
+
+      console.log('[ML Service] OAuth URL generated successfully');
+      return { 
+        success: true, 
+        authorization_url: data.url 
       };
-    } catch (error) {
-      console.error('ML OAuth initiation failed:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'OAuth initiation failed',
+
+    } catch (e) {
+      console.error('[ML Service] OAuth start exception:', e);
+      return { 
+        success: false, 
+        error: 'Erro interno ao iniciar OAuth' 
       };
     }
   }
 
   /**
-   * Get connected ML accounts for current organization
+   * Abre popup OAuth e gerencia o fluxo
+   */
+  async initiateOAuth(): Promise<{ success: boolean; integration_account_id?: string; error?: string }> {
+    const startResult = await this.startOAuth();
+    
+    if (!startResult.success || !startResult.authorization_url) {
+      return startResult;
+    }
+
+    return new Promise((resolve) => {
+      const popup = window.open(
+        startResult.authorization_url,
+        'ml-oauth',
+        'width=600,height=700,scrollbars=yes,resizable=yes'
+      );
+
+      if (!popup) {
+        resolve({ success: false, error: 'Popup bloqueado pelo navegador' });
+        return;
+      }
+
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageHandler);
+          resolve({ success: false, error: 'OAuth cancelado pelo usuário' });
+        }
+      }, 1000);
+
+      const messageHandler = (event: MessageEvent) => {
+        if (event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre') {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageHandler);
+          popup.close();
+          resolve({ 
+            success: true, 
+            integration_account_id: event.data.integration_account_id 
+          });
+        } else if (event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre') {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', messageHandler);
+          popup.close();
+          resolve({ 
+            success: false, 
+            error: event.data.error || 'Erro durante OAuth' 
+          });
+        }
+      };
+
+      window.addEventListener('message', messageHandler);
+    });
+  }
+
+  /**
+   * Renova o token de acesso
+   */
+  async refreshToken(integration_account_id: string): Promise<{ success: boolean; access_token?: string; error?: string }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('smart-responder', {
+        body: { integration_account_id }
+      });
+
+      if (error || !data.ok) {
+        return { success: false, error: data?.error || 'Falha ao renovar token' };
+      }
+
+      return { 
+        success: true, 
+        access_token: data.access_token 
+      };
+    } catch (e) {
+      return { 
+        success: false, 
+        error: 'Erro interno ao renovar token' 
+      };
+    }
+  }
+
+  /**
+   * Busca pedidos do vendedor
+   */
+  async fetchOrders(params: MLOrdersParams): Promise<{ success: boolean; data?: MLOrdersResponse; error?: string }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('rapid-responder', {
+        body: params
+      });
+
+      if (error || !data.ok) {
+        return { success: false, error: data?.error || 'Falha ao buscar pedidos' };
+      }
+
+      return { 
+        success: true, 
+        data: {
+          orders: data.orders,
+          paging: data.paging,
+          seller_id: data.seller_id,
+        }
+      };
+    } catch (e) {
+      return { 
+        success: false, 
+        error: 'Erro interno ao buscar pedidos' 
+      };
+    }
+  }
+
+  /**
+   * Busca contas conectadas
    */
   async getConnectedAccounts(): Promise<MLAccount[]> {
     try {
       const { data, error } = await supabase
         .from('integration_accounts')
-        .select(`
-          id,
-          name,
-          account_identifier,
-          public_auth,
-          is_active,
-          updated_at
-        `)
+        .select('id, name, account_identifier, public_auth, is_active, updated_at')
         .eq('provider', 'mercadolivre')
         .eq('is_active', true);
 
       if (error) {
-        throw new Error(`Failed to get ML accounts: ${error.message}`);
+        console.error('[ML Service] Failed to fetch accounts:', error);
+        return [];
       }
 
-      return (data || []).map((account) => {
-        const publicAuth = account.public_auth as any; // Type assertion for JSON field
-        return {
-          id: account.id,
-          nickname: publicAuth?.nickname || account.name,
-          email: publicAuth?.email,
-          site_id: publicAuth?.site_id || 'MLB',
-          user_id: parseInt(account.account_identifier),
-          permalink: publicAuth?.permalink,
-          is_connected: account.is_active,
-          last_sync: account.updated_at,
-        };
-      });
-    } catch (error) {
-      console.error('Failed to get ML accounts:', error);
-      throw error;
+      return data || [];
+    } catch (e) {
+      console.error('[ML Service] Exception fetching accounts:', e);
+      return [];
     }
   }
 
   /**
-   * Fetch orders from MercadoLibre for a specific account
-   */
-  async getOrders(params: MLOrdersParams): Promise<MLOrdersResponse> {
-    try {
-      if (!params.integration_account_id) {
-        throw new Error('Integration account ID is required');
-      }
-
-      console.log('Fetching ML orders:', {
-        account_id: params.integration_account_id,
-        since: params.since,
-        until: params.until,
-        limit: params.limit,
-      });
-
-      const { data, error } = await supabase.functions.invoke('rapid-responder', {
-        body: params,
-      });
-
-      if (error || !data.success) {
-        const errorMsg = data?.error || error?.message || 'Failed to fetch orders from MercadoLibre';
-        
-        // Handle specific error types
-        if (errorMsg.includes('INSUFFICIENT_PERMISSIONS')) {
-          throw new Error('Sua conta não tem permissão para acessar pedidos. Verifique se é uma conta de vendedor ativa no MercadoLibre.');
-        }
-        
-        if (errorMsg.includes('RATE_LIMIT')) {
-          throw new Error('Muitas requisições ao MercadoLibre. Tente novamente em alguns minutos.');
-        }
-        
-        throw new Error(errorMsg);
-      }
-
-      console.log('ML orders fetched successfully:', {
-        total_orders: data.data?.paging?.total || 0,
-        returned_orders: data.data?.results?.length || 0,
-      });
-
-      return data.data;
-    } catch (error) {
-      console.error('Failed to fetch ML orders:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Sync orders from ML to local database
-   */
-  async syncOrders(accountId: string, options?: {
-    since?: string;
-    until?: string;
-    status?: string;
-  }): Promise<{ synced: number; errors: string[] }> {
-    try {
-      // Get orders from ML
-      const ordersResponse = await this.getOrders({
-        integration_account_id: accountId,
-        since: options?.since,
-        until: options?.until,
-        status: options?.status,
-        limit: 50, // Process in batches
-      });
-
-      const errors: string[] = [];
-      let synced = 0;
-
-      // Process each order
-      for (const order of ordersResponse.results) {
-        try {
-          // Convert ML order to our format
-          const orderItems = order.order_items.map((item) => ({
-            numero_pedido: order.ml_order_id,
-            sku: item.item_id,
-            descricao: item.title,
-            quantidade: item.quantity,
-            valor_unitario: item.unit_price,
-            valor_total: item.unit_price * item.quantity,
-            pedido_id: order.ml_order_id,
-          }));
-
-          // Insert/update order
-          const { error: orderError } = await supabase
-            .from('pedidos')
-            .upsert({
-              id: order.ml_order_id,
-              numero: order.ml_order_id,
-              integration_account_id: accountId,
-              nome_cliente: order.buyer.nickname,
-              cpf_cnpj: '', // Not available in ML orders
-              situacao: order.status,
-              data_pedido: new Date(order.date_created).toISOString().split('T')[0],
-              valor_total: order.total_amount,
-              valor_frete: 0, // Calculate from shipping if needed
-              valor_desconto: order.total_amount - order.paid_amount,
-              obs: `MercadoLibre Order - Status: ${order.status}`,
-              codigo_rastreamento: order.shipping?.tracking_number,
-              empresa: 'MercadoLibre',
-              numero_ecommerce: order.ml_order_id,
-            }, {
-              onConflict: 'id',
-            });
-
-          if (orderError) {
-            errors.push(`Failed to sync order ${order.ml_order_id}: ${orderError.message}`);
-            continue;
-          }
-
-          // Insert order items
-          for (const item of orderItems) {
-            const { error: itemError } = await supabase
-              .from('itens_pedidos')
-              .upsert(item, {
-                onConflict: 'pedido_id,sku',
-              });
-
-            if (itemError) {
-              errors.push(`Failed to sync item ${item.sku} for order ${order.ml_order_id}: ${itemError.message}`);
-            }
-          }
-
-          synced++;
-        } catch (itemError) {
-          errors.push(`Failed to process order ${order.ml_order_id}: ${itemError instanceof Error ? itemError.message : 'Unknown error'}`);
-        }
-      }
-
-      return { synced, errors };
-    } catch (error) {
-      console.error('ML orders sync failed:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Disconnect MercadoLibre account
+   * Desconecta uma conta
    */
   async disconnect(accountId: string): Promise<boolean> {
     try {
@@ -363,49 +272,30 @@ class MercadoLivreService {
         .eq('id', accountId)
         .eq('provider', 'mercadolivre');
 
-      if (error) {
-        throw new Error(`Failed to disconnect ML account: ${error.message}`);
-      }
-
-      // Also clear the stored tokens
-      await supabase
-        .from('integration_secrets')
-        .delete()
-        .eq('integration_account_id', accountId)
-        .eq('provider', 'mercadolivre');
-
-      return true;
-    } catch (error) {
-      console.error('Failed to disconnect ML account:', error);
+      return !error;
+    } catch (e) {
       return false;
     }
   }
 
   /**
-   * Get account connection status
+   * Verifica status da conexão
    */
-  async getConnectionStatus(accountId?: string): Promise<{
-    connected: boolean;
-    accounts: MLAccount[];
+  async getConnectionStatus(): Promise<{ 
+    connected: boolean; 
+    accounts: MLAccount[]; 
     last_sync?: string;
   }> {
-    try {
-      const accounts = await this.getConnectedAccounts();
-      
-      return {
-        connected: accounts.length > 0,
-        accounts,
-        last_sync: accounts[0]?.last_sync,
-      };
-    } catch (error) {
-      console.error('Failed to get ML connection status:', error);
-      return {
-        connected: false,
-        accounts: [],
-      };
-    }
+    const accounts = await this.getConnectedAccounts();
+    
+    return {
+      connected: accounts.length > 0,
+      accounts,
+      last_sync: accounts[0]?.updated_at,
+    };
   }
 }
 
+// Export singleton instance
 export const mercadoLivreService = MercadoLivreService.getInstance();
 export default mercadoLivreService;

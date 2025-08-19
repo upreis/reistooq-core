@@ -1,10 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { makeClient, getMlConfig, ENC_KEY, ok, fail, corsHeaders } from "../_shared/client.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,141 +8,99 @@ serve(async (req) => {
   }
 
   if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { 
-      status: 405, 
-      headers: corsHeaders 
-    });
+    return fail("Method Not Allowed", 405);
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const appEncryptionKey = Deno.env.get('APP_ENCRYPTION_KEY');
-    const mlClientId = Deno.env.get('ML_CLIENT_ID');
-    const mlClientSecret = Deno.env.get('ML_CLIENT_SECRET');
+    const supabase = makeClient(req.headers.get("Authorization"));
+    const body = await req.json();
+    const { integration_account_id } = body;
 
-    if (!supabaseUrl || !supabaseServiceRoleKey || !appEncryptionKey || !mlClientId || !mlClientSecret) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Missing required environment variables" 
-      }), { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+    if (!integration_account_id) {
+      return fail("integration_account_id é obrigatório");
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
-      auth: { persistSession: false }
+    console.log('[ML Token Refresh] Starting token refresh for account:', integration_account_id);
+
+    // Get current secrets
+    const { data: secrets, error: secretsError } = await supabase.rpc('decrypt_integration_secret', {
+      p_account_id: integration_account_id,
+      p_provider: 'mercadolivre',
+      p_encryption_key: ENC_KEY,
     });
 
-    const { account_id, provider } = await req.json();
-
-    if (!account_id || !provider) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "account_id e provider são obrigatórios" 
-      }), { 
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+    if (secretsError || !secrets) {
+      console.error('[ML Token Refresh] Failed to get secrets:', secretsError);
+      return fail("Segredos não encontrados ou inválidos", 404);
     }
 
-    console.log(`[Smart Responder] Refreshing token for account ${account_id}`);
-
-    // Get current encrypted secret
-    const { data: secretData, error: secretError } = await supabase.rpc('decrypt_integration_secret', {
-      p_account_id: account_id,
-      p_provider: provider,
-      p_encryption_key: appEncryptionKey
-    });
-
-    if (secretError || !secretData?.refresh_token) {
-      console.error('Failed to get refresh token:', secretError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Refresh token não encontrado" 
-      }), { 
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+    const refreshToken = secrets.refresh_token;
+    if (!refreshToken) {
+      return fail("Refresh token não encontrado", 400);
     }
 
-    // Refresh token with MercadoLibre
-    const tokenParams = new URLSearchParams({
+    // Get ML credentials
+    const { clientId, clientSecret } = getMlConfig();
+
+    // Refresh tokens
+    const refreshParams = new URLSearchParams({
       grant_type: 'refresh_token',
-      refresh_token: secretData.refresh_token,
-      client_id: mlClientId,
-      client_secret: mlClientSecret,
+      client_id: clientId,
+      client_secret: clientSecret,
+      refresh_token: refreshToken,
     });
 
-    const tokenResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
+    console.log('[ML Token Refresh] Calling ML token refresh API...');
+
+    const refreshResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json',
       },
-      body: tokenParams.toString(),
+      body: refreshParams.toString(),
     });
 
-    if (!tokenResponse.ok) {
-      const error = await tokenResponse.text();
-      console.error('ML token refresh failed:', error);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Falha ao renovar token do MercadoLibre" 
-      }), { 
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+    if (!refreshResponse.ok) {
+      const errorText = await refreshResponse.text();
+      console.error('[ML Token Refresh] Token refresh failed:', errorText);
+      return fail("Falha ao renovar token de acesso", 400);
     }
 
-    const tokenData = await tokenResponse.json();
-    
-    // Calculate expires_at (ML returns expires_in in seconds)
-    const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000));
+    const newTokenData = await refreshResponse.json();
+    console.log('[ML Token Refresh] Token refresh successful');
 
-    // Update encrypted secret with new tokens
-    const { data: updateResult, error: updateError } = await supabase.rpc('encrypt_integration_secret', {
-      p_account_id: account_id,
-      p_provider: provider,
-      p_client_id: mlClientId,
-      p_client_secret: mlClientSecret,
-      p_access_token: tokenData.access_token,
-      p_refresh_token: tokenData.refresh_token || secretData.refresh_token,
-      p_expires_at: expiresAt.toISOString(),
-      p_payload: secretData.payload || {},
-      p_encryption_key: appEncryptionKey,
+    // Calculate new expires_at
+    const newExpiresAt = new Date(Date.now() + (newTokenData.expires_in * 1000)).toISOString();
+
+    // Update stored secrets with new tokens
+    const { error: updateError } = await supabase.rpc('encrypt_integration_secret', {
+      p_account_id: integration_account_id,
+      p_provider: 'mercadolivre',
+      p_client_id: clientId,
+      p_client_secret: clientSecret,
+      p_access_token: newTokenData.access_token,
+      p_refresh_token: newTokenData.refresh_token || refreshToken, // Keep old if not returned
+      p_expires_at: newExpiresAt,
+      p_payload: secrets.payload, // Keep existing payload
+      p_encryption_key: ENC_KEY,
     });
 
     if (updateError) {
-      console.error('Failed to update tokens:', updateError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Falha ao salvar novos tokens" 
-      }), { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      console.error('[ML Token Refresh] Failed to update secrets:', updateError);
+      return fail("Falha ao salvar novos tokens", 500);
     }
 
-    console.log(`[Smart Responder] Token refreshed successfully for account ${account_id}`);
+    console.log('[ML Token Refresh] Successfully updated tokens');
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      access_token: tokenData.access_token,
-      expires_at: expiresAt.toISOString()
-    }), { 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    return ok({
+      access_token: newTokenData.access_token,
+      expires_at: newExpiresAt,
+      token_type: newTokenData.token_type || 'Bearer',
     });
 
-  } catch (error) {
-    console.error('Error in smart-responder:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: String(error?.message ?? error) 
-    }), { 
-      status: 500, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
-    });
+  } catch (e) {
+    console.error('[ML Token Refresh] Unexpected error:', e);
+    return fail(String(e?.message ?? e), 500);
   }
 });
