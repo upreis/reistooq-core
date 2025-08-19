@@ -56,26 +56,19 @@ serve(async (req) => {
     }
     
     // Get ML secrets from vault
-    const { data: clientIdData } = await supabase.rpc('get_secret', { 
-      name: 'ML_CLIENT_ID' 
-    });
-    const { data: redirectUriData } = await supabase.rpc('get_secret', { 
-      name: 'ML_REDIRECT_URI' 
-    });
+    const clientId = Deno.env.get('ML_CLIENT_ID');
+    const redirectUri = Deno.env.get('ML_REDIRECT_URI');
 
-    if (!clientIdData || !redirectUriData) {
-      console.error('Missing ML secrets:', { clientIdData, redirectUriData });
+    if (!clientId || !redirectUri) {
+      console.error('Missing ML secrets:', { clientId: !!clientId, redirectUri: !!redirectUri });
       return new Response(JSON.stringify({ 
         success: false, 
-        error: "Configuração do MercadoLibre não encontrada" 
+        error: "Configuração do MercadoLibre não encontrada. Configure ML_CLIENT_ID e ML_REDIRECT_URI nos secrets." 
       }), { 
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
-
-    const clientId = clientIdData;
-    const redirectUri = redirectUriData;
     
     // Generate PKCE parameters
     const codeVerifier = generateCodeVerifier();
