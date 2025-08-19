@@ -146,17 +146,17 @@ serve(async (req) => {
       `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
     }
 
-    // Save secrets via secure function
-    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000).toISOString();
-    const { error: storeErr } = await serviceClient.functions.invoke('integrations-store-secret', {
-      body: {
-        integration_account_id: account.id,
-        provider: 'mercadolivre',
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        expires_at: expiresAt,
-        payload: { user_id: tokenData.user_id, scope: tokenData.scope },
-      },
+    // Save secrets via secure RPC function
+    const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+    const { error: storeErr } = await serviceClient.rpc('encrypt_integration_secret', {
+      p_account_id: account.id,
+      p_provider: 'mercadolivre',
+      p_client_id: clientId,
+      p_client_secret: clientSecret,
+      p_access_token: tokenData.access_token,
+      p_refresh_token: tokenData.refresh_token,
+      p_expires_at: expiresAt.toISOString(),
+      p_payload: { user_id: tokenData.user_id, scope: tokenData.scope }
     });
     if (storeErr) {
       console.error('Failed to store secrets:', storeErr);
@@ -167,6 +167,8 @@ serve(async (req) => {
         </script></body></html>
       `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
     }
+    
+    console.log('ML OAuth completed successfully for account:', account.id);
 
     // Success
     return new Response(`
