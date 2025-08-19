@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient, ENC_KEY, ok, fail, corsHeaders } from "../_shared/client.ts";
+import { makeClient, ENC_KEY, ok, fail } from "../_shared/client.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '3600',
+};
 
 interface UnifiedOrdersRequest {
   search?: string;
@@ -248,13 +255,25 @@ serve(async (req) => {
 
     console.log('[Unified Orders] Returning', paginatedOrders.length, 'of', allOrders.length, 'total orders');
 
-    return ok({
+    return new Response(JSON.stringify({
+      ok: true,
+      url: req.url,
+      paging: { total: allOrders.length, offset: offset, limit: limit },
+      results: paginatedOrders,
       data: paginatedOrders,
       count: allOrders.length,
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('[Unified Orders] Unexpected error:', error);
-    return fail(String(error?.message ?? error), 500);
+    return new Response(JSON.stringify({
+      ok: false,
+      error: String(error?.message ?? error)
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

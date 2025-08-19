@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { ShoppingCart, User, Calendar, ExternalLink, Unplug, RefreshCw } from 'lucide-react';
 import { mercadoLivreService, type MLAccount } from '@/services/MercadoLivreService';
 import { supabase } from '@/integrations/supabase/client';
+import MeliOrders from '@/components/MeliOrders';
 
 interface MercadoLivreConnectionProps {
   onOrdersSync?: (accountId: string) => void;
@@ -408,6 +409,13 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
                 )}
               </div>
             ))}
+
+            <Separator className="my-4" />
+            
+            <div>
+              <h4 className="font-medium mb-3">Pedidos Recentes</h4>
+              <MeliOrders accountId={accounts[0]?.id} />
+            </div>
 
             <Button 
               variant="outline"
