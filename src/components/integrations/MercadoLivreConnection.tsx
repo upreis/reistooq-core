@@ -22,6 +22,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<MLAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [testingFunctions, setTestingFunctions] = useState(false);
 
   // Load connected accounts
   useEffect(() => {
@@ -47,15 +48,15 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
 
       // Start OAuth via Edge Function that uses ML_REDIRECT_URI (POST)
       const { data, error } = await supabase.functions.invoke('hyper-function', {
-        body: { organization_id: 'current' },
+        body: { usePkce: true },
       });
 
-      if (error || !data?.success || !data?.authorization_url) {
+      if (error || !data?.ok || !data?.url) {
         console.error('ML OAuth start failed:', { error, data });
         throw new Error(data?.error || error?.message || 'Falha ao iniciar conexão OAuth');
       }
 
-      const rawUrl: string = data.authorization_url as string;
+      const rawUrl: string = data.url as string;
       // Normalize domain to PT-BR as per official docs
       const authUrl = rawUrl
         .replace('auth.mercadolivre.com/authorization', 'auth.mercadolivre.com.br/authorization')
@@ -188,6 +189,66 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
     }
   };
 
+  const testEdgeFunctions = async () => {
+    try {
+      setTestingFunctions(true);
+      
+      // 1. Test smooth-service (OAuth callback)
+      const smoothResponse = await fetch("https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service?code=TEST&state=TEST");
+      const smoothText = await smoothResponse.text();
+      
+      if (!smoothText.includes("Missing code or state") && !smoothText.includes("Invalid or expired state")) {
+        toast.error("❌ smooth-service não está respondendo corretamente");
+        return;
+      }
+      
+      // 2. Test hyper-function (OAuth start) - requires auth
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("❌ Usuário não autenticado para testar hyper-function");
+        return;
+      }
+      
+      const hyperResponse = await fetch("https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/hyper-function", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ usePkce: true })
+      });
+      
+      const hyperData = await hyperResponse.json();
+      
+      if (!hyperData.ok || !hyperData.url || !hyperData.url.startsWith("https://auth.mercadolivre.com.br/authorization")) {
+        toast.error("❌ hyper-function não está gerando URL válida");
+        console.error("hyper-function response:", hyperData);
+        return;
+      }
+      
+      // 3. Test other functions availability
+      const functions = ['smart-responder', 'rapid-responder'];
+      for (const func of functions) {
+        const response = await fetch(`https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/${func}`, {
+          method: 'OPTIONS'
+        });
+        
+        if (response.status !== 200 && response.status !== 204) {
+          toast.error(`❌ ${func} não está disponível`);
+          return;
+        }
+      }
+      
+      toast.success("✅ Todas as Edge Functions estão funcionando corretamente!");
+      
+    } catch (error) {
+      console.error("Edge Functions test failed:", error);
+      toast.error(`❌ Erro ao testar funções: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      setTestingFunctions(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -219,6 +280,31 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
             <p className="text-muted-foreground mb-4">
               Nenhuma conta do Mercado Livre conectada
             </p>
+            
+            {/* Botão de teste das Edge Functions */}
+            <div className="space-y-2 mb-4">
+              <Button 
+                variant="outline"
+                onClick={testEdgeFunctions} 
+                disabled={testingFunctions}
+                className="w-full"
+              >
+                {testingFunctions ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Testando funções...
+                  </>
+                ) : (
+                  <>
+                    🧪 Testar Edge Functions
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Testa se as funções hyper-function, smooth-service, smart-responder e rapid-responder estão funcionando
+              </p>
+            </div>
+            
             <Button 
               onClick={handleConnect} 
               disabled={isConnecting}
