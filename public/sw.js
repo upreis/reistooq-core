@@ -77,6 +77,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // IMPORTANTE: Não interceptar requisições que não sejam GET ou que sejam de outros domínios
+  // Evita quebrar chamadas para Supabase Functions e outros serviços externos
+  if (request.method !== 'GET' || url.origin !== self.location.origin) {
+    return; // deixa o navegador lidar normalmente (sem SW)
+  }
   
   // Estratégia para assets estáticos
   if (STATIC_ASSETS.some(asset => url.pathname.endsWith(asset))) {
@@ -84,8 +90,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Estratégia para APIs - Cache First com fallback
-  if (url.pathname.includes('/api/')) {
+  // Estratégia para APIs internas do app - Cache First com fallback
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(apiCacheStrategy(request));
     return;
   }
