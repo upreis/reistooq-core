@@ -104,7 +104,7 @@ serve(async (req) => {
     });
     if (stateData.code_verifier) tokenParams.set('code_verifier', stateData.code_verifier);
 
-    const tokenResp = await fetch('https://api.mercadolibre.com/oauth/token', {
+    const tokenResp = await fetch('https://api.mercadolivre.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
       body: tokenParams,
@@ -122,7 +122,7 @@ serve(async (req) => {
     const tokenData = await tokenResp.json();
 
     // User info
-    const userResp = await fetch('https://api.mercadolibre.com/users/me', {
+    const userResp = await fetch('https://api.mercadolivre.com/users/me', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     if (!userResp.ok) {
