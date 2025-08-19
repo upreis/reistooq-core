@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient } from "../_shared/client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +13,35 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = makeClient(null); // No auth required for callback
+    // Use service role for database operations (fixes permission denied)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+      return new Response(`
+        <html>
+          <body>
+            <script>
+              window.opener?.postMessage({
+                type: 'oauth_error',
+                provider: 'mercadolivre',
+                error: 'Server configuration error'
+              }, '*');
+              window.close();
+            </script>
+          </body>
+        </html>
+      `, {
+        headers: { ...corsHeaders, "Content-Type": "text/html" }
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: { persistSession: false }
+    });
+
+    console.log('[ML OAuth Callback] Using service role:', !!supabaseServiceRoleKey);
     const url = new URL(req.url);
     
     const code = url.searchParams.get('code');
@@ -62,7 +90,7 @@ serve(async (req) => {
       });
     }
 
-    // Validate state
+    // Validate state and get code_verifier for PKCE
     const { data: stateData, error: stateError } = await supabase
       .from('oauth_states')
       .select('*')
@@ -123,20 +151,28 @@ serve(async (req) => {
       });
     }
 
-    // Exchange code for token
+    // Exchange code for token (with PKCE support)
+    const tokenParams = new URLSearchParams({
+      'grant_type': 'authorization_code',
+      'client_id': clientId,
+      'client_secret': clientSecret,
+      'code': code,
+      'redirect_uri': redirectUri
+    });
+
+    // Add code_verifier for PKCE if available
+    if (stateData.code_verifier) {
+      tokenParams.set('code_verifier', stateData.code_verifier);
+      console.log('[ML OAuth] Using PKCE code_verifier');
+    }
+
     const tokenResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Accept': 'application/json'
       },
-      body: new URLSearchParams({
-        'grant_type': 'authorization_code',
-        'client_id': clientId,
-        'client_secret': clientSecret,
-        'code': code,
-        'redirect_uri': redirectUri
-      })
+      body: tokenParams
     });
 
     if (!tokenResponse.ok) {
