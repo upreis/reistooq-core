@@ -35,26 +35,36 @@ export default function Pedidos() {
     forceFonte
   });
 
-  // Verificar mapeamentos quando os pedidos carregarem
-  useEffect(() => {
+  // Função para verificar mapeamentos manualmente
+  const verificarMapeamentos = async () => {
     if (rows.length > 0) {
-      const skusPedido = rows.flatMap(pedido => {
-        // Extrair SKUs dos itens (assumindo que obs contém os SKUs ou títulos)
+      const pedidosEnriquecidos = await MapeamentoService.enriquecerPedidosComMapeamento(rows);
+      
+      // Criar o mapa de verificação para compatibilidade com o código existente
+      const mapeamentosMap = new Map();
+      pedidosEnriquecidos.forEach(pedido => {
         if (pedido.obs) {
-          // Para ML, os títulos dos produtos estão na obs
-          return pedido.obs.split(', ').map(titulo => titulo.trim());
+          pedido.obs.split(',').forEach(sku => {
+            const skuTrimmed = sku.trim();
+            mapeamentosMap.set(skuTrimmed, {
+              skuPedido: skuTrimmed,
+              temMapeamento: !!pedido.sku_estoque,
+              skuEstoque: pedido.sku_estoque,
+              quantidadeKit: pedido.qtd_kit
+            });
+          });
         }
-        return [pedido.numero]; // Fallback para número do pedido
+        mapeamentosMap.set(pedido.numero, {
+          skuPedido: pedido.numero,
+          temMapeamento: !!pedido.sku_estoque,
+          skuEstoque: pedido.sku_estoque,
+          quantidadeKit: pedido.qtd_kit
+        });
       });
-
-      MapeamentoService.verificarMapeamentos(skusPedido).then(verificacoes => {
-        const mapeamentosMap = new Map(
-          verificacoes.map(v => [v.skuPedido, v])
-        );
-        setMapeamentosVerificacao(mapeamentosMap);
-      });
+      
+      setMapeamentosVerificacao(mapeamentosMap);
     }
-  }, [rows]);
+  };
   
   const handleFonteChange = (novaFonte: FontePedidos) => {
     setFonteEscolhida(novaFonte);
@@ -173,6 +183,10 @@ export default function Pedidos() {
       {/* Ações de Baixa de Estoque */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm" onClick={verificarMapeamentos}>
+            Verificar Mapeamentos
+          </Button>
+          
           {pedidosSelecionados.length > 0 && (
             <BaixaEstoqueModal 
               pedidos={pedidosSelecionados}
@@ -201,10 +215,10 @@ export default function Pedidos() {
       <Alert className="border-blue-200 bg-blue-50">
         <Package className="h-4 w-4" />
         <AlertDescription>
-          <div className="font-medium">Baixa Automática de Estoque</div>
+          <div className="font-medium">Baixa Manual de Estoque</div>
           <div className="text-sm mt-1">
-            Selecione pedidos para processar a baixa automática baseada no mapeamento De-Para. 
-            O sistema verifica duplicatas pelo histórico e aplica as quantidades do KIT automaticamente.
+            Selecione pedidos e clique em "Baixar Estoque" para processar manualmente. 
+            Use "Verificar Mapeamentos" para atualizar o status dos pedidos.
             <br />
             <strong>Linhas verdes:</strong> pedidos com mapeamento configurado | <strong>Linhas laranjas:</strong> pedidos sem mapeamento
           </div>

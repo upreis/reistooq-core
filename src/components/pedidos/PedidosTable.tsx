@@ -4,8 +4,6 @@ import { listPedidos } from '@/services/pedidos';
 import { Pedido } from '@/types/pedido';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { CopyButton } from './CopyButton';
-import { LinkButton } from './LinkButton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -238,12 +236,13 @@ export function PedidosTable({
                   className="rounded border-border"
                 />
               </TableHead>
-              <TableHead className="font-mono text-xs">ID</TableHead>
+              <TableHead>Id Único</TableHead>
               <TableHead>Número</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>CPF/CNPJ</TableHead>
               <TableHead>Data Pedido</TableHead>
-              <TableHead>Data Prevista</TableHead>
+              <TableHead>SKU</TableHead>
+              <TableHead>Quantidade</TableHead>
               <TableHead>Situação</TableHead>
               <TableHead>Valor Total</TableHead>
               <TableHead>Valor Frete</TableHead>
@@ -253,13 +252,12 @@ export function PedidosTable({
               <TableHead>Empresa</TableHead>
               <TableHead>Cidade</TableHead>
               <TableHead>UF</TableHead>
-              <TableHead>Código Rastreamento</TableHead>
-              <TableHead>URL Rastreamento</TableHead>
               <TableHead>Obs</TableHead>
-              <TableHead>Obs Interna</TableHead>
-              <TableHead>Integration Account ID</TableHead>
-              <TableHead>Criado em</TableHead>
-              <TableHead>Atualizado em</TableHead>
+              <TableHead>SKU Estoque</TableHead>
+              <TableHead>SKU Kit</TableHead>
+              <TableHead>QTD Kit</TableHead>
+              <TableHead>Total Itens</TableHead>
+              <TableHead>Status</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -282,7 +280,7 @@ export function PedidosTable({
                     />
                   </TableCell>
                   <TableCell className="font-mono text-xs">
-                    {pedido.id ? pedido.id.substring(0, 8) + '...' : '—'}
+                    {pedido.id_unico || `${pedido.obs?.split(',')[0]?.trim() || 'SKU'}-${pedido.numero}`}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -301,7 +299,10 @@ export function PedidosTable({
                 <TableCell>{pedido.nome_cliente || '—'}</TableCell>
                 <TableCell>{maskCpfCnpj(pedido.cpf_cnpj)}</TableCell>
                 <TableCell>{formatDate(pedido.data_pedido)}</TableCell>
-                <TableCell>{formatDate(pedido.data_prevista)}</TableCell>
+                <TableCell>
+                  <TruncatedCell content={pedido.obs?.split(',')[0]?.trim() || '—'} maxLength={20} />
+                </TableCell>
+                <TableCell>{pedido.total_itens || pedido.obs?.split(',').length || 1}</TableCell>
                 <TableCell>
                   <Badge variant={getSituacaoVariant(pedido.situacao)}>
                     {pedido.situacao || '—'}
@@ -316,33 +317,24 @@ export function PedidosTable({
                 <TableCell>{pedido.cidade || '—'}</TableCell>
                 <TableCell>{pedido.uf || '—'}</TableCell>
                 <TableCell>
-                  {pedido.codigo_rastreamento ? (
-                    <div className="flex items-center gap-1">
-                      <span className="font-mono text-xs">
-                        {pedido.codigo_rastreamento}
-                      </span>
-                      <CopyButton text={pedido.codigo_rastreamento} />
-                    </div>
-                  ) : (
-                    '—'
-                  )}
-                </TableCell>
-                <TableCell>
-                  <LinkButton href={pedido.url_rastreamento}>
-                    Rastrear
-                  </LinkButton>
-                </TableCell>
-                <TableCell>
                   <TruncatedCell content={pedido.obs} />
                 </TableCell>
+                <TableCell>{pedido.sku_estoque || '—'}</TableCell>
+                <TableCell>{pedido.sku_kit || '—'}</TableCell>
+                <TableCell>{pedido.qtd_kit || '—'}</TableCell>
+                <TableCell>{pedido.total_itens || '—'}</TableCell>
                 <TableCell>
-                  <TruncatedCell content={pedido.obs_interna} />
+                  <Badge 
+                    variant={
+                      pedido.status_estoque === 'pronto_baixar' ? 'default' :
+                      pedido.status_estoque === 'sem_estoque' ? 'destructive' : 'secondary'
+                    }
+                  >
+                    {pedido.status_estoque === 'pronto_baixar' ? 'Pronto p/ baixar' :
+                     pedido.status_estoque === 'sem_estoque' ? 'Sem estoque' :
+                     pedido.status_estoque === 'pedido_baixado' ? 'Pedido baixado' : 'Pronto p/ baixar'}
+                  </Badge>
                 </TableCell>
-                <TableCell className="font-mono text-xs">
-                  {pedido.integration_account_id?.substring(0, 8) || '—'}...
-                </TableCell>
-                  <TableCell>{formatDate(pedido.created_at, true)}</TableCell>
-                  <TableCell>{formatDate(pedido.updated_at, true)}</TableCell>
                 </TableRow>
               );
             })}

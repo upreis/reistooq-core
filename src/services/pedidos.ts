@@ -38,7 +38,6 @@ export async function listPedidos({
       nome_cliente,
       cpf_cnpj,
       data_pedido,
-      data_prevista,
       situacao,
       valor_total,
       valor_frete,
@@ -48,13 +47,17 @@ export async function listPedidos({
       empresa,
       cidade,
       uf,
-      codigo_rastreamento,
-      url_rastreamento,
       obs,
-      obs_interna,
       integration_account_id,
       created_at,
-      updated_at
+      updated_at,
+      itens_pedidos (
+        sku,
+        descricao,
+        quantidade,
+        valor_unitario,
+        valor_total
+      )
     `, { count: 'exact' })
     .eq('integration_account_id', integrationAccountId)
     .order('created_at', { ascending: false });
@@ -100,9 +103,27 @@ export async function listPedidos({
   query = query.range(start, end);
 
   const result = await query;
+
+  // Processar os dados para incluir campos calculados
+  const processedData = result.data?.map((pedido: any) => {
+    const itens = pedido.itens_pedidos || [];
+    const totalItens = itens.reduce((sum: number, item: any) => sum + (item.quantidade || 0), 0);
+    const skuPrincipal = itens[0]?.sku || pedido.obs?.split(',')[0]?.trim() || '';
+    
+    return {
+      ...pedido,
+      id_unico: skuPrincipal ? `${skuPrincipal}-${pedido.numero}` : pedido.numero,
+      itens: itens,
+      total_itens: totalItens > 0 ? totalItens : 1,
+      sku_estoque: null, // Será preenchido quando verificar mapeamento
+      sku_kit: null,
+      qtd_kit: null,
+      status_estoque: 'pronto_baixar' as const
+    };
+  }) || [];
   
   return {
-    data: result.data as Pedido[] | null,
+    data: processedData as Pedido[] | null,
     count: result.count,
     error: result.error
   };
@@ -110,32 +131,50 @@ export async function listPedidos({
 
 // Mapeia dados do ML para interface da tabela
 function mapMlToUi(mlOrders: any[]): Pedido[] {
-  return mlOrders.map((order: any) => ({
-    id: order.id?.toString() || '',
-    numero: order.id?.toString() || '',
-    nome_cliente: order.buyer?.first_name && order.buyer?.last_name 
-      ? `${order.buyer.first_name} ${order.buyer.last_name}` 
-      : order.buyer?.nickname || 'N/A',
-    cpf_cnpj: order.buyer?.identification?.number || null,
-    data_pedido: order.date_created?.split('T')[0] || new Date().toISOString().split('T')[0],
-    data_prevista: order.shipping?.date_promised?.split('T')[0] || null,
-    situacao: mapMlStatus(order.status),
-    valor_total: order.total_amount || 0,
-    valor_frete: order.shipping?.cost || 0,
-    valor_desconto: order.coupon?.amount || 0,
-    numero_ecommerce: order.pack_id?.toString() || null,
-    numero_venda: order.id?.toString() || null,
-    empresa: 'Mercado Livre',
-    cidade: order.shipping?.receiver_address?.city?.name || null,
-    uf: order.shipping?.receiver_address?.state?.name || null,
-    codigo_rastreamento: order.shipping?.id?.toString() || null,
-    url_rastreamento: null,
-    obs: order.order_items?.map((item: any) => item?.item?.title).filter(Boolean).join(', ') || null,
-    obs_interna: `Status pagamento: ${order.payments?.[0]?.status || 'N/A'}`,
-    integration_account_id: order.seller?.id?.toString() || null,
-    created_at: order.date_created || new Date().toISOString(),
-    updated_at: order.last_updated || new Date().toISOString(),
-  }));
+  return mlOrders.map((order: any) => {
+    const itens = order.order_items?.map((item: any) => ({
+      sku: item.item?.id?.toString() || '',
+      descricao: item.item?.title || '',
+      quantidade: item.quantity || 1,
+      valor_unitario: item.unit_price || 0,
+      valor_total: (item.unit_price || 0) * (item.quantity || 1)
+    })) || [];
+    
+    const totalItens = itens.reduce((sum, item) => sum + item.quantidade, 0);
+    const skuPrincipal = itens[0]?.sku || order.id?.toString() || '';
+    
+    return {
+      id: order.id?.toString() || '',
+      numero: order.id?.toString() || '',
+      id_unico: `${skuPrincipal}-${order.id}`,
+      nome_cliente: order.buyer?.first_name && order.buyer?.last_name 
+        ? `${order.buyer.first_name} ${order.buyer.last_name}` 
+        : order.buyer?.nickname || 'N/A',
+      cpf_cnpj: order.buyer?.identification?.number || null,
+      data_pedido: order.date_created?.split('T')[0] || new Date().toISOString().split('T')[0],
+      situacao: mapMlStatus(order.status),
+      valor_total: order.total_amount || 0,
+      valor_frete: order.shipping?.cost || 0,
+      valor_desconto: order.coupon?.amount || 0,
+      numero_ecommerce: order.pack_id?.toString() || null,
+      numero_venda: order.id?.toString() || null,
+      empresa: 'Mercado Livre',
+      cidade: order.shipping?.receiver_address?.city?.name || null,
+      uf: order.shipping?.receiver_address?.state?.name || null,
+      obs: order.order_items?.map((item: any) => item?.item?.title).filter(Boolean).join(', ') || null,
+      integration_account_id: order.seller?.id?.toString() || null,
+      created_at: order.date_created || new Date().toISOString(),
+      updated_at: order.last_updated || new Date().toISOString(),
+      
+      // Novos campos
+      itens: itens,
+      total_itens: totalItens > 0 ? totalItens : 1,
+      sku_estoque: null,
+      sku_kit: null, 
+      qtd_kit: null,
+      status_estoque: 'pronto_baixar' as const
+    };
+  });
 }
 
 function mapMlStatus(mlStatus: string): string {
