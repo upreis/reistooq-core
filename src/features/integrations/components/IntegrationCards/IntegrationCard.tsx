@@ -90,20 +90,10 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = React.memo(({
         const { mercadoLivreService } = await import('@/services/MercadoLivreService');
         const result = await mercadoLivreService.initiateOAuth();
         
-        if (result.success && result.authorization_url) {
-          // Open ML authorization in popup
-          const popup = window.open(
-            result.authorization_url,
-            'ml_oauth',
-            'width=600,height=700,scrollbars=yes,resizable=yes'
-          );
-          
-          if (!popup) {
-            throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
-          }
-        } else {
+        if (!result.success) {
           throw new Error(result.error || 'Failed to start OAuth flow');
         }
+        // OAuth popup is handled internally by initiateOAuth
       } catch (error) {
         console.error('ML OAuth failed:', error);
       }

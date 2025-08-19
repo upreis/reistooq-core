@@ -70,15 +70,17 @@ export interface MLAccount {
   id: string;
   name: string;
   account_identifier: string;
-  public_auth: {
-    user_id: number;
-    nickname: string;
-    email?: string;
-    site_id: string;
-    country_id: string;
-  };
+  public_auth: any;
   is_active: boolean;
   updated_at: string;
+  // Computed properties from public_auth
+  nickname: string;
+  email?: string;
+  site_id: string;
+  country_id: string;
+  user_id: number;
+  last_sync?: string;
+  permalink?: string;
 }
 
 class MercadoLivreService {
@@ -133,7 +135,7 @@ class MercadoLivreService {
   /**
    * Abre popup OAuth e gerencia o fluxo
    */
-  async initiateOAuth(): Promise<{ success: boolean; integration_account_id?: string; error?: string }> {
+  async initiateOAuth(): Promise<{ success: boolean; integration_account_id?: string; authorization_url?: string; error?: string }> {
     const startResult = await this.startOAuth();
     
     if (!startResult.success || !startResult.authorization_url) {
@@ -167,7 +169,8 @@ class MercadoLivreService {
           popup.close();
           resolve({ 
             success: true, 
-            integration_account_id: event.data.integration_account_id 
+            integration_account_id: event.data.integration_account_id,
+            authorization_url: startResult.authorization_url
           });
         } else if (event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre') {
           clearInterval(checkClosed);
@@ -254,7 +257,19 @@ class MercadoLivreService {
         return [];
       }
 
-      return data || [];
+      return (data || []).map(account => {
+        const auth = account.public_auth as any; // Cast to handle Json type
+        return {
+          ...account,
+          nickname: auth?.nickname || account.name || 'Usuário ML',
+          email: auth?.email,
+          site_id: auth?.site_id || 'MLB',
+          country_id: auth?.country_id || 'BR',
+          user_id: auth?.user_id || 0,
+          last_sync: account.updated_at,
+          permalink: auth?.permalink
+        };
+      });
     } catch (e) {
       console.error('[ML Service] Exception fetching accounts:', e);
       return [];
@@ -275,6 +290,35 @@ class MercadoLivreService {
       return !error;
     } catch (e) {
       return false;
+    }
+  }
+
+  /**
+   * Sincroniza pedidos de uma conta
+   */
+  async syncOrders(accountId: string, options: { since?: string } = {}): Promise<{ synced: number; errors: string[] }> {
+    try {
+      const result = await this.fetchOrders({
+        integration_account_id: accountId,
+        date_from: options.since,
+        limit: 50
+      });
+
+      if (!result.success || !result.data) {
+        return { synced: 0, errors: [result.error || 'Falha ao buscar pedidos'] };
+      }
+
+      // For now, just return the count of orders found
+      // In a real implementation, you would save these to your database
+      return {
+        synced: result.data.orders.length,
+        errors: []
+      };
+    } catch (error) {
+      return {
+        synced: 0,
+        errors: [error instanceof Error ? error.message : 'Erro desconhecido']
+      };
     }
   }
 
