@@ -227,15 +227,20 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
         return;
       }
       
-      // 3. Test other functions availability
+      // 3. Test other functions availability via authenticated POST (expecting validation error)
       const functions = ['smart-responder', 'rapid-responder'];
       for (const func of functions) {
         const response = await fetch(`https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/${func}`, {
-          method: 'OPTIONS'
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ ping: true })
         });
-        
-        if (response.status !== 200 && response.status !== 204) {
-          toast.error(`❌ ${func} não está disponível`);
+        // Consider 200/400/405 as "alive" (function exists and responded)
+        if (![200, 400, 405].includes(response.status)) {
+          toast.error(`❌ ${func} retornou status inesperado: ${response.status}`);
           return;
         }
       }

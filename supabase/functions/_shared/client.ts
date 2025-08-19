@@ -12,14 +12,14 @@ export const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!;
 
 export function ok(data: any) {
   return new Response(JSON.stringify({ ok: true, ...data }), {
-    headers: { "Content-Type": "application/json" }
+    headers: { "Content-Type": "application/json", ...corsHeaders }
   });
 }
 
 export function fail(error: string, status = 400) {
   return new Response(JSON.stringify({ ok: false, error }), {
     status,
-    headers: { "Content-Type": "application/json" }
+    headers: { "Content-Type": "application/json", ...corsHeaders }
   });
 }
 
