@@ -414,7 +414,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
             
             <div>
               <h4 className="font-medium mb-3">Pedidos Recentes</h4>
-              <MeliOrders accountId={accounts[0]?.id} />
+              <MeliOrders integrationAccountId={accounts[0]?.id} />
             </div>
 
             <Button 
