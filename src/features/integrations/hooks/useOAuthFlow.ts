@@ -18,7 +18,7 @@ const getOAuthConfigs = (): Record<Provider, OAuthConfig | null> => {
       client_secret: '', // Handled securely by Edge Function
       authorization_url: 'https://auth.mercadolibre.com.ar/authorization',
       token_url: 'https://api.mercadolibre.com/oauth/token',
-      redirect_uri: `${baseUrl}/functions/v1/smooth-service`,
+      redirect_uri: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service`,
       scopes: ['read', 'write'],
       use_pkce: false, // ML doesn't use PKCE
     },
@@ -27,7 +27,7 @@ const getOAuthConfigs = (): Record<Provider, OAuthConfig | null> => {
       client_secret: '', // Handled securely by Edge Function
       authorization_url: 'https://partner.shopeemobile.com/api/v2/shop/auth_partner',
       token_url: 'https://partner.shopeemobile.com/api/v2/auth/token/get',
-      redirect_uri: `${baseUrl}/oauth/callback/shopee`,
+      redirect_uri: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/shopee-callback`,
       scopes: ['item.base', 'item.fullinfo', 'order.base'],
       use_pkce: false,
     },

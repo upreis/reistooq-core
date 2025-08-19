@@ -230,7 +230,7 @@ export class ConfigService {
       mercadolivre: {
         client_id: '',
         client_secret: '',
-        redirect_uri: `${window.location.origin}/oauth/callback/mercadolivre`,
+        redirect_uri: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service`,
         access_token: '',
         refresh_token: '',
         expires_at: null,
