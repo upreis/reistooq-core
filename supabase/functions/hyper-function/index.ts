@@ -69,7 +69,7 @@ serve(async (req) => {
     }
 
     // Build authorization URL using Argentina endpoint (as per docs)
-    const authUrl = new URL('https://auth.mercadolibre.com.ar/authorization');
+    const authUrl = new URL('https://auth.mercadolivre.com.br/authorization');
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('client_id', clientId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
