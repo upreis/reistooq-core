@@ -1,0 +1,384 @@
+{
+  "migration": {
+    "name": "Pedidos Enhanced Architecture V2",
+    "version": "2.0.0",
+    "description": "Migração arquitetural completa com design system dark/light e otimizações avançadas",
+    "estimatedTime": "8-12 semanas",
+    "phases": {
+      "phase1_mvp": {
+        "name": "MVP Melhorado",
+        "duration": "2-3 semanas",
+        "priority": "high",
+        "tasks": [
+          "refactor_component_structure",
+          "implement_design_system",
+          "optimize_performance",
+          "centralize_state_management"
+        ]
+      },
+      "phase2_advanced": {
+        "name": "Funcionalidades Avançadas", 
+        "duration": "3-4 semanas",
+        "priority": "medium",
+        "tasks": [
+          "smart_search_system",
+          "analytics_dashboard",
+          "advanced_export",
+          "realtime_notifications"
+        ]
+      },
+      "phase3_premium": {
+        "name": "Recursos Premium",
+        "duration": "4-5 semanas", 
+        "priority": "low",
+        "tasks": [
+          "ai_ml_insights",
+          "predictive_analytics",
+          "automation_rules",
+          "advanced_integrations"
+        ]
+      }
+    }
+  },
+  "architecture": {
+    "structure": {
+      "src/features/pedidos/": {
+        "components/": {
+          "layout/": [
+            "PedidosPageLayout.tsx",
+            "PedidosHeader.tsx", 
+            "PedidosContainer.tsx"
+          ],
+          "stats/": [
+            "PedidosStats.tsx",
+            "StatCard.tsx",
+            "MetricsGrid.tsx",
+            "TrendIndicator.tsx"
+          ],
+          "filters/": [
+            "PedidosFiltersBar.tsx",
+            "SmartSearch.tsx",
+            "FilterChips.tsx",
+            "SavedFilters.tsx"
+          ],
+          "table/": [
+            "PedidosDataTable.tsx",
+            "VirtualizedTable.tsx",
+            "PedidoRow.tsx",
+            "CellRenderers/",
+            "ColumnManager.tsx"
+          ],
+          "actions/": [
+            "BulkActions.tsx",
+            "ExportManager.tsx",
+            "SelectionControls.tsx"
+          ],
+          "ui/": [
+            "LoadingStates.tsx",
+            "EmptyStates.tsx",
+            "ErrorBoundary.tsx"
+          ]
+        },
+        "hooks/": [
+          "usePedidosState.ts",
+          "usePedidosQuery.ts", 
+          "usePedidosSelection.ts",
+          "usePedidosColumns.ts",
+          "usePedidosRealtime.ts",
+          "usePedidosExport.ts",
+          "usePedidosSearch.ts"
+        ],
+        "services/": [
+          "PedidosRepository.ts",
+          "PedidosCache.ts",
+          "PedidosExportService.ts",
+          "PedidosAnalyticsService.ts",
+          "PedidosNotificationService.ts"
+        ],
+        "types/": [
+          "pedidos-enhanced.types.ts",
+          "pedidos-ui.types.ts",
+          "pedidos-api.types.ts"
+        ],
+        "utils/": [
+          "pedidos-formatters.ts",
+          "pedidos-validators.ts", 
+          "pedidos-constants.ts"
+        ]
+      }
+    }
+  },
+  "design_system": {
+    "theme_tokens": {
+      "colors": {
+        "semantic": {
+          "pedidos-status-approved": "hsl(142 76% 36%)",
+          "pedidos-status-pending": "hsl(43 96% 56%)", 
+          "pedidos-status-cancelled": "hsl(0 84% 60%)",
+          "pedidos-status-processing": "hsl(217 91% 60%)",
+          "pedidos-mapped": "hsl(142 76% 36%)",
+          "pedidos-unmapped": "hsl(43 96% 56%)"
+        },
+        "interactive": {
+          "pedidos-row-hover": "hsl(var(--muted) / 0.5)",
+          "pedidos-row-selected": "hsl(var(--primary) / 0.1)",
+          "pedidos-border-focus": "hsl(var(--ring))"
+        },
+        "backgrounds": {
+          "pedidos-mapping-bg": "hsl(142 76% 36% / 0.1)",
+          "pedidos-unmapping-bg": "hsl(43 96% 56% / 0.1)",
+          "pedidos-card-bg": "hsl(var(--card))",
+          "pedidos-elevated-bg": "hsl(var(--background))"
+        }
+      },
+      "dark_mode_adjustments": {
+        "pedidos-mapping-bg": "hsl(142 76% 36% / 0.05)",
+        "pedidos-unmapping-bg": "hsl(43 96% 56% / 0.05)",
+        "pedidos-row-hover": "hsl(var(--muted) / 0.3)"
+      }
+    },
+    "components": {
+      "StatusBadge": {
+        "variants": ["success", "warning", "destructive", "info", "outline"],
+        "animations": ["scale-in", "fade-in", "pulse"],
+        "dark_mode": true
+      },
+      "StatCard": {
+        "hover_effects": true,
+        "trend_indicators": true,
+        "responsive": true,
+        "dark_mode": true
+      },
+      "DataTable": {
+        "virtualization": true,
+        "sticky_headers": true,
+        "row_selection": true,
+        "column_sorting": true,
+        "dark_mode": true
+      }
+    }
+  },
+  "performance_optimizations": {
+    "virtualization": {
+      "library": "react-virtual",
+      "item_size": 60,
+      "overscan": 10,
+      "estimated_improvement": "87%"
+    },
+    "memoization": {
+      "components": [
+        "PedidoRow", 
+        "CellRenderer",
+        "StatusBadge",
+        "StatCard"
+      ],
+      "estimated_improvement": "65%"
+    },
+    "caching": {
+      "strategy": "stale-while-revalidate",
+      "ttl": 300000,
+      "estimated_improvement": "80%"
+    },
+    "bundle_splitting": {
+      "lazy_loading": true,
+      "dynamic_imports": true,
+      "estimated_improvement": "45%"
+    }
+  },
+  "state_management": {
+    "architecture": "reducer_pattern",
+    "libraries": ["use-reducer", "react-query"],
+    "features": {
+      "centralized_state": true,
+      "optimistic_updates": true,
+      "offline_support": true,
+      "real_time_sync": true
+    },
+    "state_structure": {
+      "selection": {
+        "selectedIds": "Set<string>",
+        "selectAll": "boolean", 
+        "selectionMode": "'single' | 'multiple'"
+      },
+      "pagination": {
+        "currentPage": "number",
+        "pageSize": "number",
+        "totalItems": "number",
+        "totalPages": "number"
+      },
+      "filters": {
+        "searchTerm": "string",
+        "statusFilter": "string[]",
+        "dateRange": "DateRange",
+        "customFilters": "Record<string, any>"
+      },
+      "ui": {
+        "loading": "boolean",
+        "error": "string | null",
+        "viewMode": "'table' | 'grid' | 'cards'",
+        "density": "'compact' | 'normal' | 'comfortable'"
+      }
+    }
+  },
+  "advanced_features": {
+    "smart_search": {
+      "auto_complete": true,
+      "search_shortcuts": true,
+      "saved_searches": true,
+      "search_analytics": true
+    },
+    "analytics_dashboard": {
+      "real_time_metrics": true,
+      "interactive_charts": true,
+      "custom_kpis": true,
+      "trend_analysis": true
+    },
+    "export_system": {
+      "formats": ["xlsx", "pdf", "csv", "json"],
+      "scope_options": ["all", "filtered", "selected"],
+      "scheduling": true,
+      "templates": true
+    },
+    "notifications": {
+      "real_time": true,
+      "push_notifications": true,
+      "email_alerts": true,
+      "notification_center": true
+    }
+  },
+  "api_optimizations": {
+    "graphql_implementation": {
+      "selective_fields": true,
+      "batch_queries": true,
+      "subscription_support": true
+    },
+    "caching_strategy": {
+      "query_cache": true,
+      "background_refetch": true,
+      "optimistic_updates": true
+    },
+    "pagination": {
+      "cursor_based": true,
+      "infinite_scroll": true,
+      "virtual_pagination": true
+    }
+  },
+  "testing_strategy": {
+    "unit_tests": {
+      "coverage_target": "90%",
+      "libraries": ["vitest", "testing-library"]
+    },
+    "integration_tests": {
+      "api_integration": true,
+      "component_integration": true
+    },
+    "e2e_tests": {
+      "critical_paths": true,
+      "browser_testing": true,
+      "mobile_testing": true
+    },
+    "performance_tests": {
+      "lighthouse": true,
+      "bundle_analysis": true,
+      "memory_profiling": true
+    }
+  },
+  "deployment_config": {
+    "build_optimizations": {
+      "tree_shaking": true,
+      "code_splitting": true,
+      "compression": "gzip + brotli"
+    },
+    "cdn_strategy": {
+      "static_assets": true,
+      "edge_caching": true,
+      "image_optimization": true
+    },
+    "monitoring": {
+      "error_tracking": true,
+      "performance_monitoring": true,
+      "user_analytics": true
+    }
+  },
+  "migration_steps": [
+    {
+      "step": 1,
+      "name": "Preparação do Ambiente",
+      "tasks": [
+        "Setup design system tokens",
+        "Configure build optimization",
+        "Setup testing environment"
+      ],
+      "duration": "2 days"
+    },
+    {
+      "step": 2, 
+      "name": "Refatoração da Arquitetura Base",
+      "tasks": [
+        "Create feature folder structure",
+        "Implement base components",
+        "Setup state management"
+      ],
+      "duration": "5 days"
+    },
+    {
+      "step": 3,
+      "name": "Implementação do Design System",
+      "tasks": [
+        "Create semantic tokens",
+        "Implement themed components", 
+        "Setup dark/light mode"
+      ],
+      "duration": "3 days"
+    },
+    {
+      "step": 4,
+      "name": "Otimizações de Performance",
+      "tasks": [
+        "Implement virtualization",
+        "Add memoization",
+        "Setup caching system"
+      ],
+      "duration": "4 days"
+    },
+    {
+      "step": 5,
+      "name": "Funcionalidades Avançadas",
+      "tasks": [
+        "Smart search implementation",
+        "Analytics dashboard",
+        "Export system",
+        "Real-time notifications"
+      ],
+      "duration": "12 days"
+    },
+    {
+      "step": 6,
+      "name": "Testes e Otimizações Finais", 
+      "tasks": [
+        "Comprehensive testing",
+        "Performance optimization",
+        "Bug fixes and polishing"
+      ],
+      "duration": "5 days"
+    }
+  ],
+  "success_metrics": {
+    "performance": {
+      "page_load_time": "< 2s",
+      "time_to_interactive": "< 3s", 
+      "largest_contentful_paint": "< 2.5s",
+      "cumulative_layout_shift": "< 0.1"
+    },
+    "user_experience": {
+      "accessibility_score": "> 95",
+      "mobile_friendliness": "100%",
+      "seo_score": "> 90"
+    },
+    "business_metrics": {
+      "user_satisfaction": "> 4.5/5",
+      "task_completion_rate": "> 95%",
+      "error_rate": "< 0.1%"
+    }
+  }
+}
