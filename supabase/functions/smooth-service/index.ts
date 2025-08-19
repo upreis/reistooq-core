@@ -112,6 +112,25 @@ serve(async (req) => {
       throw new Error('Invalid or expired state parameter');
     }
 
+    // Get organization_id from user profile if not present in oauthState
+    let organizationId = oauthState.organization_id;
+    if (!organizationId) {
+      console.log('[ML OAuth Callback] Getting organization_id from profile for user:', oauthState.user_id);
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', oauthState.user_id)
+        .single();
+      
+      if (profileError || !profile?.organizacao_id) {
+        console.error('[ML OAuth Callback] Failed to get organization_id:', profileError);
+        throw new Error('User organization not found');
+      }
+      
+      organizationId = profile.organizacao_id;
+      console.log('[ML OAuth Callback] Found organization_id:', organizationId);
+    }
+
     // Mark state as used
     await supabase
       .from('oauth_states')
@@ -175,7 +194,7 @@ serve(async (req) => {
         provider: 'mercadolivre',
         name: userInfo.nickname || `ML User ${tokenData.user_id}`,
         identifier: tokenData.user_id.toString(),
-        organization_id: oauthState.organization_id,
+        organization_id: organizationId,
         is_active: true,
       })
       .select()
