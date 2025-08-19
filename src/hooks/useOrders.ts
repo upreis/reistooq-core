@@ -46,7 +46,7 @@ export function useOrders(): UseOrdersReturn {
   const startDate = searchParams.get('from') || getLastSevenDays().from;
   const endDate = searchParams.get('to') || getLastSevenDays().to;
   const situacoes = searchParams.get('situacoes')?.split(',').filter(Boolean) || [];
-  const fonte = (searchParams.get('fonte') as any) || 'interno';
+  const fonte = (searchParams.get('fonte') as any) || undefined;
   const offset = parseInt(searchParams.get('offset') || '0', 10);
   
   // Debounce search to avoid excessive API calls

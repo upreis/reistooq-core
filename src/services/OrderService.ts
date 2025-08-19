@@ -7,7 +7,7 @@ export const OrderListParamsSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   situacoes: z.array(z.string()).optional(),
-  fonte: z.enum(['interno', 'mercadolivre', 'shopee', 'tiny']).default('interno'),
+  fonte: z.enum(['interno', 'mercadolivre', 'shopee', 'tiny']).optional(),
   limit: z.number().min(1).max(1000).default(100),
   offset: z.number().min(0).default(0),
 });
