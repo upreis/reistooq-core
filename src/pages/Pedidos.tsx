@@ -4,14 +4,12 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ShoppingCart, Clock, CheckCircle, XCircle, Plus, ExternalLink } from "lucide-react";
-import { useOrders } from '@/hooks/useOrders';
-import { useOrderExport } from '@/hooks/useOrderExport';
-import { useBulkStock } from '@/hooks/useBulkStock';
-import { OrdersTable } from '@/components/orders/OrdersTable';
+import { OrdersProvider, useOrdersData, useOrdersActions } from '@/features/orders/components/layout/OrdersProvider';
+import { OrdersList } from '@/features/orders/components/list/OrdersList';
 import { OrdersFilters } from '@/components/orders/OrdersFilters';
 import { BulkActionsBar } from '@/components/orders/BulkActionsBar';
 import { OrdersSyncStatus } from '@/components/orders/OrdersSyncStatus';
-import { Order } from '@/services/OrderService';
+import { Order } from '@/features/orders/types/Orders.types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -137,14 +135,14 @@ const OrderDetailsModal = React.memo<{
   );
 });
 
-const Pedidos = () => {
+// Main component with the new architecture
+const PedidosContent = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   
-  // Main hooks
-  const orders = useOrders();
-  const export_ = useOrderExport();
-  const bulk = useBulkStock(orders.orders);
+  // New optimized hooks
+  const { orders, stats, total, isLoading, isError, error, refetch } = useOrdersData();
+  const { setFilters, clearFilters } = useOrdersActions();
   
   // Handlers
   const handleViewDetails = useCallback((order: Order) => {
@@ -158,20 +156,16 @@ const Pedidos = () => {
   }, []);
   
   const handleExportCsv = useCallback(() => {
-    const filename = `pedidos_${new Date().toISOString().split('T')[0]}.csv`;
-    export_.exportToCsv(orders.filters, filename);
-  }, [export_, orders.filters]);
+    console.log('Export CSV - will be implemented in next phase');
+  }, []);
   
   const handleClearFilters = useCallback(() => {
-    orders.setSearch('');
-    orders.setSituacoes([]);
-    orders.setFonte('interno');
-    const defaultDates = { 
-      from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      to: new Date().toISOString().split('T')[0] 
-    };
-    orders.setDateRange(defaultDates.from, defaultDates.to);
-  }, [orders]);
+    clearFilters();
+  }, [clearFilters]);
+  
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
   
   return (
     <div className="container mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-6 space-y-6">
@@ -188,21 +182,21 @@ const Pedidos = () => {
       </div>
 
       {/* Integration Status */}
-      <OrdersSyncStatus onSyncComplete={orders.refresh} />
+      <OrdersSyncStatus onSyncComplete={handleRefresh} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Pedidos Hoje"
-          value={orders.stats.today.toString()}
-          change={orders.isLoadingStats ? "Carregando..." : "+12% vs ontem"}
+          value={stats.today.toString()}
+          change={isLoading ? "Carregando..." : "+12% vs ontem"}
           changeType="positive"
           icon={ShoppingCart}
           gradient="primary"
         />
         <StatsCard
           title="Pendentes"
-          value={orders.stats.pending.toString()}
+          value={stats.pending.toString()}
           change="Aguardando processamento"
           changeType="neutral"
           icon={Clock}
@@ -210,66 +204,56 @@ const Pedidos = () => {
         />
         <StatsCard
           title="Concluídos"
-          value={orders.stats.completed.toString()}
-          change={orders.isLoadingStats ? "Carregando..." : "+8% vs ontem"}
+          value={stats.completed.toString()}
+          change={isLoading ? "Carregando..." : "+8% vs ontem"}
           changeType="positive"
           icon={CheckCircle}
           gradient="success"
         />
         <StatsCard
           title="Cancelados"
-          value={orders.stats.cancelled.toString()}
-          change={orders.isLoadingStats ? "Carregando..." : "-2 vs ontem"}
+          value={stats.cancelled.toString()}
+          change={isLoading ? "Carregando..." : "-2 vs ontem"}
           changeType="negative"
           icon={XCircle}
           gradient="danger"
         />
       </div>
 
-      {/* Filters */}
-      <OrdersFilters
-        filters={orders.filters}
-        onSearchChange={orders.setSearch}
-        onDateRangeChange={orders.setDateRange}
-        onSituacoesChange={orders.setSituacoes}
-        onFonteChange={orders.setFonte}
-        onClearFilters={handleClearFilters}
-      />
-
-      {/* Bulk Actions Bar */}
-      <BulkActionsBar
-        selectedCount={bulk.selectedOrders.length}
-        eligibleCount={bulk.eligibleOrders.length}
-        totalOrders={orders.total}
-        isProcessing={bulk.isProcessing}
-        isExporting={export_.isExporting}
-        filters={orders.filters}
-        onClearSelection={bulk.clearSelection}
-        onBulkBaixarEstoque={bulk.bulkBaixarEstoque}
-        onBulkCancelarPedidos={bulk.bulkCancelarPedidos}
-        onExportCsv={handleExportCsv}
-        onRefresh={orders.refresh}
-      />
-
-      {/* Orders Table */}
-      <OrdersTable
-        orders={orders.orders}
-        isLoading={orders.isLoading}
-        selectedOrders={bulk.selectedOrders}
-        eligibleOrders={bulk.eligibleOrders}
-        onSelectOrder={bulk.selectOrder}
-        onUnselectOrder={bulk.unselectOrder}
-        onSelectAll={() => bulk.selectAll(orders.orders)}
-        onClearSelection={bulk.clearSelection}
-        onViewDetails={handleViewDetails}
-        getStockEligibility={bulk.getStockEligibility}
-      />
+      {/* Modern Orders List - Replaces old table */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold">Lista de Pedidos</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleExportCsv}>
+              Exportar CSV
+            </Button>
+            <Button variant="outline" onClick={handleClearFilters}>
+              Limpar Filtros
+            </Button>
+          </div>
+        </div>
+        
+        <OrdersList 
+          orders={orders}
+          isLoading={isLoading}
+          isError={isError}
+          error={error}
+          hasMore={false}
+          onLoadMore={() => {}}
+          onOrderSelect={handleViewDetails}
+          onOrderAction={(action, orderId) => console.log('Order action:', action, orderId)}
+          selectedOrderIds={[]}
+          viewMode="cards"
+          isCompactMode={false}
+        />
+      </div>
 
       {/* Error state */}
-      {orders.isError && (
+      {isError && (
         <div className="text-center py-8">
-          <p className="text-destructive">Erro ao carregar pedidos: {orders.error?.message}</p>
-          <Button variant="outline" onClick={orders.refresh} className="mt-2">
+          <p className="text-destructive">Erro ao carregar pedidos: {error?.message}</p>
+          <Button variant="outline" onClick={handleRefresh} className="mt-2">
             Tentar novamente
           </Button>
         </div>
@@ -282,6 +266,22 @@ const Pedidos = () => {
         onClose={handleCloseDetailsModal}
       />
     </div>
+  );
+};
+
+// Main wrapper with provider
+const Pedidos = () => {
+  return (
+    <OrdersProvider 
+      initialFilters={{ 
+        limit: 50,
+        offset: 0
+      }}
+      enableRealtime={true}
+      enableNotifications={true}
+    >
+      <PedidosContent />
+    </OrdersProvider>
   );
 };
 

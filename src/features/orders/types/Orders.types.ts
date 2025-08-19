@@ -41,8 +41,8 @@ export interface OrderStats {
   pending: number;
   completed: number;
   cancelled: number;
-  total: number;
-  revenue: number;
+  total?: number;
+  revenue?: number;
 }
 
 export interface OrderFilters {

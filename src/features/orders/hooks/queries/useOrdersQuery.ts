@@ -108,7 +108,7 @@ export function useOrdersQuery(
   
   return {
     data: ordersData?.data || [],
-    stats: stats || { today: 0, pending: 0, completed: 0, cancelled: 0 },
+    stats: stats || { today: 0, pending: 0, completed: 0, cancelled: 0, total: 0, revenue: 0 },
     total: ordersData?.count || 0,
     isLoading,
     isLoadingStats,
@@ -143,6 +143,7 @@ export function useOrdersInfiniteQuery(
     queryFn: ({ pageParam = 0, queryKey: [, baseFilters] }) =>
       orderService.list({
         ...(baseFilters as OrderFilters),
+        limit: filters.limit || 50,
         offset: pageParam as number
       }),
     initialPageParam: 0,
