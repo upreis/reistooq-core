@@ -25,6 +25,14 @@ import {
 
 interface PedidosTableProps {
   integrationAccountId: string;
+  hybridData?: {
+    rows: Pedido[];
+    total: number;
+    fonte: 'banco' | 'tempo-real';
+    loading: boolean;
+    error: string | null;
+    refetch: () => void;
+  };
 }
 
 function getSituacaoVariant(situacao: string): "default" | "secondary" | "destructive" | "outline" {
@@ -63,7 +71,8 @@ function TruncatedCell({ content, maxLength = 50 }: { content?: string | null; m
   );
 }
 
-export function PedidosTable({ integrationAccountId }: PedidosTableProps) {
+export function PedidosTable({ integrationAccountId, hybridData }: PedidosTableProps) {
+  // Estados locais para quando não usar hybridData
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,16 +105,24 @@ export function PedidosTable({ integrationAccountId }: PedidosTableProps) {
   };
 
   useEffect(() => {
-    if (integrationAccountId) {
+    // Só carregar localmente se não tiver hybridData
+    if (integrationAccountId && !hybridData) {
       loadPedidos();
     }
-  }, [integrationAccountId, page]);
+  }, [integrationAccountId, page, hybridData]);
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  // Usar dados híbridos se disponíveis
+  const finalPedidos = hybridData ? hybridData.rows : pedidos;
+  const finalLoading = hybridData ? hybridData.loading : loading;
+  const finalError = hybridData ? hybridData.error : error;
+  const finalTotalCount = hybridData ? hybridData.total : totalCount;
+  const finalRefresh = hybridData ? hybridData.refetch : loadPedidos;
+
+  const totalPages = Math.ceil(finalTotalCount / pageSize);
   const startItem = (page - 1) * pageSize + 1;
-  const endItem = Math.min(page * pageSize, totalCount);
+  const endItem = Math.min(page * pageSize, finalTotalCount);
 
-  if (loading) {
+  if (finalLoading) {
     return (
       <div className="space-y-3">
         <Skeleton className="h-8 w-full" />
@@ -114,16 +131,16 @@ export function PedidosTable({ integrationAccountId }: PedidosTableProps) {
     );
   }
 
-  if (error) {
+  if (finalError) {
     return (
       <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
         <div className="font-medium text-destructive">Erro ao carregar pedidos</div>
-        <div className="text-sm text-destructive/80">{error}</div>
+        <div className="text-sm text-destructive/80">{finalError}</div>
         <Button 
           variant="outline" 
           size="sm" 
           className="mt-2"
-          onClick={loadPedidos}
+          onClick={finalRefresh}
         >
           Tentar novamente
         </Button>
@@ -131,7 +148,7 @@ export function PedidosTable({ integrationAccountId }: PedidosTableProps) {
     );
   }
 
-  if (!pedidos.length) {
+  if (!finalPedidos.length) {
     return (
       <div className="rounded-lg border border-muted bg-muted/30 p-8 text-center">
         <div className="text-lg font-medium text-muted-foreground">
@@ -175,29 +192,29 @@ export function PedidosTable({ integrationAccountId }: PedidosTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pedidos.map((pedido) => (
+            {finalPedidos.map((pedido) => (
               <TableRow key={pedido.id}>
                 <TableCell className="font-mono text-xs">
-                  {pedido.id.substring(0, 8)}...
+                  {pedido.id ? pedido.id.substring(0, 8) + '...' : '—'}
                 </TableCell>
-                <TableCell>{pedido.numero}</TableCell>
-                <TableCell>{pedido.nome_cliente}</TableCell>
+                <TableCell>{pedido.numero || '—'}</TableCell>
+                <TableCell>{pedido.nome_cliente || '—'}</TableCell>
                 <TableCell>{maskCpfCnpj(pedido.cpf_cnpj)}</TableCell>
                 <TableCell>{formatDate(pedido.data_pedido)}</TableCell>
                 <TableCell>{formatDate(pedido.data_prevista)}</TableCell>
                 <TableCell>
                   <Badge variant={getSituacaoVariant(pedido.situacao)}>
-                    {pedido.situacao}
+                    {pedido.situacao || '—'}
                   </Badge>
                 </TableCell>
                 <TableCell>{formatMoney(pedido.valor_total)}</TableCell>
                 <TableCell>{formatMoney(pedido.valor_frete)}</TableCell>
                 <TableCell>{formatMoney(pedido.valor_desconto)}</TableCell>
-                <TableCell>{pedido.numero_ecommerce || '-'}</TableCell>
-                <TableCell>{pedido.numero_venda || '-'}</TableCell>
-                <TableCell>{pedido.empresa || '-'}</TableCell>
-                <TableCell>{pedido.cidade || '-'}</TableCell>
-                <TableCell>{pedido.uf || '-'}</TableCell>
+                <TableCell>{pedido.numero_ecommerce || '—'}</TableCell>
+                <TableCell>{pedido.numero_venda || '—'}</TableCell>
+                <TableCell>{pedido.empresa || '—'}</TableCell>
+                <TableCell>{pedido.cidade || '—'}</TableCell>
+                <TableCell>{pedido.uf || '—'}</TableCell>
                 <TableCell>
                   {pedido.codigo_rastreamento ? (
                     <div className="flex items-center gap-1">
@@ -207,7 +224,7 @@ export function PedidosTable({ integrationAccountId }: PedidosTableProps) {
                       <CopyButton text={pedido.codigo_rastreamento} />
                     </div>
                   ) : (
-                    '-'
+                    '—'
                   )}
                 </TableCell>
                 <TableCell>
@@ -222,7 +239,7 @@ export function PedidosTable({ integrationAccountId }: PedidosTableProps) {
                   <TruncatedCell content={pedido.obs_interna} />
                 </TableCell>
                 <TableCell className="font-mono text-xs">
-                  {pedido.integration_account_id?.substring(0, 8) || '-'}...
+                  {pedido.integration_account_id?.substring(0, 8) || '—'}...
                 </TableCell>
                 <TableCell>{formatDate(pedido.created_at, true)}</TableCell>
                 <TableCell>{formatDate(pedido.updated_at, true)}</TableCell>
@@ -235,7 +252,7 @@ export function PedidosTable({ integrationAccountId }: PedidosTableProps) {
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Mostrando {startItem}–{endItem} de {totalCount} pedidos
+          Mostrando {startItem}–{endItem} de {finalTotalCount} pedidos
         </div>
         
         <div className="flex items-center gap-2">
