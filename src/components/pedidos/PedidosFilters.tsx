@@ -86,8 +86,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
             <SelectTrigger>
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todas</SelectItem>
+            <SelectContent className="bg-background border border-border z-50">
               {SITUACOES.map((situacao) => (
                 <SelectItem key={situacao} value={situacao}>
                   {situacao}
@@ -186,8 +185,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
               <SelectTrigger>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+              <SelectContent className="bg-background border border-border z-50">
                 {UFS.map((uf) => (
                   <SelectItem key={uf} value={uf}>
                     {uf}
