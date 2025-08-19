@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -144,6 +144,16 @@ const PedidosContent = () => {
   const { orders, stats, total, isLoading, isError, error, refetch } = useOrdersData();
   const { setFilters, clearFilters } = useOrdersActions();
   
+  // Auto sync toggle state
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+
+  // Poll every 60s when auto sync is enabled
+  useEffect(() => {
+    if (!autoSyncEnabled) return;
+    const id = setInterval(() => refetch(), 60000);
+    return () => clearInterval(id);
+  }, [autoSyncEnabled, refetch]);
+  
   // Handlers
   const handleViewDetails = useCallback((order: Order) => {
     setSelectedOrder(order);
@@ -182,7 +192,7 @@ const PedidosContent = () => {
       </div>
 
       {/* Integration Status */}
-      <OrdersSyncStatus onSyncComplete={handleRefresh} />
+      <OrdersSyncStatus onSyncNow={handleRefresh} autoSyncEnabled={autoSyncEnabled} onToggleAutoSync={setAutoSyncEnabled} />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

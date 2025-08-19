@@ -7,31 +7,27 @@ import { useToast } from '@/hooks/use-toast';
 
 interface OrdersSyncStatusProps {
   className?: string;
-  onSyncComplete?: () => void;
+  onSyncNow?: () => void;
+  autoSyncEnabled?: boolean;
+  onToggleAutoSync?: (enabled: boolean) => void;
 }
 
-export const OrdersSyncStatus: React.FC<OrdersSyncStatusProps> = ({ className, onSyncComplete }) => {
+export const OrdersSyncStatus: React.FC<OrdersSyncStatusProps> = ({ className, onSyncNow, autoSyncEnabled = false, onToggleAutoSync }) => {
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const handleSyncOrders = async () => {
     setIsRefreshing(true);
     try {
-      // Here you would call the sync service
-      // For now, just simulate the sync
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      onSyncNow?.();
       toast({
-        title: "Sincronização concluída",
-        description: "Pedidos do Mercado Livre foram sincronizados com sucesso.",
+        title: "Sincronização iniciada",
+        description: "Atualizando lista de pedidos agora...",
       });
-      
-      // Trigger refresh callback
-      onSyncComplete?.();
     } catch (error) {
       toast({
         title: "Erro na sincronização",
-        description: "Falha ao sincronizar pedidos do Mercado Livre.",
+        description: "Falha ao iniciar sincronização de pedidos.",
         variant: "destructive",
       });
     } finally {
@@ -59,7 +55,21 @@ export const OrdersSyncStatus: React.FC<OrdersSyncStatusProps> = ({ className, o
             </Badge>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Auto</span>
+              {/* Minimal toggle without importing new UI components */}
+              <button
+                aria-label="Alternar sincronização automática"
+                onClick={() => onToggleAutoSync?.(!autoSyncEnabled)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${autoSyncEnabled ? 'bg-green-500' : 'bg-muted'}`}
+              >
+                <span
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${autoSyncEnabled ? 'translate-x-5' : 'translate-x-1'}`}
+                />
+              </button>
+            </div>
+
             <Button
               variant="outline"
               size="sm"
@@ -68,7 +78,7 @@ export const OrdersSyncStatus: React.FC<OrdersSyncStatusProps> = ({ className, o
               className="gap-2"
             >
               <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Sincronizando...' : 'Sincronizar'}
+              {isRefreshing ? 'Sincronizando...' : 'Sincronizar agora'}
             </Button>
             
             <Button
@@ -84,7 +94,7 @@ export const OrdersSyncStatus: React.FC<OrdersSyncStatusProps> = ({ className, o
         </div>
 
         <div className="mt-3 text-xs text-muted-foreground">
-          Última sincronização: há 2 minutos • 15 pedidos importados hoje
+          Última verificação automática baseada no seu intervalo • Clique em "Sincronizar agora" para atualizar imediatamente
         </div>
       </CardContent>
     </Card>
