@@ -70,6 +70,8 @@ serve(async (req) => {
       });
     }
     
+    console.log('[ML OAuth] Env secrets present:', { clientId: true, redirectUri: true });
+    
     // Generate PKCE parameters
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
