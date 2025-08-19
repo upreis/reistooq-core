@@ -228,6 +228,17 @@ serve(async (req) => {
 
     const userData = await userResponse.json();
 
+    // Resolve organization_id from state or user's profile
+    let orgId = stateData.organization_id as string | null;
+    if (!orgId && stateData.user_id) {
+      const { data: profileOrg } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', stateData.user_id)
+        .maybeSingle();
+      orgId = profileOrg?.organizacao_id ?? null;
+    }
+
     // Store integration account
     const { data: accountData, error: accountError } = await supabase
       .from('integration_accounts')
@@ -236,7 +247,7 @@ serve(async (req) => {
         name: userData.nickname || userData.first_name,
         account_identifier: userData.id.toString(),
         is_active: true,
-        organization_id: stateData.organization_id,
+        organization_id: orgId,
         public_auth: {
           user_id: userData.id,
           nickname: userData.nickname,
