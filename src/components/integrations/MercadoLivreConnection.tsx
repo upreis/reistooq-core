@@ -58,9 +58,9 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       const rawUrl: string = data.authorization_url as string;
       // Normalize domain to PT-BR as per official docs
       const authUrl = rawUrl
-        .replace('auth.mercadolibre.com/authorization', 'auth.mercadolivre.com.br/authorization')
-        .replace('auth.mercadolibre.com.ar/authorization', 'auth.mercadolivre.com.br/authorization')
-        .replace('auth.mercadolibre.com.br/authorization', 'auth.mercadolivre.com.br/authorization');
+        .replace('auth.mercadolivre.com/authorization', 'auth.mercadolivre.com.br/authorization')
+        .replace('auth.mercadolivre.com.ar/authorization', 'auth.mercadolivre.com.br/authorization')
+        .replace('auth.mercadolivre.com.br/authorization', 'auth.mercadolivre.com.br/authorization');
 
       // Open ML authorization in popup
       const popup = window.open(
