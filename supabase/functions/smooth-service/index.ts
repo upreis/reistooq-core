@@ -237,9 +237,10 @@ serve(async (req) => {
         account_name: userData.nickname || userData.first_name,
         account_email: userData.email,
         is_active: true,
-        site_id: userData.site_id,
-        user_type: userData.user_type,
-        metadata: {
+        organization_id: stateData.organization_id, // From oauth_states
+        public_auth: {
+          site_id: userData.site_id,
+          user_type: userData.user_type,
           country_id: userData.country_id,
           status: userData.status?.site_status,
           permalink: userData.permalink

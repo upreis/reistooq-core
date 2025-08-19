@@ -42,6 +42,19 @@ serve(async (req) => {
   try {
     const supabase = makeClient(req.headers.get("Authorization"));
     
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('User not authenticated:', userError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Usuário não autenticado" 
+      }), { 
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    
     // Get ML secrets from vault
     const { data: clientIdData } = await supabase.rpc('get_secret', { 
       name: 'ML_CLIENT_ID' 
@@ -71,7 +84,7 @@ serve(async (req) => {
     // Generate state for security
     const state = crypto.randomUUID();
     
-    console.log('Generated PKCE code_challenge');
+    console.log('Generated PKCE code_challenge for user:', user.id);
     
     // Store state and code_verifier in database for validation
     const { error: stateError } = await supabase
@@ -81,6 +94,7 @@ serve(async (req) => {
         code_verifier: codeVerifier,
         provider: 'mercadolivre',
         expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes
+        user_id: user.id, // Current authenticated user
         organization_id: null // Will be set by trigger
       });
 
