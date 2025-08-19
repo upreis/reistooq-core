@@ -16,7 +16,7 @@ const getOAuthConfigs = (): Record<Provider, OAuthConfig | null> => {
     mercadolivre: {
       client_id: 'configured_via_edge_function', // Handled by Edge Function
       client_secret: '', // Handled securely by Edge Function
-      authorization_url: 'https://auth.mercadolivre.com.br/authorization',
+      authorization_url: 'https://auth.mercadolibre.com.ar/authorization',
       token_url: 'https://api.mercadolibre.com/oauth/token',
       redirect_uri: `${baseUrl}/functions/v1/smooth-service`,
       scopes: ['read', 'write'],
