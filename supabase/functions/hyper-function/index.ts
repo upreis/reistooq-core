@@ -109,8 +109,8 @@ serve(async (req) => {
       });
     }
 
-    // Build authorization URL with PKCE support (global auth domain per docs)
-    const authUrl = new URL('https://auth.mercadolibre.com/authorization');
+    // Build authorization URL with PKCE support (Brasil domain per docs)
+    const authUrl = new URL('https://auth.mercadolivre.com.br/authorization');
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('client_id', clientId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
