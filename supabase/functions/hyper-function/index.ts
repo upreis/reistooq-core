@@ -121,6 +121,8 @@ serve(async (req) => {
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
 
+    console.log('[ML OAuth] Authorization URL:', authUrl.toString());
+
     console.log('ML OAuth URL generated:', authUrl.toString());
 
     return new Response(JSON.stringify({ 
