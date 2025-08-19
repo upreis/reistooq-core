@@ -22,6 +22,7 @@ export default function MeliOrders({ accountId = DEFAULT_ACCOUNT_ID }: Props) {
         status: 'paid',
         limit: pageSize,
         offset: pageOffset,
+        fonte: 'mercadolivre', // Only ML orders
       });
       setItems((prev) => (append ? [...prev, ...res.results] : res.results));
       setOffset(pageOffset);

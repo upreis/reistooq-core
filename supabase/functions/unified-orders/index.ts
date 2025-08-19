@@ -9,6 +9,7 @@ const corsHeaders = {
 };
 
 interface UnifiedOrdersRequest {
+  integration_account_id?: string;
   search?: string;
   startDate?: string;
   endDate?: string;
@@ -16,6 +17,14 @@ interface UnifiedOrdersRequest {
   fonte?: 'interno' | 'mercadolivre' | 'shopee' | 'tiny';
   limit?: number;
   offset?: number;
+  // New filters requested
+  tags?: string;
+  q?: string;
+  sort?: string;
+  date_last_updated_from?: string;
+  date_last_updated_to?: string;
+  debug?: boolean;
+  status?: string;
 }
 
 interface MLOrder {
@@ -136,13 +145,49 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== "POST") {
-    return fail("Method Not Allowed", 405);
+  // Support both GET and POST methods
+  let body: UnifiedOrdersRequest = {};
+  
+  if (req.method === "GET") {
+    const url = new URL(req.url);
+    body = {
+      integration_account_id: url.searchParams.get('integration_account_id') || undefined,
+      search: url.searchParams.get('search') || url.searchParams.get('q') || undefined,
+      startDate: url.searchParams.get('startDate') || url.searchParams.get('date_from') || undefined,
+      endDate: url.searchParams.get('endDate') || url.searchParams.get('date_to') || undefined,
+      tags: url.searchParams.get('tags') || undefined,
+      sort: url.searchParams.get('sort') || undefined,
+      date_last_updated_from: url.searchParams.get('date_last_updated_from') || undefined,
+      date_last_updated_to: url.searchParams.get('date_last_updated_to') || undefined,
+      limit: url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined,
+      offset: url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset')!) : undefined,
+      debug: url.searchParams.get('debug') === 'true',
+      status: url.searchParams.get('status') || undefined,
+      fonte: url.searchParams.get('fonte') as any || undefined,
+    };
+  } else if (req.method === "POST") {
+    try {
+      const text = await req.text();
+      body = text ? JSON.parse(text) : {};
+    } catch (error) {
+      console.error('[Unified Orders] JSON parse error:', error);
+      return new Response(JSON.stringify({
+        ok: false,
+        error: 'Invalid JSON body'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  } else {
+    return new Response(JSON.stringify({ ok: false, error: "Method Not Allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 
   try {
     const supabase = makeClient(req.headers.get("Authorization"));
-    const body: UnifiedOrdersRequest = await req.json();
     
     console.log('[Unified Orders] Request received:', body);
 
@@ -255,14 +300,27 @@ serve(async (req) => {
 
     console.log('[Unified Orders] Returning', paginatedOrders.length, 'of', allOrders.length, 'total orders');
 
-    return new Response(JSON.stringify({
+    const response: any = {
       ok: true,
       url: req.url,
       paging: { total: allOrders.length, offset: offset, limit: limit },
       results: paginatedOrders,
       data: paginatedOrders,
       count: allOrders.length,
-    }), {
+    };
+
+    // Add debug info if requested
+    if (body.debug) {
+      response.raw = {
+        request_body: body,
+        ml_accounts_found: 0, // Will be updated if ML accounts are processed
+        internal_orders_count: 0,
+        ml_orders_count: 0,
+        processing_time: Date.now()
+      };
+    }
+
+    return new Response(JSON.stringify(response), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
