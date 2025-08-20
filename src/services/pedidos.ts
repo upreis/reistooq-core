@@ -1,3 +1,4 @@
+// src/services/pedidos.ts
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Pedido, PedidosResponse } from '@/types/pedido';
@@ -28,11 +29,12 @@ export async function listPedidos({
   cidade,
   uf,
   valorMin,
-  valorMax
+  valorMax,
 }: ListPedidosParams): Promise<PedidosResponse> {
   let query = supabase
     .from('pedidos')
-    .select(`
+    .select(
+      `
       id,
       numero,
       nome_cliente,
@@ -58,121 +60,128 @@ export async function listPedidos({
         valor_unitario,
         valor_total
       )
-    `, { count: 'exact' })
+    `,
+      { count: 'exact' }
+    )
     .eq('integration_account_id', integrationAccountId)
     .order('created_at', { ascending: false });
 
-  // Apply filters
   if (search) {
     query = query.or(
       `numero.ilike.%${search}%,nome_cliente.ilike.%${search}%,cpf_cnpj.ilike.%${search}%`
     );
   }
+  if (situacao) query = query.eq('situacao', situacao);
+  if (dataInicio) query = query.gte('data_pedido', dataInicio);
+  if (dataFim) query = query.lte('data_pedido', dataFim);
+  if (cidade) query = query.ilike('cidade', `%${cidade}%`);
+  if (uf) query = query.eq('uf', uf);
+  if (valorMin !== undefined) query = query.gte('valor_total', valorMin);
+  if (valorMax !== undefined) query = query.lte('valor_total', valorMax);
 
-  if (situacao) {
-    query = query.eq('situacao', situacao);
-  }
-
-  if (dataInicio) {
-    query = query.gte('data_pedido', dataInicio);
-  }
-
-  if (dataFim) {
-    query = query.lte('data_pedido', dataFim);
-  }
-
-  if (cidade) {
-    query = query.ilike('cidade', `%${cidade}%`);
-  }
-
-  if (uf) {
-    query = query.eq('uf', uf);
-  }
-
-  if (valorMin !== undefined) {
-    query = query.gte('valor_total', valorMin);
-  }
-
-  if (valorMax !== undefined) {
-    query = query.lte('valor_total', valorMax);
-  }
-
-  // Apply pagination
   const start = (page - 1) * pageSize;
   const end = start + pageSize - 1;
   query = query.range(start, end);
 
   const result = await query;
 
-  // Processar os dados para incluir campos calculados
-  const processedData = result.data?.map((pedido: any) => {
-    const itens = pedido.itens_pedidos || [];
-    const totalItens = itens.reduce((sum: number, item: any) => sum + (item.quantidade || 0), 0);
-    const skuPrincipal = itens[0]?.sku || pedido.obs?.split(',')[0]?.trim() || '';
-    
-    return {
-      ...pedido,
-      id_unico: skuPrincipal ? `${skuPrincipal}-${pedido.numero}` : pedido.numero,
-      itens: itens,
-      total_itens: totalItens > 0 ? totalItens : 1,
-      sku_estoque: null, // Será preenchido quando verificar mapeamento
-      sku_kit: null,
-      qtd_kit: null,
-      status_estoque: 'pronto_baixar' as const
-    };
-  }) || [];
-  
+  const processedData =
+    result.data?.map((pedido: any) => {
+      const itens = pedido.itens_pedidos || [];
+      const totalItens = itens.reduce(
+        (sum: number, item: any) => sum + (item.quantidade || 0),
+        0
+      );
+      const skuPrincipal =
+        itens[0]?.sku || pedido.obs?.split(',')[0]?.trim() || '';
+
+      return {
+        ...pedido,
+        id_unico: skuPrincipal ? `${skuPrincipal}-${pedido.numero}` : pedido.numero,
+        itens,
+        total_itens: totalItens > 0 ? totalItens : 1,
+        sku_estoque: null,
+        sku_kit: null,
+        qtd_kit: null,
+        status_estoque: 'pronto_baixar' as const,
+      };
+    }) || [];
+
   return {
     data: processedData as Pedido[] | null,
     count: result.count,
-    error: result.error
+    error: result.error,
   };
 }
 
-// Mapeia dados do ML para interface da tabela
+// Helpers
+function parseUF(state: any): string | null {
+  const id = state?.id as string | undefined;
+  const name = state?.name as string | undefined;
+  if (id && id.includes('-')) {
+    const p = id.split('-').pop();
+    if (p && p.length === 2) return p;
+  }
+  return name || null;
+}
+
+// Mapeia dados do ML (raw/unified) para interface da tabela – usado no fallback
 function mapMlToUi(mlOrders: any[]): Pedido[] {
   return mlOrders.map((order: any) => {
-    const itens = order.order_items?.map((item: any) => ({
-      sku: item.item?.id?.toString() || '',
-      descricao: item.item?.title || '',
-      quantidade: item.quantity || 1,
-      valor_unitario: item.unit_price || 0,
-      valor_total: (item.unit_price || 0) * (item.quantity || 1)
-    })) || [];
-    
-    const totalItens = itens.reduce((sum, item) => sum + item.quantidade, 0);
+    // preferir shipping_details (enrichment) e cair para shipping básico
+    const ship = order.shipping_details ?? order.shipping ?? {};
+    const addr = ship.receiver_address ?? {};
+    const state = addr.state ?? {};
+
+    const itens =
+      order.order_items?.map((item: any) => ({
+        sku: item.item?.id?.toString() || '',
+        descricao: item.item?.title || '',
+        quantidade: item.quantity || 1,
+        valor_unitario: item.unit_price || 0,
+        valor_total: (item.unit_price || 0) * (item.quantity || 1),
+      })) || [];
+
+    const totalItens = itens.reduce((sum: number, it: any) => sum + it.quantidade, 0);
     const skuPrincipal = itens[0]?.sku || order.id?.toString() || '';
-    
+
     return {
       id: order.id?.toString() || '',
       numero: order.id?.toString() || '',
       id_unico: `${skuPrincipal}-${order.id}`,
-      nome_cliente: order.buyer?.first_name && order.buyer?.last_name 
-        ? `${order.buyer.first_name} ${order.buyer.last_name}` 
-        : order.buyer?.nickname || 'N/A',
+      nome_cliente:
+        order.buyer?.first_name && order.buyer?.last_name
+          ? `${order.buyer.first_name} ${order.buyer.last_name}`
+          : order.buyer?.nickname || 'N/A',
       cpf_cnpj: order.buyer?.identification?.number || null,
-      data_pedido: order.date_created?.split('T')[0] || new Date().toISOString().split('T')[0],
+      data_pedido:
+        order.date_created?.split('T')[0] ||
+        new Date().toISOString().split('T')[0],
       situacao: mapMlStatus(order.status),
       valor_total: order.total_amount || 0,
-      valor_frete: order.shipping?.cost || 0,
+      valor_frete: order.payments?.[0]?.shipping_cost ?? ship.cost ?? 0,
       valor_desconto: order.coupon?.amount || 0,
       numero_ecommerce: order.pack_id?.toString() || null,
       numero_venda: order.id?.toString() || null,
       empresa: 'Mercado Livre',
-      cidade: order.shipping?.receiver_address?.city?.name || null,
-      uf: order.shipping?.receiver_address?.state?.name || null,
-      obs: order.order_items?.map((item: any) => item?.item?.title).filter(Boolean).join(', ') || null,
+      cidade: addr.city?.name || null,
+      uf: parseUF(state),
+      obs:
+        order.order_items
+          ?.map((item: any) => item?.item?.title)
+          .filter(Boolean)
+          .join(', ') || null,
       integration_account_id: order.seller?.id?.toString() || null,
       created_at: order.date_created || new Date().toISOString(),
       updated_at: order.last_updated || new Date().toISOString(),
-      
-      // Novos campos
-      itens: itens,
+
+      // campos auxiliares
+      itens,
       total_itens: totalItens > 0 ? totalItens : 1,
       sku_estoque: null,
-      sku_kit: null, 
+      sku_kit: null,
       qtd_kit: null,
-      status_estoque: 'pronto_baixar' as const
+      status_estoque: 'pronto_baixar' as const,
     };
   });
 }
@@ -217,7 +226,7 @@ export interface UsePedidosHybridParams {
   uf?: string;
   valorMin?: number;
   valorMax?: number;
-  forceFonte?: FontePedidos; // Para forçar uma fonte específica
+  forceFonte?: FontePedidos;
 }
 
 export function usePedidosHybrid({
@@ -232,7 +241,7 @@ export function usePedidosHybrid({
   uf,
   valorMin,
   valorMax,
-  forceFonte
+  forceFonte,
 }: UsePedidosHybridParams): PedidosHybridResult {
   const [rows, setRows] = useState<Pedido[]>([]);
   const [total, setTotal] = useState(0);
@@ -242,21 +251,16 @@ export function usePedidosHybrid({
 
   const fetchData = useCallback(async () => {
     if (!integrationAccountId) return;
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      console.info('[PedidosHybrid] Iniciando busca. Fonte preferida:', forceFonte || 'banco');
-      
-      // Se forçar tempo real, pular o banco
       if (forceFonte === 'tempo-real') {
-        console.info('[PedidosHybrid] Forçando fonte tempo-real');
         await fetchFromUnifiedOrders();
         return;
       }
-      
-      // Tentar banco primeiro (padrão)
+
       const bancoResult = await listPedidos({
         integrationAccountId,
         page,
@@ -268,32 +272,40 @@ export function usePedidosHybrid({
         cidade,
         uf,
         valorMin,
-        valorMax
+        valorMax,
       });
-      
+
       if (bancoResult.error) {
-        console.warn('[PedidosHybrid] Erro no banco:', bancoResult.error.message);
         await fetchFromUnifiedOrders();
         return;
       }
-      
+
       if (bancoResult.data && bancoResult.data.length > 0) {
-        console.info('[PedidosHybrid] fonte=banco rows=', bancoResult.data.length);
         setRows(bancoResult.data);
         setTotal(bancoResult.count || 0);
         setFonte('banco');
       } else {
-        console.info('[PedidosHybrid] Banco vazio, fazendo fallback para tempo-real');
         await fetchFromUnifiedOrders();
       }
-      
-    } catch (err: any) {
-      console.error('[PedidosHybrid] Erro geral:', err.message);
+    } catch {
       await fetchFromUnifiedOrders();
     } finally {
       setLoading(false);
     }
-  }, [integrationAccountId, page, pageSize, search, situacao, dataInicio, dataFim, cidade, uf, valorMin, valorMax, forceFonte]);
+  }, [
+    integrationAccountId,
+    page,
+    pageSize,
+    search,
+    situacao,
+    dataInicio,
+    dataFim,
+    cidade,
+    uf,
+    valorMin,
+    valorMax,
+    forceFonte,
+  ]);
 
   const fetchFromUnifiedOrders = async () => {
     try {
@@ -301,21 +313,19 @@ export function usePedidosHybrid({
         integration_account_id: integrationAccountId,
         status: 'paid',
         limit: pageSize,
-        offset: (page - 1) * pageSize
+        offset: (page - 1) * pageSize,
+        include_shipping: true, // 👈 pede UF/Cidade/CEP/Tracking
       });
-      
+
       const mappedOrders = mapMlToUi(Array.isArray(results) ? results : []);
-      console.info('[PedidosHybrid] fonte=tempo-real rows=', mappedOrders.length);
-      
       setRows(mappedOrders);
-      setTotal(mappedOrders.length); // ML não retorna count total, só os resultados da página
+      setTotal(mappedOrders.length);
       setFonte('tempo-real');
     } catch (err: any) {
-      console.error('[PedidosHybrid] Erro em unified-orders:', err.message);
       setError(err.message || 'Erro ao buscar pedidos em tempo real');
       setRows([]);
       setTotal(0);
-      setFonte('banco'); // Volta para banco como fallback
+      setFonte('banco');
     }
   };
 
@@ -323,12 +333,5 @@ export function usePedidosHybrid({
     fetchData();
   }, [fetchData]);
 
-  return {
-    rows,
-    total,
-    fonte,
-    loading,
-    error,
-    refetch: fetchData
-  };
+  return { rows, total, fonte, loading, error, refetch: fetchData };
 }
