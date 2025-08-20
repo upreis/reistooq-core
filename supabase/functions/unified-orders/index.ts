@@ -41,13 +41,14 @@ Deno.serve(async (req) => {
 
     if (account.provider === 'mercadolivre') {
       // Get current secrets and validate token
-      let { data: secrets } = await supabase.rpc('get_integration_secret_secure', {
-        account_id: integration_account_id,
-        provider_name: 'mercadolivre',
-        requesting_function: 'unified-orders'
-      }).single()
+      const { data: secrets, error: secretsError } = await supabase.rpc('decrypt_integration_secret', {
+        p_account_id: integration_account_id,
+        p_provider: 'mercadolivre',
+        p_encryption_key: Deno.env.get('APP_ENCRYPTION_KEY')
+      })
 
-      if (!secrets) {
+      if (secretsError || !secrets) {
+        console.error('[Unified Orders] Failed to get secrets:', secretsError)
         throw new Error('No secrets found for account')
       }
 
@@ -65,8 +66,8 @@ Deno.serve(async (req) => {
         secrets = refreshResponse.data
       }
 
-      // Get user ID from payload
-      const userId = secrets.payload?.user_data?.id
+      // Get user ID from payload  
+      const userId = secrets.payload?.user_id
       if (!userId) {
         throw new Error('User ID not found in secrets')
       }
