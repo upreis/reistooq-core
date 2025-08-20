@@ -5,7 +5,7 @@ import { PedidosTable } from '@/components/pedidos/PedidosTable';
 import { BaixaEstoqueModal } from '@/components/pedidos/BaixaEstoqueModal';
 import { PedidosFilters, PedidosFiltersState } from '@/components/pedidos/PedidosFilters';
 import { ColumnSelector, DEFAULT_COLUMNS, ColumnConfig } from '@/components/pedidos/ColumnSelector';
-import { usePedidosHybrid, FontePedidos } from '@/services/pedidos';
+import { fetchPedidosRealtime, Row } from '@/services/orders';
 import { usePedidosFilters } from '@/hooks/usePedidosFilters';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
@@ -20,61 +20,108 @@ export default function Pedidos() {
     import.meta.env.VITE_INTEGRATION_ACCOUNT_ID || 
     '5740f717-1771-4298-b8c9-464ffb8d8dce';
 
-  const [fonteEscolhida, setFonteEscolhida] = useState<FontePedidos>('banco');
-  const [forceFonte, setForceFonte] = useState<FontePedidos | undefined>();
   const [pedidosSelecionados, setPedidosSelecionados] = useState<Pedido[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [mapeamentosVerificacao, setMapeamentosVerificacao] = useState<Map<string, MapeamentoVerificacao>>(new Map());
   const [visibleColumns, setVisibleColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const { filters, setFilters, clearFilters, apiParams } = usePedidosFilters();
-  
-  const { rows, total, fonte, loading, error, refetch } = usePedidosHybrid({
-    integrationAccountId: INTEGRATION_ACCOUNT_ID,
-    page: currentPage,
-    pageSize: 25,
-    ...apiParams,
-    forceFonte
-  });
+  const { filters, setFilters, clearFilters } = usePedidosFilters();
+
+  const loadPedidos = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const result = await fetchPedidosRealtime({
+        integration_account_id: INTEGRATION_ACCOUNT_ID,
+        status: filters.situacao,
+        limit: 25,
+        offset: (currentPage - 1) * 25,
+        enrich: true
+      });
+      
+      setRows(result.rows);
+      setTotal(result.total);
+    } catch (err: any) {
+      setError(err.message || 'Erro inesperado');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (INTEGRATION_ACCOUNT_ID) {
+      loadPedidos();
+    }
+  }, [INTEGRATION_ACCOUNT_ID, currentPage, filters.situacao]);
 
   // Função para verificar mapeamentos manualmente
   const verificarMapeamentos = async () => {
-    if (rows.length > 0) {
-      const pedidosEnriquecidos = await MapeamentoService.enriquecerPedidosComMapeamento(rows);
-      
-      // Criar o mapa de verificação para compatibilidade com o código existente
-      const mapeamentosMap = new Map();
-      pedidosEnriquecidos.forEach(pedido => {
-        if (pedido.obs) {
-          pedido.obs.split(',').forEach(sku => {
-            const skuTrimmed = sku.trim();
-            mapeamentosMap.set(skuTrimmed, {
-              skuPedido: skuTrimmed,
-              temMapeamento: !!pedido.sku_estoque,
-              skuEstoque: pedido.sku_estoque,
-              quantidadeKit: pedido.qtd_kit
-            });
-          });
-        }
-        mapeamentosMap.set(pedido.numero, {
-          skuPedido: pedido.numero,
-          temMapeamento: !!pedido.sku_estoque,
-          skuEstoque: pedido.sku_estoque,
-          quantidadeKit: pedido.qtd_kit
-        });
-      });
-      
-      setMapeamentosVerificacao(mapeamentosMap);
-    }
-  };
-  
-  const handleFonteChange = (novaFonte: FontePedidos) => {
-    setFonteEscolhida(novaFonte);
-    setForceFonte(novaFonte);
+    // TODO: Implement mapping verification for Row structure
+    console.log('Verificar mapeamentos - implementar para nova estrutura');
   };
 
-  const handleSelectionChange = (selectedRows: Pedido[]) => {
-    setPedidosSelecionados(selectedRows);
+  const handleSelectionChange = (selectedRows: Row[]) => {
+    // Convert Row[] to Pedido[] for backward compatibility
+    const pedidos: Pedido[] = selectedRows.map(row => {
+      const unified = row.unified;
+      const raw = row.raw;
+      
+      // Create a Pedido object from unified and raw data
+      return {
+        id: unified?.id || String(raw?.id) || '',
+        numero: unified?.numero || String(raw?.id) || '',
+        nome_cliente: unified?.nome_cliente || raw?.buyer?.nickname || null,
+        cpf_cnpj: unified?.cpf_cnpj || null,
+        data_pedido: unified?.data_pedido || raw?.date_created || null,
+        data_prevista: unified?.data_prevista || raw?.date_closed || null,
+        situacao: unified?.situacao || raw?.status || '',
+        valor_total: unified?.valor_total || raw?.total_amount || 0,
+        valor_frete: unified?.valor_frete || 0,
+        valor_desconto: unified?.valor_desconto || 0,
+        numero_ecommerce: unified?.numero_ecommerce || String(raw?.id) || '',
+        numero_venda: unified?.numero_venda || String(raw?.id) || '',
+        empresa: unified?.empresa || 'mercadolivre',
+        cidade: unified?.cidade || null,
+        uf: unified?.uf || null,
+        codigo_rastreamento: unified?.codigo_rastreamento || null,
+        url_rastreamento: unified?.url_rastreamento || null,
+        obs: unified?.obs || null,
+        obs_interna: unified?.obs_interna || null,
+        integration_account_id: unified?.integration_account_id || '',
+        created_at: unified?.created_at || raw?.date_created || null,
+        updated_at: unified?.updated_at || raw?.last_updated || null,
+        // Legacy fields for compatibility
+        paid_amount: raw?.paid_amount || 0,
+        currency_id: raw?.currency_id || 'BRL',
+        coupon: raw?.coupon || null,
+        date_created: raw?.date_created || null,
+        date_closed: raw?.date_closed || null,
+        last_updated: raw?.last_updated || null,
+        pack_id: raw?.pack_id || null,
+        pickup_id: raw?.pickup_id || null,
+        manufacturing_ending_date: raw?.manufacturing_ending_date || null,
+        comment: raw?.comment || null,
+        status_detail: raw?.status_detail || null,
+        tags: raw?.tags || [],
+        buyer: raw?.buyer || null,
+        seller: raw?.seller || null,
+        shipping: raw?.shipping || null,
+        // Additional fields that might be needed
+        sku_estoque: null,
+        sku_kit: null,
+        qtd_kit: null,
+        total_itens: null,
+        status_estoque: 'pronto_baixar',
+        id_unico: null
+      } as Pedido;
+    });
+    
+    setPedidosSelecionados(pedidos);
   };
 
   const handleFiltersChange = (newFilters: PedidosFiltersState) => {
@@ -83,15 +130,7 @@ export default function Pedidos() {
   };
 
   // Estatísticas de mapeamento
-  const pedidosComMapeamento = rows.filter(pedido => {
-    if (pedido.obs) {
-      return pedido.obs.split(', ').some(sku => 
-        mapeamentosVerificacao.get(sku.trim())?.temMapeamento
-      );
-    }
-    return mapeamentosVerificacao.get(pedido.numero)?.temMapeamento;
-  }).length;
-
+  const pedidosComMapeamento = 0; // TODO: Implement for new structure
   const pedidosSemMapeamento = rows.length - pedidosComMapeamento;
 
   if (!INTEGRATION_ACCOUNT_ID) {
@@ -111,29 +150,6 @@ export default function Pedidos() {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Pedidos</h1>
-        
-        {/* Toggle de Fonte */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Fonte:</span>
-          <div className="flex rounded-lg border bg-muted p-1">
-            <Button
-              variant={fonteEscolhida === 'banco' ? 'default' : 'ghost'}
-              size="sm"
-              className="h-8"
-              onClick={() => handleFonteChange('banco')}
-            >
-              Banco
-            </Button>
-            <Button
-              variant={fonteEscolhida === 'tempo-real' ? 'default' : 'ghost'}
-              size="sm"
-              className="h-8"
-              onClick={() => handleFonteChange('tempo-real')}
-            >
-              Tempo real
-            </Button>
-          </div>
-        </div>
       </div>
 
       {/* Filtros */}
@@ -143,15 +159,6 @@ export default function Pedidos() {
         onClearFilters={clearFilters}
       />
 
-      {/* Alerta de Fallback */}
-      {fonte === 'tempo-real' && fonteEscolhida === 'banco' && (
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Sem dados na tabela. Exibindo pedidos em tempo real (Mercado Livre).
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Estatísticas de Mapeamento */}
       {rows.length > 0 && (
@@ -214,7 +221,7 @@ export default function Pedidos() {
         </div>
 
         <div className="text-sm text-muted-foreground">
-          Fonte ativa: <span className="font-medium">{fonte === 'banco' ? 'Banco de dados' : 'Tempo real (Mercado Livre)'}</span>
+          Fonte ativa: <span className="font-medium">Tempo real (Mercado Livre)</span>
         </div>
       </div>
 
@@ -234,7 +241,7 @@ export default function Pedidos() {
       
       <PedidosTable 
         integrationAccountId={INTEGRATION_ACCOUNT_ID}
-        hybridData={{ rows, total, fonte, loading, error, refetch }}
+        hybridData={{ rows, total, fonte: 'tempo-real', loading, error, refetch: loadPedidos }}
         onSelectionChange={handleSelectionChange}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
