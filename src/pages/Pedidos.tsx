@@ -13,13 +13,13 @@ import { Pedido } from '@/types/pedido';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Package, AlertTriangle, CheckCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Pedidos() {
-  // Buscar de múltiplas fontes: prop > env > hardcoded
-  const INTEGRATION_ACCOUNT_ID =
-    // @ts-ignore - VITE_ vars are available at build time
-    import.meta.env.VITE_INTEGRATION_ACCOUNT_ID ||
-    '5740f717-1771-4298-b8c9-464ffb8d8dce';
+  // Estado para conta de integração ativa
+  const [integrationAccountId, setIntegrationAccountId] = useState<string | null>(null);
+  const [integrationAccounts, setIntegrationAccounts] = useState<any[]>([]);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
 
   // Audit mode detection
   const isAuditMode =
@@ -43,16 +43,65 @@ export default function Pedidos() {
 
   const { filters, setFilters, clearFilters, apiParams } = usePedidosFilters();
 
+  // Carrega contas de integração do Mercado Livre
+  const loadIntegrationAccounts = async () => {
+    try {
+      console.log('[Pedidos] Loading integration accounts...');
+      
+      const { data: accounts, error } = await supabase
+        .from('integration_accounts')
+        .select('*')
+        .eq('provider', 'mercadolivre')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      console.log('[Pedidos] Integration accounts query result:', { accounts, error });
+
+      if (error) {
+        console.error('Error loading integration accounts:', error);
+        setError(`Erro ao carregar contas: ${error.message}`);
+        setIntegrationAccounts([]);
+      } else {
+        console.log('[Pedidos] Found accounts:', accounts?.length || 0);
+        setIntegrationAccounts(accounts || []);
+        // Se há contas, usa a primeira como padrão
+        if (accounts && accounts.length > 0) {
+          setIntegrationAccountId(accounts[0].id);
+          console.log('[Pedidos] Selected account:', accounts[0].id, accounts[0].name);
+        } else {
+          console.log('[Pedidos] No active accounts found');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load integration accounts:', err);
+      setError(`Erro inesperado: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
+      setIntegrationAccounts([]);
+    } finally {
+      setAccountsLoaded(true);
+    }
+  };
+
+  // Carrega contas de integração no início
+  useEffect(() => {
+    loadIntegrationAccounts();
+  }, []);
+
   // Carrega sempre via unified-orders (/orders/search) + envio
   const loadPedidos = async () => {
-    if (!INTEGRATION_ACCOUNT_ID) return;
+    if (!integrationAccountId) {
+      setRows([]);
+      setTotal(0);
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
+      console.log('[Pedidos] Fetching orders for account:', integrationAccountId);
+      
       const result = await fetchPedidosRealtime({
-        integration_account_id: INTEGRATION_ACCOUNT_ID,
+        integration_account_id: integrationAccountId,
         status: apiParams.status,
         limit: 25,
         offset: (currentPage - 1) * 25,
@@ -61,10 +110,13 @@ export default function Pedidos() {
         ...apiParams,
       });
 
+      console.log('[Pedidos] Orders result:', result);
+      
       setRows(result.rows);
       setTotal(result.total);
       setDebugInfo(result.debug || null);
     } catch (err: any) {
+      console.error('[Pedidos] Error loading orders:', err);
       setError(err.message || 'Erro ao carregar pedidos');
       setRows([]);
       setTotal(0);
@@ -75,9 +127,11 @@ export default function Pedidos() {
 
   // Load data on mount and when dependencies change
   useEffect(() => {
-    loadPedidos();
+    if (accountsLoaded && integrationAccountId) {
+      loadPedidos();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [INTEGRATION_ACCOUNT_ID, currentPage, JSON.stringify(apiParams)]);
+  }, [integrationAccountId, currentPage, JSON.stringify(apiParams), accountsLoaded]);
 
   // Verificar mapeamentos manualmente
   const verificarMapeamentos = async () => {
@@ -152,14 +206,35 @@ export default function Pedidos() {
 
   const pedidosSemMapeamento = rows.length - pedidosComMapeamento;
 
-  if (!INTEGRATION_ACCOUNT_ID) {
+  if (!accountsLoaded) {
     return (
       <div className="p-4">
         <h1 className="text-2xl font-semibold mb-4">Pedidos</h1>
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
-          <div className="font-medium text-destructive">
-            Defina INTEGRATION_ACCOUNT_ID para carregar pedidos
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          <span>Carregando contas de integração...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!integrationAccountId) {
+    return (
+      <div className="p-4 space-y-4">
+        <h1 className="text-2xl font-semibold mb-4">Pedidos</h1>
+        <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+          <div className="font-medium text-orange-800 mb-2">
+            Nenhuma conta do Mercado Livre conectada
           </div>
+          <p className="text-sm text-orange-700 mb-3">
+            Conecte uma conta do Mercado Livre para ver os pedidos aqui.
+          </p>
+          <Button 
+            onClick={() => window.location.href = '/configuracoes/integracoes'}
+            size="sm"
+          >
+            Ir para Integrações
+          </Button>
         </div>
       </div>
     );
@@ -203,7 +278,7 @@ export default function Pedidos() {
 
       {/* Audit Panel (ativar com ?audit=1) */}
       {isAuditMode && (
-        <AuditPanel rows={rows} integrationAccountId={INTEGRATION_ACCOUNT_ID} />
+        <AuditPanel rows={rows} integrationAccountId={integrationAccountId} />
       )}
 
       {/* Estatísticas de Mapeamento */}
@@ -271,6 +346,11 @@ export default function Pedidos() {
 
         <div className="text-sm text-muted-foreground">
           Fonte ativa: <span className="font-medium">Unified Orders (/orders/search)</span>
+          {integrationAccounts.length > 0 && (
+            <span className="ml-2">
+              • Conta: {integrationAccounts.find(acc => acc.id === integrationAccountId)?.name || 'Desconhecida'}
+            </span>
+          )}
           {isAuditMode && <span className="ml-2 text-orange-600">[AUDIT MODE]</span>}
         </div>
       </div>
