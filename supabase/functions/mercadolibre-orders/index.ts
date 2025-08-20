@@ -51,7 +51,7 @@ serve(async (req) => {
       console.log('[ML Orders] Token expiring soon, refreshing...');
       
       // Call refresh function
-      const refreshResponse = await supabase.functions.invoke('smart-responder', {
+      const refreshResponse = await supabase.functions.invoke('mercadolibre-token-refresh', {
         body: { integration_account_id }
       });
 

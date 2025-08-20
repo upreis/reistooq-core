@@ -1,60 +1,25 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { makeClient, getMlConfig, corsHeaders, ok, fail } from "../_shared/client.ts";
 
-// Local helpers (no cross-file imports to avoid deploy errors)
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-function makeClient(authHeader: string | null) {
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  return createClient(url, key, {
-    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
-  });
-}
-
-function ok(data: any) {
-  return new Response(JSON.stringify({ ok: true, ...data }), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-function fail(error: string, status = 400) {
-  return new Response(JSON.stringify({ ok: false, error }), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-function getMlConfig() {
-  const clientId = Deno.env.get('ML_CLIENT_ID');
-  const redirectUri = Deno.env.get('ML_REDIRECT_URI');
-  if (!clientId || !redirectUri) {
-    throw new Error('Missing ML secrets: ML_CLIENT_ID and ML_REDIRECT_URI are required');
-  }
-  return { clientId, redirectUri };
-}
-
-// PKCE helper functions
-function generateCodeVerifier() {
-  const array = new Uint8Array(32);
+// Generate random string for PKCE and state
+function generateRandomString(length: number): string {
+  const array = new Uint8Array(length);
   crypto.getRandomValues(array);
-  return btoa(String.fromCharCode.apply(null, Array.from(array)))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function generateCodeChallenge(verifier: string) {
+// Generate PKCE code verifier
+function generateCodeVerifier(): string {
+  return generateRandomString(32);
+}
+
+// Generate PKCE code challenge
+async function generateCodeChallenge(verifier: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(verifier);
   const digest = await crypto.subtle.digest('SHA-256', data);
-  return btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(digest))))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)));
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 serve(async (req) => {
@@ -69,72 +34,71 @@ serve(async (req) => {
 
   try {
     const supabase = makeClient(req.headers.get("Authorization"));
-
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error('User not authenticated:', userError);
-      return fail("Usuário não autenticado", 401);
+    
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return fail("User not authenticated", 401);
     }
 
-    // Get ML config (will throw if secrets are missing)
+    // Get user's organization
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organizacao_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile?.organizacao_id) {
+      return fail("Organization not found for user", 400);
+    }
+
+    console.log('[ML OAuth Start] Starting OAuth flow for user:', user.id);
+
+    // Get ML configuration
     const { clientId, redirectUri } = getMlConfig();
-
-    console.log('[ML OAuth] Config loaded, starting OAuth flow');
-
-    const body = await req.json();
-    const { usePkce = true } = body;
-
-    console.log('[ML OAuth] Starting OAuth flow with PKCE:', usePkce);
 
     // Generate PKCE parameters
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
+    const state = generateRandomString(16);
 
-    // Generate state for security
-    const state = crypto.randomUUID();
-
-    console.log('Generated PKCE code_challenge for user:', user.id);
-
-    // Store state and code_verifier in database for validation
+    // Store OAuth state in database
     const { error: stateError } = await supabase
       .from('oauth_states')
       .insert({
         state_value: state,
         code_verifier: codeVerifier,
-        provider: 'mercadolivre',
-        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes
         user_id: user.id,
-        organization_id: null // Will be set by trigger
+        organization_id: profile.organizacao_id,
+        provider: 'mercadolivre',
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
+        used: false
       });
 
     if (stateError) {
-      console.error('Failed to store state:', stateError);
-      return fail("Erro interno de segurança", 500);
+      console.error('[ML OAuth Start] Failed to store state:', stateError);
+      return fail("Failed to initialize OAuth flow", 500);
     }
 
-    // Build authorization URL with PKCE support (Brasil domain per docs)
+    // Build authorization URL
     const authUrl = new URL('https://auth.mercadolivre.com.br/authorization');
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('client_id', clientId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('state', state);
-    authUrl.searchParams.set('scope', 'offline_access read write');
+    authUrl.searchParams.set('code_challenge', codeChallenge);
+    authUrl.searchParams.set('code_challenge_method', 'S256');
 
-    // Add PKCE parameters if requested
-    if (usePkce) {
-      authUrl.searchParams.set('code_challenge', codeChallenge);
-      authUrl.searchParams.set('code_challenge_method', 'S256');
-    }
-
-    console.log('[ML OAuth] Authorization URL generated successfully');
+    console.log('[ML OAuth Start] Generated authorization URL');
 
     return ok({
-      url: authUrl.toString(),
-      state: state
+      authorization_url: authUrl.toString(),
+      state,
+      expires_in: 900 // 15 minutes
     });
+
   } catch (e) {
-    console.error('Error in hyper-function:', e);
+    console.error('[ML OAuth Start] Unexpected error:', e);
     return fail(String(e?.message ?? e), 500);
   }
 });
