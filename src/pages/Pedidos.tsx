@@ -17,16 +17,14 @@ import { Info, Package, AlertTriangle, CheckCircle, LogIn, RefreshCw } from 'luc
 // ======== NOVO: helpers de conexão Mercado Livre ========
 
 function buildAuthorizeUrl() {
-  const CLIENT_ID = import.meta.env.VITE_ML_CLIENT_ID as string;
-  if (!CLIENT_ID) {
-    alert('VITE_ML_CLIENT_ID não está definido. Adicione no seu .env');
-    throw new Error('VITE_ML_CLIENT_ID ausente');
-  }
-  const redirectUri = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
-  const state =
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2);
+  // usa a env se existir; senão, usa seu client_id fixo
+  const CLIENT_ID =
+    (import.meta.env?.VITE_ML_CLIENT_ID as string) || '2053972567766696';
+
+  const redirectUri =
+    'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
+
+  const state = crypto.randomUUID(); // opcional: você pode guardar no localStorage se quiser validar depois
 
   const url =
     'https://auth.mercadolibre.com.br/authorization' +
@@ -35,8 +33,9 @@ function buildAuthorizeUrl() {
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&state=${encodeURIComponent(state)}`;
 
-  return { url, redirectOrigin: new URL(redirectUri).origin };
+  return { url, state };
 }
+
 
 function openMlPopup(url: string) {
   const w = 600, h = 700;
