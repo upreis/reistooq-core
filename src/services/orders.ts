@@ -64,5 +64,11 @@ export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
   return { rows, total: data?.paging?.total ?? data?.count ?? rows.length };
 }
 
+// Helper functions
+export const get = (obj: any, path: string): any =>
+  path.split('.').reduce((acc, k) => (acc?.[k] ?? undefined), obj);
+
+export const show = (v: any): string => (v ?? '—');
+
 // Backward compatibility
 export const listOrders = fetchUnifiedOrders;

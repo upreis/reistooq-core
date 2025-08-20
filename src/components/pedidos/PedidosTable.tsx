@@ -22,7 +22,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ColumnConfig } from './ColumnSelector';
-import { get, show } from '@/types/ml';
+import { get, show } from '@/services/orders';
 
 interface PedidosTableProps {
   integrationAccountId: string;
