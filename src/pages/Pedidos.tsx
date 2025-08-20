@@ -6,7 +6,7 @@ import { BaixaEstoqueModal } from '@/components/pedidos/BaixaEstoqueModal';
 import { PedidosFilters, PedidosFiltersState } from '@/components/pedidos/PedidosFilters';
 import { ColumnSelector, DEFAULT_COLUMNS, ColumnConfig } from '@/components/pedidos/ColumnSelector';
 import { AuditPanel } from '@/components/pedidos/AuditPanel';
-import { usePedidosHybrid, FontePedidos } from '@/services/pedidos';
+import { FontePedidos } from '@/services/pedidos';
 import { usePedidosFilters } from '@/hooks/usePedidosFilters';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { fetchPedidosRealtime, Row } from '@/services/orders';
@@ -25,7 +25,7 @@ export default function Pedidos() {
   // Audit mode detection
   const isAuditMode = new URLSearchParams(window.location.search).get('audit') === '1';
 
-  const [fonteEscolhida, setFonteEscolhida] = useState<FontePedidos>('banco');
+  const [fonteEscolhida, setFonteEscolhida] = useState<FontePedidos>('tempo-real');
   const [forceFonte, setForceFonte] = useState<FontePedidos | undefined>();
   const [pedidosSelecionados, setPedidosSelecionados] = useState<Pedido[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,7 +40,7 @@ export default function Pedidos() {
   
   const { filters, setFilters, clearFilters, apiParams } = usePedidosFilters();
   
-  // Load unified orders data
+  // Carrega sempre via unified-orders (/orders/search)
   const loadPedidos = async () => {
     if (!INTEGRATION_ACCOUNT_ID) return;
     
@@ -111,8 +111,9 @@ export default function Pedidos() {
   };
   
   const handleFonteChange = (novaFonte: FontePedidos) => {
+    // Mantemos visível o toggle, mas a fonte real é sempre unified-orders (tempo-real)
     setFonteEscolhida(novaFonte);
-    setForceFonte(novaFonte);
+    setForceFonte('tempo-real');
   };
 
   const handleSelectionChange = (selectedRows: Row[]) => {
@@ -194,7 +195,7 @@ export default function Pedidos() {
         onClearFilters={clearFilters}
       />
 
-      {/* Audit Panel */}
+      {/* Audit Panel (ativar com ?audit=1) */}
       {isAuditMode && (
         <AuditPanel 
           rows={rows} 
@@ -263,7 +264,7 @@ export default function Pedidos() {
         </div>
 
         <div className="text-sm text-muted-foreground">
-          Fonte ativa: <span className="font-medium">Unified Orders (Tempo real)</span>
+          Fonte ativa: <span className="font-medium">Unified Orders (/orders/search)</span>
           {isAuditMode && <span className="ml-2 text-orange-600">[AUDIT MODE]</span>}
         </div>
       </div>
