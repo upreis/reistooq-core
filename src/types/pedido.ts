@@ -176,6 +176,24 @@ export interface Pedido {
   taxes?: Taxes;
 }
 
+export interface UnifiedOrdersParams {
+  integration_account_id: string;
+  seller_id?: string | number;
+  date_from?: string;
+  date_to?: string;
+  date_last_updated_from?: string;
+  date_last_updated_to?: string;
+  status?: string;
+  tags?: string;
+  q?: string;
+  sort?: string;
+  limit?: number;
+  offset?: number;
+  x_format_new?: string;
+  debug?: string | boolean;
+  include_shipping?: boolean;
+}
+
 export interface PedidosResponse {
   data: Pedido[] | null;
   count: number | null;

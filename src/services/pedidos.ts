@@ -1,7 +1,7 @@
 // src/services/pedidos.ts
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Pedido, PedidosResponse } from '@/types/pedido';
+import { Pedido, PedidosResponse, UnifiedOrdersParams } from '@/types/pedido';
 import { fetchUnifiedOrders } from '@/services/orders';
 
 export interface ListPedidosParams {
