@@ -1,5 +1,5 @@
+// src/features/integrations/utils/openMlPopup.ts
 // 🎯 Centralized MercadoLibre OAuth Popup Utility
-// Standardizes all OAuth popup flows to prevent inconsistencies
 
 export interface MLPopupConfig {
   width?: number;
@@ -10,95 +10,95 @@ export interface MLPopupConfig {
 }
 
 export function openMlPopup(config: MLPopupConfig = {}) {
-  const {
-    width = 600,
-    height = 700,
-    onSuccess,
-    onError,
-    onClosed
-  } = config;
+  const { width = 600, height = 700, onSuccess, onError, onClosed } = config;
 
-  // Standardized OAuth parameters
-  const CLIENT_ID = (import.meta.env?.VITE_ML_CLIENT_ID as string) || '2053972567766696';
-  const REDIRECT_URI = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
-  const AUTHORIZATION_DOMAIN = 'https://auth.mercadolivre.com.br/authorization';
+  // Padronizados
+  const CLIENT_ID =
+    (import.meta as any).env?.VITE_ML_CLIENT_ID || '2053972567766696';
+  if (!CLIENT_ID) {
+    alert('VITE_ML_CLIENT_ID não está definido. Adicione no .env');
+    throw new Error('VITE_ML_CLIENT_ID ausente');
+  }
 
-  // Generate state (base64 encoded JSON)
+  const REDIRECT_URI =
+    'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
+  const AUTHORIZATION_DOMAIN =
+    'https://auth.mercadolivre.com.br/authorization';
+
+  // state = JSON base64url (inclui redirect/org para o smooth-service)
   const stateObj = { redirect_uri: REDIRECT_URI, org_id: 'default' };
   const stateB64 = btoa(JSON.stringify(stateObj))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 
-  // Build authorization URL
+  // URL de autorização
   const authUrl = new URL(AUTHORIZATION_DOMAIN);
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('client_id', CLIENT_ID);
   authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
   authUrl.searchParams.set('state', stateB64);
-
   const url = authUrl.toString();
 
-  console.info('[ML-OAUTH] open', url);
+  console.info('[ML-OAUTH] open', { url, CLIENT_ID, REDIRECT_URI });
 
-  // Open popup with standardized dimensions
-  const popup = window.open(
-    url,
-    'ml_oauth',
-    `width=${width},height=${height},scrollbars=yes,resizable=yes`
-  );
-
+  // ✅ 1) PRÉ-ABRE a janela (gesto do usuário) e DEPOIS navega
+  const features = `width=${width},height=${height},scrollbars=yes,resizable=yes`;
+  const popup = window.open('', 'ml_oauth', features);
   if (!popup) {
     throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
   }
+  try {
+    popup.location.href = url;
+  } catch {
+    // fallback raro
+    popup.close();
+    const p2 = window.open(url, 'ml_oauth', features);
+    if (!p2) throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
+  }
 
-  // Setup message listener for OAuth completion
+  // ✅ 3) Aceitar só mensagens do nosso Supabase OU da própria app
+  const allowedOrigins = new Set<string>([
+    window.location.origin,
+    new URL(REDIRECT_URI).origin,
+  ]);
+
   const handleMessage = (event: MessageEvent) => {
-    console.info('[ML-OAUTH] message.received', event.data);
-    
-    // Accept messages from Supabase edge functions
-    if (!event.origin.includes('supabase.co') && event.origin !== window.location.origin) {
-      return;
-    }
+    console.info('[ML-OAUTH] message.received', event.origin, event.data);
+    if (!allowedOrigins.has(event.origin)) return;
 
-    const successV1 = event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre';
-    const successLegacy = event.data?.source === 'smooth-service' && event.data?.connected === true;
-    const errorV1 = event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre';
+    const data = event.data || {};
+    const okV1 = data.type === 'oauth_success' && data.provider === 'mercadolivre';
+    const errV1 = data.type === 'oauth_error' && data.provider === 'mercadolivre';
+    const okLegacy = data.source === 'smooth-service' && data.connected === true;
 
-    if (successV1 || successLegacy) {
-      popup.close();
-      window.removeEventListener('message', handleMessage);
-      onSuccess?.(event.data);
-      
-    } else if (errorV1) {
-      popup.close();
-      window.removeEventListener('message', handleMessage);
-      
-      const errorMsg = event.data.error || 'Falha desconhecida';
-      onError?.(errorMsg);
+    if (okV1 || okLegacy) {
+      cleanup();
+      onSuccess?.(data);
+    } else if (errV1) {
+      cleanup();
+      onError?.(data.error || 'Falha desconhecida');
     }
   };
 
   console.info('[ML-OAUTH] message.listener.ready');
   window.addEventListener('message', handleMessage);
 
-  // Monitor popup for manual closure
-  const checkClosed = setInterval(() => {
+  // Monitorar fechamento manual
+  const checkClosed = window.setInterval(() => {
     if (popup.closed) {
-      clearInterval(checkClosed);
-      window.removeEventListener('message', handleMessage);
+      cleanup();
       onClosed?.();
     }
-  }, 1000);
+  }, 800);
 
-  return {
-    popup,
-    cleanup: () => {
-      window.removeEventListener('message', handleMessage);
-      clearInterval(checkClosed);
-      if (!popup.closed) {
-        popup.close();
-      }
-    }
-  };
+  function cleanup() {
+    window.removeEventListener('message', handleMessage);
+    window.clearInterval(checkClosed);
+    try {
+      if (!popup.closed) popup.close();
+    } catch {}
+  }
+
+  return { popup, cleanup };
 }
