@@ -5,7 +5,6 @@ import { PedidosTable } from '@/components/pedidos/PedidosTable';
 import { BaixaEstoqueModal } from '@/components/pedidos/BaixaEstoqueModal';
 import { PedidosFilters, PedidosFiltersState } from '@/components/pedidos/PedidosFilters';
 import { ColumnSelector, DEFAULT_COLUMNS, ColumnConfig } from '@/components/pedidos/ColumnSelector';
-import { AuditPanel } from '@/components/pedidos/AuditPanel';
 import { fetchPedidosRealtime, Row } from '@/services/orders';
 import { usePedidosFilters } from '@/hooks/usePedidosFilters';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
@@ -15,9 +14,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function Pedidos() {
-  // Check for audit mode
-  const isAuditMode = new URLSearchParams(window.location.search).get('audit') === '1';
-  
   // Buscar de múltiplas fontes: prop > env > hardcoded
   const INTEGRATION_ACCOUNT_ID = 
     // @ts-ignore - VITE_ vars are available at build time
@@ -100,8 +96,14 @@ export default function Pedidos() {
         created_at: unified?.created_at || raw?.date_created || null,
         updated_at: unified?.updated_at || raw?.last_updated || null,
         // Legacy fields for compatibility
-        pack_id: raw?.pack_id ? Number(raw.pack_id) : null,
-        pickup_id: raw?.pickup_id ? Number(raw.pickup_id) : null,
+        paid_amount: raw?.paid_amount || 0,
+        currency_id: raw?.currency_id || 'BRL',
+        coupon: raw?.coupon || null,
+        date_created: raw?.date_created || null,
+        date_closed: raw?.date_closed || null,
+        last_updated: raw?.last_updated || null,
+        pack_id: raw?.pack_id || null,
+        pickup_id: raw?.pickup_id || null,
         manufacturing_ending_date: raw?.manufacturing_ending_date || null,
         comment: raw?.comment || null,
         status_detail: raw?.status_detail || null,
@@ -223,14 +225,6 @@ export default function Pedidos() {
         </div>
       </div>
 
-      {/* Painel de Auditoria */}
-      {isAuditMode && (
-        <AuditPanel 
-          integrationAccountId={INTEGRATION_ACCOUNT_ID}
-          rows={rows}
-        />
-      )}
-
       {/* Informações sobre Baixa de Estoque */}
       <Alert className="border-blue-200 bg-blue-50">
         <Package className="h-4 w-4" />
@@ -241,8 +235,6 @@ export default function Pedidos() {
             Use "Verificar Mapeamentos" para atualizar o status dos pedidos.
             <br />
             <strong>Linhas verdes:</strong> pedidos com mapeamento configurado | <strong>Linhas laranjas:</strong> pedidos sem mapeamento
-            <br />
-            <strong>Modo Auditoria:</strong> Adicione <code>?audit=1</code> na URL para ativar o painel de diagnóstico.
           </div>
         </AlertDescription>
       </Alert>

@@ -1,7 +1,7 @@
+// src/services/orders.ts
 import { supabase } from '@/integrations/supabase/client';
-import { MLOrder } from '@/types/ml';
 
-export type RawML = MLOrder;
+export type RawML = any;
 export type Unified = {
   id: string; numero: string; nome_cliente: string | null; cpf_cnpj: string | null;
   data_pedido: string | null; data_prevista: string | null; situacao: string | null;
@@ -38,7 +38,7 @@ export async function fetchPedidosRealtime(params: {
   enrich?: boolean;
 }) {
   const { data, error } = await supabase.functions.invoke('unified-orders', {
-    body: { ...params, enrich: true, debug: false }
+    body: { ...params, debug: false }
   });
   if (error) throw error;
 
@@ -51,24 +51,14 @@ export async function fetchPedidosRealtime(params: {
 }
 
 export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
-  const { data, error } = await supabase.functions.invoke('unified-orders', { 
-    body: { ...params, enrich: true } 
-  });
+  const { data, error } = await supabase.functions.invoke('unified-orders', { body: params });
   if (error) throw error;
   if (!data?.ok) throw new Error('unified-orders: resposta inesperada');
   
-  const results: RawML[] = data?.results ?? [];
-  const unified: Unified[] = data?.unified ?? [];
-  const rows: Row[] = results.map((r, i) => ({ raw: r, unified: unified[i] ?? null }));
-  
-  return { rows, total: data?.paging?.total ?? data?.count ?? rows.length };
+  // Use enriched data when available, fallback to raw results
+  const rows = data?.unified ?? data?.results ?? [];
+  return { ...data, rows }; // Keep original structure but add rows for compatibility
 }
-
-// Helper functions
-export const get = (obj: any, path: string): any =>
-  path.split('.').reduce((acc, k) => (acc?.[k] ?? undefined), obj);
-
-export const show = (v: any): string => (v ?? '—');
 
 // Backward compatibility
 export const listOrders = fetchUnifiedOrders;

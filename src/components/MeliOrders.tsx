@@ -19,12 +19,12 @@ export default function MeliOrders({ integrationAccountId, status = 'paid', limi
       try {
         setLoading(true);
         setErr(null);
-        const { rows } = await fetchUnifiedOrders({
+        const { results } = await fetchUnifiedOrders({
           integration_account_id: integrationAccountId,
           status,
           limit,
         });
-        setOrders(rows.map(r => r.raw) || []);
+        setOrders(Array.isArray(results) ? results : []);
       } catch (e: any) {
         setErr(e?.message ?? String(e));
       } finally {

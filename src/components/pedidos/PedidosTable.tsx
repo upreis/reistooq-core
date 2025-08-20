@@ -22,7 +22,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ColumnConfig } from './ColumnSelector';
-import { get, show } from '@/services/orders';
+
+// Helper functions for safe data access
+const get = (obj: any, path: string) =>
+  path.split('.').reduce((acc, k) => (acc?.[k] ?? undefined), obj);
+
+const show = (v: any) => (v ?? '—'); // uses nullish coalescing, preserves 0 and false
 
 interface PedidosTableProps {
   integrationAccountId: string;
@@ -294,7 +299,7 @@ export function PedidosTable({
                       <TableCell key={col.key}>
                         {(() => {
                           switch (col.key) {
-                            // Raw ML columns from /orders/search
+                            // Raw ML columns
                             case 'pack_id':
                               return show(get(row.raw, 'pack_id'));
                             case 'pickup_id':  
@@ -333,25 +338,16 @@ export function PedidosTable({
                               return get(row.raw, 'date_closed') ? formatDate(get(row.raw, 'date_closed')) : '—';
                             case 'last_updated':
                               return get(row.raw, 'last_updated') ? formatDate(get(row.raw, 'last_updated')) : '—';
-                            case 'seller_sku':
-                              const items = get(row.raw, 'order_items');
-                              if (Array.isArray(items) && items.length > 0) {
-                                const skus = items.map((item: any) => 
-                                  get(item, 'item.seller_sku') ?? get(item, 'item.seller_custom_field') ?? '—'
-                                );
-                                return <TruncatedCell content={skus.join(', ')} maxLength={40} />;
-                              }
-                              return '—';
                             
                             // Unified columns (22 fields) with fallbacks to raw
                             case 'nome_cliente':
                               return show(get(row.unified, 'nome_cliente') ?? get(row.raw, 'buyer.nickname'));
                             case 'cpf_cnpj':
-                              return show(maskCpfCnpj(get(row.unified, 'cpf_cnpj')));
+                              return maskCpfCnpj(get(row.unified, 'cpf_cnpj'));
                             case 'data_pedido':
-                              return show(formatDate(get(row.unified, 'data_pedido') ?? get(row.raw, 'date_created')));
+                              return formatDate(get(row.unified, 'data_pedido') ?? get(row.raw, 'date_created'));
                             case 'data_prevista':
-                              return show(formatDate(get(row.unified, 'data_prevista') ?? get(row.raw, 'date_closed')));
+                              return formatDate(get(row.unified, 'data_prevista') ?? get(row.raw, 'date_closed'));
                             case 'situacao':
                               return (
                                 <Badge variant={getSituacaoVariant(get(row.unified, 'situacao') ?? get(row.raw, 'status'))}>
@@ -359,17 +355,17 @@ export function PedidosTable({
                                 </Badge>
                               );
                             case 'valor_total':
-                              return show(formatMoney(get(row.unified, 'valor_total') ?? get(row.raw, 'total_amount')));
+                              return formatMoney(get(row.unified, 'valor_total') ?? get(row.raw, 'total_amount'));
                             case 'valor_frete':
-                              return show(formatMoney(get(row.unified, 'valor_frete') ?? get(row.raw, 'payments.0.shipping_cost')));
+                              return formatMoney(get(row.unified, 'valor_frete'));
                             case 'valor_desconto':
-                              return show(formatMoney(get(row.unified, 'valor_desconto')));
+                              return formatMoney(get(row.unified, 'valor_desconto'));
                             case 'numero_ecommerce':
-                              return show(get(row.unified, 'numero_ecommerce') ?? String(get(row.raw, 'id')));
+                              return show(get(row.unified, 'numero_ecommerce') ?? get(row.raw, 'id'));
                             case 'numero_venda':
-                              return show(get(row.unified, 'numero_venda') ?? String(get(row.raw, 'id')));
+                              return show(get(row.unified, 'numero_venda') ?? get(row.raw, 'id'));
                             case 'empresa':
-                              return show(get(row.unified, 'empresa') ?? 'mercadolivre');
+                              return show(get(row.unified, 'empresa'));
                             case 'cidade':
                               return show(get(row.unified, 'cidade'));
                             case 'uf':
@@ -377,14 +373,9 @@ export function PedidosTable({
                             case 'codigo_rastreamento':
                               return show(get(row.unified, 'codigo_rastreamento'));
                             case 'url_rastreamento':
-                              const url = get(row.unified, 'url_rastreamento');
-                              return url ? (
-                                <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                                  {show(url)}
-                                </a>
-                              ) : '—';
+                              return show(get(row.unified, 'url_rastreamento'));
                             case 'obs':
-                              return <TruncatedCell content={get(row.unified, 'obs') ?? get(row.raw, 'status_detail')} />;
+                              return <TruncatedCell content={get(row.unified, 'obs') ?? get(row.raw, 'obs')} />;
                             case 'obs_interna':
                               return show(get(row.unified, 'obs_interna'));
                             
