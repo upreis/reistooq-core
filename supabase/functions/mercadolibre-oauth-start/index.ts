@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
+import { getMlConfig } from '../_shared/client.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -61,8 +62,7 @@ Deno.serve(async (req) => {
       })
 
     // Mercado Livre OAuth URL
-    const clientId = '2053972567766696'
-    const redirectUri = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolibre-oauth-callback'
+    const { clientId, redirectUri } = getMlConfig()
     
     const authUrl = new URL('https://auth.mercadolivre.com.br/authorization')
     authUrl.searchParams.set('response_type', 'code')
@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
     authUrl.searchParams.set('state', state)
     authUrl.searchParams.set('code_challenge', codeChallenge)
     authUrl.searchParams.set('code_challenge_method', 'S256')
+    authUrl.searchParams.set('scope', 'offline_access')
 
     return new Response(
       JSON.stringify({ 

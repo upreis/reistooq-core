@@ -74,7 +74,6 @@ Deno.serve(async (req) => {
       // Fetch orders from Mercado Livre
       const ordersUrl = new URL(`https://api.mercadolibre.com/orders/search`)
       ordersUrl.searchParams.set('seller', userId.toString())
-      ordersUrl.searchParams.set('access_token', secrets.access_token)
       ordersUrl.searchParams.set('limit', limit.toString())
       ordersUrl.searchParams.set('offset', offset.toString())
       
@@ -82,13 +81,31 @@ Deno.serve(async (req) => {
         ordersUrl.searchParams.set('order.status', status)
       }
 
-      console.log('Fetching orders from ML API:', ordersUrl.toString().replace(secrets.access_token, '[HIDDEN]'))
+      console.log('Fetching orders from ML API:', ordersUrl.toString())
 
-      const ordersResponse = await fetch(ordersUrl.toString())
+      const ordersResponse = await fetch(ordersUrl.toString(), {
+        headers: {
+          'Authorization': `Bearer ${secrets.access_token}`,
+          'Accept': 'application/json'
+        }
+      })
       const ordersData = await ordersResponse.json()
 
       if (!ordersResponse.ok) {
         console.error('Orders fetch failed:', ordersData)
+        
+        // Handle specific ML API errors
+        if (ordersResponse.status === 401) {
+          throw new Error('Token de acesso inválido ou expirado')
+        } else if (ordersResponse.status === 403) {
+          if (ordersData.message?.includes('invalid_operator_user_id')) {
+            throw new Error('Conecte com o usuário administrador da conta do Mercado Livre')
+          }
+          throw new Error('Acesso negado - verifique as permissões da aplicação')
+        } else if (ordersResponse.status === 429) {
+          throw new Error('Limite de taxa excedido - tente novamente mais tarde')
+        }
+        
         throw new Error(ordersData.message || 'Failed to fetch orders')
       }
 
