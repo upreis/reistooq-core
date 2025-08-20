@@ -183,8 +183,8 @@ export function PedidosTable({
   const visibleColumnConfigs = visibleColumns.filter(col => col.visible);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border overflow-auto">
+    <div className="space-y-4 text-foreground">
+      <div className="rounded-lg border overflow-auto bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -196,7 +196,7 @@ export function PedidosTable({
                     if (el) el.indeterminate = isSomeSelected;
                   }}
                   onChange={(e) => handleSelectAll(e.target.checked)}
-                  className="rounded border-border"
+                  className="rounded border-border bg-background"
                 />
               </TableHead>
               {visibleColumnConfigs.map((col) => (
@@ -212,19 +212,20 @@ export function PedidosTable({
               const rowId = getRowId(row);
               
               return (
-                <TableRow 
+                <TableRow
                   key={rowId}
-                  className={temMapeamento 
-                    ? "bg-green-50 hover:bg-green-100 border-l-4 border-l-green-400" 
-                    : "bg-orange-50 hover:bg-orange-100 border-l-4 border-l-orange-400"
-                  }
-                >
+                  className={
+                    "border-l-4 " +
+                    (temMapeamento
+                      ? "border-l-emerald-500/60 bg-emerald-500/5 hover:bg-emerald-500/10 dark:bg-emerald-500/10"
+                      : "border-l-amber-500/60 bg-amber-500/5 hover:bg-amber-500/10 dark:bg-amber-500/10")
+                  }>
                   <TableCell>
                     <input
                       type="checkbox"
                       checked={selectedRows.has(rowId)}
                       onChange={(e) => handleRowSelection(rowId, e.target.checked)}
-                      className="rounded border-border"
+                      className="rounded border-border bg-background"
                     />
                   </TableCell>
                   
@@ -240,11 +241,11 @@ export function PedidosTable({
                               <div className="flex items-center gap-2">
                                 <span>{show(numero)}</span>
                                 {temMapeamento ? (
-                                  <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
+                                  <Badge variant="outline" className="text-xs bg-emerald-500/10">
                                     Mapeado
                                   </Badge>
                                 ) : (
-                                  <Badge variant="outline" className="bg-orange-100 text-orange-800 text-xs">
+                                  <Badge variant="outline" className="text-xs bg-amber-500/10">
                                     Sem Map.
                                   </Badge>
                                 )}
@@ -328,7 +329,7 @@ export function PedidosTable({
                           case 'seller_id':
                             return show(get(row.raw, 'seller.id'));
                           case 'shipping_id':
-                            return show(get(row.raw, 'shipping.id'));
+                            return show(get(row.raw, 'shipping.id')); // correto: shipping.id
                           case 'date_created':
                             return formatDate(get(row.raw, 'date_created'));
                           case 'date_closed':
@@ -337,15 +338,16 @@ export function PedidosTable({
                             return formatDate(get(row.raw, 'last_updated'));
                           
                           // SKU extraction from order items
-                          case 'sku':
-                            const orderItems = get(row.raw, 'order_items');
-                            if (Array.isArray(orderItems)) {
-                              const skus = orderItems.map(item => 
-                                get(item, 'item.seller_sku') ?? get(item, 'item.seller_custom_field')
-                              ).filter(Boolean);
-                              return <TruncatedCell content={skus.join(', ')} maxLength={20} />;
+                          case 'sku': {
+                            const items = get(row.raw, 'order_items');
+                            if (Array.isArray(items)) {
+                              const skus = items
+                                .map((it: any) => get(it, 'item.seller_sku') ?? get(it, 'item.seller_custom_field'))
+                                .filter(Boolean) as string[];
+                              return <TruncatedCell content={skus.join(', ')} maxLength={24} />;
                             }
-                            return show(get(row.unified, 'obs'));
+                            return '—';
+                          }
                           
                           // Legacy columns - fallback to unified or show placeholder
                           case 'quantidade':
