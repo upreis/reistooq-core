@@ -115,58 +115,18 @@ function mapMLStatus(mlStatus: string): string {
 }
 
 // Helper for controlled concurrency
-async function poolLimit<T>(limit: number, tasks: (() => Promise<T>)[]): Promise<T[]> {
+async function poolLimit<T>(limit: number, tasks: Array<() => Promise<T>>): Promise<T[]> {
   const ret: T[] = [];
-  const executing: Promise<void>[] = [];
+  const running = new Set<Promise<void>>();
   
-  for (const task of tasks) {
-    const p = task().then((v) => { ret.push(v); (p as any).resolved = true; });
-    executing.push(p);
-    
-    if (executing.length >= limit) {
-      await Promise.race(executing);
-    }
-    
-    // Clean up resolved promises
-    for (let i = executing.length - 1; i >= 0; i--) {
-      if ((executing[i] as any).resolved) {
-        executing.splice(i, 1);
-      }
-    }
+  for (const t of tasks) {
+    const p = t().then(v => { ret.push(v); }).finally(() => { running.delete(p); });
+    running.add(p);
+    if (running.size >= limit) await Promise.race(running);
   }
   
-  await Promise.all(executing);
+  await Promise.all(running);
   return ret;
-}
-
-// Map ML order to unified order format (legacy - kept for compatibility)
-function mapMLOrderToUnified(mlOrder: MLOrder, accountId: string): UnifiedOrder {
-  const now = new Date().toISOString();
-  
-  return {
-    id: `ml_${mlOrder.id}`,
-    numero: mlOrder.id.toString(),
-    nome_cliente: mlOrder.buyer.nickname || 'Cliente ML',
-    cpf_cnpj: null, // ML doesn't provide this in basic order data
-    data_pedido: mlOrder.date_created,
-    data_prevista: mlOrder.date_closed || null,
-    situacao: mapMLStatus(mlOrder.status),
-    valor_total: mlOrder.total_amount,
-    valor_frete: 0, // Could be calculated from shipping info if needed
-    valor_desconto: 0, // Could be calculated from price differences
-    numero_ecommerce: mlOrder.id.toString(),
-    numero_venda: mlOrder.id.toString(),
-    empresa: 'mercadolivre',
-    cidade: null, // Would need to fetch from shipping details
-    uf: null, // Would need to fetch from shipping details
-    codigo_rastreamento: mlOrder.shipping?.tracking_number || null,
-    url_rastreamento: null, // ML doesn't provide direct tracking URL
-    obs: mlOrder.status_detail || null,
-    obs_interna: `ML Order ID: ${mlOrder.id}, Buyer: ${mlOrder.buyer.nickname}`,
-    integration_account_id: accountId,
-    created_at: mlOrder.date_created,
-    updated_at: mlOrder.last_updated,
-  };
 }
 
 serve(async (req) => {
@@ -225,8 +185,11 @@ serve(async (req) => {
     
     console.log('[Unified Orders] Request received:', body);
 
-    let allOrders: UnifiedOrder[] = [];
-    let mlOrdersForEnrichment: Array<{order: any, accountId: string, accessToken: string}> = [];
+    // Declare once in request scope
+    let mlOrdersForEnrichment: Array<{ order: any; accountId: string; accessToken: string }> = [];
+    const mlUrls: string[] = [];
+    const requested_endpoints: string[] = [];
+    let allMLResults: any[] = [];
     
     // Parse enrichment flags with safe defaults
     const enrich = body.enrich !== false; // default true
@@ -234,31 +197,7 @@ serve(async (req) => {
     const enrich_shipments = body.enrich_shipments !== false; // default true
     const max_concurrency = Math.max(1, Math.min(10, body.max_concurrency || 3)); // safe range
 
-    // 1. Get internal orders (if no source filter or source is interno)
-    if (!body.fonte || body.fonte === 'interno') {
-      try {
-        console.log('[Unified Orders] Fetching internal orders...');
-        
-        const { data: internalOrders, error: internalError } = await supabase.rpc('get_pedidos_masked', {
-          _search: body.search || null,
-          _start: body.startDate || null,
-          _end: body.endDate || null,
-          _limit: body.limit || 100,
-          _offset: body.offset || 0,
-        });
-
-        if (internalError) {
-          console.error('[Unified Orders] Internal orders error:', internalError);
-        } else {
-          console.log('[Unified Orders] Found', internalOrders?.length || 0, 'internal orders');
-          allOrders.push(...(internalOrders || []));
-        }
-      } catch (error) {
-        console.error('[Unified Orders] Internal orders exception:', error);
-      }
-    }
-
-    // 2. Get MercadoLibre orders (if no source filter or source is mercadolivre)
+    // Get MercadoLibre orders (if no source filter or source is mercadolivre)
     if (!body.fonte || body.fonte === 'mercadolivre') {
       try {
         console.log('[Unified Orders] Fetching ML orders...');
@@ -376,6 +315,7 @@ serve(async (req) => {
               params.append('offset', (body.offset || 0).toString());
 
               const mlUrl = `https://api.mercadolibre.com/orders/search?${params.toString()}`;
+              mlUrls.push(mlUrl);
               
               if (body.debug) {
                 console.log(`[Unified Orders] ML URL for account ${account.id}:`, mlUrl);
@@ -396,15 +336,11 @@ serve(async (req) => {
 
               const mlData = await mlResponse.json();
               if (mlData.results && mlData.results.length > 0) {
-                const mappedOrders = mlData.results.map((mlOrder: MLOrder) => 
-                  mapMLOrderToUnified(mlOrder, account.id)
-                );
-
-                allOrders.push(...mappedOrders);
-                console.log(`[Unified Orders] Added ${mappedOrders.length} orders from ML account ${account.name}`);
+                // Store raw ML results for stable contract
+                allMLResults.push(...mlData.results);
+                console.log(`[Unified Orders] Added ${mlData.results.length} raw orders from ML account ${account.name}`);
                 
-                // Store enrichment data for later processing
-                if (!mlOrdersForEnrichment) mlOrdersForEnrichment = [];
+                // Store for enrichment
                 mlData.results.forEach((mlOrder: any) => {
                   mlOrdersForEnrichment.push({ 
                     order: mlOrder, 
@@ -426,9 +362,8 @@ serve(async (req) => {
       }
     }
 
-    // 3. ENRICHMENT PHASE - Get additional data from ML APIs
+    // ENRICHMENT PHASE - Get additional data from ML APIs
     let unified: any[] = [];
-    let requested_endpoints: string[] = [];
     let enrichment_logs: any = { users_cached: 0, shipments_cached: 0, errors: [] };
     
     if (enrich && mlOrdersForEnrichment.length > 0) {
@@ -577,39 +512,61 @@ serve(async (req) => {
           updated_at: o?.last_updated ?? null,
         }));
       }
+    } else {
+      // No enrichment - use basic mapping for ML orders
+      unified = mlOrdersForEnrichment.map(({order: o, accountId}) => ({
+        id: String(o.id),
+        numero: String(o.id),
+        nome_cliente: o?.buyer?.nickname ?? null,
+        cpf_cnpj: null,
+        data_pedido: o?.date_created ?? null,
+        data_prevista: o?.date_closed ?? null,
+        situacao: o?.status ?? null,
+        valor_total: o?.total_amount ?? null,
+        valor_frete: null,
+        valor_desconto: o?.coupon?.amount ?? 0,
+        numero_ecommerce: String(o.id),
+        numero_venda: String(o.id),
+        empresa: 'mercadolivre',
+        cidade: null,
+        uf: null,
+        codigo_rastreamento: null,
+        url_rastreamento: null,
+        obs: o?.status_detail ?? null,
+        obs_interna: `ML order: ${o?.id}`,
+        integration_account_id: accountId,
+        created_at: o?.date_created ?? null,
+        updated_at: o?.last_updated ?? null,
+      }));
     }
 
-    // 4. Sort all orders by date (newest first)
-    allOrders.sort((a, b) => new Date(b.data_pedido).getTime() - new Date(a.data_pedido).getTime());
+    // Sort both arrays by date (newest first) - maintaining same order
+    const sortByDate = (a: any, b: any) => new Date(b.date_created || b.data_pedido).getTime() - new Date(a.date_created || a.data_pedido).getTime();
+    allMLResults.sort(sortByDate);
+    unified.sort(sortByDate);
 
-    // 5. Apply pagination to combined results
+    // Apply pagination to combined results - stable contract
     const offset = body.offset || 0;
     const limit = body.limit || 100;
-    const paginatedOrders = allOrders.slice(offset, offset + limit);
+    const resultsPage = allMLResults.slice(offset, offset + limit);
+    const unifiedPage = unified.slice(offset, offset + limit);
 
-    console.log('[Unified Orders] Returning', paginatedOrders.length, 'of', allOrders.length, 'total orders');
+    console.log('[Unified Orders] Returning', resultsPage.length, 'of', allMLResults.length, 'total ML orders');
 
     const response: any = {
       ok: true,
-      url: req.url,
-      paging: { total: allOrders.length, offset: offset, limit: limit },
-      results: paginatedOrders,
-      data: paginatedOrders,
-      count: allOrders.length,
-      unified: unified.slice(offset, offset + limit), // Apply same pagination to unified
+      paging: { total: allMLResults.length, offset: offset, limit: limit },
+      results: resultsPage, // RAW ML data for compatibility
+      unified: unifiedPage, // ENRICHED data with 22 columns
+      count: allMLResults.length,
     };
 
     // Add debug info if requested
     if (body.debug) {
+      response.ml_urls = mlUrls;
       response.requested_endpoints = Array.from(new Set(requested_endpoints));
       response.enrichment_logs = enrichment_logs;
-      response.raw = {
-        request_body: body,
-        ml_orders_enriched: unified.length,
-        internal_orders_count: allOrders.length - unified.length,
-        ml_orders_count: unified.length,
-        processing_time: Date.now()
-      };
+      response.sample_unified = unifiedPage[0] || null;
     }
 
     return new Response(JSON.stringify(response), {
