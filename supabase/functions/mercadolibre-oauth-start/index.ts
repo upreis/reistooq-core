@@ -1,104 +1,118 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient, getMlConfig, corsHeaders, ok, fail } from "../_shared/client.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
 
-// Generate random string for PKCE and state
-function generateRandomString(length: number): string {
-  const array = new Uint8Array(length);
-  crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Generate PKCE code verifier
-function generateCodeVerifier(): string {
-  return generateRandomString(32);
-}
-
-// Generate PKCE code challenge
-async function generateCodeChallenge(verifier: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(verifier);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(digest)));
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== "POST") {
-    return fail("Method Not Allowed", 405);
-  }
-
   try {
-    const supabase = makeClient(req.headers.get("Authorization"));
-    
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return fail("User not authenticated", 401);
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Get user from auth header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('Missing authorization header')
     }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    )
+
+    if (userError || !user) {
+      throw new Error('Invalid user token')
+    }
+
+    // Generate state for OAuth
+    const state = crypto.randomUUID()
+    const codeVerifier = generateCodeVerifier()
+    const codeChallenge = await generateCodeChallenge(codeVerifier)
 
     // Get user's organization
     const { data: profile } = await supabase
       .from('profiles')
       .select('organizacao_id')
       .eq('id', user.id)
-      .single();
+      .single()
 
-    if (!profile?.organizacao_id) {
-      return fail("Organization not found for user", 400);
+    const orgId = profile?.organizacao_id
+    if (!orgId) {
+      throw new Error('User organization not found')
     }
 
-    console.log('[ML OAuth Start] Starting OAuth flow for user:', user.id);
-
-    // Get ML configuration
-    const { clientId, redirectUri } = getMlConfig();
-
-    // Generate PKCE parameters
-    const codeVerifier = generateCodeVerifier();
-    const codeChallenge = await generateCodeChallenge(codeVerifier);
-    const state = generateRandomString(16);
-
-    // Store OAuth state in database
-    const { error: stateError } = await supabase
+    // Store OAuth state
+    await supabase
       .from('oauth_states')
       .insert({
         state_value: state,
         code_verifier: codeVerifier,
         user_id: user.id,
-        organization_id: profile.organizacao_id,
+        organization_id: orgId,
         provider: 'mercadolivre',
-        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // 15 minutes
-        used: false
-      });
+        expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
+      })
 
-    if (stateError) {
-      console.error('[ML OAuth Start] Failed to store state:', stateError);
-      return fail("Failed to initialize OAuth flow", 500);
-    }
+    // Mercado Livre OAuth URL
+    const clientId = '2053972567766696'
+    const redirectUri = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolibre-oauth-callback'
+    
+    const authUrl = new URL('https://auth.mercadolivre.com.br/authorization')
+    authUrl.searchParams.set('response_type', 'code')
+    authUrl.searchParams.set('client_id', clientId)
+    authUrl.searchParams.set('redirect_uri', redirectUri)
+    authUrl.searchParams.set('state', state)
+    authUrl.searchParams.set('code_challenge', codeChallenge)
+    authUrl.searchParams.set('code_challenge_method', 'S256')
 
-    // Build authorization URL
-    const authUrl = new URL('https://auth.mercadolivre.com.br/authorization');
-    authUrl.searchParams.set('response_type', 'code');
-    authUrl.searchParams.set('client_id', clientId);
-    authUrl.searchParams.set('redirect_uri', redirectUri);
-    authUrl.searchParams.set('state', state);
-    authUrl.searchParams.set('code_challenge', codeChallenge);
-    authUrl.searchParams.set('code_challenge_method', 'S256');
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        authorization_url: authUrl.toString(),
+        state 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
 
-    console.log('[ML OAuth Start] Generated authorization URL');
-
-    return ok({
-      authorization_url: authUrl.toString(),
-      state,
-      expires_in: 900 // 15 minutes
-    });
-
-  } catch (e) {
-    console.error('[ML OAuth Start] Unexpected error:', e);
-    return fail(String(e?.message ?? e), 500);
+  } catch (error) {
+    console.error('OAuth start error:', error)
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
   }
-});
+})
+
+function generateCodeVerifier(): string {
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
+}
+
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(verifier)
+  const digest = await crypto.subtle.digest('SHA-256', data)
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
+}
