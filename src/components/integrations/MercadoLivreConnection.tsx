@@ -11,6 +11,7 @@ import { ShoppingCart, User, Calendar, ExternalLink, Unplug, RefreshCw } from 'l
 import { mercadoLivreService, type MLAccount } from '@/services/MercadoLivreService';
 import { supabase } from '@/integrations/supabase/client';
 import MeliOrders from '@/components/MeliOrders';
+import { openMlPopup } from '@/features/integrations/utils/openMlPopup';
 
 interface MercadoLivreConnectionProps {
   onOrdersSync?: (accountId: string) => void;
@@ -43,70 +44,19 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
     }
   };
 
-  function buildAuthorizeUrl() {
-    const CLIENT_ID = (import.meta.env?.VITE_ML_CLIENT_ID as string) || '2053972567766696';
-    const redirectUri = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
-
-    console.info('[ML-OAUTH] authorize.build', { 
-      host: 'auth.mercadolibre.com.br', 
-      clientId: CLIENT_ID, 
-      redirectUri 
-    });
-
-    // envie redirect_uri e (se quiser) org_id dentro do state
-    const stateObj = { redirect_uri: redirectUri, org_id: 'default' };
-    const stateB64 = btoa(JSON.stringify(stateObj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-
-    const url =
-      'https://auth.mercadolibre.com.br/authorization' +
-      '?response_type=code' +
-      `&client_id=${encodeURIComponent(CLIENT_ID)}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&state=${encodeURIComponent(stateB64)}`;
-
-    return url;
-  }
 
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
 
-      // usar no clique:
-      const authorizeUrl = buildAuthorizeUrl();
-      console.info('[ML-OAUTH] authorize.open', { url: authorizeUrl });
-      const popup = window.open(authorizeUrl, 'ml_oauth', 'width=600,height=700');
-      
-      if (!popup) {
-        throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
-      }
-
-      // Listen for OAuth completion messages
-      const handleMessage = (event: MessageEvent) => {
-        console.info('[ML-OAUTH] message.received', event.data);
-        
-        // Accept messages from Supabase edge functions
-        if (!event.origin.includes('supabase.co') && event.origin !== window.location.origin) {
-          return;
-        }
-
-        const successV1 = event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre';
-        const successLegacy = event.data?.source === 'smooth-service' && event.data?.connected === true;
-        const errorV1 = event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre';
-
-        if (successV1 || successLegacy) {
-          popup.close();
-          window.removeEventListener('message', handleMessage);
+      openMlPopup({
+        onSuccess: () => {
           setIsConnecting(false);
-          
           toast.success('Mercado Livre conectado com sucesso!');
           loadAccounts();
-          
-        } else if (errorV1) {
-          popup.close();
-          window.removeEventListener('message', handleMessage);
+        },
+        onError: (errorMsg: string) => {
           setIsConnecting(false);
-          
-          const errorMsg = event.data.error || 'Falha desconhecida';
           
           // Handle specific error types with better user messages
           if (errorMsg.includes('OPERATOR_REQUIRED')) {
@@ -116,20 +66,11 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
           } else {
             toast.error(`Erro na autenticação: ${errorMsg}`);
           }
-        }
-      };
-
-      console.info('[ML-OAUTH] message.listener.ready');
-      window.addEventListener('message', handleMessage);
-
-      // Monitor popup for manual closure
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', handleMessage);
+        },
+        onClosed: () => {
           setIsConnecting(false);
         }
-      }, 1000);
+      });
     } catch (error) {
       console.error('ML connection failed:', error);
       

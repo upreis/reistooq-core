@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { openMlPopup } from '@/features/integrations/utils/openMlPopup';
 import { 
   ShoppingCart, 
   User, 
@@ -34,9 +35,10 @@ interface MLAccount {
 
 interface MercadoLivreManagerProps {
   onAccountsUpdate?: (accounts: MLAccount[]) => void;
+  onUpdate?: () => void;
 }
 
-export function MercadoLivreManager({ onAccountsUpdate }: MercadoLivreManagerProps) {
+export function MercadoLivreManager({ onAccountsUpdate, onUpdate }: MercadoLivreManagerProps) {
   const [accounts, setAccounts] = useState<MLAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
@@ -79,47 +81,22 @@ export function MercadoLivreManager({ onAccountsUpdate }: MercadoLivreManagerPro
       if (error) throw error;
       if (!data.success) throw new Error(data.error);
 
-      // Abrir popup para autorização
-      const rawUrl: string = data.authorization_url as string;
-      const authUrl = rawUrl
-        .replace('auth.mercadolivre.com/authorization', 'auth.mercadolivre.com.br/authorization')
-        .replace('auth.mercadolivre.com.ar/authorization', 'auth.mercadolivre.com.br/authorization')
-        .replace('auth.mercadolivre.com.br/authorization', 'auth.mercadolivre.com.br/authorization');
-
-      const popup = window.open(
-        authUrl,
-        'width=600,height=700,scrollbars=yes,resizable=yes'
-      );
-
-      if (!popup) {
-        throw new Error('Popup bloqueado. Permita popups para este site.');
-      }
-
-      // Escutar mensagens do popup
-      const handleMessage = (event: MessageEvent) => {
-        if (event.data.type === 'ML_AUTH_SUCCESS') {
-          popup.close();
-          toast.success('Conta MercadoLibre conectada com sucesso!');
+      // Use centralized popup utility
+      openMlPopup({
+        onSuccess: () => {
+          setConnecting(false);
+          toast.success('MercadoLibre conectado com sucesso!');
           loadAccounts();
-          window.removeEventListener('message', handleMessage);
-        } else if (event.data.type === 'ML_AUTH_ERROR') {
-          popup.close();
-          console.error('Erro OAuth ML:', event.data.error);
-          toast.error(`Erro na conexão: ${event.data.error}`);
-          window.removeEventListener('message', handleMessage);
-        }
-      };
-
-      window.addEventListener('message', handleMessage);
-
-      // Cleanup se popup for fechado manualmente
-      const checkClosed = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(checkClosed);
-          window.removeEventListener('message', handleMessage);
+          onUpdate?.();
+        },
+        onError: (errorMsg: string) => {
+          setConnecting(false);
+          toast.error(`Erro na autenticação: ${errorMsg}`);
+        },
+        onClosed: () => {
           setConnecting(false);
         }
-      }, 1000);
+      });
 
     } catch (error) {
       console.error('Erro ao conectar ML:', error);

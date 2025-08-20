@@ -37,5 +37,4 @@ verify_jwt = true
 [functions.integrations-store-secret]
 verify_jwt = true
 
-[functions.mercadolivre-oauth-callback]
-verify_jwt = false
+# Removed - using smooth-service for all OAuth callbacks
