@@ -314,13 +314,19 @@ export function PedidosTable({
                           case 'empresa':
                             return show(get(row.unified, 'empresa') ?? 'mercadolivre');
                           case 'cidade':
-                            return show(get(row.unified, 'cidade'));
+                            return show(get(row.unified, 'cidade') ?? get(row.raw, 'shipping_details.receiver_address.city.name'));
                           case 'uf':
-                            return show(get(row.unified, 'uf'));
+                            return show(get(row.unified, 'uf') ?? get(row.raw, 'shipping_details.receiver_address.state.id'));
+                          case 'cep':
+                            return show(get(row.raw, 'shipping_details.receiver_address.zip_code'));
+                          case 'shipping_status':
+                            return show(get(row.raw, 'shipping_details.status'));
+                          case 'shipping_mode':
+                            return show(get(row.raw, 'shipping_details.shipping_mode'));
                           case 'codigo_rastreamento':
-                            return show(get(row.unified, 'codigo_rastreamento'));
+                            return show(get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping_details.tracking_number'));
                           case 'url_rastreamento':
-                            return show(get(row.unified, 'url_rastreamento'));
+                            return show(get(row.unified, 'url_rastreamento') ?? get(row.raw, 'shipping_details.tracking_url'));
                           case 'obs':
                             return <TruncatedCell content={get(row.unified, 'obs')} />;
                           case 'obs_interna':

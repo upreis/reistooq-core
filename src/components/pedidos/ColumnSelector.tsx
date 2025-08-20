@@ -62,8 +62,13 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'numero_ecommerce', label: 'Nº eCommerce', visible: false, category: 'basic' },
   { key: 'numero_venda', label: 'Nº Venda', visible: false, category: 'basic' },
   { key: 'empresa', label: 'Empresa', visible: false, category: 'basic' },
-  { key: 'cidade', label: 'Cidade', visible: false, category: 'basic' },
-  { key: 'uf', label: 'UF', visible: false, category: 'basic' },
+  { key: 'cidade', label: 'Cidade', visible: true, category: 'basic' },
+  { key: 'uf', label: 'UF', visible: true, category: 'basic' },
+  { key: 'cep', label: 'CEP', visible: true, category: 'basic' },
+
+  // Envio (ML)
+  { key: 'shipping_status', label: 'Status do Envio', visible: true, category: 'ml' },
+  { key: 'shipping_mode', label: 'Modo de Envio', visible: true, category: 'ml' },
 ];
 
 interface ColumnSelectorProps {

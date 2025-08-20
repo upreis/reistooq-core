@@ -72,7 +72,7 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
     new URLSearchParams(window.location.search).get('audit') === '1';
 
   const { data, error } = await supabase.functions.invoke('unified-orders', {
-    body: { ...params, enrich: true, debug: isAudit, audit: isAudit }
+    body: { ...params, enrich: true, debug: isAudit, audit: isAudit, include_shipping: true }
   });
   
   if (error) throw error;
