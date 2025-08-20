@@ -20,10 +20,7 @@ export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
   const { data, error } = await supabase.functions.invoke('unified-orders', { body: params });
   if (error) throw error;
   if (!data?.ok) throw new Error('unified-orders: resposta inesperada');
-  
-  // Use enriched data when available, fallback to raw results
-  const rows = data?.unified ?? data?.results ?? [];
-  return { ...data, rows }; // Keep original structure but add rows for compatibility
+  return data; // { ok, url, paging, results, raw? }
 }
 
 // Backward compatibility
