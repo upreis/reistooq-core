@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { listPedidos } from '@/services/pedidos';
-import { Pedido } from '@/types/pedido';
+import { Row, get, show } from '@/services/orders';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { Button } from '@/components/ui/button';
@@ -24,16 +23,12 @@ import {
 import { ColumnConfig } from './ColumnSelector';
 
 interface PedidosTableProps {
-  integrationAccountId: string;
-  hybridData?: {
-    rows: Pedido[];
-    total: number;
-    fonte: 'banco' | 'tempo-real';
-    loading: boolean;
-    error: string | null;
-    refetch: () => void;
-  };
-  onSelectionChange?: (selectedRows: Pedido[]) => void;
+  rows: Row[];
+  total: number;
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => void;
+  onSelectionChange?: (selectedRows: Row[]) => void;
   currentPage?: number;
   onPageChange?: (page: number) => void;
   mapeamentosVerificacao?: Map<string, MapeamentoVerificacao>;
@@ -77,113 +72,76 @@ function TruncatedCell({ content, maxLength = 50 }: { content?: string | null; m
 }
 
 export function PedidosTable({ 
-  integrationAccountId, 
-  hybridData, 
+  rows,
+  total,
+  loading,
+  error,
+  onRefresh,
   onSelectionChange, 
   currentPage = 1, 
   onPageChange,
   mapeamentosVerificacao = new Map(),
   visibleColumns
 }: PedidosTableProps) {
-  // Estados locais para quando não usar hybridData
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(currentPage);
-
-  // Sincronizar página externa com interna
-  useEffect(() => {
-    setPage(currentPage);
-  }, [currentPage]);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const pageSize = 25;
 
   // Função para verificar se pedido tem mapeamento
-  const pedidoTemMapeamento = (pedido: Pedido): boolean => {
-    if (pedido.obs) {
+  const rowTemMapeamento = (row: Row): boolean => {
+    const obs = row.unified?.obs;
+    const numero = row.unified?.numero || String(row.raw?.id);
+    
+    if (obs) {
       // Para ML, verificar nos títulos dos produtos
-      return pedido.obs.split(', ').some(sku => 
+      return obs.split(', ').some(sku => 
         mapeamentosVerificacao.get(sku.trim())?.temMapeamento
       );
     }
     // Para banco, verificar pelo número do pedido como fallback
-    return mapeamentosVerificacao.get(pedido.numero)?.temMapeamento || false;
+    return mapeamentosVerificacao.get(numero)?.temMapeamento || false;
   };
-  const [totalCount, setTotalCount] = useState(0);
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
-  const pageSize = 25;
-
-  const loadPedidos = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const result = await listPedidos({
-        integrationAccountId,
-        page,
-        pageSize
-      });
-      
-      if (result.error) {
-        throw new Error(result.error.message || 'Erro ao carregar pedidos');
-      }
-      
-      setPedidos(result.data || []);
-      setTotalCount(result.count || 0);
-    } catch (err: any) {
-      setError(err.message || 'Erro inesperado');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // Só carregar localmente se não tiver hybridData
-    if (integrationAccountId && !hybridData) {
-      loadPedidos();
-    }
-  }, [integrationAccountId, page, hybridData]);
-
-  // Usar dados híbridos se disponíveis
-  const finalPedidos = hybridData ? hybridData.rows : pedidos;
-  const finalLoading = hybridData ? hybridData.loading : loading;
-  const finalError = hybridData ? hybridData.error : error;
-  const finalTotalCount = hybridData ? hybridData.total : totalCount;
-  const finalRefresh = hybridData ? hybridData.refetch : loadPedidos;
 
   // Gerenciar seleção
-  const handleRowSelection = (pedidoId: string, selected: boolean) => {
+  const handleRowSelection = (rowId: string, selected: boolean) => {
     const newSelection = new Set(selectedRows);
     if (selected) {
-      newSelection.add(pedidoId);
+      newSelection.add(rowId);
     } else {
-      newSelection.delete(pedidoId);
+      newSelection.delete(rowId);
     }
     setSelectedRows(newSelection);
     
     // Notificar componente pai
     if (onSelectionChange) {
-      const selectedPedidos = finalPedidos.filter(p => newSelection.has(p.id));
-      onSelectionChange(selectedPedidos);
+      const selectedRowObjects = rows.filter(r => newSelection.has(getRowId(r)));
+      onSelectionChange(selectedRowObjects);
     }
   };
 
   const handleSelectAll = (selected: boolean) => {
-    const newSelection = selected ? new Set(finalPedidos.map(p => p.id)) : new Set<string>();
+    const newSelection = selected ? new Set(rows.map(r => getRowId(r))) : new Set<string>();
     setSelectedRows(newSelection);
     
     if (onSelectionChange) {
-      const selectedPedidos = selected ? finalPedidos : [];
-      onSelectionChange(selectedPedidos);
+      const selectedRowObjects = selected ? rows : [];
+      onSelectionChange(selectedRowObjects);
     }
   };
 
-  const isAllSelected = finalPedidos.length > 0 && selectedRows.size === finalPedidos.length;
-  const isSomeSelected = selectedRows.size > 0 && selectedRows.size < finalPedidos.length;
+  // Helper to get consistent row ID
+  const getRowId = (row: Row): string => {
+    return row.unified?.id || String(row.raw?.id) || '';
+  };
 
-  const totalPages = Math.ceil(finalTotalCount / pageSize);
+  const isAllSelected = rows.length > 0 && selectedRows.size === rows.length;
+  const isSomeSelected = selectedRows.size > 0 && selectedRows.size < rows.length;
+
+  const totalPages = Math.ceil(total / pageSize);
   const startItem = (page - 1) * pageSize + 1;
-  const endItem = Math.min(page * pageSize, finalTotalCount);
+  const endItem = Math.min(page * pageSize, total);
 
-  if (finalLoading) {
+  if (loading) {
     return (
       <div className="space-y-3">
         <Skeleton className="h-8 w-full" />
@@ -192,16 +150,16 @@ export function PedidosTable({
     );
   }
 
-  if (finalError) {
+  if (error) {
     return (
       <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
         <div className="font-medium text-destructive">Erro ao carregar pedidos</div>
-        <div className="text-sm text-destructive/80">{finalError}</div>
+        <div className="text-sm text-destructive/80">{error}</div>
         <Button 
           variant="outline" 
           size="sm" 
           className="mt-2"
-          onClick={finalRefresh}
+          onClick={onRefresh}
         >
           Tentar novamente
         </Button>
@@ -209,7 +167,7 @@ export function PedidosTable({
     );
   }
 
-  if (!finalPedidos.length) {
+  if (!rows.length) {
     return (
       <div className="rounded-lg border border-muted bg-muted/30 p-8 text-center">
         <div className="text-lg font-medium text-muted-foreground">
@@ -249,11 +207,13 @@ export function PedidosTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {finalPedidos.map((pedido) => {
-              const temMapeamento = pedidoTemMapeamento(pedido);
+            {rows.map((row) => {
+              const temMapeamento = rowTemMapeamento(row);
+              const rowId = getRowId(row);
+              
               return (
                 <TableRow 
-                  key={pedido.id}
+                  key={rowId}
                   className={temMapeamento 
                     ? "bg-green-50 hover:bg-green-100 border-l-4 border-l-green-400" 
                     : "bg-orange-50 hover:bg-orange-100 border-l-4 border-l-orange-400"
@@ -262,145 +222,141 @@ export function PedidosTable({
                   <TableCell>
                     <input
                       type="checkbox"
-                      checked={selectedRows.has(pedido.id)}
-                      onChange={(e) => handleRowSelection(pedido.id, e.target.checked)}
+                      checked={selectedRows.has(rowId)}
+                      onChange={(e) => handleRowSelection(rowId, e.target.checked)}
                       className="rounded border-border"
                     />
                   </TableCell>
                   
-                  {/* Special handling for numero column to show mapping badge */}
+                  {/* Render each visible column */}
                   {visibleColumnConfigs.map((col) => (
-                    col.key === 'numero' ? (
-                      <TableCell key={col.key}>
-                        <div className="flex items-center gap-2">
-                          <span>{pedido.numero || '—'}</span>
-                          {temMapeamento ? (
-                            <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
-                              Mapeado
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="bg-orange-100 text-orange-800 text-xs">
-                              Sem Map.
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                    ) : (
-                      <TableCell key={col.key}>
-                        {(() => {
-                          switch (col.key) {
-                            case 'id_unico':
-                              return (
-                                <div className="font-mono text-xs">
-                                  {pedido.id_unico || `${pedido.obs?.split(',')[0]?.trim() || 'SKU'}-${pedido.numero}`}
-                                </div>
-                              );
-                            case 'nome_cliente':
-                              return pedido.nome_cliente || '—';
-                            case 'cpf_cnpj':
-                              return maskCpfCnpj(pedido.cpf_cnpj);
-                            case 'data_pedido':
-                              return formatDate(pedido.data_pedido);
-                            case 'sku':
-                              return (
-                                <TruncatedCell content={pedido.obs?.split(',')[0]?.trim() || '—'} maxLength={20} />
-                              );
-                            case 'quantidade':
-                              return pedido.total_itens || pedido.obs?.split(',').length || 1;
-                            case 'situacao':
-                              return (
-                                <Badge variant={getSituacaoVariant(pedido.situacao)}>
-                                  {pedido.situacao || '—'}
-                                </Badge>
-                              );
-                            case 'valor_total':
-                              return formatMoney(pedido.valor_total);
-                            case 'valor_frete':
-                              return formatMoney(pedido.valor_frete);
-                            case 'valor_desconto':
-                              return formatMoney(pedido.valor_desconto);
-                            case 'paid_amount':
-                              return pedido.paid_amount ? formatMoney(pedido.paid_amount) : '—';
-                            case 'currency_id':
-                              return pedido.currency_id || '—';
-                            case 'coupon_amount':
-                              return pedido.coupon?.amount ? formatMoney(pedido.coupon.amount) : '—';
-                            case 'numero_ecommerce':
-                              return pedido.numero_ecommerce || '—';
-                            case 'numero_venda':
-                              return pedido.numero_venda || '—';
-                            case 'empresa':
-                              return pedido.empresa || '—';
-                            case 'cidade':
-                              return pedido.cidade || '—';
-                            case 'uf':
-                              return pedido.uf || '—';
-                            case 'obs':
-                              return <TruncatedCell content={pedido.obs} />;
-                            case 'sku_estoque':
-                              return pedido.sku_estoque || '—';
-                            case 'sku_kit':
-                              return pedido.sku_kit || '—';
-                            case 'qtd_kit':
-                              return pedido.qtd_kit || '—';
-                            case 'total_itens':
-                              return pedido.total_itens || '—';
-                            case 'status_estoque':
-                              return (
-                                <Badge 
-                                  variant={
-                                    pedido.status_estoque === 'pronto_baixar' ? 'default' :
-                                    pedido.status_estoque === 'sem_estoque' ? 'destructive' : 'secondary'
-                                  }
-                                >
-                                  {pedido.status_estoque === 'pronto_baixar' ? 'Pronto p/ baixar' :
-                                   pedido.status_estoque === 'sem_estoque' ? 'Sem estoque' :
-                                   pedido.status_estoque === 'pedido_baixado' ? 'Pedido baixado' : 'Pronto p/ baixar'}
-                                </Badge>
-                              );
-                            case 'date_created':
-                              return pedido.date_created ? formatDate(pedido.date_created) : '—';
-                            case 'date_closed':
-                              return pedido.date_closed ? formatDate(pedido.date_closed) : '—';
-                            case 'last_updated':
-                              return pedido.last_updated ? formatDate(pedido.last_updated) : '—';
-                            case 'pack_id':
-                              return pedido.pack_id || '—';
-                            case 'pickup_id':
-                              return pedido.pickup_id || '—';
-                            case 'manufacturing_ending_date':
-                              return pedido.manufacturing_ending_date ? formatDate(pedido.manufacturing_ending_date) : '—';
-                            case 'comment':
-                              return <TruncatedCell content={pedido.comment} maxLength={30} />;
-                            case 'status_detail':
-                              return pedido.status_detail || '—';
-                            case 'tags':
-                              return pedido.tags?.length ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {pedido.tags.slice(0, 2).map((tag, idx) => (
-                                    <Badge key={idx} variant="outline" className="text-xs">
-                                      {tag}
-                                    </Badge>
-                                  ))}
-                                  {pedido.tags.length > 2 && (
-                                    <span className="text-xs text-muted-foreground">
-                                      +{pedido.tags.length - 2}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : '—';
-                            case 'buyer_id':
-                              return pedido.buyer?.id || '—';
-                            case 'seller_id':
-                              return pedido.seller?.id || '—';
-                            case 'shipping_id':
-                              return pedido.shipping?.id || '—';
-                            default:
-                              return '—';
-                          }
-                        })()}
-                      </TableCell>
-                    )
+                    <TableCell key={col.key}>
+                      {(() => {
+                        switch (col.key) {
+                          // UNIFIED columns with fallbacks
+                          case 'numero':
+                            const numero = get(row.unified, 'numero') ?? String(get(row.raw, 'id'));
+                            return (
+                              <div className="flex items-center gap-2">
+                                <span>{show(numero)}</span>
+                                {temMapeamento ? (
+                                  <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
+                                    Mapeado
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="bg-orange-100 text-orange-800 text-xs">
+                                    Sem Map.
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          case 'id_unico':
+                            return (
+                              <div className="font-mono text-xs">
+                                {show(get(row.unified, 'id') ?? get(row.raw, 'id'))}
+                              </div>
+                            );
+                          case 'nome_cliente':
+                            return show(get(row.unified, 'nome_cliente') ?? get(row.raw, 'buyer.nickname'));
+                          case 'cpf_cnpj':
+                            return maskCpfCnpj(get(row.unified, 'cpf_cnpj'));
+                          case 'data_pedido':
+                            return formatDate(get(row.unified, 'data_pedido') ?? get(row.raw, 'date_created'));
+                          case 'data_prevista':
+                            return formatDate(get(row.unified, 'data_prevista') ?? get(row.raw, 'date_closed'));
+                          case 'situacao':
+                            const situacao = get(row.unified, 'situacao') ?? get(row.raw, 'status');
+                            return (
+                              <Badge variant={getSituacaoVariant(situacao)}>
+                                {show(situacao)}
+                              </Badge>
+                            );
+                          case 'valor_total':
+                            return formatMoney(get(row.unified, 'valor_total'));
+                          case 'valor_frete':
+                            return formatMoney(get(row.unified, 'valor_frete') ?? get(row.raw, 'payments.0.shipping_cost'));
+                          case 'valor_desconto':
+                            return formatMoney(get(row.unified, 'valor_desconto'));
+                          case 'numero_ecommerce':
+                            return show(get(row.unified, 'numero_ecommerce') ?? get(row.raw, 'id'));
+                          case 'numero_venda':
+                            return show(get(row.unified, 'numero_venda') ?? get(row.raw, 'id'));
+                          case 'empresa':
+                            return show(get(row.unified, 'empresa') ?? 'mercadolivre');
+                          case 'cidade':
+                            return show(get(row.unified, 'cidade'));
+                          case 'uf':
+                            return show(get(row.unified, 'uf'));
+                          case 'codigo_rastreamento':
+                            return show(get(row.unified, 'codigo_rastreamento'));
+                          case 'url_rastreamento':
+                            return show(get(row.unified, 'url_rastreamento'));
+                          case 'obs':
+                            return <TruncatedCell content={get(row.unified, 'obs')} />;
+                          case 'obs_interna':
+                            return <TruncatedCell content={get(row.unified, 'obs_interna')} />;
+                          
+                          // RAW columns from ML orders/search
+                          case 'pack_id':
+                            return show(get(row.raw, 'pack_id'));
+                          case 'pickup_id':
+                            return show(get(row.raw, 'pickup_id'));
+                          case 'manufacturing_ending_date':
+                            return formatDate(get(row.raw, 'manufacturing_ending_date'));
+                          case 'comment':
+                            return <TruncatedCell content={get(row.raw, 'comment')} maxLength={30} />;
+                          case 'status_detail':
+                            return show(get(row.raw, 'status_detail'));
+                          case 'tags':
+                            const tags = get(row.raw, 'tags');
+                            return Array.isArray(tags) && tags.length ? (
+                              <div className="flex flex-wrap gap-1">
+                                {tags.slice(0, 2).map((tag, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {tags.length > 2 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    +{tags.length - 2}
+                                  </span>
+                                )}
+                              </div>
+                            ) : show(tags);
+                          case 'buyer_id':
+                            return show(get(row.raw, 'buyer.id'));
+                          case 'seller_id':
+                            return show(get(row.raw, 'seller.id'));
+                          case 'shipping_id':
+                            return show(get(row.raw, 'shipping.id'));
+                          case 'date_created':
+                            return formatDate(get(row.raw, 'date_created'));
+                          case 'date_closed':
+                            return formatDate(get(row.raw, 'date_closed'));
+                          case 'last_updated':
+                            return formatDate(get(row.raw, 'last_updated'));
+                          
+                          // SKU extraction from order items
+                          case 'sku':
+                            const orderItems = get(row.raw, 'order_items');
+                            if (Array.isArray(orderItems)) {
+                              const skus = orderItems.map(item => 
+                                get(item, 'item.seller_sku') ?? get(item, 'item.seller_custom_field')
+                              ).filter(Boolean);
+                              return <TruncatedCell content={skus.join(', ')} maxLength={20} />;
+                            }
+                            return show(get(row.unified, 'obs'));
+                          
+                          // Legacy columns - fallback to unified or show placeholder
+                          case 'quantidade':
+                            const items = get(row.raw, 'order_items');
+                            return Array.isArray(items) ? items.length : show(get(row.unified, 'total_itens'));
+                          
+                          default:
+                            return '—';
+                        }
+                      })()}
+                    </TableCell>
                   ))}
                 </TableRow>
               );
@@ -412,7 +368,7 @@ export function PedidosTable({
       {/* Pagination */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Mostrando {startItem}–{endItem} de {finalTotalCount} pedidos
+          Mostrando {startItem}–{endItem} de {total} pedidos
         </div>
         
         <div className="flex items-center gap-2">

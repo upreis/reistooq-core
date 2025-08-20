@@ -5,9 +5,11 @@ import { PedidosTable } from '@/components/pedidos/PedidosTable';
 import { BaixaEstoqueModal } from '@/components/pedidos/BaixaEstoqueModal';
 import { PedidosFilters, PedidosFiltersState } from '@/components/pedidos/PedidosFilters';
 import { ColumnSelector, DEFAULT_COLUMNS, ColumnConfig } from '@/components/pedidos/ColumnSelector';
+import { AuditPanel } from '@/components/pedidos/AuditPanel';
 import { usePedidosHybrid, FontePedidos } from '@/services/pedidos';
 import { usePedidosFilters } from '@/hooks/usePedidosFilters';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
+import { fetchPedidosRealtime, Row } from '@/services/orders';
 import { Pedido } from '@/types/pedido';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -20,6 +22,9 @@ export default function Pedidos() {
     import.meta.env.VITE_INTEGRATION_ACCOUNT_ID || 
     '5740f717-1771-4298-b8c9-464ffb8d8dce';
 
+  // Audit mode detection
+  const isAuditMode = new URLSearchParams(window.location.search).get('audit') === '1';
+
   const [fonteEscolhida, setFonteEscolhida] = useState<FontePedidos>('banco');
   const [forceFonte, setForceFonte] = useState<FontePedidos | undefined>();
   const [pedidosSelecionados, setPedidosSelecionados] = useState<Pedido[]>([]);
@@ -27,20 +32,57 @@ export default function Pedidos() {
   const [mapeamentosVerificacao, setMapeamentosVerificacao] = useState<Map<string, MapeamentoVerificacao>>(new Map());
   const [visibleColumns, setVisibleColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   
+  // New state for unified orders data
+  const [rows, setRows] = useState<Row[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const { filters, setFilters, clearFilters, apiParams } = usePedidosFilters();
   
-  const { rows, total, fonte, loading, error, refetch } = usePedidosHybrid({
-    integrationAccountId: INTEGRATION_ACCOUNT_ID,
-    page: currentPage,
-    pageSize: 25,
-    ...apiParams,
-    forceFonte
-  });
+  // Load unified orders data
+  const loadPedidos = async () => {
+    if (!INTEGRATION_ACCOUNT_ID) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const result = await fetchPedidosRealtime({
+        integration_account_id: INTEGRATION_ACCOUNT_ID,
+        status: apiParams.status,
+        limit: 25,
+        offset: (currentPage - 1) * 25,
+        ...apiParams
+      });
+      
+      setRows(result.rows);
+      setTotal(result.total);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao carregar pedidos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load data on mount and when dependencies change
+  useEffect(() => {
+    loadPedidos();
+  }, [INTEGRATION_ACCOUNT_ID, currentPage, apiParams]);
 
   // Função para verificar mapeamentos manualmente
   const verificarMapeamentos = async () => {
     if (rows.length > 0) {
-      const pedidosEnriquecidos = await MapeamentoService.enriquecerPedidosComMapeamento(rows);
+      // Convert Row[] back to Pedido[] for existing service
+      const pedidos = rows.map(row => ({
+        id: row.unified?.id || String(row.raw?.id) || '',
+        numero: row.unified?.numero || String(row.raw?.id) || '',
+        obs: row.unified?.obs || '', 
+        sku_estoque: '', // Will be enriched
+        qtd_kit: 0 // Will be enriched
+      })) as Pedido[];
+      
+      const pedidosEnriquecidos = await MapeamentoService.enriquecerPedidosComMapeamento(pedidos);
       
       // Criar o mapa de verificação para compatibilidade com o código existente
       const mapeamentosMap = new Map();
@@ -73,8 +115,14 @@ export default function Pedidos() {
     setForceFonte(novaFonte);
   };
 
-  const handleSelectionChange = (selectedRows: Pedido[]) => {
-    setPedidosSelecionados(selectedRows);
+  const handleSelectionChange = (selectedRows: Row[]) => {
+    // Convert Row[] to Pedido[] for backward compatibility
+    const pedidos = selectedRows.map(row => ({
+      id: row.unified?.id || String(row.raw?.id) || '',
+      numero: row.unified?.numero || String(row.raw?.id) || '',
+      obs: row.unified?.obs || ''
+    })) as Pedido[];
+    setPedidosSelecionados(pedidos);
   };
 
   const handleFiltersChange = (newFilters: PedidosFiltersState) => {
@@ -83,13 +131,16 @@ export default function Pedidos() {
   };
 
   // Estatísticas de mapeamento
-  const pedidosComMapeamento = rows.filter(pedido => {
-    if (pedido.obs) {
-      return pedido.obs.split(', ').some(sku => 
+  const pedidosComMapeamento = rows.filter(row => {
+    const obs = row.unified?.obs;
+    const numero = row.unified?.numero || String(row.raw?.id);
+    
+    if (obs) {
+      return obs.split(', ').some(sku => 
         mapeamentosVerificacao.get(sku.trim())?.temMapeamento
       );
     }
-    return mapeamentosVerificacao.get(pedido.numero)?.temMapeamento;
+    return mapeamentosVerificacao.get(numero)?.temMapeamento;
   }).length;
 
   const pedidosSemMapeamento = rows.length - pedidosComMapeamento;
@@ -143,14 +194,12 @@ export default function Pedidos() {
         onClearFilters={clearFilters}
       />
 
-      {/* Alerta de Fallback */}
-      {fonte === 'tempo-real' && fonteEscolhida === 'banco' && (
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Sem dados na tabela. Exibindo pedidos em tempo real (Mercado Livre).
-          </AlertDescription>
-        </Alert>
+      {/* Audit Panel */}
+      {isAuditMode && (
+        <AuditPanel 
+          rows={rows} 
+          integrationAccountId={INTEGRATION_ACCOUNT_ID}
+        />
       )}
 
       {/* Estatísticas de Mapeamento */}
@@ -214,7 +263,8 @@ export default function Pedidos() {
         </div>
 
         <div className="text-sm text-muted-foreground">
-          Fonte ativa: <span className="font-medium">{fonte === 'banco' ? 'Banco de dados' : 'Tempo real (Mercado Livre)'}</span>
+          Fonte ativa: <span className="font-medium">Unified Orders (Tempo real)</span>
+          {isAuditMode && <span className="ml-2 text-orange-600">[AUDIT MODE]</span>}
         </div>
       </div>
 
@@ -233,8 +283,11 @@ export default function Pedidos() {
       </Alert>
       
       <PedidosTable 
-        integrationAccountId={INTEGRATION_ACCOUNT_ID}
-        hybridData={{ rows, total, fonte, loading, error, refetch }}
+        rows={rows}
+        total={total}
+        loading={loading}
+        error={error}
+        onRefresh={loadPedidos}
         onSelectionChange={handleSelectionChange}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
