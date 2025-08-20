@@ -25,6 +25,11 @@ interface UnifiedOrdersRequest {
   date_last_updated_to?: string;
   debug?: boolean;
   status?: string;
+  // Enrichment controls
+  enrich?: boolean;
+  enrich_users?: boolean;
+  enrich_shipments?: boolean;
+  max_concurrency?: number;
 }
 
 interface MLOrder {
@@ -109,7 +114,32 @@ function mapMLStatus(mlStatus: string): string {
   return statusMap[mlStatus] || 'Pendente';
 }
 
-// Map ML order to unified order format
+// Helper for controlled concurrency
+async function poolLimit<T>(limit: number, tasks: (() => Promise<T>)[]): Promise<T[]> {
+  const ret: T[] = [];
+  const executing: Promise<void>[] = [];
+  
+  for (const task of tasks) {
+    const p = task().then((v) => { ret.push(v); (p as any).resolved = true; });
+    executing.push(p);
+    
+    if (executing.length >= limit) {
+      await Promise.race(executing);
+    }
+    
+    // Clean up resolved promises
+    for (let i = executing.length - 1; i >= 0; i--) {
+      if ((executing[i] as any).resolved) {
+        executing.splice(i, 1);
+      }
+    }
+  }
+  
+  await Promise.all(executing);
+  return ret;
+}
+
+// Map ML order to unified order format (legacy - kept for compatibility)
 function mapMLOrderToUnified(mlOrder: MLOrder, accountId: string): UnifiedOrder {
   const now = new Date().toISOString();
   
@@ -164,6 +194,10 @@ serve(async (req) => {
       debug: url.searchParams.get('debug') === 'true',
       status: url.searchParams.get('status') || undefined,
       fonte: url.searchParams.get('fonte') as any || undefined,
+      enrich: url.searchParams.get('enrich') !== 'false',
+      enrich_users: url.searchParams.get('enrich_users') !== 'false',
+      enrich_shipments: url.searchParams.get('enrich_shipments') !== 'false',
+      max_concurrency: url.searchParams.get('max_concurrency') ? parseInt(url.searchParams.get('max_concurrency')!) : 3,
     };
   } else if (req.method === "POST") {
     try {
@@ -192,6 +226,13 @@ serve(async (req) => {
     console.log('[Unified Orders] Request received:', body);
 
     let allOrders: UnifiedOrder[] = [];
+    let mlOrdersForEnrichment: Array<{order: any, accountId: string, accessToken: string}> = [];
+    
+    // Parse enrichment flags with safe defaults
+    const enrich = body.enrich !== false; // default true
+    const enrich_users = body.enrich_users !== false; // default true  
+    const enrich_shipments = body.enrich_shipments !== false; // default true
+    const max_concurrency = Math.max(1, Math.min(10, body.max_concurrency || 3)); // safe range
 
     // 1. Get internal orders (if no source filter or source is interno)
     if (!body.fonte || body.fonte === 'interno') {
@@ -361,6 +402,16 @@ serve(async (req) => {
 
                 allOrders.push(...mappedOrders);
                 console.log(`[Unified Orders] Added ${mappedOrders.length} orders from ML account ${account.name}`);
+                
+                // Store enrichment data for later processing
+                if (!mlOrdersForEnrichment) mlOrdersForEnrichment = [];
+                mlData.results.forEach((mlOrder: any) => {
+                  mlOrdersForEnrichment.push({ 
+                    order: mlOrder, 
+                    accountId: account.id, 
+                    accessToken 
+                  });
+                });
               }
               
             } catch (error) {
@@ -375,10 +426,163 @@ serve(async (req) => {
       }
     }
 
-    // 3. Sort all orders by date (newest first)
+    // 3. ENRICHMENT PHASE - Get additional data from ML APIs
+    let unified: any[] = [];
+    let requested_endpoints: string[] = [];
+    let enrichment_logs: any = { users_cached: 0, shipments_cached: 0, errors: [] };
+    
+    if (enrich && mlOrdersForEnrichment.length > 0) {
+      console.log(`[Unified Orders] Starting enrichment for ${mlOrdersForEnrichment.length} ML orders`);
+      
+      // Create caches to avoid duplicate API calls
+      const usersCache = new Map<number, any>();
+      const shipmentsCache = new Map<number, any>();
+      
+      // Helper functions for API calls with caching
+      const getUser = async (uid: number, accessToken: string) => {
+        if (usersCache.has(uid)) return usersCache.get(uid);
+        const url = `https://api.mercadolibre.com/users/${uid}`;
+        requested_endpoints.push(url);
+        try {
+          const r = await fetch(url, { 
+            headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }
+          });
+          const j = r.ok ? await r.json() : null;
+          usersCache.set(uid, j);
+          return j;
+        } catch (error) {
+          enrichment_logs.errors.push(`Users API error for ${uid}: ${error}`);
+          usersCache.set(uid, null);
+          return null;
+        }
+      };
+
+      const getShipment = async (sid: number, accessToken: string) => {
+        if (shipmentsCache.has(sid)) return shipmentsCache.get(sid);
+        const url = `https://api.mercadolibre.com/shipments/${sid}`;
+        requested_endpoints.push(url);
+        try {
+          const r = await fetch(url, { 
+            headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }
+          });
+          const j = r.ok ? await r.json() : null;
+          shipmentsCache.set(sid, j);
+          return j;
+        } catch (error) {
+          enrichment_logs.errors.push(`Shipments API error for ${sid}: ${error}`);
+          shipmentsCache.set(sid, null);
+          return null;
+        }
+      };
+
+      // Create enrichment tasks
+      const enrichmentTasks = mlOrdersForEnrichment.map(({order: o, accountId, accessToken}) => async () => {
+        let user = null, ship = null;
+        
+        // Get user data if enabled and buyer ID exists
+        if (enrich_users && o?.buyer?.id) {
+          user = await getUser(o.buyer.id, accessToken);
+        }
+        
+        // Get shipment data if enabled and shipping ID exists  
+        if (enrich_shipments && o?.shipping?.id) {
+          ship = await getShipment(o.shipping.id, accessToken);
+        }
+
+        // Build enriched name
+        const first = user?.first_name?.trim?.() || '';
+        const last = user?.last_name?.trim?.() || '';
+        const nome = (first || last) ? `${first} ${last}`.trim() : (o?.buyer?.nickname ?? null);
+        
+        // Get document number from multiple possible sources
+        const doc = user?.identification?.number ?? 
+                   user?.billing_info?.doc_number ?? 
+                   o?.buyer?.billing_info?.doc_number ?? null;
+
+        // Calculate shipping cost from multiple sources
+        const shipCostFromPayments = o?.payments?.find?.(() => true)?.shipping_cost ?? null;
+        const shipCostFromShipment = ship?.shipping_option?.cost ?? null;
+        
+        // Calculate discount from coupon and price differences
+        let totalDiscount = o?.coupon?.amount || 0;
+        if (o?.order_items?.length > 0) {
+          o.order_items.forEach((item: any) => {
+            const itemDiscount = (item.full_unit_price - item.unit_price) * item.quantity;
+            totalDiscount += Math.max(0, itemDiscount);
+          });
+        }
+
+        // Extract location data
+        const cidade = ship?.receiver_address?.city?.name ?? null;
+        const uf = ship?.receiver_address?.state?.name ?? ship?.receiver_address?.state?.id ?? null;
+
+        return {
+          id: String(o.id),
+          numero: String(o.id),
+          nome_cliente: nome || null,
+          cpf_cnpj: doc || null,
+          data_pedido: o?.date_created ?? null,
+          data_prevista: o?.date_closed ?? null,
+          situacao: o?.status ?? null,
+          valor_total: o?.total_amount ?? null,
+          valor_frete: shipCostFromPayments ?? shipCostFromShipment ?? null,
+          valor_desconto: totalDiscount,
+          numero_ecommerce: String(o.id),
+          numero_venda: String(o.id),
+          empresa: 'mercadolivre',
+          cidade,
+          uf,
+          codigo_rastreamento: ship?.tracking_number ?? null,
+          url_rastreamento: ship?.tracking_url ?? null,
+          obs: o?.status_detail ?? null,
+          obs_interna: `ML order: ${o?.id}`,
+          integration_account_id: accountId,
+          created_at: o?.date_created ?? null,
+          updated_at: o?.last_updated ?? null,
+        };
+      });
+
+      // Execute enrichment with controlled concurrency
+      try {
+        unified = await poolLimit(max_concurrency, enrichmentTasks);
+        enrichment_logs.users_cached = usersCache.size;
+        enrichment_logs.shipments_cached = shipmentsCache.size;
+        console.log(`[Unified Orders] Enrichment completed. Users: ${usersCache.size}, Shipments: ${shipmentsCache.size}`);
+      } catch (error) {
+        console.error('[Unified Orders] Enrichment error:', error);
+        enrichment_logs.errors.push(`Enrichment failed: ${error}`);
+        // Fallback to basic mapping if enrichment fails
+        unified = mlOrdersForEnrichment.map(({order: o, accountId}) => ({
+          id: String(o.id),
+          numero: String(o.id),
+          nome_cliente: o?.buyer?.nickname ?? null,
+          cpf_cnpj: null,
+          data_pedido: o?.date_created ?? null,
+          data_prevista: o?.date_closed ?? null,
+          situacao: o?.status ?? null,
+          valor_total: o?.total_amount ?? null,
+          valor_frete: null,
+          valor_desconto: o?.coupon?.amount ?? 0,
+          numero_ecommerce: String(o.id),
+          numero_venda: String(o.id),
+          empresa: 'mercadolivre',
+          cidade: null,
+          uf: null,
+          codigo_rastreamento: null,
+          url_rastreamento: null,
+          obs: o?.status_detail ?? null,
+          obs_interna: `ML order: ${o?.id}`,
+          integration_account_id: accountId,
+          created_at: o?.date_created ?? null,
+          updated_at: o?.last_updated ?? null,
+        }));
+      }
+    }
+
+    // 4. Sort all orders by date (newest first)
     allOrders.sort((a, b) => new Date(b.data_pedido).getTime() - new Date(a.data_pedido).getTime());
 
-    // 4. Apply pagination to combined results
+    // 5. Apply pagination to combined results
     const offset = body.offset || 0;
     const limit = body.limit || 100;
     const paginatedOrders = allOrders.slice(offset, offset + limit);
@@ -392,15 +596,18 @@ serve(async (req) => {
       results: paginatedOrders,
       data: paginatedOrders,
       count: allOrders.length,
+      unified: unified.slice(offset, offset + limit), // Apply same pagination to unified
     };
 
     // Add debug info if requested
     if (body.debug) {
+      response.requested_endpoints = Array.from(new Set(requested_endpoints));
+      response.enrichment_logs = enrichment_logs;
       response.raw = {
         request_body: body,
-        ml_accounts_found: 0, // Will be updated if ML accounts are processed
-        internal_orders_count: 0,
-        ml_orders_count: 0,
+        ml_orders_enriched: unified.length,
+        internal_orders_count: allOrders.length - unified.length,
+        ml_orders_count: unified.length,
         processing_time: Date.now()
       };
     }
