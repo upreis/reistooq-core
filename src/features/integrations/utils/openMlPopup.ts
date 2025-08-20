@@ -1,5 +1,4 @@
-// src/features/integrations/utils/openMlPopup.ts
-// 🎯 Centralized MercadoLibre OAuth Popup Utility
+// 🎯 Centralized MercadoLibre OAuth Popup Utility (PKCE READY)
 
 export interface MLPopupConfig {
   width?: number;
@@ -9,96 +8,96 @@ export interface MLPopupConfig {
   onClosed?: () => void;
 }
 
+const b64url = (bytes: Uint8Array) =>
+  btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+
+const randVerifier = (len = 64) => {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+  const buf = new Uint8Array(len);
+  crypto.getRandomValues(buf);
+  return Array.from(buf, (b) => chars[b % chars.length]).join("");
+};
+
 export function openMlPopup(config: MLPopupConfig = {}) {
   const { width = 600, height = 700, onSuccess, onError, onClosed } = config;
 
-  // Padronizados
-  const CLIENT_ID =
-    (import.meta as any).env?.VITE_ML_CLIENT_ID || '2053972567766696';
-  if (!CLIENT_ID) {
-    alert('VITE_ML_CLIENT_ID não está definido. Adicione no .env');
-    throw new Error('VITE_ML_CLIENT_ID ausente');
-  }
+  const CLIENT_ID = (import.meta.env?.VITE_ML_CLIENT_ID as string) || "2053972567766696";
+  const REDIRECT_URI = "https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service";
+  const AUTHORIZATION_URL = "https://auth.mercadolivre.com.br/authorization";
 
-  const REDIRECT_URI =
-    'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
-  const AUTHORIZATION_DOMAIN =
-    'https://auth.mercadolivre.com.br/authorization';
+  // Abre o popup imediatamente para não ser bloqueado, depois navegamos para a URL real
+  const popup = window.open("about:blank", "ml_oauth", `width=${width},height=${height},scrollbars=yes,resizable=yes`);
+  if (!popup) throw new Error("Pop-up bloqueado. Permita pop-ups para continuar.");
 
-  // state = JSON base64url (inclui redirect/org para o smooth-service)
-  const stateObj = { redirect_uri: REDIRECT_URI, org_id: 'default' };
-  const stateB64 = btoa(JSON.stringify(stateObj))
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '');
+  // Gera PKCE e monta a URL assíncronamente
+  (async () => {
+    const code_verifier = randVerifier(64);
+    const data = new TextEncoder().encode(code_verifier);
+    const digest = await crypto.subtle.digest("SHA-256", data);
+    const code_challenge = b64url(new Uint8Array(digest));
 
-  // URL de autorização
-  const authUrl = new URL(AUTHORIZATION_DOMAIN);
-  authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('client_id', CLIENT_ID);
-  authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
-  authUrl.searchParams.set('state', stateB64);
-  const url = authUrl.toString();
+    // Incluímos o code_verifier DENTRO do state (base64url JSON) para o backend usar no /oauth/token
+    const stateObj = { redirect_uri: REDIRECT_URI, org_id: "default", code_verifier };
+    const stateB64 = btoa(JSON.stringify(stateObj)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 
-  console.info('[ML-OAUTH] open', { url, CLIENT_ID, REDIRECT_URI });
+    const url =
+      AUTHORIZATION_URL +
+      "?response_type=code" +
+      `&client_id=${encodeURIComponent(CLIENT_ID)}` +
+      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+      `&state=${encodeURIComponent(stateB64)}` +
+      `&code_challenge=${encodeURIComponent(code_challenge)}` +
+      `&code_challenge_method=S256`;
 
-  // ✅ 1) PRÉ-ABRE a janela (gesto do usuário) e DEPOIS navega
-  const features = `width=${width},height=${height},scrollbars=yes,resizable=yes`;
-  const popup = window.open('', 'ml_oauth', features);
-  if (!popup) {
-    throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
-  }
-  try {
-    popup.location.href = url;
-  } catch {
-    // fallback raro
-    popup.close();
-    const p2 = window.open(url, 'ml_oauth', features);
-    if (!p2) throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
-  }
+    console.info("[ML-OAUTH] open", url);
+    try {
+      popup.location.href = url;
+    } catch {
+      // se der erro de navegação, feche o popup
+      try { popup.close(); } catch {}
+      onError?.("Falha ao abrir popup de autenticação");
+    }
+  })();
 
-  // ✅ 3) Aceitar só mensagens do nosso Supabase OU da própria app
-  const allowedOrigins = new Set<string>([
-    window.location.origin,
-    new URL(REDIRECT_URI).origin,
-  ]);
-
+  // Listener de retorno
   const handleMessage = (event: MessageEvent) => {
-    console.info('[ML-OAUTH] message.received', event.origin, event.data);
-    if (!allowedOrigins.has(event.origin)) return;
+    console.info("[ML-OAUTH] message.received", event.data);
 
-    const data = event.data || {};
-    const okV1 = data.type === 'oauth_success' && data.provider === 'mercadolivre';
-    const errV1 = data.type === 'oauth_error' && data.provider === 'mercadolivre';
-    const okLegacy = data.source === 'smooth-service' && data.connected === true;
+    // Aceita da mesma origem ou do domínio do Supabase
+    if (!event.origin.includes("supabase.co") && event.origin !== window.location.origin) return;
 
-    if (okV1 || okLegacy) {
-      cleanup();
-      onSuccess?.(data);
-    } else if (errV1) {
-      cleanup();
-      onError?.(data.error || 'Falha desconhecida');
+    const ok = event.data?.type === "oauth_success" && event.data?.provider === "mercadolivre";
+    const err = event.data?.type === "oauth_error" && event.data?.provider === "mercadolivre";
+
+    if (ok) {
+      try { popup.close(); } catch {}
+      window.removeEventListener("message", handleMessage);
+      onSuccess?.(event.data);
+    } else if (err) {
+      try { popup.close(); } catch {}
+      window.removeEventListener("message", handleMessage);
+      onError?.(event.data?.error || "Falha na autenticação");
     }
   };
 
-  console.info('[ML-OAUTH] message.listener.ready');
-  window.addEventListener('message', handleMessage);
+  console.info("[ML-OAUTH] message.listener.ready");
+  window.addEventListener("message", handleMessage);
 
-  // Monitorar fechamento manual
-  const checkClosed = window.setInterval(() => {
+  const checkClosed = setInterval(() => {
     if (popup.closed) {
-      cleanup();
+      clearInterval(checkClosed);
+      window.removeEventListener("message", handleMessage);
       onClosed?.();
     }
-  }, 800);
+  }, 1000);
 
-  function cleanup() {
-    window.removeEventListener('message', handleMessage);
-    window.clearInterval(checkClosed);
-    try {
+  return {
+    popup,
+    cleanup: () => {
+      window.removeEventListener("message", handleMessage);
+      clearInterval(checkClosed);
       if (!popup.closed) popup.close();
-    } catch {}
-  }
-
-  return { popup, cleanup };
+    },
+  };
 }
+
