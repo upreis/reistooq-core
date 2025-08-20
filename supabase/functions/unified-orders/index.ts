@@ -1,629 +1,228 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient, ENC_KEY, ok, fail } from "../_shared/client.ts";
+// supabase/functions/unified-orders/index.ts
+// Deno + Supabase Edge Function
+// Blindado para: token refresh (401), seller id, order.status, sort/limit/offset
+// Retorna: { ok: true, paging, results, unified, debug? }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Max-Age': '3600',
-};
+// deno-lint-ignore-file no-explicit-any
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-interface UnifiedOrdersRequest {
-  integration_account_id?: string;
-  search?: string;
-  startDate?: string;
-  endDate?: string;
-  situacoes?: string[];
-  fonte?: 'interno' | 'mercadolivre' | 'shopee' | 'tiny';
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false },
+});
+
+type Body = {
+  integration_account_id: string;
+  status?: string; // ex.: "paid" (mapeado para order.status)
+  sort?: "date_desc" | "date_asc";
   limit?: number;
   offset?: number;
-  // New filters requested
-  tags?: string;
   q?: string;
-  sort?: string;
+  date_from?: string;
+  date_to?: string;
   date_last_updated_from?: string;
   date_last_updated_to?: string;
-  debug?: boolean;
-  status?: string;
-  // Enrichment controls
   enrich?: boolean;
-  enrich_users?: boolean;
-  enrich_shipments?: boolean;
-  max_concurrency?: number;
+  debug?: boolean;
+};
+
+function ok<T>(data: T, debug?: any) {
+  return new Response(JSON.stringify({ ok: true, ...data, ...(debug ? { debug } : {}) }), {
+    headers: corsHeaders,
+  });
+}
+function bad(status: number, message: string, debug?: any) {
+  return new Response(JSON.stringify({ ok: false, error: message, ...(debug ? { debug } : {}) }), {
+    status,
+    headers: corsHeaders,
+  });
 }
 
-interface MLOrder {
-  id: number;
-  date_created: string;
-  date_closed?: string;
-  last_updated: string;
-  status: string;
-  status_detail?: string;
-  currency_id: string;
-  total_amount: number;
-  buyer: {
-    id: number;
-    nickname: string;
-    email?: string;
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Content-Type": "application/json",
+};
+
+// Ajuste aqui conforme seu schema: precisa ter access_token/refresh_token e (opcional) ml_user_id
+const TOKENS_TABLE = "ml_tokens";
+
+async function getTokenRow(integration_account_id: string) {
+  const { data, error } = await sb
+    .from(TOKENS_TABLE)
+    .select("access_token, refresh_token, client_id, client_secret, ml_user_id")
+    .eq("integration_account_id", integration_account_id)
+    .single();
+  if (error) throw error;
+  return data as {
+    access_token: string;
+    refresh_token?: string;
+    client_id?: string;
+    client_secret?: string;
+    ml_user_id?: string | number;
   };
-  seller: {
-    id: number;
-    nickname: string;
-  };
-  shipping?: {
-    id: number;
-    status: string;
-    tracking_number?: string;
-    tracking_method?: string;
-  };
-  order_items: Array<{
-    item: {
-      id: string;
-      title: string;
-      variation_id?: number;
-    };
-    quantity: number;
-    unit_price: number;
-    full_unit_price: number;
-  }>;
-  payments?: Array<{
-    id: number;
-    status: string;
-    transaction_amount: number;
-    payment_method_id: string;
-  }>;
 }
 
-interface UnifiedOrder {
-  id: string;
-  numero: string;
-  nome_cliente: string;
-  cpf_cnpj: string | null;
-  data_pedido: string;
-  data_prevista: string | null;
-  situacao: string;
-  valor_total: number;
-  valor_frete: number;
-  valor_desconto: number;
-  numero_ecommerce: string | null;
-  numero_venda: string | null;
-  empresa: string | null;
-  cidade: string | null;
-  uf: string | null;
-  codigo_rastreamento: string | null;
-  url_rastreamento: string | null;
-  obs: string | null;
-  obs_interna: string | null;
-  integration_account_id: string | null;
-  created_at: string;
-  updated_at: string;
+async function refreshAccessToken(row: any) {
+  if (!row?.refresh_token || !row?.client_id || !row?.client_secret) return null;
+  const payload = new URLSearchParams();
+  payload.set("grant_type", "refresh_token");
+  payload.set("client_id", row.client_id);
+  payload.set("client_secret", row.client_secret);
+  payload.set("refresh_token", row.refresh_token);
+
+  const r = await fetch("https://api.mercadolibre.com/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: payload.toString(),
+  });
+  if (!r.ok) return null;
+  const j = await r.json();
+  const new_access = j.access_token as string;
+  const new_refresh = (j.refresh_token ?? row.refresh_token) as string;
+
+  // persistir
+  await sb.from(TOKENS_TABLE)
+    .update({ access_token: new_access, refresh_token: new_refresh })
+    .eq("access_token", row.access_token);
+
+  return { access_token: new_access, refresh_token: new_refresh };
 }
 
-// Map ML status to internal status
-function mapMLStatus(mlStatus: string): string {
-  const statusMap: Record<string, string> = {
-    'confirmed': 'Confirmado',
-    'payment_required': 'Aguardando Pagamento',
-    'payment_in_process': 'Processando Pagamento',
-    'paid': 'Pago',
-    'shipped': 'Enviado',
-    'delivered': 'Entregue',
-    'cancelled': 'Cancelado',
-    'invalid': 'Inválido',
-  };
-  return statusMap[mlStatus] || 'Pendente';
+async function resolveSellerId(access_token: string, fallback?: string | number) {
+  if (fallback) return String(fallback);
+  const r = await fetch("https://api.mercadolibre.com/users/me", {
+    headers: { Authorization: `Bearer ${access_token}` },
+  });
+  if (!r.ok) throw new Error("Falha ao obter /users/me");
+  const me = await r.json();
+  return String(me.id);
 }
 
-// Helper for controlled concurrency
-async function poolLimit<T>(limit: number, tasks: (() => Promise<T>)[]): Promise<T[]> {
-  const ret: T[] = [];
-  const executing: Promise<void>[] = [];
-  
-  for (const task of tasks) {
-    const p = task().then((v) => { ret.push(v); (p as any).resolved = true; });
-    executing.push(p);
-    
-    if (executing.length >= limit) {
-      await Promise.race(executing);
-    }
-    
-    // Clean up resolved promises
-    for (let i = executing.length - 1; i >= 0; i--) {
-      if ((executing[i] as any).resolved) {
-        executing.splice(i, 1);
-      }
-    }
-  }
-  
-  await Promise.all(executing);
-  return ret;
-}
+function mapUnified(o: any) {
+  // Mapeamento mínimo para as 22 colunas mais usadas no frontend
+  const buyer = o?.buyer ?? {};
+  const shipping = o?.shipping ?? {};
+  const payments = Array.isArray(o?.payments) ? o.payments : [];
+  const firstPay = payments[0] ?? {};
+  const orderItems = Array.isArray(o?.order_items) ? o.order_items : [];
+  const skus = orderItems
+    .map((it: any) => it?.item?.seller_sku ?? it?.item?.seller_custom_field)
+    .filter(Boolean)
+    .join(", ");
 
-// Map ML order to unified order format (legacy - kept for compatibility)
-function mapMLOrderToUnified(mlOrder: MLOrder, accountId: string): UnifiedOrder {
-  const now = new Date().toISOString();
-  
   return {
-    id: `ml_${mlOrder.id}`,
-    numero: mlOrder.id.toString(),
-    nome_cliente: mlOrder.buyer.nickname || 'Cliente ML',
-    cpf_cnpj: null, // ML doesn't provide this in basic order data
-    data_pedido: mlOrder.date_created,
-    data_prevista: mlOrder.date_closed || null,
-    situacao: mapMLStatus(mlOrder.status),
-    valor_total: mlOrder.total_amount,
-    valor_frete: 0, // Could be calculated from shipping info if needed
-    valor_desconto: 0, // Could be calculated from price differences
-    numero_ecommerce: mlOrder.id.toString(),
-    numero_venda: mlOrder.id.toString(),
-    empresa: 'mercadolivre',
-    cidade: null, // Would need to fetch from shipping details
-    uf: null, // Would need to fetch from shipping details
-    codigo_rastreamento: mlOrder.shipping?.tracking_number || null,
-    url_rastreamento: null, // ML doesn't provide direct tracking URL
-    obs: mlOrder.status_detail || null,
-    obs_interna: `ML Order ID: ${mlOrder.id}, Buyer: ${mlOrder.buyer.nickname}`,
-    integration_account_id: accountId,
-    created_at: mlOrder.date_created,
-    updated_at: mlOrder.last_updated,
+    id: String(o.id),
+    numero: String(o.id),
+    nome_cliente: buyer.nickname ?? null,
+    cpf_cnpj: null,
+    data_pedido: o.date_created ?? null,
+    data_prevista: o.date_closed ?? null,
+    situacao: o.status ?? null,
+    valor_total: o.total_amount ?? null,
+    valor_frete: firstPay?.shipping_cost ?? null,
+    valor_desconto: null,
+    numero_ecommerce: String(o.id),
+    numero_venda: String(o.id),
+    empresa: "mercadolivre",
+    cidade: null,
+    uf: null,
+    codigo_rastreamento: shipping?.tracking_number ?? null,
+    url_rastreamento: shipping?.tracking_url ?? null,
+    obs: skus || null,
+    obs_interna: null,
+    integration_account_id: null,
+    created_at: null,
+    updated_at: null,
   };
+}
+
+async function fetchOrders(access_token: string, seller: string, q: URLSearchParams) {
+  const url = new URL("https://api.mercadolibre.com/orders/search");
+  url.search = q.toString();
+  url.searchParams.set("seller", seller);
+  const r = await fetch(url.toString(), { headers: { Authorization: `Bearer ${access_token}` } });
+  return r;
+}
+
+async function fetchOrderDetail(access_token: string, id: string | number) {
+  const r = await fetch(`https://api.mercadolibre.com/orders/${id}`, {
+    headers: { Authorization: `Bearer ${access_token}` },
+  });
+  if (!r.ok) throw new Error(`Falha ao enriquecer pedido ${id}: ${r.status}`);
+  return r.json();
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  // Support both GET and POST methods
-  let body: UnifiedOrdersRequest = {};
-  
-  if (req.method === "GET") {
-    const url = new URL(req.url);
-    body = {
-      integration_account_id: url.searchParams.get('integration_account_id') || undefined,
-      search: url.searchParams.get('search') || url.searchParams.get('q') || undefined,
-      startDate: url.searchParams.get('startDate') || url.searchParams.get('date_from') || undefined,
-      endDate: url.searchParams.get('endDate') || url.searchParams.get('date_to') || undefined,
-      tags: url.searchParams.get('tags') || undefined,
-      sort: url.searchParams.get('sort') || undefined,
-      date_last_updated_from: url.searchParams.get('date_last_updated_from') || undefined,
-      date_last_updated_to: url.searchParams.get('date_last_updated_to') || undefined,
-      limit: url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined,
-      offset: url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset')!) : undefined,
-      debug: url.searchParams.get('debug') === 'true',
-      status: url.searchParams.get('status') || undefined,
-      fonte: url.searchParams.get('fonte') as any || undefined,
-      enrich: url.searchParams.get('enrich') !== 'false',
-      enrich_users: url.searchParams.get('enrich_users') !== 'false',
-      enrich_shipments: url.searchParams.get('enrich_shipments') !== 'false',
-      max_concurrency: url.searchParams.get('max_concurrency') ? parseInt(url.searchParams.get('max_concurrency')!) : 3,
-    };
-  } else if (req.method === "POST") {
-    try {
-      const text = await req.text();
-      body = text ? JSON.parse(text) : {};
-    } catch (error) {
-      console.error('[Unified Orders] JSON parse error:', error);
-      return new Response(JSON.stringify({
-        ok: false,
-        error: 'Invalid JSON body'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-  } else {
-    return new Response(JSON.stringify({ ok: false, error: "Method Not Allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const supabase = makeClient(req.headers.get("Authorization"));
-    
-    console.log('[Unified Orders] Request received:', body);
-
-    let allOrders: UnifiedOrder[] = [];
-    let mlOrdersForEnrichment: Array<{order: any, accountId: string, accessToken: string}> = [];
-    
-    // Parse enrichment flags with safe defaults
-    const enrich = body.enrich !== false; // default true
-    const enrich_users = body.enrich_users !== false; // default true  
-    const enrich_shipments = body.enrich_shipments !== false; // default true
-    const max_concurrency = Math.max(1, Math.min(10, body.max_concurrency || 3)); // safe range
-
-    // 1. Get internal orders (if no source filter or source is interno)
-    if (!body.fonte || body.fonte === 'interno') {
-      try {
-        console.log('[Unified Orders] Fetching internal orders...');
-        
-        const { data: internalOrders, error: internalError } = await supabase.rpc('get_pedidos_masked', {
-          _search: body.search || null,
-          _start: body.startDate || null,
-          _end: body.endDate || null,
-          _limit: body.limit || 100,
-          _offset: body.offset || 0,
-        });
-
-        if (internalError) {
-          console.error('[Unified Orders] Internal orders error:', internalError);
-        } else {
-          console.log('[Unified Orders] Found', internalOrders?.length || 0, 'internal orders');
-          allOrders.push(...(internalOrders || []));
-        }
-      } catch (error) {
-        console.error('[Unified Orders] Internal orders exception:', error);
-      }
+    const body = (await req.json()) as Body;
+    if (!body?.integration_account_id) {
+      return bad(400, "integration_account_id é obrigatório");
     }
 
-    // 2. Get MercadoLibre orders (if no source filter or source is mercadolivre)
-    if (!body.fonte || body.fonte === 'mercadolivre') {
-      try {
-        console.log('[Unified Orders] Fetching ML orders...');
+    // Carrega tokens
+    const tokenRow = await getTokenRow(body.integration_account_id);
+    let access = tokenRow.access_token;
 
-        // Get ML integration accounts (filter by integration_account_id if provided)
-        let accountQuery = supabase
-          .from('integration_accounts')
-          .select('id, name, account_identifier')
-          .eq('provider', 'mercadolivre')
-          .eq('is_active', true);
+    // Monta query do /orders/search
+    const q = new URLSearchParams();
+    if (body.status) q.set("order.status", body.status); // 👈 ML exige order.status
+    q.set("sort", body.sort ?? "date_desc");
+    q.set("limit", String(Math.min(Math.max(body.limit ?? 25, 1), 50)));
+    if (body.offset) q.set("offset", String(body.offset));
+    if (body.q) q.set("q", body.q);
+    if (body.date_from) q.set("date_created.from", body.date_from);
+    if (body.date_to) q.set("date_created.to", body.date_to);
+    if (body.date_last_updated_from) q.set("last_updated.from", body.date_last_updated_from);
+    if (body.date_last_updated_to) q.set("last_updated.to", body.date_last_updated_to);
 
-        if (body.integration_account_id) {
-          accountQuery = accountQuery.eq('id', body.integration_account_id);
-        }
+    // Resolve seller id
+    const seller = await resolveSellerId(access, tokenRow.ml_user_id);
 
-        const { data: mlAccounts, error: accountsError } = await accountQuery;
+    // Primeira tentativa
+    let r = await fetchOrders(access, seller, q);
 
-        if (accountsError) {
-          console.error('[Unified Orders] ML accounts error:', accountsError);
-        } else if (mlAccounts && mlAccounts.length > 0) {
-          console.log('[Unified Orders] Found', mlAccounts.length, 'ML accounts');
-
-          // Fetch orders from each ML account
-          for (const account of mlAccounts) {
-            try {
-              // Decrypt integration secrets
-              const { data: secrets, error: secretsError } = await supabase.rpc('decrypt_integration_secret', {
-                p_account_id: account.id,
-                p_provider: 'mercadolivre',
-                p_encryption_key: Deno.env.get('APP_ENCRYPTION_KEY') || ''
-              });
-
-              if (secretsError || !secrets) {
-                console.error(`[Unified Orders] Failed to get secrets for account ${account.id}:`, secretsError);
-                continue;
-              }
-
-              let accessToken = secrets.access_token;
-              const refreshToken = secrets.refresh_token;
-              const expiresAt = secrets.expires_at;
-
-              // Check if token needs refresh (less than 5 minutes remaining)
-              if (expiresAt && new Date(expiresAt) < new Date(Date.now() + 5 * 60 * 1000)) {
-                console.log(`[Unified Orders] Token expires soon for account ${account.id}, refreshing...`);
-                
-                try {
-                  const refreshResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                      grant_type: 'refresh_token',
-                      client_id: secrets.client_id,
-                      client_secret: secrets.client_secret,
-                      refresh_token: refreshToken
-                    })
-                  });
-
-                  if (refreshResponse.ok) {
-                    const refreshData = await refreshResponse.json();
-                    accessToken = refreshData.access_token;
-                    
-                    // Store refreshed token
-                    await supabase.rpc('encrypt_integration_secret', {
-                      p_account_id: account.id,
-                      p_provider: 'mercadolivre',
-                      p_client_id: secrets.client_id,
-                      p_client_secret: secrets.client_secret,
-                      p_access_token: refreshData.access_token,
-                      p_refresh_token: refreshData.refresh_token || refreshToken,
-                      p_expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
-                      p_payload: secrets.payload,
-                      p_encryption_key: Deno.env.get('APP_ENCRYPTION_KEY') || ''
-                    });
-                    
-                    console.log(`[Unified Orders] Token refreshed for account ${account.id}`);
-                  }
-                } catch (refreshError) {
-                  console.warn(`[Unified Orders] Token refresh failed for account ${account.id}, continuing with existing token:`, refreshError);
-                }
-              }
-
-              // Get seller_id (fallback to payload.user_id, then fetch from /users/me)
-              let sellerId = secrets.payload?.user_id;
-              if (!sellerId) {
-                try {
-                  const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                  });
-                  if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    sellerId = userData.id;
-                  }
-                } catch (error) {
-                  console.warn(`[Unified Orders] Failed to get seller_id from /users/me for account ${account.id}:`, error);
-                }
-              }
-
-              if (!sellerId) {
-                console.error(`[Unified Orders] No seller_id available for account ${account.id}`);
-                continue;
-              }
-
-              // Build ML orders search URL with all filters
-              const params = new URLSearchParams();
-              params.append('seller', sellerId.toString());
-              if (body.status) params.append('order.status', body.status);
-              if (body.startDate || body.date_from) params.append('order.date_created.from', body.startDate || body.date_from!);
-              if (body.endDate || body.date_to) params.append('order.date_created.to', body.endDate || body.date_to!);
-              if (body.date_last_updated_from) params.append('order.date_last_updated.from', body.date_last_updated_from);
-              if (body.date_last_updated_to) params.append('order.date_last_updated.to', body.date_last_updated_to);
-              if (body.q || body.search) params.append('q', body.q || body.search!);
-              if (body.tags) params.append('tags', body.tags);
-              if (body.sort) params.append('sort', body.sort);
-              params.append('limit', (body.limit || 50).toString());
-              params.append('offset', (body.offset || 0).toString());
-
-              const mlUrl = `https://api.mercadolibre.com/orders/search?${params.toString()}`;
-              
-              if (body.debug) {
-                console.log(`[Unified Orders] ML URL for account ${account.id}:`, mlUrl);
-              }
-
-              // Fetch orders from MercadoLibre API
-              const mlResponse = await fetch(mlUrl, {
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'x-format-new': 'true'
-                }
-              });
-
-              if (!mlResponse.ok) {
-                console.error(`[Unified Orders] ML API error for account ${account.id}:`, mlResponse.status, await mlResponse.text());
-                continue;
-              }
-
-              const mlData = await mlResponse.json();
-              if (mlData.results && mlData.results.length > 0) {
-                const mappedOrders = mlData.results.map((mlOrder: MLOrder) => 
-                  mapMLOrderToUnified(mlOrder, account.id)
-                );
-
-                allOrders.push(...mappedOrders);
-                console.log(`[Unified Orders] Added ${mappedOrders.length} orders from ML account ${account.name}`);
-                
-                // Store enrichment data for later processing
-                if (!mlOrdersForEnrichment) mlOrdersForEnrichment = [];
-                mlData.results.forEach((mlOrder: any) => {
-                  mlOrdersForEnrichment.push({ 
-                    order: mlOrder, 
-                    accountId: account.id, 
-                    accessToken 
-                  });
-                });
-              }
-              
-            } catch (error) {
-              console.error(`[Unified Orders] Exception fetching ML orders for account ${account.id}:`, error);
-            }
-          }
-        } else {
-          console.log('[Unified Orders] No active ML accounts found');
-        }
-      } catch (error) {
-        console.error('[Unified Orders] ML orders exception:', error);
-      }
+    // Se 401, tenta refresh e repete 1x
+    if (r.status === 401) {
+      const refreshed = await refreshAccessToken(tokenRow);
+      if (!refreshed) return bad(401, "Token expirado e refresh indisponível");
+      access = refreshed.access_token;
+      r = await fetchOrders(access, seller, q);
     }
 
-    // 3. ENRICHMENT PHASE - Get additional data from ML APIs
-    let unified: any[] = [];
-    let requested_endpoints: string[] = [];
-    let enrichment_logs: any = { users_cached: 0, shipments_cached: 0, errors: [] };
-    
-    if (enrich && mlOrdersForEnrichment.length > 0) {
-      console.log(`[Unified Orders] Starting enrichment for ${mlOrdersForEnrichment.length} ML orders`);
-      
-      // Create caches to avoid duplicate API calls
-      const usersCache = new Map<number, any>();
-      const shipmentsCache = new Map<number, any>();
-      
-      // Helper functions for API calls with caching
-      const getUser = async (uid: number, accessToken: string) => {
-        if (usersCache.has(uid)) return usersCache.get(uid);
-        const url = `https://api.mercadolibre.com/users/${uid}`;
-        requested_endpoints.push(url);
-        try {
-          const r = await fetch(url, { 
-            headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }
-          });
-          const j = r.ok ? await r.json() : null;
-          usersCache.set(uid, j);
-          return j;
-        } catch (error) {
-          enrichment_logs.errors.push(`Users API error for ${uid}: ${error}`);
-          usersCache.set(uid, null);
-          return null;
-        }
-      };
-
-      const getShipment = async (sid: number, accessToken: string) => {
-        if (shipmentsCache.has(sid)) return shipmentsCache.get(sid);
-        const url = `https://api.mercadolibre.com/shipments/${sid}`;
-        requested_endpoints.push(url);
-        try {
-          const r = await fetch(url, { 
-            headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }
-          });
-          const j = r.ok ? await r.json() : null;
-          shipmentsCache.set(sid, j);
-          return j;
-        } catch (error) {
-          enrichment_logs.errors.push(`Shipments API error for ${sid}: ${error}`);
-          shipmentsCache.set(sid, null);
-          return null;
-        }
-      };
-
-      // Create enrichment tasks
-      const enrichmentTasks = mlOrdersForEnrichment.map(({order: o, accountId, accessToken}) => async () => {
-        let user = null, ship = null;
-        
-        // Get user data if enabled and buyer ID exists
-        if (enrich_users && o?.buyer?.id) {
-          user = await getUser(o.buyer.id, accessToken);
-        }
-        
-        // Get shipment data if enabled and shipping ID exists  
-        if (enrich_shipments && o?.shipping?.id) {
-          ship = await getShipment(o.shipping.id, accessToken);
-        }
-
-        // Build enriched name
-        const first = user?.first_name?.trim?.() || '';
-        const last = user?.last_name?.trim?.() || '';
-        const nome = (first || last) ? `${first} ${last}`.trim() : (o?.buyer?.nickname ?? null);
-        
-        // Get document number from multiple possible sources
-        const doc = user?.identification?.number ?? 
-                   user?.billing_info?.doc_number ?? 
-                   o?.buyer?.billing_info?.doc_number ?? null;
-
-        // Calculate shipping cost from multiple sources
-        const shipCostFromPayments = o?.payments?.find?.(() => true)?.shipping_cost ?? null;
-        const shipCostFromShipment = ship?.shipping_option?.cost ?? null;
-        
-        // Calculate discount from coupon and price differences
-        let totalDiscount = o?.coupon?.amount || 0;
-        if (o?.order_items?.length > 0) {
-          o.order_items.forEach((item: any) => {
-            const itemDiscount = (item.full_unit_price - item.unit_price) * item.quantity;
-            totalDiscount += Math.max(0, itemDiscount);
-          });
-        }
-
-        // Extract location data
-        const cidade = ship?.receiver_address?.city?.name ?? null;
-        const uf = ship?.receiver_address?.state?.name ?? ship?.receiver_address?.state?.id ?? null;
-
-        return {
-          id: String(o.id),
-          numero: String(o.id),
-          nome_cliente: nome || null,
-          cpf_cnpj: doc || null,
-          data_pedido: o?.date_created ?? null,
-          data_prevista: o?.date_closed ?? null,
-          situacao: o?.status ?? null,
-          valor_total: o?.total_amount ?? null,
-          valor_frete: shipCostFromPayments ?? shipCostFromShipment ?? null,
-          valor_desconto: totalDiscount,
-          numero_ecommerce: String(o.id),
-          numero_venda: String(o.id),
-          empresa: 'mercadolivre',
-          cidade,
-          uf,
-          codigo_rastreamento: ship?.tracking_number ?? null,
-          url_rastreamento: ship?.tracking_url ?? null,
-          obs: o?.status_detail ?? null,
-          obs_interna: `ML order: ${o?.id}`,
-          integration_account_id: accountId,
-          created_at: o?.date_created ?? null,
-          updated_at: o?.last_updated ?? null,
-        };
-      });
-
-      // Execute enrichment with controlled concurrency
-      try {
-        unified = await poolLimit(max_concurrency, enrichmentTasks);
-        enrichment_logs.users_cached = usersCache.size;
-        enrichment_logs.shipments_cached = shipmentsCache.size;
-        console.log(`[Unified Orders] Enrichment completed. Users: ${usersCache.size}, Shipments: ${shipmentsCache.size}`);
-      } catch (error) {
-        console.error('[Unified Orders] Enrichment error:', error);
-        enrichment_logs.errors.push(`Enrichment failed: ${error}`);
-        // Fallback to basic mapping if enrichment fails
-        unified = mlOrdersForEnrichment.map(({order: o, accountId}) => ({
-          id: String(o.id),
-          numero: String(o.id),
-          nome_cliente: o?.buyer?.nickname ?? null,
-          cpf_cnpj: null,
-          data_pedido: o?.date_created ?? null,
-          data_prevista: o?.date_closed ?? null,
-          situacao: o?.status ?? null,
-          valor_total: o?.total_amount ?? null,
-          valor_frete: null,
-          valor_desconto: o?.coupon?.amount ?? 0,
-          numero_ecommerce: String(o.id),
-          numero_venda: String(o.id),
-          empresa: 'mercadolivre',
-          cidade: null,
-          uf: null,
-          codigo_rastreamento: null,
-          url_rastreamento: null,
-          obs: o?.status_detail ?? null,
-          obs_interna: `ML order: ${o?.id}`,
-          integration_account_id: accountId,
-          created_at: o?.date_created ?? null,
-          updated_at: o?.last_updated ?? null,
-        }));
-      }
+    if (!r.ok) {
+      const txt = await r.text();
+      return bad(r.status, `ML /orders/search falhou: ${txt}`, body.debug ? { q: Object.fromEntries(q.entries()), seller } : undefined);
     }
 
-    // 4. Sort all orders by date (newest first)
-    allOrders.sort((a, b) => new Date(b.data_pedido).getTime() - new Date(a.data_pedido).getTime());
+    const j = await r.json();
+    const results = Array.isArray(j?.results) ? j.results : [];
+    const paging = j?.paging ?? { total: results.length, limit: Number(q.get("limit")) || 25, offset: Number(q.get("offset")) || 0 };
 
-    // 5. Apply pagination to combined results
-    const offset = body.offset || 0;
-    const limit = body.limit || 100;
-    const paginatedOrders = allOrders.slice(offset, offset + limit);
-
-    console.log('[Unified Orders] Returning', paginatedOrders.length, 'of', allOrders.length, 'total orders');
-
-    const response: any = {
-      ok: true,
-      url: req.url,
-      paging: { total: allOrders.length, offset: offset, limit: limit },
-      results: paginatedOrders,
-      data: paginatedOrders,
-      count: allOrders.length,
-      unified: unified.slice(offset, offset + limit), // Apply same pagination to unified
-    };
-
-    // Add debug info if requested
-    if (body.debug) {
-      response.requested_endpoints = Array.from(new Set(requested_endpoints));
-      response.enrichment_logs = enrichment_logs;
-      response.raw = {
-        request_body: body,
-        ml_orders_enriched: unified.length,
-        internal_orders_count: allOrders.length - unified.length,
-        ml_orders_count: unified.length,
-        processing_time: Date.now()
-      };
+    // enrich opcional (busca /orders/{id})
+    let resultsFinal = results;
+    if (body.enrich) {
+      // Limite de 25 para evitar rate limit
+      const slice = results.slice(0, 25);
+      const detailed = await Promise.allSettled(slice.map((o: any) => fetchOrderDetail(access, o.id)));
+      const merged = detailed.map((res, idx) => (res.status === "fulfilled" ? res.value : slice[idx]));
+      resultsFinal = merged.concat(results.slice(25));
     }
 
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    const unified = resultsFinal.map(mapUnified);
 
-  } catch (error) {
-    console.error('[Unified Orders] Unexpected error:', error);
-    return new Response(JSON.stringify({
-      ok: false,
-      error: String(error?.message ?? error)
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return ok(
+      {
+        paging: { total: paging.total, limit: paging.limit, offset: paging.offset },
+        results: resultsFinal,
+        unified,
+      },
+      body.debug ? { q: Object.fromEntries(q.entries()), seller } : undefined,
+    );
+  } catch (e: any) {
+    return bad(500, e?.message ?? "Erro inesperado");
   }
 });
