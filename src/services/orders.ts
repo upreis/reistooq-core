@@ -1,6 +1,12 @@
 // src/services/orders.ts
 import { supabase } from '@/integrations/supabase/client';
 
+// 🔒 GUARDRAILS:
+// - Não tocar em supabase/functions/**
+// - Consumir SOMENTE a edge 'unified-orders' (usa /orders/search)
+// - Manter contrato { rows, total } e estrutura Row = { raw, unified }
+// - Sempre enrich: true e debug: false no fetch principal
+
 export type UnifiedOrdersParams = {
   integration_account_id: string;
   status?: string;
@@ -46,11 +52,9 @@ export type Unified = {
 
 export type Row = { raw: RawML; unified: Unified | null };
 
-// Safe object path accessor using nullish coalescing
+// Helpers seguros (⚠️ nunca use || para placeholder)
 export const get = (obj: any, path: string) =>
   path.split('.').reduce((acc, k) => (acc?.[k] ?? undefined), obj);
-
-// Safe display helper using nullish coalescing (never ||)
 export const show = (v: any) => (v ?? '—');
 
 export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
@@ -71,10 +75,10 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
   const results: RawML[] = data?.results ?? [];
   const unified: Unified[] = data?.unified ?? [];
   
-  // Merge by index: each row has { raw, unified }
-  const rows: Row[] = results.map((r, i) => ({ 
-    raw: r, 
-    unified: unified[i] ?? null 
+  // Merge por índice: cada linha = { raw, unified }
+  const rows: Row[] = results.map((r, i) => ({
+    raw: r,
+    unified: unified[i] ?? null
   }));
 
   const total = data?.paging?.total ?? data?.count ?? rows.length;
@@ -82,5 +86,5 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
   return { rows, total };
 }
 
-// Backward compatibility
+// Backward compatibility (mantido)
 export const listOrders = fetchUnifiedOrders;
