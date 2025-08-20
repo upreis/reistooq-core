@@ -26,6 +26,7 @@ type Body = {
   date_last_updated_to?: string;
   enrich?: boolean;
   debug?: boolean;
+  audit?: boolean;
 };
 
 function ok<T>(data: T, debug?: any) {
@@ -195,7 +196,11 @@ serve(async (req) => {
 
     if (!r.ok) {
       const txt = await r.text();
-      return bad(r.status, `ML /orders/search falhou: ${txt}`, body.debug ? { q: Object.fromEntries(q.entries()), seller } : undefined);
+      return bad(
+        r.status,
+        `ML /orders/search falhou: ${txt}`,
+        (body.debug || body.audit) ? { q: Object.fromEntries(q.entries()), seller } : undefined
+      );
     }
 
     const j = await r.json();
@@ -214,13 +219,42 @@ serve(async (req) => {
 
     const unified = resultsFinal.map(mapUnified);
 
+    // ---------- DEBUG / PROVAS ----------
+    let debugPayload: any | undefined;
+    if (body.debug || body.audit) {
+      // Se vazio e havia filtro de status, faz 1 sonda sem order.status (limit=1)
+      let probeAnyCount: number | undefined;
+      if (results.length === 0 && q.has("order.status")) {
+        const q2 = new URLSearchParams(q);
+        q2.delete("order.status");
+        q2.set("limit", "1");
+        const r2 = await fetchOrders(access, seller, q2);
+        const j2 = r2.ok ? await r2.json() : null;
+        probeAnyCount = Array.isArray(j2?.results) ? j2.results.length : 0;
+      }
+
+      debugPayload = {
+        seller,
+        q: Object.fromEntries(q.entries()),
+        ml_status: r.status,
+        results_count: results.length,
+        probe_any_count: probeAnyCount,
+        empty_reason: (results.length === 0)
+          ? (q.has("order.status") && probeAnyCount === 0 ? "no_orders"
+             : q.has("order.status") && (probeAnyCount ?? 0) > 0 ? "filter_excluded_all"
+             : "no_results")
+          : undefined
+      };
+    }
+    // ------------------------------------
+
     return ok(
       {
         paging: { total: paging.total, limit: paging.limit, offset: paging.offset },
         results: resultsFinal,
         unified,
       },
-      body.debug ? { q: Object.fromEntries(q.entries()), seller } : undefined,
+      debugPayload,
     );
   } catch (e: any) {
     return bad(500, e?.message ?? "Erro inesperado");

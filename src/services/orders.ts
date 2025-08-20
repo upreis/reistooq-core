@@ -52,6 +52,8 @@ export type Unified = {
 
 export type Row = { raw: RawML; unified: Unified | null };
 
+export type FetchPedidosResult = { rows: Row[]; total: number; debug?: any };
+
 // Helpers seguros (⚠️ nunca use || para placeholder)
 export const get = (obj: any, path: string) =>
   path.split('.').reduce((acc, k) => (acc?.[k] ?? undefined), obj);
@@ -65,8 +67,12 @@ export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
 }
 
 export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
+  const isAudit =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('audit') === '1';
+
   const { data, error } = await supabase.functions.invoke('unified-orders', {
-    body: { ...params, enrich: true, debug: false }
+    body: { ...params, enrich: true, debug: isAudit, audit: isAudit }
   });
   
   if (error) throw error;
@@ -82,8 +88,7 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
   }));
 
   const total = data?.paging?.total ?? data?.count ?? rows.length;
-  
-  return { rows, total };
+  return { rows, total, debug: data?.debug };
 }
 
 // Backward compatibility (mantido)

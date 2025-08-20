@@ -37,6 +37,7 @@ export default function Pedidos() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   
   const { filters, setFilters, clearFilters, apiParams } = usePedidosFilters();
   
@@ -58,6 +59,7 @@ export default function Pedidos() {
       
       setRows(result.rows);
       setTotal(result.total);
+      setDebugInfo(result.debug || null);
     } catch (err: any) {
       setError(err.message || 'Erro ao carregar pedidos');
     } finally {
@@ -283,7 +285,7 @@ export default function Pedidos() {
         </AlertDescription>
       </Alert>
       
-      <PedidosTable 
+      <PedidosTable
         rows={rows}
         total={total}
         loading={loading}
@@ -294,6 +296,7 @@ export default function Pedidos() {
         onPageChange={setCurrentPage}
         mapeamentosVerificacao={mapeamentosVerificacao}
         visibleColumns={visibleColumns}
+        debugInfo={debugInfo}
       />
     </div>
   );

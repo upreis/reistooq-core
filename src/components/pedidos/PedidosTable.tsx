@@ -6,6 +6,7 @@ import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
   TableBody,
@@ -33,6 +34,7 @@ interface PedidosTableProps {
   onPageChange?: (page: number) => void;
   mapeamentosVerificacao?: Map<string, MapeamentoVerificacao>;
   visibleColumns: ColumnConfig[];
+  debugInfo?: any;
 }
 
 function getSituacaoVariant(situacao: string): "default" | "secondary" | "destructive" | "outline" {
@@ -81,7 +83,8 @@ export function PedidosTable({
   currentPage = 1, 
   onPageChange,
   mapeamentosVerificacao = new Map(),
-  visibleColumns
+  visibleColumns,
+  debugInfo
 }: PedidosTableProps) {
   const [page, setPage] = useState(currentPage);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -168,14 +171,40 @@ export function PedidosTable({
   }
 
   if (!rows.length) {
+    const isAuditMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('audit') === '1';
+    
     return (
-      <div className="rounded-lg border border-muted bg-muted/30 p-8 text-center">
-        <div className="text-lg font-medium text-muted-foreground">
-          Nenhum pedido encontrado
+      <div className="space-y-4">
+        <div className="rounded-lg border border-muted bg-muted/30 p-8 text-center">
+          <div className="text-lg font-medium text-muted-foreground">
+            Nenhum pedido encontrado
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Verifique os filtros ou tente novamente mais tarde.
+          </div>
         </div>
-        <div className="text-sm text-muted-foreground">
-          Verifique os filtros ou tente novamente mais tarde.
-        </div>
+
+        {isAuditMode && debugInfo && (
+          <Alert className="border-amber-200 bg-amber-50 text-left">
+            <AlertDescription className="space-y-2">
+              <div className="font-medium">Provas (unified-orders)</div>
+              <div className="text-xs font-mono whitespace-pre-wrap">
+                {JSON.stringify(debugInfo, null, 2)}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  navigator.clipboard.writeText(
+                    JSON.stringify(debugInfo, null, 2)
+                  )
+                }
+              >
+                Copiar Provas
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
     );
   }
