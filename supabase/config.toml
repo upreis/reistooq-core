@@ -37,4 +37,3 @@ verify_jwt = true
 [functions.integrations-store-secret]
 verify_jwt = true
 
-# Removed - using smooth-service for all OAuth callbacks
