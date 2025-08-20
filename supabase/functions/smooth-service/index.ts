@@ -70,6 +70,11 @@ serve(async (req) => {
   const error = url.searchParams.get('error');
   const errorDescription = url.searchParams.get('error_description');
 
+  console.log('[ML-OAUTH] smooth-service.in', { 
+    hasCode: !!code, 
+    origin: url.origin, 
+    path: url.pathname 
+  });
   console.log('[ML OAuth Callback] Received callback with code:', !!code, 'state:', !!state, 'error:', error);
 
   // Handle OAuth errors
@@ -183,6 +188,10 @@ serve(async (req) => {
     }
 
     console.log('[ML OAuth Callback] Exchanging code for tokens...');
+    console.log('[ML-OAUTH] token.request', { 
+      client_id: clientId, 
+      redirect_uri: redirectUri 
+    });
 
     const tokenResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
       method: 'POST',
@@ -215,15 +224,26 @@ serve(async (req) => {
       );
     }
 
+    console.log('[ML-OAUTH] token.response', { 
+      ok: tokenResponse.ok, 
+      status: tokenResponse.status 
+    });
+
     const tokenData = await tokenResponse.json();
     console.log('[ML OAuth Callback] Token exchange successful, user_id:', tokenData.user_id);
 
     // Get user info for account creation
+    console.log('[ML-OAUTH] me.request');
     const userInfoResponse = await fetch(`https://api.mercadolibre.com/users/me`, {
       headers: {
         'Authorization': `Bearer ${tokenData.access_token}`,
         'Accept': 'application/json',
       },
+    });
+
+    console.log('[ML-OAUTH] me.response', { 
+      ok: userInfoResponse.ok, 
+      status: userInfoResponse.status 
     });
 
     let userInfo = { nickname: 'Usuário ML' };
@@ -254,6 +274,10 @@ serve(async (req) => {
     // Calculate expires_at
     const expiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
 
+    console.log('[ML-OAUTH] vault.encrypt', { 
+      integration_account_id: integrationAccount.id 
+    });
+
     // Store encrypted secrets
     const { error: secretError } = await supabase.rpc('encrypt_integration_secret', {
       p_account_id: integrationAccount.id,
@@ -278,6 +302,9 @@ serve(async (req) => {
     }
 
     console.log('[ML OAuth Callback] Integration completed successfully');
+    console.log('[ML-OAUTH] success', { 
+      integration_account_id: integrationAccount.id 
+    });
 
     // Success response
     return new Response(`

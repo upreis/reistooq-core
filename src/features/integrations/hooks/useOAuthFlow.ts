@@ -91,12 +91,17 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
 
       console.log('Iniciando fluxo OAuth para MercadoLibre...');
 
+      const requestPayload = {
+        organization_id: 'current', // Will be resolved by Edge Function
+      };
+      console.info('[ML-OAUTH] store.start', requestPayload);
+
       // Call OAuth start edge function
       const { data, error } = await supabase.functions.invoke('hyper-function', {
-        body: {
-          organization_id: 'current', // Will be resolved by Edge Function
-        },
+        body: requestPayload,
       });
+
+      console.info('[ML-OAUTH] store.done', { data, error });
 
       if (error) {
         console.error('Edge Function error:', error);
@@ -109,6 +114,7 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
       }
 
       console.log('Authorization URL gerada:', data.authorization_url);
+      console.info('[ML-OAUTH] authorize.open', { url: data.authorization_url });
 
       // Open authorization URL in popup
       const popup = window.open(
@@ -304,7 +310,11 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
 
   // Listen for OAuth callback messages from popup
   useEffect(() => {
+    console.info('[ML-OAUTH] message.listener.ready');
+    
     const handleMessage = (event: MessageEvent) => {
+      console.info('[ML-OAUTH] message.received', event.data);
+      
       // Allow messages from the same origin or from our callback domain
       const allowedOrigins = [
         window.location.origin,

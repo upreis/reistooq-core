@@ -47,6 +47,12 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
     const CLIENT_ID = (import.meta.env?.VITE_ML_CLIENT_ID as string) || '2053972567766696';
     const redirectUri = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
 
+    console.info('[ML-OAUTH] authorize.build', { 
+      host: 'auth.mercadolibre.com.br', 
+      clientId: CLIENT_ID, 
+      redirectUri 
+    });
+
     // envie redirect_uri e (se quiser) org_id dentro do state
     const stateObj = { redirect_uri: redirectUri, org_id: 'default' };
     const stateB64 = btoa(JSON.stringify(stateObj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -66,7 +72,9 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       setIsConnecting(true);
 
       // usar no clique:
-      const popup = window.open(buildAuthorizeUrl(), 'ml_oauth', 'width=600,height=700');
+      const authorizeUrl = buildAuthorizeUrl();
+      console.info('[ML-OAUTH] authorize.open', { url: authorizeUrl });
+      const popup = window.open(authorizeUrl, 'ml_oauth', 'width=600,height=700');
       
       if (!popup) {
         throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
@@ -74,6 +82,8 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
 
       // Listen for OAuth completion messages
       const handleMessage = (event: MessageEvent) => {
+        console.info('[ML-OAUTH] message.received', event.data);
+        
         // Accept messages from Supabase edge functions
         if (!event.origin.includes('supabase.co') && event.origin !== window.location.origin) {
           return;
@@ -109,6 +119,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
         }
       };
 
+      console.info('[ML-OAUTH] message.listener.ready');
       window.addEventListener('message', handleMessage);
 
       // Monitor popup for manual closure
