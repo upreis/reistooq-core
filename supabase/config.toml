@@ -13,16 +13,16 @@ enabled = true
 [edge_runtime]
 enabled = true
 
-[functions.hyper-function]
+[functions.mercadolibre-oauth-start]
 verify_jwt = true
 
-[functions.smooth-service]  
+[functions.mercadolibre-oauth-callback]  
 verify_jwt = false
 
-[functions.smart-responder]
+[functions.mercadolibre-token-refresh]
 verify_jwt = true
 
-[functions.rapid-responder]
+[functions.mercadolibre-orders]
 verify_jwt = true
 
 [functions.unified-orders]

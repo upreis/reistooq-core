@@ -20,7 +20,7 @@ export function openMlPopup(config: MLPopupConfig = {}) {
 
   // Standardized OAuth parameters
   const CLIENT_ID = (import.meta.env?.VITE_ML_CLIENT_ID as string) || '2053972567766696';
-  const REDIRECT_URI = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
+  const REDIRECT_URI = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolibre-oauth-callback';
   const AUTHORIZATION_DOMAIN = 'https://auth.mercadolivre.com.br/authorization';
 
   // Generate state (base64 encoded JSON)
@@ -62,7 +62,7 @@ export function openMlPopup(config: MLPopupConfig = {}) {
     }
 
     const successV1 = event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre';
-    const successLegacy = event.data?.source === 'smooth-service' && event.data?.connected === true;
+    const successLegacy = event.data?.source === 'mercadolibre-oauth-callback' && event.data?.connected === true;
     const errorV1 = event.data?.type === 'oauth_error' && event.data?.provider === 'mercadolivre';
 
     if (successV1 || successLegacy) {

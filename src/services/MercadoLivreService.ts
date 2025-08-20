@@ -100,7 +100,7 @@ class MercadoLivreService {
     try {
       console.log('[ML Service] Starting OAuth flow...');
       
-      const { data, error } = await supabase.functions.invoke('hyper-function', {
+      const { data, error } = await supabase.functions.invoke('mercadolibre-oauth-start', {
         body: { 
           usePkce: true 
         }
@@ -191,7 +191,7 @@ class MercadoLivreService {
    */
   async refreshToken(integration_account_id: string): Promise<{ success: boolean; access_token?: string; error?: string }> {
     try {
-      const { data, error } = await supabase.functions.invoke('smart-responder', {
+      const { data, error } = await supabase.functions.invoke('mercadolibre-token-refresh', {
         body: { integration_account_id }
       });
 
@@ -216,7 +216,7 @@ class MercadoLivreService {
    */
   async fetchOrders(params: MLOrdersParams): Promise<{ success: boolean; data?: MLOrdersResponse; error?: string }> {
     try {
-      const { data, error } = await supabase.functions.invoke('rapid-responder', {
+      const { data, error } = await supabase.functions.invoke('mercadolibre-orders', {
         body: params
       });
 

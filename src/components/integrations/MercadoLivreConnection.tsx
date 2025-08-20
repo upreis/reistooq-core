@@ -143,23 +143,23 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
     try {
       setTestingFunctions(true);
       
-      // 1. Test smooth-service (OAuth callback)
-      const smoothResponse = await fetch("https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service?code=TEST&state=TEST");
+      // 1. Test mercadolibre-oauth-callback (OAuth callback)
+      const smoothResponse = await fetch("https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolibre-oauth-callback?code=TEST&state=TEST");
       const smoothText = await smoothResponse.text();
       
       if (!smoothText.includes("Missing code or state") && !smoothText.includes("Invalid or expired state")) {
-        toast.error("❌ smooth-service não está respondendo corretamente");
+        toast.error("❌ mercadolibre-oauth-callback não está respondendo corretamente");
         return;
       }
       
-      // 2. Test hyper-function (OAuth start) - requires auth
+      // 2. Test mercadolibre-oauth-start (OAuth start) - requires auth
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) {
-        toast.error("❌ Usuário não autenticado para testar hyper-function");
+        toast.error("❌ Usuário não autenticado para testar mercadolibre-oauth-start");
         return;
       }
       
-      const hyperResponse = await fetch("https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/hyper-function", {
+      const hyperResponse = await fetch("https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolibre-oauth-start", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,13 +172,13 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       const hyperAuthUrl: string | undefined = hyperData.url || hyperData.authorization_url;
       
       if (!hyperData.ok || !hyperAuthUrl || !hyperAuthUrl.startsWith("https://auth.mercadolivre.com.br/authorization")) {
-        toast.error("❌ hyper-function não está gerando URL válida");
-        console.error("hyper-function response:", hyperData);
+        toast.error("❌ mercadolibre-oauth-start não está gerando URL válida");
+        console.error("mercadolibre-oauth-start response:", hyperData);
         return;
       }
       
       // 3. Test other functions availability via authenticated POST (expecting validation error)
-      const functions = ['smart-responder', 'rapid-responder'];
+      const functions = ['mercadolibre-token-refresh', 'mercadolibre-orders'];
       for (const func of functions) {
         const response = await fetch(`https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/${func}`, {
           method: 'POST',
@@ -257,7 +257,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
                 )}
               </Button>
               <p className="text-xs text-muted-foreground">
-                Testa se as funções hyper-function, smooth-service, smart-responder e rapid-responder estão funcionando
+                Testa se as funções mercadolibre-oauth-start, mercadolibre-oauth-callback, mercadolibre-token-refresh e mercadolibre-orders estão funcionando
               </p>
             </div>
             

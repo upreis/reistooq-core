@@ -18,7 +18,7 @@ const getOAuthConfigs = (): Record<Provider, OAuthConfig | null> => {
       client_secret: '', // Handled securely by Edge Function
       authorization_url: 'https://auth.mercadolivre.com.br/authorization',
       token_url: 'https://api.mercadolivre.com/oauth/token',
-      redirect_uri: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service`,
+      redirect_uri: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolibre-oauth-callback`,
       scopes: ['offline_access', 'read', 'write'],
       use_pkce: true,
     },
@@ -97,7 +97,7 @@ export const useOAuthFlow = (): UseOAuthFlowReturn => {
       console.info('[ML-OAUTH] store.start', requestPayload);
 
       // Call OAuth start edge function
-      const { data, error } = await supabase.functions.invoke('hyper-function', {
+      const { data, error } = await supabase.functions.invoke('mercadolibre-oauth-start', {
         body: requestPayload,
       });
 
