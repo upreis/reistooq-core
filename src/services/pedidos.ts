@@ -297,14 +297,14 @@ export function usePedidosHybrid({
 
   const fetchFromUnifiedOrders = async () => {
     try {
-      const { results } = await fetchUnifiedOrders({
+      const { rows } = await fetchUnifiedOrders({
         integration_account_id: integrationAccountId,
         status: 'paid',
         limit: pageSize,
         offset: (page - 1) * pageSize
       });
       
-      const mappedOrders = mapMlToUi(Array.isArray(results) ? results : []);
+      const mappedOrders = mapMlToUi(rows.map(r => r.raw) || []);
       console.info('[PedidosHybrid] fonte=tempo-real rows=', mappedOrders.length);
       
       setRows(mappedOrders);
