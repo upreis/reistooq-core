@@ -43,33 +43,30 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
     }
   };
 
+  function buildAuthorizeUrl() {
+    const CLIENT_ID = (import.meta.env?.VITE_ML_CLIENT_ID as string) || '2053972567766696';
+    const redirectUri = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
+
+    // envie redirect_uri e (se quiser) org_id dentro do state
+    const stateObj = { redirect_uri: redirectUri, org_id: 'default' };
+    const stateB64 = btoa(JSON.stringify(stateObj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    const url =
+      'https://auth.mercadolibre.com.br/authorization' +
+      '?response_type=code' +
+      `&client_id=${encodeURIComponent(CLIENT_ID)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&state=${encodeURIComponent(stateB64)}`;
+
+    return url;
+  }
+
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
 
-      // Start OAuth via Edge Function that uses ML_REDIRECT_URI (POST)
-      const { data, error } = await supabase.functions.invoke('hyper-function', {
-        body: { usePkce: true },
-      });
-
-      if (error || !data?.ok || !(data?.url || data?.authorization_url)) {
-        console.error('ML OAuth start failed:', { error, data });
-        throw new Error(data?.error || error?.message || 'Falha ao iniciar conexão OAuth');
-      }
-
-      const rawUrl: string = (data.url || data.authorization_url) as string;
-      // Normalize domain to PT-BR as per official docs
-      const authUrl = rawUrl
-        .replace('auth.mercadolivre.com/authorization', 'auth.mercadolivre.com.br/authorization')
-        .replace('auth.mercadolivre.com.ar/authorization', 'auth.mercadolivre.com.br/authorization')
-        .replace('auth.mercadolivre.com.br/authorization', 'auth.mercadolivre.com.br/authorization');
-
-      // Open ML authorization in popup
-      const popup = window.open(
-        authUrl,
-        'ml_oauth',
-        'width=600,height=700,scrollbars=yes,resizable=yes'
-      );
+      // usar no clique:
+      const popup = window.open(buildAuthorizeUrl(), 'ml_oauth', 'width=600,height=700');
       
       if (!popup) {
         throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
