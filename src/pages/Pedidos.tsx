@@ -1,5 +1,5 @@
 // src/pages/Pedidos.tsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { PedidosTable } from '@/components/pedidos/PedidosTable';
 import { BaixaEstoqueModal } from '@/components/pedidos/BaixaEstoqueModal';
 import { PedidosFilters, PedidosFiltersState } from '@/components/pedidos/PedidosFilters';
@@ -12,116 +12,52 @@ import { fetchPedidosRealtime, Row } from '@/services/orders';
 import { Pedido } from '@/types/pedido';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, Package, AlertTriangle, CheckCircle, LogIn, RefreshCw } from 'lucide-react';
-
-// ======== NOVO: helpers de conexão Mercado Livre ========
-
-function buildAuthorizeUrl() {
-  // usa a env se existir; senão, usa seu client_id fixo
-  const CLIENT_ID =
-    (import.meta.env?.VITE_ML_CLIENT_ID as string) || '2053972567766696';
-
-  const redirectUri =
-    'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service';
-
-  const state = crypto.randomUUID(); // opcional: você pode guardar no localStorage se quiser validar depois
-
-  const url =
-    'https://auth.mercadolibre.com.br/authorization' +
-    '?response_type=code' +
-    `&client_id=${encodeURIComponent(CLIENT_ID)}` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-    `&state=${encodeURIComponent(state)}`;
-
-  return { url, state };
-}
-
-
-function openMlPopup(url: string) {
-  const w = 600, h = 700;
-  const y = window.top?.outerHeight ? (window.top.outerHeight - h) / 2 : 100;
-  const x = window.top?.outerWidth ? (window.top.outerWidth - w) / 2 : 100;
-  return window.open(
-    url,
-    'ml_oauth',
-    `width=${w},height=${h},left=${x},top=${y},menubar=no,toolbar=no,status=no,scrollbars=yes`
-  );
-}
-
-// ========================================================
+import { Info, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 
 export default function Pedidos() {
-  // integration_account_id agora vem do localStorage OU do env (fallback)
-  const [integrationId, setIntegrationId] = useState<string>(() =>
-    localStorage.getItem('integration_account_id') ||
+  // Buscar de múltiplas fontes: prop > env > hardcoded
+  const INTEGRATION_ACCOUNT_ID =
     // @ts-ignore - VITE_ vars are available at build time
-    (import.meta.env.VITE_INTEGRATION_ACCOUNT_ID as string) ||
-    ''
-  );
+    import.meta.env.VITE_INTEGRATION_ACCOUNT_ID ||
+    '5740f717-1771-4298-b8c9-464ffb8d8dce';
 
+  // Audit mode detection
   const isAuditMode =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('audit') === '1';
 
   const [fonteEscolhida, setFonteEscolhida] = useState<FontePedidos>('tempo-real');
+  const [pedidosSelecionados, setPedidosSelecionados] = useState<Pedido[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [mapeamentosVerificacao, setMapeamentosVerificacao] = useState<
+    Map<string, MapeamentoVerificacao>
+  >(new Map());
+  const [visibleColumns, setVisibleColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+
+  // unified-orders
   const [rows, setRows] = useState<Row[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
 
-  const [mapeamentosVerificacao, setMapeamentosVerificacao] =
-    useState<Map<string, MapeamentoVerificacao>>(new Map());
-  const [visibleColumns, setVisibleColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
-  const [pedidosSelecionados, setPedidosSelecionados] = useState<Pedido[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-
   const { filters, setFilters, clearFilters, apiParams } = usePedidosFilters();
 
-  // ======== NOVO: listener para receber sucesso/erro do smooth-service ========
-  useEffect(() => {
-    const { redirectOrigin } = buildAuthorizeUrl();
-    const onMessage = (e: MessageEvent) => {
-      try {
-        // Segurança: só aceita mensagens do seu Supabase
-        if (e.origin !== redirectOrigin) return;
-
-        const data = e.data;
-        if (!data || typeof data !== 'object') return;
-
-        if (data.type === 'oauth_success' && data.provider === 'mercadolivre') {
-          const id = data.integration_account_id as string;
-          if (id) {
-            localStorage.setItem('integration_account_id', id);
-            setIntegrationId(id);
-            alert('Conta Mercado Livre conectada com sucesso!');
-            // Recarrega a página 1 com os novos pedidos
-            setCurrentPage(1);
-          }
-        } else if (data.type === 'oauth_error') {
-          alert(`Erro na integração: ${data.description || data.error || 'desconhecido'}`);
-        }
-      } catch {}
-    };
-
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, []);
-  // ============================================================================
-
-  const loadPedidos = useCallback(async () => {
-    if (!integrationId) return;
+  // Carrega sempre via unified-orders (/orders/search) + envio
+  const loadPedidos = async () => {
+    if (!INTEGRATION_ACCOUNT_ID) return;
 
     setLoading(true);
     setError(null);
 
     try {
       const result = await fetchPedidosRealtime({
-        integration_account_id: integrationId,
+        integration_account_id: INTEGRATION_ACCOUNT_ID,
         status: apiParams.status,
         limit: 25,
         offset: (currentPage - 1) * 25,
-        include_shipping: true, // 👈 já traz UF/Cidade/CEP/Tracking
+        include_shipping: true, // 👈 traz UF/Cidade/CEP/Tracking/Status do envio
+        debug: isAuditMode,
         ...apiParams,
       });
 
@@ -135,96 +71,126 @@ export default function Pedidos() {
     } finally {
       setLoading(false);
     }
-  }, [integrationId, currentPage, apiParams]);
+  };
 
+  // Load data on mount and when dependencies change
   useEffect(() => {
     loadPedidos();
-  }, [loadPedidos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [INTEGRATION_ACCOUNT_ID, currentPage, JSON.stringify(apiParams)]);
+
+  // Verificar mapeamentos manualmente
+  const verificarMapeamentos = async () => {
+    if (rows.length > 0) {
+      const pedidos = rows.map((row) => ({
+        id: row.unified?.id || String(row.raw?.id) || '',
+        numero: row.unified?.numero || String(row.raw?.id) || '',
+        obs: row.unified?.obs || '',
+        sku_estoque: '',
+        qtd_kit: 0,
+      })) as Pedido[];
+
+      const pedidosEnriquecidos =
+        await MapeamentoService.enriquecerPedidosComMapeamento(pedidos);
+
+      const mapeamentosMap = new Map();
+      pedidosEnriquecidos.forEach((pedido) => {
+        if (pedido.obs) {
+          pedido.obs.split(',').forEach((sku) => {
+            const skuTrimmed = sku.trim();
+            mapeamentosMap.set(skuTrimmed, {
+              skuPedido: skuTrimmed,
+              temMapeamento: !!pedido.sku_estoque,
+              skuEstoque: pedido.sku_estoque,
+              quantidadeKit: pedido.qtd_kit,
+            });
+          });
+        }
+        mapeamentosMap.set(pedido.numero, {
+          skuPedido: pedido.numero,
+          temMapeamento: !!pedido.sku_estoque,
+          skuEstoque: pedido.sku_estoque,
+          quantidadeKit: pedido.qtd_kit,
+        });
+      });
+
+      setMapeamentosVerificacao(mapeamentosMap);
+    }
+  };
 
   const handleFonteChange = (novaFonte: FontePedidos) => {
-    setFonteEscolhida(novaFonte); // visual apenas
+    // Mantemos visível o toggle, mas a fonte real é unified-orders
+    setFonteEscolhida(novaFonte);
   };
 
   const handleSelectionChange = (selectedRows: Row[]) => {
-    const pedidos = selectedRows.map(row => ({
+    const pedidos = selectedRows.map((row) => ({
       id: row.unified?.id || String(row.raw?.id) || '',
       numero: row.unified?.numero || String(row.raw?.id) || '',
-      obs: row.unified?.obs || ''
+      obs: row.unified?.obs || '',
     })) as Pedido[];
     setPedidosSelecionados(pedidos);
   };
 
   const handleFiltersChange = (newFilters: PedidosFiltersState) => {
     setFilters(newFilters);
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset para primeira página ao filtrar
   };
 
   // Estatísticas de mapeamento
-  const pedidosComMapeamento = rows.filter(row => {
+  const pedidosComMapeamento = rows.filter((row) => {
     const obs = row.unified?.obs;
     const numero = row.unified?.numero || String(row.raw?.id);
+
     if (obs) {
-      return obs.split(', ').some(sku =>
-        mapeamentosVerificacao.get(sku.trim())?.temMapeamento
-      );
+      return obs
+        .split(', ')
+        .some((sku) => mapeamentosVerificacao.get(sku.trim())?.temMapeamento);
     }
     return mapeamentosVerificacao.get(numero)?.temMapeamento;
   }).length;
+
   const pedidosSemMapeamento = rows.length - pedidosComMapeamento;
 
-  // ======== NOVO: Ações de conexão =========
-  const conectarMercadoLivre = () => {
-    try {
-      const { url } = buildAuthorizeUrl();
-      const win = openMlPopup(url);
-      if (!win) alert('Permita pop-ups para continuar a conexão.');
-    } catch {}
-  };
-
-  const trocarConta = () => {
-    localStorage.removeItem('integration_account_id');
-    setIntegrationId('');
-    setRows([]);
-    setTotal(0);
-    alert('Conta desconectada. Clique em "Conectar Mercado Livre" para vincular outra.');
-  };
-  // =========================================
-
-  // Empty state quando não há integração ainda
-  if (!integrationId) {
+  if (!INTEGRATION_ACCOUNT_ID) {
     return (
-      <div className="p-6 max-w-2xl mx-auto">
+      <div className="p-4">
         <h1 className="text-2xl font-semibold mb-4">Pedidos</h1>
-        <Alert className="border-blue-200 bg-blue-50 mb-4">
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            Conecte sua conta do <strong>Mercado Livre</strong> para listar pedidos em tempo real.
-          </AlertDescription>
-        </Alert>
-        <Button onClick={conectarMercadoLivre}>
-          <LogIn className="h-4 w-4 mr-2" />
-          Conectar Mercado Livre
-        </Button>
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+          <div className="font-medium text-destructive">
+            Defina INTEGRATION_ACCOUNT_ID para carregar pedidos
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Pedidos</h1>
 
+        {/* Toggle de Fonte (visual) */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={conectarMercadoLivre} title="Conectar nova conta">
-            <LogIn className="h-4 w-4 mr-1" />
-            Conectar outra conta
-          </Button>
-          <Button variant="ghost" size="sm" onClick={trocarConta} title="Desvincular conta atual">
-            Desconectar
-          </Button>
-          <Button variant="outline" size="sm" onClick={loadPedidos} title="Recarregar">
-            <RefreshCw className="h-4 w-4 mr-1" /> Recarregar
-          </Button>
+          <span className="text-sm text-muted-foreground">Fonte:</span>
+          <div className="flex rounded-lg border bg-muted p-1">
+            <Button
+              variant={fonteEscolhida === 'banco' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8"
+              onClick={() => handleFonteChange('banco')}
+            >
+              Banco
+            </Button>
+            <Button
+              variant={fonteEscolhida === 'tempo-real' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8"
+              onClick={() => handleFonteChange('tempo-real')}
+            >
+              Tempo real
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -237,10 +203,7 @@ export default function Pedidos() {
 
       {/* Audit Panel (ativar com ?audit=1) */}
       {isAuditMode && (
-        <AuditPanel
-          rows={rows}
-          integrationAccountId={integrationId}
-        />
+        <AuditPanel rows={rows} integrationAccountId={INTEGRATION_ACCOUNT_ID} />
       )}
 
       {/* Estatísticas de Mapeamento */}
@@ -258,7 +221,9 @@ export default function Pedidos() {
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
               <div className="font-medium">Com Mapeamento</div>
-              <div className="text-lg font-semibold text-green-700">{pedidosComMapeamento}</div>
+              <div className="text-lg font-semibold text-green-700">
+                {pedidosComMapeamento}
+              </div>
             </AlertDescription>
           </Alert>
 
@@ -266,56 +231,23 @@ export default function Pedidos() {
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               <div className="font-medium">Sem Mapeamento</div>
-              <div className="text-lg font-semibold text-orange-700">{pedidosSemMapeamento}</div>
+              <div className="text-lg font-semibold text-orange-700">
+                {pedidosSemMapeamento}
+              </div>
             </AlertDescription>
           </Alert>
         </div>
       )}
 
-      {/* Ações + Toggle de Fonte (visual) */}
+      {/* Ações de Baixa de Estoque */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={async () => {
-            // Verificar mapeamentos usando as linhas atuais
-            if (rows.length > 0) {
-              const pedidos = rows.map(row => ({
-                id: row.unified?.id || String(row.raw?.id) || '',
-                numero: row.unified?.numero || String(row.raw?.id) || '',
-                obs: row.unified?.obs || '',
-                sku_estoque: '',
-                qtd_kit: 0
-              })) as Pedido[];
-
-              const pedidosEnriquecidos = await MapeamentoService.enriquecerPedidosComMapeamento(pedidos);
-
-              const mapeamentosMap = new Map<string, MapeamentoVerificacao>();
-              pedidosEnriquecidos.forEach(pedido => {
-                if (pedido.obs) {
-                  pedido.obs.split(',').forEach(skuRaw => {
-                    const sku = skuRaw.trim();
-                    mapeamentosMap.set(sku, {
-                      skuPedido: sku,
-                      temMapeamento: !!pedido.sku_estoque,
-                      skuEstoque: pedido.sku_estoque || '',
-                      quantidadeKit: pedido.qtd_kit || 0
-                    });
-                  });
-                }
-                mapeamentosMap.set(pedido.numero, {
-                  skuPedido: pedido.numero,
-                  temMapeamento: !!pedido.sku_estoque,
-                  skuEstoque: pedido.sku_estoque || '',
-                  quantidadeKit: pedido.qtd_kit || 0
-                });
-              });
-
-              setMapeamentosVerificacao(mapeamentosMap);
-            }
-          }}>
+          <Button variant="outline" size="sm" onClick={verificarMapeamentos}>
             Verificar Mapeamentos
           </Button>
 
           <ColumnSelector columns={visibleColumns} onColumnsChange={setVisibleColumns} />
+
           {pedidosSelecionados.length > 0 && (
             <BaixaEstoqueModal
               pedidos={pedidosSelecionados}
@@ -326,6 +258,14 @@ export default function Pedidos() {
                 </Button>
               }
             />
+          )}
+
+          {pedidosSelecionados.length > 0 && (
+            <span className="text-sm text-muted-foreground">
+              {pedidosSelecionados.length} pedido
+              {pedidosSelecionados.length === 1 ? '' : 's'} selecionado
+              {pedidosSelecionados.length === 1 ? '' : 's'}
+            </span>
           )}
         </div>
 
@@ -341,10 +281,11 @@ export default function Pedidos() {
         <AlertDescription>
           <div className="font-medium">Baixa Manual de Estoque</div>
           <div className="text-sm mt-1">
-            Selecione pedidos e clique em "Baixar Estoque" para processar manualmente. 
+            Selecione pedidos e clique em "Baixar Estoque" para processar manualmente.
             Use "Verificar Mapeamentos" para atualizar o status dos pedidos.
             <br />
-            <strong>Linhas verdes:</strong> pedidos com mapeamento configurado | <strong>Linhas laranjas:</strong> pedidos sem mapeamento
+            <strong>Linhas verdes:</strong> pedidos com mapeamento configurado |{' '}
+            <strong>Linhas laranjas:</strong> pedidos sem mapeamento
           </div>
         </AlertDescription>
       </Alert>
@@ -355,7 +296,7 @@ export default function Pedidos() {
         loading={loading}
         error={error}
         onRefresh={loadPedidos}
-        onSelectionChange={setPedidosSelecionados as any}
+        onSelectionChange={handleSelectionChange}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
         mapeamentosVerificacao={mapeamentosVerificacao}
