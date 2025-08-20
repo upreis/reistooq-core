@@ -49,7 +49,13 @@ export function openMlPopup(config: MLPopupConfig = {}) {
   );
 
   if (!popup) {
-    throw new Error('Pop-up bloqueado. Permita pop-ups para continuar.');
+    // Instead of throwing error, redirect directly in current window
+    console.warn('[ML-OAUTH] Popup blocked, redirecting in current window');
+    window.location.href = url;
+    return {
+      popup: null,
+      cleanup: () => {}
+    };
   }
 
   // Setup message listener for OAuth completion
