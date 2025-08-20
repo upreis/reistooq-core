@@ -30,6 +30,34 @@ function getMlConfig() {
   return { clientId, clientSecret, redirectUri, siteId };
 }
 
+function errorResponse(error: string, description: string, status: number = 400, hint?: string) {
+  return new Response(`
+    <!DOCTYPE html>
+    <html>
+    <head><title>Integration Error</title></head>
+    <body>
+      <script>
+        (function () {
+          try {
+            window.opener && window.opener.postMessage({
+              "type":"oauth_error",
+              "provider":"mercadolivre",
+              "error":"${error}",
+              "description":"${description}",
+              "status":${status},
+              "hint":"${hint || ''}"
+            }, '*');
+          } catch (e) {}
+          window.close();
+        })();
+      </script>
+    </body>
+    </html>
+  `, {
+    headers: { 'Content-Type': 'text/html' }
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -167,8 +195,24 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error('[ML OAuth Callback] Token exchange failed:', errorText);
-      throw new Error(`Token exchange failed: ${errorText}`);
+      console.error('[ML OAuth Callback] Token exchange failed:', {
+        status: tokenResponse.status,
+        error: errorText,
+        params: {
+          grant_type: 'authorization_code',
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          code_present: !!code,
+          code_verifier_present: !!oauthState.code_verifier
+        }
+      });
+      
+      return errorResponse(
+        'token_exchange_failed',
+        `Failed to exchange code for tokens`,
+        400,
+        `Cheque se o redirect_uri é idêntico no app do ML, no authorize e no token. Gere um code novo.`
+      );
     }
 
     const tokenData = await tokenResponse.json();

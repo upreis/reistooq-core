@@ -19,8 +19,9 @@ export type UnifiedOrdersParams = {
   sort?: string;
   limit?: number;
   offset?: number;
-  debug?: boolean;
+  debug?: string | boolean;
   enrich?: boolean;
+  include_shipping?: boolean;
 };
 
 export type RawML = any;
