@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Chave usada pelo RPC para cifrar/decifrar
+// Chave usada pelo RPC para cifrar/decifrar (deve existir no Supabase → Project Settings → Secrets)
 const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY") || "";
 
 // CORS básico
@@ -22,7 +22,8 @@ function makeClient(authHeader: string | null) {
 function getMlConfig() {
   const clientId = Deno.env.get("ML_CLIENT_ID");
   const clientSecret = Deno.env.get("ML_CLIENT_SECRET");
-  const redirectUriEnv = Deno.env.get("ML_REDIRECT_URI") || null; // só p/ conferência
+  const redirectUriEnv = Deno.env.get("ML_REDIRECT_URI") || null; // apenas para conferência
+
   if (!clientId || !clientSecret) {
     throw new Error("Missing ML secrets: ML_CLIENT_ID / ML_CLIENT_SECRET");
   }
@@ -30,14 +31,16 @@ function getMlConfig() {
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
     if (!ENC_KEY) {
       console.error("[ML OAuth Callback] Missing APP_ENCRYPTION_KEY");
       return new Response(
-        `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Encryption key missing'},'*');window.close();</script>`,
-        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Encryption key missing'},'*');window.close();</script>",
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } },
       );
     }
 
@@ -50,17 +53,16 @@ serve(async (req) => {
     if (errParam) {
       console.error("ML OAuth error:", errParam);
       return new Response(
-        `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:${JSON.stringify(
-          errParam
-        )}},'*');window.close();</script>`,
-        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:${JSON.stringify(errParam)}},'*');window.close();</script>`,
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } },
       );
     }
+
     if (!code || !state) {
       console.error("Missing code or state");
       return new Response(
-        `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Missing code or state'},'*');window.close();</script>`,
-        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Missing code or state'},'*');window.close();</script>",
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } },
       );
     }
 
@@ -77,8 +79,8 @@ serve(async (req) => {
     if (stateErr || !stateData) {
       console.error("Invalid state:", stateErr);
       return new Response(
-        `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Invalid or expired state'},'*');window.close();</script>`,
-        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Invalid or expired state'},'*');window.close();</script>",
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } },
       );
     }
 
@@ -98,25 +100,23 @@ serve(async (req) => {
     // Segredos do app ML
     const { clientId, clientSecret, redirectUriEnv } = getMlConfig();
 
-    // ===== Use o redirect_uri salvo no oauth_states para garantir consistência total
-    const redirectUriFromState = (stateData as any).redirect_uri || redirectUriEnv;
-    const computedRedirect = `${url.origin}${url.pathname}`; // ex: .../functions/v1/mercadolibre-oauth-callback
-    const redirectForToken = redirectUriFromState || computedRedirect;
-    
-    console.log("[ML OAuth Callback] Using redirect_uri:", {
-      fromState: redirectUriFromState,
-      fromEnv: redirectUriEnv,
-      computed: computedRedirect,
-      final: redirectForToken,
-    });
+    // Redirect calculado da própria função — deve ser idêntico ao cadastrado no App ML
+    const computedRedirect = `${url.origin}${url.pathname}`; // → .../functions/v1/mercadolivre-oauth-callback
+    if (redirectUriEnv && redirectUriEnv !== computedRedirect) {
+      console.warn("[ML OAuth Callback] ML_REDIRECT_URI != computedRedirect", {
+        redirectUriEnv,
+        computedRedirect,
+      });
+    }
+    console.log("[ML OAuth Callback] Using redirect_uri:", computedRedirect);
 
-    // Troca code -> tokens (usa o MESMO redirect_uri do authorize)
+    // Troca code -> tokens (usa exatamente o computedRedirect)
     const tokenParams = new URLSearchParams({
       grant_type: "authorization_code",
       client_id: clientId,
       client_secret: clientSecret,
       code,
-      redirect_uri: redirectForToken,
+      redirect_uri: computedRedirect,
     });
     if (stateData.code_verifier) tokenParams.set("code_verifier", stateData.code_verifier);
 
@@ -125,31 +125,36 @@ serve(async (req) => {
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
       body: tokenParams.toString(),
     });
+
     if (!tokenResp.ok) {
       const body = await tokenResp.text();
-      console.error("Token exchange failed:", tokenResp.status, body);
+      console.error("Token exchange failed:", tokenResp.status, body, {
+        computedRedirect,
+        redirectUriEnv,
+      });
       return new Response(
-        `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Token exchange failed'},'*');window.close();</script>`,
-        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Token exchange failed'},'*');window.close();</script>",
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } },
       );
     }
+
     const tokenData = await tokenResp.json();
 
     // /users/me
-    const meResp = await fetch("https://api.mercadolibre.com/users/me", {
+    const meResp = await fetch("https://api.mercadolivre.com/users/me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     if (!meResp.ok) {
       const t = await meResp.text();
       console.error("Failed to fetch user info:", meResp.status, t);
       return new Response(
-        `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to get user info'},'*');window.close();</script>`,
-        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to get user info'},'*');window.close();</script>",
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } },
       );
     }
     const user = await meResp.json();
 
-    // Cria conta
+    // Cria conta de integração
     const { data: account, error: accErr } = await serviceClient
       .from("integration_accounts")
       .insert({
@@ -175,12 +180,12 @@ serve(async (req) => {
     if (accErr) {
       console.error("Failed to store integration account:", accErr);
       return new Response(
-        `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to store account'},'*');window.close();</script>`,
-        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to store account'},'*');window.close();</script>",
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } },
       );
     }
 
-    // Guarda segredos (cofre)
+    // Guarda segredos (cofre) via RPC – COM a chave
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
     const { error: storeErr } = await serviceClient.rpc("encrypt_integration_secret", {
       p_account_id: account.id,
@@ -191,28 +196,37 @@ serve(async (req) => {
       p_refresh_token: tokenData.refresh_token,
       p_expires_at: expiresAt.toISOString(),
       p_payload: { user_id: user.id, scope: tokenData.scope || null },
-      p_encryption_key: ENC_KEY,
+      p_encryption_key: ENC_KEY, // <- ESSENCIAL
     });
+
     if (storeErr) {
       console.error("Failed to store secrets:", storeErr);
       return new Response(
-        `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to store tokens'},'*');window.close();</script>`,
-        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to store tokens'},'*');window.close();</script>",
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } },
       );
     }
 
+    console.log("ML OAuth completed successfully for account:", account.id);
+
     // Sucesso
     return new Response(
-      `<!doctype html><script>window.opener?.postMessage({type:'oauth_success',provider:'mercadolivre',account_id:'${account.id}',account_name:${JSON.stringify(
-        account.name
-      )}},'*');window.close();</script>`,
-      { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+      `<!doctype html><script>
+        window.opener?.postMessage({
+          type:'oauth_success',
+          provider:'mercadolivre',
+          account_id:${JSON.stringify(account.id)},
+          account_name:${JSON.stringify(account.name)}
+        },'*');
+        window.close();
+      </script>`,
+      { headers: { ...corsHeaders, "Content-Type": "text/html" } },
     );
-  } catch (e: any) {
+  } catch (e) {
     console.error("MercadoLivre callback error:", e);
     return new Response(
-      `<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Internal server error'},'*');window.close();</script>`,
-      { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+      "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Internal server error'},'*');window.close();</script>",
+      { headers: { ...corsHeaders, "Content-Type": "text/html" } },
     );
   }
 });
