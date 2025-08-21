@@ -30,7 +30,7 @@ export function MLDiagnosticsTest() {
       }
 
       const response = await fetch(
-        'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolibre-diagnose?autofix=1',
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mercadolibre-diagnose?autofix=1`,
         {
           method: 'POST',
           headers: {
@@ -46,7 +46,7 @@ export function MLDiagnosticsTest() {
       console.error('Erro no diagnóstico:', error);
       setResult({
         ok: false,
-        checks: [{ name: 'error', ok: false, fix: `Erro: ${error}` }]
+        checks: [{ name: 'error', ok: false, fix: `Erro: ${error?.message ?? String(error)}` }]
       });
     } finally {
       setLoading(false);
