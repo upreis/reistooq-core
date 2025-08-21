@@ -46,7 +46,7 @@ serve(async (req) => {
       .from('integration_accounts')
       .select('*')
       .eq('id', integration_account_id)
-      .single();
+      .maybeSingle();
 
     if (accountError || !account) {
       console.log(`[unified-orders:${correlationId}] Integration account not found:`, accountError);
