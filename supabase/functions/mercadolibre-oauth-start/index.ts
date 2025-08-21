@@ -30,7 +30,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    // Service client for auth verification only
+    const serviceClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
@@ -38,16 +39,37 @@ Deno.serve(async (req) => {
     // Get user from auth header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      throw new Error('Missing authorization header')
+      console.error('[OAuth][start] Missing authorization header')
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(
+    const { data: { user }, error: userError } = await serviceClient.auth.getUser(
       authHeader.replace('Bearer ', '')
     )
 
     if (userError || !user) {
-      throw new Error('Invalid user token')
+      console.error('[OAuth][start] Invalid user token:', userError)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Invalid user token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
+
+    // Authenticated client for operations that need auth.uid()
+    const authClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
+    )
 
     // Generate state for OAuth
     const state = crypto.randomUUID()
@@ -55,7 +77,7 @@ Deno.serve(async (req) => {
     const codeChallenge = await generateCodeChallenge(codeVerifier)
 
     // Get user's organization or create one
-    let { data: profile } = await supabase
+    let { data: profile } = await authClient
       .from('profiles')
       .select('organizacao_id')
       .eq('id', user.id)
@@ -65,9 +87,9 @@ Deno.serve(async (req) => {
     
     // If user doesn't have an organization, use ensure_current_org RPC
     if (!orgId) {
-      console.log('[OAuth] User has no organization, auto-creating...')
+      console.log('[OAuth][start] User has no organization, auto-creating...')
       
-      const { data: orgResult, error: orgError } = await supabase
+      const { data: orgResult, error: orgError } = await authClient
         .rpc('ensure_current_org')
 
       if (orgError || !orgResult?.success) {
@@ -102,8 +124,8 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Store OAuth state
-    await supabase
+    // Store OAuth state using auth client
+    await authClient
       .from('oauth_states')
       .insert({
         state_value: state,
