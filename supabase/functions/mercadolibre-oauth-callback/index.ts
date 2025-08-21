@@ -98,8 +98,9 @@ serve(async (req) => {
     // Segredos do app ML
     const { clientId, clientSecret, redirectUriEnv } = getMlConfig();
 
-    // ===== AQUI: redirect da PRÓPRIA função (precisa bater com o cadastrado no ML) =====
-    const computedRedirect = `${url.origin}${url.pathname}`; // -> .../functions/v1/mercadolibre-oauth-callback
+    // ===== Redirecionamento oficial: use o ML_REDIRECT_URI exatamente; fallback para o URL atual
+    const computedRedirect = `${url.origin}${url.pathname}`; // ex: .../functions/v1/mercadolibre-oauth-callback
+    const redirectForToken = redirectUriEnv || computedRedirect;
     if (redirectUriEnv && redirectUriEnv !== computedRedirect) {
       console.warn("[ML OAuth Callback] ML_REDIRECT_URI != computedRedirect", {
         redirectUriEnv,
@@ -107,13 +108,13 @@ serve(async (req) => {
       });
     }
 
-    // Troca code -> tokens (usa exactly o computedRedirect)
+    // Troca code -> tokens (usa exatamente o redirectForToken)
     const tokenParams = new URLSearchParams({
       grant_type: "authorization_code",
       client_id: clientId,
       client_secret: clientSecret,
       code,
-      redirect_uri: computedRedirect,
+      redirect_uri: redirectForToken,
     });
     if (stateData.code_verifier) tokenParams.set("code_verifier", stateData.code_verifier);
 
@@ -133,7 +134,7 @@ serve(async (req) => {
     const tokenData = await tokenResp.json();
 
     // /users/me
-    const meResp = await fetch("https://api.mercadolivre.com/users/me", {
+    const meResp = await fetch("https://api.mercadolibre.com/users/me", {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
     if (!meResp.ok) {
