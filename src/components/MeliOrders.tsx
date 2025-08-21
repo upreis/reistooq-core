@@ -15,6 +15,14 @@ export default function MeliOrders({ integrationAccountId, status = 'paid', limi
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
+    // Blindagem: não buscar se integrationAccountId estiver vazio
+    if (!integrationAccountId?.trim()) {
+      setOrders([]);
+      setLoading(false);
+      setErr(null);
+      return;
+    }
+
     (async () => {
       try {
         setLoading(true);
@@ -33,6 +41,10 @@ export default function MeliOrders({ integrationAccountId, status = 'paid', limi
     })();
   }, [integrationAccountId, status, limit]);
 
+  if (!integrationAccountId?.trim()) {
+    return <div className="text-muted-foreground text-sm">Conecte uma conta do Mercado Livre para ver os pedidos.</div>;
+  }
+  
   if (loading) return <div>Carregando pedidos…</div>;
   if (err) return <div className="text-red-600">Erro ao buscar pedidos: {err}</div>;
   if (!orders.length) return <div>Nenhum pedido encontrado.</div>;

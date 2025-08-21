@@ -1871,6 +1871,10 @@ export type Database = {
             }
         Returns: undefined
       }
+      ensure_current_org: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       gerar_sku_automatico: {
         Args: { org_id: string; prefixo?: string }
         Returns: string

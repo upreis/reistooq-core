@@ -61,6 +61,16 @@ export const get = (obj: any, path: string) =>
 export const show = (v: any) => (v ?? '—');
 
 export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
+  // Blindagem: validar integration_account_id
+  if (!params.integration_account_id?.trim()) {
+    throw new Error('integration_account_id é obrigatório para buscar pedidos');
+  }
+
+  console.info('[Orders] Buscando pedidos unified-orders:', { 
+    account_id: params.integration_account_id,
+    status: params.status 
+  });
+
   const { data, error } = await supabase.functions.invoke('unified-orders', { body: params });
   if (error) throw error;
   if (!data?.ok) throw new Error('unified-orders: resposta inesperada');

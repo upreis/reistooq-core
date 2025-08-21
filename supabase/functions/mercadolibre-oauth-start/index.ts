@@ -13,9 +13,13 @@ function getMlConfig() {
   const redirectUri = Deno.env.get('ML_REDIRECT_URI') || Deno.env.get('MERCADOLIVRE_REDIRECT_URI') ||
     `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolibre-oauth-callback`;
 
-  if (!clientId || !clientSecret) {
-    throw new Error('Missing ML client credentials (client_id/client_secret)');
+  if (!clientId) {
+    throw new Error('Missing ML_CLIENT_ID or MERCADOLIVRE_CLIENT_ID environment variable');
   }
+  if (!clientSecret) {
+    throw new Error('Missing ML_CLIENT_SECRET or MERCADOLIVRE_CLIENT_SECRET environment variable');
+  }
+  console.log('[OAuth] ML credentials configured successfully')
   return { clientId, clientSecret, redirectUri };
 }
 
@@ -59,30 +63,20 @@ Deno.serve(async (req) => {
 
     let orgId = profile?.organizacao_id
     
-    // If user doesn't have an organization, create a default one
+    // If user doesn't have an organization, use ensure_current_org RPC
     if (!orgId) {
-      const { data: newOrg, error: orgError } = await supabase
-        .from('organizacoes')
-        .insert({
-          nome: `Organização de ${user.email?.split('@')[0] || 'Usuário'}`,
-          tipo: 'individual',
-          ativa: true
-        })
-        .select('id')
-        .single()
+      console.log('[OAuth] User has no organization, auto-creating...')
+      
+      const { data: orgResult, error: orgError } = await supabase
+        .rpc('ensure_current_org')
 
-      if (orgError || !newOrg) {
-        console.error('Failed to create organization:', orgError)
-        throw new Error('Failed to create user organization')
+      if (orgError || !orgResult?.success) {
+        console.error('Failed to ensure organization:', orgError, orgResult)
+        throw new Error(`Failed to create user organization: ${orgResult?.error || orgError?.message}`)
       }
 
-      orgId = newOrg.id
-
-      // Update user profile with new organization
-      await supabase
-        .from('profiles')
-        .update({ organizacao_id: orgId })
-        .eq('id', user.id)
+      orgId = orgResult.organization_id
+      console.log('[OAuth] Organization ensured:', orgId)
     }
 
     // Store OAuth state
@@ -122,13 +116,17 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('OAuth start error:', error)
+    
+    // Determine appropriate status code
+    const status = error.message?.includes('Missing ML_CLIENT') ? 500 : 400
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
         error: error.message 
       }),
       { 
-        status: 400,
+        status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     )

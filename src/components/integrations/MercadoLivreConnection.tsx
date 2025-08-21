@@ -25,14 +25,39 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<MLAccount[]>([]);
   const [loading, setLoading] = useState(true);
-const [testingFunctions, setTestingFunctions] = useState(false);
+  const [testingFunctions, setTestingFunctions] = useState(false);
   const [manualAuthUrl, setManualAuthUrl] = useState<string | null>(null);
+  const [session, setSession] = useState<any>(null);
   const pollRef = useRef<number | null>(null);
   const pollTimeoutRef = useRef<number | null>(null);
 
-  // Load connected accounts
+  // Load session and accounts
   useEffect(() => {
-    loadAccounts();
+    // Ensure organization exists and get session
+    const initializeUser = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        
+        if (session?.user) {
+          console.info('[ML Connection] Ensuring organization for user:', session.user.id);
+          const { data: orgResult, error } = await supabase.rpc('ensure_current_org');
+          
+          if (error || !orgResult?.success) {
+            console.error('[ML Connection] Failed to ensure organization:', error, orgResult);
+            toast.error('Erro ao verificar organização do usuário');
+            return;
+          }
+          
+          console.info('[ML Connection] Organization ensured:', orgResult.organization_id);
+          loadAccounts();
+        }
+      } catch (error) {
+        console.error('[ML Connection] Initialization error:', error);
+      }
+    };
+
+    initializeUser();
   }, []);
 
   const loadAccounts = async () => {
@@ -103,8 +128,15 @@ const [testingFunctions, setTestingFunctions] = useState(false);
   };
 
   const handleConnect = async () => {
+    // Blindagem: verificar sessão antes de conectar
+    if (!session?.user) {
+      toast.error('Você precisa estar logado para conectar uma conta do Mercado Livre');
+      return;
+    }
+
     try {
       setIsConnecting(true);
+      console.info('[ML Connection] Starting OAuth flow...');
       
       // Usar Edge Function segura em vez de openMlPopup
       const { data, error } = await supabase.functions.invoke('mercadolibre-oauth-start', {
@@ -356,13 +388,18 @@ const [testingFunctions, setTestingFunctions] = useState(false);
             
             <Button 
               onClick={handleConnect} 
-              disabled={isConnecting}
+              disabled={isConnecting || !session?.user}
               className="w-full"
             >
               {isConnecting ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                   Conectando...
+                </>
+              ) : !session?.user ? (
+                <>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Faça login para conectar
                 </>
               ) : (
                 <>
@@ -371,6 +408,12 @@ const [testingFunctions, setTestingFunctions] = useState(false);
                 </>
               )}
             </Button>
+            
+            {!session?.user && (
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                É necessário estar logado para conectar integrações
+              </p>
+            )}
 
             {manualAuthUrl && (
               <div className="mt-4 border rounded p-3 text-left">
@@ -482,13 +525,18 @@ const [testingFunctions, setTestingFunctions] = useState(false);
             <Button 
               variant="outline"
               onClick={handleConnect}
-              disabled={isConnecting}
+              disabled={isConnecting || !session?.user}
               className="w-full"
             >
               {isConnecting ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                   Conectando...
+                </>
+              ) : !session?.user ? (
+                <>
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Faça login para conectar outra conta
                 </>
               ) : (
                 <>
