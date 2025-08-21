@@ -50,16 +50,39 @@ Deno.serve(async (req) => {
     const codeVerifier = generateCodeVerifier()
     const codeChallenge = await generateCodeChallenge(codeVerifier)
 
-    // Get user's organization
-    const { data: profile } = await supabase
+    // Get user's organization or create one
+    let { data: profile } = await supabase
       .from('profiles')
       .select('organizacao_id')
       .eq('id', user.id)
       .maybeSingle()
 
-    const orgId = profile?.organizacao_id
+    let orgId = profile?.organizacao_id
+    
+    // If user doesn't have an organization, create a default one
     if (!orgId) {
-      throw new Error('User organization not found')
+      const { data: newOrg, error: orgError } = await supabase
+        .from('organizacoes')
+        .insert({
+          nome: `Organização de ${user.email?.split('@')[0] || 'Usuário'}`,
+          tipo: 'individual',
+          ativa: true
+        })
+        .select('id')
+        .single()
+
+      if (orgError || !newOrg) {
+        console.error('Failed to create organization:', orgError)
+        throw new Error('Failed to create user organization')
+      }
+
+      orgId = newOrg.id
+
+      // Update user profile with new organization
+      await supabase
+        .from('profiles')
+        .update({ organizacao_id: orgId })
+        .eq('id', user.id)
     }
 
     // Store OAuth state
