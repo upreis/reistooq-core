@@ -1,5 +1,16 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient, ENC_KEY } from "../_shared/client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Standalone helpers (no _shared import)
+function makeClient(authHeader: string | null) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(url, key, {
+    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
+  });
+}
+
+const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

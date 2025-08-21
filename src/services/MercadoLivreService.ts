@@ -216,20 +216,27 @@ class MercadoLivreService {
    */
   async fetchOrders(params: MLOrdersParams): Promise<{ success: boolean; data?: MLOrdersResponse; error?: string }> {
     try {
-      const { data, error } = await supabase.functions.invoke('mercadolibre-orders', {
-        body: params
+      // 🔄 MIGRADO: Usa unified-orders em vez da function phantom mercadolibre-orders
+      const { data, error } = await supabase.functions.invoke('unified-orders', {
+        body: {
+          integration_account_id: params.integration_account_id,
+          status: params.order_status,
+          limit: params.limit || 50,
+          offset: params.offset || 0
+        }
       });
 
       if (error || !data.ok) {
         return { success: false, error: data?.error || 'Falha ao buscar pedidos' };
       }
 
+      // Adapta resposta unified-orders para MLOrdersResponse
       return { 
         success: true, 
         data: {
-          orders: data.orders,
-          paging: data.paging,
-          seller_id: data.seller_id,
+          orders: data.results || [],
+          paging: data.paging || { total: 0, offset: 0, limit: 50 },
+          seller_id: parseInt(params.integration_account_id) || 0,
         }
       };
     } catch (e) {
