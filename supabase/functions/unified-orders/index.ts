@@ -1,12 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { ENC_KEY } from '../_shared/client.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+import { makeClient, ENC_KEY, ok, fail, corsHeaders } from '../_shared/client.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,23 +18,14 @@ serve(async (req) => {
     const correlationId = crypto.randomUUID();
     console.log(`[unified-orders:${correlationId}] Starting request processing`);
     
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = makeClient(req.headers.get("Authorization"));
 
     const body = await req.json();
     const { integration_account_id, status, limit = 50, offset = 0 } = body;
 
     if (!integration_account_id) {
       console.log(`[unified-orders:${correlationId}] Missing integration_account_id`);
-      return new Response(JSON.stringify({ 
-        ok: false, 
-        error: "integration_account_id é obrigatório" 
-      }), { 
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return fail("integration_account_id é obrigatório", 400);
     }
 
     console.log(`[unified-orders:${correlationId}] Processing account_id=${integration_account_id}, status=${status}, limit=${limit}, offset=${offset}`);
@@ -55,37 +39,19 @@ serve(async (req) => {
 
     if (accountError || !account) {
       console.log(`[unified-orders:${correlationId}] Integration account not found:`, accountError);
-      return new Response(JSON.stringify({ 
-        ok: false, 
-        error: "Integration account not found" 
-      }), { 
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return fail("Integration account not found", 404);
     }
 
     if (!account.is_active) {
       console.log(`[unified-orders:${correlationId}] Integration account is not active`);
-      return new Response(JSON.stringify({ 
-        ok: false, 
-        error: "Integration account is not active" 
-      }), { 
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return fail("Integration account is not active", 400);
     }
 
     if (account.provider === 'mercadolivre') {
       // Validate encryption key
       if (!ENC_KEY) {
         console.error(`[unified-orders:${correlationId}] ENC_KEY not configured`);
-        return new Response(JSON.stringify({ 
-          ok: false, 
-          error: "Encryption key not configured" 
-        }), { 
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+        return fail("Encryption key not configured", 500);
       }
 
       console.log(`[unified-orders:${correlationId}] Decrypting secrets for provider=${account.provider}, seller_id=${account.account_identifier}...`);
@@ -99,13 +65,7 @@ serve(async (req) => {
 
       if (secretsError || !secretsData) {
         console.error(`[unified-orders:${correlationId}] Failed to decrypt secrets:`, secretsError);
-        return new Response(JSON.stringify({ 
-          ok: false, 
-          error: "Failed to retrieve integration secrets" 
-        }), { 
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+        return fail("Failed to retrieve integration secrets", 500);
       }
 
       console.log(`[unified-orders:${correlationId}] Secrets decrypted successfully, checking token expiry...`);
@@ -126,13 +86,7 @@ serve(async (req) => {
 
         if (refreshError || !refreshData?.success) {
           console.error('[unified-orders] Token refresh failed:', refreshError);
-          return new Response(JSON.stringify({ 
-            ok: false, 
-            error: "Failed to refresh token" 
-          }), { 
-            status: 401,
-            headers: { ...corsHeaders, "Content-Type": "application/json" }
-          });
+          return fail("Failed to refresh token", 401);
         }
 
         // Update secrets with refreshed token
@@ -168,13 +122,7 @@ serve(async (req) => {
           const errorText = await mlResponse.text();
           if (errorText.includes('invalid_operator_user_id')) {
             console.error(`[unified-orders:${correlationId}] invalid_operator_user_id error - token does not have admin permissions`);
-            return new Response(JSON.stringify({ 
-              ok: false, 
-              error: "invalid_operator_user_id - Token does not have permission to access this seller" 
-            }), { 
-              status: 403,
-              headers: { ...corsHeaders, "Content-Type": "application/json" }
-            });
+            return fail("invalid_operator_user_id - Token does not have permission to access this seller", 403);
           }
         }
         
@@ -201,27 +149,18 @@ serve(async (req) => {
               const retryData = await retryResponse.json();
               console.log(`[unified-orders] Retry successful, returning ${retryData.results?.length || 0} orders`);
               
-              return new Response(JSON.stringify({
-                ok: true,
+              return ok({
                 results: retryData.results || [],
                 unified: transformMLOrders(retryData.results || []),
                 paging: retryData.paging,
                 count: retryData.paging?.total || 0
-              }), {
-                headers: { ...corsHeaders, "Content-Type": "application/json" }
               });
             }
           }
         }
         
         const errorText = await mlResponse.text();
-        return new Response(JSON.stringify({ 
-          ok: false, 
-          error: `Mercado Livre API error: ${mlResponse.status} - ${errorText}` 
-        }), { 
-          status: mlResponse.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        });
+        return fail(`Mercado Livre API error: ${mlResponse.status} - ${errorText}`, mlResponse.status);
       }
 
       const mlData = await mlResponse.json();
@@ -230,39 +169,27 @@ serve(async (req) => {
       // Transform ML orders to unified format
       const unifiedOrders = transformMLOrders(mlData.results || []);
 
-      return new Response(JSON.stringify({
-        ok: true,
+      return ok({
         results: mlData.results || [],
         unified: unifiedOrders,
         paging: mlData.paging,
         count: mlData.paging?.total || 0
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
     }
 
     // For other providers, return empty results
     console.log(`[unified-orders:${correlationId}] Provider ${account.provider} not supported yet`);
-    return new Response(JSON.stringify({
-      ok: true,
+    return ok({
       results: [],
       unified: [],
       paging: { total: 0, limit, offset },
       count: 0
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
 
   } catch (error) {
     const correlationId = 'error-' + crypto.randomUUID().split('-')[0];
     console.error(`[unified-orders:${correlationId}] Unexpected error:`, error);
-    return new Response(JSON.stringify({ 
-      ok: false, 
-      error: error.message || 'Internal server error' 
-    }), { 
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+    return fail(error.message || 'Internal server error', 500);
   }
 });
 

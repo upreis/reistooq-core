@@ -26,7 +26,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.unified-orders]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ml-token-refresh-cron]
 verify_jwt = true
