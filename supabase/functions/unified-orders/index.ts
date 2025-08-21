@@ -8,15 +8,13 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function makeClient(authHeader: string | null) {
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!; // service-role
-  return createClient(url, key, {
-    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
-  });
-}
-
 const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY") || "";
+
+function serviceClient() {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!; // sem Authorization
+  return createClient(url, key);
+}
 
 function ok(data: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify({ ok: true, ...data }), {
@@ -25,13 +23,80 @@ function ok(data: Record<string, unknown>, status = 200) {
   });
 }
 
-function fail(error: string, status = 400, extra?: unknown) {
-  // log detalhado no Edge Runtime
-  console.error("[unified-orders][fail]", status, error, extra ?? null);
-  return new Response(JSON.stringify({ ok: false, error, detail: extra ?? null }), {
+function fail(error: string, status = 400, detail?: unknown, cid?: string) {
+  const payload: Record<string, unknown> = { ok: false, error, status };
+  if (detail !== undefined) payload.detail = detail;
+  if (cid) payload.correlation_id = cid;
+  return new Response(JSON.stringify(payload), {
     status,
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
+}
+
+function getMlConfig() {
+  const clientId = Deno.env.get("ML_CLIENT_ID");
+  const clientSecret = Deno.env.get("ML_CLIENT_SECRET");
+  if (!clientId || !clientSecret) throw new Error("Missing ML_CLIENT_ID / ML_CLIENT_SECRET");
+  return { clientId, clientSecret };
+}
+
+async function refreshIfNeeded(sb: ReturnType<typeof serviceClient>, secrets: any, cid: string) {
+  const safetyMs = 5 * 60 * 1000; // 5min de margem
+  const now = Date.now();
+  const exp = secrets?.expires_at ? new Date(secrets.expires_at).getTime() : 0;
+  if (secrets?.access_token && exp > now + safetyMs) return secrets; // ainda válido
+
+  console.log(`[unified-orders:${cid}] Access token expirado/expirando, fazendo refresh...`);
+
+  const { clientId, clientSecret } = getMlConfig();
+  if (!secrets?.refresh_token) throw new Error("Missing refresh_token");
+
+  const params = new URLSearchParams({
+    grant_type: "refresh_token",
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: secrets.refresh_token,
+  });
+
+  const resp = await fetch("https://api.mercadolibre.com/oauth/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
+    body: params.toString(),
+  });
+
+  const raw = await resp.text();
+  if (!resp.ok) {
+    console.error(`[unified-orders:${cid}] Refresh ML falhou`, resp.status, raw);
+    throw new Error(`ML refresh failed ${resp.status}: ${raw}`);
+  }
+
+  const data = JSON.parse(raw);
+  const newExpiresAt = new Date(Date.now() + (data.expires_in ?? 0) * 1000).toISOString();
+
+  // persiste de volta
+  const { error: upErr } = await sb.rpc("encrypt_integration_secret", {
+    p_account_id: secrets.account_id, // vamos setar isso abaixo
+    p_provider: "mercadolivre",
+    p_client_id: clientId,
+    p_client_secret: clientSecret,
+    p_access_token: data.access_token,
+    p_refresh_token: data.refresh_token || secrets.refresh_token,
+    p_expires_at: newExpiresAt,
+    p_payload: secrets.payload ?? null,
+    p_encryption_key: ENC_KEY,
+  });
+  if (upErr) {
+    console.error(`[unified-orders:${cid}] Falha ao salvar novos tokens`, upErr);
+    throw new Error("Failed to save refreshed tokens");
+  }
+
+  console.log(`[unified-orders:${cid}] Refresh OK`);
+  return {
+    ...secrets,
+    access_token: data.access_token,
+    refresh_token: data.refresh_token || secrets.refresh_token,
+    expires_at: newExpiresAt,
+  };
 }
 
 serve(async (req) => {
@@ -41,28 +106,20 @@ serve(async (req) => {
   }
   if (req.method !== "POST") return fail("Method Not Allowed", 405);
 
-  const correlationId = crypto.randomUUID();
-  console.log(`[unified-orders:${correlationId}] start`);
-
+  const cid = crypto.randomUUID().slice(0, 8);
   try {
-    if (!ENC_KEY) return fail("APP_ENCRYPTION_KEY ausente no runtime da função. Publique a função após definir o secret.", 500);
+    if (!ENC_KEY) return fail("Encryption key not configured (APP_ENCRYPTION_KEY)", 500, null, cid);
 
+    // opcional: ainda exigimos Authorization do usuário para disciplina de uso,
+    // mas NÃO vamos usá-lo nos acessos ao banco (service role cuidará disso).
     const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
-    if (!authHeader) return fail("Missing Authorization header", 401);
+    if (!authHeader) return fail("Missing Authorization header", 401, null, cid);
 
-    const sb = makeClient(authHeader);
-
-    let body: any = {};
-    try {
-      body = await req.json();
-    } catch (e) {
-      return fail("Body inválido (JSON esperado)", 400, String(e));
-    }
-
+    const body = await req.json();
     const { integration_account_id, status, limit = 50, offset = 0 } = body || {};
-    if (!integration_account_id) return fail("integration_account_id é obrigatório", 400);
+    if (!integration_account_id) return fail("integration_account_id é obrigatório", 400, null, cid);
 
-    console.log(`[unified-orders:${correlationId}] account_id=${integration_account_id} status=${status ?? "-"} limit=${limit} offset=${offset}`);
+    const sb = serviceClient();
 
     // 1) Conta
     const { data: account, error: accErr } = await sb
@@ -71,9 +128,8 @@ serve(async (req) => {
       .eq("id", integration_account_id)
       .maybeSingle();
 
-    if (accErr || !account) return fail("Integration account not found", 404, accErr);
-    if (!account.is_active) return fail("Integration account is not active", 400);
-
+    if (accErr || !account) return fail("Integration account not found", 404, accErr, cid);
+    if (!account.is_active) return fail("Integration account is not active", 400, null, cid);
     if (account.provider !== "mercadolivre") {
       return ok({ results: [], unified: [], paging: { total: 0, limit, offset }, count: 0 });
     }
@@ -81,29 +137,22 @@ serve(async (req) => {
     // 2) Segredos
     const { data: secrets, error: secErr } = await sb.rpc("decrypt_integration_secret", {
       p_account_id: integration_account_id,
-      p_provider: account.provider,
+      p_provider: "mercadolivre",
       p_encryption_key: ENC_KEY,
     });
 
-    if (secErr || !secrets) return fail("Failed to retrieve integration secrets", 500, secErr);
+    if (secErr || !secrets) return fail("Failed to retrieve integration secrets", 500, secErr, cid);
 
-    // 3) Expiração (refresh se faltarem <= 5 min)
-    let accessToken: string | null = secrets.access_token ?? null;
-    const expiresAt = secrets.expires_at ? new Date(secrets.expires_at) : null;
-    const nearExpiry = expiresAt ? expiresAt.getTime() - Date.now() <= 5 * 60 * 1000 : false;
+    // anexa account_id para o refresh salvar
+    secrets.account_id = integration_account_id;
 
-    if (!accessToken || nearExpiry) {
-      console.log(`[unified-orders:${correlationId}] token ausente/expirando → refresh`);
-      const { data: refData, error: refErr } = await sb.functions.invoke("mercadolibre-token-refresh", {
-        body: { integration_account_id },
-      });
-      if (refErr || !refData?.success) return fail("Failed to refresh token", 401, refErr ?? refData);
-      accessToken = refData.access_token;
-    }
+    // 3) Garantir token válido
+    const validSecrets = await refreshIfNeeded(sb, secrets, cid);
+    const accessToken = validSecrets.access_token as string;
 
-    // 4) Orders API
-    const sellerId = String(account.account_identifier || secrets?.payload?.user_id || "");
-    if (!sellerId) return fail("Seller ID não encontrado (account_identifier/payload.user_id)", 400);
+    // 4) Chamada ML Orders
+    const sellerId = String(account.account_identifier || validSecrets.payload?.user_id);
+    if (!sellerId) return fail("Seller ID not found (account_identifier/payload)", 400, null, cid);
 
     const mlUrl = new URL("https://api.mercadolibre.com/orders/search");
     mlUrl.searchParams.set("seller", sellerId);
@@ -111,58 +160,33 @@ serve(async (req) => {
     mlUrl.searchParams.set("limit", String(limit));
     mlUrl.searchParams.set("offset", String(offset));
 
-    console.log(`[unified-orders:${correlationId}] ML GET ${mlUrl.toString()}`);
-
     const mlResp = await fetch(mlUrl.toString(), {
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     });
 
     const mlRaw = await mlResp.text();
     if (!mlResp.ok) {
-      // erros frequentes
       if (mlResp.status === 403 && mlRaw.includes("invalid_operator_user_id")) {
-        return fail("invalid_operator_user_id - reconecte usando a conta ADMIN do seller no Mercado Livre", 403, mlRaw);
+        return fail("invalid_operator_user_id - reconecte com a conta ADMIN da loja no ML", 403, mlRaw, cid);
       }
-      if (mlResp.status === 401) {
-        // 1 retry com refresh
-        const { data: ref2 } = await sb.functions.invoke("mercadolibre-token-refresh", { body: { integration_account_id } });
-        if (ref2?.success) {
-          const retry = await fetch(mlUrl.toString(), {
-            headers: { Authorization: `Bearer ${ref2.access_token}`, "Content-Type": "application/json" },
-          });
-          const retryRaw = await retry.text();
-          if (retry.ok) {
-            const retryJson = JSON.parse(retryRaw);
-            return ok({
-              results: retryJson.results ?? [],
-              unified: transformMLOrders(retryJson.results ?? [], integration_account_id),
-              paging: retryJson.paging,
-              count: retryJson.paging?.total ?? 0,
-            });
-          }
-          return fail(`Mercado Livre API error (retry): ${retry.status}`, retry.status, retryRaw);
-        }
-      }
-      return fail(`Mercado Livre API error: ${mlResp.status}`, mlResp.status, mlRaw);
+      return fail(`Mercado Livre API error: ${mlResp.status}`, mlResp.status, mlRaw, cid);
     }
 
-    const mlJson = JSON.parse(mlRaw || "{}");
-    console.log(`[unified-orders:${correlationId}] ML OK items=${mlJson?.results?.length ?? 0} total=${mlJson?.paging?.total ?? 0}`);
-
+    const json = JSON.parse(mlRaw);
     return ok({
-      results: mlJson.results ?? [],
-      unified: transformMLOrders(mlJson.results ?? [], integration_account_id),
-      paging: mlJson.paging,
-      count: mlJson.paging?.total ?? 0,
+      results: json.results ?? [],
+      unified: transformMLOrders(json.results ?? [], integration_account_id),
+      paging: json.paging,
+      count: json.paging?.total ?? 0,
+      correlation_id: cid,
     });
-  } catch (err) {
-    const msg = (err as Error)?.message ?? String(err);
-    console.error(`[unified-orders:${correlationId}] unhandled`, msg, err);
-    return fail(msg || "Internal server error", 500);
+  } catch (err: any) {
+    console.error(`[unified-orders:${cid}]`, err);
+    return fail(err?.message ?? "Internal server error", 500, String(err), cid);
   }
 });
 
-// helpers
+// ------ helpers ------
 function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
   return (mlOrders ?? []).map((order) => ({
     id: String(order.id),
