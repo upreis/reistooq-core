@@ -10,6 +10,13 @@ export function makeClient(authHeader: string | null) {
 
 export const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!;
 
+// CORS headers must be defined before being used
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 export function ok(data: any) {
   return new Response(JSON.stringify({ ok: true, ...data }), {
     headers: { "Content-Type": "application/json", ...corsHeaders }
@@ -35,11 +42,3 @@ export function getMlConfig() {
 
   return { clientId, clientSecret, redirectUri, siteId };
 }
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
-
-export { corsHeaders };

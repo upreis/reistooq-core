@@ -2,9 +2,15 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { makeClient, ENC_KEY, ok, fail, corsHeaders } from '../_shared/client.ts';
 
 serve(async (req) => {
+  console.log(`[unified-orders] Received ${req.method} request`);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    console.log(`[unified-orders] Handling OPTIONS (CORS preflight)`);
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
   if (req.method !== "POST") {
