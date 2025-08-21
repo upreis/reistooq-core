@@ -105,11 +105,11 @@ serve(async (req) => {
       if (mlResponse.status === 401) {
         return fail("Token de acesso inválido ou expirado", 401);
       } else if (mlResponse.status === 403) {
-        const errorData = await mlResponse.text();
-        if (errorData.includes('invalid_operator_user_id')) {
-          return fail("Conta deve ter permissões de administrador para acessar vendas", 403);
+        const errorText = await mlResponse.text();
+        if (errorText.includes('invalid_operator_user_id')) {
+          return fail("invalid_operator_user_id - Token does not have permission to access this seller", 403);
         }
-        return fail("Acesso negado - verifique as permissões da aplicação", 403);
+        return fail("Forbidden - Check seller permissions", 403);
       } else if (mlResponse.status === 429) {
         return fail("Limite de taxa excedido - tente novamente mais tarde", 429);
       }

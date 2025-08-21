@@ -1,276 +1,308 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { ENC_KEY } from '../_shared/client.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+};
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const { integration_account_id, status, limit = 50, offset = 0 } = await req.json()
+  if (req.method !== "POST") {
+    return new Response("Method Not Allowed", { 
+      status: 405, 
+      headers: corsHeaders 
+    });
+  }
 
-    console.log('Unified orders request:', { integration_account_id, status, limit, offset })
+  try {
+    console.log('[unified-orders] Starting request processing');
+    
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const body = await req.json();
+    const { integration_account_id, status, limit = 50, offset = 0 } = body;
 
     if (!integration_account_id) {
-      throw new Error('Missing integration_account_id')
+      console.log('[unified-orders] Missing integration_account_id');
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        error: "integration_account_id é obrigatório" 
+      }), { 
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    console.log(`[unified-orders] Processing account: ${integration_account_id}`);
 
-    // Verify the integration account exists and is active
-    const { data: account } = await supabase
+    // Get integration account details
+    const { data: account, error: accountError } = await supabase
       .from('integration_accounts')
       .select('*')
       .eq('id', integration_account_id)
-      .eq('is_active', true)
-      .single()
+      .single();
 
-    if (!account) {
-      throw new Error('Integration account not found or inactive')
+    if (accountError || !account) {
+      console.log('[unified-orders] Integration account not found:', accountError);
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        error: "Integration account not found" 
+      }), { 
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    console.log('Found integration account:', account.name, account.provider)
+    if (!account.is_active) {
+      console.log('[unified-orders] Integration account is not active');
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        error: "Integration account is not active" 
+      }), { 
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
 
     if (account.provider === 'mercadolivre') {
-      // Get current secrets and validate token
-      const { data: secrets, error: secretsError } = await supabase.rpc('decrypt_integration_secret', {
-        p_account_id: integration_account_id,
-        p_provider: 'mercadolivre',
-        p_encryption_key: Deno.env.get('APP_ENCRYPTION_KEY')
-      })
-
-      if (secretsError || !secrets) {
-        console.error('[Unified Orders] Failed to get secrets:', secretsError)
-        throw new Error('No secrets found for account')
+      // Validate encryption key
+      if (!ENC_KEY) {
+        console.error('[unified-orders] ENC_KEY not configured');
+        return new Response(JSON.stringify({ 
+          ok: false, 
+          error: "Encryption key not configured" 
+        }), { 
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
       }
+
+      console.log('[unified-orders] Decrypting secrets...');
+      
+      // Get integration secrets using RPC
+      const { data: secretsData, error: secretsError } = await supabase.rpc("decrypt_integration_secret", {
+        p_account_id: integration_account_id,
+        p_provider: account.provider,
+        p_encryption_key: ENC_KEY,
+      });
+
+      if (secretsError || !secretsData) {
+        console.error('[unified-orders] Failed to decrypt secrets:', secretsError);
+        return new Response(JSON.stringify({ 
+          ok: false, 
+          error: "Failed to retrieve integration secrets" 
+        }), { 
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      console.log('[unified-orders] Secrets decrypted successfully');
+
+      // Use let instead of const to allow reassignment
+      let secrets = secretsData;
 
       // Check if token needs refresh
-      const now = new Date()
-      const expiresAt = new Date(secrets.expires_at)
-      if (expiresAt <= now) {
-        console.log('Token expired, refreshing...')
+      if (secrets.expires_at && new Date(secrets.expires_at) <= new Date()) {
+        console.log('[unified-orders] Token expired, refreshing...');
         
-        const refreshResponse = await refreshToken(supabase, integration_account_id, secrets)
-        if (refreshResponse.error) {
-          throw new Error('Failed to refresh token')
-        }
-        
-        secrets = refreshResponse.data
-      }
-
-      // Get user ID from payload - try multiple possible locations
-      let userId = secrets.payload?.user_id || secrets.payload?.user_data?.id || secrets.payload?.seller_id
-      if (!userId) {
-        // Try to get seller_id from ML API if not in secrets
-        try {
-          const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
-            headers: { 'Authorization': `Bearer ${secrets.access_token}` }
-          })
-          if (userResponse.ok) {
-            const userData = await userResponse.json()
-            userId = userData.id
+        const { data: refreshData, error: refreshError } = await supabase.functions.invoke('mercadolibre-token-refresh', {
+          body: {
+            integration_account_id: integration_account_id,
+            provider: account.provider
           }
-        } catch (e) {
-          console.error('[Unified Orders] Failed to get user from ML API:', e)
+        });
+
+        if (refreshError || !refreshData?.success) {
+          console.error('[unified-orders] Token refresh failed:', refreshError);
+          return new Response(JSON.stringify({ 
+            ok: false, 
+            error: "Failed to refresh token" 
+          }), { 
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
         }
+
+        // Update secrets with refreshed token
+        secrets = {
+          ...secrets,
+          access_token: refreshData.access_token,
+          expires_at: refreshData.expires_at
+        };
         
-        if (!userId) {
-          throw new Error('User ID not found in secrets or ML API')
-        }
+        console.log('[unified-orders] Token refreshed successfully');
       }
 
-      // Fetch orders from Mercado Livre
-      const ordersUrl = new URL(`https://api.mercadolibre.com/orders/search`)
-      ordersUrl.searchParams.set('seller', userId.toString())
-      ordersUrl.searchParams.set('limit', limit.toString())
-      ordersUrl.searchParams.set('offset', offset.toString())
+      // Fetch orders from Mercado Livre API
+      console.log('[unified-orders] Fetching orders from ML API...');
       
-      if (status && status !== 'all') {
-        ordersUrl.searchParams.set('order.status', status)
-      }
+      const mlUrl = new URL('https://api.mercadolibre.com/orders/search');
+      mlUrl.searchParams.set('seller', account.account_identifier);
+      if (status) mlUrl.searchParams.set('order.status', status);
+      mlUrl.searchParams.set('limit', limit.toString());
+      mlUrl.searchParams.set('offset', offset.toString());
 
-      console.log('Fetching orders from ML API:', ordersUrl.toString())
-
-      const ordersResponse = await fetch(ordersUrl.toString(), {
+      const mlResponse = await fetch(mlUrl.toString(), {
         headers: {
           'Authorization': `Bearer ${secrets.access_token}`,
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         }
-      })
-      const ordersData = await ordersResponse.json()
+      });
 
-      if (!ordersResponse.ok) {
-        console.error('Orders fetch failed:', ordersData)
+      if (!mlResponse.ok) {
+        console.error(`[unified-orders] ML API error: ${mlResponse.status}`);
         
-        // Handle specific ML API errors
-        if (ordersResponse.status === 401) {
-          throw new Error('Token de acesso inválido ou expirado')
-        } else if (ordersResponse.status === 403) {
-          if (ordersData.message?.includes('invalid_operator_user_id')) {
-            throw new Error('Conecte com o usuário administrador da conta do Mercado Livre')
+        if (mlResponse.status === 403) {
+          const errorText = await mlResponse.text();
+          if (errorText.includes('invalid_operator_user_id')) {
+            return new Response(JSON.stringify({ 
+              ok: false, 
+              error: "invalid_operator_user_id - Token does not have permission to access this seller" 
+            }), { 
+              status: 403,
+              headers: { ...corsHeaders, "Content-Type": "application/json" }
+            });
           }
-          throw new Error('Acesso negado - verifique as permissões da aplicação')
-        } else if (ordersResponse.status === 429) {
-          throw new Error('Limite de taxa excedido - tente novamente mais tarde')
         }
         
-        throw new Error(ordersData.message || 'Failed to fetch orders')
-      }
-
-      console.log('ML API returned', ordersData.results?.length || 0, 'orders')
-
-      // Convert ML orders to unified format
-      const unifiedOrders = ordersData.results?.map((order: any) => ({
-        id: order.id.toString(),
-        external_id: order.id.toString(),
-        source: 'mercadolivre',
-        status: mapMLStatus(order.status),
-        total: order.total_amount || 0,
-        currency: order.currency_id || 'BRL',
-        created_at: order.date_created,
-        updated_at: order.date_closed || order.date_created,
-        customer: {
-          name: order.buyer?.nickname || '',
-          email: order.buyer?.email || '',
-          document: null
-        },
-        items: order.order_items?.map((item: any) => ({
-          id: item.item?.id,
-          title: item.item?.title,
-          quantity: item.quantity || 1,
-          unit_price: item.unit_price || 0,
-          total_price: (item.unit_price || 0) * (item.quantity || 1)
-        })) || [],
-        shipping: {
-          status: order.shipping?.status || '',
-          cost: order.shipping?.cost || 0
-        },
-        integration_account_id
-      })) || []
-
-      console.log('Returning', unifiedOrders.length, 'unified orders')
-
-      return new Response(
-        JSON.stringify({ 
-          ok: true,
-          results: ordersData.results || [],
-          unified: unifiedOrders,
-          paging: ordersData.paging || {},
-          count: ordersData.paging?.total || unifiedOrders.length
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        if (mlResponse.status === 401) {
+          // Try one more token refresh
+          console.log('[unified-orders] 401 error, attempting token refresh...');
+          
+          const { data: refreshData, error: refreshError } = await supabase.functions.invoke('mercadolibre-token-refresh', {
+            body: {
+              integration_account_id: integration_account_id,
+              provider: account.provider
+            }
+          });
+          
+          if (!refreshError && refreshData?.success) {
+            const retryResponse = await fetch(mlUrl.toString(), {
+              headers: {
+                'Authorization': `Bearer ${refreshData.access_token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (retryResponse.ok) {
+              const retryData = await retryResponse.json();
+              console.log(`[unified-orders] Retry successful, returning ${retryData.results?.length || 0} orders`);
+              
+              return new Response(JSON.stringify({
+                ok: true,
+                results: retryData.results || [],
+                unified: transformMLOrders(retryData.results || []),
+                paging: retryData.paging,
+                count: retryData.paging?.total || 0
+              }), {
+                headers: { ...corsHeaders, "Content-Type": "application/json" }
+              });
+            }
+          }
         }
-      )
+        
+        const errorText = await mlResponse.text();
+        return new Response(JSON.stringify({ 
+          ok: false, 
+          error: `Mercado Livre API error: ${mlResponse.status} - ${errorText}` 
+        }), { 
+          status: mlResponse.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+
+      const mlData = await mlResponse.json();
+      console.log(`[unified-orders] ML API success, returning ${mlData.results?.length || 0} orders`);
+      
+      // Transform ML orders to unified format
+      const unifiedOrders = transformMLOrders(mlData.results || []);
+
+      return new Response(JSON.stringify({
+        ok: true,
+        results: mlData.results || [],
+        unified: unifiedOrders,
+        paging: mlData.paging,
+        count: mlData.paging?.total || 0
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
-    // For other providers, return empty for now
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        orders: [],
-        total: 0,
-        source: account.provider
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    // For other providers, return empty results
+    console.log(`[unified-orders] Provider ${account.provider} not supported yet`);
+    return new Response(JSON.stringify({
+      ok: true,
+      results: [],
+      unified: [],
+      paging: { total: 0, limit, offset },
+      count: 0
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
 
   } catch (error) {
-    console.error('Unified orders error:', error)
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    console.error('[unified-orders] Unexpected error:', error);
+    return new Response(JSON.stringify({ 
+      ok: false, 
+      error: error.message || 'Internal server error' 
+    }), { 
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
   }
-})
+});
 
-async function refreshToken(supabase: any, accountId: string, secrets: any) {
-  try {
-    console.log('Refreshing ML token...')
-    
-    const refreshResponse = await fetch('https://api.mercadolibre.com/oauth/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json'
-      },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        client_id: secrets.client_id,
-        client_secret: secrets.client_secret,
-        refresh_token: secrets.refresh_token
-      })
-    })
-
-    const tokenData = await refreshResponse.json()
-
-    if (!refreshResponse.ok) {
-      console.error('Token refresh failed:', tokenData)
-      return { error: tokenData.message || 'Token refresh failed' }
-    }
-
-    // Update stored secrets
-    const encryptionKey = Deno.env.get('APP_ENCRYPTION_KEY')
-    if (!encryptionKey) {
-      return { error: 'Encryption key not found' }
-    }
-
-    await supabase.rpc('encrypt_integration_secret', {
-      p_account_id: accountId,
-      p_provider: 'mercadolivre',
-      p_client_id: secrets.client_id,
-      p_client_secret: secrets.client_secret,
-      p_access_token: tokenData.access_token,
-      p_refresh_token: tokenData.refresh_token || secrets.refresh_token,
-      p_expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
-      p_payload: secrets.payload || {},
-      p_encryption_key: encryptionKey
-    })
-
-    console.log('Token refreshed successfully')
-
-    return {
-      data: {
-        ...secrets,
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token || secrets.refresh_token,
-        expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
-      }
-    }
-  } catch (error) {
-    console.error('Refresh token error:', error)
-    return { error: error.message }
-  }
+// Transform ML orders to unified format
+function transformMLOrders(mlOrders: any[]): any[] {
+  return mlOrders.map(order => ({
+    id: order.id.toString(),
+    numero: order.id.toString(),
+    nome_cliente: order.buyer?.nickname || order.buyer?.first_name || null,
+    cpf_cnpj: null,
+    data_pedido: order.date_created?.split('T')[0] || null,
+    data_prevista: order.estimated_delivery?.date || null,
+    situacao: mapMLStatus(order.status),
+    valor_total: order.total_amount || 0,
+    valor_frete: order.shipping?.cost || 0,
+    valor_desconto: 0,
+    numero_ecommerce: order.id.toString(),
+    numero_venda: null,
+    empresa: 'MercadoLivre',
+    cidade: order.shipping?.receiver_address?.city || null,
+    uf: order.shipping?.receiver_address?.state?.name || null,
+    codigo_rastreamento: order.shipping?.tracking_number || null,
+    url_rastreamento: null,
+    obs: null,
+    obs_interna: null,
+    integration_account_id: null,
+    created_at: order.date_created,
+    updated_at: order.last_updated || order.date_created
+  }));
 }
 
+// Map ML status to unified status
 function mapMLStatus(mlStatus: string): string {
   const statusMap: { [key: string]: string } = {
-    'confirmed': 'paid',
-    'payment_required': 'pending',
-    'payment_in_process': 'processing',
-    'partially_paid': 'processing',
-    'paid': 'paid',
-    'cancelled': 'cancelled',
-    'invalid': 'cancelled',
-    'shipped': 'shipped',
-    'delivered': 'delivered'
-  }
-  return statusMap[mlStatus] || mlStatus
+    'confirmed': 'Confirmado',
+    'payment_required': 'Aguardando Pagamento',
+    'payment_in_process': 'Processando Pagamento',
+    'partially_paid': 'Parcialmente Pago',
+    'paid': 'Pago',
+    'cancelled': 'Cancelado',
+    'invalid': 'Inválido',
+    'shipped': 'Enviado',
+    'delivered': 'Entregue'
+  };
+  return statusMap[mlStatus] || mlStatus;
 }

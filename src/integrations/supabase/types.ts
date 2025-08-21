@@ -486,7 +486,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
-          organization_id: string
+          organization_id: string | null
           provider: Database["public"]["Enums"]["integration_provider"]
           public_auth: Json | null
           updated_at: string
@@ -498,7 +498,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
-          organization_id: string
+          organization_id?: string | null
           provider: Database["public"]["Enums"]["integration_provider"]
           public_auth?: Json | null
           updated_at?: string
@@ -510,7 +510,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
-          organization_id?: string
+          organization_id?: string | null
           provider?: Database["public"]["Enums"]["integration_provider"]
           public_auth?: Json | null
           updated_at?: string
@@ -563,63 +563,27 @@ export type Database = {
       }
       integration_secrets: {
         Row: {
-          access_count: number | null
-          created_at: string
-          encrypted_note: string | null
-          expires_at: string | null
-          id: string
-          integration_account_id: string
-          last_accessed_at: string | null
-          organization_id: string
-          payload: Json | null
+          account_id: string
+          created_at: string | null
+          enc_data: string
           provider: string
-          secret_enc: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          access_count?: number | null
-          created_at?: string
-          encrypted_note?: string | null
-          expires_at?: string | null
-          id?: string
-          integration_account_id: string
-          last_accessed_at?: string | null
-          organization_id: string
-          payload?: Json | null
+          account_id: string
+          created_at?: string | null
+          enc_data: string
           provider: string
-          secret_enc?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          access_count?: number | null
-          created_at?: string
-          encrypted_note?: string | null
-          expires_at?: string | null
-          id?: string
-          integration_account_id?: string
-          last_accessed_at?: string | null
-          organization_id?: string
-          payload?: Json | null
+          account_id?: string
+          created_at?: string | null
+          enc_data?: string
           provider?: string
-          secret_enc?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "integration_secrets_integration_account_id_fkey"
-            columns: ["integration_account_id"]
-            isOneToOne: false
-            referencedRelation: "integration_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "integration_secrets_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       integration_secrets_access_log: {
         Row: {
@@ -1825,18 +1789,30 @@ export type Database = {
         Returns: Json
       }
       encrypt_integration_secret: {
-        Args: {
-          p_access_token?: string
-          p_account_id: string
-          p_client_id?: string
-          p_client_secret?: string
-          p_encryption_key?: string
-          p_expires_at?: string
-          p_payload?: Json
-          p_provider: string
-          p_refresh_token?: string
-        }
-        Returns: string
+        Args:
+          | {
+              p_access_token: string
+              p_account_id: string
+              p_client_id: string
+              p_client_secret: string
+              p_encryption_key: string
+              p_expires_at: string
+              p_payload: Json
+              p_provider: string
+              p_refresh_token: string
+            }
+          | {
+              p_access_token: string
+              p_account_id: string
+              p_client_id: string
+              p_client_secret: string
+              p_encryption_key: string
+              p_expires_at: string
+              p_payload: Json
+              p_provider: string
+              p_refresh_token: string
+            }
+        Returns: undefined
       }
       gerar_sku_automatico: {
         Args: { org_id: string; prefixo?: string }
