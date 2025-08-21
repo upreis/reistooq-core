@@ -3,14 +3,13 @@ import { makeClient, ENC_KEY, ok, fail, corsHeaders } from '../_shared/client.ts
 
 serve(async (req) => {
   console.log(`[unified-orders] Received ${req.method} request`);
-  
+
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    console.log(`[unified-orders] Handling OPTIONS (CORS preflight)`);
-    return new Response(null, { 
-      status: 200,
-      headers: corsHeaders 
-    });
+    const reqHeaders = req.headers.get('Access-Control-Request-Headers') ?? 'authorization, x-client-info, apikey, content-type';
+    const headers = { ...corsHeaders, 'Access-Control-Allow-Headers': reqHeaders } as HeadersInit;
+    console.log(`[unified-orders] Preflight OK. Allow-Headers: ${reqHeaders}`);
+    return new Response(null, { status: 200, headers });
   }
 
   if (req.method !== "POST") {
@@ -24,7 +23,13 @@ serve(async (req) => {
     const correlationId = crypto.randomUUID();
     console.log(`[unified-orders:${correlationId}] Starting request processing`);
     
-    const supabase = makeClient(req.headers.get("Authorization"));
+    const authHeader = req.headers.get('Authorization') ?? req.headers.get('authorization');
+    if (!authHeader) {
+      console.warn(`[unified-orders:${correlationId}] Missing Authorization header`);
+      return fail('Missing Authorization header', 401);
+    }
+    
+    const supabase = makeClient(authHeader);
 
     const body = await req.json();
     const { integration_account_id, status, limit = 50, offset = 0 } = body;
