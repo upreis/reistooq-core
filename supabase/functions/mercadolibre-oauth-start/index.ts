@@ -68,10 +68,10 @@ Deno.serve(async (req) => {
     authUrl.searchParams.set('response_type', 'code')
     authUrl.searchParams.set('client_id', clientId)
     authUrl.searchParams.set('redirect_uri', redirectUri)
+    authUrl.searchParams.set('scope', 'offline_access read write')
     authUrl.searchParams.set('state', state)
     authUrl.searchParams.set('code_challenge', codeChallenge)
     authUrl.searchParams.set('code_challenge_method', 'S256')
-    authUrl.searchParams.set('scope', 'offline_access')
 
     return new Response(
       JSON.stringify({ 

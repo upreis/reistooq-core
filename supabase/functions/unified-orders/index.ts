@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
       }
 
       // Get user ID from payload - try multiple possible locations
-      const userId = secrets.payload?.user_id || secrets.payload?.user_data?.id || secrets.payload?.seller_id
+      let userId = secrets.payload?.user_id || secrets.payload?.user_data?.id || secrets.payload?.seller_id
       if (!userId) {
         // Try to get seller_id from ML API if not in secrets
         try {
@@ -161,10 +161,11 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          orders: unifiedOrders,
-          total: ordersData.paging?.total || unifiedOrders.length,
-          source: 'mercadolivre'
+          ok: true,
+          results: ordersData.results || [],
+          unified: unifiedOrders,
+          paging: ordersData.paging || {},
+          count: ordersData.paging?.total || unifiedOrders.length
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
