@@ -31,6 +31,13 @@ Deno.serve(async (req) => {
     return json({ ok: false, checks: [{ name: "auth", ok: false, fix: "Envie Authorization: Bearer <token do usuário>" }] }, 401);
   }
 
+  // Auth-bound client to execute RPCs that rely on auth.uid()
+  const authClient = createClient(
+    SUPABASE_URL,
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+    { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } }
+  );
+
   // 1) ENV
   checks.push(check("env.ML_CLIENT_ID", !!ML_CLIENT_ID, "Configure ML_CLIENT_ID"));
   checks.push(check("env.ML_CLIENT_SECRET", !!ML_CLIENT_SECRET, "Configure ML_CLIENT_SECRET"));
@@ -51,8 +58,8 @@ Deno.serve(async (req) => {
     if (!orgId && autoFix) {
       // tenta RPC ensure_current_org, se existir
       try {
-        const { data: ensured } = await sb.rpc("ensure_current_org");
-        if (ensured?.success && ensured?.organization_id) {
+        const { data: ensured, error: ensureErr } = await authClient.rpc("ensure_current_org");
+        if (!ensureErr && ensured?.success && ensured?.organization_id) {
           orgId = ensured.organization_id;
         }
       } catch {}
@@ -96,25 +103,55 @@ Deno.serve(async (req) => {
   }
 
   // 5) Vault/RPC encrypt_integration_secret (selftest)
-  const selfAccount = "selftest:ml:diagnose";
+  const selfLabel = "selftest:ml:diagnose";
+  let tempAccId: string | null = null;
   try {
-    const { error: encErr } = await sb.rpc("encrypt_integration_secret", {
-      p_account_id: selfAccount,
-      p_provider: "mercadolivre",
-      p_client_id: ML_CLIENT_ID || "test",
-      p_client_secret: ML_CLIENT_SECRET || "test",
-      p_access_token: "test",
-      p_refresh_token: "test",
-      p_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
-      p_payload: { ping: true },
-      p_encryption_key: APP_ENCRYPTION_KEY, // ESSENCIAL
-    });
-    checks.push(check("rpc.encrypt_integration_secret", !encErr, "Verifique se o RPC existe e aceite p_encryption_key; confira estrutura de integration_secrets"));
+    // Garantir organização para vincular o segredo
+    if (!orgId && autoFix) {
+      try {
+        const { data: ensured, error: ensureErr } = await authClient.rpc("ensure_current_org");
+        if (!ensureErr && ensured?.success && ensured?.organization_id) {
+          orgId = ensured.organization_id;
+        }
+      } catch {}
+    }
+
+    // Criar conta de integração temporária
+    const { data: acc, error: accErr } = await sb
+      .from("integration_accounts")
+      .insert({
+        provider: "mercadolivre",
+        is_active: true,
+        name: "Diagnose SelfTest",
+        account_identifier: selfLabel,
+        organization_id: orgId,
+      })
+      .select("id")
+      .single();
+
+    if (!accErr && acc?.id) {
+      tempAccId = acc.id as string;
+      const { error: encErr } = await sb.rpc("encrypt_integration_secret", {
+        p_account_id: tempAccId,
+        p_provider: "mercadolivre",
+        p_client_id: ML_CLIENT_ID || "test",
+        p_client_secret: ML_CLIENT_SECRET || "test",
+        p_access_token: "test",
+        p_refresh_token: "test",
+        p_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+        p_payload: { ping: true },
+        p_encryption_key: APP_ENCRYPTION_KEY, // ESSENCIAL
+      });
+      checks.push(check("rpc.encrypt_integration_secret", !encErr, "Verifique se o RPC existe e aceite p_encryption_key; confira estrutura de integration_secrets"));
+    } else {
+      checks.push(check("rpc.encrypt_integration_secret", false, "Falha ao criar conta de integração temporária; verifique tabela integration_accounts e provider 'mercadolivre'"));
+    }
   } catch (e) {
     checks.push(check("rpc.encrypt_integration_secret", false, "RPC ausente/erro interno; veja logs do banco"));
   } finally {
-    // tenta limpar registro de teste
-    try { await sb.from("integration_secrets").delete().eq("account_id", selfAccount); } catch {}
+    // Limpeza
+    try { if (tempAccId) await sb.from("integration_secrets").delete().eq("integration_account_id", tempAccId); } catch {}
+    try { if (tempAccId) await sb.from("integration_accounts").delete().eq("id", tempAccId); } catch {}
   }
 
   // 6) Redirect calculado
