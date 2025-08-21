@@ -99,7 +99,7 @@ serve(async (req) => {
     const { clientId, clientSecret, redirectUriEnv } = getMlConfig();
 
     // ===== AQUI: redirect da PRÓPRIA função (precisa bater com o cadastrado no ML) =====
-    const computedRedirect = `${url.origin}${url.pathname}`; // -> .../functions/v1/mercadolivre-oauth-callback
+    const computedRedirect = `${url.origin}${url.pathname}`; // -> .../functions/v1/mercadolibre-oauth-callback
     if (redirectUriEnv && redirectUriEnv !== computedRedirect) {
       console.warn("[ML OAuth Callback] ML_REDIRECT_URI != computedRedirect", {
         redirectUriEnv,
