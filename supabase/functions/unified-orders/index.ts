@@ -22,7 +22,8 @@ serve(async (req) => {
   }
 
   try {
-    console.log('[unified-orders] Starting request processing');
+    const correlationId = crypto.randomUUID();
+    console.log(`[unified-orders:${correlationId}] Starting request processing`);
     
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -33,7 +34,7 @@ serve(async (req) => {
     const { integration_account_id, status, limit = 50, offset = 0 } = body;
 
     if (!integration_account_id) {
-      console.log('[unified-orders] Missing integration_account_id');
+      console.log(`[unified-orders:${correlationId}] Missing integration_account_id`);
       return new Response(JSON.stringify({ 
         ok: false, 
         error: "integration_account_id é obrigatório" 
@@ -43,7 +44,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[unified-orders] Processing account: ${integration_account_id}`);
+    console.log(`[unified-orders:${correlationId}] Processing account_id=${integration_account_id}, status=${status}, limit=${limit}, offset=${offset}`);
 
     // Get integration account details
     const { data: account, error: accountError } = await supabase
@@ -53,7 +54,7 @@ serve(async (req) => {
       .single();
 
     if (accountError || !account) {
-      console.log('[unified-orders] Integration account not found:', accountError);
+      console.log(`[unified-orders:${correlationId}] Integration account not found:`, accountError);
       return new Response(JSON.stringify({ 
         ok: false, 
         error: "Integration account not found" 
@@ -64,7 +65,7 @@ serve(async (req) => {
     }
 
     if (!account.is_active) {
-      console.log('[unified-orders] Integration account is not active');
+      console.log(`[unified-orders:${correlationId}] Integration account is not active`);
       return new Response(JSON.stringify({ 
         ok: false, 
         error: "Integration account is not active" 
@@ -77,7 +78,7 @@ serve(async (req) => {
     if (account.provider === 'mercadolivre') {
       // Validate encryption key
       if (!ENC_KEY) {
-        console.error('[unified-orders] ENC_KEY not configured');
+        console.error(`[unified-orders:${correlationId}] ENC_KEY not configured`);
         return new Response(JSON.stringify({ 
           ok: false, 
           error: "Encryption key not configured" 
@@ -87,7 +88,7 @@ serve(async (req) => {
         });
       }
 
-      console.log('[unified-orders] Decrypting secrets...');
+      console.log(`[unified-orders:${correlationId}] Decrypting secrets for provider=${account.provider}, seller_id=${account.account_identifier}...`);
       
       // Get integration secrets using RPC
       const { data: secretsData, error: secretsError } = await supabase.rpc("decrypt_integration_secret", {
@@ -97,7 +98,7 @@ serve(async (req) => {
       });
 
       if (secretsError || !secretsData) {
-        console.error('[unified-orders] Failed to decrypt secrets:', secretsError);
+        console.error(`[unified-orders:${correlationId}] Failed to decrypt secrets:`, secretsError);
         return new Response(JSON.stringify({ 
           ok: false, 
           error: "Failed to retrieve integration secrets" 
@@ -107,7 +108,7 @@ serve(async (req) => {
         });
       }
 
-      console.log('[unified-orders] Secrets decrypted successfully');
+      console.log(`[unified-orders:${correlationId}] Secrets decrypted successfully, checking token expiry...`);
 
       // Use let instead of const to allow reassignment
       let secrets = secretsData;
@@ -145,7 +146,7 @@ serve(async (req) => {
       }
 
       // Fetch orders from Mercado Livre API
-      console.log('[unified-orders] Fetching orders from ML API...');
+      console.log(`[unified-orders:${correlationId}] Fetching orders from ML API: seller=${account.account_identifier}, status=${status || 'all'}, limit=${limit}, offset=${offset}`);
       
       const mlUrl = new URL('https://api.mercadolibre.com/orders/search');
       mlUrl.searchParams.set('seller', account.account_identifier);
@@ -161,11 +162,12 @@ serve(async (req) => {
       });
 
       if (!mlResponse.ok) {
-        console.error(`[unified-orders] ML API error: ${mlResponse.status}`);
+        console.error(`[unified-orders:${correlationId}] ML API error: status=${mlResponse.status}, seller_id=${account.account_identifier}`);
         
         if (mlResponse.status === 403) {
           const errorText = await mlResponse.text();
           if (errorText.includes('invalid_operator_user_id')) {
+            console.error(`[unified-orders:${correlationId}] invalid_operator_user_id error - token does not have admin permissions`);
             return new Response(JSON.stringify({ 
               ok: false, 
               error: "invalid_operator_user_id - Token does not have permission to access this seller" 
@@ -223,7 +225,7 @@ serve(async (req) => {
       }
 
       const mlData = await mlResponse.json();
-      console.log(`[unified-orders] ML API success, returning ${mlData.results?.length || 0} orders`);
+      console.log(`[unified-orders:${correlationId}] ML API success: fetched ${mlData.results?.length || 0} orders, total=${mlData.paging?.total || 0}`);
       
       // Transform ML orders to unified format
       const unifiedOrders = transformMLOrders(mlData.results || []);
@@ -240,7 +242,7 @@ serve(async (req) => {
     }
 
     // For other providers, return empty results
-    console.log(`[unified-orders] Provider ${account.provider} not supported yet`);
+    console.log(`[unified-orders:${correlationId}] Provider ${account.provider} not supported yet`);
     return new Response(JSON.stringify({
       ok: true,
       results: [],
@@ -252,7 +254,8 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[unified-orders] Unexpected error:', error);
+    const correlationId = 'error-' + crypto.randomUUID().split('-')[0];
+    console.error(`[unified-orders:${correlationId}] Unexpected error:`, error);
     return new Response(JSON.stringify({ 
       ok: false, 
       error: error.message || 'Internal server error' 
