@@ -1,13 +1,14 @@
 // 🎯 MercadoLibre Connection Component
 // UI for connecting and managing ML integration
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { ShoppingCart, User, Calendar, ExternalLink, Unplug, RefreshCw } from 'lucide-react';
+import { ShoppingCart, User, Calendar, ExternalLink, Unplug, RefreshCw, Copy } from 'lucide-react';
 import { mercadoLivreService, type MLAccount } from '@/services/MercadoLivreService';
 import { supabase } from '@/integrations/supabase/client';
 import MeliOrders from '@/components/MeliOrders';
@@ -24,7 +25,10 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
   const [isSyncing, setIsSyncing] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<MLAccount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [testingFunctions, setTestingFunctions] = useState(false);
+const [testingFunctions, setTestingFunctions] = useState(false);
+  const [manualAuthUrl, setManualAuthUrl] = useState<string | null>(null);
+  const pollRef = useRef<number | null>(null);
+  const pollTimeoutRef = useRef<number | null>(null);
 
   // Load connected accounts
   useEffect(() => {
@@ -44,6 +48,59 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
     }
   };
 
+
+  // Fallback: polling quando popup é bloqueado
+  const startPollingForConnection = () => {
+    try {
+      if (pollRef.current) window.clearInterval(pollRef.current);
+      if (pollTimeoutRef.current) window.clearTimeout(pollTimeoutRef.current);
+    } catch {}
+
+    pollRef.current = window.setInterval(async () => {
+      try {
+        const connectedAccounts = await mercadoLivreService.getConnectedAccounts();
+        if (connectedAccounts.length > 0) {
+          setAccounts(connectedAccounts);
+          setIsConnecting(false);
+          setManualAuthUrl(null);
+          if (pollRef.current) window.clearInterval(pollRef.current);
+          if (pollTimeoutRef.current) window.clearTimeout(pollTimeoutRef.current);
+          toast.success('✅ Conta Mercado Livre conectada!');
+        }
+      } catch {
+        // ignore
+      }
+    }, 2000);
+
+    // timeout em 5 minutos
+    pollTimeoutRef.current = window.setTimeout(() => {
+      if (pollRef.current) window.clearInterval(pollRef.current);
+    }, 300000);
+  };
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) window.clearInterval(pollRef.current);
+      if (pollTimeoutRef.current) window.clearTimeout(pollTimeoutRef.current);
+    };
+  }, []);
+
+  const handleCopyUrl = async () => {
+    if (!manualAuthUrl) return;
+    try {
+      await navigator.clipboard.writeText(manualAuthUrl);
+      toast.success('URL copiada para a área de transferência');
+    } catch {
+      toast.error('Não foi possível copiar automaticamente');
+    }
+  };
+
+  const handleOpenManual = () => {
+    if (!manualAuthUrl) return;
+    // Tentativa de abrir (pode ser bloqueado pelo sandbox)
+    window.open(manualAuthUrl, '_blank', 'noopener,noreferrer');
+  };
 
   const handleConnect = async () => {
     try {
@@ -65,7 +122,12 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       );
 
       if (!popup) {
-        throw new Error('Popup bloqueado pelo navegador');
+        // Popup bloqueado no ambiente sandbox do preview -> fallback manual
+        toast.warning('Pop-up bloqueado pelo navegador. Use o link manual para concluir a conexão.');
+        setManualAuthUrl(data.authorization_url);
+        startPollingForConnection();
+        setIsConnecting(false);
+        return;
       }
 
       // Aguardar callback
@@ -309,6 +371,26 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
                 </>
               )}
             </Button>
+
+            {manualAuthUrl && (
+              <div className="mt-4 border rounded p-3 text-left">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Pop-up bloqueado pelo navegador. Use o link abaixo para concluir a autenticação no Mercado Livre. A conexão será detectada automaticamente.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <code className="text-xs break-all bg-muted/40 p-2 rounded">{manualAuthUrl}</code>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleOpenManual}>
+                      <ExternalLink className="h-3 w-3 mr-1" /> Abrir link
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleCopyUrl}>
+                      <Copy className="h-3 w-3 mr-1" /> Copiar URL
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         ) : (
           <div className="space-y-4">
