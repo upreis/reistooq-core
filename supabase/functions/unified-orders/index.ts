@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 Deno.serve(async (req) => {
@@ -66,10 +67,25 @@ Deno.serve(async (req) => {
         secrets = refreshResponse.data
       }
 
-      // Get user ID from payload  
-      const userId = secrets.payload?.user_id
+      // Get user ID from payload - try multiple possible locations
+      const userId = secrets.payload?.user_id || secrets.payload?.user_data?.id || secrets.payload?.seller_id
       if (!userId) {
-        throw new Error('User ID not found in secrets')
+        // Try to get seller_id from ML API if not in secrets
+        try {
+          const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
+            headers: { 'Authorization': `Bearer ${secrets.access_token}` }
+          })
+          if (userResponse.ok) {
+            const userData = await userResponse.json()
+            userId = userData.id
+          }
+        } catch (e) {
+          console.error('[Unified Orders] Failed to get user from ML API:', e)
+        }
+        
+        if (!userId) {
+          throw new Error('User ID not found in secrets or ML API')
+        }
       }
 
       // Fetch orders from Mercado Livre
