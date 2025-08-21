@@ -11,7 +11,7 @@ import { ShoppingCart, User, Calendar, ExternalLink, Unplug, RefreshCw } from 'l
 import { mercadoLivreService, type MLAccount } from '@/services/MercadoLivreService';
 import { supabase } from '@/integrations/supabase/client';
 import MeliOrders from '@/components/MeliOrders';
-import { openMlPopup } from '@/features/integrations/utils/openMlPopup';
+
 
 interface MercadoLivreConnectionProps {
   onOrdersSync?: (accountId: string) => void;
@@ -48,17 +48,40 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
+      
+      // Usar Edge Function segura em vez de openMlPopup
+      const { data, error } = await supabase.functions.invoke('mercadolibre-oauth-start', {
+        body: { organization_id: 'current' }
+      });
 
-      openMlPopup({
-        onSuccess: () => {
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error);
+
+      // Abrir popup com URL segura da Edge Function
+      const popup = window.open(
+        data.authorization_url,
+        'ml-oauth',
+        'width=600,height=700,scrollbars=yes,resizable=yes'
+      );
+
+      if (!popup) {
+        throw new Error('Popup bloqueado pelo navegador');
+      }
+
+      // Aguardar callback
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre') {
+          popup.close();
+          window.removeEventListener('message', handleMessage);
           setIsConnecting(false);
-          toast.success('Mercado Livre conectado com sucesso!');
+          toast.success('MercadoLibre conectado com sucesso!');
           loadAccounts();
-        },
-        onError: (errorMsg: string) => {
+        } else if (event.data?.type === 'oauth_error') {
+          popup.close();
+          window.removeEventListener('message', handleMessage);
           setIsConnecting(false);
           
-          // Handle specific error types with better user messages
+          const errorMsg = event.data.error || 'Erro desconhecido';
           if (errorMsg.includes('OPERATOR_REQUIRED')) {
             toast.error('Erro: Use uma conta com permissões de administrador no MercadoLibre para realizar integrações.');
           } else if (errorMsg.includes('invalid_grant') || errorMsg.includes('expirado')) {
@@ -66,11 +89,19 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
           } else {
             toast.error(`Erro na autenticação: ${errorMsg}`);
           }
-        },
-        onClosed: () => {
+        }
+      };
+
+      window.addEventListener('message', handleMessage);
+      
+      // Cleanup se popup for fechado manualmente
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener('message', handleMessage);
           setIsConnecting(false);
         }
-      });
+      }, 1000);
     } catch (error) {
       console.error('ML connection failed:', error);
       
