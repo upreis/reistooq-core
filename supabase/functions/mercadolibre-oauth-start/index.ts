@@ -1,10 +1,22 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
-import { getMlConfig } from '../_shared/client.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+function getMlConfig() {
+  // Suporta duas convenções de env keys
+  const clientId = Deno.env.get('ML_CLIENT_ID') || Deno.env.get('MERCADOLIVRE_CLIENT_ID') || '';
+  const clientSecret = Deno.env.get('ML_CLIENT_SECRET') || Deno.env.get('MERCADOLIVRE_CLIENT_SECRET') || '';
+  const redirectUri = Deno.env.get('ML_REDIRECT_URI') || Deno.env.get('MERCADOLIVRE_REDIRECT_URI') ||
+    `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolibre-oauth-callback`;
+
+  if (!clientId || !clientSecret) {
+    throw new Error('Missing ML client credentials (client_id/client_secret)');
+  }
+  return { clientId, clientSecret, redirectUri };
 }
 
 Deno.serve(async (req) => {
