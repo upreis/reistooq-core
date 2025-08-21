@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
       .from('profiles')
       .select('organizacao_id')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     const orgId = profile?.organizacao_id
     if (!orgId) {
