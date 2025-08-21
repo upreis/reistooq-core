@@ -11,7 +11,7 @@ function getMlConfig() {
   const clientId = Deno.env.get('ML_CLIENT_ID') || Deno.env.get('MERCADOLIVRE_CLIENT_ID') || '';
   const clientSecret = Deno.env.get('ML_CLIENT_SECRET') || Deno.env.get('MERCADOLIVRE_CLIENT_SECRET') || '';
   const redirectUri = Deno.env.get('ML_REDIRECT_URI') || Deno.env.get('MERCADOLIVRE_REDIRECT_URI') ||
-    `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolibre-oauth-callback`;
+    `${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolivre-oauth-callback`;
 
   if (!clientId) {
     throw new Error('Missing ML_CLIENT_ID or MERCADOLIVRE_CLIENT_ID environment variable');

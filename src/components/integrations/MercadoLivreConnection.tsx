@@ -269,11 +269,11 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       setTestingFunctions(true);
       
       // 1. Test mercadolibre-oauth-callback (OAuth callback)
-      const smoothResponse = await fetch("https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolibre-oauth-callback?code=TEST&state=TEST");
+      const smoothResponse = await fetch("https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-oauth-callback?code=TEST&state=TEST");
       const smoothText = await smoothResponse.text();
       
       if (!smoothText.includes("Missing code or state") && !smoothText.includes("Invalid or expired state")) {
-        toast.error("❌ mercadolibre-oauth-callback não está respondendo corretamente");
+        toast.error("❌ mercadolivre-oauth-callback não está respondendo corretamente");
         return;
       }
       
