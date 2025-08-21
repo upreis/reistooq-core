@@ -2,7 +2,13 @@
 // Substitui a versão monolítica antiga com melhorias de performance e UX
 
 import { IntegrationsHub } from '@/features/integrations/components/IntegrationsHub/IntegrationsHub';
+import { MLDiagnosticsTest } from '@/features/integrations/components/MLDiagnosticsTest';
 
 export default function IntegracoesPage() {
-  return <IntegrationsHub />;
+  return (
+    <div className="space-y-6">
+      <MLDiagnosticsTest />
+      <IntegrationsHub />
+    </div>
+  );
 }
