@@ -50,17 +50,20 @@ serve(async (req) => {
     if (expiresAt.getTime() - now.getTime() < 5 * 60 * 1000) {
       console.log('[ML Orders] Token expiring soon, refreshing...');
       
-      // Call refresh function
-      const refreshResponse = await supabase.functions.invoke('mercadolibre-token-refresh', {
-        body: { integration_account_id }
+      // Call unified refresh function
+      const { data: refreshData, error: refreshError } = await supabase.functions.invoke('mercadolibre-token-refresh', {
+        body: { 
+          integration_account_id,
+          provider: 'mercadolivre'
+        }
       });
 
-      if (refreshResponse.error) {
-        console.error('[ML Orders] Token refresh failed:', refreshResponse.error);
+      if (refreshError || !refreshData?.success) {
+        console.error('[ML Orders] Token refresh failed:', refreshError);
         return fail("Falha ao renovar token de acesso", 400);
       }
 
-      accessToken = refreshResponse.data.access_token;
+      accessToken = refreshData.access_token;
       console.log('[ML Orders] Token refreshed successfully');
     }
 

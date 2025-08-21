@@ -563,27 +563,60 @@ export type Database = {
       }
       integration_secrets: {
         Row: {
-          account_id: string
-          created_at: string | null
-          enc_data: string
+          access_count: number | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          integration_account_id: string
+          last_accessed_at: string | null
+          organization_id: string
+          payload: Json | null
           provider: string
-          updated_at: string | null
+          secret_enc: string
+          updated_at: string
         }
         Insert: {
-          account_id: string
-          created_at?: string | null
-          enc_data: string
+          access_count?: number | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          integration_account_id: string
+          last_accessed_at?: string | null
+          organization_id: string
+          payload?: Json | null
           provider: string
-          updated_at?: string | null
+          secret_enc: string
+          updated_at?: string
         }
         Update: {
-          account_id?: string
-          created_at?: string | null
-          enc_data?: string
+          access_count?: number | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          integration_account_id?: string
+          last_accessed_at?: string | null
+          organization_id?: string
+          payload?: Json | null
           provider?: string
-          updated_at?: string | null
+          secret_enc?: string
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_integration_account"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_organization"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       integration_secrets_access_log: {
         Row: {
@@ -657,6 +690,30 @@ export type Database = {
           requesting_function?: string | null
           user_agent?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      integration_secrets_backup: {
+        Row: {
+          account_id: string | null
+          created_at: string | null
+          enc_data: string | null
+          provider: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string | null
+          enc_data?: string | null
+          provider?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string | null
+          enc_data?: string | null
+          provider?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

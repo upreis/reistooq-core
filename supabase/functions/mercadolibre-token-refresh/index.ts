@@ -94,6 +94,7 @@ serve(async (req) => {
     console.log('[ML Token Refresh] Successfully updated tokens');
 
     return ok({
+      success: true,
       access_token: newTokenData.access_token,
       expires_at: newExpiresAt,
       token_type: newTokenData.token_type || 'Bearer',
