@@ -114,13 +114,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 5) Persiste state/PKCE
+    // 5) Persiste state/PKCE + redirect_uri para garantir consistência
     const { error: stErr } = await authClient.from('oauth_states').insert({
       state_value: state,
       code_verifier: codeVerifier,
       user_id: user.id,
       organization_id: orgId,
       provider: 'mercadolivre',
+      redirect_uri: redirectUri, // Salva o redirect_uri usado na autorização
       expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 min
     })
     if (stErr) {

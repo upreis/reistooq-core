@@ -98,17 +98,19 @@ serve(async (req) => {
     // Segredos do app ML
     const { clientId, clientSecret, redirectUriEnv } = getMlConfig();
 
-    // ===== Redirecionamento oficial: use o ML_REDIRECT_URI exatamente; fallback para o URL atual
+    // ===== Use o redirect_uri salvo no oauth_states para garantir consistência total
+    const redirectUriFromState = (stateData as any).redirect_uri || redirectUriEnv;
     const computedRedirect = `${url.origin}${url.pathname}`; // ex: .../functions/v1/mercadolibre-oauth-callback
-    const redirectForToken = redirectUriEnv || computedRedirect;
-    if (redirectUriEnv && redirectUriEnv !== computedRedirect) {
-      console.warn("[ML OAuth Callback] ML_REDIRECT_URI != computedRedirect", {
-        redirectUriEnv,
-        computedRedirect,
-      });
-    }
+    const redirectForToken = redirectUriFromState || computedRedirect;
+    
+    console.log("[ML OAuth Callback] Using redirect_uri:", {
+      fromState: redirectUriFromState,
+      fromEnv: redirectUriEnv,
+      computed: computedRedirect,
+      final: redirectForToken,
+    });
 
-    // Troca code -> tokens (usa exatamente o redirectForToken)
+    // Troca code -> tokens (usa o MESMO redirect_uri do authorize)
     const tokenParams = new URLSearchParams({
       grant_type: "authorization_code",
       client_id: clientId,

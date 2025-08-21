@@ -1042,6 +1042,7 @@ export type Database = {
           id: string
           organization_id: string | null
           provider: string | null
+          redirect_uri: string | null
           state_value: string | null
           used: boolean | null
           user_id: string
@@ -1053,6 +1054,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           provider?: string | null
+          redirect_uri?: string | null
           state_value?: string | null
           used?: boolean | null
           user_id: string
@@ -1064,6 +1066,7 @@ export type Database = {
           id?: string
           organization_id?: string | null
           provider?: string | null
+          redirect_uri?: string | null
           state_value?: string | null
           used?: boolean | null
           user_id?: string
