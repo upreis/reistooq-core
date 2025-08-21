@@ -162,7 +162,7 @@ serve(async (req) => {
               
               return ok({
                 results: retryData.results || [],
-                unified: transformMLOrders(retryData.results || []),
+                unified: transformMLOrders(retryData.results || [], integration_account_id),
                 paging: retryData.paging,
                 count: retryData.paging?.total || 0
               });
@@ -178,7 +178,7 @@ serve(async (req) => {
       console.log(`[unified-orders:${correlationId}] ML API success: fetched ${mlData.results?.length || 0} orders, total=${mlData.paging?.total || 0}`);
       
       // Transform ML orders to unified format
-      const unifiedOrders = transformMLOrders(mlData.results || []);
+      const unifiedOrders = transformMLOrders(mlData.results || [], integration_account_id);
 
       return ok({
         results: mlData.results || [],
@@ -205,7 +205,7 @@ serve(async (req) => {
 });
 
 // Transform ML orders to unified format
-function transformMLOrders(mlOrders: any[]): any[] {
+function transformMLOrders(mlOrders: any[], integrationAccountId: string): any[] {
   return mlOrders.map(order => ({
     id: order.id.toString(),
     numero: order.id.toString(),
@@ -226,7 +226,7 @@ function transformMLOrders(mlOrders: any[]): any[] {
     url_rastreamento: null,
     obs: null,
     obs_interna: null,
-    integration_account_id: null,
+    integration_account_id: integrationAccountId,
     created_at: order.date_created,
     updated_at: order.last_updated || order.date_created
   }));
