@@ -1852,17 +1852,29 @@ export type Database = {
         Returns: Json
       }
       encrypt_integration_secret: {
-        Args: {
-          p_access_token: string
-          p_account_id: string
-          p_client_id: string
-          p_client_secret: string
-          p_encryption_key: string
-          p_expires_at: string
-          p_payload: Json
-          p_provider: string
-          p_refresh_token: string
-        }
+        Args:
+          | {
+              p_access_token: string
+              p_account_id: string
+              p_client_id: string
+              p_client_secret: string
+              p_encryption_key: string
+              p_expires_at: string
+              p_payload: Json
+              p_provider: string
+              p_refresh_token: string
+            }
+          | {
+              p_access_token: string
+              p_account_id: string
+              p_client_id: string
+              p_client_secret: string
+              p_encryption_key: string
+              p_expires_at: string
+              p_payload?: Json
+              p_provider: string
+              p_refresh_token: string
+            }
         Returns: undefined
       }
       ensure_current_org: {
