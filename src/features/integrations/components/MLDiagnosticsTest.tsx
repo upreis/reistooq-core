@@ -30,7 +30,7 @@ export function MLDiagnosticsTest() {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mercadolivre-diagnose?autofix=1`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mercadolibre-diagnose?autofix=1`,
         {
           method: 'POST',
           headers: {

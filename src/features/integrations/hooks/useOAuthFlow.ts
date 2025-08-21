@@ -18,7 +18,7 @@ const getOAuthConfigs = (): Record<Provider, OAuthConfig | null> => {
       client_secret: '', // Handled securely by Edge Function
       authorization_url: 'https://auth.mercadolivre.com.br/authorization',
       token_url: 'https://api.mercadolivre.com/oauth/token',
-      redirect_uri: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolivre-oauth-callback`,
+      redirect_uri: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/mercadolibre-oauth-callback`,
       scopes: ['offline_access', 'read', 'write'],
       use_pkce: true,
     },

@@ -1,10 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ====== AJUSTE: chave de criptografia (obrigatória no RPC) ======
-const ENC_KEY = Deno.env.get('APP_ENCRYPTION_KEY') || '';
-
-// Helpers locais (evita imports cruzados)
+// Local helpers (no cross-file imports to avoid deploy errors)
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -21,7 +18,7 @@ function makeClient(authHeader: string | null) {
 function getMlConfig() {
   const clientId = Deno.env.get('ML_CLIENT_ID');
   const clientSecret = Deno.env.get('ML_CLIENT_SECRET');
-  const redirectUri = Deno.env.get('ML_REDIRECT_URI'); // precisa ser IDÊNTICO ao usado no authorize
+  const redirectUri = Deno.env.get('ML_REDIRECT_URI');
   if (!clientId || !clientSecret || !redirectUri) {
     throw new Error('Missing ML secrets: ML_CLIENT_ID, ML_CLIENT_SECRET, ML_REDIRECT_URI');
   }
@@ -34,16 +31,6 @@ serve(async (req) => {
   }
 
   try {
-    if (!ENC_KEY) {
-      console.error('[ML OAuth Callback] Missing APP_ENCRYPTION_KEY');
-      return new Response(`
-        <html><body><script>
-        window.opener?.postMessage({ type: 'oauth_error', provider: 'mercadolivre', error: 'Encryption key missing' }, '*');
-        window.close();
-        </script></body></html>
-      `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
-    }
-
     // Service role client
     const serviceClient = makeClient(null);
     console.log('[ML OAuth Callback] Using service role: true');
@@ -73,7 +60,7 @@ serve(async (req) => {
       `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
     }
 
-    // Valida state + obtém PKCE e org
+    // Validate state + get PKCE verifier and org
     const { data: stateData, error: stateErr } = await serviceClient
       .from('oauth_states')
       .select('*')
@@ -95,7 +82,7 @@ serve(async (req) => {
 
     await serviceClient.from('oauth_states').update({ used: true }).eq('id', stateData.id);
 
-    // Resolve organization_id via profiles se faltou no state
+    // Resolve organization_id fallback via profiles if missing
     let organizationId = stateData.organization_id as string | null;
     if (!organizationId && stateData.user_id) {
       const { data: prof } = await serviceClient
@@ -106,17 +93,19 @@ serve(async (req) => {
       organizationId = prof?.organizacao_id ?? null;
     }
 
-    // Segredos do ML
-    const { clientId, clientSecret, redirectUri } = getMlConfig();
+    // Get ML config (will throw if secrets are missing)
+    const { clientId, clientSecret } = getMlConfig();
     console.log('[ML OAuth Callback] Secrets loaded successfully');
 
-    // Troca code -> tokens (usa exatamente o MESMO redirect_uri do authorize)
+    // Token exchange (PKCE if verifier exists)
+    // Use EXACTLY the URL of this function as redirect_uri
+    const computedRedirect = `${url.origin}${url.pathname}`;
     const tokenParams = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: clientId,
       client_secret: clientSecret,
       code,
-      redirect_uri: redirectUri,
+      redirect_uri: computedRedirect,
     });
     if (stateData.code_verifier) tokenParams.set('code_verifier', stateData.code_verifier);
 
@@ -152,7 +141,7 @@ serve(async (req) => {
     }
     const user = await userResp.json();
 
-    // Cria conta de integração
+    // Create/Store integration account
     const { data: account, error: accErr } = await serviceClient
       .from('integration_accounts')
       .insert({
@@ -185,24 +174,34 @@ serve(async (req) => {
       `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
     }
 
-    // ====== AJUSTE: salva credenciais no cofre com p_encryption_key ======
+    // Save secrets via secure RPC function
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
-
+    const encKey = Deno.env.get('APP_ENCRYPTION_KEY') || '';
+    
+    if (!encKey) {
+      console.error('[ML OAuth Callback] Missing APP_ENCRYPTION_KEY');
+      return new Response(`
+        <html><body><script>
+        window.opener?.postMessage({ type: 'oauth_error', provider: 'mercadolivre', error: 'Encryption key missing' }, '*');
+        window.close();
+        </script></body></html>
+      `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
+    }
+    
     const { error: storeErr } = await serviceClient.rpc('encrypt_integration_secret', {
-      p_account_id: account.id,          // id do registro em integration_accounts
+      p_account_id: account.id,
       p_provider: 'mercadolivre',
       p_client_id: clientId,
       p_client_secret: clientSecret,
       p_access_token: tokenData.access_token,
       p_refresh_token: tokenData.refresh_token,
       p_expires_at: expiresAt.toISOString(),
-      p_payload: {
-        user_id: user.id,                 // use o id do /users/me
-        scope: tokenData.scope || null
+      p_payload: { 
+        user_id: user.id, // Use user.id from /users/me instead of tokenData.user_id
+        scope: tokenData.scope || null 
       },
-      p_encryption_key: ENC_KEY          // <- OBRIGATÓRIO
+      p_encryption_key: encKey
     });
-
     if (storeErr) {
       console.error('Failed to store secrets:', storeErr);
       return new Response(`
@@ -215,7 +214,7 @@ serve(async (req) => {
 
     console.log('ML OAuth completed successfully for account:', account.id);
 
-    // Sucesso
+    // Success
     return new Response(`
       <html><body><script>
       window.opener?.postMessage({ type: 'oauth_success', provider: 'mercadolivre', account_id: '${account.id}', account_name: '${account.name}' }, '*');
