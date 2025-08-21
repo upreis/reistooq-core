@@ -71,12 +71,35 @@ Deno.serve(async (req) => {
         .rpc('ensure_current_org')
 
       if (orgError || !orgResult?.success) {
-        console.error('Failed to ensure organization:', orgError, orgResult)
-        throw new Error(`Failed to create user organization: ${orgResult?.error || orgError?.message}`)
+        console.error('[OAuth][start] Failed to ensure organization:', orgError, orgResult)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Failed to create user organization. Please try again.' 
+          }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
       }
 
       orgId = orgResult.organization_id
-      console.log('[OAuth] Organization ensured:', orgId)
+      console.log('[OAuth][start] Organization auto-created:', orgId)
+    }
+    
+    if (!orgId) {
+      console.error('[OAuth][start] User organization not found after ensure')
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'User organization not found' 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
     }
 
     // Store OAuth state

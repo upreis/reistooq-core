@@ -94,23 +94,25 @@ serve(async (req) => {
     }
 
     // Get ML config (will throw if secrets are missing)
-    const { clientId, clientSecret, redirectUri } = getMlConfig();
+    const { clientId, clientSecret } = getMlConfig();
     console.log('[ML OAuth Callback] Secrets loaded successfully');
 
     // Token exchange (PKCE if verifier exists)
+    // Use EXACTLY the URL of this function as redirect_uri
+    const computedRedirect = `${url.origin}${url.pathname}`;
     const tokenParams = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: clientId,
       client_secret: clientSecret,
       code,
-      redirect_uri: redirectUri,
+      redirect_uri: computedRedirect,
     });
     if (stateData.code_verifier) tokenParams.set('code_verifier', stateData.code_verifier);
 
     const tokenResp = await fetch('https://api.mercadolivre.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
-      body: tokenParams,
+      body: tokenParams.toString(),
     });
     if (!tokenResp.ok) {
       const err = await tokenResp.text();
@@ -174,6 +176,18 @@ serve(async (req) => {
 
     // Save secrets via secure RPC function
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
+    const encKey = Deno.env.get('APP_ENCRYPTION_KEY') || '';
+    
+    if (!encKey) {
+      console.error('[ML OAuth Callback] Missing APP_ENCRYPTION_KEY');
+      return new Response(`
+        <html><body><script>
+        window.opener?.postMessage({ type: 'oauth_error', provider: 'mercadolivre', error: 'Encryption key missing' }, '*');
+        window.close();
+        </script></body></html>
+      `, { headers: { ...corsHeaders, 'Content-Type': 'text/html' } });
+    }
+    
     const { error: storeErr } = await serviceClient.rpc('encrypt_integration_secret', {
       p_account_id: account.id,
       p_provider: 'mercadolivre',
@@ -182,7 +196,11 @@ serve(async (req) => {
       p_access_token: tokenData.access_token,
       p_refresh_token: tokenData.refresh_token,
       p_expires_at: expiresAt.toISOString(),
-      p_payload: { user_id: tokenData.user_id, scope: tokenData.scope }
+      p_payload: { 
+        user_id: user.id, // Use user.id from /users/me instead of tokenData.user_id
+        scope: tokenData.scope || null 
+      },
+      p_encryption_key: encKey
     });
     if (storeErr) {
       console.error('Failed to store secrets:', storeErr);

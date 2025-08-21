@@ -43,13 +43,13 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
           console.info('[ML Connection] Ensuring organization for user:', session.user.id);
           const { data: orgResult, error } = await supabase.rpc('ensure_current_org');
           
-          if (error || !orgResult?.success) {
+          if (error || !(orgResult as any)?.success) {
             console.error('[ML Connection] Failed to ensure organization:', error, orgResult);
             toast.error('Erro ao verificar organização do usuário');
             return;
           }
           
-          console.info('[ML Connection] Organization ensured:', orgResult.organization_id);
+          console.info('[ML Connection] Organization ensured:', (orgResult as any).organization_id);
           loadAccounts();
         }
       } catch (error) {
