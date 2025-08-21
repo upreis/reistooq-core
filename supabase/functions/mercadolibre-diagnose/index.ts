@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
   const ML_CLIENT_SECRET = Deno.env.get("ML_CLIENT_SECRET") ?? Deno.env.get("MERCADOLIVRE_CLIENT_SECRET") ?? "";
   const APP_ENCRYPTION_KEY = Deno.env.get("APP_ENCRYPTION_KEY") ?? "";
   const REDIRECT_URI = Deno.env.get("ML_REDIRECT_URI")
-    ?? `${SUPABASE_URL}/functions/v1/mercadolibre-oauth-callback`;
+    ?? `${SUPABASE_URL}/functions/v1/mercadolivre-oauth-callback`;
 
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
   const checks: Check[] = [];
