@@ -1,5 +1,20 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { makeClient, ENC_KEY, corsHeaders } from "../_shared/client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// Standalone cron function (no _shared import)
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function makeClient(authHeader: string | null) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(url, key, {
+    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
+  });
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -12,19 +27,18 @@ serve(async (req) => {
   try {
     const supabase = makeClient(req.headers.get("Authorization"));
 
-    // Find tokens expiring within 30 minutes
-    const { data: expiringSoonAccounts, error: queryError } = await supabase.rpc('decrypt_integration_secret', {
-      p_account_id: null, // Special: return all accounts
-      p_provider: 'mercadolivre',
-      p_encryption_key: ENC_KEY,
-    });
+    // Find tokens expiring within 30 minutes (provider = mercadolivre)
+    const threshold = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const { data: expiringSoon, error: queryError } = await supabase
+      .from('integration_secrets')
+      .select('integration_account_id, expires_at, provider')
+      .eq('provider', 'mercadolivre')
+      .not('expires_at', 'is', null)
+      .lte('expires_at', threshold);
 
     if (queryError) {
       console.error('[ML Token Refresh Cron] Failed to query expiring tokens:', queryError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Failed to query tokens' 
-      }), {
+      return new Response(JSON.stringify({ success: false, error: 'Failed to query tokens' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
       });
@@ -33,32 +47,21 @@ serve(async (req) => {
     let refreshed = 0;
     let errors = 0;
 
-    // Check each account for token expiration
-    for (const account of expiringSoonAccounts || []) {
+    for (const row of expiringSoon || []) {
+      const accountId = row.integration_account_id;
       try {
-        const expiresAt = new Date(account.expires_at);
-        const now = new Date();
-        const minutesToExpiry = (expiresAt.getTime() - now.getTime()) / (1000 * 60);
-
-        // Refresh if expires within 30 minutes
-        if (minutesToExpiry < 30 && minutesToExpiry > 0) {
-          console.log(`[ML Token Refresh Cron] Refreshing token for account ${account.integration_account_id}, expires in ${minutesToExpiry.toFixed(1)} minutes`);
-
-          // Call the existing smart-responder function
-          const refreshResponse = await supabase.functions.invoke('smart-responder', {
-            body: { integration_account_id: account.integration_account_id }
-          });
-
-          if (refreshResponse.error) {
-            console.error(`[ML Token Refresh Cron] Failed to refresh token for ${account.integration_account_id}:`, refreshResponse.error);
-            errors++;
-          } else {
-            console.log(`[ML Token Refresh Cron] Successfully refreshed token for ${account.integration_account_id}`);
-            refreshed++;
-          }
+        const { data, error } = await supabase.functions.invoke('mercadolibre-token-refresh', {
+          body: { integration_account_id: accountId },
+        });
+        if (error || !data?.success) {
+          console.error(`[ML Token Refresh Cron] Refresh failed for ${accountId}:`, error || data);
+          errors++;
+        } else {
+          console.log(`[ML Token Refresh Cron] Token refreshed for ${accountId}`);
+          refreshed++;
         }
-      } catch (error) {
-        console.error(`[ML Token Refresh Cron] Error processing account ${account.integration_account_id}:`, error);
+      } catch (e) {
+        console.error(`[ML Token Refresh Cron] Error refreshing ${accountId}:`, e);
         errors++;
       }
     }
@@ -69,7 +72,7 @@ serve(async (req) => {
       success: true,
       refreshed,
       errors,
-      message: `Proactive token refresh completed: ${refreshed} refreshed, ${errors} errors`
+      checked: expiringSoon?.length || 0
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
@@ -77,11 +80,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[ML Token Refresh Cron] Unexpected error:', error);
-    
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: String(error?.message ?? error) 
-    }), {
+    return new Response(JSON.stringify({ success: false, error: String(error?.message ?? error) }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders }
     });
