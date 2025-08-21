@@ -1,4 +1,4 @@
-// supabase/functions/mercadolivre-oauth-start/index.ts
+// supabase/functions/mercadolibre-oauth-start/index.ts
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0'
 
 const corsHeaders = {
@@ -13,7 +13,7 @@ function getMlConfig() {
     Deno.env.get('ML_CLIENT_ID') || Deno.env.get('MERCADOLIVRE_CLIENT_ID') || ''
   const clientSecret =
     Deno.env.get('ML_CLIENT_SECRET') || Deno.env.get('MERCADOLIVRE_CLIENT_SECRET') || ''
-  // ⚠️ Fallback fixo para mercadolivre-oauth-callback (com “livre”)
+  // ⚠️ Fallback fixo para mercadolibre-oauth-callback (com “livre”)
   const redirectUri =
     Deno.env.get('ML_REDIRECT_URI') ||
     Deno.env.get('MERCADOLIVRE_REDIRECT_URI') ||
