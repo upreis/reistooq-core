@@ -564,6 +564,7 @@ export type Database = {
       integration_secrets: {
         Row: {
           access_count: number | null
+          access_token: string | null
           created_at: string
           expires_at: string | null
           id: string
@@ -573,11 +574,13 @@ export type Database = {
           organization_id: string
           payload: Json | null
           provider: string
+          refresh_token: string | null
           secret_enc: string
           updated_at: string
         }
         Insert: {
           access_count?: number | null
+          access_token?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -587,11 +590,13 @@ export type Database = {
           organization_id: string
           payload?: Json | null
           provider: string
+          refresh_token?: string | null
           secret_enc: string
           updated_at?: string
         }
         Update: {
           access_count?: number | null
+          access_token?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
@@ -601,6 +606,7 @@ export type Database = {
           organization_id?: string
           payload?: Json | null
           provider?: string
+          refresh_token?: string | null
           secret_enc?: string
           updated_at?: string
         }
@@ -1842,43 +1848,6 @@ export type Database = {
           id: string
           token: string
         }[]
-      }
-      decrypt_integration_secret: {
-        Args:
-          | {
-              p_account_id: string
-              p_encryption_key: string
-              p_provider: string
-            }
-          | {
-              p_account_id: string
-              p_encryption_key: string
-              p_provider: string
-            }
-        Returns: Json
-      }
-      encrypt_integration_secret: {
-        Args:
-          | {
-              p_access_token: string
-              p_account_id: string
-              p_client_id: string
-              p_client_secret: string
-              p_encryption_key: string
-              p_expires_at: string
-              p_payload: Json
-              p_provider: string
-              p_refresh_token: string
-            }
-          | {
-              p_account_id: string
-              p_encryption_key: string
-              p_expires_at?: string
-              p_payload?: Json
-              p_provider: string
-              p_secret: Json
-            }
-        Returns: string
       }
       ensure_current_org: {
         Args: Record<PropertyKey, never>
