@@ -172,9 +172,13 @@ serve(async (req) => {
     }
 
     const json = JSON.parse(mlRaw);
+    
+    // 5) Buscar detalhes de shipping para cada pedido
+    const enrichedOrders = await enrichOrdersWithShipping(json.results ?? [], accessToken, cid);
+    
     return ok({
-      results: json.results ?? [],
-      unified: transformMLOrders(json.results ?? [], integration_account_id),
+      results: enrichedOrders,
+      unified: transformMLOrders(enrichedOrders, integration_account_id),
       paging: json.paging,
       count: json.paging?.total ?? 0,
       correlation_id: cid,
@@ -186,6 +190,50 @@ serve(async (req) => {
 });
 
 // ------ helpers ------
+
+// Função para buscar detalhes de shipping dos pedidos
+async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid: string) {
+  const enrichedOrders = [];
+  
+  for (const order of orders) {
+    try {
+      let enrichedOrder = { ...order };
+      
+      // Se tem shipping ID, buscar detalhes
+      if (order.shipping?.id) {
+        const shippingUrl = `https://api.mercadolibre.com/shipments/${order.shipping.id}`;
+        const shippingResp = await fetch(shippingUrl, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        
+        if (shippingResp.ok) {
+          const shippingData = await shippingResp.json();
+          
+          // Enriquecer com dados de shipping
+          enrichedOrder.shipping = {
+            ...order.shipping,
+            receiver_address: shippingData.receiver_address,
+            tracking_number: shippingData.tracking_number,
+            tracking_url: shippingData.tracking_url,
+            status: shippingData.status
+          };
+          
+          console.log(`[unified-orders:${cid}] Enriched shipping for order ${order.id}`);
+        } else {
+          console.log(`[unified-orders:${cid}] Failed to fetch shipping ${order.shipping.id}: ${shippingResp.status}`);
+        }
+      }
+      
+      enrichedOrders.push(enrichedOrder);
+    } catch (err) {
+      console.error(`[unified-orders:${cid}] Error enriching order ${order.id}:`, err);
+      enrichedOrders.push(order); // Fallback para order original
+    }
+  }
+  
+  return enrichedOrders;
+}
+
 function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
   return (mlOrders ?? []).map((order) => {
     // Calcular frete: primeiro tentar payments[].shipping_cost, depois shipping.cost
@@ -205,6 +253,12 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       }
     });
     
+    // Extrair cidade e estado do endereço de entrega
+    const cidade = order.shipping?.receiver_address?.city?.name || "";
+    const uf = order.shipping?.receiver_address?.state?.name || "";
+    const codigoRastreamento = order.shipping?.tracking_number || "";
+    const urlRastreamento = order.shipping?.tracking_url || "";
+    
     return {
       id: `ml_${order.id}`,
       numero: `ML-${order.id}`,
@@ -219,10 +273,10 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       numero_ecommerce: String(order.id),
       numero_venda: String(order.id),
       empresa: "mercadolivre",
-      cidade: null, // Requer chamada para /shipments/{shipping.id}
-      uf: null, // Requer chamada para /shipments/{shipping.id}
-      codigo_rastreamento: null, // Requer chamada para /shipments/{shipping.id}
-      url_rastreamento: null,
+      cidade,
+      uf,
+      codigo_rastreamento: codigoRastreamento,
+      url_rastreamento: urlRastreamento,
       obs: skuList.length > 0 ? `SKUs: ${skuList.join(", ")}` : order.status_detail,
       obs_interna: `ML Order ID: ${order.id} | Buyer ID: ${order.buyer?.id} | ${order.currency_id}`,
       integration_account_id: integrationAccountId,
