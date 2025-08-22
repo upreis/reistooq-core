@@ -531,13 +531,12 @@ const loadAccounts = async () => {
                   <th className="p-2 text-left">Tipo Listagem</th>
                   <th className="p-2 text-left">Atributos Variação</th>
                   
-                  {/* Dados de Envio Detalhados */}
-                  <th className="p-2 text-left">Forma Entrega</th>
-                  <th className="p-2 text-left">Preferência Entrega</th>
-                  <th className="p-2 text-left">Endereço Completo</th>
-                  <th className="p-2 text-left">CEP</th>
-                  <th className="p-2 text-left">Comentário Endereço</th>
-                  <th className="p-2 text-left">Nome Destinatário</th>
+                   {/* Dados de Envio Detalhados */}
+                   <th className="p-2 text-left">Preferência Entrega</th>
+                   <th className="p-2 text-left">Endereço Completo</th>
+                   <th className="p-2 text-left">CEP</th>
+                   <th className="p-2 text-left">Comentário Endereço</th>
+                   <th className="p-2 text-left">Nome Destinatário</th>
                 </tr>
               </thead>
               <tbody>
@@ -567,7 +566,6 @@ const loadAccounts = async () => {
                            `SKU-${order.numero_venda}`
                          }
                        </div>
-                       <div className="text-xs text-gray-500">#{order.numero}</div>
                      </td>
                      
                       {/* Cliente */}
@@ -703,14 +701,11 @@ const loadAccounts = async () => {
                       </div>
                     </td>
                     
-                    {/* Dados de Envio Detalhados */}
-                    <td className="p-2">
-                      {order.unified?.forma_entrega || '—'}
-                    </td>
-                    <td className="p-2">
-                      <Badge variant="outline" className={
-                        order.unified?.preferencia_entrega === 'residential' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                      }>
+                     {/* Dados de Envio Detalhados */}
+                     <td className="p-2">
+                       <Badge variant="outline" className={
+                         order.unified?.preferencia_entrega === 'residential' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                       }>
                         {order.unified?.preferencia_entrega === 'residential' ? 'Residencial' : 
                          order.unified?.preferencia_entrega === 'business' ? 'Comercial' : 
                          order.unified?.preferencia_entrega || '—'}
