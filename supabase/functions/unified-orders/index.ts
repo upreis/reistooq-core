@@ -253,11 +253,19 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       }
     });
     
+    // Calcular quantidade total de itens comprados
+    const quantidadeTotalItens = orderItems.reduce((total: number, item: any) => {
+      return total + (item.quantity || 0);
+    }, 0);
+    
     // Extrair cidade e estado do endereço de entrega
     const cidade = order.shipping?.receiver_address?.city?.name || "";
     const uf = order.shipping?.receiver_address?.state?.name || "";
     const codigoRastreamento = order.shipping?.tracking_number || "";
     const urlRastreamento = order.shipping?.tracking_url || "";
+    
+    // Status detalhado do pedido combinando order status + shipping status
+    const statusDetalhado = mapDetailedStatus(order.status, order.shipping?.status, order.status_detail);
     
     return {
       id: `ml_${order.id}`,
@@ -266,7 +274,7 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       cpf_cnpj: null, // Requer chamada para /users/{buyer.id}
       data_pedido: order.date_created?.split("T")[0] || null,
       data_prevista: order.date_closed?.split("T")[0] || null,
-      situacao: mapMLStatus(order.status),
+      situacao: statusDetalhado,
       valor_total: order.total_amount || 0,
       valor_frete: shippingCost,
       valor_desconto: Math.max(0, valorDesconto),
@@ -278,25 +286,56 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       codigo_rastreamento: codigoRastreamento,
       url_rastreamento: urlRastreamento,
       obs: skuList.length > 0 ? `SKUs: ${skuList.join(", ")}` : order.status_detail,
-      obs_interna: `ML Order ID: ${order.id} | Buyer ID: ${order.buyer?.id} | ${order.currency_id}`,
+      obs_interna: `ML Order ID: ${order.id} | Buyer ID: ${order.buyer?.id} | ${order.currency_id} | Qtd Total: ${quantidadeTotalItens}`,
       integration_account_id: integrationAccountId,
       created_at: order.date_created,
       updated_at: order.last_updated || order.date_created,
+      quantidade_itens: quantidadeTotalItens,
+      status_original: order.status,
+      status_shipping: order.shipping?.status || null,
     };
   });
 }
 
-function mapMLStatus(s: string) {
-  const m: Record<string, string> = {
+function mapMLStatus(status: string): string {
+  const statusMap: Record<string, string> = {
     confirmed: "Confirmado",
     payment_required: "Aguardando Pagamento",
-    payment_in_process: "Processando Pagamento",
-    partially_paid: "Parcialmente Pago",
+    payment_in_process: "Pagamento em Processamento",
     paid: "Pago",
-    cancelled: "Cancelado",
-    invalid: "Inválido",
     shipped: "Enviado",
     delivered: "Entregue",
+    cancelled: "Cancelado",
+    invalid: "Inválido",
   };
-  return m[s] ?? s;
+  return statusMap[status] || status;
+}
+
+// Função para mapear status detalhado combinando order status + shipping status
+function mapDetailedStatus(orderStatus: string, shippingStatus?: string, statusDetail?: string): string {
+  // Status de pedido + shipping para dar contexto completo
+  const baseStatus = mapMLStatus(orderStatus);
+  
+  if (!shippingStatus) return baseStatus;
+  
+  const shippingMap: Record<string, string> = {
+    pending: "Pendente de Envio",
+    handling: "Preparando para Envio",
+    ready_to_ship: "Pronto para Envio",
+    shipped: "A Caminho",
+    delivered: "Entregue",
+    not_delivered: "Não Entregue",
+    cancelled: "Envio Cancelado",
+    returned: "Devolvido",
+    lost: "Extraviado"
+  };
+  
+  const mappedShipping = shippingMap[shippingStatus] || shippingStatus;
+  
+  // Combinar status do pedido com status de envio
+  if (orderStatus === 'paid' && shippingStatus) {
+    return `Pago - ${mappedShipping}`;
+  }
+  
+  return `${baseStatus}${mappedShipping ? ` - ${mappedShipping}` : ''}`;
 }
