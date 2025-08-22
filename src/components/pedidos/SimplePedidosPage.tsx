@@ -505,28 +505,14 @@ const loadAccounts = async () => {
                       className="rounded border-gray-300"
                     />
                   </th>
-                  <th className="p-2 text-left">ID/Número</th>
-                  <th className="p-2 text-left">Cliente</th>
-                  <th className="p-2 text-left">CPF/CNPJ</th>
-                  <th className="p-2 text-left">Data Pedido</th>
-                  <th className="p-2 text-left">Data Prevista</th>
-                  <th className="p-2 text-left">Status</th>
-                  <th className="p-2 text-left">Valor Total</th>
-                  <th className="p-2 text-left">Valor Frete</th>
-                  <th className="p-2 text-left">Valor Desconto</th>
-                  <th className="p-2 text-left">Núm. E-commerce</th>
-                  <th className="p-2 text-left">Núm. Venda</th>
-                  <th className="p-2 text-left">Empresa</th>
-                  <th className="p-2 text-left">Cidade</th>
-                  <th className="p-2 text-left">UF</th>
-                  <th className="p-2 text-left">Código Rastreamento</th>
-                  <th className="p-2 text-left">URL Rastreamento</th>
-                  <th className="p-2 text-left">Observações</th>
-                  <th className="p-2 text-left">Obs. Internas</th>
-                  <th className="p-2 text-left">SKUs/Produtos</th>
-                  <th className="p-2 text-left">Mapeamento</th>
-                  <th className="p-2 text-left">Criado em</th>
-                  <th className="p-2 text-left">Atualizado em</th>
+                   <th className="p-2 text-left">ID/Número</th>
+                   <th className="p-2 text-left">Cliente</th>
+                   <th className="p-2 text-left">Data Pedido</th>
+                   <th className="p-2 text-left">UF</th>
+                   <th className="p-2 text-left">Status</th>
+                   <th className="p-2 text-left">SKUs/Produtos</th>
+                   <th className="p-2 text-left">Valor Total</th>
+                   <th className="p-2 text-left">Mapeamento</th>
                   
                   {/* Dados Financeiros Detalhados */}
                   <th className="p-2 text-left">Receita Produtos</th>
@@ -577,150 +563,67 @@ const loadAccounts = async () => {
                       <div className="text-xs text-gray-500">ID: {order.id}</div>
                     </td>
                     
-                    {/* Cliente */}
-                    <td className="p-2 max-w-32">
-                      <div className="truncate" title={order.nome_cliente}>
-                        {order.nome_cliente || '—'}
-                      </div>
-                    </td>
-                    
-                    {/* CPF/CNPJ */}
-                    <td className="p-2">
-                      {order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '—'}
-                    </td>
-                    
-                    {/* Data Pedido */}
-                    <td className="p-2">
-                      {order.data_pedido ? formatDate(order.data_pedido) : '—'}
-                    </td>
-                    
-                    {/* Data Prevista */}
-                    <td className="p-2">
-                      {order.data_prevista ? formatDate(order.data_prevista) : '—'}
-                    </td>
-                    
-                    {/* Status */}
-                    <td className="p-2">
-                      <Badge className={getSituacaoColor(order.situacao)}>
-                        {order.situacao || '—'}
-                      </Badge>
-                    </td>
-                    
-                    {/* Valor Total */}
-                    <td className="p-2">
-                      {formatMoney(order.valor_total)}
-                    </td>
-                    
-                    {/* Valor Frete */}
-                    <td className="p-2">
-                      {order.valor_frete > 0 ? formatMoney(order.valor_frete) : '—'}
-                    </td>
-                    
-                    {/* Valor Desconto */}
-                    <td className="p-2">
-                      {order.valor_desconto > 0 ? formatMoney(order.valor_desconto) : '—'}
-                    </td>
-                    
-                    {/* Número E-commerce */}
-                    <td className="p-2">
-                      {order.numero_ecommerce || '—'}
-                    </td>
-                    
-                    {/* Número Venda */}
-                    <td className="p-2">
-                      {order.numero_venda || '—'}
-                    </td>
-                    
-                    {/* Empresa */}
-                    <td className="p-2">
-                      <Badge variant="outline" className="bg-orange-100 text-orange-800">
-                        {order.empresa || 'ML'}
-                      </Badge>
-                    </td>
-                    
-                    {/* Cidade */}
-                    <td className="p-2">
-                      {order.cidade || '—'}
-                    </td>
-                    
-                    {/* UF */}
-                    <td className="p-2">
-                      {order.uf || '—'}
-                    </td>
-                    
-                    {/* Código Rastreamento */}
-                    <td className="p-2">
-                      {order.codigo_rastreamento || '—'}
-                    </td>
-                    
-                    {/* URL Rastreamento */}
-                    <td className="p-2">
-                      {order.url_rastreamento ? (
-                        <a 
-                          href={order.url_rastreamento} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline text-xs"
-                        >
-                          Rastrear
-                        </a>
-                      ) : '—'}
-                    </td>
-                    
-                    {/* Observações */}
-                    <td className="p-2 max-w-32">
-                      <div className="text-xs truncate" title={order.obs}>
-                        {order.obs || '—'}
-                      </div>
-                    </td>
-                    
-                    {/* Obs. Internas */}
-                    <td className="p-2 max-w-32">
-                      <div className="text-xs truncate" title={order.obs_interna}>
-                        {order.obs_interna || '—'}
-                      </div>
-                    </td>
-                    
-                    {/* SKUs/Produtos */}
-                    <td className="p-2 max-w-40">
-                      {order.skus && order.skus.length > 0 ? (
-                        <div className="text-xs">
-                          {order.skus.slice(0, 2).map((sku, idx) => (
-                            <div key={idx} className="truncate" title={sku}>
-                              {sku}
-                            </div>
-                          ))}
-                          {order.skus.length > 2 && (
-                            <div className="text-gray-500">
-                              +{order.skus.length - 2} mais
-                            </div>
-                          )}
-                        </div>
-                      ) : '—'}
+                     {/* Cliente */}
+                     <td className="p-2 max-w-32">
+                       <div className="truncate" title={order.nome_cliente}>
+                         {order.nome_cliente || '—'}
+                       </div>
                      </td>
-                    <td className="p-2">
-                      {temMapeamento ? (
-                        <Badge variant="outline" className="bg-green-100 text-green-800">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Mapeado
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-orange-100 text-orange-800">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Sem Map.
-                        </Badge>
-                      )}
-                    </td>
-                    
-                    {/* Criado em */}
-                    <td className="p-2">
-                      {order.created_at ? formatDate(order.created_at) : '—'}
-                    </td>
-                    
-                    {/* Atualizado em */}
-                    <td className="p-2">
-                      {order.updated_at ? formatDate(order.updated_at) : '—'}
-                    </td>
+                     
+                     {/* Data Pedido */}
+                     <td className="p-2">
+                       {order.data_pedido ? formatDate(order.data_pedido) : '—'}
+                     </td>
+                     
+                     {/* UF */}
+                     <td className="p-2">
+                       {order.uf || '—'}
+                     </td>
+                     
+                     {/* Status */}
+                     <td className="p-2">
+                       <Badge className={getSituacaoColor(order.situacao)}>
+                         {order.situacao || '—'}
+                       </Badge>
+                     </td>
+                     
+                     {/* SKUs/Produtos */}
+                     <td className="p-2 max-w-40">
+                       {order.skus && order.skus.length > 0 ? (
+                         <div className="text-xs">
+                           {order.skus.slice(0, 2).map((sku, idx) => (
+                             <div key={idx} className="truncate" title={sku}>
+                               {sku}
+                             </div>
+                           ))}
+                           {order.skus.length > 2 && (
+                             <div className="text-gray-500">
+                               +{order.skus.length - 2} mais
+                             </div>
+                           )}
+                         </div>
+                       ) : '—'}
+                      </td>
+
+                     {/* Valor Total */}
+                     <td className="p-2">
+                       {formatMoney(order.valor_total)}
+                     </td>
+                     
+                     {/* Mapeamento */}
+                     <td className="p-2">
+                       {temMapeamento ? (
+                         <Badge variant="outline" className="bg-green-100 text-green-800">
+                           <CheckCircle className="h-3 w-3 mr-1" />
+                           Mapeado
+                         </Badge>
+                       ) : (
+                         <Badge variant="outline" className="bg-orange-100 text-orange-800">
+                           <AlertTriangle className="h-3 w-3 mr-1" />
+                           Sem Map.
+                         </Badge>
+                       )}
+                     </td>
                     
                     {/* Dados Financeiros Detalhados */}
                     <td className="p-2">
