@@ -697,35 +697,7 @@ const loadAccounts = async () => {
                           )}
                         </div>
                       ) : '—'}
-                    </td>
-            
-            {/* Quantidade de Itens */}
-            <td className="text-xs p-2 border">
-              <div className="flex items-center gap-1">
-                <Package className="h-3 w-3" />
-                <span className="font-medium">{order.quantidade_itens || 'N/A'}</span>
-              </div>
-            </td>
-
-            {/* Status Detalhado */}
-            <td className="text-xs p-2 border">
-              <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                {order.situacao || 'N/A'}
-              </span>
-            </td>
-
-            {/* Status Envio */}
-            <td className="text-xs p-2 border">
-              {order.status_shipping ? (
-                <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                  {order.status_shipping}
-                </span>
-              ) : (
-                <span className="text-muted-foreground">-</span>
-              )}
-            </td>
-
-            {/* Mapeamento */}
+                     </td>
                     <td className="p-2">
                       {temMapeamento ? (
                         <Badge variant="outline" className="bg-green-100 text-green-800">
