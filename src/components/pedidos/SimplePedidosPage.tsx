@@ -536,6 +536,8 @@ const loadAccounts = async () => {
                    <th className="p-2 text-left">Método Rastreamento</th>
                    <th className="p-2 text-left">Sub-status</th>
                    <th className="p-2 text-left">Modo Logístico</th>
+                   <th className="p-2 text-left">Cidade</th>
+                   <th className="p-2 text-left">UF</th>
                    <th className="p-2 text-left">Preferência Entrega</th>
                    <th className="p-2 text-left">Endereço Completo</th>
                    <th className="p-2 text-left">CEP</th>
@@ -724,15 +726,23 @@ const loadAccounts = async () => {
                          {order.unified?.logistic_mode || '—'}
                        </Badge>
                      </td>
-                     <td className="p-2">
-                       <Badge variant="outline" className={
-                         order.unified?.preferencia_entrega === 'residential' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                       }>
-                        {order.unified?.preferencia_entrega === 'residential' ? 'Residencial' : 
-                         order.unified?.preferencia_entrega === 'business' ? 'Comercial' : 
-                         order.unified?.preferencia_entrega || '—'}
-                      </Badge>
-                    </td>
+                      <td className="p-2">
+                        {order.unified?.cidade || '—'}
+                      </td>
+                      <td className="p-2">
+                        <Badge variant="outline" className="bg-green-100 text-green-800">
+                          {order.unified?.uf || '—'}
+                        </Badge>
+                      </td>
+                      <td className="p-2">
+                        <Badge variant="outline" className={
+                          order.unified?.preferencia_entrega === 'residential' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                        }>
+                         {order.unified?.preferencia_entrega === 'residential' ? 'Residencial' : 
+                          order.unified?.preferencia_entrega === 'business' ? 'Comercial' : 
+                          order.unified?.preferencia_entrega || '—'}
+                       </Badge>
+                     </td>
                     <td className="p-2 max-w-48">
                       <div className="text-xs truncate" title={order.unified?.endereco_completo}>
                         {order.unified?.endereco_completo || '—'}
