@@ -134,34 +134,45 @@ const loadAccounts = async () => {
       const results = data.results || [];
       const unified = data.unified || [];
       
+      console.log('📊 Debug ML Data:', { 
+        resultsCount: results.length, 
+        unifiedCount: unified.length,
+        firstResult: results[0],
+        firstUnified: unified[0] 
+      });
+      
       const processedOrders: Order[] = results.map((raw: any, index: number) => {
         const unifiedData = unified[index] || {};
         
         // Extrair SKUs dos itens do pedido para mapeamento
         const orderItems = raw.order_items || [];
         const skus = orderItems.map((item: any) => 
-          item.item?.seller_sku || item.item?.seller_custom_field || item.item?.title
+          item.item?.seller_sku || item.item?.seller_custom_field || item.item?.title?.substring(0, 30)
         ).filter(Boolean);
         
-        return {
-          id: unifiedData.id || raw.id || '',
-          numero: unifiedData.numero || raw.id || '',
-          nome_cliente: unifiedData.nome_cliente || raw.buyer?.nickname || '',
-          cpf_cnpj: unifiedData.cpf_cnpj || '',
-          data_pedido: unifiedData.data_pedido || raw.date_created || '',
-          situacao: unifiedData.situacao || raw.status || '',
+        // Usar dados do unified primeiro, fallback para raw
+        const processedOrder = {
+          id: unifiedData.id || `ml_${raw.id}`,
+          numero: unifiedData.numero || `ML-${raw.id}`,
+          nome_cliente: unifiedData.nome_cliente || raw.buyer?.nickname || `Cliente ML ${raw.buyer?.id}`,
+          cpf_cnpj: unifiedData.cpf_cnpj || null,
+          data_pedido: unifiedData.data_pedido || raw.date_created?.split('T')[0],
+          situacao: unifiedData.situacao || raw.status,
           valor_total: unifiedData.valor_total || raw.total_amount || 0,
           valor_frete: unifiedData.valor_frete || raw.payments?.[0]?.shipping_cost || 0,
-          cidade: unifiedData.cidade || raw.shipping_details?.receiver_address?.city?.name || '',
-          uf: unifiedData.uf || raw.shipping_details?.receiver_address?.state?.id || '',
-          obs: skus.join(', ') || unifiedData.obs || '',
-          codigo_rastreamento: unifiedData.codigo_rastreamento || raw.shipping_details?.tracking_number || '',
+          cidade: unifiedData.cidade || null,
+          uf: unifiedData.uf || null,
+          obs: unifiedData.obs || (skus.length > 0 ? `SKUs: ${skus.join(', ')}` : ''),
+          codigo_rastreamento: unifiedData.codigo_rastreamento || null,
           // Dados extras para ações de estoque
           integration_account_id: integrationAccountId,
           raw: raw,
           unified: unifiedData,
           skus: skus // Lista de SKUs para mapeamento
         };
+        
+        console.log(`📦 Processed Order ${index}:`, processedOrder);
+        return processedOrder;
       });
 
       setOrders(processedOrders);

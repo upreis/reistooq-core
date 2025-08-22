@@ -187,30 +187,49 @@ serve(async (req) => {
 
 // ------ helpers ------
 function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
-  return (mlOrders ?? []).map((order) => ({
-    id: String(order.id),
-    numero: String(order.id),
-    nome_cliente: order.buyer?.nickname || order.buyer?.first_name || null,
-    cpf_cnpj: null,
-    data_pedido: order.date_created?.split("T")[0] || null,
-    data_prevista: order.estimated_delivery?.date || null,
-    situacao: mapMLStatus(order.status),
-    valor_total: order.total_amount || 0,
-    valor_frete: order.shipping?.cost || 0,
-    valor_desconto: 0,
-    numero_ecommerce: String(order.id),
-    numero_venda: null,
-    empresa: "MercadoLivre",
-    cidade: order.shipping?.receiver_address?.city || null,
-    uf: order.shipping?.receiver_address?.state?.name || null,
-    codigo_rastreamento: order.shipping?.tracking_number || null,
-    url_rastreamento: null,
-    obs: null,
-    obs_interna: null,
-    integration_account_id: integrationAccountId,
-    created_at: order.date_created,
-    updated_at: order.last_updated || order.date_created,
-  }));
+  return (mlOrders ?? []).map((order) => {
+    // Calcular frete: primeiro tentar payments[].shipping_cost, depois shipping.cost
+    const shippingCost = order.payments?.[0]?.shipping_cost || order.shipping?.cost || 0;
+    
+    // Extrair SKUs dos itens para observações
+    const orderItems = order.order_items || [];
+    const skuList = orderItems.map((item: any) => 
+      item.item?.seller_sku || item.item?.seller_custom_field || item.item?.title?.substring(0, 30)
+    ).filter(Boolean);
+    
+    // Calcular desconto: diferença entre full_unit_price e unit_price
+    let valorDesconto = 0;
+    orderItems.forEach((item: any) => {
+      if (item.full_unit_price && item.unit_price) {
+        valorDesconto += (item.full_unit_price - item.unit_price) * item.quantity;
+      }
+    });
+    
+    return {
+      id: `ml_${order.id}`,
+      numero: `ML-${order.id}`,
+      nome_cliente: order.buyer?.nickname || order.buyer?.first_name || `Cliente ML ${order.buyer?.id}`,
+      cpf_cnpj: null, // Requer chamada para /users/{buyer.id}
+      data_pedido: order.date_created?.split("T")[0] || null,
+      data_prevista: order.date_closed?.split("T")[0] || null,
+      situacao: mapMLStatus(order.status),
+      valor_total: order.total_amount || 0,
+      valor_frete: shippingCost,
+      valor_desconto: Math.max(0, valorDesconto),
+      numero_ecommerce: String(order.id),
+      numero_venda: String(order.id),
+      empresa: "mercadolivre",
+      cidade: null, // Requer chamada para /shipments/{shipping.id}
+      uf: null, // Requer chamada para /shipments/{shipping.id}
+      codigo_rastreamento: null, // Requer chamada para /shipments/{shipping.id}
+      url_rastreamento: null,
+      obs: skuList.length > 0 ? `SKUs: ${skuList.join(", ")}` : order.status_detail,
+      obs_interna: `ML Order ID: ${order.id} | Buyer ID: ${order.buyer?.id} | ${order.currency_id}`,
+      integration_account_id: integrationAccountId,
+      created_at: order.date_created,
+      updated_at: order.last_updated || order.date_created,
+    };
+  });
 }
 
 function mapMLStatus(s: string) {
