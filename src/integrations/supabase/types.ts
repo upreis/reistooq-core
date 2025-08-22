@@ -569,6 +569,7 @@ export type Database = {
           id: string
           integration_account_id: string
           last_accessed_at: string | null
+          meta: Json
           organization_id: string
           payload: Json | null
           provider: string
@@ -582,6 +583,7 @@ export type Database = {
           id?: string
           integration_account_id: string
           last_accessed_at?: string | null
+          meta?: Json
           organization_id: string
           payload?: Json | null
           provider: string
@@ -595,6 +597,7 @@ export type Database = {
           id?: string
           integration_account_id?: string
           last_accessed_at?: string | null
+          meta?: Json
           organization_id?: string
           payload?: Json | null
           provider?: string
@@ -1868,17 +1871,14 @@ export type Database = {
               p_refresh_token: string
             }
           | {
-              p_access_token: string
               p_account_id: string
-              p_client_id: string
-              p_client_secret: string
               p_encryption_key: string
-              p_expires_at: string
+              p_expires_at?: string
               p_payload?: Json
               p_provider: string
-              p_refresh_token: string
+              p_secret: Json
             }
-        Returns: undefined
+        Returns: string
       }
       ensure_current_org: {
         Args: Record<PropertyKey, never>
