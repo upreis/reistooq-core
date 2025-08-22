@@ -4,7 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { Package, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Filter } from 'lucide-react';
+import { BaixaEstoqueModal } from './BaixaEstoqueModal';
+import { PedidosFilters, PedidosFiltersState } from './PedidosFilters';
+import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
+import { Pedido } from '@/types/pedido';
 
 type Order = {
   id: string;
@@ -35,6 +39,8 @@ export default function SimplePedidosPage({ className }: Props) {
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [filters, setFilters] = useState<PedidosFiltersState>({});
+  const [mapeamentos, setMapeamentos] = useState<Map<string, MapeamentoVerificacao>>(new Map());
 
   const pageSize = 25;
   const totalPages = Math.ceil(total / pageSize);
@@ -57,12 +63,12 @@ export default function SimplePedidosPage({ className }: Props) {
     loadAccounts();
   }, []);
 
-  // Carregar pedidos quando conta muda
+  // Carregar pedidos quando conta muda ou filtros mudam
   useEffect(() => {
     if (integrationAccountId) {
       loadOrders();
     }
-  }, [integrationAccountId, currentPage]);
+  }, [integrationAccountId, currentPage, JSON.stringify(filters)]);
 
 const loadAccounts = async () => {
     try {
@@ -103,13 +109,21 @@ const loadAccounts = async () => {
     setError('');
 
     try {
+      // Converter filtros para parâmetros da API
+      const apiParams: any = {};
+      if (filters.search) apiParams.q = filters.search;
+      if (filters.situacao) apiParams.status = filters.situacao.toLowerCase();
+      if (filters.dataInicio) apiParams.date_from = filters.dataInicio.toISOString().split('T')[0];
+      if (filters.dataFim) apiParams.date_to = filters.dataFim.toISOString().split('T')[0];
+
       const { data, error } = await supabase.functions.invoke('unified-orders', {
         body: {
           integration_account_id: integrationAccountId,
           limit: pageSize,
           offset: (currentPage - 1) * pageSize,
           enrich: true,
-          include_shipping: true
+          include_shipping: true,
+          ...apiParams
         }
       });
 
@@ -123,6 +137,12 @@ const loadAccounts = async () => {
       const processedOrders: Order[] = results.map((raw: any, index: number) => {
         const unifiedData = unified[index] || {};
         
+        // Extrair SKUs dos itens do pedido para mapeamento
+        const orderItems = raw.order_items || [];
+        const skus = orderItems.map((item: any) => 
+          item.item?.seller_sku || item.item?.seller_custom_field || item.item?.title
+        ).filter(Boolean);
+        
         return {
           id: unifiedData.id || raw.id || '',
           numero: unifiedData.numero || raw.id || '',
@@ -134,17 +154,21 @@ const loadAccounts = async () => {
           valor_frete: unifiedData.valor_frete || raw.payments?.[0]?.shipping_cost || 0,
           cidade: unifiedData.cidade || raw.shipping_details?.receiver_address?.city?.name || '',
           uf: unifiedData.uf || raw.shipping_details?.receiver_address?.state?.id || '',
-          obs: unifiedData.obs || '',
+          obs: skus.join(', ') || unifiedData.obs || '',
           codigo_rastreamento: unifiedData.codigo_rastreamento || raw.shipping_details?.tracking_number || '',
           // Dados extras para ações de estoque
           integration_account_id: integrationAccountId,
           raw: raw,
-          unified: unifiedData
+          unified: unifiedData,
+          skus: skus // Lista de SKUs para mapeamento
         };
       });
 
       setOrders(processedOrders);
       setTotal(data.paging?.total || data.count || processedOrders.length);
+      
+      // Verificar mapeamentos automaticamente
+      await verificarMapeamentos(processedOrders);
     } catch (err: any) {
       const msg = err?.message || String(err);
       const isSecretsMissing = msg.includes('404') || msg.toLowerCase().includes('segredo') || (err?.status === 404);
@@ -162,6 +186,45 @@ const loadAccounts = async () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Verificar mapeamentos De-Para
+  const verificarMapeamentos = async (ordersToCheck?: Order[]) => {
+    const ordersList = ordersToCheck || orders;
+    if (ordersList.length === 0) return;
+
+    try {
+      // Extrair todos os SKUs únicos dos pedidos
+      const allSkus = new Set<string>();
+      ordersList.forEach(order => {
+        if (order.skus) {
+          order.skus.forEach((sku: string) => allSkus.add(sku.trim()));
+        }
+        // Também incluir número do pedido como fallback
+        allSkus.add(order.numero);
+      });
+
+      const skuArray = Array.from(allSkus).filter(Boolean);
+      const verificacoes = await MapeamentoService.verificarMapeamentos(skuArray);
+
+      // Criar mapa de mapeamentos
+      const mapeamentosMap = new Map();
+      verificacoes.forEach(verif => {
+        mapeamentosMap.set(verif.skuPedido, verif);
+      });
+
+      setMapeamentos(mapeamentosMap);
+    } catch (error) {
+      console.error('Erro ao verificar mapeamentos:', error);
+    }
+  };
+
+  // Verificar se pedido tem mapeamento
+  const pedidoTemMapeamento = (order: Order): boolean => {
+    if (order.skus && order.skus.length > 0) {
+      return order.skus.some((sku: string) => mapeamentos.get(sku.trim())?.temMapeamento);
+    }
+    return mapeamentos.get(order.numero)?.temMapeamento || false;
   };
 
   const toggleOrderSelection = (orderId: string) => {
@@ -184,12 +247,44 @@ const loadAccounts = async () => {
 
   const getSituacaoColor = (situacao: string) => {
     switch (situacao?.toLowerCase()) {
-      case 'entregue': return 'bg-green-100 text-green-800';
-      case 'pago': return 'bg-blue-100 text-blue-800';
-      case 'cancelado': return 'bg-red-100 text-red-800';
+      case 'entregue': case 'delivered': return 'bg-green-100 text-green-800';
+      case 'pago': case 'paid': return 'bg-blue-100 text-blue-800';
+      case 'cancelado': case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'enviado': case 'shipped': return 'bg-purple-100 text-purple-800';
+      case 'confirmado': case 'confirmed': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  // Estatísticas de mapeamento
+  const ordersComMapeamento = orders.filter(pedidoTemMapeamento).length;
+  const ordersSemMapeamento = orders.length - ordersComMapeamento;
+
+  // Converter pedidos selecionados para formato Pedido
+  const pedidosSelecionados: Pedido[] = Array.from(selectedOrders)
+    .map(id => orders.find(o => o.id === id))
+    .filter(Boolean)
+    .map(order => ({
+      id: order!.id,
+      numero: order!.numero,
+      nome_cliente: order!.nome_cliente,
+      cpf_cnpj: order!.cpf_cnpj,
+      data_pedido: order!.data_pedido,
+      situacao: order!.situacao,
+      valor_total: order!.valor_total,
+      valor_frete: order!.valor_frete,
+      valor_desconto: 0,
+      numero_ecommerce: order!.numero,
+      numero_venda: order!.numero,
+      empresa: 'MercadoLivre',
+      cidade: order!.cidade,
+      uf: order!.uf,
+      obs: order!.obs,
+      codigo_rastreamento: order!.codigo_rastreamento,
+      integration_account_id: order!.integration_account_id,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    } as Pedido));
 
   if (!accounts.length) {
     return (
@@ -229,36 +324,76 @@ const loadAccounts = async () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Filtros */}
+      <PedidosFilters
+        filters={filters}
+        onFiltersChange={(newFilters) => {
+          setFilters(newFilters);
+          setCurrentPage(1); // Reset para primeira página
+        }}
+        onClearFilters={() => {
+          setFilters({});
+          setCurrentPage(1);
+        }}
+      />
+
+      {/* Stats Avançadas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
           <div className="text-sm text-gray-600">Total de Pedidos</div>
           <div className="text-2xl font-bold">{total}</div>
         </Card>
         <Card className="p-4">
+          <div className="text-sm text-gray-600 flex items-center gap-1">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            Com Mapeamento
+          </div>
+          <div className="text-2xl font-bold text-green-600">{ordersComMapeamento}</div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-sm text-gray-600 flex items-center gap-1">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            Sem Mapeamento
+          </div>
+          <div className="text-2xl font-bold text-orange-600">{ordersSemMapeamento}</div>
+        </Card>
+        <Card className="p-4">
           <div className="text-sm text-gray-600">Selecionados</div>
           <div className="text-2xl font-bold text-blue-600">{selectedOrders.size}</div>
         </Card>
-        <Card className="p-4">
-          <div className="text-sm text-gray-600">Página Atual</div>
-          <div className="text-2xl font-bold">{currentPage} de {totalPages}</div>
-        </Card>
       </div>
 
-      {/* Actions */}
-      {selectedOrders.size > 0 && (
-        <Card className="p-4">
-          <div className="flex gap-2">
-            <Button>
-              <Package className="h-4 w-4 mr-2" />
-              Baixar Estoque ({selectedOrders.size})
-            </Button>
+      {/* Actions Avançadas */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => verificarMapeamentos()}>
+            <Filter className="h-4 w-4 mr-2" />
+            Verificar Mapeamentos
+          </Button>
+          
+          {selectedOrders.size > 0 && (
+            <BaixaEstoqueModal
+              pedidos={pedidosSelecionados}
+              trigger={
+                <Button>
+                  <Package className="h-4 w-4 mr-2" />
+                  Baixar Estoque ({selectedOrders.size})
+                </Button>
+              }
+            />
+          )}
+          
+          {selectedOrders.size > 0 && (
             <Button variant="outline" onClick={() => setSelectedOrders(new Set())}>
               Limpar Seleção
             </Button>
-          </div>
-        </Card>
-      )}
+          )}
+        </div>
+        
+        <div className="text-sm text-muted-foreground">
+          Fonte: Unified Orders (ML API /orders/search)
+        </div>
+      </div>
 
       {/* Error */}
       {error && (
@@ -299,12 +434,20 @@ const loadAccounts = async () => {
                   <th className="p-3 text-left">Status</th>
                   <th className="p-3 text-left">Valor</th>
                   <th className="p-3 text-left">Localização</th>
-                  <th className="p-3 text-left">Itens</th>
+                  <th className="p-3 text-left">SKUs/Produtos</th>
+                  <th className="p-3 text-left">Mapeamento</th>
                 </tr>
               </thead>
               <tbody>
-                {orders.map(order => (
-                  <tr key={order.id} className="border-b hover:bg-gray-50">
+                {orders.map(order => {
+                  const temMapeamento = pedidoTemMapeamento(order);
+                  return (
+                  <tr 
+                    key={order.id} 
+                    className={`border-b hover:bg-gray-50 border-l-4 ${
+                      temMapeamento ? 'border-l-green-500 bg-green-50' : 'border-l-orange-500 bg-orange-50'
+                    }`}
+                  >
                     <td className="p-3">
                       <input 
                         type="checkbox" 
@@ -354,8 +497,22 @@ const loadAccounts = async () => {
                         {order.obs || '—'}
                       </div>
                     </td>
+                    <td className="p-3">
+                      {temMapeamento ? (
+                        <Badge variant="outline" className="bg-green-100 text-green-800">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Mapeado
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-orange-100 text-orange-800">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Sem Map.
+                        </Badge>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
