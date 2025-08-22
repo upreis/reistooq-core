@@ -510,6 +510,7 @@ const loadAccounts = async () => {
                    <th className="p-2 text-left">Data Pedido</th>
                    <th className="p-2 text-left">UF</th>
                    <th className="p-2 text-left">Status</th>
+                   <th className="p-2 text-left">Forma Entrega</th>
                    <th className="p-2 text-left">SKUs/Produtos</th>
                    <th className="p-2 text-left">Valor Total</th>
                    <th className="p-2 text-left">Mapeamento</th>
@@ -580,14 +581,19 @@ const loadAccounts = async () => {
                        {order.uf || '—'}
                      </td>
                      
-                     {/* Status */}
-                     <td className="p-2">
-                       <Badge className={getSituacaoColor(order.situacao)}>
-                         {order.situacao || '—'}
-                       </Badge>
-                     </td>
-                     
-                     {/* SKUs/Produtos */}
+                      {/* Status */}
+                      <td className="p-2">
+                        <Badge className={getSituacaoColor(order.situacao)}>
+                          {order.situacao || '—'}
+                        </Badge>
+                      </td>
+                      
+                      {/* Forma Entrega */}
+                      <td className="p-2">
+                        {order.unified?.forma_entrega || '—'}
+                      </td>
+                      
+                      {/* SKUs/Produtos */}
                      <td className="p-2 max-w-40">
                        {order.skus && order.skus.length > 0 ? (
                          <div className="text-xs">
