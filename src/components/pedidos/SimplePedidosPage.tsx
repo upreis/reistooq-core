@@ -486,6 +486,29 @@ const loadAccounts = async () => {
                   <th className="p-2 text-left">Mapeamento</th>
                   <th className="p-2 text-left">Criado em</th>
                   <th className="p-2 text-left">Atualizado em</th>
+                  
+                  {/* Dados Financeiros Detalhados */}
+                  <th className="p-2 text-left">Receita Produtos</th>
+                  <th className="p-2 text-left">Tarifas Venda</th>
+                  <th className="p-2 text-left">Impostos</th>
+                  <th className="p-2 text-left">Receita Envio</th>
+                  <th className="p-2 text-left">Valor Pago Total</th>
+                  
+                  {/* Dados do Produto/Anúncio */}
+                  <th className="p-2 text-left">Título Anúncio</th>
+                  <th className="p-2 text-left">Categoria ML</th>
+                  <th className="p-2 text-left">Condição</th>
+                  <th className="p-2 text-left">Garantia</th>
+                  <th className="p-2 text-left">Tipo Listagem</th>
+                  <th className="p-2 text-left">Atributos Variação</th>
+                  
+                  {/* Dados de Envio Detalhados */}
+                  <th className="p-2 text-left">Forma Entrega</th>
+                  <th className="p-2 text-left">Preferência Entrega</th>
+                  <th className="p-2 text-left">Endereço Completo</th>
+                  <th className="p-2 text-left">CEP</th>
+                  <th className="p-2 text-left">Comentário Endereço</th>
+                  <th className="p-2 text-left">Nome Destinatário</th>
                 </tr>
               </thead>
               <tbody>
@@ -684,6 +707,89 @@ const loadAccounts = async () => {
                     {/* Atualizado em */}
                     <td className="p-2">
                       {order.updated_at ? formatDate(order.updated_at) : '—'}
+                    </td>
+                    
+                    {/* Dados Financeiros Detalhados */}
+                    <td className="p-2">
+                      {order.unified?.receita_produtos ? formatMoney(order.unified.receita_produtos) : '—'}
+                    </td>
+                    <td className="p-2">
+                      {order.unified?.tarifas_venda ? formatMoney(order.unified.tarifas_venda) : '—'}
+                    </td>
+                    <td className="p-2">
+                      {order.unified?.impostos ? formatMoney(order.unified.impostos) : '—'}
+                    </td>
+                    <td className="p-2">
+                      {order.unified?.receita_envio ? formatMoney(order.unified.receita_envio) : '—'}
+                    </td>
+                    <td className="p-2">
+                      {order.unified?.valor_pago_total ? formatMoney(order.unified.valor_pago_total) : '—'}
+                    </td>
+                    
+                    {/* Dados do Produto/Anúncio */}
+                    <td className="p-2 max-w-48">
+                      <div className="text-xs truncate" title={order.unified?.titulo_anuncio}>
+                        {order.unified?.titulo_anuncio || '—'}
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      {order.unified?.categoria_ml || '—'}
+                    </td>
+                    <td className="p-2">
+                      <Badge variant="outline" className={
+                        order.unified?.condicao === 'new' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }>
+                        {order.unified?.condicao === 'new' ? 'Novo' : order.unified?.condicao === 'used' ? 'Usado' : order.unified?.condicao || '—'}
+                      </Badge>
+                    </td>
+                    <td className="p-2 max-w-32">
+                      <div className="text-xs truncate" title={order.unified?.garantia}>
+                        {order.unified?.garantia || '—'}
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <Badge variant="outline" className={
+                        order.unified?.tipo_listagem?.includes('gold') ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                      }>
+                        {order.unified?.tipo_listagem?.replace('_', ' ').toUpperCase() || '—'}
+                      </Badge>
+                    </td>
+                    <td className="p-2 max-w-40">
+                      <div className="text-xs truncate" title={order.unified?.atributos_variacao}>
+                        {order.unified?.atributos_variacao || '—'}
+                      </div>
+                    </td>
+                    
+                    {/* Dados de Envio Detalhados */}
+                    <td className="p-2">
+                      {order.unified?.forma_entrega || '—'}
+                    </td>
+                    <td className="p-2">
+                      <Badge variant="outline" className={
+                        order.unified?.preferencia_entrega === 'residential' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                      }>
+                        {order.unified?.preferencia_entrega === 'residential' ? 'Residencial' : 
+                         order.unified?.preferencia_entrega === 'business' ? 'Comercial' : 
+                         order.unified?.preferencia_entrega || '—'}
+                      </Badge>
+                    </td>
+                    <td className="p-2 max-w-48">
+                      <div className="text-xs truncate" title={order.unified?.endereco_completo}>
+                        {order.unified?.endereco_completo || '—'}
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      {order.unified?.cep || '—'}
+                    </td>
+                    <td className="p-2 max-w-32">
+                      <div className="text-xs truncate" title={order.unified?.comentario_endereco}>
+                        {order.unified?.comentario_endereco || '—'}
+                      </div>
+                    </td>
+                    <td className="p-2 max-w-32">
+                      <div className="text-xs truncate" title={order.unified?.nome_destinatario}>
+                        {order.unified?.nome_destinatario || '—'}
+                      </div>
                     </td>
                   </tr>
                   );

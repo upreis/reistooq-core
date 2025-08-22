@@ -258,11 +258,40 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       return total + (item.quantity || 0);
     }, 0);
     
-    // Extrair cidade e estado do endereço de entrega
+    // Dados Financeiros Detalhados
+    const receitaPorProdutos = (order.total_amount || 0) - shippingCost;
+    const tarifasVenda = orderItems.reduce((total: number, item: any) => total + (item.sale_fee || 0), 0);
+    const impostos = order.payments?.[0]?.taxes_amount || 0;
+    const receitaPorEnvio = shippingCost;
+    const valorPagoTotal = order.paid_amount || 0;
+    
+    // Dados do Produto/Anúncio (primeiro item como representativo)
+    const primeiroItem = orderItems[0]?.item || {};
+    const tituloAnuncio = primeiroItem.title || "";
+    const categoriaML = primeiroItem.category_id || "";
+    const condicao = primeiroItem.condition || "";
+    const garantia = primeiroItem.warranty || "";
+    const tipoListagem = orderItems[0]?.listing_type_id || "";
+    const atributosVariacao = primeiroItem.variation_attributes || [];
+    const atributosTexto = atributosVariacao.map((attr: any) => `${attr.name}: ${attr.value_name}`).join(", ");
+    
+    // Extrair dados de envio detalhados
     const cidade = order.shipping?.receiver_address?.city?.name || "";
     const uf = order.shipping?.receiver_address?.state?.name || "";
     const codigoRastreamento = order.shipping?.tracking_number || "";
     const urlRastreamento = order.shipping?.tracking_url || "";
+    
+    // Dados de Envio Detalhados
+    const formaEntrega = order.shipping?.shipping_method || order.shipping?.shipping_mode || "Não informado";
+    const preferenciaEntrega = order.shipping?.receiver_address?.delivery_preference || "";
+    const enderecoCompleto = [
+      order.shipping?.receiver_address?.street_name,
+      order.shipping?.receiver_address?.street_number,
+      order.shipping?.receiver_address?.neighborhood?.name
+    ].filter(Boolean).join(", ");
+    const cep = order.shipping?.receiver_address?.zip_code || "";
+    const comentarioEndereco = order.shipping?.receiver_address?.comment || "";
+    const nomeDestinatario = order.shipping?.receiver_address?.receiver_name || "";
     
     // Status detalhado do pedido combinando order status + shipping status
     const statusDetalhado = mapDetailedStatus(order.status, order.shipping?.status, order.status_detail);
@@ -293,6 +322,29 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       quantidade_itens: quantidadeTotalItens,
       status_original: order.status,
       status_shipping: order.shipping?.status || null,
+      
+      // Dados Financeiros Detalhados
+      receita_produtos: receitaPorProdutos,
+      tarifas_venda: tarifasVenda,
+      impostos: impostos,
+      receita_envio: receitaPorEnvio,
+      valor_pago_total: valorPagoTotal,
+      
+      // Dados do Produto/Anúncio
+      titulo_anuncio: tituloAnuncio,
+      categoria_ml: categoriaML,
+      condicao: condicao,
+      garantia: garantia,
+      tipo_listagem: tipoListagem,
+      atributos_variacao: atributosTexto,
+      
+      // Dados de Envio Detalhados
+      forma_entrega: formaEntrega,
+      preferencia_entrega: preferenciaEntrega,
+      endereco_completo: enderecoCompleto,
+      cep: cep,
+      comentario_endereco: comentarioEndereco,
+      nome_destinatario: nomeDestinatario,
     };
   });
 }
