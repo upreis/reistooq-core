@@ -16,13 +16,26 @@ type Order = {
   nome_cliente: string;
   cpf_cnpj: string;
   data_pedido: string;
+  data_prevista: string;
   situacao: string;
   valor_total: number;
   valor_frete: number;
+  valor_desconto: number;
+  numero_ecommerce: string;
+  numero_venda: string;
+  empresa: string;
   cidade: string;
   uf: string;
-  obs: string;
   codigo_rastreamento: string;
+  url_rastreamento: string;
+  obs: string;
+  obs_interna: string;
+  integration_account_id: string;
+  created_at: string;
+  updated_at: string;
+  skus?: string[];
+  raw?: any;
+  unified?: any;
   [key: string]: any;
 };
 
@@ -157,13 +170,22 @@ const loadAccounts = async () => {
           nome_cliente: unifiedData.nome_cliente || raw.buyer?.nickname || `Cliente ML ${raw.buyer?.id}`,
           cpf_cnpj: unifiedData.cpf_cnpj || null,
           data_pedido: unifiedData.data_pedido || raw.date_created?.split('T')[0],
+          data_prevista: unifiedData.data_prevista || raw.date_closed?.split('T')[0],
           situacao: unifiedData.situacao || raw.status,
           valor_total: unifiedData.valor_total || raw.total_amount || 0,
           valor_frete: unifiedData.valor_frete || raw.payments?.[0]?.shipping_cost || 0,
+          valor_desconto: unifiedData.valor_desconto || 0,
+          numero_ecommerce: unifiedData.numero_ecommerce || String(raw.id),
+          numero_venda: unifiedData.numero_venda || String(raw.id),
+          empresa: unifiedData.empresa || 'mercadolivre',
           cidade: unifiedData.cidade || null,
           uf: unifiedData.uf || null,
-          obs: unifiedData.obs || (skus.length > 0 ? `SKUs: ${skus.join(', ')}` : ''),
           codigo_rastreamento: unifiedData.codigo_rastreamento || null,
+          url_rastreamento: unifiedData.url_rastreamento || null,
+          obs: unifiedData.obs || (skus.length > 0 ? `SKUs: ${skus.join(', ')}` : ''),
+          obs_interna: unifiedData.obs_interna || `ML Order ID: ${raw.id} | Buyer ID: ${raw.buyer?.id}`,
+          created_at: unifiedData.created_at || raw.date_created,
+          updated_at: unifiedData.updated_at || raw.last_updated || raw.date_created,
           // Dados extras para ações de estoque
           integration_account_id: integrationAccountId,
           raw: raw,
@@ -428,10 +450,10 @@ const loadAccounts = async () => {
       {!loading && orders.length > 0 && (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="p-3 text-left">
+                  <th className="p-2 text-left">
                     <input 
                       type="checkbox" 
                       checked={selectedOrders.size === orders.length && orders.length > 0}
@@ -439,14 +461,28 @@ const loadAccounts = async () => {
                       className="rounded border-gray-300"
                     />
                   </th>
-                  <th className="p-3 text-left">Pedido</th>
-                  <th className="p-3 text-left">Cliente</th>
-                  <th className="p-3 text-left">Data</th>
-                  <th className="p-3 text-left">Status</th>
-                  <th className="p-3 text-left">Valor</th>
-                  <th className="p-3 text-left">Localização</th>
-                  <th className="p-3 text-left">SKUs/Produtos</th>
-                  <th className="p-3 text-left">Mapeamento</th>
+                  <th className="p-2 text-left">ID/Número</th>
+                  <th className="p-2 text-left">Cliente</th>
+                  <th className="p-2 text-left">CPF/CNPJ</th>
+                  <th className="p-2 text-left">Data Pedido</th>
+                  <th className="p-2 text-left">Data Prevista</th>
+                  <th className="p-2 text-left">Status</th>
+                  <th className="p-2 text-left">Valor Total</th>
+                  <th className="p-2 text-left">Valor Frete</th>
+                  <th className="p-2 text-left">Valor Desconto</th>
+                  <th className="p-2 text-left">Núm. E-commerce</th>
+                  <th className="p-2 text-left">Núm. Venda</th>
+                  <th className="p-2 text-left">Empresa</th>
+                  <th className="p-2 text-left">Cidade</th>
+                  <th className="p-2 text-left">UF</th>
+                  <th className="p-2 text-left">Código Rastreamento</th>
+                  <th className="p-2 text-left">URL Rastreamento</th>
+                  <th className="p-2 text-left">Observações</th>
+                  <th className="p-2 text-left">Obs. Internas</th>
+                  <th className="p-2 text-left">SKUs/Produtos</th>
+                  <th className="p-2 text-left">Mapeamento</th>
+                  <th className="p-2 text-left">Criado em</th>
+                  <th className="p-2 text-left">Atualizado em</th>
                 </tr>
               </thead>
               <tbody>
@@ -455,11 +491,11 @@ const loadAccounts = async () => {
                   return (
                   <tr 
                     key={order.id} 
-                    className={`border-b hover:bg-gray-50 border-l-4 ${
-                      temMapeamento ? 'border-l-green-500 bg-green-50' : 'border-l-orange-500 bg-orange-50'
+                    className={`border-b hover:bg-gray-50 text-xs ${
+                      temMapeamento ? 'border-l-4 border-l-green-500 bg-green-50' : 'border-l-4 border-l-orange-500 bg-orange-50'
                     }`}
                   >
-                    <td className="p-3">
+                    <td className="p-2">
                       <input 
                         type="checkbox" 
                         checked={selectedOrders.has(order.id)}
@@ -467,48 +503,137 @@ const loadAccounts = async () => {
                         className="rounded border-gray-300"
                       />
                     </td>
-                    <td className="p-3">
+                    
+                    {/* ID/Número */}
+                    <td className="p-2">
                       <div className="font-medium">#{order.numero}</div>
-                      {order.codigo_rastreamento && (
-                        <div className="text-xs text-gray-500">
-                          Tracking: {order.codigo_rastreamento}
-                        </div>
-                      )}
+                      <div className="text-xs text-gray-500">ID: {order.id}</div>
                     </td>
-                    <td className="p-3">
-                      <div>{order.nome_cliente || '—'}</div>
-                      {order.cpf_cnpj && (
-                        <div className="text-xs text-gray-500">
-                          {maskCpfCnpj(order.cpf_cnpj)}
-                        </div>
-                      )}
+                    
+                    {/* Cliente */}
+                    <td className="p-2 max-w-32">
+                      <div className="truncate" title={order.nome_cliente}>
+                        {order.nome_cliente || '—'}
+                      </div>
                     </td>
-                    <td className="p-3">
+                    
+                    {/* CPF/CNPJ */}
+                    <td className="p-2">
+                      {order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '—'}
+                    </td>
+                    
+                    {/* Data Pedido */}
+                    <td className="p-2">
                       {order.data_pedido ? formatDate(order.data_pedido) : '—'}
                     </td>
-                    <td className="p-3">
+                    
+                    {/* Data Prevista */}
+                    <td className="p-2">
+                      {order.data_prevista ? formatDate(order.data_prevista) : '—'}
+                    </td>
+                    
+                    {/* Status */}
+                    <td className="p-2">
                       <Badge className={getSituacaoColor(order.situacao)}>
                         {order.situacao || '—'}
                       </Badge>
                     </td>
-                    <td className="p-3">
-                      <div>{formatMoney(order.valor_total)}</div>
-                      {order.valor_frete > 0 && (
-                        <div className="text-xs text-gray-500">
-                          Frete: {formatMoney(order.valor_frete)}
-                        </div>
-                      )}
+                    
+                    {/* Valor Total */}
+                    <td className="p-2">
+                      {formatMoney(order.valor_total)}
                     </td>
-                    <td className="p-3">
-                      <div>{order.cidade || '—'}</div>
-                      <div className="text-xs text-gray-500">{order.uf || '—'}</div>
+                    
+                    {/* Valor Frete */}
+                    <td className="p-2">
+                      {order.valor_frete > 0 ? formatMoney(order.valor_frete) : '—'}
                     </td>
-                    <td className="p-3">
-                      <div className="text-sm max-w-32 truncate" title={order.obs}>
+                    
+                    {/* Valor Desconto */}
+                    <td className="p-2">
+                      {order.valor_desconto > 0 ? formatMoney(order.valor_desconto) : '—'}
+                    </td>
+                    
+                    {/* Número E-commerce */}
+                    <td className="p-2">
+                      {order.numero_ecommerce || '—'}
+                    </td>
+                    
+                    {/* Número Venda */}
+                    <td className="p-2">
+                      {order.numero_venda || '—'}
+                    </td>
+                    
+                    {/* Empresa */}
+                    <td className="p-2">
+                      <Badge variant="outline" className="bg-orange-100 text-orange-800">
+                        {order.empresa || 'ML'}
+                      </Badge>
+                    </td>
+                    
+                    {/* Cidade */}
+                    <td className="p-2">
+                      {order.cidade || '—'}
+                    </td>
+                    
+                    {/* UF */}
+                    <td className="p-2">
+                      {order.uf || '—'}
+                    </td>
+                    
+                    {/* Código Rastreamento */}
+                    <td className="p-2">
+                      {order.codigo_rastreamento || '—'}
+                    </td>
+                    
+                    {/* URL Rastreamento */}
+                    <td className="p-2">
+                      {order.url_rastreamento ? (
+                        <a 
+                          href={order.url_rastreamento} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-xs"
+                        >
+                          Rastrear
+                        </a>
+                      ) : '—'}
+                    </td>
+                    
+                    {/* Observações */}
+                    <td className="p-2 max-w-32">
+                      <div className="text-xs truncate" title={order.obs}>
                         {order.obs || '—'}
                       </div>
                     </td>
-                    <td className="p-3">
+                    
+                    {/* Obs. Internas */}
+                    <td className="p-2 max-w-32">
+                      <div className="text-xs truncate" title={order.obs_interna}>
+                        {order.obs_interna || '—'}
+                      </div>
+                    </td>
+                    
+                    {/* SKUs/Produtos */}
+                    <td className="p-2 max-w-40">
+                      {order.skus && order.skus.length > 0 ? (
+                        <div className="text-xs">
+                          {order.skus.slice(0, 2).map((sku, idx) => (
+                            <div key={idx} className="truncate" title={sku}>
+                              {sku}
+                            </div>
+                          ))}
+                          {order.skus.length > 2 && (
+                            <div className="text-gray-500">
+                              +{order.skus.length - 2} mais
+                            </div>
+                          )}
+                        </div>
+                      ) : '—'}
+                    </td>
+                    
+                    {/* Mapeamento */}
+                    <td className="p-2">
                       {temMapeamento ? (
                         <Badge variant="outline" className="bg-green-100 text-green-800">
                           <CheckCircle className="h-3 w-3 mr-1" />
@@ -520,6 +645,16 @@ const loadAccounts = async () => {
                           Sem Map.
                         </Badge>
                       )}
+                    </td>
+                    
+                    {/* Criado em */}
+                    <td className="p-2">
+                      {order.created_at ? formatDate(order.created_at) : '—'}
+                    </td>
+                    
+                    {/* Atualizado em */}
+                    <td className="p-2">
+                      {order.updated_at ? formatDate(order.updated_at) : '—'}
                     </td>
                   </tr>
                   );
