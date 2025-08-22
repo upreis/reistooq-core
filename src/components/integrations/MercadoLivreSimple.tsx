@@ -57,17 +57,15 @@ export function MercadoLivreSimple() {
     try {
       setConnecting(true);
       
-      const session = await supabase.auth.getSession();
-      const response = await fetch(`https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/ml-auth?action=start`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.data.session?.access_token}`,
-          'Content-Type': 'application/json'
-        }
+      // Usar supabase.functions.invoke em vez de fetch direto para evitar CORS
+      const { data, error } = await supabase.functions.invoke('mercadolibre-oauth-start', {
+        body: {}
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
+      if (error) throw new Error(error.message || 'Erro ao iniciar OAuth');
+      if (!data?.success || !data?.authorization_url) {
+        throw new Error(data?.error || 'URL de autorização não retornada');
+      }
 
       const popup = window.open(
         data.authorization_url,
@@ -131,18 +129,16 @@ export function MercadoLivreSimple() {
       setLoadingOrders(true);
       setSelectedAccount(accountId);
 
-      const session = await supabase.auth.getSession();
-      const response = await fetch(`https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/ml-auth?action=orders`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.data.session?.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ account_id: accountId, limit: 20 })
+      // Usar supabase.functions.invoke em vez de fetch direto
+      const { data, error } = await supabase.functions.invoke('unified-orders', {
+        body: { 
+          integration_account_id: accountId, 
+          limit: 20 
+        }
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
+      if (error) throw new Error(error.message || 'Erro ao buscar pedidos');
+      if (!data?.ok) throw new Error(data?.error || 'Erro ao buscar pedidos');
 
       setOrders(data.orders || []);
     } catch (error) {
