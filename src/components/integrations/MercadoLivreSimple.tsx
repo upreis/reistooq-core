@@ -10,12 +10,7 @@ interface MLAccount {
   id: string;
   name: string;
   account_identifier: string;
-  public_auth: {
-    user_id: number;
-    nickname: string;
-    email?: string;
-    site_id: string;
-  };
+  public_auth: any;
   is_active: boolean;
   created_at: string;
 }
@@ -49,7 +44,7 @@ export function MercadoLivreSimple() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAccounts(data || []);
+      setAccounts((data || []) as MLAccount[]);
     } catch (error) {
       console.error('Erro ao carregar contas:', error);
       toast.error('Erro ao carregar contas do MercadoLibre');
@@ -62,13 +57,17 @@ export function MercadoLivreSimple() {
     try {
       setConnecting(true);
       
-      const { data, error } = await supabase.functions.invoke('ml-auth', {
-        body: {},
+      const session = await supabase.auth.getSession();
+      const response = await fetch(`https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/ml-auth?action=start`, {
         method: 'GET',
-        headers: new Headers([['action', 'start']])
+        headers: {
+          'Authorization': `Bearer ${session.data.session?.access_token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
 
       const popup = window.open(
         data.authorization_url,
@@ -132,13 +131,19 @@ export function MercadoLivreSimple() {
       setLoadingOrders(true);
       setSelectedAccount(accountId);
 
-      const { data, error } = await supabase.functions.invoke('ml-auth', {
-        body: { account_id: accountId, limit: 20 },
+      const session = await supabase.auth.getSession();
+      const response = await fetch(`https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/ml-auth?action=orders`, {
         method: 'POST',
-        headers: new Headers([['action', 'orders']])
+        headers: {
+          'Authorization': `Bearer ${session.data.session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ account_id: accountId, limit: 20 })
       });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
       setOrders(data.orders || []);
     } catch (error) {
       console.error('Erro ao carregar pedidos:', error);
@@ -196,7 +201,7 @@ export function MercadoLivreSimple() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
                         <User className="h-4 w-4" />
-                        <span className="font-medium">{account.public_auth.nickname}</span>
+                        <span className="font-medium">{account.public_auth?.nickname || account.name}</span>
                         <Badge variant="default">Ativa</Badge>
                       </div>
                       <div className="flex gap-2">
@@ -223,9 +228,9 @@ export function MercadoLivreSimple() {
                       </div>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      <p>Site: {account.public_auth.site_id}</p>
-                      <p>ID: {account.public_auth.user_id}</p>
-                      {account.public_auth.email && <p>Email: {account.public_auth.email}</p>}
+                      <p>Site: {account.public_auth?.site_id || 'MLB'}</p>
+                      <p>ID: {account.public_auth?.user_id || account.account_identifier}</p>
+                      {account.public_auth?.email && <p>Email: {account.public_auth.email}</p>}
                     </div>
                   </div>
                 ))}

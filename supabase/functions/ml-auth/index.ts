@@ -145,6 +145,13 @@ serve(async (req) => {
 
       const userData = await userResp.json();
 
+      // Buscar organização do usuário
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', stateData.user_id)
+        .single();
+
       // Salvar conta e tokens
       const { data: account } = await supabase
         .from('integration_accounts')
@@ -153,6 +160,7 @@ serve(async (req) => {
           name: userData.nickname,
           account_identifier: String(userData.id),
           is_active: true,
+          organization_id: profile?.organizacao_id,
           public_auth: {
             user_id: userData.id,
             nickname: userData.nickname,
@@ -167,6 +175,7 @@ serve(async (req) => {
         await supabase.from('integration_secrets').upsert({
           integration_account_id: account.id,
           provider: 'mercadolivre',
+          organization_id: profile?.organizacao_id,
           access_token: tokenData.access_token,
           refresh_token: tokenData.refresh_token,
           expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
