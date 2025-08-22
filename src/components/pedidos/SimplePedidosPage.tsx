@@ -159,41 +159,82 @@ const loadAccounts = async () => {
         
         // Extrair SKUs dos itens do pedido para mapeamento
         const orderItems = raw.order_items || [];
-        const skus = orderItems.map((item: any) => 
-          item.item?.seller_sku || item.item?.seller_custom_field || item.item?.title?.substring(0, 30)
-        ).filter(Boolean);
+        const skus = orderItems
+          .map((item: any) => item.item?.seller_sku || item.item?.seller_custom_field || item.item?.title?.substring(0, 30))
+          .filter(Boolean);
+
+        // Derivar dados detalhados caso unified ainda não contenha (fallback seguro)
+        const primeiroItem = orderItems[0]?.item || {};
+        const shippingCost = raw.payments?.[0]?.shipping_cost ?? raw.shipping?.cost ?? 0;
+        const tarifasVenda = orderItems.reduce((total: number, item: any) => total + (item.sale_fee || 0), 0);
+        const impostos = raw.payments?.[0]?.taxes_amount ?? 0;
+        const receitaEnvio = shippingCost;
+        const valorPagoTotal = raw.paid_amount ?? raw.payments?.[0]?.total_paid_amount ?? 0;
+        const receitaProdutos = (raw.total_amount ?? 0) - shippingCost;
+        const atributosVariacaoTexto = (primeiroItem.variation_attributes || [])
+          .map((attr: any) => `${attr.name}: ${attr.value_name}`)
+          .join(', ');
+        const enderecoCompleto = [
+          raw.shipping?.receiver_address?.street_name,
+          raw.shipping?.receiver_address?.street_number,
+          raw.shipping?.receiver_address?.neighborhood?.name,
+        ].filter(Boolean).join(', ');
+
+        const computedUnified = {
+          ...unifiedData,
+          // Dados Financeiros Detalhados
+          receita_produtos: unifiedData.receita_produtos ?? receitaProdutos,
+          tarifas_venda: unifiedData.tarifas_venda ?? tarifasVenda,
+          impostos: unifiedData.impostos ?? impostos,
+          receita_envio: unifiedData.receita_envio ?? receitaEnvio,
+          valor_pago_total: unifiedData.valor_pago_total ?? valorPagoTotal,
+          // Dados do Produto/Anúncio
+          titulo_anuncio: unifiedData.titulo_anuncio ?? (primeiroItem.title || ''),
+          categoria_ml: unifiedData.categoria_ml ?? (primeiroItem.category_id || ''),
+          condicao: unifiedData.condicao ?? (primeiroItem.condition || ''),
+          garantia: unifiedData.garantia ?? (primeiroItem.warranty || ''),
+          tipo_listagem: unifiedData.tipo_listagem ?? (orderItems[0]?.listing_type_id || ''),
+          atributos_variacao: unifiedData.atributos_variacao ?? atributosVariacaoTexto,
+          // Dados de Envio Detalhados
+          forma_entrega: unifiedData.forma_entrega ?? (raw.shipping?.shipping_method || raw.shipping?.shipping_mode || 'Não informado'),
+          preferencia_entrega: unifiedData.preferencia_entrega ?? (raw.shipping?.receiver_address?.delivery_preference || ''),
+          endereco_completo: unifiedData.endereco_completo ?? enderecoCompleto,
+          cep: unifiedData.cep ?? (raw.shipping?.receiver_address?.zip_code || ''),
+          comentario_endereco: unifiedData.comentario_endereco ?? (raw.shipping?.receiver_address?.comment || ''),
+          nome_destinatario: unifiedData.nome_destinatario ?? (raw.shipping?.receiver_address?.receiver_name || ''),
+        };
         
-        // Usar dados do unified primeiro, fallback para raw
+        // Usar dados do unified primeiro, com fallback para raw
         const processedOrder = {
-          id: unifiedData.id || `ml_${raw.id}`,
-          numero: unifiedData.numero || `ML-${raw.id}`,
-          nome_cliente: unifiedData.nome_cliente || raw.buyer?.nickname || `Cliente ML ${raw.buyer?.id}`,
-          cpf_cnpj: unifiedData.cpf_cnpj || null,
-          data_pedido: unifiedData.data_pedido || raw.date_created?.split('T')[0],
-          data_prevista: unifiedData.data_prevista || raw.date_closed?.split('T')[0],
-          situacao: unifiedData.situacao || raw.status,
-          valor_total: unifiedData.valor_total || raw.total_amount || 0,
-          valor_frete: unifiedData.valor_frete || raw.payments?.[0]?.shipping_cost || 0,
-          valor_desconto: unifiedData.valor_desconto || 0,
-          numero_ecommerce: unifiedData.numero_ecommerce || String(raw.id),
-          numero_venda: unifiedData.numero_venda || String(raw.id),
-          empresa: unifiedData.empresa || 'mercadolivre',
-          cidade: unifiedData.cidade || null,
-          uf: unifiedData.uf || null,
-          codigo_rastreamento: unifiedData.codigo_rastreamento || null,
-          url_rastreamento: unifiedData.url_rastreamento || null,
-          obs: unifiedData.obs || (skus.length > 0 ? `SKUs: ${skus.join(', ')}` : ''),
-          obs_interna: unifiedData.obs_interna || `ML Order ID: ${raw.id} | Buyer ID: ${raw.buyer?.id}`,
-          created_at: unifiedData.created_at || raw.date_created,
-          updated_at: unifiedData.updated_at || raw.last_updated || raw.date_created,
+          id: computedUnified.id || `ml_${raw.id}`,
+          numero: computedUnified.numero || `ML-${raw.id}`,
+          nome_cliente: computedUnified.nome_cliente || raw.buyer?.nickname || `Cliente ML ${raw.buyer?.id}`,
+          cpf_cnpj: computedUnified.cpf_cnpj || null,
+          data_pedido: computedUnified.data_pedido || raw.date_created?.split('T')[0],
+          data_prevista: computedUnified.data_prevista || raw.date_closed?.split('T')[0],
+          situacao: computedUnified.situacao || raw.status,
+          valor_total: computedUnified.valor_total || raw.total_amount || 0,
+          valor_frete: computedUnified.valor_frete || shippingCost || 0,
+          valor_desconto: computedUnified.valor_desconto || 0,
+          numero_ecommerce: computedUnified.numero_ecommerce || String(raw.id),
+          numero_venda: computedUnified.numero_venda || String(raw.id),
+          empresa: computedUnified.empresa || 'mercadolivre',
+          cidade: computedUnified.cidade || raw.shipping?.receiver_address?.city?.name || null,
+          uf: computedUnified.uf || raw.shipping?.receiver_address?.state?.name || null,
+          codigo_rastreamento: computedUnified.codigo_rastreamento || raw.shipping?.tracking_number || null,
+          url_rastreamento: computedUnified.url_rastreamento || raw.shipping?.tracking_url || null,
+          obs: computedUnified.obs || (skus.length > 0 ? `SKUs: ${skus.join(', ')}` : ''),
+          obs_interna: computedUnified.obs_interna || `ML Order ID: ${raw.id} | Buyer ID: ${raw.buyer?.id}`,
+          created_at: computedUnified.created_at || raw.date_created,
+          updated_at: computedUnified.updated_at || raw.last_updated || raw.date_created,
           // Dados extras para ações de estoque
           integration_account_id: integrationAccountId,
           raw: raw,
-          unified: unifiedData,
+          unified: computedUnified,
           skus: skus, // Lista de SKUs para mapeamento
-          quantidade_itens: unifiedData.quantidade_itens || orderItems.reduce((total: number, item: any) => total + (item.quantity || 0), 0),
-          status_original: unifiedData.status_original || raw.status,
-          status_shipping: unifiedData.status_shipping || raw.shipping?.status,
+          quantidade_itens: computedUnified.quantidade_itens || orderItems.reduce((total: number, item: any) => total + (item.quantity || 0), 0),
+          status_original: computedUnified.status_original || raw.status,
+          status_shipping: computedUnified.status_shipping || raw.shipping?.status,
         };
         
         console.log(`📦 Processed Order ${index}:`, processedOrder);
@@ -711,19 +752,29 @@ const loadAccounts = async () => {
                     
                     {/* Dados Financeiros Detalhados */}
                     <td className="p-2">
-                      {order.unified?.receita_produtos ? formatMoney(order.unified.receita_produtos) : '—'}
+                      {order.unified?.receita_produtos !== undefined && order.unified?.receita_produtos !== null
+                        ? formatMoney(order.unified.receita_produtos)
+                        : '—'}
                     </td>
                     <td className="p-2">
-                      {order.unified?.tarifas_venda ? formatMoney(order.unified.tarifas_venda) : '—'}
+                      {order.unified?.tarifas_venda !== undefined && order.unified?.tarifas_venda !== null
+                        ? formatMoney(order.unified.tarifas_venda)
+                        : '—'}
                     </td>
                     <td className="p-2">
-                      {order.unified?.impostos ? formatMoney(order.unified.impostos) : '—'}
+                      {order.unified?.impostos !== undefined && order.unified?.impostos !== null
+                        ? formatMoney(order.unified.impostos)
+                        : '—'}
                     </td>
                     <td className="p-2">
-                      {order.unified?.receita_envio ? formatMoney(order.unified.receita_envio) : '—'}
+                      {order.unified?.receita_envio !== undefined && order.unified?.receita_envio !== null
+                        ? formatMoney(order.unified.receita_envio)
+                        : '—'}
                     </td>
                     <td className="p-2">
-                      {order.unified?.valor_pago_total ? formatMoney(order.unified.valor_pago_total) : '—'}
+                      {order.unified?.valor_pago_total !== undefined && order.unified?.valor_pago_total !== null
+                        ? formatMoney(order.unified.valor_pago_total)
+                        : '—'}
                     </td>
                     
                     {/* Dados do Produto/Anúncio */}
