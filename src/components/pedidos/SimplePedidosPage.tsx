@@ -34,6 +34,21 @@ type Order = {
   created_at: string;
   updated_at: string;
   skus?: string[];
+  quantidade_itens?: number;
+  status_original?: string;
+  status_shipping?: string;
+  // Novos campos detalhados
+  status_descricao?: string;
+  titulos_anuncios?: string;
+  receita_produtos?: number;
+  tarifa_venda?: number;
+  receita_envio?: number;
+  tarifa_envio?: number;
+  total_receita?: number;
+  forma_entrega?: string;
+  data_a_caminho?: string;
+  data_entrega?: string;
+  comprador_completo?: string;
   raw?: any;
   unified?: any;
   [key: string]: any;
@@ -163,7 +178,7 @@ const loadAccounts = async () => {
           item.item?.seller_sku || item.item?.seller_custom_field || item.item?.title?.substring(0, 30)
         ).filter(Boolean);
         
-        // Usar dados do unified primeiro, fallback para raw
+          // Usar dados do unified primeiro, fallback para raw
         const processedOrder = {
           id: unifiedData.id || `ml_${raw.id}`,
           numero: unifiedData.numero || `ML-${raw.id}`,
@@ -194,6 +209,18 @@ const loadAccounts = async () => {
           quantidade_itens: unifiedData.quantidade_itens || orderItems.reduce((total: number, item: any) => total + (item.quantity || 0), 0),
           status_original: unifiedData.status_original || raw.status,
           status_shipping: unifiedData.status_shipping || raw.shipping?.status,
+          // Novos campos detalhados
+          status_descricao: unifiedData.status_descricao || null,
+          titulos_anuncios: unifiedData.titulos_anuncios || null,
+          receita_produtos: unifiedData.receita_produtos || null,
+          tarifa_venda: unifiedData.tarifa_venda || null,
+          receita_envio: unifiedData.receita_envio || null,
+          tarifa_envio: unifiedData.tarifa_envio || null,
+          total_receita: unifiedData.total_receita || null,
+          forma_entrega: unifiedData.forma_entrega || null,
+          data_a_caminho: unifiedData.data_a_caminho || null,
+          data_entrega: unifiedData.data_entrega || null,
+          comprador_completo: unifiedData.comprador_completo || null,
         };
         
         console.log(`📦 Processed Order ${index}:`, processedOrder);
@@ -483,6 +510,18 @@ const loadAccounts = async () => {
                   <th className="p-2 text-left">Observações</th>
                   <th className="p-2 text-left">Obs. Internas</th>
                   <th className="p-2 text-left">SKUs/Produtos</th>
+                  <th className="p-2 text-left">Qtd Itens</th>
+                  <th className="p-2 text-left">Status Descrição</th>
+                  <th className="p-2 text-left">Títulos Anúncios</th>
+                  <th className="p-2 text-left">Receita Produtos</th>
+                  <th className="p-2 text-left">Tarifa Venda</th>
+                  <th className="p-2 text-left">Receita Envio</th>
+                  <th className="p-2 text-left">Tarifa Envio</th>
+                  <th className="p-2 text-left">Total Receita</th>
+                  <th className="p-2 text-left">Forma Entrega</th>
+                  <th className="p-2 text-left">Data A Caminho</th>
+                  <th className="p-2 text-left">Data Entrega</th>
+                  <th className="p-2 text-left">Comprador Completo</th>
                   <th className="p-2 text-left">Mapeamento</th>
                   <th className="p-2 text-left">Criado em</th>
                   <th className="p-2 text-left">Atualizado em</th>
@@ -636,29 +675,76 @@ const loadAccounts = async () => {
                     </td>
             
             {/* Quantidade de Itens */}
-            <td className="text-xs p-2 border">
+            <td className="p-2">
               <div className="flex items-center gap-1">
                 <Package className="h-3 w-3" />
-                <span className="font-medium">{order.quantidade_itens || 'N/A'}</span>
+                <span className="font-medium">{order.quantidade_itens || '—'}</span>
               </div>
             </td>
 
-            {/* Status Detalhado */}
-            <td className="text-xs p-2 border">
-              <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                {order.situacao || 'N/A'}
+            {/* Status Descrição */}
+            <td className="p-2 max-w-48">
+              <div className="text-xs truncate" title={order.status_descricao}>
+                {order.status_descricao || '—'}
+              </div>
+            </td>
+
+            {/* Títulos Anúncios */}
+            <td className="p-2 max-w-60">
+              <div className="text-xs truncate" title={order.titulos_anuncios}>
+                {order.titulos_anuncios || '—'}
+              </div>
+            </td>
+
+            {/* Receita Produtos */}
+            <td className="p-2">
+              {order.receita_produtos ? formatMoney(order.receita_produtos) : '—'}
+            </td>
+
+            {/* Tarifa Venda */}
+            <td className="p-2">
+              {order.tarifa_venda ? formatMoney(order.tarifa_venda) : '—'}
+            </td>
+
+            {/* Receita Envio */}
+            <td className="p-2">
+              {order.receita_envio ? formatMoney(order.receita_envio) : '—'}
+            </td>
+
+            {/* Tarifa Envio */}
+            <td className="p-2">
+              {order.tarifa_envio ? formatMoney(order.tarifa_envio) : '—'}
+            </td>
+
+            {/* Total Receita */}
+            <td className="p-2">
+              <span className="font-medium text-green-600">
+                {order.total_receita ? formatMoney(order.total_receita) : '—'}
               </span>
             </td>
 
-            {/* Status Envio */}
-            <td className="text-xs p-2 border">
-              {order.status_shipping ? (
-                <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                  {order.status_shipping}
-                </span>
-              ) : (
-                <span className="text-muted-foreground">-</span>
-              )}
+            {/* Forma Entrega */}
+            <td className="p-2 max-w-32">
+              <div className="text-xs truncate" title={order.forma_entrega}>
+                {order.forma_entrega || '—'}
+              </div>
+            </td>
+
+            {/* Data A Caminho */}
+            <td className="p-2">
+              {order.data_a_caminho ? formatDate(order.data_a_caminho) : '—'}
+            </td>
+
+            {/* Data Entrega */}
+            <td className="p-2">
+              {order.data_entrega ? formatDate(order.data_entrega) : '—'}
+            </td>
+
+            {/* Comprador Completo */}
+            <td className="p-2 max-w-40">
+              <div className="text-xs truncate" title={order.comprador_completo}>
+                {order.comprador_completo || order.nome_cliente || '—'}
+              </div>
             </td>
 
             {/* Mapeamento */}

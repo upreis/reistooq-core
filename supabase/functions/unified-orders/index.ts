@@ -191,7 +191,7 @@ serve(async (req) => {
 
 // ------ helpers ------
 
-// Função para buscar detalhes de shipping dos pedidos
+// Função para buscar detalhes de shipping e informações adicionais dos pedidos
 async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid: string) {
   const enrichedOrders = [];
   
@@ -199,7 +199,44 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
     try {
       let enrichedOrder = { ...order };
       
-      // Se tem shipping ID, buscar detalhes
+      // Buscar detalhes dos itens para obter títulos dos anúncios
+      if (order.order_items && order.order_items.length > 0) {
+        const itemDetails = [];
+        for (const orderItem of order.order_items) {
+          if (orderItem.item?.id) {
+            try {
+              const itemUrl = `https://api.mercadolibre.com/items/${orderItem.item.id}`;
+              const itemResp = await fetch(itemUrl, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+              });
+              
+              if (itemResp.ok) {
+                const itemData = await itemResp.json();
+                itemDetails.push({
+                  ...orderItem,
+                  item_details: {
+                    title: itemData.title,
+                    permalink: itemData.permalink,
+                    pictures: itemData.pictures,
+                    price: itemData.price,
+                    available_quantity: itemData.available_quantity
+                  }
+                });
+              } else {
+                itemDetails.push(orderItem);
+              }
+            } catch (err) {
+              console.log(`[unified-orders:${cid}] Error fetching item ${orderItem.item.id}:`, err);
+              itemDetails.push(orderItem);
+            }
+          } else {
+            itemDetails.push(orderItem);
+          }
+        }
+        enrichedOrder.order_items = itemDetails;
+      }
+      
+      // Se tem shipping ID, buscar detalhes completos
       if (order.shipping?.id) {
         const shippingUrl = `https://api.mercadolibre.com/shipments/${order.shipping.id}`;
         const shippingResp = await fetch(shippingUrl, {
@@ -209,18 +246,52 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
         if (shippingResp.ok) {
           const shippingData = await shippingResp.json();
           
-          // Enriquecer com dados de shipping
+          // Enriquecer com dados completos de shipping
           enrichedOrder.shipping = {
             ...order.shipping,
             receiver_address: shippingData.receiver_address,
             tracking_number: shippingData.tracking_number,
             tracking_url: shippingData.tracking_url,
-            status: shippingData.status
+            status: shippingData.status,
+            status_detail: shippingData.status_detail,
+            substatus: shippingData.substatus,
+            shipping_option: shippingData.shipping_option,
+            date_shipped: shippingData.date_shipped,
+            date_delivered: shippingData.date_delivered,
+            estimated_delivery_time: shippingData.estimated_delivery_time,
+            estimated_delivery_extended: shippingData.estimated_delivery_extended,
+            estimated_handling_limit: shippingData.estimated_handling_limit,
+            cost: shippingData.cost,
+            logistic_type: shippingData.logistic_type
           };
           
           console.log(`[unified-orders:${cid}] Enriched shipping for order ${order.id}`);
         } else {
           console.log(`[unified-orders:${cid}] Failed to fetch shipping ${order.shipping.id}: ${shippingResp.status}`);
+        }
+      }
+      
+      // Buscar informações do comprador se necessário
+      if (order.buyer?.id && !order.buyer.nickname) {
+        try {
+          const buyerUrl = `https://api.mercadolibre.com/users/${order.buyer.id}`;
+          const buyerResp = await fetch(buyerUrl, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          
+          if (buyerResp.ok) {
+            const buyerData = await buyerResp.json();
+            enrichedOrder.buyer = {
+              ...order.buyer,
+              nickname: buyerData.nickname,
+              first_name: buyerData.first_name,
+              last_name: buyerData.last_name,
+              email: buyerData.email,
+              user_type: buyerData.user_type
+            };
+          }
+        } catch (err) {
+          console.log(`[unified-orders:${cid}] Error fetching buyer ${order.buyer.id}:`, err);
         }
       }
       
@@ -264,8 +335,34 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
     const codigoRastreamento = order.shipping?.tracking_number || "";
     const urlRastreamento = order.shipping?.tracking_url || "";
     
-    // Status detalhado do pedido combinando order status + shipping status
+    // Status detalhado do pedido combinando order status + shipping status + descrições específicas
     const statusDetalhado = mapDetailedStatus(order.status, order.shipping?.status, order.status_detail);
+    const statusDescricao = getStatusDescription(order.shipping);
+    
+    // Extrair títulos dos anúncios
+    const titulosAnuncios = orderItems.map((item: any) => 
+      item.item_details?.title || item.item?.title || "Produto sem título"
+    );
+    
+    // Calcular valores financeiros detalhados
+    const receitaProdutos = orderItems.reduce((total: number, item: any) => {
+      return total + (item.unit_price * item.quantity);
+    }, 0);
+    
+    const tarifaVenda = orderItems.reduce((total: number, item: any) => {
+      return total + (item.sale_fee || 0);
+    }, 0);
+    
+    const receitaEnvio = order.shipping?.cost || 0;
+    const tarifaEnvio = order.payments?.[0]?.shipping_cost || 0;
+    const totalReceita = receitaProdutos + receitaEnvio - tarifaVenda - tarifaEnvio;
+    
+    // Forma de entrega
+    const formaEntrega = order.shipping?.shipping_option?.name || order.shipping?.logistic_type || "Não informado";
+    
+    // Datas específicas
+    const dataACaminho = order.shipping?.date_shipped || null;
+    const dataEntrega = order.shipping?.date_delivered || null;
     
     return {
       id: `ml_${order.id}`,
@@ -293,6 +390,19 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       quantidade_itens: quantidadeTotalItens,
       status_original: order.status,
       status_shipping: order.shipping?.status || null,
+      
+      // Novos campos detalhados
+      status_descricao: statusDescricao,
+      titulos_anuncios: titulosAnuncios.join(" | "),
+      receita_produtos: receitaProdutos,
+      tarifa_venda: tarifaVenda,
+      receita_envio: receitaEnvio,
+      tarifa_envio: tarifaEnvio,
+      total_receita: totalReceita,
+      forma_entrega: formaEntrega,
+      data_a_caminho: dataACaminho,
+      data_entrega: dataEntrega,
+      comprador_completo: `${order.buyer?.first_name || ''} ${order.buyer?.last_name || ''}`.trim() || order.buyer?.nickname || `Cliente ML ${order.buyer?.id}`
     };
   });
 }
@@ -338,4 +448,72 @@ function mapDetailedStatus(orderStatus: string, shippingStatus?: string, statusD
   }
   
   return `${baseStatus}${mappedShipping ? ` - ${mappedShipping}` : ''}`;
+}
+
+// Função para obter descrição detalhada do status de entrega
+function getStatusDescription(shipping?: any): string {
+  if (!shipping) return "";
+  
+  const status = shipping.status;
+  const substatus = shipping.substatus;
+  const estimatedDelivery = shipping.estimated_delivery_time;
+  const estimatedHandling = shipping.estimated_handling_limit;
+  
+  // Mensagens específicas baseadas no status e substatus
+  if (status === "ready_to_ship" && estimatedHandling) {
+    const handlingDate = new Date(estimatedHandling.date);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    if (handlingDate.toDateString() === tomorrow.toDateString()) {
+      return "Você deve dar o pacote ao seu motorista amanhã";
+    }
+    return `Você deve dar o pacote ao seu motorista até ${handlingDate.toLocaleDateString('pt-BR')}`;
+  }
+  
+  if (status === "shipped" && estimatedDelivery) {
+    const deliveryFrom = new Date(estimatedDelivery.date);
+    const deliveryTo = new Date(estimatedDelivery.date);
+    
+    if (estimatedDelivery.time_from && estimatedDelivery.time_to) {
+      deliveryFrom.setHours(parseInt(estimatedDelivery.time_from.split(":")[0]));
+      deliveryTo.setHours(parseInt(estimatedDelivery.time_to.split(":")[0]));
+      
+      return `Chega entre ${deliveryFrom.toLocaleDateString('pt-BR')} e ${deliveryTo.toLocaleDateString('pt-BR')}`;
+    }
+    
+    return `Previsão de entrega: ${deliveryFrom.toLocaleDateString('pt-BR')}`;
+  }
+  
+  if (status === "delivered") {
+    return "Produto entregue com sucesso";
+  }
+  
+  if (status === "not_delivered") {
+    return "Não foi possível entregar o produto";
+  }
+  
+  if (status === "cancelled") {
+    return "Envio cancelado";
+  }
+  
+  if (status === "returned") {
+    return "Produto devolvido";
+  }
+  
+  if (status === "lost") {
+    return "Produto extraviado durante o transporte";
+  }
+  
+  // Status específicos do substatus
+  if (substatus === "stale") {
+    return "Aguardando atualização do status";
+  }
+  
+  if (substatus === "delayed") {
+    return "Entrega atrasada";
+  }
+  
+  return shipping.status_detail || "";
 }
