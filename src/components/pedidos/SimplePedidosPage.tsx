@@ -39,6 +39,19 @@ export default function SimplePedidosPage({ className }: Props) {
   const pageSize = 25;
   const totalPages = Math.ceil(total / pageSize);
 
+// Helper: testa se conta possui segredos válidos na unified-orders
+  const testAccount = async (accId: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('unified-orders', {
+        body: { integration_account_id: accId, limit: 1 }
+      });
+      if (error) return false;
+      return !!data?.ok;
+    } catch {
+      return false;
+    }
+  };
+
   // Carregar contas do Mercado Livre
   useEffect(() => {
     loadAccounts();
@@ -51,19 +64,32 @@ export default function SimplePedidosPage({ className }: Props) {
     }
   }, [integrationAccountId, currentPage]);
 
-  const loadAccounts = async () => {
+const loadAccounts = async () => {
     try {
       const { data, error } = await supabase
         .from('integration_accounts')
         .select('*')
         .eq('provider', 'mercadolivre')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
 
-      setAccounts(data || []);
-      if (data && data.length > 0) {
-        setIntegrationAccountId(data[0].id);
+      const list = data || [];
+      setAccounts(list);
+
+      if (list.length > 0) {
+        // Escolher automaticamente a primeira conta válida (com segredos)
+        for (const acc of list) {
+          const ok = await testAccount(acc.id);
+          if (ok) {
+            setIntegrationAccountId(acc.id);
+            return;
+          }
+        }
+        // Se nenhuma válida, selecionar a mais recente e avisar
+        setIntegrationAccountId(list[0].id);
+        setError('Conta conectada sem segredos válidos. Vá em Configurações > Integrações e reconecte a conta.');
       }
     } catch (err: any) {
       setError(`Erro ao carregar contas: ${err.message}`);
@@ -120,7 +146,18 @@ export default function SimplePedidosPage({ className }: Props) {
       setOrders(processedOrders);
       setTotal(data.paging?.total || data.count || processedOrders.length);
     } catch (err: any) {
-      setError(`Erro ao carregar pedidos: ${err.message}`);
+      const msg = err?.message || String(err);
+      const isSecretsMissing = msg.includes('404') || msg.toLowerCase().includes('segredo') || (err?.status === 404);
+      if (isSecretsMissing && accounts.length > 1) {
+        for (const acc of accounts.filter(a => a.id !== integrationAccountId)) {
+          const ok = await testAccount(acc.id);
+          if (ok) {
+            setIntegrationAccountId(acc.id);
+            return; // vai disparar novo loadOrders pelo useEffect
+          }
+        }
+      }
+      setError(`Erro ao carregar pedidos: ${msg}`);
       setOrders([]);
     } finally {
       setLoading(false);
