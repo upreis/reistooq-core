@@ -307,6 +307,11 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
                          order.shipping?.shipping_mode || 
                          (order.shipping?.logistic?.type === 'drop_off' ? 'Mercado Envios' : 'Não informado');
     
+    // Novos campos de rastreamento e logística
+    const trackingMethod = order.shipping?.tracking_method || "";
+    const substatus = order.shipping?.substatus || "";
+    const logisticMode = order.shipping?.logistic?.mode || "";
+    
     const preferenciaEntrega = order.shipping?.destination?.shipping_address?.delivery_preference || "";
     const enderecoCompleto = [
       order.shipping?.destination?.shipping_address?.street_name,
@@ -369,6 +374,11 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       cep: cep,
       comentario_endereco: comentarioEndereco,
       nome_destinatario: nomeDestinatario,
+      
+      // Novos campos de rastreamento e logística
+      tracking_method: trackingMethod,
+      substatus: substatus,
+      logistic_mode: logisticMode,
     };
   });
 }

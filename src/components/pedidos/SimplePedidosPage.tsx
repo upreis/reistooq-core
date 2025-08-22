@@ -533,6 +533,9 @@ const loadAccounts = async () => {
                   
                    {/* Dados de Envio Detalhados */}
                    <th className="p-2 text-left">Forma Entrega</th>
+                   <th className="p-2 text-left">Método Rastreamento</th>
+                   <th className="p-2 text-left">Sub-status</th>
+                   <th className="p-2 text-left">Modo Logístico</th>
                    <th className="p-2 text-left">Preferência Entrega</th>
                    <th className="p-2 text-left">Endereço Completo</th>
                    <th className="p-2 text-left">CEP</th>
@@ -705,6 +708,21 @@ const loadAccounts = async () => {
                      {/* Dados de Envio Detalhados */}
                      <td className="p-2">
                        {order.unified?.forma_entrega || '—'}
+                     </td>
+                     <td className="p-2">
+                       <Badge variant="outline" className="bg-indigo-100 text-indigo-800">
+                         {order.unified?.tracking_method || '—'}
+                       </Badge>
+                     </td>
+                     <td className="p-2">
+                       <Badge variant="outline" className="bg-amber-100 text-amber-800">
+                         {order.unified?.substatus || '—'}
+                       </Badge>
+                     </td>
+                     <td className="p-2">
+                       <Badge variant="outline" className="bg-cyan-100 text-cyan-800">
+                         {order.unified?.logistic_mode || '—'}
+                       </Badge>
                      </td>
                      <td className="p-2">
                        <Badge variant="outline" className={
