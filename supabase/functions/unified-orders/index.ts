@@ -199,23 +199,43 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
     try {
       let enrichedOrder = { ...order };
       
-      // Se tem shipping ID, buscar detalhes
+      // Se tem shipping ID, buscar detalhes completos do shipment
       if (order.shipping?.id) {
         const shippingUrl = `https://api.mercadolibre.com/shipments/${order.shipping.id}`;
         const shippingResp = await fetch(shippingUrl, {
-          headers: { Authorization: `Bearer ${accessToken}` }
+          headers: { 
+            Authorization: `Bearer ${accessToken}`,
+            'x-format-new': 'true'  // Header necessário para o novo formato JSON
+          }
         });
         
         if (shippingResp.ok) {
           const shippingData = await shippingResp.json();
           
-          // Enriquecer com dados de shipping
+          // Enriquecer com todos os dados de shipping disponíveis
           enrichedOrder.shipping = {
             ...order.shipping,
-            receiver_address: shippingData.receiver_address,
+            // Dados básicos
             tracking_number: shippingData.tracking_number,
-            tracking_url: shippingData.tracking_url,
-            status: shippingData.status
+            status: shippingData.status,
+            substatus: shippingData.substatus,
+            
+            // Endereços completos
+            origin: shippingData.origin,
+            destination: shippingData.destination,
+            
+            // Informações de logística e método de envio
+            logistic: shippingData.logistic,
+            lead_time: shippingData.lead_time,
+            
+            // Dados importantes para "Forma Entrega"
+            shipping_method: shippingData.lead_time?.shipping_method,
+            delivery_type: shippingData.lead_time?.delivery_type,
+            
+            // Informações adicionais
+            tags: shippingData.tags,
+            dimensions: shippingData.dimensions,
+            declared_value: shippingData.declared_value
           };
           
           console.log(`[unified-orders:${cid}] Enriched shipping for order ${order.id}`);
@@ -281,17 +301,21 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
     const codigoRastreamento = order.shipping?.tracking_number || "";
     const urlRastreamento = order.shipping?.tracking_url || "";
     
-    // Dados de Envio Detalhados
-    const formaEntrega = order.shipping?.shipping_method || order.shipping?.shipping_mode || "Não informado";
-    const preferenciaEntrega = order.shipping?.receiver_address?.delivery_preference || "";
+    // Dados de Envio Detalhados - usando dados completos do endpoint /shipments
+    const shippingMethod = order.shipping?.shipping_method || order.shipping?.lead_time?.shipping_method;
+    const formaEntrega = shippingMethod?.name || 
+                         order.shipping?.shipping_mode || 
+                         (order.shipping?.logistic?.type === 'drop_off' ? 'Mercado Envios' : 'Não informado');
+    
+    const preferenciaEntrega = order.shipping?.destination?.shipping_address?.delivery_preference || "";
     const enderecoCompleto = [
-      order.shipping?.receiver_address?.street_name,
-      order.shipping?.receiver_address?.street_number,
-      order.shipping?.receiver_address?.neighborhood?.name
+      order.shipping?.destination?.shipping_address?.street_name,
+      order.shipping?.destination?.shipping_address?.street_number,
+      order.shipping?.destination?.shipping_address?.neighborhood?.name
     ].filter(Boolean).join(", ");
-    const cep = order.shipping?.receiver_address?.zip_code || "";
-    const comentarioEndereco = order.shipping?.receiver_address?.comment || "";
-    const nomeDestinatario = order.shipping?.receiver_address?.receiver_name || "";
+    const cep = order.shipping?.destination?.shipping_address?.zip_code || "";
+    const comentarioEndereco = order.shipping?.destination?.shipping_address?.comment || "";
+    const nomeDestinatario = order.shipping?.destination?.receiver_name || "";
     
     // Status detalhado do pedido combinando order status + shipping status
     const statusDetalhado = mapDetailedStatus(order.status, order.shipping?.status, order.status_detail);

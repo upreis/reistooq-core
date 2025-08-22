@@ -532,6 +532,7 @@ const loadAccounts = async () => {
                   <th className="p-2 text-left">Atributos Variação</th>
                   
                    {/* Dados de Envio Detalhados */}
+                   <th className="p-2 text-left">Forma Entrega</th>
                    <th className="p-2 text-left">Preferência Entrega</th>
                    <th className="p-2 text-left">Endereço Completo</th>
                    <th className="p-2 text-left">CEP</th>
@@ -702,6 +703,9 @@ const loadAccounts = async () => {
                     </td>
                     
                      {/* Dados de Envio Detalhados */}
+                     <td className="p-2">
+                       {order.unified?.forma_entrega || '—'}
+                     </td>
                      <td className="p-2">
                        <Badge variant="outline" className={
                          order.unified?.preferencia_entrega === 'residential' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
