@@ -3,11 +3,13 @@
 
 import { IntegrationsHub } from '@/features/integrations/components/IntegrationsHub/IntegrationsHub';
 import { MLDiagnosticsTest } from '@/features/integrations/components/MLDiagnosticsTest';
+import { MercadoLivreSimple } from '@/components/integrations/MercadoLivreSimple';
 
 export default function IntegracoesPage() {
   return (
     <div className="space-y-6">
       <MLDiagnosticsTest />
+      <MercadoLivreSimple />
       <IntegrationsHub />
     </div>
   );

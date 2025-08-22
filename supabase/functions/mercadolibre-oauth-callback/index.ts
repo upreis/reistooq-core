@@ -157,10 +157,10 @@ serve(async (req) => {
     }
     const user = await meResp.json();
 
-    // Cria conta de integração
+    // Cria ou atualiza conta de integração para evitar duplicação
     const { data: account, error: accErr } = await serviceClient
       .from("integration_accounts")
-      .insert({
+      .upsert({
         provider: "mercadolivre",
         name: user.nickname || user.first_name,
         account_identifier: String(user.id),
@@ -176,6 +176,9 @@ serve(async (req) => {
           permalink: user.permalink,
           status: user.status?.site_status,
         },
+      }, { 
+        onConflict: 'provider,account_identifier',
+        ignoreDuplicates: false
       })
       .select()
       .single();
@@ -188,19 +191,46 @@ serve(async (req) => {
       );
     }
 
-    // Guarda tokens diretamente na tabela (sem criptografia)
+    // Salvar tokens usando upsert para evitar conflitos
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
-    const { error: storeErr } = await serviceClient.from('integration_secrets').upsert({
-      integration_account_id: account.id,
-      provider: 'mercadolivre',
-      organization_id: organization_id,
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
-      expires_at: expiresAt.toISOString(),
-      meta: { user_id: user.id, scope: tokenData.scope || null },
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'integration_account_id,provider' });
+    
+    // Primeiro tentar atualizar, depois inserir se não existir
+    const { data: existingSecret } = await serviceClient
+      .from('integration_secrets')
+      .select('id')
+      .eq('integration_account_id', account.id)
+      .eq('provider', 'mercadolivre')
+      .maybeSingle();
+
+    let storeErr;
+    if (existingSecret) {
+      // Atualizar secret existente
+      const { error } = await serviceClient
+        .from('integration_secrets')
+        .update({
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_at: expiresAt.toISOString(),
+          meta: { user_id: user.id, scope: tokenData.scope || null },
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingSecret.id);
+      storeErr = error;
+    } else {
+      // Criar novo secret
+      const { error } = await serviceClient
+        .from('integration_secrets')
+        .insert({
+          integration_account_id: account.id,
+          provider: 'mercadolivre',
+          organization_id: organizationId, // Corrigido: usar organizationId
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_at: expiresAt.toISOString(),
+          meta: { user_id: user.id, scope: tokenData.scope || null }
+        });
+      storeErr = error;
+    }
 
     if (storeErr) {
       console.error("Failed to store secrets:", storeErr);
