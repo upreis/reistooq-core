@@ -61,13 +61,15 @@ serve(async (req)=>{
     const supabase = makeClient(req.headers.get("Authorization"));
     const { integration_account_id } = await req.json();
     if (!integration_account_id) return fail("integration_account_id é obrigatório", 400);
-    // 1) Lê segredos atuais
-    const { data: secrets, error: secretsError } = await supabase.rpc("decrypt_integration_secret", {
-      p_account_id: integration_account_id,
-      p_provider: "mercadolivre",
-      p_encryption_key: ENC_KEY
-    });
-    if (secretsError || !secrets) return fail("Segredos não encontrados ou inválidos", 404, secretsError);
+    // 1) Lê refresh_token atual
+    const { data: secrets, error: secretsError } = await supabase
+      .from('integration_secrets')
+      .select('refresh_token, meta')
+      .eq('integration_account_id', integration_account_id)
+      .eq('provider', 'mercadolivre')
+      .maybeSingle();
+      
+    if (secretsError || !secrets?.refresh_token) return fail("Refresh token não encontrado", 404, secretsError);
     const refreshToken = secrets.refresh_token;
     if (!refreshToken) return fail("Refresh token não encontrado", 400);
     const { clientId, clientSecret } = getMlConfig();
@@ -98,18 +100,16 @@ serve(async (req)=>{
     }
     const json = JSON.parse(raw);
     const newExpiresAt = new Date(Date.now() + (json.expires_in ?? 0) * 1000).toISOString();
-    // 3) Persiste os novos tokens (mantém payload anterior)
-    const { error: upErr } = await supabase.rpc("encrypt_integration_secret", {
-      p_account_id: integration_account_id,
-      p_provider: "mercadolivre",
-      p_client_id: clientId,
-      p_client_secret: clientSecret,
-      p_access_token: json.access_token,
-      p_refresh_token: json.refresh_token ?? refreshToken,
-      p_expires_at: newExpiresAt,
-      p_payload: secrets.payload ?? {},
-      p_encryption_key: ENC_KEY
-    });
+    // 3) Atualiza tokens em texto puro
+    const { error: upErr } = await supabase.from('integration_secrets').upsert({
+      integration_account_id,
+      provider: 'mercadolivre',
+      access_token: json.access_token,
+      refresh_token: json.refresh_token ?? refreshToken,
+      expires_at: newExpiresAt,
+      meta: secrets.meta ?? {},
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'integration_account_id,provider' });
     if (upErr) return fail("Falha ao salvar novos tokens", 500, upErr);
     return ok({
       success: true,

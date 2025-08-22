@@ -74,17 +74,15 @@ async function refreshIfNeeded(sb: ReturnType<typeof serviceClient>, secrets: an
   const newExpiresAt = new Date(Date.now() + (data.expires_in ?? 0) * 1000).toISOString();
 
   // persiste de volta
-  const { error: upErr } = await sb.rpc("encrypt_integration_secret", {
-    p_account_id: secrets.account_id, // vamos setar isso abaixo
-    p_provider: "mercadolivre",
-    p_client_id: clientId,
-    p_client_secret: clientSecret,
-    p_access_token: data.access_token,
-    p_refresh_token: data.refresh_token || secrets.refresh_token,
-    p_expires_at: newExpiresAt,
-    p_payload: secrets.payload ?? null,
-    p_encryption_key: ENC_KEY,
-  });
+  const { error: upErr } = await sb.from('integration_secrets').upsert({
+    integration_account_id: secrets.account_id,
+    provider: 'mercadolivre',
+    access_token: data.access_token,
+    refresh_token: data.refresh_token || secrets.refresh_token,
+    expires_at: newExpiresAt,
+    meta: secrets.meta ?? {},
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'integration_account_id,provider' });
   if (upErr) {
     console.error(`[unified-orders:${cid}] Falha ao salvar novos tokens`, upErr);
     throw new Error("Failed to save refreshed tokens");
@@ -135,23 +133,24 @@ serve(async (req) => {
     }
 
     // 2) Segredos
-    const { data: secrets, error: secErr } = await sb.rpc("decrypt_integration_secret", {
-      p_account_id: integration_account_id,
-      p_provider: "mercadolivre",
-      p_encryption_key: ENC_KEY,
-    });
+    const { data: secrets, error: secErr } = await sb
+      .from('integration_secrets')
+      .select('access_token, refresh_token, expires_at, meta')
+      .eq('integration_account_id', integration_account_id)
+      .eq('provider', 'mercadolivre')
+      .maybeSingle();
 
-    if (secErr || !secrets) return fail("Failed to retrieve integration secrets", 500, secErr, cid);
+    if (secErr || !secrets?.access_token) return fail("Segredos não encontrados", 404, secErr, cid);
 
     // anexa account_id para o refresh salvar
-    secrets.account_id = integration_account_id;
+    const secretsWithAccountId = { ...secrets, account_id: integration_account_id };
 
     // 3) Garantir token válido
-    const validSecrets = await refreshIfNeeded(sb, secrets, cid);
+    const validSecrets = await refreshIfNeeded(sb, secretsWithAccountId, cid);
     const accessToken = validSecrets.access_token as string;
 
     // 4) Chamada ML Orders
-    const sellerId = String(account.account_identifier || validSecrets.payload?.user_id);
+    const sellerId = String(account.account_identifier || validSecrets.meta?.user_id);
     if (!sellerId) return fail("Seller ID not found (account_identifier/payload)", 400, null, cid);
 
     const mlUrl = new URL("https://api.mercadolibre.com/orders/search");

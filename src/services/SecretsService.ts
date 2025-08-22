@@ -17,12 +17,12 @@ export interface GetSecretRequest {
 }
 
 /**
- * Service for handling encrypted integration secrets
- * Uses Edge Functions to encrypt/decrypt secrets securely
+ * Service for handling integration secrets
+ * Uses direct table access via service role (no encryption, protected by RLS)
  */
 export class SecretsService {
   /**
-   * Save encrypted secret via Edge Function
+   * Save secret via Edge Function
    */
   static async saveSecret(payload: SecretPayload) {
     try {
@@ -44,7 +44,7 @@ export class SecretsService {
   }
 
   /**
-   * Get decrypted secret via Edge Function
+   * Get secret via Edge Function
    */
   static async getSecret(request: GetSecretRequest) {
     try {

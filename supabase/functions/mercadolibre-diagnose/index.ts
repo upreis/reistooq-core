@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     if (stateRowId) await sb.from("oauth_states").delete().eq("id", stateRowId);
   }
 
-  // 5) Vault/RPC encrypt_integration_secret (selftest)
+  // 5) Test direct integration_secrets table access (no RPC needed)
   const selfLabel = "selftest:ml:diagnose";
   let tempAccId: string | null = null;
   try {
@@ -131,23 +131,24 @@ Deno.serve(async (req) => {
 
     if (!accErr && acc?.id) {
       tempAccId = acc.id as string;
-      const { error: encErr } = await sb.rpc("encrypt_integration_secret", {
-        p_account_id: tempAccId,
-        p_provider: "mercadolivre",
-        p_client_id: ML_CLIENT_ID || "test",
-        p_client_secret: ML_CLIENT_SECRET || "test",
-        p_access_token: "test",
-        p_refresh_token: "test",
-        p_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
-        p_payload: { ping: true },
-        p_encryption_key: APP_ENCRYPTION_KEY, // ESSENCIAL
-      });
-      checks.push(check("rpc.encrypt_integration_secret", !encErr, "Verifique se o RPC existe e aceite p_encryption_key; confira estrutura de integration_secrets"));
+      const { error: secretErr } = await sb.from('integration_secrets').upsert({
+        integration_account_id: tempAccId,
+        provider: 'mercadolivre',
+        organization_id: orgId,
+        access_token: 'TEST_TOKEN',
+        refresh_token: 'TEST_REFRESH',
+        expires_at: new Date(Date.now() + 3600000).toISOString(),
+        meta: { ping: true },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'integration_account_id,provider' });
+      
+      checks.push(check("integration_secrets.table_access", !secretErr, "Tabela integration_secrets deve ter colunas access_token, refresh_token, expires_at, meta"));
     } else {
-      checks.push(check("rpc.encrypt_integration_secret", false, "Falha ao criar conta de integração temporária; verifique tabela integration_accounts e provider 'mercadolivre'"));
+      checks.push(check("integration_secrets.table_access", false, "Falha ao criar conta de integração temporária; verifique tabela integration_accounts"));
     }
   } catch (e) {
-    checks.push(check("rpc.encrypt_integration_secret", false, "RPC ausente/erro interno; veja logs do banco"));
+    checks.push(check("integration_secrets.table_access", false, "Erro ao acessar tabela integration_secrets; verifique estrutura"));
   } finally {
     // Limpeza
     try { if (tempAccId) await sb.from("integration_secrets").delete().eq("integration_account_id", tempAccId); } catch {}

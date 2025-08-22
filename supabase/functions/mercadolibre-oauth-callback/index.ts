@@ -188,19 +188,19 @@ serve(async (req) => {
       );
     }
 
-    // Guarda tokens no cofre via RPC
+    // Guarda tokens diretamente na tabela (sem criptografia)
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
-    const { error: storeErr } = await serviceClient.rpc("encrypt_integration_secret", {
-      p_account_id: account.id,
-      p_provider: "mercadolivre",
-      p_client_id: Deno.env.get("ML_CLIENT_ID"),
-      p_client_secret: Deno.env.get("ML_CLIENT_SECRET"),
-      p_access_token: tokenData.access_token,
-      p_refresh_token: tokenData.refresh_token,
-      p_expires_at: expiresAt.toISOString(),
-      p_payload: { user_id: user.id, scope: tokenData.scope || null },
-      p_encryption_key: ENC_KEY,
-    });
+    const { error: storeErr } = await serviceClient.from('integration_secrets').upsert({
+      integration_account_id: account.id,
+      provider: 'mercadolivre',
+      organization_id: organization_id,
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      expires_at: expiresAt.toISOString(),
+      meta: { user_id: user.id, scope: tokenData.scope || null },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'integration_account_id,provider' });
 
     if (storeErr) {
       console.error("Failed to store secrets:", storeErr);

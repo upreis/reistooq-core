@@ -44,21 +44,23 @@ serve(async (req) => {
       });
     }
 
-    const { data, error } = await supabase.rpc("encrypt_integration_secret", {
-      p_account_id: b.integration_account_id,
-      p_provider: b.provider,
-      p_client_id: b.client_id ?? null,
-      p_client_secret: b.client_secret ?? null,
-      p_access_token: b.access_token ?? null,
-      p_refresh_token: b.refresh_token ?? null,
-      p_expires_at: b.expires_at ?? null,
-      p_payload: b.payload ?? {},
-      p_encryption_key: ENC_KEY,
+    // Direct upsert to integration_secrets table (no encryption, RLS protection)
+    const { data, error } = await supabase.from('integration_secrets').upsert({
+      integration_account_id: b.integration_account_id,
+      provider: b.provider,
+      access_token: b.access_token ?? null,
+      refresh_token: b.refresh_token ?? null,
+      expires_at: b.expires_at ? new Date(b.expires_at).toISOString() : null,
+      meta: b.payload || {},
+      updated_at: new Date().toISOString()
+    }, { 
+      onConflict: 'integration_account_id,provider',
+      ignoreDuplicates: false 
     });
 
     if (error) throw error;
 
-    return new Response(JSON.stringify({ ok: true, id: data }), { 
+    return new Response(JSON.stringify({ ok: true, id: data?.[0]?.id }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
   } catch (e) {

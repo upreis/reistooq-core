@@ -44,11 +44,13 @@ serve(async (req) => {
       });
     }
 
-    const { data, error } = await supabase.rpc("decrypt_integration_secret", {
-      p_account_id: b.integration_account_id,
-      p_provider: b.provider,
-      p_encryption_key: ENC_KEY,
-    });
+    // Direct query to integration_secrets table (no decryption needed)
+    const { data, error } = await supabase
+      .from('integration_secrets')
+      .select('access_token, refresh_token, expires_at, meta')
+      .eq('integration_account_id', b.integration_account_id)
+      .eq('provider', b.provider)
+      .maybeSingle();
 
     if (error) throw error;
 
