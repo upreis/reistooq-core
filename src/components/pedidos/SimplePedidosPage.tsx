@@ -505,13 +505,14 @@ const loadAccounts = async () => {
                       className="rounded border-gray-300"
                     />
                   </th>
-                   <th className="p-2 text-left">ID/Número</th>
+                   <th className="p-2 text-left">ID-Único</th>
                    <th className="p-2 text-left">Cliente</th>
                    <th className="p-2 text-left">Data Pedido</th>
                    <th className="p-2 text-left">UF</th>
                    <th className="p-2 text-left">Status</th>
                    <th className="p-2 text-left">Forma Entrega</th>
                    <th className="p-2 text-left">SKUs/Produtos</th>
+                   <th className="p-2 text-left">Núm. Venda</th>
                    <th className="p-2 text-left">Valor Total</th>
                    <th className="p-2 text-left">Mapeamento</th>
                   
@@ -558,78 +559,88 @@ const loadAccounts = async () => {
                       />
                     </td>
                     
-                    {/* ID/Número */}
-                    <td className="p-2">
-                      <div className="font-medium">#{order.numero}</div>
-                      <div className="text-xs text-gray-500">ID: {order.id}</div>
-                    </td>
-                    
-                     {/* Cliente */}
-                     <td className="p-2 max-w-32">
-                       <div className="truncate" title={order.nome_cliente}>
-                         {order.nome_cliente || '—'}
+                     {/* ID-Único */}
+                     <td className="p-2">
+                       <div className="font-medium">
+                         {order.skus && order.skus.length > 0 ? 
+                           `${order.skus[0]}-${order.numero_venda}` : 
+                           `SKU-${order.numero_venda}`
+                         }
                        </div>
+                       <div className="text-xs text-gray-500">#{order.numero}</div>
                      </td>
                      
-                     {/* Data Pedido */}
-                     <td className="p-2">
-                       {order.data_pedido ? formatDate(order.data_pedido) : '—'}
-                     </td>
-                     
-                     {/* UF */}
-                     <td className="p-2">
-                       {order.uf || '—'}
-                     </td>
-                     
-                      {/* Status */}
-                      <td className="p-2">
-                        <Badge className={getSituacaoColor(order.situacao)}>
-                          {order.situacao || '—'}
-                        </Badge>
+                      {/* Cliente */}
+                      <td className="p-2 max-w-32">
+                        <div className="truncate" title={order.nome_cliente}>
+                          {order.nome_cliente || '—'}
+                        </div>
                       </td>
                       
-                      {/* Forma Entrega */}
+                      {/* Data Pedido */}
                       <td className="p-2">
-                        {order.unified?.forma_entrega || '—'}
+                        {order.data_pedido ? formatDate(order.data_pedido) : '—'}
                       </td>
                       
-                      {/* SKUs/Produtos */}
-                     <td className="p-2 max-w-40">
-                       {order.skus && order.skus.length > 0 ? (
-                         <div className="text-xs">
-                           {order.skus.slice(0, 2).map((sku, idx) => (
-                             <div key={idx} className="truncate" title={sku}>
-                               {sku}
-                             </div>
-                           ))}
-                           {order.skus.length > 2 && (
-                             <div className="text-gray-500">
-                               +{order.skus.length - 2} mais
-                             </div>
-                           )}
-                         </div>
-                       ) : '—'}
+                      {/* UF */}
+                      <td className="p-2">
+                        {order.uf || '—'}
+                      </td>
+                      
+                       {/* Status */}
+                       <td className="p-2">
+                         <Badge className={getSituacaoColor(order.situacao)}>
+                           {order.situacao || '—'}
+                         </Badge>
+                       </td>
+                       
+                       {/* Forma Entrega */}
+                       <td className="p-2">
+                         {order.unified?.forma_entrega || '—'}
+                       </td>
+                       
+                       {/* SKUs/Produtos */}
+                      <td className="p-2 max-w-40">
+                        {order.skus && order.skus.length > 0 ? (
+                          <div className="text-xs">
+                            {order.skus.slice(0, 2).map((sku, idx) => (
+                              <div key={idx} className="truncate" title={sku}>
+                                {sku}
+                              </div>
+                            ))}
+                            {order.skus.length > 2 && (
+                              <div className="text-gray-500">
+                                +{order.skus.length - 2} mais
+                              </div>
+                            )}
+                          </div>
+                        ) : '—'}
+                       </td>
+
+                      {/* Núm. Venda */}
+                      <td className="p-2">
+                        <div className="font-medium">{order.numero_venda || '—'}</div>
                       </td>
 
-                     {/* Valor Total */}
-                     <td className="p-2">
-                       {formatMoney(order.valor_total)}
-                     </td>
-                     
-                     {/* Mapeamento */}
-                     <td className="p-2">
-                       {temMapeamento ? (
-                         <Badge variant="outline" className="bg-green-100 text-green-800">
-                           <CheckCircle className="h-3 w-3 mr-1" />
-                           Mapeado
-                         </Badge>
-                       ) : (
-                         <Badge variant="outline" className="bg-orange-100 text-orange-800">
-                           <AlertTriangle className="h-3 w-3 mr-1" />
-                           Sem Map.
-                         </Badge>
-                       )}
-                     </td>
+                      {/* Valor Total */}
+                      <td className="p-2">
+                        {formatMoney(order.valor_total)}
+                      </td>
+                      
+                      {/* Mapeamento */}
+                      <td className="p-2">
+                        {temMapeamento ? (
+                          <Badge variant="outline" className="bg-green-100 text-green-800">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Mapeado
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-orange-100 text-orange-800">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Sem Map.
+                          </Badge>
+                        )}
+                      </td>
                     
                     {/* Dados Financeiros Detalhados */}
                     <td className="p-2">
