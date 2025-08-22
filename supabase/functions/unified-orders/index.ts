@@ -176,6 +176,12 @@ serve(async (req) => {
     // 5) Buscar detalhes de shipping para cada pedido
     const enrichedOrders = await enrichOrdersWithShipping(json.results ?? [], accessToken, cid);
     
+    // Debug: log a amostra dos dados enriquecidos
+    if (enrichedOrders.length > 0) {
+      console.log(`[unified-orders:${cid}] Sample enriched order shipping data:`, 
+        JSON.stringify(enrichedOrders[0]?.shipping, null, 2));
+    }
+    
     return ok({
       results: enrichedOrders,
       unified: transformMLOrders(enrichedOrders, integration_account_id),
@@ -295,9 +301,11 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
     const atributosVariacao = primeiroItem.variation_attributes || [];
     const atributosTexto = atributosVariacao.map((attr: any) => `${attr.name}: ${attr.value_name}`).join(", ");
     
-    // Extrair dados de envio detalhados
-    const cidade = order.shipping?.receiver_address?.city?.name || "";
-    const uf = order.shipping?.receiver_address?.state?.name || "";
+    // Extrair dados de envio detalhados - corrigir caminhos
+    const cidade = order.shipping?.destination?.shipping_address?.city?.name || 
+                   order.shipping?.receiver_address?.city?.name || "";
+    const uf = order.shipping?.destination?.shipping_address?.state?.name || 
+               order.shipping?.receiver_address?.state?.name || "";
     const codigoRastreamento = order.shipping?.tracking_number || "";
     const urlRastreamento = order.shipping?.tracking_url || "";
     
@@ -307,10 +315,21 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
                          order.shipping?.shipping_mode || 
                          (order.shipping?.logistic?.type === 'drop_off' ? 'Mercado Envios' : 'Não informado');
     
-    // Novos campos de rastreamento e logística
+    // Novos campos de rastreamento e logística - corrigir caminhos
     const trackingMethod = order.shipping?.tracking_method || "";
     const substatus = order.shipping?.substatus || "";
     const logisticMode = order.shipping?.logistic?.mode || "";
+    
+    // Debug: Log dos dados de shipping para auditoria
+    if (order.id && order.shipping) {
+      console.log(`[transform] Order ${order.id} shipping data:`, {
+        tracking_method: order.shipping?.tracking_method,
+        substatus: order.shipping?.substatus,
+        logistic_mode: order.shipping?.logistic?.mode,
+        city: order.shipping?.destination?.shipping_address?.city?.name,
+        state: order.shipping?.destination?.shipping_address?.state?.name
+      });
+    }
     
     const preferenciaEntrega = order.shipping?.destination?.shipping_address?.delivery_preference || "";
     const enderecoCompleto = [
