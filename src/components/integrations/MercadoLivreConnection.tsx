@@ -128,7 +128,6 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
   };
 
   const handleConnect = async () => {
-    // Blindagem: verificar sessão antes de conectar
     if (!session?.user) {
       toast.error('Você precisa estar logado para conectar uma conta do Mercado Livre');
       return;
@@ -137,58 +136,62 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
     try {
       setIsConnecting(true);
       console.info('[ML Connection] Starting OAuth flow...');
-      
-      // Usar Edge Function segura em vez de openMlPopup
+
+      // invoke: POST + Bearer automático
       const { data, error } = await supabase.functions.invoke('mercadolibre-oauth-start', {
-        body: { organization_id: 'current' }
+        body: {}, // nada necessário
       });
 
       if (error) throw error;
-      if (!data.success) throw new Error(data.error);
+      const authUrl: string | undefined = data?.authorization_url ?? data?.url;
+      if (!authUrl) throw new Error('Start não retornou a URL de autorização');
 
-      // Abrir popup com URL segura da Edge Function
+      // tenta abrir popup
       const popup = window.open(
-        data.authorization_url,
+        authUrl,
         'ml-oauth',
         'width=600,height=700,scrollbars=yes,resizable=yes'
       );
 
+      // se popup bloqueado → fallback com link manual + polling
       if (!popup) {
-        // Popup bloqueado no ambiente sandbox do preview -> fallback manual
         toast.warning('Pop-up bloqueado pelo navegador. Use o link manual para concluir a conexão.');
-        setManualAuthUrl(data.authorization_url);
+        setManualAuthUrl(authUrl);
         startPollingForConnection();
         setIsConnecting(false);
         return;
       }
 
-      // Aguardar callback
+      // listener único por tentativa
       const handleMessage = (event: MessageEvent) => {
-        if (event.data?.type === 'oauth_success' && event.data?.provider === 'mercadolivre') {
-          popup.close();
-          window.removeEventListener('message', handleMessage);
+        // dica: se quiser, filtre por origem do seu projeto Supabase:
+        // if (!String(event.origin).includes('.supabase.co')) return;
+        const d = event.data;
+        if (!d || d.provider !== 'mercadolivre') return;
+
+        window.removeEventListener('message', handleMessage);
+        try { popup.close(); } catch {}
+
+        if (d.type === 'oauth_success') {
           setIsConnecting(false);
-          toast.success('MercadoLibre conectado com sucesso!');
+          toast.success('Mercado Livre conectado com sucesso!');
           loadAccounts();
-        } else if (event.data?.type === 'oauth_error') {
-          popup.close();
-          window.removeEventListener('message', handleMessage);
+        } else if (d.type === 'oauth_error') {
           setIsConnecting(false);
-          
-          const errorMsg = event.data.error || 'Erro desconhecido';
-          if (errorMsg.includes('OPERATOR_REQUIRED')) {
-            toast.error('Erro: Use uma conta com permissões de administrador no MercadoLibre para realizar integrações.');
-          } else if (errorMsg.includes('invalid_grant') || errorMsg.includes('expirado')) {
-            toast.error('Código de autorização expirado. Tente conectar novamente.');
+          const msg = d.error || 'Erro desconhecido';
+          if (msg.includes('OPERATOR_REQUIRED')) {
+            toast.error('Use uma conta ADMIN no Mercado Livre para integrar.');
+          } else if (msg.includes('invalid_grant') || msg.includes('expirado')) {
+            toast.error('Código expirado. Tente conectar novamente.');
           } else {
-            toast.error(`Erro na autenticação: ${errorMsg}`);
+            toast.error(`Erro na autenticação: ${msg}`);
           }
         }
       };
 
       window.addEventListener('message', handleMessage);
-      
-      // Cleanup se popup for fechado manualmente
+
+      // cleanup se o usuário fechar o popup
       const checkClosed = setInterval(() => {
         if (popup.closed) {
           clearInterval(checkClosed);
@@ -196,18 +199,9 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
           setIsConnecting(false);
         }
       }, 1000);
-    } catch (error) {
-      console.error('ML connection failed:', error);
-      
-      const errorMsg = error instanceof Error ? error.message : 'Falha ao conectar Mercado Livre';
-      
-      // Handle specific error types
-      if (errorMsg.includes('Failed to start OAuth flow')) {
-        toast.error('Erro ao iniciar conexão. Verifique sua internet e tente novamente.');
-      } else {
-        toast.error(errorMsg);
-      }
-      
+    } catch (err: any) {
+      console.error('ML connection failed:', err);
+      toast.error(err?.message || 'Falha ao conectar Mercado Livre');
       setIsConnecting(false);
     }
   };
