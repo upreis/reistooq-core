@@ -37,7 +37,8 @@ function getMlConfig() {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    const reqHeaders = req.headers.get('Access-Control-Request-Headers') ?? 'authorization, x-client-info, apikey, content-type';
+    return new Response(null, { status: 200, headers: { ...corsHeaders, 'Access-Control-Allow-Headers': reqHeaders } });
   }
 
   try {
