@@ -172,15 +172,35 @@ serve(async (req) => {
         .single();
 
       if (account) {
-        await supabase.from('integration_secrets').upsert({
-          integration_account_id: account.id,
-          provider: 'mercadolivre',
-          organization_id: profile?.organizacao_id,
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
-          meta: { user_id: userData.id }
-        }, { onConflict: 'integration_account_id,provider' });
+        // Buscar tokens existentes primeiro para atualizar ou criar
+        const { data: existingSecret } = await supabase
+          .from('integration_secrets')
+          .select('id')
+          .eq('integration_account_id', account.id)
+          .eq('provider', 'mercadolivre')
+          .single();
+
+        if (existingSecret) {
+          // Atualizar tokens existentes
+          await supabase.from('integration_secrets').update({
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+            meta: { user_id: userData.id },
+            updated_at: new Date().toISOString()
+          }).eq('id', existingSecret.id);
+        } else {
+          // Criar novo secret
+          await supabase.from('integration_secrets').insert({
+            integration_account_id: account.id,
+            provider: 'mercadolivre',
+            organization_id: profile?.organizacao_id,
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            expires_at: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+            meta: { user_id: userData.id }
+          });
+        }
       }
 
       return new Response(`
@@ -199,10 +219,10 @@ serve(async (req) => {
         return Response.json({ error: 'account_id required' }, { status: 400, headers: corsHeaders });
       }
 
-      // Buscar tokens
+      // Buscar tokens com organização válida
       const { data: secrets } = await supabase
         .from('integration_secrets')
-        .select('access_token, refresh_token, expires_at')
+        .select('access_token, refresh_token, expires_at, organization_id')
         .eq('integration_account_id', account_id)
         .eq('provider', 'mercadolivre')
         .single();
