@@ -61,8 +61,7 @@ export default function SimplePedidosPage({ className }: Props) {
   // Configuração de colunas
   const defaultColumns = new Set([
     'id_unico', 'data_pedido', 'uf', 'status', 'skus_produtos', 
-    'num_venda', 'valor_total', 'mapeamento', 'titulo_anuncio', 'nome_destinatario',
-    'sku_estoque', 'sku_kit', 'qtd_kit', 'total_itens', 'status_baixa'
+    'num_venda', 'valor_total', 'mapeamento', 'titulo_anuncio', 'nome_destinatario', 'total_itens'
   ]);
   
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(defaultColumns);
@@ -98,12 +97,12 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'cep', label: 'CEP', default: false },
     { key: 'comentario_endereco', label: 'Comentário Endereço', default: false },
     { key: 'nome_destinatario', label: 'Nome Destinatário', default: true },
+    { key: 'total_itens', label: 'Qtd Itens', default: true },
     // Colunas de mapeamento (sempre no final)
-    { key: 'sku_estoque', label: 'SKU Estoque Mapeado', default: true },
-    { key: 'sku_kit', label: 'SKU KIT Mapeado', default: true },
-    { key: 'qtd_kit', label: 'QTD KIT Mapeado', default: true },
-    { key: 'total_itens', label: 'Total de Itens', default: true },
-    { key: 'status_baixa', label: 'Status', default: true }
+    { key: 'sku_estoque', label: 'SKU Estoque Mapeado', default: false },
+    { key: 'sku_kit', label: 'SKU KIT Mapeado', default: false },
+    { key: 'qtd_kit', label: 'QTD KIT Mapeado', default: false },
+    { key: 'status_baixa', label: 'Status', default: false }
   ];
 
   const pageSize = 25;
@@ -1029,14 +1028,14 @@ const loadAccounts = async () => {
                            </td>
                          );
                        
-                       case 'total_itens':
-                         return (
-                           <td key={columnKey} className="p-2 text-center">
-                             <div className="text-xs font-semibold">
-                               {mappingData.get(order.id)?.totalItens || '—'}
-                             </div>
-                           </td>
-                         );
+                        case 'total_itens':
+                          return (
+                            <td key={columnKey} className="p-2 text-center">
+                              <div className="text-sm font-semibold">
+                                {order.quantidade_itens || order.unified?.quantidade_itens || '—'}
+                              </div>
+                            </td>
+                          );
                        
                        case 'status_baixa':
                          return (
