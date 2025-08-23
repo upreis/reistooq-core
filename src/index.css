@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MaterialM Theme System */
+/* Enhanced Design System - Dark/Light Mode */
 
 @layer base {
   /* MaterialM theme variables are applied via JavaScript */
@@ -20,6 +20,34 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+    /* Status Colors - Applied dynamically by ThemeProvider */
+    --status-success: hsl(142 76% 36%);
+    --status-success-bg: hsl(142 76% 36% / 0.1);
+    --status-warning: hsl(43 96% 56%);
+    --status-warning-bg: hsl(43 96% 56% / 0.1);
+    --status-error: hsl(0 84% 60%);
+    --status-error-bg: hsl(0 84% 60% / 0.1);
+    --status-info: hsl(217 78% 51%);
+    --status-info-bg: hsl(217 78% 51% / 0.1);
+
+    /* Interactive States */
+    --interactive-hover: hsl(var(--primary) / 0.8);
+    --interactive-active: hsl(var(--primary) / 0.9);
+    --interactive-disabled: hsl(var(--muted) / 0.5);
+    --interactive-focus: hsl(var(--primary) / 0.2);
+
+    /* Table Specific - Applied dynamically by ThemeProvider */
+    --table-header-bg: hsl(var(--muted) / 0.3);
+    --table-row-hover: hsl(var(--accent) / 0.05);
+    --table-row-selected: hsl(var(--primary) / 0.1);
+    --table-border: hsl(var(--border));
+
+    /* Gradients Adaptativos */
+    --gradient-status-success: linear-gradient(135deg, var(--status-success), hsl(158 64% 52%));
+    --gradient-status-warning: linear-gradient(135deg, var(--status-warning), hsl(43 96% 66%));
+    --gradient-status-error: linear-gradient(135deg, var(--status-error), hsl(0 84% 70%));
+    --gradient-status-info: linear-gradient(135deg, var(--status-info), hsl(217 78% 61%));
   }
 }
 

@@ -1,0 +1,405 @@
+{
+  "migration": {
+    "name": "Pedidos Enhanced Filters & Dark/Light Theme",
+    "version": "3.0.0",
+    "description": "Migração completa do sistema de filtros, tabela virtual e suporte completo a dark/light mode",
+    "estimated_duration": "2-3 semanas",
+    "priority": "HIGH",
+    "phases": [
+      {
+        "name": "Fase 1: Design System & Core",
+        "duration": "1 semana",
+        "priority": "CRITICAL",
+        "tasks": [
+          "Implementar tokens semânticos dark/light",
+          "Criar sistema de filtros avançado",
+          "Migrar tabela para virtualização",
+          "Implementar URL synchronization"
+        ]
+      },
+      {
+        "name": "Fase 2: Advanced Features",
+        "duration": "1 semana", 
+        "priority": "HIGH",
+        "tasks": [
+          "Salvamento de filtros personalizados",
+          "Multi-sort na tabela",
+          "Colunas dinâmicas",
+          "Mobile responsiveness"
+        ]
+      },
+      {
+        "name": "Fase 3: Analytics & Performance",
+        "duration": "1 semana",
+        "priority": "MEDIUM",
+        "tasks": [
+          "Dashboard de analytics",
+          "Performance monitoring",
+          "Cache inteligente",
+          "Otimizações finais"
+        ]
+      }
+    ]
+  },
+  "architecture": {
+    "structure": {
+      "src/features/pedidos/": {
+        "components/": {
+          "filters/": [
+            "PedidosFiltersAdvanced.tsx",
+            "SavedFiltersManager.tsx", 
+            "FilterPresets.tsx",
+            "SmartSearch.tsx",
+            "FilterUrlSync.tsx"
+          ],
+          "table/": [
+            "PedidosVirtualTable.tsx",
+            "ColumnManager.tsx",
+            "TableThemeProvider.tsx",
+            "SortingIndicators.tsx",
+            "TablePagination.tsx"
+          ],
+          "analytics/": [
+            "PedidosAnalyticsDashboard.tsx",
+            "PerformanceMetrics.tsx",
+            "TrendCharts.tsx",
+            "UsageStats.tsx"
+          ],
+          "layout/": [
+            "PedidosProvider.tsx",
+            "PedidosErrorBoundary.tsx", 
+            "PedidosLoadingStates.tsx"
+          ]
+        },
+        "hooks/": [
+          "usePedidosInfiniteQuery.ts",
+          "usePedidosFilters.ts",
+          "usePedidosTheme.ts",
+          "usePedidosPerformance.ts",
+          "usePedidosUrlSync.ts"
+        ],
+        "stores/": [
+          "usePedidosStore.ts",
+          "useFiltersStore.ts", 
+          "useUIStore.ts",
+          "useAnalyticsStore.ts"
+        ],
+        "services/": [
+          "PedidosRepository.ts",
+          "PedidosCache.ts",
+          "PedidosAnalytics.ts",
+          "FilterService.ts"
+        ],
+        "types/": [
+          "pedidos-enhanced.types.ts",
+          "filters-advanced.types.ts",
+          "theme.types.ts",
+          "analytics.types.ts"
+        ]
+      }
+    }
+  },
+  "design_system": {
+    "theme_tokens": {
+      "status_colors": {
+        "light": {
+          "success": "hsl(142 76% 36%)",
+          "success_bg": "hsl(142 76% 36% / 0.1)",
+          "warning": "hsl(43 96% 56%)", 
+          "warning_bg": "hsl(43 96% 56% / 0.1)",
+          "error": "hsl(0 84% 60%)",
+          "error_bg": "hsl(0 84% 60% / 0.1)",
+          "info": "hsl(217 78% 51%)",
+          "info_bg": "hsl(217 78% 51% / 0.1)"
+        },
+        "dark": {
+          "success": "hsl(142 76% 46%)",
+          "success_bg": "hsl(142 76% 46% / 0.15)",
+          "warning": "hsl(43 96% 66%)",
+          "warning_bg": "hsl(43 96% 66% / 0.15)", 
+          "error": "hsl(0 84% 70%)",
+          "error_bg": "hsl(0 84% 70% / 0.15)",
+          "info": "hsl(217 78% 61%)",
+          "info_bg": "hsl(217 78% 61% / 0.15)"
+        }
+      },
+      "interactive_states": {
+        "hover": "hsl(var(--primary) / 0.8)",
+        "active": "hsl(var(--primary) / 0.9)",
+        "disabled": "hsl(var(--muted) / 0.5)",
+        "focus": "hsl(var(--primary) / 0.2)"
+      },
+      "table_specific": {
+        "light": {
+          "header_bg": "hsl(var(--muted) / 0.3)",
+          "row_hover": "hsl(var(--accent) / 0.05)",
+          "row_selected": "hsl(var(--primary) / 0.1)",
+          "border": "hsl(var(--border))"
+        },
+        "dark": {
+          "header_bg": "hsl(var(--muted) / 0.2)",
+          "row_hover": "hsl(var(--accent) / 0.1)",
+          "row_selected": "hsl(var(--primary) / 0.15)",
+          "border": "hsl(var(--border) / 0.8)"
+        }
+      }
+    },
+    "component_configs": {
+      "PedidosVirtualTable": {
+        "variants": ["default", "compact", "detailed"],
+        "dark_mode": true,
+        "animations": {
+          "hover": "transition-colors duration-200",
+          "sort": "transition-all duration-300",
+          "loading": "animate-pulse"
+        }
+      },
+      "PedidosFiltersAdvanced": {
+        "variants": ["sidebar", "toolbar", "modal"],
+        "auto_save": true,
+        "url_sync": true,
+        "smart_suggestions": true
+      },
+      "StatusBadge": {
+        "variants": ["default", "outline", "filled", "gradient"],
+        "status_mapping": {
+          "entregue": "success",
+          "pago": "info", 
+          "cancelado": "error",
+          "pendente": "warning"
+        }
+      }
+    }
+  },
+  "technical_specifications": {
+    "performance_optimizations": {
+      "virtualization": {
+        "library": "@tanstack/react-virtual",
+        "estimated_improvement": "90% faster rendering",
+        "supports_rows": 10000,
+        "buffer_size": 10
+      },
+      "memoization": {
+        "components": ["TableRow", "FilterItem", "SortHeader"],
+        "hooks": ["usePedidosQuery", "useFilters"],
+        "estimated_improvement": "70% fewer re-renders"
+      },
+      "caching": {
+        "query_cache": "React Query with 5min stale time",
+        "filter_cache": "localStorage with compression",
+        "estimated_improvement": "85% fewer API calls"
+      },
+      "bundle_splitting": {
+        "lazy_components": ["AnalyticsDashboard", "ExportModal"],
+        "estimated_improvement": "30% smaller initial bundle"
+      }
+    },
+    "state_management": {
+      "pattern": "Zustand with slices",
+      "libraries": ["zustand", "immer"],
+      "stores": {
+        "pedidos": "usePedidosStore",
+        "filters": "useFiltersStore", 
+        "ui": "useUIStore",
+        "analytics": "useAnalyticsStore"
+      },
+      "state_structure": {
+        "pedidos": {
+          "data": "Pedido[]",
+          "loading": "boolean",
+          "error": "string | null",
+          "pagination": "PaginationState"
+        },
+        "filters": {
+          "active": "FilterState",
+          "saved": "SavedFilter[]",
+          "presets": "FilterPreset[]",
+          "history": "FilterHistory[]"
+        }
+      }
+    },
+    "advanced_features": {
+      "smart_search": {
+        "fuzzy_matching": true,
+        "auto_complete": true,
+        "search_history": true,
+        "ai_suggestions": false
+      },
+      "filters_system": {
+        "total_filters": 25,
+        "advanced_filters": 15,
+        "saved_presets": true,
+        "url_synchronization": true,
+        "bulk_operations": true
+      },
+      "analytics_dashboard": {
+        "real_time_metrics": true,
+        "trend_analysis": true,
+        "performance_tracking": true,
+        "usage_analytics": true
+      },
+      "table_features": {
+        "virtual_scrolling": true,
+        "infinite_loading": true,
+        "multi_sort": true,
+        "column_reordering": true,
+        "column_resizing": true,
+        "row_selection": true,
+        "bulk_actions": true
+      }
+    },
+    "api_optimizations": {
+      "query_implementation": {
+        "library": "@tanstack/react-query",
+        "infinite_queries": true,
+        "optimistic_updates": true,
+        "background_refetch": true
+      },
+      "caching_strategy": {
+        "query_cache": "5 minutes",
+        "mutation_cache": "1 minute", 
+        "offline_support": false
+      },
+      "pagination": {
+        "type": "cursor-based",
+        "page_size": 25,
+        "prefetch_pages": 1
+      }
+    }
+  },
+  "testing_strategy": {
+    "unit_tests": {
+      "framework": "vitest",
+      "coverage_target": "90%",
+      "focus_areas": ["hooks", "utils", "services"]
+    },
+    "integration_tests": {
+      "framework": "@testing-library/react",
+      "focus_areas": ["filters", "table", "pagination"]
+    },
+    "e2e_tests": {
+      "framework": "playwright", 
+      "scenarios": ["filter_flow", "table_interaction", "theme_switching"]
+    },
+    "performance_tests": {
+      "tools": ["lighthouse", "web-vitals"],
+      "metrics": ["LCP", "FID", "CLS", "rendering_time"]
+    }
+  },
+  "deployment_config": {
+    "build_optimizations": {
+      "code_splitting": true,
+      "tree_shaking": true,
+      "compression": "gzip",
+      "bundle_analysis": true
+    },
+    "cdn_strategy": {
+      "static_assets": "CDN cached",
+      "dynamic_imports": "lazy loaded"
+    },
+    "monitoring": {
+      "error_tracking": "built-in",
+      "performance_monitoring": "web-vitals",
+      "user_analytics": "privacy-focused"
+    }
+  },
+  "migration_steps": [
+    {
+      "step": 1,
+      "title": "Setup Design System",
+      "tasks": [
+        "Update index.css with semantic tokens",
+        "Create theme provider context",
+        "Add dark/light mode utilities",
+        "Test theme switching"
+      ],
+      "duration": "1 day"
+    },
+    {
+      "step": 2, 
+      "title": "Implement Advanced Filters",
+      "tasks": [
+        "Create PedidosFiltersAdvanced component",
+        "Add URL synchronization",
+        "Implement saved filters",
+        "Add filter presets"
+      ],
+      "duration": "2 days"
+    },
+    {
+      "step": 3,
+      "title": "Migrate to Virtual Table", 
+      "tasks": [
+        "Install @tanstack/react-virtual",
+        "Create PedidosVirtualTable component",
+        "Implement infinite scrolling",
+        "Add column management"
+      ],
+      "duration": "2 days"
+    },
+    {
+      "step": 4,
+      "title": "Add State Management",
+      "tasks": [
+        "Setup Zustand stores",
+        "Migrate from useState to stores",
+        "Add cache management",
+        "Implement optimistic updates"
+      ],
+      "duration": "1 day"
+    },
+    {
+      "step": 5,
+      "title": "Performance Optimizations",
+      "tasks": [
+        "Add React.memo to components",
+        "Implement query optimizations", 
+        "Add loading states",
+        "Bundle optimization"
+      ],
+      "duration": "1 day"
+    },
+    {
+      "step": 6,
+      "title": "Analytics Dashboard",
+      "tasks": [
+        "Create analytics components",
+        "Implement real-time metrics",
+        "Add trend charts",
+        "Performance tracking"
+      ],
+      "duration": "2 days"
+    },
+    {
+      "step": 7,
+      "title": "Testing & Polish",
+      "tasks": [
+        "Write unit tests",
+        "E2E test scenarios",
+        "Performance testing",
+        "Accessibility audit"
+      ],
+      "duration": "2 days"
+    }
+  ],
+  "success_metrics": {
+    "performance": {
+      "page_load_time": "< 1.5s (target: 0.8s)",
+      "filter_response_time": "< 200ms (target: 100ms)",
+      "table_rendering": "< 100ms for 1000 rows",
+      "memory_usage": "< 50MB (target: 30MB)"
+    },
+    "user_experience": {
+      "filter_usage": "+200% in advanced filters",
+      "session_duration": "+150% time on page",
+      "user_satisfaction": "> 4.5/5 rating",
+      "mobile_usage": "> 90% responsive score"
+    },
+    "business_outcomes": {
+      "productivity": "+25% faster order processing",
+      "error_reduction": "-80% filter-related errors",
+      "feature_adoption": "> 75% use advanced features",
+      "maintenance_cost": "-50% bug reports"
+    }
+  }
+}
