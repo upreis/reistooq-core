@@ -158,6 +158,76 @@ export default function SimplePedidosPage({ className }: Props) {
     }
   };
 
+  // Função para simplificar status
+  const simplificarStatus = (status: string): string => {
+    if (!status) return 'Não informado';
+    
+    const statusLower = status.toLowerCase();
+    
+    const statusMap: { [key: string]: string } = {
+      // Status do Mercado Livre
+      'confirmed': 'Confirmado',
+      'payment_required': 'Aguardando pagamento',
+      'payment_in_process': 'Processando pagamento',
+      'paid': 'Pago',
+      'shipped': 'Enviado',
+      'delivered': 'Entregue',
+      'cancelled': 'Cancelado',
+      'invalid': 'Inválido',
+      'expired': 'Expirado',
+      'pending': 'Pendente',
+      'ready_to_ship': 'Pronto para envio',
+      'handling': 'Preparando',
+      'not_delivered': 'Não entregue',
+      'returned': 'Devolvido',
+      
+      // Status genéricos
+      'completed': 'Concluído',
+      'processing': 'Processando',
+      'on_hold': 'Em espera',
+      'refunded': 'Reembolsado',
+      'failed': 'Falha',
+      'draft': 'Rascunho',
+      'active': 'Ativo',
+      'inactive': 'Inativo',
+      'partially_shipped': 'Enviado parcialmente',
+      'partially_delivered': 'Entregue parcialmente',
+      'in_transit': 'Em trânsito',
+      'out_for_delivery': 'Saiu para entrega',
+      'attempted_delivery': 'Tentativa de entrega',
+      'exception': 'Exceção na entrega',
+      'waiting_for_pickup': 'Aguardando retirada'
+    };
+    
+    // Busca exata primeiro
+    if (statusMap[statusLower]) {
+      return statusMap[statusLower];
+    }
+    
+    // Busca por palavras-chave
+    if (statusLower.includes('entregue') || statusLower.includes('delivered')) {
+      return 'Entregue';
+    }
+    if (statusLower.includes('cancelado') || statusLower.includes('cancelled')) {
+      return 'Cancelado';
+    }
+    if (statusLower.includes('enviado') || statusLower.includes('shipped')) {
+      return 'Enviado';
+    }
+    if (statusLower.includes('pago') || statusLower.includes('paid')) {
+      return 'Pago';
+    }
+    if (statusLower.includes('pendente') || statusLower.includes('pending')) {
+      return 'Pendente';
+    }
+    if (statusLower.includes('processando') || statusLower.includes('processing')) {
+      return 'Processando';
+    }
+    
+    // Se não encontrou mapeamento, capitaliza a primeira letra
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+  };
+
 // Helper: testa se conta possui segredos válidos na unified-orders
   const testAccount = async (accId: string) => {
     try {
@@ -778,14 +848,14 @@ const loadAccounts = async () => {
                             {order.uf || '—'}
                           </td>
                         );
-                      case 'status':
-                        return (
-                          <td key={columnKey} className="p-2">
-                            <Badge className={getSituacaoColor(order.situacao)}>
-                              {order.situacao || '—'}
-                            </Badge>
-                          </td>
-                        );
+                       case 'status':
+                         return (
+                           <td key={columnKey} className="p-2">
+                             <Badge className={getSituacaoColor(order.situacao)}>
+                               {simplificarStatus(order.situacao)}
+                             </Badge>
+                           </td>
+                         );
                       case 'forma_entrega':
                         return (
                           <td key={columnKey} className="p-2">
