@@ -114,7 +114,8 @@ serve(async (req) => {
     if (!authHeader) return fail("Missing Authorization header", 401, null, cid);
 
     const body = await req.json();
-    const { integration_account_id, status, limit = 50, offset = 0 } = body || {};
+    const { integration_account_id, status, date_from, date_to, seller_id, q, limit = 50, offset = 0 } = body || {};
+    console.log(`[unified-orders:${cid}] filters`, { integration_account_id, status, date_from, date_to, seller_id, q, limit, offset });
     if (!integration_account_id) return fail("integration_account_id é obrigatório", 400, null, cid);
 
     const sb = serviceClient();
@@ -154,10 +155,14 @@ serve(async (req) => {
     if (!sellerId) return fail("Seller ID not found (account_identifier/payload)", 400, null, cid);
 
     const mlUrl = new URL("https://api.mercadolibre.com/orders/search");
-    mlUrl.searchParams.set("seller", sellerId);
+    const effectiveSeller = seller_id ? String(seller_id) : sellerId;
+    mlUrl.searchParams.set("seller", effectiveSeller);
     if (status) mlUrl.searchParams.set("order.status", status);
+    if (date_from) mlUrl.searchParams.set("order.date_created.from", String(date_from));
+    if (date_to) mlUrl.searchParams.set("order.date_created.to", String(date_to));
     mlUrl.searchParams.set("limit", String(limit));
     mlUrl.searchParams.set("offset", String(offset));
+    console.log(`[unified-orders:${cid}] url`, mlUrl.toString());
 
     const mlResp = await fetch(mlUrl.toString(), {
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },

@@ -416,15 +416,19 @@ const loadAccounts = async () => {
       if (dataInicio) apiParams.date_from = new Date(dataInicio).toISOString().split('T')[0];
       if (dataFim) apiParams.date_to = new Date(dataFim).toISOString().split('T')[0];
 
+      const requestBody = {
+        integration_account_id: integrationAccountId,
+        limit: pageSize,
+        offset: (currentPage - 1) * pageSize,
+        enrich: true,
+        include_shipping: true,
+        ...apiParams
+      };
+
+      console.info('[Pedidos] invoking unified-orders with:', requestBody);
+
       const { data, error } = await supabase.functions.invoke('unified-orders', {
-        body: {
-          integration_account_id: integrationAccountId,
-          limit: pageSize,
-          offset: (currentPage - 1) * pageSize,
-          enrich: true,
-          include_shipping: true,
-          ...apiParams
-        }
+        body: requestBody
       });
 
       if (error) throw error;
