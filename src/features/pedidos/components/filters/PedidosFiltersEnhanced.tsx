@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Search, Filter, Calendar, X, Save, Star, MapPin, TrendingUp, Clock, AlertTriangle, CalendarDays, CheckCircle, AlertCircle, Sparkles, History, BarChart3 } from 'lucide-react';
+import { Search, Filter, Calendar, X, Save, Star, MapPin, TrendingUp, Clock, AlertTriangle, CalendarDays, CheckCircle, AlertCircle, Sparkles, History, BarChart3, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -75,6 +75,33 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
   const [saveFilterName, setSaveFilterName] = useState('');
   const [activeTab, setActiveTab] = useState('basic');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // 🎯 ESTADO TEMPORÁRIO PARA DATAS (NÃO APLICA AUTOMATICAMENTE)
+  const [tempDateRange, setTempDateRange] = useState({
+    inicio: filters.dateRange.inicio,
+    fim: filters.dateRange.fim,
+    preset: filters.dateRange.preset
+  });
+
+  // Verificar se há mudanças pendentes nas datas
+  const hasPendingDateChanges = 
+    tempDateRange.inicio !== filters.dateRange.inicio ||
+    tempDateRange.fim !== filters.dateRange.fim ||
+    tempDateRange.preset !== filters.dateRange.preset;
+
+  // Aplicar filtros de data manualmente
+  const applyDateFilters = () => {
+    updateFilter('dateRange', tempDateRange);
+  };
+
+  // Resetar datas temporárias
+  const resetTempDates = () => {
+    setTempDateRange({
+      inicio: filters.dateRange.inicio,
+      fim: filters.dateRange.fim,
+      preset: filters.dateRange.preset
+    });
+  };
 
   // Notify parent component of filter changes
   React.useEffect(() => {
@@ -350,15 +377,28 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                   </Popover>
                 </div>
 
-                {/* Date Range with Enhanced Calendar */}
+                {/* Enhanced Date Range with Manual Apply */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-medium">Período</Label>
+                  <Label className="text-xs font-medium flex items-center gap-1">
+                    Período
+                    {hasPendingDateChanges && (
+                      <Badge variant="secondary" className="text-xs animate-pulse">
+                        Pendente
+                      </Badge>
+                    )}
+                  </Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="h-8 justify-start text-left text-sm font-normal">
+                      <Button 
+                        variant="outline" 
+                        className={cn(
+                          "h-8 justify-start text-left text-sm font-normal",
+                          hasPendingDateChanges && "border-primary/50 bg-primary/5"
+                        )}
+                      >
                         <Calendar className="mr-2 h-3 w-3" />
-                        {filters.dateRange.inicio || filters.dateRange.fim
-                          ? `${filters.dateRange.inicio ? format(filters.dateRange.inicio, 'dd/MM', { locale: ptBR }) : '...'} - ${filters.dateRange.fim ? format(filters.dateRange.fim, 'dd/MM', { locale: ptBR }) : '...'}`
+                        {tempDateRange.inicio || tempDateRange.fim
+                          ? `${tempDateRange.inicio ? format(tempDateRange.inicio, 'dd/MM', { locale: ptBR }) : '...'} - ${tempDateRange.fim ? format(tempDateRange.fim, 'dd/MM', { locale: ptBR }) : '...'}`
                           : 'Selecionar'
                         }
                       </Button>
@@ -366,47 +406,81 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                     <PopoverContent className="w-auto p-0" align="start">
                       <div className="p-3 space-y-3">
                         <div className="flex gap-2">
-                          <CalendarComponent
-                            mode="single"
-                            selected={filters.dateRange.inicio || undefined}
-                            onSelect={(date) => updateFilter('dateRange', {
-                              ...filters.dateRange,
-                              inicio: date || null
-                            })}
-                            locale={ptBR}
-                            className="pointer-events-auto"
-                          />
-                          <CalendarComponent
-                            mode="single"
-                            selected={filters.dateRange.fim || undefined}
-                            onSelect={(date) => updateFilter('dateRange', {
-                              ...filters.dateRange,
-                              fim: date || null
-                            })}
-                            locale={ptBR}
-                            className="pointer-events-auto"
-                          />
+                          <div className="space-y-2">
+                            <Label className="text-xs font-medium">Data Início</Label>
+                            <CalendarComponent
+                              mode="single"
+                              selected={tempDateRange.inicio || undefined}
+                              onSelect={(date) => setTempDateRange(prev => ({
+                                ...prev,
+                                inicio: date || null,
+                                preset: null
+                              }))}
+                              locale={ptBR}
+                              className="pointer-events-auto"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs font-medium">Data Fim</Label>
+                            <CalendarComponent
+                              mode="single"
+                              selected={tempDateRange.fim || undefined}
+                              onSelect={(date) => setTempDateRange(prev => ({
+                                ...prev,
+                                fim: date || null,
+                                preset: null
+                              }))}
+                              locale={ptBR}
+                              className="pointer-events-auto"
+                            />
+                          </div>
                         </div>
                         
                         {/* Quick Date Presets */}
-                        <div className="flex flex-wrap gap-1">
-                          {['hoje', 'esta_semana', 'este_mes', 'ultimo_mes'].map(preset => (
-                            <Button
-                              key={preset}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                updateFilter('dateRange', {
-                                  inicio: null,
-                                  fim: null,
-                                  preset
-                                });
-                              }}
-                              className="text-xs"
-                            >
-                              {preset.replace('_', ' ')}
-                            </Button>
-                          ))}
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">Presets Rápidos</Label>
+                          <div className="grid grid-cols-2 gap-1">
+                            {['hoje', 'esta_semana', 'este_mes', 'ultimo_mes'].map(preset => (
+                              <Button
+                                key={preset}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setTempDateRange({
+                                    inicio: null,
+                                    fim: null,
+                                    preset
+                                  });
+                                }}
+                                className="text-xs h-7"
+                              >
+                                {preset.replace('_', ' ')}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Apply/Cancel Buttons */}
+                        <div className="flex gap-2 pt-2 border-t">
+                          <Button
+                            size="sm"
+                            onClick={applyDateFilters}
+                            disabled={!hasPendingDateChanges}
+                            className="flex-1 h-7 text-xs"
+                          >
+                            <Check className="h-3 w-3 mr-1" />
+                            Aplicar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={resetTempDates}
+                            disabled={!hasPendingDateChanges}
+                            className="flex-1 h-7 text-xs"
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Cancelar
+                          </Button>
                         </div>
                       </div>
                     </PopoverContent>
@@ -683,7 +757,10 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                       Período: {filters.dateRange.inicio ? format(filters.dateRange.inicio, 'dd/MM', { locale: ptBR }) : '...'} - {filters.dateRange.fim ? format(filters.dateRange.fim, 'dd/MM', { locale: ptBR }) : '...'}
                       <X 
                         className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => updateFilter('dateRange', { inicio: null, fim: null, preset: null })} 
+                        onClick={() => {
+                          updateFilter('dateRange', { inicio: null, fim: null, preset: null });
+                          setTempDateRange({ inicio: null, fim: null, preset: null });
+                        }} 
                       />
                     </Badge>
                   )}
