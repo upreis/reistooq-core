@@ -122,7 +122,10 @@ export function usePedidosManager(initialAccountId?: string) {
       enrich: true,
       include_shipping: true,
       ...apiParams,
-      ...getUrlParams() // URL tem prioridade
+      ...getUrlParams(), // URL tem prioridade
+      // Sempre enriquecer para ter os dados de SKUs e mapeamentos
+      enrich_skus: true,
+      include_skus: true
     };
 
     console.info('[PedidosManager] Calling unified-orders with:', requestBody);
@@ -234,6 +237,10 @@ export function usePedidosManager(initialAccountId?: string) {
         setOrders(unifiedResult.results);
         setTotal(unifiedResult.total);
         setFonte('tempo-real');
+        
+        // Debug: verificar se os SKUs estão vindo nos dados
+        console.log('[PedidosManager] Sample order data:', unifiedResult.results[0]);
+        console.log('[PedidosManager] Total orders loaded:', unifiedResult.results.length);
         
       } catch (unifiedError: any) {
         console.warn('[PedidosManager] Unified-orders failed:', unifiedError.message);

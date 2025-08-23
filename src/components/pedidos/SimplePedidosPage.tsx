@@ -214,7 +214,10 @@ export default function SimplePedidosPage({ className }: Props) {
       
       for (const pedido of orders) {
         try {
-          const skusPedido = pedido.skus?.filter(Boolean) || [];
+          // Extrair SKUs dos dados recebidos
+          const skusPedido = pedido.skus?.filter(Boolean) || 
+                            pedido.order_items?.map((item: any) => item.item?.seller_sku).filter(Boolean) || 
+                            [];
           
           if (skusPedido.length > 0) {
             // Buscar mapeamentos
@@ -361,10 +364,48 @@ export default function SimplePedidosPage({ className }: Props) {
         </div>
       </Card>
 
-      {/* 🛡️ FILTROS UNIFICADOS */}
-      <div className="bg-muted/30 p-4 rounded-lg">
-        <p>Filtros: {JSON.stringify(filters)}</p>
-        <Button onClick={actions.clearFilters}>Limpar Filtros</Button>
+      {/* 🛡️ FILTROS UNIFICADOS + CONTROLE DE COLUNAS */}
+      <div className="bg-muted/30 p-4 rounded-lg space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm">Filtros ativos: {JSON.stringify(filters)}</p>
+            <p className="text-xs text-muted-foreground">Fonte: {state.fonte}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={actions.clearFilters}>
+              Limpar Filtros
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Colunas
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium">Selecionar Colunas</h4>
+                    <Button size="sm" variant="ghost" onClick={resetToDefault}>
+                      Padrão
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {allColumns.map((col) => (
+                      <label key={col.key} className="flex items-center space-x-2 text-sm">
+                        <Checkbox
+                          checked={visibleColumns.has(col.key)}
+                          onCheckedChange={() => toggleColumn(col.key)}
+                        />
+                        <span>{col.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
       </div>
 
       {/* 🛡️ MENSAGEM DE ERRO SEGURA */}
@@ -376,7 +417,7 @@ export default function SimplePedidosPage({ className }: Props) {
         </Card>
       )}
 
-      {/* 🛡️ TABELA SIMPLIFICADA POR ENQUANTO */}
+      {/* 🛡️ TABELA COM TODAS AS COLUNAS ORIGINAIS */}
       <Card>
         {loading ? (
           <div className="p-8 text-center">
@@ -405,45 +446,138 @@ export default function SimplePedidosPage({ className }: Props) {
                       }}
                     />
                   </th>
-                  <th className="text-left p-3">ID</th>
-                  <th className="text-left p-3">Data</th>
-                  <th className="text-left p-3">Cliente</th>
-                  <th className="text-left p-3">Status</th>
-                  <th className="text-left p-3">Valor</th>
-                  <th className="text-left p-3">Ações</th>
+                  {visibleColumns.has('id_unico') && <th className="text-left p-3">ID-Único</th>}
+                  {visibleColumns.has('cliente') && <th className="text-left p-3">Cliente</th>}
+                  {visibleColumns.has('data_pedido') && <th className="text-left p-3">Data Pedido</th>}
+                  {visibleColumns.has('uf') && <th className="text-left p-3">UF</th>}
+                  {visibleColumns.has('status') && <th className="text-left p-3">Status</th>}
+                  {visibleColumns.has('forma_entrega') && <th className="text-left p-3">Forma Entrega</th>}
+                  {visibleColumns.has('skus_produtos') && <th className="text-left p-3">SKUs/Produtos</th>}
+                  {visibleColumns.has('num_venda') && <th className="text-left p-3">Nº da venda</th>}
+                  {visibleColumns.has('unidades_vendidas') && <th className="text-left p-3">Unidades Vendidas</th>}
+                  {visibleColumns.has('valor_total') && <th className="text-left p-3">Valor Total</th>}
+                  {visibleColumns.has('mapeamento') && <th className="text-left p-3">Mapeamento</th>}
+                  {visibleColumns.has('titulo_anuncio') && <th className="text-left p-3">Título Anúncio</th>}
+                  {visibleColumns.has('nome_destinatario') && <th className="text-left p-3">Nome Destinatário</th>}
+                  {visibleColumns.has('sku_estoque') && <th className="text-left p-3">SKU Estoque Mapeado</th>}
+                  {visibleColumns.has('sku_kit') && <th className="text-left p-3">SKU KIT Mapeado</th>}
+                  {visibleColumns.has('qtd_kit') && <th className="text-left p-3">QTD KIT Mapeado</th>}
+                  {visibleColumns.has('status_baixa') && <th className="text-left p-3">Status Baixa</th>}
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} className="border-b hover:bg-muted/50">
-                    <td className="p-3">
-                      <Checkbox
-                        checked={selectedOrders.has(order.id)}
-                        onCheckedChange={(checked) => {
-                          const newSelected = new Set(selectedOrders);
-                          if (checked) {
-                            newSelected.add(order.id);
-                          } else {
-                            newSelected.delete(order.id);
-                          }
-                          setSelectedOrders(newSelected);
-                        }}
-                      />
-                    </td>
-                    <td className="p-3 font-mono text-sm">{order.numero}</td>
-                    <td className="p-3">{formatDate(order.data_pedido)}</td>
-                    <td className="p-3">{order.nome_cliente}</td>
-                    <td className="p-3">
-                      <Badge variant={getStatusBadgeVariant(order.situacao)}>
-                        {simplificarStatus(order.situacao)}
-                      </Badge>
-                    </td>
-                    <td className="p-3">{formatMoney(order.valor_total)}</td>
-                    <td className="p-3">
-                      {renderStatusBaixa(order.id)}
-                    </td>
-                  </tr>
-                ))}
+                {orders.map((order) => {
+                  const mapping = mappingData.get(order.id);
+                  const skus = order.skus || order.order_items?.map((item: any) => item.item?.seller_sku) || [];
+                  const quantidadeItens = order.quantidade_itens || order.order_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 0;
+                  
+                  return (
+                    <tr key={order.id} className="border-b hover:bg-muted/50">
+                      <td className="p-3">
+                        <Checkbox
+                          checked={selectedOrders.has(order.id)}
+                          onCheckedChange={(checked) => {
+                            const newSelected = new Set(selectedOrders);
+                            if (checked) {
+                              newSelected.add(order.id);
+                            } else {
+                              newSelected.delete(order.id);
+                            }
+                            setSelectedOrders(newSelected);
+                          }}
+                        />
+                      </td>
+                      
+                      {visibleColumns.has('id_unico') && (
+                        <td className="p-3 font-mono text-sm">{order.numero || order.id}</td>
+                      )}
+                      
+                      {visibleColumns.has('cliente') && (
+                        <td className="p-3">{order.nome_cliente || order.buyer?.first_name + ' ' + order.buyer?.last_name}</td>
+                      )}
+                      
+                      {visibleColumns.has('data_pedido') && (
+                        <td className="p-3">{formatDate(order.data_pedido || order.date_created)}</td>
+                      )}
+                      
+                      {visibleColumns.has('uf') && (
+                        <td className="p-3">{order.uf || order.shipping?.receiver_address?.state?.name || '-'}</td>
+                      )}
+                      
+                      {visibleColumns.has('status') && (
+                        <td className="p-3">
+                          <Badge variant={getStatusBadgeVariant(order.situacao || order.status)}>
+                            {simplificarStatus(order.situacao || order.status)}
+                          </Badge>
+                        </td>
+                      )}
+                      
+                      {visibleColumns.has('forma_entrega') && (
+                        <td className="p-3">{order.shipping?.shipping_option?.name || '-'}</td>
+                      )}
+                      
+                      {visibleColumns.has('skus_produtos') && (
+                        <td className="p-3">
+                          <div className="max-w-xs truncate" title={skus.join(', ')}>
+                            {skus.length > 0 ? skus.join(', ') : '-'}
+                          </div>
+                        </td>
+                      )}
+                      
+                      {visibleColumns.has('num_venda') && (
+                        <td className="p-3">{order.numero_venda || order.pack_id || '-'}</td>
+                      )}
+                      
+                      {visibleColumns.has('unidades_vendidas') && (
+                        <td className="p-3">{quantidadeItens}</td>
+                      )}
+                      
+                      {visibleColumns.has('valor_total') && (
+                        <td className="p-3">{formatMoney(order.valor_total || order.total_amount || 0)}</td>
+                      )}
+                      
+                      {visibleColumns.has('mapeamento') && (
+                        <td className="p-3">
+                          {mapping ? (
+                            <Badge variant="secondary">
+                              {mapping.statusBaixa === 'pronto_baixar' ? 'Mapeado' : 'Parcial'}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">Não mapeado</Badge>
+                          )}
+                        </td>
+                      )}
+                      
+                      {visibleColumns.has('titulo_anuncio') && (
+                        <td className="p-3">
+                          <div className="max-w-xs truncate" title={order.order_items?.[0]?.item?.title}>
+                            {order.order_items?.[0]?.item?.title || '-'}
+                          </div>
+                        </td>
+                      )}
+                      
+                      {visibleColumns.has('nome_destinatario') && (
+                        <td className="p-3">{order.shipping?.receiver_address?.receiver_name || order.nome_cliente || '-'}</td>
+                      )}
+                      
+                      {visibleColumns.has('sku_estoque') && (
+                        <td className="p-3">{mapping?.skuEstoque || '-'}</td>
+                      )}
+                      
+                      {visibleColumns.has('sku_kit') && (
+                        <td className="p-3">{mapping?.skuKit || '-'}</td>
+                      )}
+                      
+                      {visibleColumns.has('qtd_kit') && (
+                        <td className="p-3">{mapping?.qtdKit || '-'}</td>
+                      )}
+                      
+                      {visibleColumns.has('status_baixa') && (
+                        <td className="p-3">{renderStatusBaixa(order.id)}</td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
