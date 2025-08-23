@@ -12,7 +12,7 @@ import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoS
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { mapMLShippingSubstatus, getStatusBadgeVariant } from '@/utils/mlStatusMapping';
+import { mapMLShippingSubstatus, getStatusBadgeVariant, mapMLStatus } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
 type Order = {
   id: string;
@@ -422,8 +422,23 @@ const loadAccounts = async () => {
       // Datas: aceitar formatos antigo (dataInicio/dataFim) e novo (dateRange.inicio/fim)
       const dataInicio = (filters as any)?.dataInicio || (filters as any)?.dateRange?.inicio;
       const dataFim = (filters as any)?.dataFim || (filters as any)?.dateRange?.fim;
-      if (dataInicio) apiParams.date_from = new Date(dataInicio).toISOString().split('T')[0];
-      if (dataFim) apiParams.date_to = new Date(dataFim).toISOString().split('T')[0];
+      const toYMD = (d: Date) => {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      };
+      if (dataInicio instanceof Date) apiParams.date_from = toYMD(new Date(dataInicio));
+      if (dataFim instanceof Date) apiParams.date_to = toYMD(new Date(dataFim));
+      // Se vier pela URL (?dateFrom=YYYY-MM-DD&dateTo=YYYY-MM-DD), priorizar exatamente o que o usuário passou
+      try {
+        const sp = new URLSearchParams(window.location.search);
+        const urlFrom = sp.get('dateFrom');
+        const urlTo = sp.get('dateTo');
+        if (urlFrom) apiParams.date_from = urlFrom;
+        if (urlTo) apiParams.date_to = urlTo;
+      } catch {}
+
 
       const requestBody: any = {
         integration_account_id: integrationAccountId,
@@ -598,9 +613,19 @@ const loadAccounts = async () => {
 
           if (selectedSituacoes.length) {
             const keep: number[] = [];
+            const selectedNorms = new Set<string>();
+            selectedSituacoes.forEach((s) => {
+              const sl = s.toLowerCase().trim();
+              selectedNorms.add(sl);
+              const mlCode = mapSituacaoToApiStatus(s);
+              if (mlCode) selectedNorms.add(mlCode.toLowerCase());
+            });
+
             unified.forEach((u, i) => {
-              const sit = (u?.situacao || '').toString().toLowerCase();
-              if (selectedSituacoes.some((s) => s.toLowerCase() === sit)) keep.push(i);
+              const sitRaw = (u?.situacao || u?.status_original || results[i]?.status || '').toString();
+              const sitPT = mapMLStatus(sitRaw).toLowerCase();
+              const sitEN = sitRaw.toLowerCase();
+              if (selectedNorms.has(sitPT) || selectedNorms.has(sitEN)) keep.push(i);
             });
             if (keep.length) {
               results = keep.map(i => results[i]).filter(Boolean);
