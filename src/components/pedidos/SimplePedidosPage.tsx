@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Filter } from 'lucide-react';
+import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Filter, Settings, CheckSquare } from 'lucide-react';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { PedidosFilters, PedidosFiltersState } from './PedidosFilters';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type Order = {
   id: string;
@@ -55,8 +57,63 @@ export default function SimplePedidosPage({ className }: Props) {
   const [filters, setFilters] = useState<PedidosFiltersState>({});
   const [mapeamentos, setMapeamentos] = useState<Map<string, MapeamentoVerificacao>>(new Map());
 
+  // Configuração de colunas
+  const defaultColumns = new Set([
+    'id_unico', 'data_pedido', 'uf', 'status', 'skus_produtos', 
+    'num_venda', 'valor_total', 'mapeamento', 'titulo_anuncio', 'nome_destinatario'
+  ]);
+  
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(defaultColumns);
+
+  const allColumns = [
+    { key: 'id_unico', label: 'ID-Único', default: true },
+    { key: 'cliente', label: 'Cliente', default: false },
+    { key: 'data_pedido', label: 'Data Pedido', default: true },
+    { key: 'uf', label: 'UF', default: true },
+    { key: 'status', label: 'Status', default: true },
+    { key: 'forma_entrega', label: 'Forma Entrega', default: false },
+    { key: 'skus_produtos', label: 'SKUs/Produtos', default: true },
+    { key: 'num_venda', label: 'Núm. Venda', default: true },
+    { key: 'valor_total', label: 'Valor Total', default: true },
+    { key: 'mapeamento', label: 'Mapeamento', default: true },
+    { key: 'receita_produtos', label: 'Receita Produtos', default: false },
+    { key: 'tarifas_venda', label: 'Tarifas Venda', default: false },
+    { key: 'impostos', label: 'Impostos', default: false },
+    { key: 'receita_envio', label: 'Receita Envio', default: false },
+    { key: 'valor_pago_total', label: 'Valor Pago Total', default: false },
+    { key: 'titulo_anuncio', label: 'Título Anúncio', default: true },
+    { key: 'categoria_ml', label: 'Categoria ML', default: false },
+    { key: 'condicao', label: 'Condição', default: false },
+    { key: 'garantia', label: 'Garantia', default: false },
+    { key: 'tipo_listagem', label: 'Tipo Listagem', default: false },
+    { key: 'atributos_variacao', label: 'Atributos Variação', default: false },
+    { key: 'metodo_rastreamento', label: 'Método Rastreamento', default: false },
+    { key: 'substatus', label: 'Sub-status', default: false },
+    { key: 'modo_logistico', label: 'Modo Logístico', default: false },
+    { key: 'cidade', label: 'Cidade', default: false },
+    { key: 'preferencia_entrega', label: 'Preferência Entrega', default: false },
+    { key: 'endereco_completo', label: 'Endereço Completo', default: false },
+    { key: 'cep', label: 'CEP', default: false },
+    { key: 'comentario_endereco', label: 'Comentário Endereço', default: false },
+    { key: 'nome_destinatario', label: 'Nome Destinatário', default: true },
+  ];
+
   const pageSize = 25;
   const totalPages = Math.ceil(total / pageSize);
+
+  const toggleColumn = (columnKey: string) => {
+    const newVisible = new Set(visibleColumns);
+    if (newVisible.has(columnKey)) {
+      newVisible.delete(columnKey);
+    } else {
+      newVisible.add(columnKey);
+    }
+    setVisibleColumns(newVisible);
+  };
+
+  const resetToDefault = () => {
+    setVisibleColumns(new Set(defaultColumns));
+  };
 
 // Helper: testa se conta possui segredos válidos na unified-orders
   const testAccount = async (accId: string) => {
@@ -467,8 +524,55 @@ const loadAccounts = async () => {
           )}
         </div>
         
-        <div className="text-sm text-muted-foreground">
-          Fonte: Unified Orders (ML API /orders/search)
+        <div className="flex items-center gap-4">
+          {/* Seletor de Colunas */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Colunas ({visibleColumns.size})
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 z-50 bg-white border shadow-lg" align="end">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">Selecionar Colunas</h4>
+                  <Button variant="ghost" size="sm" onClick={resetToDefault}>
+                    Padrão
+                  </Button>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
+                  {allColumns.map((column) => (
+                    <div key={column.key} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={column.key}
+                        checked={visibleColumns.has(column.key)}
+                        onCheckedChange={() => toggleColumn(column.key)}
+                      />
+                      <label 
+                        htmlFor={column.key} 
+                        className={`text-sm cursor-pointer ${
+                          column.default ? 'font-medium text-blue-600' : ''
+                        }`}
+                      >
+                        {column.label}
+                        {column.default && ' (Padrão)'}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="text-xs text-gray-500 pt-2 border-t">
+                  Colunas em azul são padrão e sempre recomendadas
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          
+          <div className="text-sm text-muted-foreground">
+            Fonte: Unified Orders (ML API /orders/search)
+          </div>
         </div>
       </div>
 
@@ -505,257 +609,300 @@ const loadAccounts = async () => {
                       className="rounded border-gray-300"
                     />
                   </th>
-                   <th className="p-2 text-left">ID-Único</th>
-                   <th className="p-2 text-left">Cliente</th>
-                   <th className="p-2 text-left">Data Pedido</th>
-                   <th className="p-2 text-left">UF</th>
-                   <th className="p-2 text-left">Status</th>
-                   <th className="p-2 text-left">Forma Entrega</th>
-                   <th className="p-2 text-left">SKUs/Produtos</th>
-                   <th className="p-2 text-left">Núm. Venda</th>
-                   <th className="p-2 text-left">Valor Total</th>
-                   <th className="p-2 text-left">Mapeamento</th>
-                  
-                  {/* Dados Financeiros Detalhados */}
-                  <th className="p-2 text-left">Receita Produtos</th>
-                  <th className="p-2 text-left">Tarifas Venda</th>
-                  <th className="p-2 text-left">Impostos</th>
-                  <th className="p-2 text-left">Receita Envio</th>
-                  <th className="p-2 text-left">Valor Pago Total</th>
-                  
-                  {/* Dados do Produto/Anúncio */}
-                  <th className="p-2 text-left">Título Anúncio</th>
-                  <th className="p-2 text-left">Categoria ML</th>
-                  <th className="p-2 text-left">Condição</th>
-                  <th className="p-2 text-left">Garantia</th>
-                  <th className="p-2 text-left">Tipo Listagem</th>
-                  <th className="p-2 text-left">Atributos Variação</th>
-                  
-                   {/* Dados de Envio Detalhados */}
-                   <th className="p-2 text-left">Forma Entrega</th>
-                   <th className="p-2 text-left">Método Rastreamento</th>
-                   <th className="p-2 text-left">Sub-status</th>
-                   <th className="p-2 text-left">Modo Logístico</th>
-                   <th className="p-2 text-left">Cidade</th>
-                   <th className="p-2 text-left">Preferência Entrega</th>
-                   <th className="p-2 text-left">Endereço Completo</th>
-                   <th className="p-2 text-left">CEP</th>
-                   <th className="p-2 text-left">Comentário Endereço</th>
-                   <th className="p-2 text-left">Nome Destinatário</th>
+                  {allColumns.map(column => 
+                    visibleColumns.has(column.key) && (
+                      <th key={column.key} className="p-2 text-left">
+                        {column.label}
+                      </th>
+                    )
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {orders.map(order => {
                   const temMapeamento = pedidoTemMapeamento(order);
-                  return (
-                  <tr 
-                    key={order.id} 
-                    className={`border-b hover:bg-gray-50 text-xs ${
-                      temMapeamento ? 'border-l-4 border-l-green-500 bg-green-50' : 'border-l-4 border-l-orange-500 bg-orange-50'
-                    }`}
-                  >
-                    <td className="p-2">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedOrders.has(order.id)}
-                        onChange={() => toggleOrderSelection(order.id)}
-                        className="rounded border-gray-300"
-                      />
-                    </td>
-                    
-                     {/* ID-Único */}
-                     <td className="p-2">
-                       <div className="font-medium">
-                         {order.skus && order.skus.length > 0 ? 
-                           `${order.skus[0]}-${order.numero_venda}` : 
-                           `SKU-${order.numero_venda}`
-                         }
-                       </div>
-                     </td>
-                     
-                      {/* Cliente */}
-                      <td className="p-2 max-w-32">
-                        <div className="truncate" title={order.nome_cliente}>
-                          {order.nome_cliente || '—'}
-                        </div>
-                      </td>
-                      
-                      {/* Data Pedido */}
-                      <td className="p-2">
-                        {order.data_pedido ? formatDate(order.data_pedido) : '—'}
-                      </td>
-                      
-                      {/* UF */}
-                      <td className="p-2">
-                        {order.uf || '—'}
-                      </td>
-                      
-                       {/* Status */}
-                       <td className="p-2">
-                         <Badge className={getSituacaoColor(order.situacao)}>
-                           {order.situacao || '—'}
-                         </Badge>
-                       </td>
-                       
-                       {/* Forma Entrega */}
-                       <td className="p-2">
-                         {order.unified?.forma_entrega || '—'}
-                       </td>
-                       
-                       {/* SKUs/Produtos */}
-                      <td className="p-2 max-w-40">
-                        {order.skus && order.skus.length > 0 ? (
-                          <div className="text-xs">
-                            {order.skus.slice(0, 2).map((sku, idx) => (
-                              <div key={idx} className="truncate" title={sku}>
-                                {sku}
+                  
+                  const renderCell = (columnKey: string) => {
+                    switch (columnKey) {
+                      case 'id_unico':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            <div className="font-medium">
+                              {order.skus && order.skus.length > 0 ? 
+                                `${order.skus[0]}-${order.numero_venda}` : 
+                                `SKU-${order.numero_venda}`
+                              }
+                            </div>
+                          </td>
+                        );
+                      case 'cliente':
+                        return (
+                          <td key={columnKey} className="p-2 max-w-32">
+                            <div className="truncate" title={order.nome_cliente}>
+                              {order.nome_cliente || '—'}
+                            </div>
+                          </td>
+                        );
+                      case 'data_pedido':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.data_pedido ? formatDate(order.data_pedido) : '—'}
+                          </td>
+                        );
+                      case 'uf':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.uf || '—'}
+                          </td>
+                        );
+                      case 'status':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            <Badge className={getSituacaoColor(order.situacao)}>
+                              {order.situacao || '—'}
+                            </Badge>
+                          </td>
+                        );
+                      case 'forma_entrega':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.unified?.forma_entrega || '—'}
+                          </td>
+                        );
+                      case 'skus_produtos':
+                        return (
+                          <td key={columnKey} className="p-2 max-w-40">
+                            {order.skus && order.skus.length > 0 ? (
+                              <div className="text-xs">
+                                {order.skus.slice(0, 2).map((sku, idx) => (
+                                  <div key={idx} className="truncate" title={sku}>
+                                    {sku}
+                                  </div>
+                                ))}
+                                {order.skus.length > 2 && (
+                                  <div className="text-gray-500">
+                                    +{order.skus.length - 2} mais
+                                  </div>
+                                )}
                               </div>
-                            ))}
-                            {order.skus.length > 2 && (
-                              <div className="text-gray-500">
-                                +{order.skus.length - 2} mais
-                              </div>
+                            ) : '—'}
+                          </td>
+                        );
+                      case 'num_venda':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            <div className="font-medium">{order.numero_venda || '—'}</div>
+                          </td>
+                        );
+                      case 'valor_total':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {formatMoney(order.valor_total)}
+                          </td>
+                        );
+                      case 'mapeamento':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {temMapeamento ? (
+                              <Badge variant="outline" className="bg-green-100 text-green-800">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Mapeado
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-orange-100 text-orange-800">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                Sem Map.
+                              </Badge>
                             )}
-                          </div>
-                        ) : '—'}
-                       </td>
+                          </td>
+                        );
+                      case 'receita_produtos':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.unified?.receita_produtos !== undefined && order.unified?.receita_produtos !== null
+                              ? formatMoney(order.unified.receita_produtos)
+                              : '—'}
+                          </td>
+                        );
+                      case 'tarifas_venda':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.unified?.tarifas_venda !== undefined && order.unified?.tarifas_venda !== null
+                              ? formatMoney(order.unified.tarifas_venda)
+                              : '—'}
+                          </td>
+                        );
+                      case 'impostos':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.unified?.impostos !== undefined && order.unified?.impostos !== null
+                              ? formatMoney(order.unified.impostos)
+                              : '—'}
+                          </td>
+                        );
+                      case 'receita_envio':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.unified?.receita_envio !== undefined && order.unified?.receita_envio !== null
+                              ? formatMoney(order.unified.receita_envio)
+                              : '—'}
+                          </td>
+                        );
+                      case 'valor_pago_total':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.unified?.valor_pago_total !== undefined && order.unified?.valor_pago_total !== null
+                              ? formatMoney(order.unified.valor_pago_total)
+                              : '—'}
+                          </td>
+                        );
+                      case 'titulo_anuncio':
+                        return (
+                          <td key={columnKey} className="p-2 max-w-48">
+                            <div className="text-xs truncate" title={order.unified?.titulo_anuncio}>
+                              {order.unified?.titulo_anuncio || '—'}
+                            </div>
+                          </td>
+                        );
+                      case 'categoria_ml':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.unified?.categoria_ml || '—'}
+                          </td>
+                        );
+                      case 'condicao':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            <Badge variant="outline" className={
+                              order.unified?.condicao === 'new' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                            }>
+                              {order.unified?.condicao === 'new' ? 'Novo' : order.unified?.condicao === 'used' ? 'Usado' : order.unified?.condicao || '—'}
+                            </Badge>
+                          </td>
+                        );
+                      case 'garantia':
+                        return (
+                          <td key={columnKey} className="p-2 max-w-32">
+                            <div className="text-xs truncate" title={order.unified?.garantia}>
+                              {order.unified?.garantia || '—'}
+                            </div>
+                          </td>
+                        );
+                      case 'tipo_listagem':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            <Badge variant="outline" className={
+                              order.unified?.tipo_listagem?.includes('gold') ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                            }>
+                              {order.unified?.tipo_listagem?.replace('_', ' ').toUpperCase() || '—'}
+                            </Badge>
+                          </td>
+                        );
+                      case 'atributos_variacao':
+                        return (
+                          <td key={columnKey} className="p-2 max-w-40">
+                            <div className="text-xs truncate" title={order.unified?.atributos_variacao}>
+                              {order.unified?.atributos_variacao || '—'}
+                            </div>
+                          </td>
+                        );
+                      case 'metodo_rastreamento':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            <Badge variant="outline" className="bg-indigo-100 text-indigo-800">
+                              {order.unified?.tracking_method || '—'}
+                            </Badge>
+                          </td>
+                        );
+                      case 'substatus':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            <Badge variant="outline" className="bg-amber-100 text-amber-800">
+                              {order.unified?.substatus || '—'}
+                            </Badge>
+                          </td>
+                        );
+                      case 'modo_logistico':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            <Badge variant="outline" className="bg-cyan-100 text-cyan-800">
+                              {order.unified?.logistic_mode || '—'}
+                            </Badge>
+                          </td>
+                        );
+                      case 'cidade':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.unified?.cidade ?? order.cidade ?? '—'}
+                          </td>
+                        );
+                      case 'preferencia_entrega':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            <Badge variant="outline" className={
+                              order.unified?.preferencia_entrega === 'residential' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                            }>
+                              {order.unified?.preferencia_entrega === 'residential' ? 'Residencial' : 
+                               order.unified?.preferencia_entrega === 'business' ? 'Comercial' : 
+                               order.unified?.preferencia_entrega || '—'}
+                            </Badge>
+                          </td>
+                        );
+                      case 'endereco_completo':
+                        return (
+                          <td key={columnKey} className="p-2 max-w-48">
+                            <div className="text-xs truncate" title={order.unified?.endereco_completo}>
+                              {order.unified?.endereco_completo || '—'}
+                            </div>
+                          </td>
+                        );
+                      case 'cep':
+                        return (
+                          <td key={columnKey} className="p-2">
+                            {order.unified?.cep || '—'}
+                          </td>
+                        );
+                      case 'comentario_endereco':
+                        return (
+                          <td key={columnKey} className="p-2 max-w-32">
+                            <div className="text-xs truncate" title={order.unified?.comentario_endereco}>
+                              {order.unified?.comentario_endereco || '—'}
+                            </div>
+                          </td>
+                        );
+                      case 'nome_destinatario':
+                        return (
+                          <td key={columnKey} className="p-2 max-w-32">
+                            <div className="text-xs truncate" title={order.unified?.nome_destinatario}>
+                              {order.unified?.nome_destinatario || '—'}
+                            </div>
+                          </td>
+                        );
+                      default:
+                        return null;
+                    }
+                  };
 
-                      {/* Núm. Venda */}
+                  return (
+                    <tr 
+                      key={order.id} 
+                      className={`border-b hover:bg-gray-50 text-xs ${
+                        temMapeamento ? 'border-l-4 border-l-green-500 bg-green-50' : 'border-l-4 border-l-orange-500 bg-orange-50'
+                      }`}
+                    >
                       <td className="p-2">
-                        <div className="font-medium">{order.numero_venda || '—'}</div>
-                      </td>
-
-                      {/* Valor Total */}
-                      <td className="p-2">
-                        {formatMoney(order.valor_total)}
+                        <input 
+                          type="checkbox" 
+                          checked={selectedOrders.has(order.id)}
+                          onChange={() => toggleOrderSelection(order.id)}
+                          className="rounded border-gray-300"
+                        />
                       </td>
                       
-                      {/* Mapeamento */}
-                      <td className="p-2">
-                        {temMapeamento ? (
-                          <Badge variant="outline" className="bg-green-100 text-green-800">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Mapeado
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="bg-orange-100 text-orange-800">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Sem Map.
-                          </Badge>
-                        )}
-                      </td>
-                    
-                    {/* Dados Financeiros Detalhados */}
-                    <td className="p-2">
-                      {order.unified?.receita_produtos !== undefined && order.unified?.receita_produtos !== null
-                        ? formatMoney(order.unified.receita_produtos)
-                        : '—'}
-                    </td>
-                    <td className="p-2">
-                      {order.unified?.tarifas_venda !== undefined && order.unified?.tarifas_venda !== null
-                        ? formatMoney(order.unified.tarifas_venda)
-                        : '—'}
-                    </td>
-                    <td className="p-2">
-                      {order.unified?.impostos !== undefined && order.unified?.impostos !== null
-                        ? formatMoney(order.unified.impostos)
-                        : '—'}
-                    </td>
-                    <td className="p-2">
-                      {order.unified?.receita_envio !== undefined && order.unified?.receita_envio !== null
-                        ? formatMoney(order.unified.receita_envio)
-                        : '—'}
-                    </td>
-                    <td className="p-2">
-                      {order.unified?.valor_pago_total !== undefined && order.unified?.valor_pago_total !== null
-                        ? formatMoney(order.unified.valor_pago_total)
-                        : '—'}
-                    </td>
-                    
-                    {/* Dados do Produto/Anúncio */}
-                    <td className="p-2 max-w-48">
-                      <div className="text-xs truncate" title={order.unified?.titulo_anuncio}>
-                        {order.unified?.titulo_anuncio || '—'}
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      {order.unified?.categoria_ml || '—'}
-                    </td>
-                    <td className="p-2">
-                      <Badge variant="outline" className={
-                        order.unified?.condicao === 'new' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }>
-                        {order.unified?.condicao === 'new' ? 'Novo' : order.unified?.condicao === 'used' ? 'Usado' : order.unified?.condicao || '—'}
-                      </Badge>
-                    </td>
-                    <td className="p-2 max-w-32">
-                      <div className="text-xs truncate" title={order.unified?.garantia}>
-                        {order.unified?.garantia || '—'}
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <Badge variant="outline" className={
-                        order.unified?.tipo_listagem?.includes('gold') ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
-                      }>
-                        {order.unified?.tipo_listagem?.replace('_', ' ').toUpperCase() || '—'}
-                      </Badge>
-                    </td>
-                    <td className="p-2 max-w-40">
-                      <div className="text-xs truncate" title={order.unified?.atributos_variacao}>
-                        {order.unified?.atributos_variacao || '—'}
-                      </div>
-                    </td>
-                    
-                     {/* Dados de Envio Detalhados */}
-                     <td className="p-2">
-                       {order.unified?.forma_entrega || '—'}
-                     </td>
-                     <td className="p-2">
-                       <Badge variant="outline" className="bg-indigo-100 text-indigo-800">
-                         {order.unified?.tracking_method || '—'}
-                       </Badge>
-                     </td>
-                     <td className="p-2">
-                       <Badge variant="outline" className="bg-amber-100 text-amber-800">
-                         {order.unified?.substatus || '—'}
-                       </Badge>
-                     </td>
-                     <td className="p-2">
-                       <Badge variant="outline" className="bg-cyan-100 text-cyan-800">
-                         {order.unified?.logistic_mode || '—'}
-                       </Badge>
-                     </td>
-                      <td className="p-2">
-                        {order.unified?.cidade ?? order.cidade ?? '—'}
-                      </td>
-                      <td className="p-2">
-                        <Badge variant="outline" className={
-                          order.unified?.preferencia_entrega === 'residential' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                        }>
-                         {order.unified?.preferencia_entrega === 'residential' ? 'Residencial' : 
-                          order.unified?.preferencia_entrega === 'business' ? 'Comercial' : 
-                          order.unified?.preferencia_entrega || '—'}
-                       </Badge>
-                     </td>
-                    <td className="p-2 max-w-48">
-                      <div className="text-xs truncate" title={order.unified?.endereco_completo}>
-                        {order.unified?.endereco_completo || '—'}
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      {order.unified?.cep || '—'}
-                    </td>
-                    <td className="p-2 max-w-32">
-                      <div className="text-xs truncate" title={order.unified?.comentario_endereco}>
-                        {order.unified?.comentario_endereco || '—'}
-                      </div>
-                    </td>
-                    <td className="p-2 max-w-32">
-                      <div className="text-xs truncate" title={order.unified?.nome_destinatario}>
-                        {order.unified?.nome_destinatario || '—'}
-                      </div>
-                    </td>
-                  </tr>
+                      {allColumns.map(column => 
+                        visibleColumns.has(column.key) && renderCell(column.key)
+                      )}
+                    </tr>
                   );
                 })}
               </tbody>
