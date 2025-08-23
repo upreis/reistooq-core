@@ -537,7 +537,6 @@ const loadAccounts = async () => {
                    <th className="p-2 text-left">Sub-status</th>
                    <th className="p-2 text-left">Modo Logístico</th>
                    <th className="p-2 text-left">Cidade</th>
-                   <th className="p-2 text-left">UF</th>
                    <th className="p-2 text-left">Preferência Entrega</th>
                    <th className="p-2 text-left">Endereço Completo</th>
                    <th className="p-2 text-left">CEP</th>
@@ -727,12 +726,7 @@ const loadAccounts = async () => {
                        </Badge>
                      </td>
                       <td className="p-2">
-                        {order.unified?.cidade || '—'}
-                      </td>
-                      <td className="p-2">
-                        <Badge variant="outline" className="bg-green-100 text-green-800">
-                          {order.unified?.uf || '—'}
-                        </Badge>
+                        {order.unified?.cidade ?? order.cidade ?? '—'}
                       </td>
                       <td className="p-2">
                         <Badge variant="outline" className={
