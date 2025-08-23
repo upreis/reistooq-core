@@ -189,8 +189,8 @@ const DEFAULT_FILTERS: PedidosFiltersAdvanced = {
 // ===== HOOK PRINCIPAL =====
 export function usePedidosFiltersEnhanced() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [filters, setFilters] = useState<PedidosFiltersAdvanced>(DEFAULT_FILTERS);
-  const [tempFilters, setTempFilters] = useState<PedidosFiltersAdvanced>(DEFAULT_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState<PedidosFiltersAdvanced>(DEFAULT_FILTERS);
+  const [draftFilters, setDraftFilters] = useState<PedidosFiltersAdvanced>(DEFAULT_FILTERS);
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [filterHistory, setFilterHistory] = useState<PedidosFiltersAdvanced[]>([]);
@@ -203,29 +203,29 @@ export function usePedidosFiltersEnhanced() {
   });
 
   // Debounce search for performance (only applied filters)
-  const debouncedSearch = useDebounce(filters.search, 300);
+  const debouncedSearch = useDebounce(appliedFilters.search, 300);
 
   // Check for pending changes
-  const hasPendingChanges = JSON.stringify(filters) !== JSON.stringify(tempFilters);
+  const hasPendingChanges = JSON.stringify(appliedFilters) !== JSON.stringify(draftFilters);
 
-  // FASE 1: URL Synchronization
+  // FASE 1: URL Synchronization - Only for applied filters
   useEffect(() => {
     const urlFilters = parseFiltersFromUrl(searchParams);
     if (Object.keys(urlFilters).length > 0) {
-      setFilters(prev => ({ ...prev, ...urlFilters }));
-      setTempFilters(prev => ({ ...prev, ...urlFilters }));
+      setAppliedFilters(prev => ({ ...prev, ...urlFilters }));
+      setDraftFilters(prev => ({ ...prev, ...urlFilters }));
     }
   }, []);
 
   useEffect(() => {
-    const hasActiveFilters = hasActiveFiltersCheck(filters);
+    const hasActiveFilters = hasActiveFiltersCheck(appliedFilters);
     if (hasActiveFilters) {
-      const urlParams = encodeFiltersToUrl(filters);
+      const urlParams = encodeFiltersToUrl(appliedFilters);
       setSearchParams(urlParams, { replace: true });
     } else {
       setSearchParams({}, { replace: true });
     }
-  }, [filters, setSearchParams]);
+  }, [appliedFilters, setSearchParams]);
 
   // FASE 2: Load saved filters from localStorage
   useEffect(() => {
@@ -257,14 +257,14 @@ export function usePedidosFiltersEnhanced() {
     }
   }, []);
 
-  // FASE 3: Track analytics
+  // FASE 3: Track analytics - Only for applied filters
   useEffect(() => {
-    if (hasActiveFiltersCheck(filters)) {
-      trackFilterUsage(filters);
+    if (hasActiveFiltersCheck(appliedFilters)) {
+      trackFilterUsage(appliedFilters);
     }
-  }, [debouncedSearch, filters.situacao, filters.dateRange, filters.uf]);
+  }, [debouncedSearch, appliedFilters.situacao, appliedFilters.dateRange, appliedFilters.uf]);
 
-  // API Parameters conversion with enhanced mapping
+  // API Parameters conversion with enhanced mapping - Only applied filters
   const apiParams = useMemo(() => {
     const params: Record<string, any> = {};
 
@@ -275,106 +275,107 @@ export function usePedidosFiltersEnhanced() {
     }
 
     // Multi-select status
-    if (filters.situacao.length > 0) {
-      params.status = filters.situacao;
-      params.situacao = filters.situacao; // Fallback
+    if (appliedFilters.situacao.length > 0) {
+      params.status = appliedFilters.situacao;
+      params.situacao = appliedFilters.situacao; // Fallback
     }
 
     // Enhanced date range
-    if (filters.dateRange.inicio) {
-      params.dateFrom = filters.dateRange.inicio.toISOString().split('T')[0];
-      params.dataInicio = filters.dateRange.inicio;
+    if (appliedFilters.dateRange.inicio) {
+      params.dateFrom = appliedFilters.dateRange.inicio.toISOString().split('T')[0];
+      params.dataInicio = appliedFilters.dateRange.inicio;
     }
-    if (filters.dateRange.fim) {
-      params.dateTo = filters.dateRange.fim.toISOString().split('T')[0];
-      params.dataFim = filters.dateRange.fim;
+    if (appliedFilters.dateRange.fim) {
+      params.dateTo = appliedFilters.dateRange.fim.toISOString().split('T')[0];
+      params.dataFim = appliedFilters.dateRange.fim;
     }
 
     // Multi-select location
-    if (filters.cidade.length > 0) {
-      params.cities = filters.cidade;
-      params.cidade = filters.cidade[0]; // Fallback for single
+    if (appliedFilters.cidade.length > 0) {
+      params.cities = appliedFilters.cidade;
+      params.cidade = appliedFilters.cidade[0]; // Fallback for single
     }
-    if (filters.uf.length > 0) {
-      params.states = filters.uf;
-      params.uf = filters.uf[0]; // Fallback for single
+    if (appliedFilters.uf.length > 0) {
+      params.states = appliedFilters.uf;
+      params.uf = appliedFilters.uf[0]; // Fallback for single
     }
 
     // Enhanced value range
-    if (filters.valorRange.min !== null) {
-      params.minValue = filters.valorRange.min;
-      params.valorMin = filters.valorRange.min;
+    if (appliedFilters.valorRange.min !== null) {
+      params.minValue = appliedFilters.valorRange.min;
+      params.valorMin = appliedFilters.valorRange.min;
     }
-    if (filters.valorRange.max !== null) {
-      params.maxValue = filters.valorRange.max;
-      params.valorMax = filters.valorRange.max;
+    if (appliedFilters.valorRange.max !== null) {
+      params.maxValue = appliedFilters.valorRange.max;
+      params.valorMax = appliedFilters.valorRange.max;
     }
 
     // Advanced params
-    if (filters.hasMapping !== null) {
-      params.hasMapping = filters.hasMapping;
+    if (appliedFilters.hasMapping !== null) {
+      params.hasMapping = appliedFilters.hasMapping;
     }
-    if (filters.source !== 'all') {
-      params.source = filters.source;
+    if (appliedFilters.source !== 'all') {
+      params.source = appliedFilters.source;
     }
-    if (filters.priority !== 'all') {
-      params.priority = filters.priority;
+    if (appliedFilters.priority !== 'all') {
+      params.priority = appliedFilters.priority;
     }
-    if (filters.tags.length > 0) {
-      params.tags = filters.tags;
+    if (appliedFilters.tags.length > 0) {
+      params.tags = appliedFilters.tags;
     }
 
     return params;
-  }, [debouncedSearch, filters]);
+  }, [debouncedSearch, appliedFilters]);
 
-  // Filter management functions - Update temp filters only
-  const updateTempFilter = useCallback(<K extends keyof PedidosFiltersAdvanced>(
+  // Filter management functions - Update draft filters only
+  const updateDraftFilter = useCallback(<K extends keyof PedidosFiltersAdvanced>(
     key: K,
     value: PedidosFiltersAdvanced[K]
   ) => {
-    setTempFilters(prev => ({ ...prev, [key]: value }));
+    setDraftFilters(prev => ({ ...prev, [key]: value }));
     setActivePreset(null); // Clear preset when manual filter is applied
   }, []);
 
-  // Apply all filters at once
+  // Apply all filters at once - This is the ONLY function that triggers API calls
   const applyFilters = useCallback(() => {
-    setFilters(tempFilters);
-    if (hasActiveFiltersCheck(tempFilters)) {
-      addToHistory(tempFilters);
+    setAppliedFilters(draftFilters);
+    if (hasActiveFiltersCheck(draftFilters)) {
+      addToHistory(draftFilters);
     }
-  }, [tempFilters]);
+  }, [draftFilters]);
 
-  // Cancel changes and reset temp filters
+  // Cancel changes and reset draft filters to applied
   const cancelChanges = useCallback(() => {
-    setTempFilters(filters);
-  }, [filters]);
+    setDraftFilters(appliedFilters);
+  }, [appliedFilters]);
 
+  // Clear all filters - sets both draft and applied to defaults
   const clearFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS);
-    setTempFilters(DEFAULT_FILTERS);
+    setDraftFilters(DEFAULT_FILTERS);
+    setAppliedFilters(DEFAULT_FILTERS);
     setActivePreset(null);
     setSearchParams({}, { replace: true });
   }, [setSearchParams]);
 
   const applyPreset = useCallback((preset: FilterPreset) => {
-    const appliedFilters = { ...DEFAULT_FILTERS, ...preset.filters };
+    const presetFilters = { ...DEFAULT_FILTERS, ...preset.filters };
     
     // Handle date presets
     if (preset.filters.dateRange?.preset) {
       const dates = calculateDateRange(preset.filters.dateRange.preset);
-      appliedFilters.dateRange = {
-        ...appliedFilters.dateRange,
+      presetFilters.dateRange = {
+        ...presetFilters.dateRange,
         ...dates
       };
     }
 
-    setFilters(appliedFilters);
-    setTempFilters(appliedFilters);
+    setDraftFilters(presetFilters);
+    setAppliedFilters(presetFilters);
     setActivePreset(preset.id);
     
     // Track preset usage
     trackPresetUsage(preset.id);
-    addToHistory(appliedFilters);
+    addToHistory(presetFilters);
   }, []);
 
   // FASE 2: Saved filters management
@@ -383,7 +384,7 @@ export function usePedidosFiltersEnhanced() {
       id: `filter_${Date.now()}`,
       name,
       description,
-      filters,
+      filters: appliedFilters,
       isPublic,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -396,14 +397,14 @@ export function usePedidosFiltersEnhanced() {
     localStorage.setItem('pedidos-saved-filters', JSON.stringify(updatedSaved));
 
     return newSavedFilter;
-  }, [filters, savedFilters]);
+  }, [appliedFilters, savedFilters]);
 
   const loadSavedFilter = useCallback((savedFilter: SavedFilter) => {
-    const appliedFilters = { ...DEFAULT_FILTERS, ...savedFilter.filters };
-    setFilters(appliedFilters);
-    setTempFilters(appliedFilters);
+    const loadedFilters = { ...DEFAULT_FILTERS, ...savedFilter.filters };
+    setDraftFilters(loadedFilters);
+    setAppliedFilters(loadedFilters);
     setActivePreset(null);
-    addToHistory(appliedFilters);
+    addToHistory(loadedFilters);
 
     // Increment usage count
     const updatedSaved = savedFilters.map(sf =>
@@ -476,30 +477,30 @@ export function usePedidosFiltersEnhanced() {
     return ['São Paulo', 'Rio de Janeiro', 'Belo Horizonte', 'Brasília', 'Salvador'];
   }, []);
 
-  // Active filters count
+  // Active filters count - based on applied filters
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     
-    if (filters.search.trim()) count++;
-    if (filters.situacao.length > 0) count++;
-    if (filters.dateRange.inicio || filters.dateRange.fim) count++;
-    if (filters.cidade.length > 0) count++;
-    if (filters.uf.length > 0) count++;
-    if (filters.valorRange.min !== null || filters.valorRange.max !== null) count++;
-    if (filters.hasMapping !== null) count++;
-    if (filters.source !== 'all') count++;
-    if (filters.priority !== 'all') count++;
-    if (filters.tags.length > 0) count++;
+    if (appliedFilters.search.trim()) count++;
+    if (appliedFilters.situacao.length > 0) count++;
+    if (appliedFilters.dateRange.inicio || appliedFilters.dateRange.fim) count++;
+    if (appliedFilters.cidade.length > 0) count++;
+    if (appliedFilters.uf.length > 0) count++;
+    if (appliedFilters.valorRange.min !== null || appliedFilters.valorRange.max !== null) count++;
+    if (appliedFilters.hasMapping !== null) count++;
+    if (appliedFilters.source !== 'all') count++;
+    if (appliedFilters.priority !== 'all') count++;
+    if (appliedFilters.tags.length > 0) count++;
 
     return count;
-  }, [filters]);
+  }, [appliedFilters]);
 
   const hasActiveFilters = activeFiltersCount > 0;
 
   return {
     // State
-    filters,
-    tempFilters,
+    appliedFilters,
+    draftFilters,
     savedFilters,
     activePreset,
     filterHistory,
@@ -514,7 +515,7 @@ export function usePedidosFiltersEnhanced() {
     hasPendingChanges,
     
     // Actions
-    updateTempFilter,
+    updateDraftFilter,
     applyFilters,
     cancelChanges,
     clearFilters,
