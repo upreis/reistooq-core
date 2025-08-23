@@ -55,6 +55,7 @@ export default function SimplePedidosPage({ className }: Props) {
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [filters, setFilters] = useState<PedidosFiltersState>({});
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [mapeamentos, setMapeamentos] = useState<Map<string, MapeamentoVerificacao>>(new Map());
   const [mappingData, setMappingData] = useState<Map<string, any>>(new Map());
 
@@ -246,12 +247,17 @@ export default function SimplePedidosPage({ className }: Props) {
     loadAccounts();
   }, []);
 
-  // Carregar pedidos quando conta muda ou filtros mudam
+  // Carregar pedidos quando conta muda
   useEffect(() => {
     if (integrationAccountId) {
       loadOrders();
     }
-  }, [integrationAccountId, currentPage, JSON.stringify(filters)]);
+  }, [integrationAccountId, currentPage]);
+
+  // Aplicar filtros quando mudam
+  useEffect(() => {
+    applyFilters();
+  }, [orders, filters]);
 
   // Processar mapeamentos quando pedidos carregam
   useEffect(() => {
@@ -333,6 +339,87 @@ export default function SimplePedidosPage({ className }: Props) {
     processarMapeamentos();
   }, [orders]);
 
+  // Aplicar filtros aos pedidos
+  const applyFilters = () => {
+    let filtered = [...orders];
+
+    // Filtro de busca
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase();
+      filtered = filtered.filter(order => 
+        order.numero.toLowerCase().includes(searchTerm) ||
+        order.nome_cliente?.toLowerCase().includes(searchTerm) ||
+        order.cpf_cnpj?.toLowerCase().includes(searchTerm) ||
+        order.numero_ecommerce?.toLowerCase().includes(searchTerm) ||
+        order.numero_venda?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filtro de situação (múltipla seleção)
+    if (filters.situacao && filters.situacao.length > 0) {
+      filtered = filtered.filter(order => 
+        filters.situacao!.some(situacao => 
+          order.situacao?.toLowerCase() === situacao.toLowerCase()
+        )
+      );
+    }
+
+    // Filtro de empresas (múltipla seleção)
+    if (filters.empresas && filters.empresas.length > 0) {
+      filtered = filtered.filter(order => 
+        filters.empresas!.includes(order.empresa)
+      );
+    }
+
+    // Filtro de data início
+    if (filters.dataInicio) {
+      const startDate = filters.dataInicio.toISOString().split('T')[0];
+      filtered = filtered.filter(order => 
+        order.data_pedido >= startDate
+      );
+    }
+
+    // Filtro de data fim
+    if (filters.dataFim) {
+      const endDate = filters.dataFim.toISOString().split('T')[0];
+      filtered = filtered.filter(order => 
+        order.data_pedido <= endDate
+      );
+    }
+
+    // Filtro de cidade
+    if (filters.cidade) {
+      const cityTerm = filters.cidade.toLowerCase();
+      filtered = filtered.filter(order => 
+        order.cidade?.toLowerCase().includes(cityTerm)
+      );
+    }
+
+    // Filtro de UF
+    if (filters.uf) {
+      filtered = filtered.filter(order => 
+        order.uf === filters.uf
+      );
+    }
+
+    // Filtro de valor mínimo
+    if (filters.valorMin) {
+      filtered = filtered.filter(order => 
+        order.valor_total >= filters.valorMin!
+      );
+    }
+
+    // Filtro de valor máximo
+    if (filters.valorMax) {
+      filtered = filtered.filter(order => 
+        order.valor_total <= filters.valorMax!
+      );
+    }
+
+    setFilteredOrders(filtered);
+    setTotal(filtered.length);
+  };
+
 const loadAccounts = async () => {
     try {
       const { data, error } = await supabase
@@ -372,21 +459,15 @@ const loadAccounts = async () => {
     setError('');
 
     try {
-      // Converter filtros para parâmetros da API
-      const apiParams: any = {};
-      if (filters.search) apiParams.q = filters.search;
-      if (filters.situacao) apiParams.status = filters.situacao.toLowerCase();
-      if (filters.dataInicio) apiParams.date_from = filters.dataInicio.toISOString().split('T')[0];
-      if (filters.dataFim) apiParams.date_to = filters.dataFim.toISOString().split('T')[0];
+      // Não aplicar filtros na API, vamos filtrar no frontend
 
       const { data, error } = await supabase.functions.invoke('unified-orders', {
         body: {
           integration_account_id: integrationAccountId,
-          limit: pageSize,
-          offset: (currentPage - 1) * pageSize,
+          limit: 200, // Buscar mais pedidos para filtrar localmente
+          offset: 0,
           enrich: true,
-          include_shipping: true,
-          ...apiParams
+          include_shipping: true
         }
       });
 
@@ -492,7 +573,6 @@ const loadAccounts = async () => {
       });
 
       setOrders(processedOrders);
-      setTotal(data.paging?.total || data.count || processedOrders.length);
       
       // Verificar mapeamentos automaticamente
       await verificarMapeamentos(processedOrders);
@@ -565,10 +645,10 @@ const loadAccounts = async () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedOrders.size === orders.length) {
+    if (selectedOrders.size === filteredOrders.length) {
       setSelectedOrders(new Set());
     } else {
-      setSelectedOrders(new Set(orders.map(o => o.id)));
+      setSelectedOrders(new Set(filteredOrders.map(o => o.id)));
     }
   };
 
@@ -584,8 +664,11 @@ const loadAccounts = async () => {
   };
 
   // Estatísticas de mapeamento
-  const ordersComMapeamento = orders.filter(pedidoTemMapeamento).length;
-  const ordersSemMapeamento = orders.length - ordersComMapeamento;
+  const ordersComMapeamento = filteredOrders.filter(pedidoTemMapeamento).length;
+  const ordersSemMapeamento = filteredOrders.length - ordersComMapeamento;
+
+  // Lista de empresas disponíveis para filtro
+  const availableEmpresas = Array.from(new Set(orders.map(order => order.empresa).filter(Boolean)));
 
   // Converter pedidos selecionados para formato Pedido
   const pedidosSelecionados: Pedido[] = Array.from(selectedOrders)
@@ -656,12 +739,13 @@ const loadAccounts = async () => {
         filters={filters}
         onFiltersChange={(newFilters) => {
           setFilters(newFilters);
-          setCurrentPage(1); // Reset para primeira página
+          setCurrentPage(1);
         }}
         onClearFilters={() => {
           setFilters({});
           setCurrentPage(1);
         }}
+        availableEmpresas={availableEmpresas}
       />
 
       {/* Stats Avançadas */}
@@ -788,7 +872,7 @@ const loadAccounts = async () => {
       )}
 
       {/* Orders Table */}
-      {!loading && orders.length > 0 && (
+      {!loading && filteredOrders.length > 0 && (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -797,7 +881,7 @@ const loadAccounts = async () => {
                   <th className="p-2 text-left">
                     <input 
                       type="checkbox" 
-                      checked={selectedOrders.size === orders.length && orders.length > 0}
+                      checked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0}
                       onChange={toggleSelectAll}
                       className="rounded border-gray-300"
                     />
@@ -812,7 +896,7 @@ const loadAccounts = async () => {
                 </tr>
               </thead>
               <tbody>
-                {orders.map(order => {
+                {filteredOrders.map(order => {
                   const temMapeamento = pedidoTemMapeamento(order);
                   
                   const renderCell = (columnKey: string) => {
