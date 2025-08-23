@@ -540,6 +540,21 @@ const loadAccounts = async () => {
     } catch (err: any) {
       const msg = err?.message || String(err);
       const isSecretsMissing = msg.includes('404') || msg.toLowerCase().includes('segredo') || (err?.status === 404);
+
+      // Extrai detalhes ricos do erro da Edge Function, quando disponíveis
+      let detailMsg = msg;
+      const respBody = err?.context?.response?.body;
+      if (respBody) {
+        try {
+          const parsed = typeof respBody === 'string' ? JSON.parse(respBody) : respBody;
+          const extra = parsed?.error || parsed?.detail || parsed?.message;
+          if (extra) {
+            detailMsg += ` — ${typeof extra === 'string' ? extra : JSON.stringify(extra)}`;
+          }
+        } catch {}
+      }
+      console.error('[Pedidos] unified-orders error:', err);
+
       if (isSecretsMissing && accounts.length > 1) {
         for (const acc of accounts.filter(a => a.id !== integrationAccountId)) {
           const ok = await testAccount(acc.id);
@@ -549,7 +564,7 @@ const loadAccounts = async () => {
           }
         }
       }
-      setError(`Erro ao carregar pedidos: ${msg}`);
+      setError(`Erro ao carregar pedidos: ${detailMsg}`);
       setOrders([]);
     } finally {
       setLoading(false);

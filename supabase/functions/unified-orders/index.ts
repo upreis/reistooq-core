@@ -151,15 +151,41 @@ serve(async (req) => {
     const accessToken = validSecrets.access_token as string;
 
     // 4) Chamada ML Orders
-    const sellerId = String(account.account_identifier || validSecrets.meta?.user_id);
-    if (!sellerId) return fail("Seller ID not found (account_identifier/payload)", 400, null, cid);
+    // Seller ID robusto: evita "undefined"/"null" ao converter
+    const sellerFromAccount = account.account_identifier ? String(account.account_identifier) : '';
+    const sellerFromSecrets = validSecrets.meta?.user_id ? String(validSecrets.meta?.user_id) : '';
+    const effectiveSeller = seller_id ? String(seller_id) : (sellerFromAccount || sellerFromSecrets);
+    if (!effectiveSeller || effectiveSeller === 'undefined' || effectiveSeller === 'null' || !/^\d+$/.test(effectiveSeller)) {
+      return fail("Seller ID not found (account_identifier/payload)", 400, { sellerFromAccount, sellerFromSecrets, seller_id }, cid);
+    }
+
+    // Normalização de datas (aceita YYYY-MM-DD e ISO). Garante range válido
+    const toISODate = (d?: string, endOfDay = false) => {
+      if (!d) return undefined;
+      // Já é ISO com tempo
+      if (/T/.test(d)) return d;
+      return `${d}${endOfDay ? 'T23:59:59.999Z' : 'T00:00:00.000Z'}`;
+    };
+    let fromISO = toISODate(String(date_from || ''));
+    let toISO = toISODate(String(date_to || ''), true);
+    if (fromISO && toISO) {
+      const fromTime = Date.parse(fromISO);
+      const toTime = Date.parse(toISO);
+      if (!isNaN(fromTime) && !isNaN(toTime) && fromTime > toTime) {
+        // Swap se range invertido
+        const tmp = fromISO; fromISO = toISO; toISO = tmp;
+      }
+    }
 
     const mlUrl = new URL("https://api.mercadolibre.com/orders/search");
-    const effectiveSeller = seller_id ? String(seller_id) : sellerId;
     mlUrl.searchParams.set("seller", effectiveSeller);
-    if (status) mlUrl.searchParams.set("order.status", status);
-    if (date_from) mlUrl.searchParams.set("order.date_created.from", String(date_from));
-    if (date_to) mlUrl.searchParams.set("order.date_created.to", String(date_to));
+
+    const allowedStatuses = new Set(["confirmed","payment_required","payment_in_process","paid","shipped","delivered","cancelled","invalid"]);
+    if (status && allowedStatuses.has(String(status))) {
+      mlUrl.searchParams.set("order.status", String(status));
+    }
+    if (fromISO) mlUrl.searchParams.set("order.date_created.from", fromISO);
+    if (toISO) mlUrl.searchParams.set("order.date_created.to", toISO);
     mlUrl.searchParams.set("limit", String(limit));
     mlUrl.searchParams.set("offset", String(offset));
     console.log(`[unified-orders:${cid}] url`, mlUrl.toString());
