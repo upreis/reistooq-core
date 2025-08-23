@@ -381,25 +381,34 @@ const loadAccounts = async () => {
       if ((filters as any)?.search) apiParams.q = (filters as any).search;
 
       // Situação/status (mapear rótulos humanos -> IDs da API quando possível)
-      const mapSituacaoToApiStatus = (label: string): string | null => {
-        const l = label.toLowerCase();
-        const map: Record<string, string> = {
-          'pago': 'paid',
-          'paid': 'paid',
-          'enviado': 'shipped',
-          'shipped': 'shipped',
-          'confirmado': 'confirmed',
-          'confirmed': 'confirmed',
-          'pendente': 'pending',
-          'pending': 'pending',
-          'aguardando': 'payment_required',
-          'cancelado': 'cancelled',
-          'cancelled': 'cancelled',
-          'devolvido': 'returned',
-          'reembolsado': 'refunded'
+        const mapSituacaoToApiStatus = (label: string): string | null => {
+          const l = label.toLowerCase().trim();
+          const map: Record<string, string> = {
+            'pago': 'paid',
+            'paid': 'paid',
+            'enviado': 'shipped',
+            'a caminho': 'shipped',
+            'shipped': 'shipped',
+            'confirmado': 'confirmed',
+            'confirmed': 'confirmed',
+            'pendente': 'pending',
+            'pending': 'pending',
+            'aguardando': 'payment_required',
+            'aguardando pagamento': 'payment_required',
+            'cancelado': 'cancelled',
+            'cancelled': 'cancelled',
+            'devolvido': 'returned',
+            'reembolsado': 'refunded',
+            'entregue': 'delivered',
+            'não entregue': 'not_delivered',
+            'nao entregue': 'not_delivered',
+            'pronto para enviar': 'ready_to_ship',
+            'pronto para envio': 'ready_to_ship',
+            'preparando': 'handling',
+            'aberto': 'active'
+          };
+          return map[l] || null;
         };
-        return map[l] || null;
-      };
 
       const situacao = (filters as any)?.situacao;
       if (Array.isArray(situacao) && situacao.length > 0) {
