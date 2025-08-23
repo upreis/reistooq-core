@@ -376,8 +376,12 @@ const loadAccounts = async () => {
       const apiParams: any = {};
       if (filters.search) apiParams.q = filters.search;
       if (filters.situacao) apiParams.status = filters.situacao.toLowerCase();
-      if (filters.dataInicio) apiParams.date_from = filters.dataInicio.toISOString().split('T')[0];
-      if (filters.dataFim) apiParams.date_to = filters.dataFim.toISOString().split('T')[0];
+      
+      // Só aplicar filtros de data se ambos estiverem selecionados
+      if (filters.dataInicio && filters.dataFim) {
+        apiParams.date_from = filters.dataInicio.toISOString().split('T')[0];
+        apiParams.date_to = filters.dataFim.toISOString().split('T')[0];
+      }
 
       const { data, error } = await supabase.functions.invoke('unified-orders', {
         body: {

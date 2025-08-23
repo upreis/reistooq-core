@@ -45,14 +45,29 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleFilterChange = (key: keyof PedidosFiltersState, value: any) => {
-    onFiltersChange({ ...filters, [key]: value });
+    const newFilters = { ...filters, [key]: value };
+    
+    // Se estamos alterando uma data e ambas as datas estão definidas, aplicar filtro
+    // Se não, apenas armazenar sem aplicar ainda
+    if ((key === 'dataInicio' || key === 'dataFim')) {
+      // Se ambas as datas estão definidas após esta mudança, aplicar
+      if (newFilters.dataInicio && newFilters.dataFim) {
+        onFiltersChange(newFilters);
+      } else {
+        // Apenas armazenar o estado local sem disparar a busca
+        onFiltersChange(newFilters);
+      }
+    } else {
+      // Para outros filtros, aplicar imediatamente
+      onFiltersChange(newFilters);
+    }
   };
 
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.search) count++;
     if (filters.situacao) count++;
-    if (filters.dataInicio || filters.dataFim) count++;
+    if (filters.dataInicio && filters.dataFim) count++; // Só conta quando ambas estão definidas
     if (filters.cidade) count++;
     if (filters.uf) count++;
     if (filters.valorMin || filters.valorMax) count++;
@@ -234,9 +249,9 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', undefined)} />
             </Badge>
           )}
-          {(filters.dataInicio || filters.dataFim) && (
+          {(filters.dataInicio && filters.dataFim) && (
             <Badge variant="secondary" className="gap-1">
-              Período: {filters.dataInicio ? format(filters.dataInicio, 'dd/MM', { locale: ptBR }) : '...'} até {filters.dataFim ? format(filters.dataFim, 'dd/MM', { locale: ptBR }) : '...'}
+              Período: {format(filters.dataInicio, 'dd/MM', { locale: ptBR })} até {format(filters.dataFim, 'dd/MM', { locale: ptBR })}
               <X className="h-3 w-3 cursor-pointer" onClick={() => {
                 handleFilterChange('dataInicio', undefined);
                 handleFilterChange('dataFim', undefined);
