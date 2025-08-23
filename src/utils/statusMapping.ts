@@ -84,7 +84,7 @@ export const STATUS_LABELS: Record<string, string> = {
  * Converte status/situação para formato da API
  */
 export function mapSituacaoToApiStatus(label: string): string | null {
-  if (!label) return null;
+  if (!label || typeof label !== 'string') return null;
   
   const normalized = label.toLowerCase().trim();
   return STATUS_MAPPING[normalized] || null;
@@ -94,7 +94,7 @@ export function mapSituacaoToApiStatus(label: string): string | null {
  * Converte status da API para label em português
  */
 export function mapApiStatusToLabel(apiStatus: string): string {
-  if (!apiStatus) return 'Não informado';
+  if (!apiStatus || typeof apiStatus !== 'string') return 'Não informado';
   
   const normalized = apiStatus.toLowerCase().trim();
   
@@ -131,6 +131,10 @@ export function mapApiStatusToLabel(apiStatus: string): string {
  * Normaliza status para comparação (remove acentos, espaços, etc.)
  */
 export function normalizeStatus(status: string): string {
+  if (!status || typeof status !== 'string') {
+    return '';
+  }
+  
   return status
     .toLowerCase()
     .trim()
