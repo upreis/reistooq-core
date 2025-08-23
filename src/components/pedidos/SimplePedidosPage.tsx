@@ -501,7 +501,14 @@ const loadAccounts = async () => {
           numero: computedUnified.numero || `ML-${raw.id}`,
           nome_cliente: computedUnified.nome_cliente || raw.buyer?.nickname || `Cliente ML ${raw.buyer?.id}`,
           cpf_cnpj: computedUnified.cpf_cnpj || null,
-          data_pedido: computedUnified.data_pedido || raw.date_created?.split('T')[0],
+          data_pedido: computedUnified.data_pedido || (raw.date_created ? (() => {
+            const d = new Date(raw.date_created);
+            if (isNaN(d.getTime())) return raw.date_created?.split('T')[0];
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+          })() : undefined),
           data_prevista: computedUnified.data_prevista || raw.date_closed?.split('T')[0],
           situacao: computedUnified.situacao || raw.status,
           valor_total: computedUnified.valor_total || raw.total_amount || 0,
@@ -532,8 +539,23 @@ const loadAccounts = async () => {
         return processedOrder;
       });
 
-      setOrders(processedOrders);
-      setTotal(data.paging?.total || data.count || processedOrders.length);
+      // Blindagem final no cliente: garantir que a listagem respeite o período em cima de Data Pedido
+      let finalOrders = processedOrders;
+      const fromStr = (apiParams as any).date_from as string | undefined;
+      const toStr = (apiParams as any).date_to as string | undefined;
+      if (fromStr || toStr) {
+        finalOrders = processedOrders.filter((o) => {
+          const d = o?.data_pedido as string | undefined; // formato YYYY-MM-DD
+          if (!d) return false;
+          if (fromStr && d < fromStr) return false;
+          if (toStr && d > toStr) return false;
+          return true;
+        });
+      }
+      console.info('[Pedidos] pós-processamento (guard cliente)', { fromStr, toStr, antes: processedOrders.length, depois: finalOrders.length, exemplo: finalOrders[0]?.data_pedido });
+
+      setOrders(finalOrders);
+      setTotal(data.paging?.total || data.count || finalOrders.length);
       
       // Verificar mapeamentos automaticamente
       await verificarMapeamentos(processedOrders);
