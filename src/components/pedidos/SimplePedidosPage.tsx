@@ -502,8 +502,15 @@ const loadAccounts = async () => {
           nome_cliente: computedUnified.nome_cliente || raw.buyer?.nickname || `Cliente ML ${raw.buyer?.id}`,
           cpf_cnpj: computedUnified.cpf_cnpj || null,
           data_pedido: computedUnified.data_pedido || (raw.date_created ? (() => {
-            const d = new Date(raw.date_created);
-            if (isNaN(d.getTime())) return raw.date_created?.split('T')[0];
+            // Extrair data diretamente da string ISO sem conversão de timezone
+            // Exemplo: "2025-08-21T20:04:16.000-04:00" -> "2025-08-21"
+            const isoStr = raw.date_created;
+            if (typeof isoStr === 'string' && isoStr.includes('T')) {
+              return isoStr.split('T')[0]; // Pega apenas YYYY-MM-DD
+            }
+            // Fallback para casos sem 'T'
+            const d = new Date(isoStr);
+            if (isNaN(d.getTime())) return isoStr?.split('T')[0];
             const yyyy = d.getFullYear();
             const mm = String(d.getMonth() + 1).padStart(2, '0');
             const dd = String(d.getDate()).padStart(2, '0');

@@ -164,6 +164,7 @@ serve(async (req) => {
       if (!d) return undefined;
       // Já é ISO com tempo
       if (/T/.test(d)) return d;
+      // Para YYYY-MM-DD, usar timezone UTC para evitar problemas de fuso horário
       return `${d}${endOfDay ? 'T23:59:59.999Z' : 'T00:00:00.000Z'}`;
     };
     let fromISO = toISODate(String(date_from || ''));
@@ -176,6 +177,11 @@ serve(async (req) => {
         const tmp = fromISO; fromISO = toISO; toISO = tmp;
       }
     }
+    
+    console.log(`[unified-orders:${cid}] date filters normalized:`, { 
+      date_from, date_to, fromISO, toISO,
+      example_ml_params: `order.date_created.from=${fromISO}&order.date_created.to=${toISO}`
+    });
 
     const mlUrl = new URL("https://api.mercadolibre.com/orders/search");
     mlUrl.searchParams.set("seller", effectiveSeller);
