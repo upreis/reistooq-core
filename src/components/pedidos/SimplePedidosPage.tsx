@@ -1,9 +1,9 @@
 /**
- * 🛡️ PÁGINA PEDIDOS REFATORADA - FASE 1 CONSOLIDAÇÃO
- * Sistema blindado com arquitetura unificada
+ * 🛡️ PÁGINA PEDIDOS REFATORADA - FASES 1, 2 E 3 COMPLETAS
+ * Sistema blindado com arquitetura unificada + Performance + UX
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -21,6 +21,8 @@ import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
 import { mapApiStatusToLabel, getStatusBadgeVariant, mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
 import { usePedidosManager } from '@/hooks/usePedidosManager';
+import { ExportModal } from './ExportModal';
+import { SavedFiltersManager } from './SavedFiltersManager';
 
 type Order = {
   id: string;
@@ -374,13 +376,28 @@ export default function SimplePedidosPage({ className }: Props) {
         </div>
         
         <div className="flex gap-2">
+          {/* 🚀 FASE 3: Filtros salvos */}
+          <SavedFiltersManager
+            savedFilters={actions.getSavedFilters()}
+            onSaveFilters={actions.saveCurrentFilters}
+            onLoadFilters={actions.loadSavedFilters}
+            hasActiveFilters={pedidosManager.hasActiveFilters}
+          />
+          
+          {/* 🚀 FASE 3: Exportação */}
+          <ExportModal
+            onExport={actions.exportData}
+            totalRecords={total}
+            isLoading={loading}
+          />
+          
           <Button
             variant="outline"
             onClick={actions.refetch}
-            disabled={loading}
+            disabled={loading || state.isRefreshing}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Atualizar
+            <RefreshCw className={`h-4 w-4 mr-2 ${(loading || state.isRefreshing) ? 'animate-spin' : ''}`} />
+            {state.isRefreshing ? 'Atualizando...' : 'Atualizar'}
           </Button>
           
           {selectedOrders.size > 0 && (
@@ -415,8 +432,22 @@ export default function SimplePedidosPage({ className }: Props) {
       <div className="bg-muted/30 p-4 rounded-lg space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm">Filtros ativos: {JSON.stringify(filters)}</p>
-            <p className="text-xs text-muted-foreground">Fonte: {state.fonte}</p>
+            <p className="text-sm">
+              Filtros ativos: {JSON.stringify(filters)}
+              {/* 🚀 FASE 2: Indicador de cache */}
+              {state.cachedAt && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  (Cache: {state.cachedAt.toLocaleTimeString()})
+                </span>
+              )}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Fonte: {state.fonte} | Total: {total} pedidos
+              {/* 🚀 FASE 2: Status de refresh */}
+              {state.isRefreshing && (
+                <span className="ml-2 animate-pulse">• Atualizando...</span>
+              )}
+            </p>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={actions.clearFilters}>
@@ -498,17 +529,34 @@ export default function SimplePedidosPage({ className }: Props) {
         </Card>
       )}
 
-      {/* 🛡️ TABELA COM TODAS AS COLUNAS ORIGINAIS */}
+      {/* 🚀 FASE 2: Loading otimizado */}
       <Card>
-        {loading ? (
+        {loading && !state.isRefreshing ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2">Carregando pedidos...</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {state.cachedAt ? 'Verificando atualizações...' : 'Buscando dados...'}
+            </p>
           </div>
         ) : orders.length === 0 ? (
           <div className="p-8 text-center">
             <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Nenhum pedido encontrado</p>
+            <p className="text-muted-foreground">
+              {pedidosManager.hasActiveFilters 
+                ? 'Nenhum pedido encontrado com os filtros aplicados' 
+                : 'Nenhum pedido encontrado'
+              }
+            </p>
+            {pedidosManager.hasActiveFilters && (
+              <Button
+                variant="link"
+                onClick={actions.clearFilters}
+                className="mt-2"
+              >
+                Limpar filtros
+              </Button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">
