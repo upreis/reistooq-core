@@ -287,9 +287,35 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
     // Dados Financeiros Detalhados
     const receitaPorProdutos = (order.total_amount || 0) - shippingCost;
     const tarifasVenda = orderItems.reduce((total: number, item: any) => total + (item.sale_fee || 0), 0);
-    const impostos = order.payments?.[0]?.taxes_amount || 0;
+    
+    // Extrair impostos - tentar múltiplas fontes
+    let impostos = 0;
+    if (order.payments && Array.isArray(order.payments)) {
+      // Tentar taxes_amount do primeiro payment
+      impostos = order.payments[0]?.taxes_amount || 0;
+      
+      // Se não encontrou, tentar somar taxes de todos os payments
+      if (impostos === 0) {
+        impostos = order.payments.reduce((total: number, payment: any) => {
+          return total + (payment.taxes_amount || payment.taxes || 0);
+        }, 0);
+      }
+    }
+    
     const receitaPorEnvio = shippingCost;
     const valorPagoTotal = order.paid_amount || 0;
+    
+    // Debug: Log dos dados financeiros para auditoria
+    if (order.id) {
+      console.log(`[transform] Order ${order.id} financial data:`, {
+        total_amount: order.total_amount,
+        payments_count: order.payments?.length || 0,
+        first_payment_taxes: order.payments?.[0]?.taxes_amount,
+        calculated_impostos: impostos,
+        shipping_cost: shippingCost,
+        paid_amount: order.paid_amount
+      });
+    }
     
     // Dados do Produto/Anúncio (primeiro item como representativo)
     const primeiroItem = orderItems[0]?.item || {};
