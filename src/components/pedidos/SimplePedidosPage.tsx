@@ -373,12 +373,48 @@ const loadAccounts = async () => {
     setError('');
 
     try {
-      // Converter filtros para parâmetros da API
+      // Converter filtros para parâmetros da API (compatível com filtros legados e enhanced)
       const apiParams: any = {};
-      if (filters.search) apiParams.q = filters.search;
-      if (filters.situacao) apiParams.status = filters.situacao.toLowerCase();
-      if (filters.dataInicio) apiParams.date_from = filters.dataInicio.toISOString().split('T')[0];
-      if (filters.dataFim) apiParams.date_to = filters.dataFim.toISOString().split('T')[0];
+
+      // Busca
+      if ((filters as any)?.search) apiParams.q = (filters as any).search;
+
+      // Situação/status (mapear rótulos humanos -> IDs da API quando possível)
+      const mapSituacaoToApiStatus = (label: string): string | null => {
+        const l = label.toLowerCase();
+        const map: Record<string, string> = {
+          'pago': 'paid',
+          'paid': 'paid',
+          'enviado': 'shipped',
+          'shipped': 'shipped',
+          'confirmado': 'confirmed',
+          'confirmed': 'confirmed',
+          'pendente': 'pending',
+          'pending': 'pending',
+          'aguardando': 'payment_required',
+          'cancelado': 'cancelled',
+          'cancelled': 'cancelled',
+          'devolvido': 'returned',
+          'reembolsado': 'refunded'
+        };
+        return map[l] || null;
+      };
+
+      const situacao = (filters as any)?.situacao;
+      if (Array.isArray(situacao) && situacao.length > 0) {
+        // Tentar mapear o primeiro selecionado; se não mapear, não envia para evitar filtro vazio
+        const mapped = mapSituacaoToApiStatus(situacao[0]);
+        if (mapped) apiParams.status = mapped;
+      } else if (typeof situacao === 'string' && situacao) {
+        const mapped = mapSituacaoToApiStatus(situacao);
+        if (mapped) apiParams.status = mapped;
+      }
+
+      // Datas: aceitar formatos antigo (dataInicio/dataFim) e novo (dateRange.inicio/fim)
+      const dataInicio = (filters as any)?.dataInicio || (filters as any)?.dateRange?.inicio;
+      const dataFim = (filters as any)?.dataFim || (filters as any)?.dateRange?.fim;
+      if (dataInicio) apiParams.date_from = new Date(dataInicio).toISOString().split('T')[0];
+      if (dataFim) apiParams.date_to = new Date(dataFim).toISOString().split('T')[0];
 
       const { data, error } = await supabase.functions.invoke('unified-orders', {
         body: {
