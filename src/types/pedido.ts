@@ -31,13 +31,6 @@ export interface OrderItemDetails {
   manufacturing_days?: number;
   sale_fee: number;
   listing_type_id: string;
-  base_exchange_rate?: number;
-  base_currency_id?: string;
-  element_id?: number;
-  stock?: Array<{
-    store_id: string;
-    network_node_id: string;
-  }>;
 }
 
 export interface Payment {
@@ -75,8 +68,6 @@ export interface Payment {
   transaction_order_id?: string;
   date_created: string;
   date_last_modified: string;
-  marketplace_fee?: number;
-  reference_id?: string;
 }
 
 export interface Coupon {
@@ -183,9 +174,6 @@ export interface Pedido {
   buyer?: Buyer;
   seller?: Seller;
   taxes?: Taxes;
-  buying_mode?: string;
-  shipping_cost?: number;
-  cancel_detail?: any;
 }
 
 export interface UnifiedOrdersParams {
