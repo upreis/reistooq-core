@@ -1,5 +1,5 @@
-import SimplePedidosPage from '@/components/pedidos/SimplePedidosPage';
+import PedidosPage from '@/features/pedidos/components/layout/PedidosPage';
 
 export default function Pedidos() {
-  return <SimplePedidosPage />;
+  return <PedidosPage />;
 }
