@@ -198,6 +198,28 @@ function mapMlStatus(mlStatus: string): string {
       return 'Enviado';
     case 'delivered':
       return 'Entregue';
+    case 'not_delivered':
+      return 'Não Entregue';
+    case 'payment_required':
+      return 'Aguardando Pagamento';
+    case 'payment_in_process':
+      return 'Processando Pagamento';
+    case 'partially_paid':
+      return 'Parcialmente Pago';
+    case 'invalid':
+      return 'Inválido';
+    case 'not_processed':
+      return 'Não Processado';
+    case 'pending':
+      return 'Pendente';
+    case 'active':
+      return 'Ativo';
+    case 'completed':
+      return 'Concluído';
+    case 'expired':
+      return 'Expirado';
+    case 'paused':
+      return 'Pausado';
     default:
       return mlStatus || 'Aberto';
   }

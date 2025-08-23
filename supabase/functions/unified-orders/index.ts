@@ -473,8 +473,16 @@ function mapMLStatus(status: string): string {
     delivered: "Entregue",
     cancelled: "Cancelado",
     invalid: "Inválido",
+    not_delivered: "Não Entregue",
+    partially_paid: "Parcialmente Pago",
+    not_processed: "Não Processado",
+    pending: "Pendente",
+    active: "Ativo",
+    completed: "Concluído",
+    expired: "Expirado",
+    paused: "Pausado",
   };
-  return statusMap[status] || status;
+  return statusMap[status?.toLowerCase()] || status;
 }
 
 // Função para mapear status detalhado combinando order status + shipping status
@@ -485,15 +493,51 @@ function mapDetailedStatus(orderStatus: string, shippingStatus?: string, statusD
   if (!shippingStatus) return baseStatus;
   
   const shippingMap: Record<string, string> = {
+    // Status principais
     pending: "Pendente de Envio",
-    handling: "Preparando para Envio",
+    handling: "Preparando para Envio", 
     ready_to_ship: "Pronto para Envio",
     shipped: "A Caminho",
     delivered: "Entregue",
     not_delivered: "Não Entregue",
     cancelled: "Envio Cancelado",
     returned: "Devolvido",
-    lost: "Extraviado"
+    lost: "Extraviado",
+    
+    // Sub-status detalhados em português
+    in_transit: "Em Trânsito",
+    out_for_delivery: "Saiu para Entrega",
+    returning_to_sender: "Retornando ao Remetente",
+    delivery_failed: "Falha na Entrega",
+    receiver_absent: "Destinatário Ausente",
+    damaged: "Danificado",
+    delayed: "Atrasado",
+    picked_up: "Coletado",
+    dropped_off: "Despachado",
+    at_customs: "Na Alfândega",
+    delayed_at_customs: "Retido na Alfândega",
+    left_customs: "Liberado da Alfândega",
+    refused_delivery: "Recusou a Entrega",
+    waiting_for_withdrawal: "Aguardando Retirada",
+    contact_with_carrier_required: "Contato com Transportadora Necessário",
+    not_localized: "Não Localizado",
+    forwarded_to_third: "Encaminhado para Terceiros",
+    soon_deliver: "Entrega em Breve",
+    bad_address: "Endereço Incorreto",
+    changed_address: "Endereço Alterado",
+    stale: "Parado",
+    claimed_me: "Reclamado pelo Comprador",
+    retained: "Retido",
+    stolen: "Roubado",
+    confiscated: "Confiscado",
+    destroyed: "Destruído",
+    in_storage: "Em Depósito",
+    pending_recovery: "Aguardando Recuperação",
+    agency_unavailable: "Agência Indisponível",
+    rejected_damaged: "Rejeitado por Danos",
+    refunded_by_delay: "Reembolsado por Atraso",
+    shipment_stopped: "Envio Parado",
+    awaiting_tax_documentation: "Aguardando Documentação Fiscal"
   };
   
   const mappedShipping = shippingMap[shippingStatus] || shippingStatus;

@@ -47,11 +47,11 @@ export interface MLOrder {
 }
 
 /**
- * Maps MercadoLibre order status to internal status
+ * Maps MercadoLibre order status to internal status (Portuguese)
  */
 export function mapMLStatus(mlStatus: string): string {
   const statusMap: Record<string, string> = {
-    // ML Status -> Internal Status
+    // ML Order Status -> Portuguese Status
     'confirmed': 'Confirmado',
     'payment_required': 'Aguardando Pagamento', 
     'payment_in_process': 'Processando Pagamento',
@@ -62,28 +62,71 @@ export function mapMLStatus(mlStatus: string): string {
     'cancelled': 'Cancelado',
     'invalid': 'Inválido',
     'not_processed': 'Não Processado',
+    'pending': 'Pendente',
+    'active': 'Ativo',
+    'completed': 'Concluído',
+    'expired': 'Expirado',
+    'paused': 'Pausado',
   };
   
-  return statusMap[mlStatus] || 'Pendente';
+  return statusMap[mlStatus?.toLowerCase()] || 'Pendente';
 }
 
 /**
- * Maps MercadoLibre shipping status for internal use
+ * Maps MercadoLibre shipping status for internal use (Complete Portuguese mapping)
  */
 export function mapMLShippingStatus(shippingStatus?: string): string | null {
   if (!shippingStatus) return null;
   
   const shippingMap: Record<string, string> = {
-    'pending': 'Preparando',
+    // Status principais
+    'pending': 'Pendente',
     'handling': 'Preparando',
-    'ready_to_ship': 'Pronto para Envio',
-    'shipped': 'Enviado',
+    'ready_to_ship': 'Pronto para Enviar',
+    'shipped': 'A Caminho',
     'delivered': 'Entregue',
     'not_delivered': 'Não Entregue',
     'cancelled': 'Cancelado',
+    
+    // Sub-status detalhados
+    'in_transit': 'Em Trânsito',
+    'out_for_delivery': 'Saiu para Entrega',
+    'returning_to_sender': 'Retornando ao Remetente',
+    'delivery_failed': 'Falha na Entrega',
+    'receiver_absent': 'Destinatário Ausente',
+    'damaged': 'Danificado',
+    'lost': 'Perdido',
+    'delayed': 'Atrasado',
+    'picked_up': 'Coletado',
+    'dropped_off': 'Despachado',
+    'at_customs': 'Na Alfândega',
+    'delayed_at_customs': 'Retido na Alfândega',
+    'left_customs': 'Liberado da Alfândega',
+    'refused_delivery': 'Recusou a Entrega',
+    'waiting_for_withdrawal': 'Aguardando Retirada',
+    'contact_with_carrier_required': 'Contato com Transportadora Necessário',
+    'not_localized': 'Não Localizado',
+    'forwarded_to_third': 'Encaminhado para Terceiros',
+    'soon_deliver': 'Entrega em Breve',
+    'bad_address': 'Endereço Incorreto',
+    'changed_address': 'Endereço Alterado',
+    'stale': 'Parado',
+    'claimed_me': 'Reclamado pelo Comprador',
+    'retained': 'Retido',
+    'stolen': 'Roubado',
+    'returned': 'Devolvido',
+    'confiscated': 'Confiscado',
+    'destroyed': 'Destruído',
+    'in_storage': 'Em Depósito',
+    'pending_recovery': 'Aguardando Recuperação',
+    'agency_unavailable': 'Agência Indisponível',
+    'rejected_damaged': 'Rejeitado por Danos',
+    'refunded_by_delay': 'Reembolsado por Atraso',
+    'shipment_stopped': 'Envio Parado',
+    'awaiting_tax_documentation': 'Aguardando Documentação Fiscal',
   };
   
-  return shippingMap[shippingStatus] || shippingStatus;
+  return shippingMap[shippingStatus?.toLowerCase()] || shippingStatus;
 }
 
 /**
