@@ -61,8 +61,8 @@ export default function SimplePedidosPage({ className }: Props) {
   // Configuração de colunas
   const defaultColumns = new Set([
     'id_unico', 'data_pedido', 'uf', 'status', 'skus_produtos', 
-    'num_venda', 'valor_total', 'mapeamento', 'titulo_anuncio', 'nome_destinatario',
-    'sku_estoque', 'sku_kit', 'qtd_kit', 'total_itens', 'status_baixa'
+    'num_venda', 'unidades_vendidas', 'valor_total', 'mapeamento', 'titulo_anuncio', 'nome_destinatario',
+    'sku_estoque', 'sku_kit', 'qtd_kit', 'status_baixa'
   ]);
   
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(defaultColumns);
@@ -75,7 +75,8 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'status', label: 'Status', default: true },
     { key: 'forma_entrega', label: 'Forma Entrega', default: false },
     { key: 'skus_produtos', label: 'SKUs/Produtos', default: true },
-    { key: 'num_venda', label: 'Núm. Venda', default: true },
+    { key: 'num_venda', label: 'Nº da venda', default: true },
+    { key: 'unidades_vendidas', label: 'Unidades Vendidas', default: true },
     { key: 'valor_total', label: 'Valor Total', default: true },
     { key: 'mapeamento', label: 'Mapeamento', default: true },
     { key: 'receita_produtos', label: 'Receita Produtos', default: false },
@@ -102,7 +103,7 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'sku_estoque', label: 'SKU Estoque Mapeado', default: true },
     { key: 'sku_kit', label: 'SKU KIT Mapeado', default: true },
     { key: 'qtd_kit', label: 'QTD KIT Mapeado', default: true },
-    { key: 'total_itens', label: 'Total de Itens', default: true },
+    
     { key: 'status_baixa', label: 'Status', default: true }
   ];
 
@@ -810,12 +811,20 @@ const loadAccounts = async () => {
                             ) : '—'}
                           </td>
                         );
-                      case 'num_venda':
-                        return (
-                          <td key={columnKey} className="p-2">
-                            <div className="font-medium">{order.numero_venda || '—'}</div>
-                          </td>
-                        );
+                        case 'num_venda':
+                          return (
+                            <td key={columnKey} className="p-2">
+                              <div className="font-medium">{order.numero_venda || '—'}</div>
+                            </td>
+                          );
+                        case 'unidades_vendidas':
+                          return (
+                            <td key={columnKey} className="p-2 text-center">
+                              <div className="text-xs font-semibold">
+                                {order.quantidade_itens || '—'}
+                              </div>
+                            </td>
+                          );
                       case 'valor_total':
                         return (
                           <td key={columnKey} className="p-2">
