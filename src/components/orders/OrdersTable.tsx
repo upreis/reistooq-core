@@ -8,6 +8,7 @@ import { ShoppingCart, ExternalLink, Eye } from "lucide-react";
 import { Order } from '@/services/OrderService';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { createCombinedStatus, getStatusBadgeVariant } from '@/utils/mlStatusMapping';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -242,11 +243,11 @@ export const OrdersTable = memo<OrdersTableProps>(({
                   </Badge>
                 </TableCell>
                 
-                <TableCell>
-                  <Badge variant={statusBadge.variant} className={statusBadge.className}>
-                    {order.situacao}
-                  </Badge>
-                </TableCell>
+                 <TableCell>
+                   <Badge variant={getStatusBadgeVariant(order.situacao, (order as any).substatus)}>
+                     {createCombinedStatus(order.situacao, (order as any).substatus)}
+                   </Badge>
+                 </TableCell>
                 
                 <TableCell>
                   <div className="flex items-center gap-1">

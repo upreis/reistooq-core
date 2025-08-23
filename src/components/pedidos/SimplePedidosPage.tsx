@@ -12,6 +12,7 @@ import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoS
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { mapMLShippingSubstatus, getStatusBadgeVariant } from '@/utils/mlStatusMapping';
 
 type Order = {
   id: string;
@@ -1095,14 +1096,14 @@ const loadAccounts = async () => {
                             </Badge>
                           </td>
                         );
-                      case 'substatus':
-                        return (
-                          <td key={columnKey} className="p-2">
-                            <Badge variant="outline" className="bg-amber-100 text-amber-800">
-                              {order.unified?.substatus || '—'}
-                            </Badge>
-                          </td>
-                        );
+                       case 'substatus':
+                         return (
+                           <td key={columnKey} className="p-2">
+                             <Badge variant={getStatusBadgeVariant(order.unified?.status || '', order.unified?.substatus)} className="text-xs">
+                               {mapMLShippingSubstatus(order.unified?.substatus) || '—'}
+                             </Badge>
+                           </td>
+                         );
                       case 'modo_logistico':
                         return (
                           <td key={columnKey} className="p-2">

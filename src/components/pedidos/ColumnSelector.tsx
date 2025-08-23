@@ -69,6 +69,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   // Envio (ML)
   { key: 'shipping_status', label: 'Status do Envio', visible: true, category: 'ml' },
   { key: 'shipping_mode', label: 'Modo de Envio', visible: true, category: 'ml' },
+  { key: 'shipping_substatus', label: 'Sub-status Detalhado', visible: true, category: 'ml' },
 ];
 
 interface ColumnSelectorProps {
