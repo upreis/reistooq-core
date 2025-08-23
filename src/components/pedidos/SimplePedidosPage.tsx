@@ -13,7 +13,7 @@ import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { mapMLShippingSubstatus, getStatusBadgeVariant } from '@/utils/mlStatusMapping';
-
+import { listPedidos } from '@/services/pedidos';
 type Order = {
   id: string;
   numero: string;
@@ -373,7 +373,6 @@ const loadAccounts = async () => {
     setLoading(true);
     setError('');
 
-    try {
       // Converter filtros para parâmetros da API (compatível com filtros legados e enhanced)
       const apiParams: any = {};
 
@@ -381,34 +380,34 @@ const loadAccounts = async () => {
       if ((filters as any)?.search) apiParams.q = (filters as any).search;
 
       // Situação/status (mapear rótulos humanos -> IDs da API quando possível)
-        const mapSituacaoToApiStatus = (label: string): string | null => {
-          const l = label.toLowerCase().trim();
-          const map: Record<string, string> = {
-            'pago': 'paid',
-            'paid': 'paid',
-            'enviado': 'shipped',
-            'a caminho': 'shipped',
-            'shipped': 'shipped',
-            'confirmado': 'confirmed',
-            'confirmed': 'confirmed',
-            'pendente': 'pending',
-            'pending': 'pending',
-            'aguardando': 'payment_required',
-            'aguardando pagamento': 'payment_required',
-            'cancelado': 'cancelled',
-            'cancelled': 'cancelled',
-            'devolvido': 'returned',
-            'reembolsado': 'refunded',
-            'entregue': 'delivered',
-            'não entregue': 'not_delivered',
-            'nao entregue': 'not_delivered',
-            'pronto para enviar': 'ready_to_ship',
-            'pronto para envio': 'ready_to_ship',
-            'preparando': 'handling',
-            'aberto': 'active'
-          };
-          return map[l] || null;
+      const mapSituacaoToApiStatus = (label: string): string | null => {
+        const l = label.toLowerCase().trim();
+        const map: Record<string, string> = {
+          'pago': 'paid',
+          'paid': 'paid',
+          'enviado': 'shipped',
+          'a caminho': 'shipped',
+          'shipped': 'shipped',
+          'confirmado': 'confirmed',
+          'confirmed': 'confirmed',
+          'pendente': 'pending',
+          'pending': 'pending',
+          'aguardando': 'payment_required',
+          'aguardando pagamento': 'payment_required',
+          'cancelado': 'cancelled',
+          'cancelled': 'cancelled',
+          'devolvido': 'returned',
+          'reembolsado': 'refunded',
+          'entregue': 'delivered',
+          'não entregue': 'not_delivered',
+          'nao entregue': 'not_delivered',
+          'pronto para enviar': 'ready_to_ship',
+          'pronto para envio': 'ready_to_ship',
+          'preparando': 'handling',
+          'aberto': 'active'
         };
+        return map[l] || null;
+      };
 
       const situacao = (filters as any)?.situacao;
       if (Array.isArray(situacao) && situacao.length > 0) {
@@ -426,7 +425,7 @@ const loadAccounts = async () => {
       if (dataInicio) apiParams.date_from = new Date(dataInicio).toISOString().split('T')[0];
       if (dataFim) apiParams.date_to = new Date(dataFim).toISOString().split('T')[0];
 
-      const requestBody = {
+      const requestBody: any = {
         integration_account_id: integrationAccountId,
         limit: pageSize,
         offset: (currentPage - 1) * pageSize,
@@ -434,6 +433,8 @@ const loadAccounts = async () => {
         include_shipping: true,
         ...apiParams
       };
+
+      try {
 
       console.info('[Pedidos] invoking unified-orders with:', requestBody);
 
@@ -577,6 +578,198 @@ const loadAccounts = async () => {
       // Verificar mapeamentos automaticamente
       await verificarMapeamentos(processedOrders);
     } catch (err: any) {
+      console.error('[Pedidos] unified-orders error:', err);
+
+      // Fallback 1: tentar novamente sem o parâmetro de status (algumas contas não suportam todos os status)
+      try {
+        const fallbackBody: any = { ...requestBody };
+        delete fallbackBody.status;
+        const { data: data2 } = await supabase.functions.invoke('unified-orders', { body: fallbackBody });
+        if (data2?.ok) {
+          let results: any[] = data2.results || [];
+          let unified: any[] = data2.unified || [];
+
+          // Se removemos o status na chamada, aplicamos o filtro de situação no cliente
+          const selectedSituacoes: string[] = Array.isArray((filters as any)?.situacao)
+            ? (filters as any).situacao
+            : ((typeof (filters as any)?.situacao === 'string' && (filters as any).situacao)
+                ? [(filters as any).situacao]
+                : []);
+
+          if (selectedSituacoes.length) {
+            const keep: number[] = [];
+            unified.forEach((u, i) => {
+              const sit = (u?.situacao || '').toString().toLowerCase();
+              if (selectedSituacoes.some((s) => s.toLowerCase() === sit)) keep.push(i);
+            });
+            if (keep.length) {
+              results = keep.map(i => results[i]).filter(Boolean);
+              unified = keep.map(i => unified[i]).filter(Boolean);
+            } else {
+              results = [];
+              unified = [];
+            }
+          }
+
+          // Reaproveita o mesmo mapeamento usado na chamada principal
+          const processedOrders: Order[] = results.map((raw: any, index: number) => {
+            const unifiedData = unified[index] || {};
+            const orderItems = raw.order_items || [];
+            const skus = orderItems
+              .map((item: any) => item.item?.seller_sku || item.item?.seller_custom_field || item.item?.title?.substring(0, 30))
+              .filter(Boolean);
+
+            const primeiroItem = orderItems[0]?.item || {};
+            const shippingCost = raw.payments?.[0]?.shipping_cost ?? raw.shipping?.cost ?? 0;
+            const tarifasVenda = orderItems.reduce((total: number, item: any) => total + (item.sale_fee || 0), 0);
+            const impostos = raw.payments?.[0]?.taxes_amount ?? 0;
+            const receitaEnvio = shippingCost;
+            const valorPagoTotal = raw.paid_amount ?? raw.payments?.[0]?.total_paid_amount ?? 0;
+            const receitaProdutos = (raw.total_amount ?? 0) - shippingCost;
+            const atributosVariacaoTexto = (primeiroItem.variation_attributes || [])
+              .map((attr: any) => `${attr.name}: ${attr.value_name}`)
+              .join(', ');
+            const enderecoCompleto = [
+              raw.shipping?.receiver_address?.street_name,
+              raw.shipping?.receiver_address?.street_number,
+              raw.shipping?.receiver_address?.neighborhood?.name,
+            ].filter(Boolean).join(', ');
+
+            const computedUnified = {
+              ...unifiedData,
+              receita_produtos: unifiedData.receita_produtos ?? receitaProdutos,
+              tarifas_venda: unifiedData.tarifas_venda ?? tarifasVenda,
+              impostos: unifiedData.impostos ?? impostos,
+              receita_envio: unifiedData.receita_envio ?? receitaEnvio,
+              valor_pago_total: unifiedData.valor_pago_total ?? valorPagoTotal,
+              titulo_anuncio: unifiedData.titulo_anuncio ?? (primeiroItem.title || ''),
+              categoria_ml: unifiedData.categoria_ml ?? (primeiroItem.category_id || ''),
+              condicao: unifiedData.condicao ?? (primeiroItem.condition || ''),
+              garantia: unifiedData.garantia ?? (primeiroItem.warranty || ''),
+              tipo_listagem: unifiedData.tipo_listagem ?? (orderItems[0]?.listing_type_id || ''),
+              atributos_variacao: unifiedData.atributos_variacao ?? atributosVariacaoTexto,
+              forma_entrega: unifiedData.forma_entrega ?? (raw.shipping?.shipping_method || raw.shipping?.shipping_mode || 'Não informado'),
+              preferencia_entrega: unifiedData.preferencia_entrega ?? (raw.shipping?.receiver_address?.delivery_preference || ''),
+              endereco_completo: unifiedData.endereco_completo ?? enderecoCompleto,
+              cep: unifiedData.cep ?? (raw.shipping?.receiver_address?.zip_code || ''),
+              comentario_endereco: unifiedData.comentario_endereco ?? (raw.shipping?.receiver_address?.comment || ''),
+              nome_destinatario: unifiedData.nome_destinatario ?? (raw.shipping?.receiver_address?.receiver_name || ''),
+            };
+
+            const processedOrder = {
+              id: computedUnified.id || `ml_${raw.id}`,
+              numero: computedUnified.numero || `ML-${raw.id}`,
+              nome_cliente: computedUnified.nome_cliente || raw.buyer?.nickname || `Cliente ML ${raw.buyer?.id}`,
+              cpf_cnpj: computedUnified.cpf_cnpj || null,
+              data_pedido: computedUnified.data_pedido || (raw.date_created ? raw.date_created.split('T')[0] : undefined),
+              data_prevista: computedUnified.data_prevista || raw.date_closed?.split('T')[0],
+              situacao: computedUnified.situacao || raw.status,
+              valor_total: computedUnified.valor_total || raw.total_amount || 0,
+              valor_frete: computedUnified.valor_frete || shippingCost || 0,
+              valor_desconto: computedUnified.valor_desconto || 0,
+              numero_ecommerce: computedUnified.numero_ecommerce || String(raw.id),
+              numero_venda: computedUnified.numero_venda || String(raw.id),
+              empresa: computedUnified.empresa || 'mercadolivre',
+              cidade: computedUnified.cidade || raw.shipping?.receiver_address?.city?.name || null,
+              uf: computedUnified.uf || raw.shipping?.receiver_address?.state?.name || null,
+              codigo_rastreamento: computedUnified.codigo_rastreamento || raw.shipping?.tracking_number || null,
+              url_rastreamento: computedUnified.url_rastreamento || raw.shipping?.tracking_url || null,
+              obs: computedUnified.obs || (skus.length > 0 ? `SKUs: ${skus.join(', ')}` : ''),
+              obs_interna: computedUnified.obs_interna || `ML Order ID: ${raw.id} | Buyer ID: ${raw.buyer?.id}`,
+              created_at: computedUnified.created_at || raw.date_created,
+              updated_at: computedUnified.updated_at || raw.last_updated || raw.date_created,
+              integration_account_id: integrationAccountId,
+              raw,
+              unified: computedUnified,
+              skus,
+              quantidade_itens: computedUnified.quantidade_itens || orderItems.reduce((total: number, item: any) => total + (item.quantity || 0), 0),
+              status_original: computedUnified.status_original || raw.status,
+              status_shipping: computedUnified.status_shipping || raw.shipping?.status,
+            } as Order;
+            return processedOrder;
+          });
+
+          // Aplicar guarda de período (cliente)
+          let finalOrders = processedOrders;
+          const fromStr = (apiParams as any).date_from as string | undefined;
+          const toStr = (apiParams as any).date_to as string | undefined;
+          if (fromStr || toStr) {
+            finalOrders = processedOrders.filter((o) => {
+              const d = o?.data_pedido as string | undefined;
+              if (!d) return false;
+              if (fromStr && d < fromStr) return false;
+              if (toStr && d > toStr) return false;
+              return true;
+            });
+          }
+
+          setOrders(finalOrders);
+          setTotal(data2.paging?.total || data2.count || finalOrders.length);
+          await verificarMapeamentos(processedOrders);
+          setError('');
+          return; // sucesso no fallback
+        }
+      } catch (e2) {
+        // Ignora e tenta fallback 2 (banco)
+      }
+
+      // Fallback 2: banco de dados
+      try {
+        const situacaoFiltro = Array.isArray((filters as any)?.situacao) ? (filters as any).situacao[0] : (filters as any)?.situacao;
+        const banco = await listPedidos({
+          integrationAccountId,
+          page: currentPage,
+          pageSize,
+          search: (filters as any)?.search,
+          situacao: situacaoFiltro,
+          dataInicio: (filters as any)?.dataInicio ? new Date((filters as any).dataInicio).toISOString().split('T')[0] : undefined,
+          dataFim: (filters as any)?.dataFim ? new Date((filters as any).dataFim).toISOString().split('T')[0] : undefined,
+          cidade: (filters as any)?.cidade,
+          uf: (filters as any)?.uf,
+          valorMin: (filters as any)?.valorMin,
+          valorMax: (filters as any)?.valorMax,
+        });
+
+        if (!banco.error && banco.data) {
+          const processedOrders: Order[] = (banco.data as any[]).map((p: any) => ({
+            id: p.id,
+            numero: p.numero,
+            nome_cliente: p.nome_cliente,
+            cpf_cnpj: p.cpf_cnpj,
+            data_pedido: p.data_pedido,
+            data_prevista: p.data_prevista,
+            situacao: p.situacao,
+            valor_total: p.valor_total,
+            valor_frete: p.valor_frete,
+            valor_desconto: p.valor_desconto,
+            numero_ecommerce: p.numero_ecommerce,
+            numero_venda: p.numero_venda,
+            empresa: p.empresa,
+            cidade: p.cidade,
+            uf: p.uf,
+            codigo_rastreamento: p.codigo_rastreamento,
+            url_rastreamento: p.url_rastreamento,
+            obs: p.obs,
+            obs_interna: '',
+            integration_account_id: p.integration_account_id,
+            created_at: p.created_at,
+            updated_at: p.updated_at,
+            skus: (p.itens || p.itens_pedidos || []).map((it: any) => it.sku).filter(Boolean),
+            raw: null,
+            unified: { situacao: p.situacao },
+          }));
+
+          setOrders(processedOrders);
+          setTotal(banco.count || processedOrders.length);
+          await verificarMapeamentos(processedOrders);
+          setError('');
+          return; // sucesso no fallback banco
+        }
+      } catch (e3) {
+        // segue para tratamento de erro padrão
+      }
+
+      // Tratamento de erro padrão + troca automática de conta se necessário
       const msg = err?.message || String(err);
       const isSecretsMissing = msg.includes('404') || msg.toLowerCase().includes('segredo') || (err?.status === 404);
 
@@ -592,7 +785,6 @@ const loadAccounts = async () => {
           }
         } catch {}
       }
-      console.error('[Pedidos] unified-orders error:', err);
 
       if (isSecretsMissing && accounts.length > 1) {
         for (const acc of accounts.filter(a => a.id !== integrationAccountId)) {
