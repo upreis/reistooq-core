@@ -1,0 +1,444 @@
+{
+  "migration_spec": {
+    "version": "3.0.0",
+    "target_architecture": "enhanced_modular_with_performance",
+    "performance_requirements": {
+      "first_contentful_paint": "< 1.2s",
+      "time_to_interactive": "< 2.5s", 
+      "large_list_rendering": "< 50ms",
+      "search_debounce": "300ms",
+      "cache_hit_ratio": "> 85%"
+    },
+    "components": {
+      "page_component": {
+        "name": "PedidosPage",
+        "path": "src/features/pedidos/components/layout/PedidosPage.tsx",
+        "responsibilities": ["Layout", "Error boundaries", "Analytics tracking"],
+        "dependencies": ["PedidosProvider", "useAnalytics"],
+        "performance": {
+          "code_splitting": true,
+          "lazy_loading": true,
+          "error_boundary": true,
+          "analytics_tracking": true
+        }
+      },
+      "provider_component": {
+        "name": "PedidosProvider", 
+        "path": "src/features/pedidos/components/layout/PedidosProvider.tsx",
+        "responsibilities": ["State management", "Context provision", "Real-time updates"],
+        "dependencies": ["usePedidosStore", "useFiltersStore", "useSelectionStore"]
+      },
+      "data_table": {
+        "name": "PedidosDataTable",
+        "path": "src/features/pedidos/components/table/PedidosDataTable.tsx", 
+        "features": [
+          "Virtual scrolling (react-window)",
+          "Infinite loading with intersection observer",
+          "Advanced column management",
+          "Row grouping and aggregation",
+          "Smart pagination",
+          "Keyboard navigation (arrow keys, enter, space)",
+          "Accessibility (screen reader support)",
+          "Export functionality"
+        ],
+        "dependencies": ["@tanstack/react-table", "react-window", "react-intersection-observer"]
+      },
+      "filters_advanced": {
+        "name": "PedidosFiltersAdvanced",
+        "path": "src/features/pedidos/components/filters/PedidosFiltersAdvanced.tsx",
+        "features": [
+          "Real-time search with highlighting",
+          "Date range picker with presets",
+          "Multi-select status with chips", 
+          "Saved filter presets with names",
+          "Filter history with timestamps",
+          "URL state synchronization",
+          "Smart suggestions based on data",
+          "Advanced operators (contains, starts with, etc.)"
+        ]
+      },
+      "analytics_dashboard": {
+        "name": "PedidosAnalyticsDashboard",
+        "path": "src/features/pedidos/components/analytics/PedidosAnalyticsDashboard.tsx",
+        "features": [
+          "Revenue trends with charts",
+          "Status distribution pie chart",
+          "Top selling products list",
+          "Geographic distribution map",
+          "Performance metrics cards",
+          "Real-time updates",
+          "Export to Excel/PDF"
+        ]
+      },
+      "bulk_actions": {
+        "name": "BulkActionsToolbar",
+        "path": "src/features/pedidos/components/actions/BulkActionsToolbar.tsx",
+        "features": [
+          "Multi-step stock reduction workflow",
+          "Progress tracking with estimates",
+          "Rollback capability",
+          "Batch processing with queues",
+          "Async operations with retry",
+          "Export selected orders",
+          "Bulk status updates"
+        ]
+      },
+      "export_system": {
+        "name": "PedidosExportSystem",
+        "path": "src/features/pedidos/components/export/PedidosExportSystem.tsx",
+        "features": [
+          "Multiple formats (Excel, CSV, PDF)",
+          "Custom templates",
+          "Scheduled exports",
+          "Email delivery",
+          "Progress tracking",
+          "History of exports"
+        ]
+      }
+    },
+    "hooks_architecture": {
+      "data_fetching": {
+        "usePedidosInfinite": {
+          "path": "src/features/pedidos/hooks/usePedidosInfinite.ts",
+          "purpose": "Infinite scroll with intelligent caching",
+          "caching_strategy": "stale-while-revalidate with 5min TTL",
+          "background_refetch": true,
+          "optimistic_updates": true,
+          "error_retry": "exponential_backoff",
+          "features": [
+            "Intelligent prefetching",
+            "Cache invalidation strategies", 
+            "Real-time updates via websockets",
+            "Offline support with sync"
+          ]
+        },
+        "useMapeamentosVerification": {
+          "path": "src/features/pedidos/hooks/useMapeamentosVerification.ts",
+          "purpose": "Batch SKU mapping verification with caching", 
+          "batch_size": 100,
+          "cache_duration": "10m",
+          "retry_strategy": "exponential_backoff_with_jitter"
+        },
+        "usePedidosRealtime": {
+          "path": "src/features/pedidos/hooks/usePedidosRealtime.ts",
+          "purpose": "Real-time updates and notifications",
+          "features": [
+            "WebSocket connection management",
+            "Automatic reconnection",
+            "Optimistic UI updates",
+            "Conflict resolution"
+          ]
+        }
+      },
+      "business_logic": {
+        "useBaixaEstoqueWorkflow": {
+          "path": "src/features/pedidos/hooks/useBaixaEstoqueWorkflow.ts",
+          "purpose": "Multi-step stock reduction with validation",
+          "steps": ["validate", "preview", "confirm", "execute", "complete"],
+          "rollback_support": true,
+          "audit_logging": true,
+          "progress_tracking": true
+        },
+        "usePedidosAnalytics": {
+          "path": "src/features/pedidos/hooks/usePedidosAnalytics.ts",
+          "purpose": "Business intelligence and insights",
+          "features": [
+            "Revenue calculations",
+            "Trend analysis", 
+            "Performance metrics",
+            "Predictive analytics"
+          ]
+        }
+      },
+      "state_management": {
+        "usePedidosStore": {
+          "path": "src/features/pedidos/stores/usePedidosStore.ts",
+          "state": ["items", "pagination", "loading_states", "cache"],
+          "actions": ["fetch", "filter", "sort", "select", "invalidate"],
+          "persistence": false,
+          "middleware": ["devtools", "immer", "persist"]
+        },
+        "useFiltersStore": {
+          "path": "src/features/pedidos/stores/useFiltersStore.ts",
+          "state": ["active_filters", "saved_presets", "history", "suggestions"],
+          "persistence": "url_and_local_storage",
+          "sync_strategy": "debounced_300ms"
+        },
+        "useSelectionStore": {
+          "path": "src/features/pedidos/stores/useSelectionStore.ts",
+          "state": ["selected_items", "selection_mode", "bulk_actions_queue"],
+          "actions": ["select", "select_all", "clear", "toggle", "select_range"],
+          "max_selection": 1000
+        }
+      }
+    },
+    "services_architecture": {
+      "repositories": {
+        "PedidosRepository": {
+          "path": "src/features/pedidos/services/PedidosRepository.ts",
+          "methods": [
+            "findMany",
+            "findById", 
+            "findWithFilters",
+            "countTotal",
+            "batchUpdate",
+            "findNearDuplicates",
+            "getAnalytics"
+          ],
+          "caching": "react-query with smart invalidation",
+          "error_handling": "structured_errors_with_retry"
+        },
+        "MapeamentosRepository": {
+          "path": "src/features/pedidos/services/MapeamentosRepository.ts",
+          "methods": [
+            "verifyBatch",
+            "findBySkus",
+            "getStats",
+            "createMapping",
+            "suggestMappings"
+          ]
+        },
+        "EstoqueRepository": {
+          "path": "src/features/pedidos/services/EstoqueRepository.ts",
+          "methods": [
+            "reduceStock",
+            "checkAvailability", 
+            "batchReduce",
+            "getMovements",
+            "getReservations"
+          ],
+          "transaction_support": true,
+          "rollback_capability": true
+        },
+        "PedidosAnalyticsService": {
+          "path": "src/features/pedidos/services/PedidosAnalyticsService.ts",
+          "methods": [
+            "getRevenueTrends",
+            "getStatusDistribution",
+            "getTopProducts",
+            "getGeographicData",
+            "getPerformanceMetrics"
+          ]
+        }
+      },
+      "validation": {
+        "schemas": {
+          "PedidoSchema": "Zod validation with custom rules",
+          "FiltersSchema": "Runtime validation with type safety", 
+          "BulkActionSchema": "Multi-step validation pipeline"
+        }
+      },
+      "cache": {
+        "PedidosCache": {
+          "path": "src/features/pedidos/services/PedidosCache.ts",
+          "strategy": "multi_layer",
+          "layers": [
+            "memory_cache (react-query)",
+            "browser_cache (IndexedDB)",
+            "cdn_cache (edge)"
+          ],
+          "invalidation": "smart_tags_based",
+          "ttl": {
+            "pedidos": "5m",
+            "analytics": "15m", 
+            "mapeamentos": "30m"
+          }
+        }
+      }
+    },
+    "ui_enhancements": {
+      "design_system": {
+        "theme_tokens": {
+          "status_colors": {
+            "paid": "hsl(var(--success))",
+            "shipped": "hsl(var(--info))",
+            "delivered": "hsl(var(--success-light))",
+            "cancelled": "hsl(var(--destructive))",
+            "pending": "hsl(var(--warning))"
+          },
+          "mapping_indicators": {
+            "mapped": "hsl(var(--success-bg))",
+            "unmapped": "hsl(var(--warning-bg))", 
+            "processing": "hsl(var(--info-bg))"
+          }
+        },
+        "components": [
+          "Enhanced DataTable with sorting/filtering",
+          "Smart StatusBadge with animations", 
+          "Progressive LoadingStates with skeletons",
+          "Informative EmptyStates with actions",
+          "Robust ErrorBoundaries with recovery",
+          "Real-time ProgressIndicators"
+        ]
+      },
+      "interactions": {
+        "keyboard_shortcuts": {
+          "ctrl+a": "Select all visible orders",
+          "ctrl+shift+a": "Select all pages", 
+          "escape": "Clear selection and close modals",
+          "ctrl+f": "Focus search input",
+          "ctrl+e": "Toggle export mode",
+          "ctrl+r": "Refresh data",
+          "space": "Toggle row selection"
+        },
+        "drag_and_drop": {
+          "files": "Import CSV/Excel for bulk operations",
+          "rows": "Reorder selection for processing",
+          "columns": "Customize table layout"
+        },
+        "gestures": {
+          "swipe_left": "Mark as processed (mobile)",
+          "swipe_right": "Quick export (mobile)",
+          "pinch": "Zoom table content"
+        }
+      },
+      "accessibility": {
+        "screen_reader": "Full ARIA support with live regions",
+        "keyboard_navigation": "Complete tab flow with focus trapping",
+        "color_contrast": "WCAG AAA compliant",
+        "focus_management": "Smart focus restoration",
+        "voice_commands": "Basic voice navigation support"
+      }
+    },
+    "performance_optimizations": {
+      "rendering": {
+        "virtualization": "react-window for 10k+ rows",
+        "memoization": "React.memo with custom comparators",
+        "code_splitting": "Route + component based with preloading",
+        "lazy_loading": "Images and heavy components with intersection observer"
+      },
+      "data": {
+        "infinite_scroll": "Intersection observer with prefetching",
+        "query_batching": "Combine similar requests with debouncing", 
+        "cache_strategies": "Multi-layer with intelligent invalidation",
+        "debouncing": "Search (300ms), filters (500ms)",
+        "prefetching": "Next page and related data"
+      },
+      "network": {
+        "compression": "gzip + brotli",
+        "cdn": "Static assets on edge",
+        "service_worker": "Background sync and offline support"
+      }
+    },
+    "advanced_features": {
+      "ai_insights": {
+        "duplicate_detection": "ML-based duplicate order detection",
+        "demand_forecasting": "Predict future order volume",
+        "anomaly_detection": "Identify unusual patterns",
+        "smart_categorization": "Auto-categorize orders"
+      },
+      "automation": {
+        "auto_mapping": "Intelligent SKU mapping suggestions",
+        "workflow_automation": "Rule-based order processing", 
+        "notification_system": "Smart alerts and reminders",
+        "scheduled_reports": "Automated report generation"
+      },
+      "integrations": {
+        "external_apis": "Enhanced ML API with webhooks",
+        "webhook_system": "Real-time order updates",
+        "email_notifications": "Rich HTML templates",
+        "sms_alerts": "Critical order notifications"
+      }
+    },
+    "testing_strategy": {
+      "unit_tests": {
+        "hooks": "Testing Library with MSW mocks",
+        "utilities": "Jest with 95% coverage target",
+        "repositories": "Mock Supabase with realistic data"
+      },
+      "integration_tests": {
+        "workflows": "Multi-step process validation",
+        "api_integration": "Real Supabase calls in test environment",
+        "cache_behavior": "Cache hit/miss scenarios"
+      },
+      "e2e_tests": {
+        "user_journeys": "Playwright with visual regression",
+        "performance": "Lighthouse CI with budgets",
+        "accessibility": "axe-core automated testing"
+      },
+      "load_tests": {
+        "stress_testing": "Handle 10k orders efficiently",
+        "memory_leaks": "Long-running session testing",
+        "cache_performance": "Cache effectiveness metrics"
+      }
+    }
+  },
+  "implementation_phases": {
+    "phase_1_mvp_enhanced": {
+      "duration": "3-4 weeks",
+      "priority": "critical",
+      "deliverables": [
+        "Modular component architecture with separation of concerns",
+        "Enhanced data fetching with React Query and caching",
+        "Advanced filters with URL state and saved presets",
+        "Improved table with virtual scrolling and sorting",
+        "Real-time updates and optimistic UI",
+        "Progressive loading states and error handling",
+        "Basic analytics dashboard with key metrics"
+      ],
+      "performance_targets": {
+        "first_load": "< 1.5s",
+        "filter_response": "< 200ms",
+        "table_render": "< 100ms for 1000 rows"
+      }
+    },
+    "phase_2_advanced_features": {
+      "duration": "4-5 weeks", 
+      "priority": "high",
+      "deliverables": [
+        "Infinite scroll with intelligent prefetching",
+        "Advanced bulk operations with progress tracking",
+        "Comprehensive export system with templates",
+        "Enhanced analytics with charts and insights",
+        "Smart notifications and alert system",
+        "Advanced keyboard shortcuts and accessibility",
+        "Offline support with background sync"
+      ],
+      "features": [
+        "AI-powered duplicate detection",
+        "Smart SKU mapping suggestions",
+        "Advanced filtering with natural language",
+        "Predictive analytics for inventory"
+      ]
+    },
+    "phase_3_premium_intelligence": {
+      "duration": "3-4 weeks",
+      "priority": "medium",
+      "deliverables": [
+        "Machine learning insights and predictions", 
+        "Advanced automation rules and workflows",
+        "Enterprise-grade reporting with scheduling",
+        "Mobile-first responsive experience",
+        "Advanced integrations and webhooks",
+        "Performance monitoring and optimization",
+        "Voice commands and AI assistant"
+      ],
+      "ai_features": [
+        "Demand forecasting with 85% accuracy",
+        "Automated order categorization",
+        "Intelligent inventory recommendations",
+        "Anomaly detection and alerts"
+      ]
+    }
+  },
+  "success_metrics": {
+    "performance": {
+      "page_load_time": "< 1.2s (target) vs 3.5s (current)",
+      "time_to_interactive": "< 2.5s (target) vs 5.2s (current)",
+      "search_response_time": "< 200ms (target) vs 800ms (current)",
+      "memory_usage": "< 100MB (target) vs 180MB (current)"
+    },
+    "user_experience": {
+      "task_completion_rate": "> 95% (target) vs 78% (current)",
+      "user_satisfaction_score": "> 4.5/5 (target) vs 3.2/5 (current)",
+      "error_rate": "< 0.1% (target) vs 2.3% (current)",
+      "feature_adoption": "> 80% (target) vs 45% (current)"
+    },
+    "business_impact": {
+      "order_processing_time": "< 30s (target) vs 2min (current)",
+      "staff_productivity": "+150% (target) vs baseline",
+      "data_accuracy": "> 99.5% (target) vs 94% (current)",
+      "support_tickets": "-70% (target) vs current volume"
+    }
+  }
+}
