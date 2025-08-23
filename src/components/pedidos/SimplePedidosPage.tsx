@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Filter, Settings, CheckSquare } from 'lucide-react';
+import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Clock, Filter, Settings, CheckSquare } from 'lucide-react';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { PedidosFilters, PedidosFiltersState } from './PedidosFilters';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
@@ -56,11 +56,13 @@ export default function SimplePedidosPage({ className }: Props) {
   const [total, setTotal] = useState(0);
   const [filters, setFilters] = useState<PedidosFiltersState>({});
   const [mapeamentos, setMapeamentos] = useState<Map<string, MapeamentoVerificacao>>(new Map());
+  const [mappingData, setMappingData] = useState<Map<string, any>>(new Map());
 
   // Configuração de colunas
   const defaultColumns = new Set([
     'id_unico', 'data_pedido', 'uf', 'status', 'skus_produtos', 
-    'num_venda', 'valor_total', 'mapeamento', 'titulo_anuncio', 'nome_destinatario'
+    'num_venda', 'valor_total', 'mapeamento', 'titulo_anuncio', 'nome_destinatario',
+    'sku_estoque', 'sku_kit', 'qtd_kit', 'total_itens', 'status_baixa'
   ]);
   
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(defaultColumns);
@@ -96,6 +98,12 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'cep', label: 'CEP', default: false },
     { key: 'comentario_endereco', label: 'Comentário Endereço', default: false },
     { key: 'nome_destinatario', label: 'Nome Destinatário', default: true },
+    // Colunas de mapeamento (sempre no final)
+    { key: 'sku_estoque', label: 'SKU Estoque Mapeado', default: true },
+    { key: 'sku_kit', label: 'SKU KIT Mapeado', default: true },
+    { key: 'qtd_kit', label: 'QTD KIT Mapeado', default: true },
+    { key: 'total_itens', label: 'Total de Itens', default: true },
+    { key: 'status_baixa', label: 'Status', default: true }
   ];
 
   const pageSize = 25;
@@ -113,6 +121,40 @@ export default function SimplePedidosPage({ className }: Props) {
 
   const resetToDefault = () => {
     setVisibleColumns(new Set(defaultColumns));
+  };
+
+  // Função para renderizar status da baixa
+  const renderStatusBaixa = (pedidoId: string) => {
+    const mapping = mappingData.get(pedidoId);
+    if (!mapping) return <span className="text-muted-foreground">-</span>;
+
+    const { statusBaixa } = mapping;
+    
+    switch (statusBaixa) {
+      case 'pronto_baixar':
+        return (
+          <div className="flex items-center gap-1 text-blue-600">
+            <CheckCircle className="h-4 w-4" />
+            <span className="text-xs font-medium">Pronto p/ baixar</span>
+          </div>
+        );
+      case 'sem_estoque':
+        return (
+          <div className="flex items-center gap-1 text-red-600">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-xs font-medium">Sem estoque</span>
+          </div>
+        );
+      case 'pedido_baixado':
+        return (
+          <div className="flex items-center gap-1 text-green-600">
+            <Clock className="h-4 w-4" />
+            <span className="text-xs font-medium">Já baixado</span>
+          </div>
+        );
+      default:
+        return <span className="text-muted-foreground">-</span>;
+    }
   };
 
 // Helper: testa se conta possui segredos válidos na unified-orders
@@ -139,6 +181,86 @@ export default function SimplePedidosPage({ className }: Props) {
       loadOrders();
     }
   }, [integrationAccountId, currentPage, JSON.stringify(filters)]);
+
+  // Processar mapeamentos quando pedidos carregam
+  useEffect(() => {
+    const processarMapeamentos = async () => {
+      if (orders.length === 0) return;
+      
+      const novosMapping = new Map();
+      
+      for (const pedido of orders) {
+        try {
+          // Extrair SKUs dos itens
+          const skusPedido = pedido.skus?.filter(Boolean) || [];
+          
+          if (skusPedido.length > 0) {
+            // Buscar mapeamentos
+            const { data: mapeamentos } = await supabase
+              .from('mapeamentos_depara')
+              .select('sku_pedido, sku_correspondente, sku_simples, quantidade')
+              .in('sku_pedido', skusPedido)
+              .eq('ativo', true);
+
+            // Verificar se já foi baixado no histórico
+            const { data: historicoCheck } = await supabase
+              .rpc('get_historico_vendas_safe', {
+                _search: pedido.id,
+                _limit: 1
+              });
+
+            const jaProcessado = !!historicoCheck && historicoCheck.length > 0;
+            
+            let skuEstoque = null;
+            let skuKit = null;
+            let qtdKit = 0;
+            let totalItens = pedido.quantidade_itens || 0;
+            let statusBaixa = 'sem_estoque';
+
+            if (mapeamentos && mapeamentos.length > 0) {
+              const mapeamento = mapeamentos[0];
+              skuEstoque = mapeamento.sku_correspondente || mapeamento.sku_simples;
+              skuKit = mapeamento.sku_pedido;
+              qtdKit = mapeamento.quantidade || 1;
+              
+              if (jaProcessado) {
+                statusBaixa = 'pedido_baixado';
+              } else if (skuEstoque) {
+                // Verificar estoque do produto
+                const { data: produto } = await supabase
+                  .from('produtos')
+                  .select('quantidade_atual')
+                  .eq('sku_interno', skuEstoque)
+                  .eq('ativo', true)
+                  .maybeSingle();
+                
+                if (produto && produto.quantidade_atual >= qtdKit) {
+                  statusBaixa = 'pronto_baixar';
+                } else {
+                  statusBaixa = 'sem_estoque';
+                }
+              }
+            }
+
+            novosMapping.set(pedido.id, {
+              skuEstoque,
+              skuKit,
+              qtdKit,
+              totalItens,
+              statusBaixa,
+              jaProcessado
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao processar mapeamento para pedido:', pedido.id, error);
+        }
+      }
+      
+      setMappingData(novosMapping);
+    };
+
+    processarMapeamentos();
+  }, [orders]);
 
 const loadAccounts = async () => {
     try {
@@ -870,16 +992,61 @@ const loadAccounts = async () => {
                             </div>
                           </td>
                         );
-                      case 'nome_destinatario':
-                        return (
-                          <td key={columnKey} className="p-2 max-w-32">
-                            <div className="text-xs truncate" title={order.unified?.nome_destinatario}>
-                              {order.unified?.nome_destinatario || '—'}
-                            </div>
-                          </td>
-                        );
-                      default:
-                        return null;
+                       case 'nome_destinatario':
+                         return (
+                           <td key={columnKey} className="p-2 max-w-32">
+                             <div className="text-xs truncate" title={order.unified?.nome_destinatario}>
+                               {order.unified?.nome_destinatario || '—'}
+                             </div>
+                           </td>
+                         );
+                       
+                       // Colunas de mapeamento
+                       case 'sku_estoque':
+                         return (
+                           <td key={columnKey} className="p-2">
+                             <div className="text-xs font-mono">
+                               {mappingData.get(order.id)?.skuEstoque || '—'}
+                             </div>
+                           </td>
+                         );
+                       
+                       case 'sku_kit':
+                         return (
+                           <td key={columnKey} className="p-2">
+                             <div className="text-xs font-mono">
+                               {mappingData.get(order.id)?.skuKit || '—'}
+                             </div>
+                           </td>
+                         );
+                       
+                       case 'qtd_kit':
+                         return (
+                           <td key={columnKey} className="p-2 text-center">
+                             <div className="text-xs font-semibold">
+                               {mappingData.get(order.id)?.qtdKit || '—'}
+                             </div>
+                           </td>
+                         );
+                       
+                       case 'total_itens':
+                         return (
+                           <td key={columnKey} className="p-2 text-center">
+                             <div className="text-xs font-semibold">
+                               {mappingData.get(order.id)?.totalItens || '—'}
+                             </div>
+                           </td>
+                         );
+                       
+                       case 'status_baixa':
+                         return (
+                           <td key={columnKey} className="p-2">
+                             {renderStatusBaixa(order.id)}
+                           </td>
+                         );
+                       
+                       default:
+                         return null;
                     }
                   };
 
