@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Clock, Filter, Settings, CheckSquare } from 'lucide-react';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
-import { PedidosFilters, PedidosFiltersState } from './PedidosFilters';
+import { PedidosFiltersEnhanced } from '@/features/pedidos/components/filters/PedidosFiltersEnhanced';
+import { type PedidosFiltersAdvanced } from '@/features/pedidos/hooks/usePedidosFiltersEnhanced';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -54,7 +55,7 @@ export default function SimplePedidosPage({ className }: Props) {
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [filters, setFilters] = useState<PedidosFiltersState>({});
+  const [filters, setFilters] = useState<any>({});
   const [mapeamentos, setMapeamentos] = useState<Map<string, MapeamentoVerificacao>>(new Map());
   const [mappingData, setMappingData] = useState<Map<string, any>>(new Map());
 
@@ -652,15 +653,10 @@ const loadAccounts = async () => {
       </div>
 
       {/* Filtros */}
-      <PedidosFilters
-        filters={filters}
+      <PedidosFiltersEnhanced
         onFiltersChange={(newFilters) => {
           setFilters(newFilters);
           setCurrentPage(1); // Reset para primeira página
-        }}
-        onClearFilters={() => {
-          setFilters({});
-          setCurrentPage(1);
         }}
       />
 
