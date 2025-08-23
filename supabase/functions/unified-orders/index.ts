@@ -159,16 +159,17 @@ serve(async (req) => {
       return fail("Seller ID not found (account_identifier/payload)", 400, { sellerFromAccount, sellerFromSecrets, seller_id }, cid);
     }
 
-    // Normalização de datas (aceita YYYY-MM-DD e ISO). Garante range válido
-    const toISODate = (d?: string, endOfDay = false) => {
+    // Normalização de datas (aceita YYYY-MM-DD e ISO). Garante range válido usando offset local (-03:00 por padrão)
+    const tzOffset = Deno.env.get('ML_TZ_OFFSET') || '-03:00';
+    const toOffsetDate = (d?: string, endOfDay = false) => {
       if (!d) return undefined;
       // Já é ISO com tempo
       if (/T/.test(d)) return d;
-      // Para YYYY-MM-DD, usar timezone UTC para evitar problemas de fuso horário
-      return `${d}${endOfDay ? 'T23:59:59.999Z' : 'T00:00:00.000Z'}`;
+      // Para YYYY-MM-DD, anexar offset local do negócio para evitar "véspera"
+      return `${d}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}${tzOffset}`;
     };
-    let fromISO = toISODate(String(date_from || ''));
-    let toISO = toISODate(String(date_to || ''), true);
+    let fromISO = toOffsetDate(String(date_from || ''));
+    let toISO = toOffsetDate(String(date_to || ''), true);
     if (fromISO && toISO) {
       const fromTime = Date.parse(fromISO);
       const toTime = Date.parse(toISO);
@@ -177,11 +178,8 @@ serve(async (req) => {
         const tmp = fromISO; fromISO = toISO; toISO = tmp;
       }
     }
-    
-    console.log(`[unified-orders:${cid}] date filters normalized:`, { 
-      date_from, date_to, fromISO, toISO,
-      example_ml_params: `order.date_created.from=${fromISO}&order.date_created.to=${toISO}`
-    });
+
+    console.log(`[unified-orders:${cid}] date filters normalized (offset ${tzOffset}):`, { date_from, date_to, fromISO, toISO });
 
     const mlUrl = new URL("https://api.mercadolibre.com/orders/search");
     mlUrl.searchParams.set("seller", effectiveSeller);
