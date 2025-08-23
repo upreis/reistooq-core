@@ -11,8 +11,7 @@ import { ptBR } from 'date-fns/locale';
 
 export interface PedidosFiltersState {
   search?: string;
-  situacao?: string[];
-  empresas?: string[];
+  situacao?: string;
   dataInicio?: Date;
   dataFim?: Date;
   cidade?: string;
@@ -25,34 +24,16 @@ interface PedidosFiltersProps {
   filters: PedidosFiltersState;
   onFiltersChange: (filters: PedidosFiltersState) => void;
   onClearFilters: () => void;
-  availableEmpresas?: string[];
 }
 
 const SITUACOES = [
-  'confirmed',
-  'payment_required',
-  'payment_in_process', 
-  'paid',
-  'ready_to_ship',
-  'shipped',
-  'delivered',
-  'cancelled',
-  'expired',
-  'invalid'
+  'Aberto',
+  'Pago', 
+  'Confirmado',
+  'Enviado',
+  'Entregue',
+  'Cancelado'
 ];
-
-const SITUACOES_LABELS: { [key: string]: string } = {
-  'confirmed': 'Confirmado',
-  'payment_required': 'Aguardando pagamento',
-  'payment_in_process': 'Processando pagamento',
-  'paid': 'Pago',
-  'ready_to_ship': 'Pronto para envio',
-  'shipped': 'Enviado',
-  'delivered': 'Entregue',
-  'cancelled': 'Cancelado',
-  'expired': 'Expirado',
-  'invalid': 'Inválido'
-};
 
 const UFS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 
@@ -60,7 +41,7 @@ const UFS = [
   'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
-export function PedidosFilters({ filters, onFiltersChange, onClearFilters, availableEmpresas = [] }: PedidosFiltersProps) {
+export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: PedidosFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleFilterChange = (key: keyof PedidosFiltersState, value: any) => {
@@ -70,29 +51,12 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, avail
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.search) count++;
-    if (filters.situacao && filters.situacao.length > 0) count++;
-    if (filters.empresas && filters.empresas.length > 0) count++;
+    if (filters.situacao) count++;
     if (filters.dataInicio || filters.dataFim) count++;
     if (filters.cidade) count++;
     if (filters.uf) count++;
     if (filters.valorMin || filters.valorMax) count++;
     return count;
-  };
-
-  const toggleSituacao = (situacao: string) => {
-    const current = filters.situacao || [];
-    const newSituacoes = current.includes(situacao)
-      ? current.filter(s => s !== situacao)
-      : [...current, situacao];
-    handleFilterChange('situacao', newSituacoes.length > 0 ? newSituacoes : undefined);
-  };
-
-  const toggleEmpresa = (empresa: string) => {
-    const current = filters.empresas || [];
-    const newEmpresas = current.includes(empresa)
-      ? current.filter(e => e !== empresa)
-      : [...current, empresa];
-    handleFilterChange('empresas', newEmpresas.length > 0 ? newEmpresas : undefined);
   };
 
   const activeFiltersCount = getActiveFiltersCount();
@@ -118,78 +82,19 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, avail
         {/* Situação */}
         <div className="min-w-40">
           <label className="text-sm font-medium mb-1 block">Situação</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                {filters.situacao && filters.situacao.length > 0 
-                  ? `${filters.situacao.length} selecionada(s)`
-                  : "Todas as situações"
-                }
-                <Filter className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 bg-background border border-border z-50">
-              <div className="space-y-2">
-                <div className="font-medium">Selecionar Situações:</div>
-                <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-                  {SITUACOES.map((situacao) => (
-                    <div key={situacao} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`situacao-${situacao}`}
-                        checked={filters.situacao?.includes(situacao) || false}
-                        onChange={() => toggleSituacao(situacao)}
-                        className="rounded border-gray-300"
-                      />
-                      <label htmlFor={`situacao-${situacao}`} className="text-sm cursor-pointer">
-                        {SITUACOES_LABELS[situacao] || situacao}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Select value={filters.situacao || ''} onValueChange={(value) => handleFilterChange('situacao', value || undefined)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border border-border z-50">
+              {SITUACOES.map((situacao) => (
+                <SelectItem key={situacao} value={situacao}>
+                  {situacao}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-
-        {/* Empresas */}
-        {availableEmpresas.length > 0 && (
-          <div className="min-w-40">
-            <label className="text-sm font-medium mb-1 block">Empresas</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  {filters.empresas && filters.empresas.length > 0 
-                    ? `${filters.empresas.length} empresa(s)`
-                    : "Todas as empresas"
-                  }
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 bg-background border border-border z-50">
-                <div className="space-y-2">
-                  <div className="font-medium">Selecionar Empresas:</div>
-                  <div className="grid grid-cols-1 gap-2 max-h-64 overflow-y-auto">
-                    {availableEmpresas.map((empresa) => (
-                      <div key={empresa} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`empresa-${empresa}`}
-                          checked={filters.empresas?.includes(empresa) || false}
-                          onChange={() => toggleEmpresa(empresa)}
-                          className="rounded border-gray-300"
-                        />
-                        <label htmlFor={`empresa-${empresa}`} className="text-sm cursor-pointer">
-                          {empresa}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
-        )}
 
         {/* Data Período */}
         <div className="flex gap-2">
@@ -323,16 +228,10 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, avail
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('search', undefined)} />
             </Badge>
           )}
-          {filters.situacao && filters.situacao.length > 0 && (
+          {filters.situacao && (
             <Badge variant="secondary" className="gap-1">
-              Situação: {filters.situacao.map(s => SITUACOES_LABELS[s] || s).join(', ')}
+              Situação: {filters.situacao}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', undefined)} />
-            </Badge>
-          )}
-          {filters.empresas && filters.empresas.length > 0 && (
-            <Badge variant="secondary" className="gap-1">
-              Empresas: {filters.empresas.join(', ')}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('empresas', undefined)} />
             </Badge>
           )}
           {(filters.dataInicio || filters.dataFim) && (
