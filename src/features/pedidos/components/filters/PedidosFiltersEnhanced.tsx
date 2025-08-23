@@ -52,13 +52,17 @@ const PRESET_ICONS = {
 export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFiltersEnhancedProps) {
   const {
     filters,
+    tempFilters,
     savedFilters,
     activePreset,
     filterHistory,
     analytics,
     activeFiltersCount,
     hasActiveFilters,
-    updateFilter,
+    hasPendingChanges,
+    updateTempFilter,
+    applyFilters,
+    cancelChanges,
     clearFilters,
     applyPreset,
     saveFilter,
@@ -76,63 +80,37 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
   const [activeTab, setActiveTab] = useState('basic');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // 🎯 ESTADO TEMPORÁRIO PARA DATAS (NÃO APLICA AUTOMATICAMENTE)
-  const [tempDateRange, setTempDateRange] = useState({
-    inicio: filters.dateRange.inicio,
-    fim: filters.dateRange.fim,
-    preset: filters.dateRange.preset
-  });
-
-  // Verificar se há mudanças pendentes nas datas
-  const hasPendingDateChanges = 
-    tempDateRange.inicio !== filters.dateRange.inicio ||
-    tempDateRange.fim !== filters.dateRange.fim ||
-    tempDateRange.preset !== filters.dateRange.preset;
-
-  // Aplicar filtros de data manualmente
-  const applyDateFilters = () => {
-    updateFilter('dateRange', tempDateRange);
-  };
-
-  // Resetar datas temporárias
-  const resetTempDates = () => {
-    setTempDateRange({
-      inicio: filters.dateRange.inicio,
-      fim: filters.dateRange.fim,
-      preset: filters.dateRange.preset
-    });
-  };
 
   // Notify parent component of filter changes
   React.useEffect(() => {
     onFiltersChange?.(filters);
   }, [filters, onFiltersChange]);
 
-  // Multi-select handlers
+  // Multi-select handlers (use tempFilters)
   const handleMultiSelectStatus = (status: string, checked: boolean) => {
-    const current = filters.situacao || [];
+    const current = tempFilters.situacao || [];
     if (checked) {
-      updateFilter('situacao', [...current, status]);
+      updateTempFilter('situacao', [...current, status]);
     } else {
-      updateFilter('situacao', current.filter(s => s !== status));
+      updateTempFilter('situacao', current.filter(s => s !== status));
     }
   };
 
   const handleMultiSelectUF = (uf: string, checked: boolean) => {
-    const current = filters.uf || [];
+    const current = tempFilters.uf || [];
     if (checked) {
-      updateFilter('uf', [...current, uf]);
+      updateTempFilter('uf', [...current, uf]);
     } else {
-      updateFilter('uf', current.filter(u => u !== uf));
+      updateTempFilter('uf', current.filter(u => u !== uf));
     }
   };
 
   const handleMultiSelectCidade = (cidade: string, checked: boolean) => {
-    const current = filters.cidade || [];
+    const current = tempFilters.cidade || [];
     if (checked) {
-      updateFilter('cidade', [...current, cidade]);
+      updateTempFilter('cidade', [...current, cidade]);
     } else {
-      updateFilter('cidade', current.filter(c => c !== cidade));
+      updateTempFilter('cidade', current.filter(c => c !== cidade));
     }
   };
 
@@ -216,21 +194,49 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
       {/* Main Filters Card */}
       <Card className="bg-background/50 backdrop-blur-sm border-border/50 animate-fade-in">
         <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filtros Avançados
-              {activeFiltersCount > 0 && (
-                <Badge 
-                  variant="secondary" 
-                  className="h-5 w-5 p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground animate-scale-in"
-                >
-                  {activeFiltersCount}
-                </Badge>
-              )}
-            </CardTitle>
-            
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                Filtros Avançados
+                {activeFiltersCount > 0 && (
+                  <Badge 
+                    variant="secondary" 
+                    className="h-5 w-5 p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground animate-scale-in"
+                  >
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+                {hasPendingChanges && (
+                  <Badge variant="outline" className="text-xs animate-pulse border-amber-500 text-amber-700">
+                    Pendente
+                  </Badge>
+                )}
+              </CardTitle>
+              
+              <div className="flex items-center gap-2">
+                {/* Apply/Cancel Buttons */}
+                {hasPendingChanges && (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={applyFilters}
+                      className="text-xs bg-primary hover:bg-primary/90"
+                    >
+                      <Check className="h-3 w-3 mr-1" />
+                      Aplicar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={cancelChanges}
+                      className="text-xs"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Cancelar
+                    </Button>
+                  </>
+                )}
               {/* FASE 2: Save Filter Button */}
               {hasActiveFilters && (
                 <Button
@@ -261,7 +267,7 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                           key={index}
                           variant="ghost"
                           size="sm"
-                          onClick={() => updateFilter('search', historyFilter.search || '')}
+                          onClick={() => loadSavedFilter({ ...historyFilter, id: `history_${Date.now()}`, name: 'Histórico', createdAt: '', updatedAt: '', usageCount: 0, tags: [], filters: historyFilter } as SavedFilter)}
                           className="w-full justify-start text-xs h-auto p-2"
                         >
                           <div className="text-left">
@@ -321,14 +327,14 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                   <Label className="text-xs font-medium">Buscar</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                    <Input
-                      ref={searchInputRef}
-                      placeholder="Número, cliente, CPF..."
-                      value={filters.search}
-                      onChange={(e) => updateFilter('search', e.target.value)}
-                      className="pl-8 h-8 text-sm"
-                      list="search-suggestions"
-                    />
+                     <Input
+                       ref={searchInputRef}
+                       placeholder="Número, cliente, CPF..."
+                       value={tempFilters.search}
+                       onChange={(e) => updateTempFilter('search', e.target.value)}
+                       className="pl-8 h-8 text-sm"
+                       list="search-suggestions"
+                     />
                     {/* FASE 3: Search Suggestions Datalist */}
                     <datalist id="search-suggestions">
                       {getSearchSuggestions().map(suggestion => (
@@ -346,23 +352,23 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                       <Button
                         variant="outline"
                         className="h-8 justify-start text-left text-sm font-normal"
-                      >
-                        {filters.situacao.length > 0 
-                          ? `${filters.situacao.length} selecionados`
-                          : 'Todas'
-                        }
+                       >
+                         {tempFilters.situacao.length > 0 
+                           ? `${tempFilters.situacao.length} selecionados`
+                           : 'Todas'
+                         }
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-64 p-3">
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {SITUACOES.map((situacao) => (
                           <div key={situacao} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`situacao-${situacao}`}
-                              checked={filters.situacao.includes(situacao)}
-                              onCheckedChange={(checked) => 
-                                handleMultiSelectStatus(situacao, !!checked)
-                              }
+                             <Checkbox
+                               id={`situacao-${situacao}`}
+                               checked={tempFilters.situacao.includes(situacao)}
+                               onCheckedChange={(checked) => 
+                                 handleMultiSelectStatus(situacao, !!checked)
+                               }
                             />
                             <Label 
                               htmlFor={`situacao-${situacao}`} 
@@ -378,114 +384,57 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                 </div>
 
                 {/* Enhanced Date Range with Manual Apply */}
-                <div className="space-y-1">
-                  <Label className="text-xs font-medium flex items-center gap-1">
-                    Período
-                    {hasPendingDateChanges && (
-                      <Badge variant="secondary" className="text-xs animate-pulse">
-                        Pendente
-                      </Badge>
-                    )}
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className={cn(
-                          "h-8 justify-start text-left text-sm font-normal",
-                          hasPendingDateChanges && "border-primary/50 bg-primary/5"
-                        )}
-                      >
-                        <Calendar className="mr-2 h-3 w-3" />
-                        {tempDateRange.inicio || tempDateRange.fim
-                          ? `${tempDateRange.inicio ? format(tempDateRange.inicio, 'dd/MM', { locale: ptBR }) : '...'} - ${tempDateRange.fim ? format(tempDateRange.fim, 'dd/MM', { locale: ptBR }) : '...'}`
-                          : 'Selecionar'
-                        }
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <div className="p-3 space-y-3">
-                        <div className="flex gap-2">
-                          <div className="space-y-2">
-                            <Label className="text-xs font-medium">Data Início</Label>
-                            <CalendarComponent
-                              mode="single"
-                              selected={tempDateRange.inicio || undefined}
-                              onSelect={(date) => setTempDateRange(prev => ({
-                                ...prev,
-                                inicio: date || null,
-                                preset: null
-                              }))}
-                              locale={ptBR}
-                              className="pointer-events-auto"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-xs font-medium">Data Fim</Label>
-                            <CalendarComponent
-                              mode="single"
-                              selected={tempDateRange.fim || undefined}
-                              onSelect={(date) => setTempDateRange(prev => ({
-                                ...prev,
-                                fim: date || null,
-                                preset: null
-                              }))}
-                              locale={ptBR}
-                              className="pointer-events-auto"
-                            />
-                          </div>
-                        </div>
-                        
-                        {/* Quick Date Presets */}
-                        <div className="space-y-2">
-                          <Label className="text-xs font-medium">Presets Rápidos</Label>
-                          <div className="grid grid-cols-2 gap-1">
-                            {['hoje', 'esta_semana', 'este_mes', 'ultimo_mes'].map(preset => (
-                              <Button
-                                key={preset}
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setTempDateRange({
-                                    inicio: null,
-                                    fim: null,
-                                    preset
-                                  });
-                                }}
-                                className="text-xs h-7"
-                              >
-                                {preset.replace('_', ' ')}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Apply/Cancel Buttons */}
-                        <div className="flex gap-2 pt-2 border-t">
-                          <Button
-                            size="sm"
-                            onClick={applyDateFilters}
-                            disabled={!hasPendingDateChanges}
-                            className="flex-1 h-7 text-xs"
-                          >
-                            <Check className="h-3 w-3 mr-1" />
-                            Aplicar
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={resetTempDates}
-                            disabled={!hasPendingDateChanges}
-                            className="flex-1 h-7 text-xs"
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            Cancelar
-                          </Button>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                 <div className="space-y-1">
+                   <Label className="text-xs font-medium">Período</Label>
+                   <Popover>
+                     <PopoverTrigger asChild>
+                       <Button 
+                         variant="outline" 
+                         className="h-8 justify-start text-left text-sm font-normal"
+                       >
+                         <Calendar className="mr-2 h-3 w-3" />
+                         {tempFilters.dateRange.inicio || tempFilters.dateRange.fim
+                           ? `${tempFilters.dateRange.inicio ? format(tempFilters.dateRange.inicio, 'dd/MM', { locale: ptBR }) : '...'} - ${tempFilters.dateRange.fim ? format(tempFilters.dateRange.fim, 'dd/MM', { locale: ptBR }) : '...'}`
+                           : 'Selecionar'
+                         }
+                       </Button>
+                     </PopoverTrigger>
+                     <PopoverContent className="w-auto p-0" align="start">
+                       <div className="p-3 space-y-3">
+                         <div className="flex gap-2">
+                           <div className="space-y-2">
+                             <Label className="text-xs font-medium">Data Início</Label>
+                             <CalendarComponent
+                               mode="single"
+                               selected={tempFilters.dateRange.inicio || undefined}
+                               onSelect={(date) => updateTempFilter('dateRange', {
+                                 ...tempFilters.dateRange,
+                                 inicio: date || null,
+                                 preset: null
+                               })}
+                               locale={ptBR}
+                               className="pointer-events-auto"
+                             />
+                           </div>
+                           <div className="space-y-2">
+                             <Label className="text-xs font-medium">Data Fim</Label>
+                             <CalendarComponent
+                               mode="single"
+                               selected={tempFilters.dateRange.fim || undefined}
+                               onSelect={(date) => updateTempFilter('dateRange', {
+                                 ...tempFilters.dateRange,
+                                 fim: date || null,
+                                 preset: null
+                               })}
+                               locale={ptBR}
+                               className="pointer-events-auto"
+                             />
+                           </div>
+                         </div>
+                       </div>
+                     </PopoverContent>
+                   </Popover>
+                 </div>
               </div>
             </TabsContent>
 
@@ -500,23 +449,23 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                       <Button
                         variant="outline"
                         className="h-8 justify-start text-left text-sm font-normal"
-                      >
-                        {filters.uf.length > 0 
-                          ? `${filters.uf.length} selecionados`
-                          : 'Todos'
-                        }
+                       >
+                         {tempFilters.uf.length > 0 
+                           ? `${tempFilters.uf.length} selecionados`
+                           : 'Todos'
+                         }
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-64 p-3">
                       <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
                         {UFS.map((uf) => (
                           <div key={uf} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`uf-${uf}`}
-                              checked={filters.uf.includes(uf)}
-                              onCheckedChange={(checked) => 
-                                handleMultiSelectUF(uf, !!checked)
-                              }
+                             <Checkbox
+                               id={`uf-${uf}`}
+                               checked={tempFilters.uf.includes(uf)}
+                               onCheckedChange={(checked) => 
+                                 handleMultiSelectUF(uf, !!checked)
+                               }
                             />
                             <Label 
                               htmlFor={`uf-${uf}`} 
@@ -539,23 +488,23 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                       <Button
                         variant="outline"
                         className="h-8 justify-start text-left text-sm font-normal"
-                      >
-                        {filters.cidade.length > 0 
-                          ? `${filters.cidade.length} selecionadas`
-                          : 'Todas'
-                        }
+                       >
+                         {tempFilters.cidade.length > 0 
+                           ? `${tempFilters.cidade.length} selecionadas`
+                           : 'Todas'
+                         }
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-64 p-3">
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {getCidadeSuggestions().map((cidade) => (
                           <div key={cidade} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`cidade-${cidade}`}
-                              checked={filters.cidade.includes(cidade)}
-                              onCheckedChange={(checked) => 
-                                handleMultiSelectCidade(cidade, !!checked)
-                              }
+                             <Checkbox
+                               id={`cidade-${cidade}`}
+                               checked={tempFilters.cidade.includes(cidade)}
+                               onCheckedChange={(checked) => 
+                                 handleMultiSelectCidade(cidade, !!checked)
+                               }
                             />
                             <Label 
                               htmlFor={`cidade-${cidade}`} 
@@ -573,30 +522,30 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                 {/* Enhanced Value Range */}
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Valor Mín. (R$)</Label>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={filters.valorRange.min || ''}
-                    onChange={(e) => updateFilter('valorRange', {
-                      ...filters.valorRange,
-                      min: e.target.value ? parseFloat(e.target.value) : null
-                    })}
-                    className="h-8 text-sm"
-                  />
+                   <Input
+                     type="number"
+                     placeholder="0"
+                     value={tempFilters.valorRange.min || ''}
+                     onChange={(e) => updateTempFilter('valorRange', {
+                       ...tempFilters.valorRange,
+                       min: e.target.value ? parseFloat(e.target.value) : null
+                     })}
+                     className="h-8 text-sm"
+                   />
                 </div>
 
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Valor Máx. (R$)</Label>
-                  <Input
-                    type="number"
-                    placeholder="∞"
-                    value={filters.valorRange.max || ''}
-                    onChange={(e) => updateFilter('valorRange', {
-                      ...filters.valorRange,
-                      max: e.target.value ? parseFloat(e.target.value) : null
-                    })}
-                    className="h-8 text-sm"
-                  />
+                   <Input
+                     type="number"
+                     placeholder="∞"
+                     value={tempFilters.valorRange.max || ''}
+                     onChange={(e) => updateTempFilter('valorRange', {
+                       ...tempFilters.valorRange,
+                       max: e.target.value ? parseFloat(e.target.value) : null
+                     })}
+                     className="h-8 text-sm"
+                   />
                 </div>
               </div>
             </TabsContent>
@@ -607,7 +556,7 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                 {/* Source Filter */}
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Origem</Label>
-                  <Select value={filters.source} onValueChange={(value: any) => updateFilter('source', value)}>
+                  <Select value={tempFilters.source} onValueChange={(value: any) => updateTempFilter('source', value)}>
                     <SelectTrigger className="h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
@@ -623,7 +572,7 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                 {/* Priority Filter */}
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Prioridade</Label>
-                  <Select value={filters.priority} onValueChange={(value: any) => updateFilter('priority', value)}>
+                  <Select value={tempFilters.priority} onValueChange={(value: any) => updateTempFilter('priority', value)}>
                     <SelectTrigger className="h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
@@ -641,22 +590,22 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                   <Label className="text-xs font-medium">Mapeamento</Label>
                   <div className="flex items-center space-x-4 h-8">
                     <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="has-mapping"
-                        checked={filters.hasMapping === true}
-                        onCheckedChange={(checked) => 
-                          updateFilter('hasMapping', checked ? true : null)
-                        }
+                       <Checkbox
+                         id="has-mapping"
+                         checked={tempFilters.hasMapping === true}
+                         onCheckedChange={(checked) => 
+                           updateTempFilter('hasMapping', checked ? true : null)
+                         }
                       />
                       <Label htmlFor="has-mapping" className="text-xs">Com mapeamento</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="no-mapping"
-                        checked={filters.hasMapping === false}
-                        onCheckedChange={(checked) => 
-                          updateFilter('hasMapping', checked ? false : null)
-                        }
+                       <Checkbox
+                         id="no-mapping"
+                         checked={tempFilters.hasMapping === false}
+                         onCheckedChange={(checked) => 
+                           updateTempFilter('hasMapping', checked ? false : null)
+                         }
                       />
                       <Label htmlFor="no-mapping" className="text-xs">Sem mapeamento</Label>
                     </div>
@@ -666,17 +615,17 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                 {/* Smart Time Filter */}
                 <div className="space-y-1">
                   <Label className="text-xs font-medium">Modificado há</Label>
-                  <Select 
-                    value={filters.lastModified.hours ? `${filters.lastModified.hours}h` : filters.lastModified.days ? `${filters.lastModified.days}d` : 'all'} 
-                    onValueChange={(value) => {
-                      if (value === 'all') {
-                        updateFilter('lastModified', { hours: null, days: null });
-                      } else if (value.endsWith('h')) {
-                        updateFilter('lastModified', { hours: parseInt(value), days: null });
-                      } else if (value.endsWith('d')) {
-                        updateFilter('lastModified', { hours: null, days: parseInt(value) });
-                      }
-                    }}
+                   <Select 
+                     value={tempFilters.lastModified.hours ? `${tempFilters.lastModified.hours}h` : tempFilters.lastModified.days ? `${tempFilters.lastModified.days}d` : 'all'} 
+                     onValueChange={(value) => {
+                       if (value === 'all') {
+                         updateTempFilter('lastModified', { hours: null, days: null });
+                       } else if (value.endsWith('h')) {
+                         updateTempFilter('lastModified', { hours: parseInt(value), days: null });
+                       } else if (value.endsWith('d')) {
+                         updateTempFilter('lastModified', { hours: null, days: parseInt(value) });
+                       }
+                     }}
                   >
                     <SelectTrigger className="h-8 text-sm">
                       <SelectValue />
@@ -735,73 +684,70 @@ export function PedidosFiltersEnhanced({ className, onFiltersChange }: PedidosFi
                   {filters.search && (
                     <Badge variant="secondary" className="gap-1 text-xs animate-fade-in">
                       Busca: {filters.search}
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => updateFilter('search', '')} 
-                      />
+                       <X 
+                         className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                         onClick={() => updateTempFilter('search', '')} 
+                       />
                     </Badge>
                   )}
                   
                   {filters.situacao.length > 0 && (
                     <Badge variant="secondary" className="gap-1 text-xs animate-fade-in">
                       Status: {filters.situacao.length > 1 ? `${filters.situacao.length} selecionados` : filters.situacao[0]}
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => updateFilter('situacao', [])} 
-                      />
+                       <X 
+                         className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                         onClick={() => updateTempFilter('situacao', [])} 
+                       />
                     </Badge>
                   )}
                   
                   {(filters.dateRange.inicio || filters.dateRange.fim) && (
                     <Badge variant="secondary" className="gap-1 text-xs animate-fade-in">
                       Período: {filters.dateRange.inicio ? format(filters.dateRange.inicio, 'dd/MM', { locale: ptBR }) : '...'} - {filters.dateRange.fim ? format(filters.dateRange.fim, 'dd/MM', { locale: ptBR }) : '...'}
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => {
-                          updateFilter('dateRange', { inicio: null, fim: null, preset: null });
-                          setTempDateRange({ inicio: null, fim: null, preset: null });
-                        }} 
-                      />
+                       <X 
+                         className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                         onClick={() => updateTempFilter('dateRange', { inicio: null, fim: null, preset: null })} 
+                       />
                     </Badge>
                   )}
                   
                   {filters.uf.length > 0 && (
                     <Badge variant="secondary" className="gap-1 text-xs animate-fade-in">
                       UF: {filters.uf.length > 1 ? `${filters.uf.length} selecionados` : filters.uf[0]}
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => updateFilter('uf', [])} 
-                      />
+                       <X 
+                         className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                         onClick={() => updateTempFilter('uf', [])} 
+                       />
                     </Badge>
                   )}
                   
                   {filters.cidade.length > 0 && (
                     <Badge variant="secondary" className="gap-1 text-xs animate-fade-in">
                       Cidade: {filters.cidade.length > 1 ? `${filters.cidade.length} selecionadas` : filters.cidade[0]}
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => updateFilter('cidade', [])} 
-                      />
+                       <X 
+                         className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                         onClick={() => updateTempFilter('cidade', [])} 
+                       />
                     </Badge>
                   )}
                   
                   {(filters.valorRange.min !== null || filters.valorRange.max !== null) && (
                     <Badge variant="secondary" className="gap-1 text-xs animate-fade-in">
                       Valor: R$ {filters.valorRange.min || '0'} - R$ {filters.valorRange.max || '∞'}
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => updateFilter('valorRange', { min: null, max: null })} 
-                      />
+                       <X 
+                         className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                         onClick={() => updateTempFilter('valorRange', { min: null, max: null })} 
+                       />
                     </Badge>
                   )}
                   
                   {filters.hasMapping !== null && (
                     <Badge variant="secondary" className="gap-1 text-xs animate-fade-in">
                       {filters.hasMapping ? 'Com mapeamento' : 'Sem mapeamento'}
-                      <X 
-                        className="h-3 w-3 cursor-pointer hover:text-destructive" 
-                        onClick={() => updateFilter('hasMapping', null)} 
-                      />
+                       <X 
+                         className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                         onClick={() => updateTempFilter('hasMapping', null)} 
+                       />
                     </Badge>
                   )}
                 </div>

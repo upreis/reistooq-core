@@ -190,6 +190,7 @@ const DEFAULT_FILTERS: PedidosFiltersAdvanced = {
 export function usePedidosFiltersEnhanced() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState<PedidosFiltersAdvanced>(DEFAULT_FILTERS);
+  const [tempFilters, setTempFilters] = useState<PedidosFiltersAdvanced>(DEFAULT_FILTERS);
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>([]);
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [filterHistory, setFilterHistory] = useState<PedidosFiltersAdvanced[]>([]);
@@ -201,14 +202,18 @@ export function usePedidosFiltersEnhanced() {
     dateRangeUsage: {}
   });
 
-  // Debounce search for performance
+  // Debounce search for performance (only applied filters)
   const debouncedSearch = useDebounce(filters.search, 300);
+
+  // Check for pending changes
+  const hasPendingChanges = JSON.stringify(filters) !== JSON.stringify(tempFilters);
 
   // FASE 1: URL Synchronization
   useEffect(() => {
     const urlFilters = parseFiltersFromUrl(searchParams);
     if (Object.keys(urlFilters).length > 0) {
       setFilters(prev => ({ ...prev, ...urlFilters }));
+      setTempFilters(prev => ({ ...prev, ...urlFilters }));
     }
   }, []);
 
@@ -322,26 +327,31 @@ export function usePedidosFiltersEnhanced() {
     return params;
   }, [debouncedSearch, filters]);
 
-  // Filter management functions
-  const updateFilter = useCallback(<K extends keyof PedidosFiltersAdvanced>(
+  // Filter management functions - Update temp filters only
+  const updateTempFilter = useCallback(<K extends keyof PedidosFiltersAdvanced>(
     key: K,
     value: PedidosFiltersAdvanced[K]
   ) => {
-    setFilters(prev => {
-      const newFilters = { ...prev, [key]: value };
-      
-      // Add to history
-      if (hasActiveFiltersCheck(newFilters)) {
-        addToHistory(newFilters);
-      }
-      
-      return newFilters;
-    });
+    setTempFilters(prev => ({ ...prev, [key]: value }));
     setActivePreset(null); // Clear preset when manual filter is applied
   }, []);
 
+  // Apply all filters at once
+  const applyFilters = useCallback(() => {
+    setFilters(tempFilters);
+    if (hasActiveFiltersCheck(tempFilters)) {
+      addToHistory(tempFilters);
+    }
+  }, [tempFilters]);
+
+  // Cancel changes and reset temp filters
+  const cancelChanges = useCallback(() => {
+    setTempFilters(filters);
+  }, [filters]);
+
   const clearFilters = useCallback(() => {
     setFilters(DEFAULT_FILTERS);
+    setTempFilters(DEFAULT_FILTERS);
     setActivePreset(null);
     setSearchParams({}, { replace: true });
   }, [setSearchParams]);
@@ -359,6 +369,7 @@ export function usePedidosFiltersEnhanced() {
     }
 
     setFilters(appliedFilters);
+    setTempFilters(appliedFilters);
     setActivePreset(preset.id);
     
     // Track preset usage
@@ -390,6 +401,7 @@ export function usePedidosFiltersEnhanced() {
   const loadSavedFilter = useCallback((savedFilter: SavedFilter) => {
     const appliedFilters = { ...DEFAULT_FILTERS, ...savedFilter.filters };
     setFilters(appliedFilters);
+    setTempFilters(appliedFilters);
     setActivePreset(null);
     addToHistory(appliedFilters);
 
@@ -487,6 +499,7 @@ export function usePedidosFiltersEnhanced() {
   return {
     // State
     filters,
+    tempFilters,
     savedFilters,
     activePreset,
     filterHistory,
@@ -498,9 +511,12 @@ export function usePedidosFiltersEnhanced() {
     // Stats
     activeFiltersCount,
     hasActiveFilters,
+    hasPendingChanges,
     
     // Actions
-    updateFilter,
+    updateTempFilter,
+    applyFilters,
+    cancelChanges,
     clearFilters,
     applyPreset,
     saveFilter,
