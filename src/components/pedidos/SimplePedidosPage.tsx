@@ -99,6 +99,7 @@ export default function SimplePedidosPage({ className }: Props) {
     
     // Colunas de status (baseadas no status da API)
     { key: 'situacao', label: 'Situação', default: true, category: 'status' },
+    { key: 'status_detail', label: 'Detalhes do Status', default: false, category: 'status' },
     
     // Colunas de mapeamento (processamento local)
     { key: 'mapeamento', label: 'Status Mapeamento', default: true, category: 'mapping' },
@@ -636,11 +637,16 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('nome_cliente') && (
-                        <td className="p-3">{order.nome_cliente}</td>
+                        <td className="p-3">
+                          {order.nome_cliente 
+                            || [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ')
+                            || order.buyer?.nickname 
+                            || '-'}
+                        </td>
                       )}
                       
                       {visibleColumns.has('data_pedido') && (
-                        <td className="p-3">{formatDate(order.data_pedido)}</td>
+                        <td className="p-3">{formatDate(order.data_pedido || order.date_created)}</td>
                       )}
                       
                       {/* Colunas básicas */}
@@ -802,7 +808,13 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('nome_destinatario') && (
-                        <td className="p-3">{order.shipping?.receiver_address?.receiver_name || order.nome_cliente || '-'}</td>
+                        <td className="p-3">
+                          {order.shipping?.receiver_address?.receiver_name 
+                            || order.nome_cliente 
+                            || [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ')
+                            || order.buyer?.nickname 
+                            || '-'}
+                        </td>
                       )}
                       
                       {/* Colunas de identificação */}
