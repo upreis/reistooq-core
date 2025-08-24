@@ -763,20 +763,28 @@ export default function SimplePedidosPage({ className }: Props) {
             </div>
           </div>
 
-          {/* Indicadores */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <div>
-              Fonte: {state.fonte} | Total: {total} pedidos
-              {state.isRefreshing && <span className="ml-2 animate-pulse">• Atualizando...</span>}
-            </div>
-            {(filters.situacao || filters.dataInicio || filters.dataFim) && (
-              <div className="flex items-center gap-1">
-                <Badge variant="secondary" className="text-xs">
-                  Filtros ativos
-                </Badge>
-              </div>
-            )}
+      {/* Indicadores */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center gap-4">
+          <span>Fonte: {state.fonte} | Total: {total} pedidos</span>
+          {state.isRefreshing && <span className="ml-2 animate-pulse">• Atualizando...</span>}
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={() => actions.refetch()}
+            className="text-xs h-6 px-2"
+          >
+            🔄 Forçar Atualização
+          </Button>
+        </div>
+        {(filters.situacao || filters.dataInicio || filters.dataFim) && (
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className="text-xs">
+              Filtros ativos
+            </Badge>
           </div>
+        )}
+      </div>
         </div>
       </Card>
 
@@ -1096,36 +1104,49 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{translateShippingStatus(order.shipping_status || order.shipping?.status)}</td>
                       )}
                       
-                       {visibleColumns.has('shipping_mode') && (
-                         <td className="p-3">
-                           <div className="flex items-center gap-2">
-                             {(() => {
-                               const modoEnvio = order.shipping_mode 
-                                 || order.shipping?.mode 
-                                 || order.raw?.shipping?.shipping_option?.delivery_type
-                                 || order.raw?.shipping?.logistic_type
-                                 || order.raw?.shipping?.shipping_method_id
-                                 || '-';
-                               
-                               const isFulfillment = order.is_fulfillment || 
-                                 order.logistic_type === 'fulfillment' ||
-                                 order.raw?.shipping?.logistic_type === 'fulfillment' ||
-                                 modoEnvio?.toLowerCase().includes('fulfillment');
-                               
-                               return (
-                                 <>
-                                   {isFulfillment && (
-                                     <Badge variant="secondary" className="text-xs">
-                                       MLF
-                                     </Badge>
-                                   )}
-                                   <span>{modoEnvio}</span>
-                                 </>
-                               );
-                             })()}
-                           </div>
-                         </td>
-                       )}
+                        {visibleColumns.has('shipping_mode') && (
+                          <td className="p-3">
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const modoEnvio = order.shipping_mode 
+                                  || order.shipping?.mode 
+                                  || order.raw?.shipping?.shipping_option?.delivery_type
+                                  || order.raw?.shipping?.logistic_type
+                                  || order.raw?.shipping?.shipping_method_id
+                                  || '-';
+                                
+                                const isFulfillment = order.is_fulfillment || 
+                                  order.logistic_type === 'fulfillment' ||
+                                  order.raw?.shipping?.logistic_type === 'fulfillment' ||
+                                  modoEnvio?.toLowerCase().includes('fulfillment');
+                                
+                                // Debug: Log para verificar os dados do pedido
+                                if (order.id && (order.shipping_mode || order.logistic_type || order.is_fulfillment)) {
+                                  console.log(`[DEBUG] Order ${order.id} shipping data:`, {
+                                    shipping_mode: order.shipping_mode,
+                                    logistic_type: order.logistic_type,
+                                    is_fulfillment: order.is_fulfillment,
+                                    forma_entrega: order.forma_entrega,
+                                    delivery_type: order.delivery_type,
+                                    modoEnvio: modoEnvio,
+                                    isFulfillment: isFulfillment
+                                  });
+                                }
+                                
+                                return (
+                                  <>
+                                    {isFulfillment && (
+                                      <Badge variant="secondary" className="text-xs">
+                                        MLF
+                                      </Badge>
+                                    )}
+                                    <span>{modoEnvio}</span>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </td>
+                        )}
                       
                       {visibleColumns.has('shipping_substatus') && (
                         <td className="p-3">{translateShippingSubstatus(order.shipping_substatus || order.shipping?.substatus)}</td>

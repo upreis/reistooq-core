@@ -467,7 +467,6 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       atributos_variacao: atributosTexto,
       
       // Dados de Envio Detalhados
-      forma_entrega: formaEntrega,
       preferencia_entrega: preferenciaEntrega,
       endereco_completo: enderecoCompleto,
       cep: cep,
