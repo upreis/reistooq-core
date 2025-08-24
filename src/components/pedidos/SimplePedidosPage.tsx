@@ -81,7 +81,28 @@ export default function SimplePedidosPage({ className }: Props) {
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
 
-  // Funções de tradução
+  // Funções de tradução e mapeamento de status
+  const getShippingStatusColor = (status: string): string => {
+    const statusColors: Record<string, string> = {
+      'pending': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'ready_to_ship': 'bg-blue-100 text-blue-800 border-blue-200',
+      'shipped': 'bg-purple-100 text-purple-800 border-purple-200',
+      'delivered': 'bg-green-100 text-green-800 border-green-200',
+      'not_delivered': 'bg-red-100 text-red-800 border-red-200',
+      'cancelled': 'bg-gray-100 text-gray-800 border-gray-200',
+      'to_be_agreed': 'bg-orange-100 text-orange-800 border-orange-200',
+      'handling': 'bg-cyan-100 text-cyan-800 border-cyan-200',
+      'ready_to_print': 'bg-indigo-100 text-indigo-800 border-indigo-200',
+      'printed': 'bg-slate-100 text-slate-800 border-slate-200',
+      'stale': 'bg-amber-100 text-amber-800 border-amber-200',
+      'delayed': 'bg-amber-100 text-amber-800 border-amber-200',
+      'lost': 'bg-red-100 text-red-800 border-red-200',
+      'damaged': 'bg-red-100 text-red-800 border-red-200',
+      'measures_not_correspond': 'bg-orange-100 text-orange-800 border-orange-200'
+    };
+    return statusColors[status?.toLowerCase()] || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+
   const translateShippingStatus = (status: string): string => {
     const translations: Record<string, string> = {
       'pending': 'Pendente',
@@ -732,28 +753,66 @@ export default function SimplePedidosPage({ className }: Props) {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Filtro por Situação */}
+            {/* Filtro por Status do Envio */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Situação</label>
+              <label className="text-sm font-medium">Status do Envio</label>
               <Select 
                 value={Array.isArray(filters.situacao) ? filters.situacao[0] || 'all' : filters.situacao || 'all'} 
                 onValueChange={(value) => actions.setFilters({ situacao: value === 'all' ? undefined : value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Todas as situações" />
+                  <SelectValue placeholder="Todos os status" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border shadow-lg z-50">
-                  <SelectItem value="all">Todas as situações</SelectItem>
-                  <SelectItem value="Pendente">Pendente</SelectItem>
-                  <SelectItem value="Pago">Pago</SelectItem>
-                  <SelectItem value="Confirmado">Confirmado</SelectItem>
-                  <SelectItem value="Enviado">Enviado</SelectItem>
-                  <SelectItem value="Entregue">Entregue</SelectItem>
-                  <SelectItem value="Cancelado">Cancelado</SelectItem>
-                  <SelectItem value="Devolvido">Devolvido</SelectItem>
-                  <SelectItem value="Reembolsado">Reembolsado</SelectItem>
-                  <SelectItem value="Aguardando">Aguardando</SelectItem>
-                  <SelectItem value="Processando">Processando</SelectItem>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="pending">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                      Pendente
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="ready_to_ship">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-blue-400"></div>
+                      Pronto para Envio
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="shipped">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-purple-400"></div>
+                      Enviado
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="delivered">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                      Entregue
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="not_delivered">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                      Não Entregue
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="cancelled">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                      Cancelado
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="handling">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-cyan-400"></div>
+                      Processando
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="to_be_agreed">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-orange-400"></div>
+                      A Combinar
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1260,7 +1319,19 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('shipping_status') && (
-                        <td className="p-3">{translateShippingStatus(order.shipping_status || order.shipping?.status || order.raw?.shipping?.status)}</td>
+                        <td className="p-3">
+                          {(() => {
+                            const status = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status;
+                            const translatedStatus = translateShippingStatus(status);
+                            const colorClass = getShippingStatusColor(status);
+                            
+                            return (
+                              <Badge className={`text-xs border ${colorClass}`}>
+                                {translatedStatus}
+                              </Badge>
+                            );
+                          })()}
+                        </td>
                       )}
                       
                       {visibleColumns.has('shipping_mode') && (

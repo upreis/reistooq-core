@@ -216,12 +216,21 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de status
+      // Filtro de status - MODIFICADO para usar shipping_status
       if (debouncedFilters.situacao) {
         const selectedStatuses = Array.isArray(debouncedFilters.situacao) ? debouncedFilters.situacao : [debouncedFilters.situacao];
-        const orderStatus = order.situacao || order.status_original || order.status || '';
         
-        if (!statusMatchesFilter(orderStatus, selectedStatuses)) {
+        // Usar shipping_status como referência principal
+        const orderShippingStatus = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || '';
+        
+        // Verificar se o shipping_status corresponde ao filtro selecionado
+        const statusMatches = selectedStatuses.some(selectedStatus => {
+          // Comparação direta ou normalizada
+          return orderShippingStatus.toLowerCase() === selectedStatus.toLowerCase() ||
+                 orderShippingStatus === selectedStatus;
+        });
+        
+        if (!statusMatches) {
           return false;
         }
       }
