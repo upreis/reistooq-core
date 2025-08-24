@@ -237,13 +237,19 @@ export default function SimplePedidosPage({ className }: Props) {
       'me1': 'Mercado Envios 1',
       'me2': 'Mercado Envios 2', 
       'flex': 'Mercado Envios Flex',
+      'self_service': 'Mercado Envios Flex',
       'cross_docking': 'Cross Docking',
+      'xd_drop_off': 'Cross Docking',
+      'xd_pick_up': 'Cross Docking',
       
       // Outros modos
       'standard': 'Padrão',
       'express': 'Expresso',
       'scheduled': 'Agendado',
       'pickup': 'Retirada',
+      'drop_off': 'Ponto de Despacho',
+      
+      // SLA / Service hints
       'same_day': 'Mesmo Dia',
       'next_day': 'Próximo Dia',
       'custom': 'Personalizado',
@@ -251,7 +257,6 @@ export default function SimplePedidosPage({ className }: Props) {
       'free': 'Grátis',
       'paid': 'Pago',
       'store_pickup': 'Retirada na Loja',
-      'self_service': 'Auto Atendimento',
       'fulfillment': 'Fulfillment',
       'fbm': 'Enviado pelo Vendedor'
     };
@@ -1376,18 +1381,29 @@ export default function SimplePedidosPage({ className }: Props) {
                                 order.raw?.shipping?.logistic?.type || 
                                 order.logistic_type;
                               
-                              // Verificar se tem tag self_service_in (indica Flex)
+                              // Dados adicionais para identificar Flex e Cross Docking
+                              const deliveryType = order.forma_entrega || 
+                                order.delivery_type || 
+                                order.shipping?.delivery_type || 
+                                order.raw?.shipping?.delivery_type;
+                              const shippingMethod = order.shipping_method || 
+                                order.shipping?.shipping_method || 
+                                order.raw?.shipping?.shipping_method;
+                              const methodTags = Array.isArray(shippingMethod?.tags) ? shippingMethod.tags : [];
                               const tags = order.tags || order.raw?.tags || [];
-                              const hasFlexTag = tags.includes('self_service_in');
+                              
+                              const isFulfillment = logisticType === 'fulfillment';
+                              const isCrossDocking = logisticType === 'cross_docking' || (typeof deliveryType === 'string' && deliveryType.startsWith('xd'));
+                              const isFlex = (deliveryType === 'self_service') || methodTags.includes('self_service') || logisticMode === 'flex' || tags.includes('self_service_in');
                               
                               // Determinar modo de envio correto
                               let modoEnvio = '-';
-                              if (logisticType === 'fulfillment') {
-                                if (hasFlexTag && logisticMode === 'me2') {
-                                  modoEnvio = 'Mercado Envios Flex';
-                                } else {
-                                  modoEnvio = 'Fulfillment (MLF)';
-                                }
+                              if (isFulfillment) {
+                                modoEnvio = 'Fulfillment (MLF)';
+                              } else if (isFlex) {
+                                modoEnvio = 'Mercado Envios Flex';
+                              } else if (isCrossDocking) {
+                                modoEnvio = 'Cross Docking';
                               } else if (logisticMode) {
                                 modoEnvio = translateShippingMode(logisticMode);
                               }
@@ -1428,6 +1444,8 @@ export default function SimplePedidosPage({ className }: Props) {
                           {translateShippingMode(
                             order.forma_entrega || 
                             order.delivery_type || 
+                            order.shipping?.delivery_type || 
+                            order.raw?.shipping?.delivery_type ||
                             order.shipping?.mode || 
                             order.raw?.shipping?.mode ||
                             'standard'
