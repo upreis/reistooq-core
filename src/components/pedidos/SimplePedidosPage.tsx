@@ -76,73 +76,60 @@ export default function SimplePedidosPage({ className }: Props) {
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
   
-  // Configuração limpa de colunas (auditadas - apenas campos disponíveis na API)
+  // Configuração corrigida de colunas (baseada na API unified-orders)
   const allColumns = [
-    // Colunas básicas disponíveis na API
+    // Colunas básicas disponíveis na API unified-orders
     { key: 'id', label: 'ID', default: true, category: 'basic' },
-    { key: 'numero', label: 'Número', default: true, category: 'basic' },
-    { key: 'nome_cliente', label: 'Cliente', default: true, category: 'basic' },
-    { key: 'data_pedido', label: 'Data Pedido', default: true, category: 'basic' },
-    { key: 'data_prevista', label: 'Data Prevista', default: false, category: 'basic' },
-    { key: 'empresa', label: 'Empresa', default: false, category: 'basic' },
-    { key: 'cidade', label: 'Cidade', default: false, category: 'basic' },
-    { key: 'uf', label: 'UF', default: true, category: 'basic' },
-    { key: 'cep', label: 'CEP', default: false, category: 'basic' },
-    { key: 'obs', label: 'Observações', default: false, category: 'basic' },
-    { key: 'obs_interna', label: 'Obs Interna', default: false, category: 'basic' },
+    { key: 'numero', label: 'Número do Pedido', default: true, category: 'basic' },
+    { key: 'nome_cliente', label: 'Nome do Cliente', default: true, category: 'basic' },
+    { key: 'data_pedido', label: 'Data do Pedido', default: true, category: 'basic' },
+    { key: 'date_closed', label: 'Data Fechamento', default: false, category: 'basic' },
+    { key: 'last_updated', label: 'Última Atualização', default: false, category: 'basic' },
     
-    // Colunas de produtos/SKUs disponíveis
+    // Colunas de produtos/SKUs (baseadas nos order_items da API)
     { key: 'skus_produtos', label: 'SKUs/Produtos', default: true, category: 'products' },
-    { key: 'quantidade_itens', label: 'Unidades Vendidas', default: true, category: 'products' },
-    { key: 'titulo_anuncio', label: 'Título Anúncio', default: true, category: 'products' },
-    { key: 'categoria_ml', label: 'Categoria ML', default: false, category: 'products' },
-    { key: 'condicao', label: 'Condição', default: false, category: 'products' },
-    { key: 'tipo_listagem', label: 'Tipo Listagem', default: false, category: 'products' },
-    { key: 'atributos_variacao', label: 'Atributos Variação', default: false, category: 'products' },
+    { key: 'quantidade_itens', label: 'Quantidade Total', default: true, category: 'products' },
+    { key: 'titulo_anuncio', label: 'Título do Produto', default: true, category: 'products' },
     
-    // Colunas financeiras disponíveis na API
+    // Colunas financeiras (baseadas nos dados financeiros da API)
     { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
-    { key: 'valor_frete', label: 'Valor Frete', default: false, category: 'financial' },
-    { key: 'valor_desconto', label: 'Valor Desconto', default: false, category: 'financial' },
-    { key: 'valor_pago_total', label: 'Valor Pago', default: false, category: 'financial' },
-    { key: 'receita_produtos', label: 'Receita Produtos', default: false, category: 'financial' },
-    { key: 'tarifas_venda', label: 'Tarifas Venda', default: false, category: 'financial' },
-    { key: 'impostos', label: 'Impostos', default: false, category: 'financial' },
-    { key: 'receita_envio', label: 'Receita Envio', default: false, category: 'financial' },
+    { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
+    { key: 'shipping_cost', label: 'Custo do Frete', default: false, category: 'financial' },
+    { key: 'currency_id', label: 'Moeda', default: false, category: 'financial' },
+    { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
     
-    // Colunas de status/situação disponíveis
+    // Colunas de status (baseadas no status da API)
     { key: 'situacao', label: 'Situação', default: true, category: 'status' },
-    { key: 'status_original', label: 'Status Original', default: false, category: 'status' },
-    { key: 'status_shipping', label: 'Status Shipping', default: false, category: 'status' },
+    { key: 'status_detail', label: 'Detalhes do Status', default: false, category: 'status' },
     
-    // Colunas de mapeamento (locais)
-    { key: 'mapeamento', label: 'Mapeamento', default: true, category: 'mapping' },
-    { key: 'sku_estoque', label: 'SKU Estoque Mapeado', default: true, category: 'mapping' },
-    { key: 'sku_kit', label: 'SKU KIT Mapeado', default: true, category: 'mapping' },
-    { key: 'qtd_kit', label: 'QTD KIT Mapeado', default: true, category: 'mapping' },
-    { key: 'total_itens', label: 'Total Itens', default: false, category: 'mapping' },
-    { key: 'status_baixa', label: 'Status Baixa', default: true, category: 'mapping' },
+    // Colunas de mapeamento (processamento local)
+    { key: 'mapeamento', label: 'Status Mapeamento', default: true, category: 'mapping' },
+    { key: 'sku_estoque', label: 'SKU Estoque', default: true, category: 'mapping' },
+    { key: 'sku_kit', label: 'SKU KIT', default: true, category: 'mapping' },
+    { key: 'qtd_kit', label: 'Quantidade KIT', default: true, category: 'mapping' },
+    { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
     
-    // Colunas específicas do Mercado Livre disponíveis
-    { key: 'created_at', label: 'Data Criação ML', default: false, category: 'ml' },
-    { key: 'updated_at', label: 'Última Atualização ML', default: false, category: 'ml' },
+    // Colunas do Mercado Livre (baseadas na API)
+    { key: 'date_created', label: 'Data Criação ML', default: false, category: 'ml' },
+    { key: 'pack_id', label: 'Pack ID', default: false, category: 'ml' },
+    { key: 'pickup_id', label: 'Pickup ID', default: false, category: 'ml' },
+    { key: 'manufacturing_ending_date', label: 'Data Fim Fabricação', default: false, category: 'ml' },
+    { key: 'comment', label: 'Comentário ML', default: false, category: 'ml' },
+    { key: 'tags', label: 'Tags', default: false, category: 'ml' },
     
-    // Colunas de envio disponíveis na API
-    { key: 'status_shipping', label: 'Status do Envio', default: false, category: 'shipping' },
-    { key: 'substatus', label: 'Sub-status Detalhado', default: false, category: 'shipping' },
-    { key: 'forma_entrega', label: 'Forma Entrega', default: false, category: 'shipping' },
-    { key: 'logistic_mode', label: 'Modo Logístico', default: false, category: 'shipping' },
-    { key: 'tracking_method', label: 'Método Rastreamento', default: false, category: 'shipping' },
+    // Colunas de envio (baseadas no shipping da API)
+    { key: 'shipping_id', label: 'ID do Envio', default: false, category: 'shipping' },
+    { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
+    { key: 'shipping_mode', label: 'Modo de Envio', default: false, category: 'shipping' },
+    { key: 'shipping_substatus', label: 'Sub-status Envio', default: false, category: 'shipping' },
+    { key: 'forma_entrega', label: 'Forma de Entrega', default: false, category: 'shipping' },
     { key: 'codigo_rastreamento', label: 'Código Rastreamento', default: false, category: 'shipping' },
     { key: 'url_rastreamento', label: 'URL Rastreamento', default: false, category: 'shipping' },
     { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
-    { key: 'endereco_completo', label: 'Endereço Completo', default: false, category: 'shipping' },
-    { key: 'preferencia_entrega', label: 'Preferência Entrega', default: false, category: 'shipping' },
-    { key: 'comentario_endereco', label: 'Comentário Endereço', default: false, category: 'shipping' },
     
-    // Colunas de identificação disponíveis
-    { key: 'numero_ecommerce', label: 'Nº eCommerce', default: false, category: 'ids' },
-    { key: 'numero_venda', label: 'Nº da venda', default: true, category: 'ids' },
+    // Colunas de identificação/participantes
+    { key: 'buyer_id', label: 'ID Comprador', default: false, category: 'ids' },
+    { key: 'seller_id', label: 'ID Vendedor', default: false, category: 'ids' },
     { key: 'integration_account_id', label: 'ID Conta Integração', default: false, category: 'ids' }
   ];
 
@@ -572,55 +559,58 @@ export default function SimplePedidosPage({ className }: Props) {
                       }}
                     />
                   </th>
+                  {/* Colunas básicas */}
                   {visibleColumns.has('id') && <th className="text-left p-3">ID</th>}
-                  {visibleColumns.has('numero') && <th className="text-left p-3">Número</th>}
-                  {visibleColumns.has('nome_cliente') && <th className="text-left p-3">Cliente</th>}
-                  {visibleColumns.has('data_pedido') && <th className="text-left p-3">Data Pedido</th>}
-                  {visibleColumns.has('data_prevista') && <th className="text-left p-3">Data Prevista</th>}
-                  {visibleColumns.has('empresa') && <th className="text-left p-3">Empresa</th>}
-                  {visibleColumns.has('cidade') && <th className="text-left p-3">Cidade</th>}
-                  {visibleColumns.has('uf') && <th className="text-left p-3">UF</th>}
-                  {visibleColumns.has('cep') && <th className="text-left p-3">CEP</th>}
-                  {visibleColumns.has('obs') && <th className="text-left p-3">Observações</th>}
-                  {visibleColumns.has('obs_interna') && <th className="text-left p-3">Obs Interna</th>}
+                  {visibleColumns.has('numero') && <th className="text-left p-3">Número do Pedido</th>}
+                  {visibleColumns.has('nome_cliente') && <th className="text-left p-3">Nome do Cliente</th>}
+                  {visibleColumns.has('data_pedido') && <th className="text-left p-3">Data do Pedido</th>}
+                  {visibleColumns.has('date_closed') && <th className="text-left p-3">Data Fechamento</th>}
+                  {visibleColumns.has('last_updated') && <th className="text-left p-3">Última Atualização</th>}
+                  
+                  {/* Colunas de produtos */}
                   {visibleColumns.has('skus_produtos') && <th className="text-left p-3">SKUs/Produtos</th>}
-                  {visibleColumns.has('quantidade_itens') && <th className="text-left p-3">Unidades Vendidas</th>}
-                  {visibleColumns.has('titulo_anuncio') && <th className="text-left p-3">Título Anúncio</th>}
-                  {visibleColumns.has('categoria_ml') && <th className="text-left p-3">Categoria ML</th>}
-                  {visibleColumns.has('condicao') && <th className="text-left p-3">Condição</th>}
-                  {visibleColumns.has('tipo_listagem') && <th className="text-left p-3">Tipo Listagem</th>}
-                  {visibleColumns.has('atributos_variacao') && <th className="text-left p-3">Atributos Variação</th>}
+                  {visibleColumns.has('quantidade_itens') && <th className="text-left p-3">Quantidade Total</th>}
+                  {visibleColumns.has('titulo_anuncio') && <th className="text-left p-3">Título do Produto</th>}
+                  
+                  {/* Colunas financeiras */}
                   {visibleColumns.has('valor_total') && <th className="text-left p-3">Valor Total</th>}
-                  {visibleColumns.has('valor_frete') && <th className="text-left p-3">Valor Frete</th>}
-                  {visibleColumns.has('valor_desconto') && <th className="text-left p-3">Valor Desconto</th>}
-                  {visibleColumns.has('valor_pago_total') && <th className="text-left p-3">Valor Pago</th>}
-                  {visibleColumns.has('receita_produtos') && <th className="text-left p-3">Receita Produtos</th>}
-                  {visibleColumns.has('tarifas_venda') && <th className="text-left p-3">Tarifas Venda</th>}
-                  {visibleColumns.has('impostos') && <th className="text-left p-3">Impostos</th>}
-                  {visibleColumns.has('receita_envio') && <th className="text-left p-3">Receita Envio</th>}
+                  {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
+                  {visibleColumns.has('shipping_cost') && <th className="text-left p-3">Custo do Frete</th>}
+                  {visibleColumns.has('currency_id') && <th className="text-left p-3">Moeda</th>}
+                  {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
+                  
+                  {/* Colunas de status */}
                   {visibleColumns.has('situacao') && <th className="text-left p-3">Situação</th>}
-                  {visibleColumns.has('status_original') && <th className="text-left p-3">Status Original</th>}
-                  {visibleColumns.has('status_shipping') && <th className="text-left p-3">Status Shipping</th>}
-                  {visibleColumns.has('mapeamento') && <th className="text-left p-3">Mapeamento</th>}
-                  {visibleColumns.has('sku_estoque') && <th className="text-left p-3">SKU Estoque Mapeado</th>}
-                  {visibleColumns.has('sku_kit') && <th className="text-left p-3">SKU KIT Mapeado</th>}
-                  {visibleColumns.has('qtd_kit') && <th className="text-left p-3">QTD KIT Mapeado</th>}
-                  {visibleColumns.has('total_itens') && <th className="text-left p-3">Total Itens</th>}
-                  {visibleColumns.has('status_baixa') && <th className="text-left p-3">Status Baixa</th>}
-                  {visibleColumns.has('created_at') && <th className="text-left p-3">Data Criação ML</th>}
-                  {visibleColumns.has('updated_at') && <th className="text-left p-3">Última Atualização ML</th>}
-                  {visibleColumns.has('substatus') && <th className="text-left p-3">Sub-status Detalhado</th>}
-                  {visibleColumns.has('forma_entrega') && <th className="text-left p-3">Forma Entrega</th>}
-                  {visibleColumns.has('logistic_mode') && <th className="text-left p-3">Modo Logístico</th>}
-                  {visibleColumns.has('tracking_method') && <th className="text-left p-3">Método Rastreamento</th>}
+                  {visibleColumns.has('status_detail') && <th className="text-left p-3">Detalhes do Status</th>}
+                  
+                  {/* Colunas de mapeamento */}
+                  {visibleColumns.has('mapeamento') && <th className="text-left p-3">Status Mapeamento</th>}
+                  {visibleColumns.has('sku_estoque') && <th className="text-left p-3">SKU Estoque</th>}
+                  {visibleColumns.has('sku_kit') && <th className="text-left p-3">SKU KIT</th>}
+                  {visibleColumns.has('qtd_kit') && <th className="text-left p-3">Quantidade KIT</th>}
+                  {visibleColumns.has('status_baixa') && <th className="text-left p-3">Status da Baixa</th>}
+                  
+                  {/* Colunas do Mercado Livre */}
+                  {visibleColumns.has('date_created') && <th className="text-left p-3">Data Criação ML</th>}
+                  {visibleColumns.has('pack_id') && <th className="text-left p-3">Pack ID</th>}
+                  {visibleColumns.has('pickup_id') && <th className="text-left p-3">Pickup ID</th>}
+                  {visibleColumns.has('manufacturing_ending_date') && <th className="text-left p-3">Data Fim Fabricação</th>}
+                  {visibleColumns.has('comment') && <th className="text-left p-3">Comentário ML</th>}
+                  {visibleColumns.has('tags') && <th className="text-left p-3">Tags</th>}
+                  
+                  {/* Colunas de envio */}
+                  {visibleColumns.has('shipping_id') && <th className="text-left p-3">ID do Envio</th>}
+                  {visibleColumns.has('shipping_status') && <th className="text-left p-3">Status do Envio</th>}
+                  {visibleColumns.has('shipping_mode') && <th className="text-left p-3">Modo de Envio</th>}
+                  {visibleColumns.has('shipping_substatus') && <th className="text-left p-3">Sub-status Envio</th>}
+                  {visibleColumns.has('forma_entrega') && <th className="text-left p-3">Forma de Entrega</th>}
                   {visibleColumns.has('codigo_rastreamento') && <th className="text-left p-3">Código Rastreamento</th>}
                   {visibleColumns.has('url_rastreamento') && <th className="text-left p-3">URL Rastreamento</th>}
                   {visibleColumns.has('nome_destinatario') && <th className="text-left p-3">Nome Destinatário</th>}
-                  {visibleColumns.has('endereco_completo') && <th className="text-left p-3">Endereço Completo</th>}
-                  {visibleColumns.has('preferencia_entrega') && <th className="text-left p-3">Preferência Entrega</th>}
-                  {visibleColumns.has('comentario_endereco') && <th className="text-left p-3">Comentário Endereço</th>}
-                  {visibleColumns.has('numero_ecommerce') && <th className="text-left p-3">Nº eCommerce</th>}
-                  {visibleColumns.has('numero_venda') && <th className="text-left p-3">Nº da venda</th>}
+                  
+                  {/* Colunas de identificação */}
+                  {visibleColumns.has('buyer_id') && <th className="text-left p-3">ID Comprador</th>}
+                  {visibleColumns.has('seller_id') && <th className="text-left p-3">ID Vendedor</th>}
                   {visibleColumns.has('integration_account_id') && <th className="text-left p-3">ID Conta Integração</th>}
                 </tr>
               </thead>
@@ -663,84 +653,47 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{formatDate(order.data_pedido)}</td>
                       )}
                       
-                      {visibleColumns.has('data_prevista') && (
-                        <td className="p-3">{order.data_prevista ? formatDate(order.data_prevista) : '-'}</td>
+                      {/* Colunas básicas */}
+                      {visibleColumns.has('date_closed') && (
+                        <td className="p-3">{order.date_closed ? formatDate(order.date_closed) : '-'}</td>
                       )}
                       
-                      {visibleColumns.has('empresa') && (
-                        <td className="p-3">{order.empresa || '-'}</td>
+                      {visibleColumns.has('last_updated') && (
+                        <td className="p-3">{order.last_updated ? formatDate(order.last_updated) : '-'}</td>
                       )}
                       
-                       {visibleColumns.has('cidade') && (
-                         <td className="p-3">{order.cidade || '-'}</td>
-                       )}
-
-                       {visibleColumns.has('uf') && (
-                         <td className="p-3">{order.uf || '-'}</td>
-                       )}
-                       
-                       {visibleColumns.has('cep') && (
-                         <td className="p-3">{order.cep || '-'}</td>
-                       )}
-                      
-                      {visibleColumns.has('obs') && (
-                        <td className="p-3">{order.obs || '-'}</td>
+                      {/* Colunas de produtos */}
+                      {visibleColumns.has('skus_produtos') && (
+                        <td className="p-3">
+                          <div className="max-w-xs truncate" title={skus.join(', ')}>
+                            {skus.length > 0 ? skus.join(', ') : '-'}
+                          </div>
+                        </td>
                       )}
                       
-                      {visibleColumns.has('obs_interna') && (
-                        <td className="p-3">{order.obs_interna || '-'}</td>
+                      {visibleColumns.has('quantidade_itens') && (
+                        <td className="p-3">{quantidadeItens}</td>
                       )}
                       
-                       {visibleColumns.has('skus_produtos') && (
-                         <td className="p-3">
-                           <div className="max-w-xs truncate" title={skus.join(', ')}>
-                             {skus.length > 0 ? skus.join(', ') : '-'}
-                           </div>
-                         </td>
-                       )}
-                       
-                       {visibleColumns.has('quantidade_itens') && (
-                         <td className="p-3">{quantidadeItens}</td>
-                       )}
-                       
-                       {visibleColumns.has('titulo_anuncio') && (
-                         <td className="p-3">
-                           <div className="max-w-xs truncate" title={order.titulo_anuncio}>
-                             {order.titulo_anuncio || '-'}
-                           </div>
-                         </td>
-                       )}
-                       
-                       {visibleColumns.has('categoria_ml') && (
-                         <td className="p-3">{order.categoria_ml || '-'}</td>
-                       )}
-                       
-                       {visibleColumns.has('condicao') && (
-                         <td className="p-3">{order.condicao || '-'}</td>
-                       )}
-                       
-                       {visibleColumns.has('tipo_listagem') && (
-                         <td className="p-3">{order.tipo_listagem || '-'}</td>
-                       )}
-                       
-                       {visibleColumns.has('atributos_variacao') && (
-                         <td className="p-3">{order.atributos_variacao || '-'}</td>
-                       )}
+                      {visibleColumns.has('titulo_anuncio') && (
+                        <td className="p-3">
+                          <div className="max-w-xs truncate" title={order.order_items?.[0]?.item?.title || order.titulo_anuncio}>
+                            {order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-'}
+                          </div>
+                        </td>
+                      )}
                       
+                      {/* Colunas financeiras */}
                       {visibleColumns.has('valor_total') && (
                         <td className="p-3">{formatMoney(order.valor_total || order.total_amount || 0)}</td>
                       )}
                       
-                      {visibleColumns.has('valor_frete') && (
-                        <td className="p-3">{formatMoney(order.valor_frete || order.shipping?.cost || 0)}</td>
-                      )}
-                      
-                      {visibleColumns.has('valor_desconto') && (
-                        <td className="p-3">{formatMoney(order.valor_desconto || order.coupon?.amount || 0)}</td>
-                      )}
-                      
                       {visibleColumns.has('paid_amount') && (
                         <td className="p-3">{formatMoney(order.paid_amount || 0)}</td>
+                      )}
+                      
+                      {visibleColumns.has('shipping_cost') && (
+                        <td className="p-3">{formatMoney(order.shipping_cost || order.shipping?.cost || 0)}</td>
                       )}
                       
                       {visibleColumns.has('currency_id') && (
@@ -751,11 +704,8 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
                       )}
                       
+                      {/* Colunas de status */}
                       {visibleColumns.has('situacao') && (
-                        <td className="p-3">{order.situacao || '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('status') && (
                         <td className="p-3">
                           <Badge variant={getStatusBadgeVariant(order.situacao || order.status)}>
                             {simplificarStatus(order.situacao || order.status)}
@@ -767,6 +717,7 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{order.status_detail || '-'}</td>
                       )}
                       
+                      {/* Colunas de mapeamento */}
                       {visibleColumns.has('mapeamento') && (
                         <td className="p-3">
                           {mapping ? (
@@ -791,24 +742,13 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{mapping?.qtdKit || '-'}</td>
                       )}
                       
-                      {visibleColumns.has('total_itens') && (
-                        <td className="p-3">{mapping?.totalItens || quantidadeItens}</td>
-                      )}
-                      
                       {visibleColumns.has('status_baixa') && (
                         <td className="p-3">{renderStatusBaixa(order.id)}</td>
                       )}
                       
+                      {/* Colunas do Mercado Livre */}
                       {visibleColumns.has('date_created') && (
                         <td className="p-3">{order.date_created ? formatDate(order.date_created) : '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('date_closed') && (
-                        <td className="p-3">{order.date_closed ? formatDate(order.date_closed) : '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('last_updated') && (
-                        <td className="p-3">{order.last_updated ? formatDate(order.last_updated) : '-'}</td>
                       )}
                       
                       {visibleColumns.has('pack_id') && (
@@ -831,14 +771,7 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{order.tags?.join(', ') || '-'}</td>
                       )}
                       
-                      {visibleColumns.has('buyer_id') && (
-                        <td className="p-3">{order.buyer_id || order.buyer?.id || '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('seller_id') && (
-                        <td className="p-3">{order.seller_id || order.seller?.id || '-'}</td>
-                      )}
-                      
+                      {/* Colunas de envio */}
                       {visibleColumns.has('shipping_id') && (
                         <td className="p-3">{order.shipping_id || order.shipping?.id || '-'}</td>
                       )}
@@ -882,16 +815,13 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{order.shipping?.receiver_address?.receiver_name || order.nome_cliente || '-'}</td>
                       )}
                       
-                      {visibleColumns.has('numero_ecommerce') && (
-                        <td className="p-3">{order.numero_ecommerce || '-'}</td>
+                      {/* Colunas de identificação */}
+                      {visibleColumns.has('buyer_id') && (
+                        <td className="p-3">{order.buyer_id || order.buyer?.id || '-'}</td>
                       )}
                       
-                      {visibleColumns.has('numero_venda') && (
-                        <td className="p-3">{order.numero_venda || '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('num_venda') && (
-                        <td className="p-3">{order.numero_venda || order.pack_id || '-'}</td>
+                      {visibleColumns.has('seller_id') && (
+                        <td className="p-3">{order.seller_id || order.seller?.id || '-'}</td>
                       )}
                       
                       {visibleColumns.has('integration_account_id') && (
