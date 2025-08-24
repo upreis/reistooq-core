@@ -104,6 +104,8 @@ export default function SimplePedidosPage({ className }: Props) {
   };
 
   const translateShippingSubstatus = (substatus: string): string => {
+    if (!substatus) return '-';
+    
     const translations: Record<string, string> = {
       'ready_to_print': 'Pronto para Imprimir',
       'printed': 'Impresso',
@@ -119,9 +121,60 @@ export default function SimplePedidosPage({ className }: Props) {
       'need_review': 'Precisa Revisão',
       'forwarded': 'Encaminhado',
       'preparing': 'Preparando',
-      'ready_to_ship': 'Pronto para Envio'
+      'ready_to_ship': 'Pronto para Envio',
+      'waiting_for_withdrawal': 'Aguardando Retirada',
+      'withdrawal_in_progress': 'Retirada em Andamento',
+      'delivered_to_agent': 'Entregue ao Agente',
+      'exception': 'Exceção',
+      'failed_delivery': 'Falha na Entrega',
+      'customs_pending': 'Pendente na Alfândega',
+      'customs_released': 'Liberado pela Alfândega'
     };
-    return translations[substatus?.toLowerCase()] || substatus || '-';
+    
+    const normalizedKey = substatus.toLowerCase();
+    
+    // Primeiro tenta traduzir diretamente
+    if (translations[normalizedKey]) {
+      return translations[normalizedKey];
+    }
+    
+    // Se não encontrar, substitui _ por espaços e capitaliza
+    return substatus.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const translateShippingMode = (mode: string): string => {
+    if (!mode) return '-';
+    
+    const translations: Record<string, string> = {
+      'standard': 'Padrão',
+      'express': 'Expresso',
+      'scheduled': 'Agendado',
+      'pickup': 'Retirada',
+      'same_day': 'Mesmo Dia',
+      'next_day': 'Próximo Dia',
+      'custom': 'Personalizado',
+      'flex': 'Flex',
+      'cross_docking': 'Cross Docking',
+      'me2': 'Mercado Envios 2',
+      'me1': 'Mercado Envios 1',
+      'normal': 'Normal',
+      'free': 'Grátis',
+      'paid': 'Pago',
+      'store_pickup': 'Retirada na Loja',
+      'self_service': 'Auto Atendimento',
+      'fulfillment': 'Full',
+      'fbm': 'Enviado pelo Vendedor'
+    };
+    
+    const normalizedKey = mode.toLowerCase();
+    
+    // Primeiro tenta traduzir diretamente
+    if (translations[normalizedKey]) {
+      return translations[normalizedKey];
+    }
+    
+    // Se não encontrar, substitui _ por espaços e capitaliza
+    return mode.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   const translateTags = (tags: string[]): string => {
@@ -1180,8 +1233,13 @@ export default function SimplePedidosPage({ className }: Props) {
                       
                       {visibleColumns.has('forma_entrega') && (
                         <td className="p-3">
-                          {/* CORREÇÃO: Buscar dados diretamente dos campos mapeados */}
-                          {order.forma_entrega || order.delivery_type || 'Standard'}
+                          {translateShippingMode(
+                            order.forma_entrega || 
+                            order.delivery_type || 
+                            order.shipping?.mode || 
+                            order.raw?.shipping?.mode ||
+                            'standard'
+                          )}
                         </td>
                       )}
                       
