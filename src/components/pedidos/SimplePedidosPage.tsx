@@ -107,7 +107,7 @@ export default function SimplePedidosPage({ className }: Props) {
     if (!substatus) return '-';
     
     // Debug log para verificar valores reais
-    console.log('[DEBUG] Translating substatus:', substatus);
+    console.log('[SUBSTATUS DEBUG] Raw value:', substatus, 'Type:', typeof substatus);
     
     const translations: Record<string, string> = {
       // Status comuns do ML
@@ -133,6 +133,13 @@ export default function SimplePedidosPage({ className }: Props) {
       'failed_delivery': 'Falha na Entrega',
       'customs_pending': 'Pendente na Alfândega',
       'customs_released': 'Liberado pela Alfândega',
+      
+      // ADICIONANDO VALORES ESPECÍFICOS QUE ESTÃO APARECENDO
+      'in_warehouse': 'No Armazém',
+      'in warehouse': 'No Armazém',
+      'at_warehouse': 'No Armazém',
+      'at warehouse': 'No Armazém',
+      'warehouse': 'Armazém',
       
       // Adicionando mais status específicos do ML
       'handling': 'Em Processamento',
@@ -169,22 +176,34 @@ export default function SimplePedidosPage({ className }: Props) {
       'measures not correspond': 'Medidas Não Correspondem'
     };
     
-    const normalizedKey = substatus.toLowerCase().trim();
+    // Normalize: lowercase, trim, and handle different formats
+    const originalKey = substatus.toLowerCase().trim();
+    const withSpacesKey = originalKey.replace(/_/g, ' ');
+    const withUnderscoresKey = originalKey.replace(/\s+/g, '_');
     
-    // Primeiro tenta traduzir diretamente
-    if (translations[normalizedKey]) {
-      console.log('[DEBUG] Found translation for:', normalizedKey, '->', translations[normalizedKey]);
-      return translations[normalizedKey];
+    console.log('[SUBSTATUS DEBUG] Trying keys:', {
+      original: originalKey,
+      withSpaces: withSpacesKey,
+      withUnderscores: withUnderscoresKey
+    });
+    
+    // Tentar diferentes variações
+    if (translations[originalKey]) {
+      console.log('[SUBSTATUS DEBUG] Found translation (original):', translations[originalKey]);
+      return translations[originalKey];
     }
     
-    // Tenta com underscores substituídos por espaços
-    const withSpaces = normalizedKey.replace(/_/g, ' ');
-    if (translations[withSpaces]) {
-      console.log('[DEBUG] Found translation with spaces for:', withSpaces, '->', translations[withSpaces]);
-      return translations[withSpaces];
+    if (translations[withSpacesKey]) {
+      console.log('[SUBSTATUS DEBUG] Found translation (spaces):', translations[withSpacesKey]);
+      return translations[withSpacesKey];
     }
     
-    console.log('[DEBUG] No translation found for:', substatus, 'using fallback');
+    if (translations[withUnderscoresKey]) {
+      console.log('[SUBSTATUS DEBUG] Found translation (underscores):', translations[withUnderscoresKey]);
+      return translations[withUnderscoresKey];
+    }
+    
+    console.log('[SUBSTATUS DEBUG] No translation found, using fallback for:', substatus);
     // Se não encontrar, substitui _ por espaços e capitaliza
     return substatus.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
@@ -1278,7 +1297,11 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">
                           {(() => {
                             const rawSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus;
-                            console.log('[DEBUG] Raw substatus value:', rawSubstatus, 'for order:', order.numero);
+                            console.log('[SUBSTATUS RENDER] Order:', order.numero, 'Raw substatus:', rawSubstatus, 'Order obj:', {
+                              shipping_substatus: order.shipping_substatus,
+                              shipping: order.shipping,
+                              raw_shipping: order.raw?.shipping
+                            });
                             return translateShippingSubstatus(rawSubstatus);
                           })()}
                         </td>
