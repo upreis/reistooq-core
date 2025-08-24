@@ -79,6 +79,72 @@ export default function SimplePedidosPage({ className }: Props) {
   const error = state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
+
+  // Funções de tradução
+  const translateShippingStatus = (status: string): string => {
+    const translations: Record<string, string> = {
+      'pending': 'Pendente',
+      'ready_to_ship': 'Pronto para Envio',
+      'shipped': 'Enviado',
+      'delivered': 'Entregue',
+      'not_delivered': 'Não Entregue',
+      'cancelled': 'Cancelado',
+      'to_be_agreed': 'A Combinar',
+      'handling': 'Processando',
+      'ready_to_print': 'Pronto para Imprimir',
+      'printed': 'Impresso',
+      'stale': 'Atrasado',
+      'delayed': 'Atrasado',
+      'lost': 'Perdido',
+      'damaged': 'Danificado',
+      'measures_not_correspond': 'Medidas Não Correspondem'
+    };
+    return translations[status?.toLowerCase()] || status || '-';
+  };
+
+  const translateShippingSubstatus = (substatus: string): string => {
+    const translations: Record<string, string> = {
+      'ready_to_print': 'Pronto para Imprimir',
+      'printed': 'Impresso',
+      'stale': 'Atrasado',
+      'delayed': 'Atrasado',
+      'receiver_absent': 'Destinatário Ausente',
+      'returning_to_sender': 'Retornando ao Remetente',
+      'out_for_delivery': 'Saiu para Entrega',
+      'in_hub': 'No Centro de Distribuição',
+      'in_transit': 'Em Trânsito',
+      'arrived_at_unit': 'Chegou na Unidade',
+      'contact_customer': 'Contatar Cliente',
+      'need_review': 'Precisa Revisão',
+      'forwarded': 'Encaminhado',
+      'preparing': 'Preparando',
+      'ready_to_ship': 'Pronto para Envio'
+    };
+    return translations[substatus?.toLowerCase()] || substatus || '-';
+  };
+
+  const translateTags = (tags: string[]): string => {
+    const translations: Record<string, string> = {
+      'immediate_payment': 'Pagamento Imediato',
+      'cart': 'Carrinho',
+      'mandatory_immediate_payment': 'Pagamento Imediato Obrigatório',
+      'paid': 'Pago',
+      'not_paid': 'Não Pago',
+      'pack_order': 'Pedido Pack',
+      'delivered': 'Entregue',
+      'not_delivered': 'Não Entregue',
+      'fbm': 'Enviado pelo Vendedor',
+      'fulfillment': 'Full',
+      'self_service_in': 'Auto Atendimento',
+      'self_service_out': 'Retirada',
+      'normal': 'Normal',
+      'me2': 'Mercado Envios 2'
+    };
+    
+    if (!Array.isArray(tags)) return '-';
+    
+    return tags.map(tag => translations[tag?.toLowerCase()] || tag).join(', ') || '-';
+  };
   
   // Configuração corrigida de colunas (baseada na API unified-orders)
   const allColumns = [
@@ -848,7 +914,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('tags') && (
-                        <td className="p-3">{order.tags?.join(', ') || '-'}</td>
+                        <td className="p-3">{translateTags(order.tags)}</td>
                       )}
                       
                       {/* Colunas de envio */}
@@ -857,7 +923,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('shipping_status') && (
-                        <td className="p-3">{order.shipping_status || order.shipping?.status || '-'}</td>
+                        <td className="p-3">{translateShippingStatus(order.shipping_status || order.shipping?.status)}</td>
                       )}
                       
                       {visibleColumns.has('shipping_mode') && (
@@ -872,7 +938,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('shipping_substatus') && (
-                        <td className="p-3">{order.shipping_substatus || order.shipping?.substatus || '-'}</td>
+                        <td className="p-3">{translateShippingSubstatus(order.shipping_substatus || order.shipping?.substatus)}</td>
                       )}
                       
                       {visibleColumns.has('forma_entrega') && (
