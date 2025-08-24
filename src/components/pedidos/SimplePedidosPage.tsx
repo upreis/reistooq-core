@@ -165,7 +165,7 @@ export default function SimplePedidosPage({ className }: Props) {
     
     // Montar ID único
     const skusPart = skus.length > 0 ? skus.join('+') : 'NO-SKU';
-    return `${skusPart}#${numeropedido}`;
+    return `${skusPart}-${numeropedido}`;
   };
   
   // Configuração corrigida de colunas (baseada na API unified-orders)
