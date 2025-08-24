@@ -422,14 +422,14 @@ export default function SimplePedidosPage({ className }: Props) {
             <div className="space-y-2">
               <label className="text-sm font-medium">Situação</label>
               <Select 
-                value={Array.isArray(filters.situacao) ? filters.situacao[0] || '' : filters.situacao || ''} 
-                onValueChange={(value) => actions.setFilters({ situacao: value || undefined })}
+                value={Array.isArray(filters.situacao) ? filters.situacao[0] || 'all' : filters.situacao || 'all'} 
+                onValueChange={(value) => actions.setFilters({ situacao: value === 'all' ? undefined : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as situações" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todas as situações</SelectItem>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="all">Todas as situações</SelectItem>
                   <SelectItem value="Pendente">Pendente</SelectItem>
                   <SelectItem value="Pago">Pago</SelectItem>
                   <SelectItem value="Confirmado">Confirmado</SelectItem>
