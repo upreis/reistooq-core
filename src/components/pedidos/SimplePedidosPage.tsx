@@ -922,8 +922,12 @@ export default function SimplePedidosPage({ className }: Props) {
                           {(() => {
                             // Buscar o nome da empresa baseado no integration_account_id
                             const accountId = order.integration_account_id;
+                            if (!accountId) return 'Conta não informada';
+                            
                             const account = accounts.find(acc => acc.id === accountId);
-                            return account?.name || 'Empresa não identificada';
+                            if (!account) return `ID: ${accountId.substring(0, 8)}...`;
+                            
+                            return account.name || account.settings?.store_name || `Conta ${account.id.substring(0, 8)}...`;
                           })()}
                         </td>
                       )}
