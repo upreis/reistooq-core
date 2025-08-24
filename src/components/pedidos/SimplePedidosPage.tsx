@@ -1273,7 +1273,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       {visibleColumns.has('situacao') && (
                         <td className="p-3">
                           <Badge variant={getStatusBadgeVariant(order.situacao || order.status)}>
-                            {simplificarStatus(order.situacao || order.status)}
+                            {order.situacao || order.status || '-'}
                           </Badge>
                         </td>
                       )}
@@ -1283,13 +1283,13 @@ export default function SimplePedidosPage({ className }: Props) {
                            {(() => {
                              const statusDetail = order.status_detail || order.raw?.status_detail;
                              const shippingCost = order.shipping_cost || order.valor_frete || order.shipping?.cost || 0;
-                             const statusText = simplificarStatus(order.situacao || order.status);
+                             const rawStatus = order.situacao || order.status || '';
                              
                              if (statusDetail) {
                                return statusDetail;
                              }
                              
-                             return `${statusText} | Frete: ${formatMoney(shippingCost)}`;
+                             return `${rawStatus} | Frete: ${formatMoney(shippingCost)}`;
                            })()}
                          </td>
                        )}
@@ -1373,7 +1373,7 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             {(() => {
-                              // Buscar dados de logística (considerar diferentes formas que a API retorna)
+                              // Buscar dados de logística (modo bruto da API)
                               const logisticMode =
                                 order.shipping?.logistic?.mode ||
                                 order.raw?.shipping?.logistic?.mode ||
@@ -1386,46 +1386,15 @@ export default function SimplePedidosPage({ className }: Props) {
                                 order.raw?.shipping?.logistic?.type ||
                                 order.logistic_type ||
                                 order.shipping_details?.logistic_type;
-                              
-                              // Dados adicionais para identificar Flex e Cross Docking
                               const deliveryType =
                                 order.forma_entrega ||
                                 order.delivery_type ||
                                 order.shipping?.delivery_type ||
                                 order.raw?.shipping?.delivery_type ||
                                 order.shipping_details?.delivery_type;
-                              const shippingMethod =
-                                order.shipping_method ||
-                                order.shipping?.shipping_method ||
-                                order.raw?.shipping?.shipping_method ||
-                                order.shipping_details?.shipping_method;
-                              const methodTags = Array.isArray(shippingMethod?.tags) ? shippingMethod.tags : [];
-                              const tags = order.tags || order.raw?.tags || order.shipping_details?.tags || [];
                               
-                              const isFulfillment = logisticType === 'fulfillment';
-                              const isCrossDocking =
-                                logisticType === 'cross_docking' ||
-                                (typeof deliveryType === 'string' && deliveryType.startsWith('xd')) ||
-                                logisticMode === 'cross_docking';
-                              const isFlex =
-                                deliveryType === 'self_service' ||
-                                methodTags.includes('self_service') ||
-                                logisticMode === 'flex' ||
-                                tags.includes('self_service_in');
-                              
-                              // Determinar modo de envio correto
-                              let modoEnvio = '-';
-                              if (isFulfillment) {
-                                modoEnvio = 'Fulfillment (MLF)';
-                              } else if (isFlex) {
-                                modoEnvio = 'Mercado Envios Flex';
-                              } else if (isCrossDocking) {
-                                modoEnvio = 'Cross Docking';
-                              } else if (logisticMode) {
-                                modoEnvio = translateShippingMode(logisticMode);
-                              }
-                              
-                              return <span>{modoEnvio}</span>;
+                              const value = logisticType || logisticMode || deliveryType || '-';
+                              return <span>{value}</span>;
                             })()}
                           </div>
                         </td>
@@ -1436,8 +1405,11 @@ export default function SimplePedidosPage({ className }: Props) {
                           {(() => {
                             const shippingMethod = order.shipping_method || 
                               order.shipping?.shipping_method || 
-                              order.raw?.shipping?.shipping_method;
-                            return translateShippingMethod(shippingMethod);
+                              order.raw?.shipping?.shipping_method ||
+                              order.shipping_details?.shipping_method;
+                            if (!shippingMethod) return '-';
+                            if (typeof shippingMethod === 'string') return shippingMethod;
+                            return shippingMethod.name || shippingMethod.id || JSON.stringify(shippingMethod);
                           })()}
                         </td>
                       )}
@@ -1445,28 +1417,25 @@ export default function SimplePedidosPage({ className }: Props) {
                       {visibleColumns.has('shipping_substatus') && (
                         <td className="p-3">
                           {(() => {
-                            const rawSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus;
-                            console.log('[SUBSTATUS RENDER] Order:', order.numero, 'Raw substatus:', rawSubstatus, 'Order obj:', {
-                              shipping_substatus: order.shipping_substatus,
-                              shipping: order.shipping,
-                              raw_shipping: order.raw?.shipping
-                            });
-                            return translateShippingSubstatus(rawSubstatus);
+                            const rawSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.shipping_details?.substatus;
+                            return rawSubstatus || '-';
                           })()}
                         </td>
                       )}
                       
                       {visibleColumns.has('forma_entrega') && (
                         <td className="p-3">
-                          {translateShippingMode(
-                            order.forma_entrega || 
-                            order.delivery_type || 
-                            order.shipping?.delivery_type || 
-                            order.raw?.shipping?.delivery_type ||
-                            order.shipping?.mode || 
-                            order.raw?.shipping?.mode ||
-                            'standard'
-                          )}
+                          {(() => {
+                            const value =
+                              order.forma_entrega || 
+                              order.delivery_type || 
+                              order.shipping?.delivery_type || 
+                              order.raw?.shipping?.delivery_type ||
+                              order.shipping?.mode || 
+                              order.raw?.shipping?.mode ||
+                              'standard';
+                            return typeof value === 'string' ? value : JSON.stringify(value);
+                          })()}
                         </td>
                       )}
                       
