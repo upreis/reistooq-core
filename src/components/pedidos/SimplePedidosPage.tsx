@@ -233,6 +233,13 @@ export default function SimplePedidosPage({ className }: Props) {
     if (!mode) return '-';
     
     const translations: Record<string, string> = {
+      // Mercado Envios
+      'me1': 'Mercado Envios 1',
+      'me2': 'Mercado Envios 2', 
+      'flex': 'Mercado Envios Flex',
+      'cross_docking': 'Cross Docking',
+      
+      // Outros modos
       'standard': 'Padrão',
       'express': 'Expresso',
       'scheduled': 'Agendado',
@@ -240,10 +247,6 @@ export default function SimplePedidosPage({ className }: Props) {
       'same_day': 'Mesmo Dia',
       'next_day': 'Próximo Dia',
       'custom': 'Personalizado',
-      'flex': 'Flex',
-      'cross_docking': 'Cross Docking',
-      'me2': 'Mercado Envios 2',
-      'me1': 'Mercado Envios 1',
       'normal': 'Normal',
       'free': 'Grátis',
       'paid': 'Pago',
@@ -262,6 +265,30 @@ export default function SimplePedidosPage({ className }: Props) {
     
     // Se não encontrar, substitui _ por espaços e capitaliza
     return mode.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const translateShippingMethod = (method: any): string => {
+    if (!method) return '-';
+    
+    // Se for string, traduzir diretamente
+    if (typeof method === 'string') {
+      return translateShippingMode(method);
+    }
+    
+    // Se for objeto com name, usar o name
+    if (method.name) {
+      const methodTranslations: Record<string, string> = {
+        'Prioritario': 'Prioritário',
+        'Standard': 'Padrão',
+        'Express': 'Expresso',
+        'Next Day': 'Próximo Dia',
+        'Same Day': 'Mesmo Dia'
+      };
+      
+      return methodTranslations[method.name] || method.name;
+    }
+    
+    return '-';
   };
 
   const translateTags = (tags: string[]): string => {
@@ -381,6 +408,7 @@ export default function SimplePedidosPage({ className }: Props) {
     // Colunas de envio (baseadas no shipping da API)
     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
     { key: 'shipping_mode', label: 'Modo de Envio', default: true, category: 'shipping' },
+    { key: 'shipping_method', label: 'Método de Envio', default: true, category: 'shipping' },
     { key: 'shipping_substatus', label: 'Sub-status Envio', default: false, category: 'shipping' },
     { key: 'forma_entrega', label: 'Forma de Entrega', default: true, category: 'shipping' },
     { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
@@ -1092,6 +1120,7 @@ export default function SimplePedidosPage({ className }: Props) {
                   {visibleColumns.has('shipping_id') && <th className="text-left p-3">ID do Envio</th>}
                   {visibleColumns.has('shipping_status') && <th className="text-left p-3">Status do Envio</th>}
                   {visibleColumns.has('shipping_mode') && <th className="text-left p-3">Modo de Envio</th>}
+                  {visibleColumns.has('shipping_method') && <th className="text-left p-3">Método de Envio</th>}
                   {visibleColumns.has('shipping_substatus') && <th className="text-left p-3">Sub-status Envio</th>}
                   {visibleColumns.has('forma_entrega') && <th className="text-left p-3">Forma de Entrega</th>}
                   {visibleColumns.has('codigo_rastreamento') && <th className="text-left p-3">Código Rastreamento</th>}
@@ -1339,19 +1368,15 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             {(() => {
-                              // CORREÇÃO: Buscar dados diretamente dos campos mapeados
-                              const modoEnvio = order.shipping_mode || 'Normal';
+                              // Buscar dados diretamente dos campos mapeados
+                              const logisticMode = order.shipping?.logistic?.mode || 
+                                order.raw?.shipping?.logistic?.mode || 
+                                order.logistic_mode || 'me2';
+                              const modoEnvio = translateShippingMode(logisticMode);
                               const isFulfillment = order.is_fulfillment || 
                                 order.logistic_type === 'fulfillment' ||
                                 order.shipping?.logistic?.type === 'fulfillment' ||
                                 order.raw?.shipping?.logistic?.type === 'fulfillment' || false;
-                              
-                              // Debug: Log para verificar os dados do pedido
-                              console.log(`[DEBUG] Order ${order.id} shipping_mode:`, {
-                                shipping_mode: order.shipping_mode,
-                                is_fulfillment: order.is_fulfillment,
-                                logistic_type: order.logistic_type
-                              });
                               
                               return (
                                 <>
@@ -1365,6 +1390,17 @@ export default function SimplePedidosPage({ className }: Props) {
                               );
                             })()}
                           </div>
+                        </td>
+                      )}
+                      
+                      {visibleColumns.has('shipping_method') && (
+                        <td className="p-3">
+                          {(() => {
+                            const shippingMethod = order.shipping_method || 
+                              order.shipping?.shipping_method || 
+                              order.raw?.shipping?.shipping_method;
+                            return translateShippingMethod(shippingMethod);
+                          })()}
                         </td>
                       )}
                       
