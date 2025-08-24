@@ -145,11 +145,33 @@ export default function SimplePedidosPage({ className }: Props) {
     
     return tags.map(tag => translations[tag?.toLowerCase()] || tag).join(', ') || '-';
   };
+
+  // Função para gerar ID-Único (SKUs/Produtos + Número do Pedido)
+  const generateUniqueId = (order: any): string => {
+    const numeropedido = order.numero || order.id || '';
+    
+    // Extrair SKUs dos itens do pedido
+    let skus: string[] = [];
+    
+    if (order.order_items && Array.isArray(order.order_items)) {
+      skus = order.order_items.map((item: any) => 
+        item.sku || item.seller_sku || item.item?.seller_sku || item.item?.id
+      ).filter(Boolean);
+    } else if (order.skus && Array.isArray(order.skus)) {
+      skus = order.skus;
+    } else if (order.sku) {
+      skus = [order.sku];
+    }
+    
+    // Montar ID único
+    const skusPart = skus.length > 0 ? skus.join('+') : 'NO-SKU';
+    return `${skusPart}#${numeropedido}`;
+  };
   
   // Configuração corrigida de colunas (baseada na API unified-orders)
   const allColumns = [
     // Colunas básicas disponíveis na API unified-orders
-    { key: 'id', label: 'ID', default: true, category: 'basic' },
+    { key: 'id', label: 'ID-Único', default: true, category: 'basic' },
     { key: 'numero', label: 'Número do Pedido', default: true, category: 'basic' },
     { key: 'nome_cliente', label: 'Nome do Cliente', default: true, category: 'basic' },
     { key: 'data_pedido', label: 'Data do Pedido', default: true, category: 'basic' },
@@ -707,7 +729,7 @@ export default function SimplePedidosPage({ className }: Props) {
                     />
                   </th>
                   {/* Colunas básicas */}
-                  {visibleColumns.has('id') && <th className="text-left p-3">ID</th>}
+                  {visibleColumns.has('id') && <th className="text-left p-3">ID-Único</th>}
                   {visibleColumns.has('numero') && <th className="text-left p-3">Número do Pedido</th>}
                   {visibleColumns.has('nome_cliente') && <th className="text-left p-3">Nome do Cliente</th>}
                    {visibleColumns.has('data_pedido') && <th className="text-left p-3">Data do Pedido</th>}
@@ -784,7 +806,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       </td>
                       
                       {visibleColumns.has('id') && (
-                        <td className="p-3 font-mono text-sm">{order.id}</td>
+                        <td className="p-3 font-mono text-sm">{generateUniqueId(order)}</td>
                       )}
                       
                       {visibleColumns.has('numero') && (
