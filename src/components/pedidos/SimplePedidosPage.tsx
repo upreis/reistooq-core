@@ -83,7 +83,6 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'numero', label: 'Número do Pedido', default: true, category: 'basic' },
     { key: 'nome_cliente', label: 'Nome do Cliente', default: true, category: 'basic' },
     { key: 'data_pedido', label: 'Data do Pedido', default: true, category: 'basic' },
-    { key: 'date_closed', label: 'Data Fechamento', default: false, category: 'basic' },
     { key: 'last_updated', label: 'Última Atualização', default: false, category: 'basic' },
     
     // Colunas de produtos/SKUs (baseadas nos order_items da API)
@@ -554,9 +553,8 @@ export default function SimplePedidosPage({ className }: Props) {
                   {visibleColumns.has('id') && <th className="text-left p-3">ID</th>}
                   {visibleColumns.has('numero') && <th className="text-left p-3">Número do Pedido</th>}
                   {visibleColumns.has('nome_cliente') && <th className="text-left p-3">Nome do Cliente</th>}
-                  {visibleColumns.has('data_pedido') && <th className="text-left p-3">Data do Pedido</th>}
-                  {visibleColumns.has('date_closed') && <th className="text-left p-3">Data Fechamento</th>}
-                  {visibleColumns.has('last_updated') && <th className="text-left p-3">Última Atualização</th>}
+                   {visibleColumns.has('data_pedido') && <th className="text-left p-3">Data do Pedido</th>}
+                   {visibleColumns.has('last_updated') && <th className="text-left p-3">Última Atualização</th>}
                   
                   {/* Colunas de produtos */}
                   {visibleColumns.has('skus_produtos') && <th className="text-left p-3">SKUs/Produtos</th>}
@@ -645,18 +643,13 @@ export default function SimplePedidosPage({ className }: Props) {
                         </td>
                       )}
                       
-                      {visibleColumns.has('data_pedido') && (
-                        <td className="p-3">{formatDate(order.data_pedido || order.date_created)}</td>
-                      )}
-                      
-                      {/* Colunas básicas */}
-                      {visibleColumns.has('date_closed') && (
-                        <td className="p-3">{order.date_closed ? formatDate(order.date_closed) : '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('last_updated') && (
-                        <td className="p-3">{order.last_updated ? formatDate(order.last_updated) : '-'}</td>
-                      )}
+                       {visibleColumns.has('data_pedido') && (
+                         <td className="p-3">{formatDate(order.data_pedido || order.date_created)}</td>
+                       )}
+                       
+                       {visibleColumns.has('last_updated') && (
+                         <td className="p-3">{order.last_updated ? formatDate(order.last_updated) : '-'}</td>
+                       )}
                       
                       {/* Colunas de produtos */}
                       {visibleColumns.has('skus_produtos') && (
