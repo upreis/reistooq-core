@@ -1373,28 +1373,45 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             {(() => {
-                              // Buscar dados de logística
-                              const logisticMode = order.shipping?.logistic?.mode || 
-                                order.raw?.shipping?.logistic?.mode || 
-                                order.logistic_mode;
-                              const logisticType = order.shipping?.logistic?.type || 
-                                order.raw?.shipping?.logistic?.type || 
-                                order.logistic_type;
+                              // Buscar dados de logística (considerar diferentes formas que a API retorna)
+                              const logisticMode =
+                                order.shipping?.logistic?.mode ||
+                                order.raw?.shipping?.logistic?.mode ||
+                                order.logistic_mode ||
+                                order.shipping_mode ||
+                                order.shipping?.mode ||
+                                order.shipping_details?.shipping_mode;
+                              const logisticType =
+                                order.shipping?.logistic?.type ||
+                                order.raw?.shipping?.logistic?.type ||
+                                order.logistic_type ||
+                                order.shipping_details?.logistic_type;
                               
                               // Dados adicionais para identificar Flex e Cross Docking
-                              const deliveryType = order.forma_entrega || 
-                                order.delivery_type || 
-                                order.shipping?.delivery_type || 
-                                order.raw?.shipping?.delivery_type;
-                              const shippingMethod = order.shipping_method || 
-                                order.shipping?.shipping_method || 
-                                order.raw?.shipping?.shipping_method;
+                              const deliveryType =
+                                order.forma_entrega ||
+                                order.delivery_type ||
+                                order.shipping?.delivery_type ||
+                                order.raw?.shipping?.delivery_type ||
+                                order.shipping_details?.delivery_type;
+                              const shippingMethod =
+                                order.shipping_method ||
+                                order.shipping?.shipping_method ||
+                                order.raw?.shipping?.shipping_method ||
+                                order.shipping_details?.shipping_method;
                               const methodTags = Array.isArray(shippingMethod?.tags) ? shippingMethod.tags : [];
-                              const tags = order.tags || order.raw?.tags || [];
+                              const tags = order.tags || order.raw?.tags || order.shipping_details?.tags || [];
                               
                               const isFulfillment = logisticType === 'fulfillment';
-                              const isCrossDocking = logisticType === 'cross_docking' || (typeof deliveryType === 'string' && deliveryType.startsWith('xd'));
-                              const isFlex = (deliveryType === 'self_service') || methodTags.includes('self_service') || logisticMode === 'flex' || tags.includes('self_service_in');
+                              const isCrossDocking =
+                                logisticType === 'cross_docking' ||
+                                (typeof deliveryType === 'string' && deliveryType.startsWith('xd')) ||
+                                logisticMode === 'cross_docking';
+                              const isFlex =
+                                deliveryType === 'self_service' ||
+                                methodTags.includes('self_service') ||
+                                logisticMode === 'flex' ||
+                                tags.includes('self_service_in');
                               
                               // Determinar modo de envio correto
                               let modoEnvio = '-';
