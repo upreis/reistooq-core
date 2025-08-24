@@ -155,6 +155,14 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
     const shippingCost = order.shipping_cost || ship.cost || 0;
     const statusDetail = `${mapMlStatus(order.status)} | Frete: R$ ${shippingCost.toFixed(2)}`;
 
+    // Dados de envio extraídos da unified-orders
+    const shippingData = order.shipping_details || order.shipping || {};
+    const shippingStatus = shippingData.status || order.status;
+    const shippingSubstatus = shippingData.substatus || null;
+    const trackingNumber = shippingData.tracking_number || null;
+    const trackingUrl = trackingNumber ? `https://www.mercadolivre.com.br/gz/shipping/tracking/${trackingNumber}` : null;
+    const receiverName = shippingData.receiver_address?.receiver_name || addr.receiver_name || null;
+
     return {
       id: order.id?.toString() || '',
       numero: order.id?.toString() || '',
@@ -185,11 +193,36 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       created_at: order.date_created || new Date().toISOString(),
       updated_at: order.last_updated || new Date().toISOString(),
 
-      // Novos campos de logística
+      // Campos de logística
       shipping_mode: shippingMode,
       forma_entrega: deliveryType,
       status_detail: statusDetail,
       is_fulfillment: isFullfillment,
+
+      // Campos de envio
+      shipping_id: shippingData.id?.toString() || null,
+      shipping_status: shippingStatus,
+      shipping_substatus: shippingSubstatus,
+      codigo_rastreamento: trackingNumber,
+      url_rastreamento: trackingUrl,
+      nome_destinatario: receiverName,
+
+      // Campos financeiros adicionais
+      paid_amount: order.total_amount || 0,
+      currency_id: order.currency_id || 'BRL',
+      coupon_amount: order.coupon?.amount || 0,
+
+      // Campos do ML
+      date_created: order.date_created,
+      pack_id: order.pack_id?.toString() || null,
+      pickup_id: order.pickup_id?.toString() || null,
+      manufacturing_ending_date: order.manufacturing_ending_date || null,
+      comment: order.comments || null,
+      tags: order.tags || [],
+
+      // Dados do comprador/vendedor
+      buyer_id: order.buyer?.id?.toString() || null,
+      seller_id: order.seller?.id?.toString() || null,
 
       // campos auxiliares
       itens,
