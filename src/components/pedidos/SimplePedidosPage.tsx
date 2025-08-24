@@ -710,7 +710,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('status_detail') && (
-                        <td className="p-3">{order.status_detail || '-'}</td>
+                        <td className="p-3">{order.status_detail || order.raw?.status_detail || '-'}</td>
                       )}
                       
                       {/* Colunas de mapeamento */}
@@ -777,7 +777,14 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('shipping_mode') && (
-                        <td className="p-3">{order.shipping_mode || order.shipping?.mode || '-'}</td>
+                        <td className="p-3">
+                          {order.shipping_mode 
+                            || order.shipping?.mode 
+                            || order.raw?.shipping?.shipping_option?.delivery_type
+                            || order.raw?.shipping?.logistic_type
+                            || order.raw?.shipping?.shipping_method_id
+                            || '-'}
+                        </td>
                       )}
                       
                       {visibleColumns.has('shipping_substatus') && (
@@ -785,7 +792,13 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('forma_entrega') && (
-                        <td className="p-3">{order.shipping?.shipping_option?.name || '-'}</td>
+                        <td className="p-3">
+                          {order.shipping?.shipping_option?.name
+                            || order.raw?.shipping?.shipping_option?.name
+                            || order.raw?.shipping?.shipping_method_id
+                            || order.raw?.shipping?.logistic_type
+                            || '-'}
+                        </td>
                       )}
                       
                       {visibleColumns.has('codigo_rastreamento') && (
