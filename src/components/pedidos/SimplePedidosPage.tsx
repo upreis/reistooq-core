@@ -427,9 +427,21 @@ export default function SimplePedidosPage({ className }: Props) {
      { key: 'forma_entrega', label: 'Forma de Entrega (Combinado)', default: false, category: 'shipping' },
      { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
     
-    // Colunas de identificação/participantes
-    { key: 'buyer_id', label: 'ID Comprador', default: false, category: 'ids' },
-    { key: 'seller_id', label: 'ID Vendedor', default: false, category: 'ids' }
+     // Colunas de valores/pagamento (baseadas na API do ML)
+     { key: 'total_amount', label: 'Valor Total (API)', default: false, category: 'financial' },
+     { key: 'paid_amount', label: 'Valor Pago', default: false, category: 'financial' },
+     { key: 'total_paid_amount', label: 'Total Pago', default: false, category: 'financial' },
+     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
+     { key: 'currency_id', label: 'Moeda', default: false, category: 'financial' },
+     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
+     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
+     { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
+     { key: 'taxes_amount', label: 'Valor Taxas', default: false, category: 'financial' },
+     { key: 'marketplace_fee', label: 'Taxa Marketplace', default: false, category: 'financial' },
+     
+     // Colunas de identificação/participantes
+     { key: 'buyer_id', label: 'ID Comprador', default: false, category: 'ids' },
+     { key: 'seller_id', label: 'ID Vendedor', default: false, category: 'ids' }
   ];
 
   const defaultColumns = new Set(allColumns.filter(col => col.default).map(col => col.key));
@@ -1147,10 +1159,22 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('url_rastreamento') && <th className="text-left p-3">URL Rastreamento</th>}
                    {visibleColumns.has('nome_destinatario') && <th className="text-left p-3">Nome Destinatário</th>}
                   
-                  {/* Colunas de identificação */}
-                  {visibleColumns.has('buyer_id') && <th className="text-left p-3">ID Comprador</th>}
-                  {visibleColumns.has('seller_id') && <th className="text-left p-3">ID Vendedor</th>}
-                  {visibleColumns.has('integration_account_id') && <th className="text-left p-3">ID Conta Integração</th>}
+                   {/* Colunas de valores/pagamento */}
+                   {visibleColumns.has('total_amount') && <th className="text-left p-3">Valor Total (API)</th>}
+                   {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
+                   {visibleColumns.has('total_paid_amount') && <th className="text-left p-3">Total Pago</th>}
+                   {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
+                   {visibleColumns.has('currency_id') && <th className="text-left p-3">Moeda</th>}
+                   {visibleColumns.has('payment_method') && <th className="text-left p-3">Método Pagamento</th>}
+                   {visibleColumns.has('payment_status') && <th className="text-left p-3">Status Pagamento</th>}
+                   {visibleColumns.has('payment_type') && <th className="text-left p-3">Tipo Pagamento</th>}
+                   {visibleColumns.has('taxes_amount') && <th className="text-left p-3">Valor Taxas</th>}
+                   {visibleColumns.has('marketplace_fee') && <th className="text-left p-3">Taxa Marketplace</th>}
+                   
+                   {/* Colunas de identificação */}
+                   {visibleColumns.has('buyer_id') && <th className="text-left p-3">ID Comprador</th>}
+                   {visibleColumns.has('seller_id') && <th className="text-left p-3">ID Vendedor</th>}
+                   {visibleColumns.has('integration_account_id') && <th className="text-left p-3">ID Conta Integração</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1642,18 +1666,114 @@ export default function SimplePedidosPage({ className }: Props) {
                         </td>
                       )}
                       
-                      {/* Colunas de identificação com fallbacks seguros */}
-                      {visibleColumns.has('buyer_id') && (
-                        <td className="p-3">{order.buyer_id || order.buyer?.id || '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('seller_id') && (
-                        <td className="p-3">{order.seller_id || order.seller?.id || '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('integration_account_id') && (
-                        <td className="p-3 font-mono text-xs">{order.integration_account_id || '-'}</td>
-                      )}
+                       {/* 🆕 COLUNAS DE VALORES/PAGAMENTO */}
+                       {visibleColumns.has('total_amount') && (
+                         <td className="p-3">
+                           {(() => {
+                             const amount = order.total_amount || order.raw?.total_amount;
+                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
+                           })()}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('paid_amount') && (
+                         <td className="p-3">
+                           {(() => {
+                             const amount = order.paid_amount || order.payments?.[0]?.total_paid_amount || order.raw?.payments?.[0]?.total_paid_amount;
+                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
+                           })()}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('total_paid_amount') && (
+                         <td className="p-3">
+                           {(() => {
+                             const amount = order.total_paid_amount || order.payments?.[0]?.total_paid_amount || order.raw?.payments?.[0]?.total_paid_amount;
+                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
+                           })()}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('coupon_amount') && (
+                         <td className="p-3">
+                           {(() => {
+                             const amount = order.coupon_amount || order.coupon?.amount || order.raw?.coupon?.amount;
+                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
+                           })()}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('currency_id') && (
+                         <td className="p-3">
+                           <span className="text-xs font-mono">
+                             {order.currency_id || order.raw?.currency_id || '-'}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('payment_method') && (
+                         <td className="p-3">
+                           <span className="text-xs">
+                             {order.payments?.[0]?.payment_method_id || 
+                              order.raw?.payments?.[0]?.payment_method_id || 
+                              order.payment_method || 
+                              '-'}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('payment_status') && (
+                         <td className="p-3">
+                           <span className="text-xs">
+                             {order.payments?.[0]?.status || 
+                              order.raw?.payments?.[0]?.status || 
+                              order.payment_status || 
+                              '-'}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('payment_type') && (
+                         <td className="p-3">
+                           <span className="text-xs">
+                             {order.payments?.[0]?.payment_type_id || 
+                              order.raw?.payments?.[0]?.payment_type_id || 
+                              order.payment_type || 
+                              '-'}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('taxes_amount') && (
+                         <td className="p-3">
+                           {(() => {
+                             const amount = order.taxes?.amount || order.raw?.taxes?.amount || order.taxes_amount;
+                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
+                           })()}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('marketplace_fee') && (
+                         <td className="p-3">
+                           {(() => {
+                             const fee = order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value;
+                             return fee ? `R$ ${Number(fee).toFixed(2)}` : '-';
+                           })()}
+                         </td>
+                       )}
+                       
+                       {/* Colunas de identificação com fallbacks seguros */}
+                       {visibleColumns.has('buyer_id') && (
+                         <td className="p-3">{order.buyer_id || order.buyer?.id || '-'}</td>
+                       )}
+                       
+                       {visibleColumns.has('seller_id') && (
+                         <td className="p-3">{order.seller_id || order.seller?.id || '-'}</td>
+                       )}
+                       
+                       {visibleColumns.has('integration_account_id') && (
+                         <td className="p-3 font-mono text-xs">{order.integration_account_id || '-'}</td>
+                       )}
                     </tr>
                   );
                 })}
