@@ -106,7 +106,11 @@ export default function SimplePedidosPage({ className }: Props) {
   const translateShippingSubstatus = (substatus: string): string => {
     if (!substatus) return '-';
     
+    // Debug log para verificar valores reais
+    console.log('[DEBUG] Translating substatus:', substatus);
+    
     const translations: Record<string, string> = {
+      // Status comuns do ML
       'ready_to_print': 'Pronto para Imprimir',
       'printed': 'Impresso',
       'stale': 'Atrasado',
@@ -128,16 +132,59 @@ export default function SimplePedidosPage({ className }: Props) {
       'exception': 'Exceção',
       'failed_delivery': 'Falha na Entrega',
       'customs_pending': 'Pendente na Alfândega',
-      'customs_released': 'Liberado pela Alfândega'
+      'customs_released': 'Liberado pela Alfândega',
+      
+      // Adicionando mais status específicos do ML
+      'handling': 'Em Processamento',
+      'ready_to_pickup': 'Pronto para Retirada',
+      'claim_pending': 'Reclamação Pendente',
+      'claimed': 'Reclamado',
+      'measures_not_correspond': 'Medidas Não Correspondem',
+      'damaged': 'Danificado',
+      'lost': 'Perdido',
+      'canceled': 'Cancelado',
+      'not_delivered': 'Não Entregue',
+      'delivered': 'Entregue',
+      'to_be_agreed': 'A Combinar',
+      'pending': 'Pendente',
+      'shipped': 'Enviado',
+      
+      // Variações com espaços
+      'ready to print': 'Pronto para Imprimir',
+      'ready to ship': 'Pronto para Envio',
+      'out for delivery': 'Saiu para Entrega',
+      'in transit': 'Em Trânsito',
+      'not delivered': 'Não Entregue',
+      'to be agreed': 'A Combinar',
+      'contact customer': 'Contatar Cliente',
+      'need review': 'Precisa Revisão',
+      'ready to pickup': 'Pronto para Retirada',
+      'waiting for withdrawal': 'Aguardando Retirada',
+      'withdrawal in progress': 'Retirada em Andamento',
+      'delivered to agent': 'Entregue ao Agente',
+      'failed delivery': 'Falha na Entrega',
+      'customs pending': 'Pendente na Alfândega',
+      'customs released': 'Liberado pela Alfândega',
+      'claim pending': 'Reclamação Pendente',
+      'measures not correspond': 'Medidas Não Correspondem'
     };
     
-    const normalizedKey = substatus.toLowerCase();
+    const normalizedKey = substatus.toLowerCase().trim();
     
     // Primeiro tenta traduzir diretamente
     if (translations[normalizedKey]) {
+      console.log('[DEBUG] Found translation for:', normalizedKey, '->', translations[normalizedKey]);
       return translations[normalizedKey];
     }
     
+    // Tenta com underscores substituídos por espaços
+    const withSpaces = normalizedKey.replace(/_/g, ' ');
+    if (translations[withSpaces]) {
+      console.log('[DEBUG] Found translation with spaces for:', withSpaces, '->', translations[withSpaces]);
+      return translations[withSpaces];
+    }
+    
+    console.log('[DEBUG] No translation found for:', substatus, 'using fallback');
     // Se não encontrar, substitui _ por espaços e capitaliza
     return substatus.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
@@ -1228,7 +1275,13 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('shipping_substatus') && (
-                        <td className="p-3">{translateShippingSubstatus(order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus)}</td>
+                        <td className="p-3">
+                          {(() => {
+                            const rawSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus;
+                            console.log('[DEBUG] Raw substatus value:', rawSubstatus, 'for order:', order.numero);
+                            return translateShippingSubstatus(rawSubstatus);
+                          })()}
+                        </td>
                       )}
                       
                       {visibleColumns.has('forma_entrega') && (
