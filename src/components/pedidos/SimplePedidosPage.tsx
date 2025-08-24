@@ -68,6 +68,7 @@ export default function SimplePedidosPage({ className }: Props) {
   
   // Estados locais para funcionalidades específicas
   const [accounts, setAccounts] = useState<any[]>([]);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [mappingData, setMappingData] = useState<Map<string, any>>(new Map());
   const [showBaixaModal, setShowBaixaModal] = useState(false);
@@ -205,6 +206,7 @@ export default function SimplePedidosPage({ className }: Props) {
   const allColumns = [
     // Colunas básicas disponíveis na API unified-orders
     { key: 'id', label: 'ID-Único', default: true, category: 'basic' },
+    { key: 'empresa', label: 'Empresa', default: true, category: 'basic' },
     { key: 'numero', label: 'Número do Pedido', default: true, category: 'basic' },
     { key: 'nome_cliente', label: 'Nome do Cliente', default: true, category: 'basic' },
     { key: 'data_pedido', label: 'Data do Pedido', default: true, category: 'basic' },
@@ -337,16 +339,24 @@ export default function SimplePedidosPage({ className }: Props) {
       setAccounts(list);
 
       if (list.length > 0) {
-        // Escolher automaticamente a primeira conta válida
+        // Selecionar automaticamente todas as contas válidas
+        const validAccounts = [];
         for (const acc of list) {
           const ok = await testAccount(acc.id);
           if (ok) {
-            actions.setIntegrationAccountId(acc.id);
-            return;
+            validAccounts.push(acc.id);
           }
         }
-        // Se nenhuma válida, selecionar a mais recente
-        actions.setIntegrationAccountId(list[0].id);
+        
+        if (validAccounts.length > 0) {
+          setSelectedAccounts(validAccounts);
+          // Para compatibilidade, manter a primeira conta no sistema antigo
+          actions.setIntegrationAccountId(validAccounts[0]);
+        } else if (list.length > 0) {
+          // Se nenhuma válida, selecionar a mais recente
+          setSelectedAccounts([list[0].id]);
+          actions.setIntegrationAccountId(list[0].id);
+        }
       }
     } catch (err: any) {
       console.error('Erro ao carregar contas:', err.message);
@@ -457,6 +467,20 @@ export default function SimplePedidosPage({ className }: Props) {
     }
   }, [integrationAccountId, actions]);
 
+  // Effect para buscar pedidos de múltiplas contas
+  useEffect(() => {
+    if (selectedAccounts.length > 0) {
+      // Se múltiplas contas selecionadas, buscar pedidos de todas
+      if (selectedAccounts.length > 1) {
+        // Implementar busca de múltiplas contas aqui
+        // Por enquanto mantém a primeira conta para compatibilidade
+        actions.setIntegrationAccountId(selectedAccounts[0]);
+      } else {
+        actions.setIntegrationAccountId(selectedAccounts[0]);
+      }
+    }
+  }, [selectedAccounts, actions]);
+
   // Render principal
   return (
     <div className={`space-y-6 p-6 ${className}`}>
@@ -508,22 +532,72 @@ export default function SimplePedidosPage({ className }: Props) {
         </div>
       </div>
 
-      {/* 🛡️ SELEÇÃO DE CONTA */}
+      {/* 🛡️ SELEÇÃO MÚLTIPLA DE CONTAS */}
       <Card className="p-4">
-        <div className="flex items-center gap-4">
-          <span className="font-medium">Conta do Mercado Livre:</span>
-          <select
-            value={integrationAccountId}
-            onChange={(e) => actions.setIntegrationAccountId(e.target.value)}
-            className="border rounded px-3 py-1"
-          >
-            <option value="">Selecione uma conta</option>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <span className="font-medium">Contas do Mercado Livre:</span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                if (selectedAccounts.length === accounts.length) {
+                  setSelectedAccounts([]);
+                  actions.setIntegrationAccountId('');
+                } else {
+                  const allAccountIds = accounts.map(acc => acc.id);
+                  setSelectedAccounts(allAccountIds);
+                  if (allAccountIds.length > 0) {
+                    actions.setIntegrationAccountId(allAccountIds[0]);
+                  }
+                }
+              }}
+            >
+              {selectedAccounts.length === accounts.length ? 'Desselecionar Todas' : 'Selecionar Todas'}
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {accounts.map((acc) => (
-              <option key={acc.id} value={acc.id}>
-                {acc.name} ({acc.account_identifier || 'ID não disponível'})
-              </option>
+              <label
+                key={acc.id}
+                className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
+              >
+                <Checkbox
+                  checked={selectedAccounts.includes(acc.id)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      const newSelected = [...selectedAccounts, acc.id];
+                      setSelectedAccounts(newSelected);
+                      if (!integrationAccountId) {
+                        actions.setIntegrationAccountId(acc.id);
+                      }
+                    } else {
+                      const newSelected = selectedAccounts.filter(id => id !== acc.id);
+                      setSelectedAccounts(newSelected);
+                      if (integrationAccountId === acc.id && newSelected.length > 0) {
+                        actions.setIntegrationAccountId(newSelected[0]);
+                      } else if (newSelected.length === 0) {
+                        actions.setIntegrationAccountId('');
+                      }
+                    }
+                  }}
+                />
+                <div className="flex-1">
+                  <div className="font-medium">{acc.name}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {acc.account_identifier || 'ID não disponível'}
+                  </div>
+                </div>
+              </label>
             ))}
-          </select>
+          </div>
+          
+          {selectedAccounts.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              {selectedAccounts.length} conta(s) selecionada(s)
+            </div>
+          )}
         </div>
       </Card>
 
@@ -761,9 +835,10 @@ export default function SimplePedidosPage({ className }: Props) {
                       }}
                     />
                   </th>
-                  {/* Colunas básicas */}
-                  {visibleColumns.has('id') && <th className="text-left p-3">ID-Único</th>}
-                  {visibleColumns.has('numero') && <th className="text-left p-3">Número do Pedido</th>}
+                   {/* Colunas básicas */}
+                   {visibleColumns.has('id') && <th className="text-left p-3">ID-Único</th>}
+                   {visibleColumns.has('empresa') && <th className="text-left p-3">Empresa</th>}
+                   {visibleColumns.has('numero') && <th className="text-left p-3">Número do Pedido</th>}
                   {visibleColumns.has('nome_cliente') && <th className="text-left p-3">Nome do Cliente</th>}
                    {visibleColumns.has('data_pedido') && <th className="text-left p-3">Data do Pedido</th>}
                    {visibleColumns.has('last_updated') && <th className="text-left p-3">Última Atualização</th>}
@@ -840,6 +915,17 @@ export default function SimplePedidosPage({ className }: Props) {
                       
                       {visibleColumns.has('id') && (
                         <td className="p-3 font-mono text-sm">{generateUniqueId(order)}</td>
+                      )}
+                      
+                      {visibleColumns.has('empresa') && (
+                        <td className="p-3">
+                          {(() => {
+                            // Buscar o nome da empresa baseado no integration_account_id
+                            const accountId = order.integration_account_id;
+                            const account = accounts.find(acc => acc.id === accountId);
+                            return account?.name || 'Empresa não identificada';
+                          })()}
+                        </td>
                       )}
                       
                       {visibleColumns.has('numero') && (
