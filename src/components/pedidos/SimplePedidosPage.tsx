@@ -95,12 +95,10 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
     { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
     { key: 'shipping_cost', label: 'Custo do Frete', default: false, category: 'financial' },
-    { key: 'currency_id', label: 'Moeda', default: false, category: 'financial' },
     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
     
     // Colunas de status (baseadas no status da API)
     { key: 'situacao', label: 'Situação', default: true, category: 'status' },
-    { key: 'status_detail', label: 'Detalhes do Status', default: false, category: 'status' },
     
     // Colunas de mapeamento (processamento local)
     { key: 'mapeamento', label: 'Status Mapeamento', default: true, category: 'mapping' },
@@ -110,27 +108,19 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
     
     // Colunas do Mercado Livre (baseadas na API)
-    { key: 'date_created', label: 'Data Criação ML', default: false, category: 'ml' },
     { key: 'pack_id', label: 'Pack ID', default: false, category: 'ml' },
-    { key: 'pickup_id', label: 'Pickup ID', default: false, category: 'ml' },
-    { key: 'manufacturing_ending_date', label: 'Data Fim Fabricação', default: false, category: 'ml' },
-    { key: 'comment', label: 'Comentário ML', default: false, category: 'ml' },
     { key: 'tags', label: 'Tags', default: false, category: 'ml' },
     
     // Colunas de envio (baseadas no shipping da API)
-    { key: 'shipping_id', label: 'ID do Envio', default: false, category: 'shipping' },
     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
     { key: 'shipping_mode', label: 'Modo de Envio', default: false, category: 'shipping' },
     { key: 'shipping_substatus', label: 'Sub-status Envio', default: false, category: 'shipping' },
     { key: 'forma_entrega', label: 'Forma de Entrega', default: false, category: 'shipping' },
-    { key: 'codigo_rastreamento', label: 'Código Rastreamento', default: false, category: 'shipping' },
-    { key: 'url_rastreamento', label: 'URL Rastreamento', default: false, category: 'shipping' },
     { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
     
     // Colunas de identificação/participantes
     { key: 'buyer_id', label: 'ID Comprador', default: false, category: 'ids' },
-    { key: 'seller_id', label: 'ID Vendedor', default: false, category: 'ids' },
-    { key: 'integration_account_id', label: 'ID Conta Integração', default: false, category: 'ids' }
+    { key: 'seller_id', label: 'ID Vendedor', default: false, category: 'ids' }
   ];
 
   const defaultColumns = new Set(allColumns.filter(col => col.default).map(col => col.key));
