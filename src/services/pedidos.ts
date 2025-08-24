@@ -202,6 +202,8 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       forma_entrega: deliveryType,
       status_detail: statusDetail,
       is_fulfillment: isFullfillment,
+      logistic_mode: order.shipping?.logistic?.mode || null,
+      logistic_type: order.shipping?.logistic?.type || null,
 
       // CORREÇÃO: Campos de envio - mapeamento correto
       shipping_id: shippingId?.toString() || null,
@@ -249,8 +251,6 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       // ADIÇÃO: Campos de logística avançados
       tracking_method: order.tracking_method || '',
       substatus: order.substatus || '',
-      logistic_mode: order.logistic_mode || '',
-      logistic_type: order.logistic_type || '',
 
       // ADIÇÃO: Campos de quantidade e status
       quantidade_itens: order.quantidade_itens || totalItens,

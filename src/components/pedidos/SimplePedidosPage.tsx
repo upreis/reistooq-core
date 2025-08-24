@@ -252,7 +252,7 @@ export default function SimplePedidosPage({ className }: Props) {
       'paid': 'Pago',
       'store_pickup': 'Retirada na Loja',
       'self_service': 'Auto Atendimento',
-      'fulfillment': 'Full',
+      'fulfillment': 'Fulfillment',
       'fbm': 'Enviado pelo Vendedor'
     };
     
@@ -1368,26 +1368,23 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             {(() => {
-                              // Buscar dados diretamente dos campos mapeados
+                              // Buscar dados de logística
                               const logisticMode = order.shipping?.logistic?.mode || 
                                 order.raw?.shipping?.logistic?.mode || 
-                                order.logistic_mode || 'me2';
-                              const modoEnvio = translateShippingMode(logisticMode);
-                              const isFulfillment = order.is_fulfillment || 
-                                order.logistic_type === 'fulfillment' ||
-                                order.shipping?.logistic?.type === 'fulfillment' ||
-                                order.raw?.shipping?.logistic?.type === 'fulfillment' || false;
+                                order.logistic_mode;
+                              const logisticType = order.shipping?.logistic?.type || 
+                                order.raw?.shipping?.logistic?.type || 
+                                order.logistic_type;
                               
-                              return (
-                                <>
-                                  {isFulfillment && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      MLF
-                                    </Badge>
-                                  )}
-                                  <span>{modoEnvio}</span>
-                                </>
-                              );
+                              // Priorizar fulfillment se for o tipo
+                              let modoEnvio = '-';
+                              if (logisticType === 'fulfillment') {
+                                modoEnvio = 'Fulfillment (MLF)';
+                              } else if (logisticMode) {
+                                modoEnvio = translateShippingMode(logisticMode);
+                              }
+                              
+                              return <span>{modoEnvio}</span>;
                             })()}
                           </div>
                         </td>
