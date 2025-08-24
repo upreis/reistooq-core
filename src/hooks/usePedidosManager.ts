@@ -178,7 +178,7 @@ export function usePedidosManager(initialAccountId?: string) {
     return {
       results: data.results || [],
       unified: data.unified || [],
-      total: data.paging?.total || data.results?.length || 0
+      total: data.paging?.total || data.paging?.count || data.results?.length || 0
     };
   }, [integrationAccountId, currentPage, getUrlParams]);
 
@@ -201,8 +201,8 @@ export function usePedidosManager(initialAccountId?: string) {
 
     return orders.filter(order => {
       // Filtro de busca
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
+      if (debouncedFilters.search) {
+        const searchTerm = debouncedFilters.search.toLowerCase();
         const searchableFields = [
           order.id,
           order.numero,
@@ -217,8 +217,8 @@ export function usePedidosManager(initialAccountId?: string) {
       }
 
       // Filtro de status
-      if (filters.situacao) {
-        const selectedStatuses = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
+      if (debouncedFilters.situacao) {
+        const selectedStatuses = Array.isArray(debouncedFilters.situacao) ? debouncedFilters.situacao : [debouncedFilters.situacao];
         const orderStatus = order.situacao || order.status_original || order.status || '';
         
         if (!statusMatchesFilter(orderStatus, selectedStatuses)) {
@@ -227,34 +227,34 @@ export function usePedidosManager(initialAccountId?: string) {
       }
 
       // Filtro de data
-      if (filters.dataInicio || filters.dataFim) {
+      if (debouncedFilters.dataInicio || debouncedFilters.dataFim) {
         const orderDate = new Date(order.data_pedido || order.date_created);
         
-        if (filters.dataInicio && orderDate < filters.dataInicio) {
+        if (debouncedFilters.dataInicio && orderDate < debouncedFilters.dataInicio) {
           return false;
         }
-        if (filters.dataFim && orderDate > filters.dataFim) {
+        if (debouncedFilters.dataFim && orderDate > debouncedFilters.dataFim) {
           return false;
         }
       }
 
       // Outros filtros
-      if (filters.cidade && !order.cidade?.toLowerCase().includes(filters.cidade.toLowerCase())) {
+      if (debouncedFilters.cidade && !order.cidade?.toLowerCase().includes(debouncedFilters.cidade.toLowerCase())) {
         return false;
       }
-      if (filters.uf && order.uf !== filters.uf) {
+      if (debouncedFilters.uf && order.uf !== debouncedFilters.uf) {
         return false;
       }
-      if (filters.valorMin !== undefined && (order.valor_total || 0) < filters.valorMin) {
+      if (debouncedFilters.valorMin !== undefined && (order.valor_total || 0) < debouncedFilters.valorMin) {
         return false;
       }
-      if (filters.valorMax !== undefined && (order.valor_total || 0) > filters.valorMax) {
+      if (debouncedFilters.valorMax !== undefined && (order.valor_total || 0) > debouncedFilters.valorMax) {
         return false;
       }
 
       return true;
     });
-  }, [filters]);
+  }, [debouncedFilters]);
 
   /**
    * 🚀 FASE 2: Cache inteligente
@@ -311,6 +311,8 @@ export function usePedidosManager(initialAccountId?: string) {
         // Debug: verificar se os SKUs estão vindo nos dados
         console.log('[PedidosManager] Sample order data:', unifiedResult.results[0]);
         console.log('[PedidosManager] Total orders loaded:', unifiedResult.results.length);
+        console.log('[PedidosManager] Total records available:', unifiedResult.total);
+        console.log('[PedidosManager] Current page:', currentPage);
         
       } catch (unifiedError: any) {
         console.warn('[PedidosManager] Unified-orders failed:', unifiedError.message);
@@ -320,8 +322,13 @@ export function usePedidosManager(initialAccountId?: string) {
           const unifiedNoFilters = await loadFromUnifiedOrders({});
           const filteredResults = applyClientSideFilters(unifiedNoFilters.results);
           
-          setOrders(filteredResults);
-          setTotal(filteredResults.length);
+          // Para client-side filtering, precisamos ajustar a paginação
+          const startIndex = (currentPage - 1) * PAGE_SIZE;
+          const endIndex = startIndex + PAGE_SIZE;
+          const paginatedResults = filteredResults.slice(startIndex, endIndex);
+          
+          setOrders(paginatedResults);
+          setTotal(filteredResults.length); // Total dos resultados filtrados
           setFonte('hibrido');
           
         } catch (fallbackError: any) {
