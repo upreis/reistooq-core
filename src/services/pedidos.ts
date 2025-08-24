@@ -145,6 +145,16 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
     const totalItens = itens.reduce((sum: number, it: any) => sum + it.quantidade, 0);
     const skuPrincipal = itens[0]?.sku || order.id?.toString() || '';
 
+    // Dados de logística extraídos do unified-orders
+    const logisticData = order.logistics || {};
+    const isFullfillment = logisticData.is_fulfillment || false;
+    const shippingMode = logisticData.shipping_mode || logisticData.logistic_mode || ship.mode || 'me2';
+    const deliveryType = logisticData.delivery_type || ship.delivery_type || 'standard';
+    
+    // Status detalhado com frete
+    const shippingCost = order.shipping_cost || ship.cost || 0;
+    const statusDetail = `${mapMlStatus(order.status)} | Frete: R$ ${shippingCost.toFixed(2)}`;
+
     return {
       id: order.id?.toString() || '',
       numero: order.id?.toString() || '',
@@ -159,11 +169,11 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
         new Date().toISOString().split('T')[0],
       situacao: mapMlStatus(order.status),
       valor_total: order.total_amount || 0,
-      valor_frete: order.payments?.[0]?.shipping_cost ?? ship.cost ?? 0,
+      valor_frete: shippingCost,
       valor_desconto: order.coupon?.amount || 0,
       numero_ecommerce: order.pack_id?.toString() || null,
       numero_venda: order.id?.toString() || null,
-      empresa: 'Mercado Livre',
+      empresa: isFullfillment ? 'Mercado Livre (MLF)' : 'Mercado Livre',
       cidade: addr.city?.name || null,
       uf: parseUF(state),
       obs:
@@ -174,6 +184,12 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       integration_account_id: order.seller?.id?.toString() || null,
       created_at: order.date_created || new Date().toISOString(),
       updated_at: order.last_updated || new Date().toISOString(),
+
+      // Novos campos de logística
+      shipping_mode: shippingMode,
+      forma_entrega: deliveryType,
+      status_detail: statusDetail,
+      is_fulfillment: isFullfillment,
 
       // campos auxiliares
       itens,

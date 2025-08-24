@@ -771,10 +771,19 @@ export default function SimplePedidosPage({ className }: Props) {
           <Button 
             size="sm" 
             variant="ghost" 
-            onClick={() => actions.refetch()}
+            onClick={() => {
+              console.log('[DEBUG] Forçando atualização completa...');
+              // Limpar cache completamente
+              localStorage.removeItem('pedidos_cache');
+              sessionStorage.clear();
+              // Recarregar dados
+              actions.clearFilters();
+              actions.refetch();
+              setTimeout(() => window.location.reload(), 500);
+            }}
             className="text-xs h-6 px-2"
           >
-            🔄 Forçar Atualização
+            🔄 Recarregar Cache
           </Button>
         </div>
         {(filters.situacao || filters.dataInicio || filters.dataFim) && (
@@ -1037,9 +1046,21 @@ export default function SimplePedidosPage({ className }: Props) {
                         </td>
                       )}
                       
-                      {visibleColumns.has('status_detail') && (
-                        <td className="p-3">{order.status_detail || order.raw?.status_detail || '-'}</td>
-                      )}
+                       {visibleColumns.has('status_detail') && (
+                         <td className="p-3">
+                           {(() => {
+                             const statusDetail = order.status_detail || order.raw?.status_detail;
+                             const shippingCost = order.shipping_cost || order.valor_frete || order.shipping?.cost || 0;
+                             const statusText = simplificarStatus(order.situacao || order.status);
+                             
+                             if (statusDetail) {
+                               return statusDetail;
+                             }
+                             
+                             return `${statusText} | Frete: ${formatMoney(shippingCost)}`;
+                           })()}
+                         </td>
+                       )}
                       
                       {/* Colunas de mapeamento */}
                       {visibleColumns.has('mapeamento') && (
