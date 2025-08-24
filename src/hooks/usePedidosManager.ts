@@ -101,14 +101,12 @@ export function usePedidosManager(initialAccountId?: string) {
       params.q = filters.search;
     }
 
-    // Status/Situação - mapear para API quando possível
+    // Status do Envio - usar shipping_status em vez de status
     if (filters.situacao) {
       const situacoes = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
       if (situacoes.length > 0) {
-        const mapped = mapSituacaoToApiStatus(situacoes[0]);
-        if (mapped) {
-          params.status = mapped;
-        }
+        // Usar diretamente o valor do filtro para shipping_status
+        params.shipping_status = situacoes[0];
       }
     }
 
