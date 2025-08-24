@@ -372,9 +372,21 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
     
     // Dados de Envio Detalhados - usando dados completos do endpoint /shipments
     const shippingMethod = order.shipping?.shipping_method || order.shipping?.lead_time?.shipping_method;
+    const logisticType = order.shipping?.logistic?.type || order.shipping?.logistic_type;
+    const deliveryType = order.shipping?.delivery_type || order.shipping?.lead_time?.delivery_type;
+    
+    // Modo de Envio - identificar fulfillment vs normal
+    const modoEnvio = logisticType === 'fulfillment' ? 'Mercado Livre Fulfillment' :
+                      logisticType === 'drop_off' ? 'Mercado Envios' :
+                      logisticType === 'cross_docking' ? 'Cross Docking' :
+                      order.shipping?.shipping_mode || 'Normal';
+    
+    // Forma de Entrega - mais detalhada
     const formaEntrega = shippingMethod?.name || 
-                         order.shipping?.shipping_mode || 
-                         (order.shipping?.logistic?.type === 'drop_off' ? 'Mercado Envios' : 'Não informado');
+                         deliveryType || 
+                         (logisticType === 'fulfillment' ? 'Fulfillment ML' : 
+                          logisticType === 'drop_off' ? 'Mercado Envios' : 
+                          'Envio Normal');
     
     // Novos campos de rastreamento e logística - corrigir caminhos
     const trackingMethod = order.shipping?.tracking_method || "";
@@ -423,6 +435,13 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       uf,
       codigo_rastreamento: codigoRastreamento,
       url_rastreamento: urlRastreamento,
+      
+      // Novos campos de logística e fulfillment
+      shipping_mode: modoEnvio,
+      forma_entrega: formaEntrega,
+      logistic_type: logisticType,
+      delivery_type: deliveryType,
+      is_fulfillment: logisticType === 'fulfillment',
       obs: skuList.length > 0 ? `SKUs: ${skuList.join(", ")}` : order.status_detail,
       obs_interna: `ML Order ID: ${order.id} | Buyer ID: ${order.buyer?.id} | ${order.currency_id} | Qtd Total: ${quantidadeTotalItens}`,
       integration_account_id: integrationAccountId,

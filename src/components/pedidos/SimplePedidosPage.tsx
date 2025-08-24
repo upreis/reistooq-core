@@ -240,9 +240,9 @@ export default function SimplePedidosPage({ className }: Props) {
     
     // Colunas de envio (baseadas no shipping da API)
     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
-    { key: 'shipping_mode', label: 'Modo de Envio', default: false, category: 'shipping' },
+    { key: 'shipping_mode', label: 'Modo de Envio', default: true, category: 'shipping' },
     { key: 'shipping_substatus', label: 'Sub-status Envio', default: false, category: 'shipping' },
-    { key: 'forma_entrega', label: 'Forma de Entrega', default: false, category: 'shipping' },
+    { key: 'forma_entrega', label: 'Forma de Entrega', default: true, category: 'shipping' },
     { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
     
     // Colunas de identificação/participantes
@@ -935,10 +935,24 @@ export default function SimplePedidosPage({ className }: Props) {
                             
                             if (!accountId) return 'Conta não informada';
                             
-                            const account = accounts.find(acc => acc.id === accountId);
-                            if (!account) return `Conta ${accountId.substring(0, 8)}...`;
-                            
-                            return account.name || account.settings?.store_name || `Conta ${account.id.substring(0, 8)}...`;
+                             const account = accounts.find(acc => acc.id === accountId);
+                             if (!account) return `Conta ${accountId.substring(0, 8)}...`;
+                             
+                             const companyName = account.name || account.settings?.store_name || `Conta ${account.id.substring(0, 8)}...`;
+                             const isFulfillment = order.is_fulfillment || 
+                               order.logistic_type === 'fulfillment' ||
+                               order.raw?.shipping?.logistic_type === 'fulfillment';
+                             
+                             return (
+                               <div className="flex items-center gap-2">
+                                 <span>{companyName}</span>
+                                 {isFulfillment && (
+                                   <Badge variant="outline" className="text-xs px-1 py-0">
+                                     MLF
+                                   </Badge>
+                                 )}
+                               </div>
+                             );
                           })()}
                         </td>
                       )}
@@ -1082,30 +1096,52 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{translateShippingStatus(order.shipping_status || order.shipping?.status)}</td>
                       )}
                       
-                      {visibleColumns.has('shipping_mode') && (
-                        <td className="p-3">
-                          {order.shipping_mode 
-                            || order.shipping?.mode 
-                            || order.raw?.shipping?.shipping_option?.delivery_type
-                            || order.raw?.shipping?.logistic_type
-                            || order.raw?.shipping?.shipping_method_id
-                            || '-'}
-                        </td>
-                      )}
+                       {visibleColumns.has('shipping_mode') && (
+                         <td className="p-3">
+                           <div className="flex items-center gap-2">
+                             {(() => {
+                               const modoEnvio = order.shipping_mode 
+                                 || order.shipping?.mode 
+                                 || order.raw?.shipping?.shipping_option?.delivery_type
+                                 || order.raw?.shipping?.logistic_type
+                                 || order.raw?.shipping?.shipping_method_id
+                                 || '-';
+                               
+                               const isFulfillment = order.is_fulfillment || 
+                                 order.logistic_type === 'fulfillment' ||
+                                 order.raw?.shipping?.logistic_type === 'fulfillment' ||
+                                 modoEnvio?.toLowerCase().includes('fulfillment');
+                               
+                               return (
+                                 <>
+                                   {isFulfillment && (
+                                     <Badge variant="secondary" className="text-xs">
+                                       MLF
+                                     </Badge>
+                                   )}
+                                   <span>{modoEnvio}</span>
+                                 </>
+                               );
+                             })()}
+                           </div>
+                         </td>
+                       )}
                       
                       {visibleColumns.has('shipping_substatus') && (
                         <td className="p-3">{translateShippingSubstatus(order.shipping_substatus || order.shipping?.substatus)}</td>
                       )}
                       
-                      {visibleColumns.has('forma_entrega') && (
-                        <td className="p-3">
-                          {order.shipping?.shipping_option?.name
-                            || order.raw?.shipping?.shipping_option?.name
-                            || order.raw?.shipping?.shipping_method_id
-                            || order.raw?.shipping?.logistic_type
-                            || '-'}
-                        </td>
-                      )}
+                       {visibleColumns.has('forma_entrega') && (
+                         <td className="p-3">
+                           {order.forma_entrega
+                             || order.delivery_type
+                             || order.shipping?.shipping_option?.name
+                             || order.raw?.shipping?.shipping_option?.name
+                             || order.raw?.shipping?.shipping_method_id
+                             || order.raw?.shipping?.logistic_type
+                             || '-'}
+                         </td>
+                       )}
                       
                       {visibleColumns.has('codigo_rastreamento') && (
                         <td className="p-3">{order.codigo_rastreamento || order.shipping?.tracking_number || '-'}</td>
