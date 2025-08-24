@@ -145,9 +145,13 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
     const totalItens = itens.reduce((sum: number, it: any) => sum + it.quantidade, 0);
     const skuPrincipal = itens[0]?.sku || order.id?.toString() || '';
 
-    // CORREÇÃO: Usar dados diretos da API unified-orders (não de sub-objeto logistics)
-    const isFullfillment = order.is_fulfillment || order.logistic_type === 'fulfillment' || false;
-    const shippingMode = order.shipping_mode || order.logistic_mode || ship.mode || 'me2';
+    // CORREÇÃO: Usar dados diretos da API unified-orders - fulfillment vem em logistic.type
+    const isFullfillment = order.is_fulfillment || 
+      order.logistic_type === 'fulfillment' || 
+      ship.logistic?.type === 'fulfillment' ||
+      order.shipping?.logistic?.type === 'fulfillment' ||
+      order.raw?.shipping?.logistic?.type === 'fulfillment' || false;
+    const shippingMode = order.shipping_mode || order.logistic_mode || ship.mode || ship.logistic?.mode || 'me2';
     const deliveryType = order.forma_entrega || order.delivery_type || ship.delivery_type || 'standard';
     
     // Status detalhado com frete - usar dados diretos

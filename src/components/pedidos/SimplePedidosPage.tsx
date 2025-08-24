@@ -1155,7 +1155,8 @@ export default function SimplePedidosPage({ className }: Props) {
                              const companyName = account.name || account.settings?.store_name || `Conta ${account.id.substring(0, 8)}...`;
                              const isFulfillment = order.is_fulfillment || 
                                order.logistic_type === 'fulfillment' ||
-                               order.raw?.shipping?.logistic_type === 'fulfillment';
+                               order.shipping?.logistic?.type === 'fulfillment' ||
+                               order.raw?.shipping?.logistic?.type === 'fulfillment';
                              
                              return (
                                <div className="flex items-center gap-2">
@@ -1340,7 +1341,10 @@ export default function SimplePedidosPage({ className }: Props) {
                             {(() => {
                               // CORREÇÃO: Buscar dados diretamente dos campos mapeados
                               const modoEnvio = order.shipping_mode || 'Normal';
-                              const isFulfillment = order.is_fulfillment || false;
+                              const isFulfillment = order.is_fulfillment || 
+                                order.logistic_type === 'fulfillment' ||
+                                order.shipping?.logistic?.type === 'fulfillment' ||
+                                order.raw?.shipping?.logistic?.type === 'fulfillment' || false;
                               
                               // Debug: Log para verificar os dados do pedido
                               console.log(`[DEBUG] Order ${order.id} shipping_mode:`, {
