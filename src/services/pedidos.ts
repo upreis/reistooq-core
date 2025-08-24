@@ -128,14 +128,14 @@ function parseUF(state: any): string | null {
 // Mapeia dados do ML (raw/unified) para interface da tabela – usado no fallback
 function mapMlToUi(mlOrders: any[]): Pedido[] {
   return mlOrders.map((order: any) => {
-    // preferir shipping_details (enrichment) e cair para shipping básico
+    // CORREÇÃO: Usar dados diretamente da resposta unified-orders
     const ship = order.shipping_details ?? order.shipping ?? {};
-    const addr = ship.receiver_address ?? {};
+    const addr = ship.receiver_address ?? ship.destination?.shipping_address ?? {};
     const state = addr.state ?? {};
 
     const itens =
       order.order_items?.map((item: any) => ({
-        sku: item.item?.id?.toString() || '',
+        sku: item.item?.seller_sku || item.item?.id?.toString() || '',
         descricao: item.item?.title || '',
         quantidade: item.quantity || 1,
         valor_unitario: item.unit_price || 0,
@@ -145,86 +145,114 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
     const totalItens = itens.reduce((sum: number, it: any) => sum + it.quantidade, 0);
     const skuPrincipal = itens[0]?.sku || order.id?.toString() || '';
 
-    // Dados de logística extraídos do unified-orders
-    const logisticData = order.logistics || {};
-    const isFullfillment = logisticData.is_fulfillment || false;
-    const shippingMode = logisticData.shipping_mode || logisticData.logistic_mode || ship.mode || 'me2';
-    const deliveryType = logisticData.delivery_type || ship.delivery_type || 'standard';
+    // CORREÇÃO: Usar dados diretos da API unified-orders (não de sub-objeto logistics)
+    const isFullfillment = order.is_fulfillment || order.logistic_type === 'fulfillment' || false;
+    const shippingMode = order.shipping_mode || order.logistic_mode || ship.mode || 'me2';
+    const deliveryType = order.forma_entrega || order.delivery_type || ship.delivery_type || 'standard';
     
-    // Status detalhado com frete
-    const shippingCost = order.shipping_cost || ship.cost || 0;
-    const statusDetail = `${mapMlStatus(order.status)} | Frete: R$ ${shippingCost.toFixed(2)}`;
+    // Status detalhado com frete - usar dados diretos
+    const shippingCost = order.valor_frete || order.shipping_cost || ship.cost || 0;
+    const statusDetail = order.status_detail || `${mapMlStatus(order.status)} | Frete: R$ ${shippingCost.toFixed(2)}`;
 
-    // Dados de envio extraídos da unified-orders
-    const shippingData = order.shipping_details || order.shipping || {};
-    const shippingStatus = shippingData.status || order.status;
-    const shippingSubstatus = shippingData.substatus || null;
-    const trackingNumber = shippingData.tracking_number || null;
-    const trackingUrl = trackingNumber ? `https://www.mercadolivre.com.br/gz/shipping/tracking/${trackingNumber}` : null;
-    const receiverName = shippingData.receiver_address?.receiver_name || addr.receiver_name || null;
+    // Dados de envio - usar estrutura correta da API
+    const shippingId = ship.id || order.shipping_id;
+    const shippingStatus = order.shipping_status || order.status_shipping || ship.status || order.status;
+    const shippingSubstatus = order.shipping_substatus || order.substatus || ship.substatus;
+    const trackingNumber = order.codigo_rastreamento || ship.tracking_number;
+    const trackingUrl = order.url_rastreamento || ship.tracking_url || 
+      (trackingNumber ? `https://www.mercadolivre.com.br/gz/shipping/tracking/${trackingNumber}` : null);
+    const receiverName = order.nome_destinatario || addr.receiver_name;
 
     return {
       id: order.id?.toString() || '',
-      numero: order.id?.toString() || '',
+      numero: order.numero || order.id?.toString() || '',
       id_unico: `${skuPrincipal}-${order.id}`,
-      nome_cliente:
-        order.buyer?.first_name && order.buyer?.last_name
+      nome_cliente: order.nome_cliente ||
+        (order.buyer?.first_name && order.buyer?.last_name
           ? `${order.buyer.first_name} ${order.buyer.last_name}`
-          : order.buyer?.nickname || 'N/A',
-      cpf_cnpj: order.buyer?.identification?.number || null,
-      data_pedido:
+          : order.buyer?.nickname || 'N/A'),
+      cpf_cnpj: order.cpf_cnpj || order.buyer?.identification?.number || null,
+      data_pedido: order.data_pedido ||
         order.date_created?.split('T')[0] ||
         new Date().toISOString().split('T')[0],
-      situacao: mapMlStatus(order.status),
-      valor_total: order.total_amount || 0,
+      situacao: order.situacao || mapMlStatus(order.status),
+      valor_total: order.valor_total || order.total_amount || 0,
       valor_frete: shippingCost,
-      valor_desconto: order.coupon?.amount || 0,
-      numero_ecommerce: order.pack_id?.toString() || null,
-      numero_venda: order.id?.toString() || null,
-      empresa: isFullfillment ? 'Mercado Livre (MLF)' : 'Mercado Livre',
-      cidade: addr.city?.name || null,
-      uf: parseUF(state),
-      obs:
+      valor_desconto: order.valor_desconto || order.coupon?.amount || 0,
+      numero_ecommerce: order.numero_ecommerce || order.pack_id?.toString() || null,
+      numero_venda: order.numero_venda || order.id?.toString() || null,
+      empresa: order.empresa || (isFullfillment ? 'Mercado Livre (MLF)' : 'Mercado Livre'),
+      cidade: order.cidade || addr.city?.name || null,
+      uf: order.uf || parseUF(state),
+      obs: order.obs ||
         order.order_items
           ?.map((item: any) => item?.item?.title)
           .filter(Boolean)
           .join(', ') || null,
-      integration_account_id: order.seller?.id?.toString() || null,
-      created_at: order.date_created || new Date().toISOString(),
-      updated_at: order.last_updated || new Date().toISOString(),
+      integration_account_id: order.integration_account_id || order.seller?.id?.toString() || null,
+      created_at: order.created_at || order.date_created || new Date().toISOString(),
+      updated_at: order.updated_at || order.last_updated || new Date().toISOString(),
 
-      // Campos de logística
+      // CORREÇÃO: Campos de logística - usar dados diretos
       shipping_mode: shippingMode,
       forma_entrega: deliveryType,
       status_detail: statusDetail,
       is_fulfillment: isFullfillment,
 
-      // Campos de envio
-      shipping_id: shippingData.id?.toString() || null,
+      // CORREÇÃO: Campos de envio - mapeamento correto
+      shipping_id: shippingId?.toString() || null,
       shipping_status: shippingStatus,
       shipping_substatus: shippingSubstatus,
       codigo_rastreamento: trackingNumber,
       url_rastreamento: trackingUrl,
       nome_destinatario: receiverName,
 
-      // Campos financeiros adicionais
-      paid_amount: order.total_amount || 0,
+      // ADIÇÃO: Campos financeiros detalhados da API
+      paid_amount: order.paid_amount || order.valor_pago_total || order.total_amount || 0,
       currency_id: order.currency_id || 'BRL',
-      coupon_amount: order.coupon?.amount || 0,
+      coupon_amount: order.coupon_amount || order.valor_desconto || 0,
+      receita_produtos: order.receita_produtos || 0,
+      tarifas_venda: order.tarifas_venda || 0,
+      impostos: order.impostos || 0,
+      receita_envio: order.receita_envio || shippingCost,
 
-      // Campos do ML
+      // ADIÇÃO: Campos do produto/anúncio da API
+      titulo_anuncio: order.titulo_anuncio || order.order_items?.[0]?.item?.title || '',
+      categoria_ml: order.categoria_ml || '',
+      condicao: order.condicao || '',
+      garantia: order.garantia || '',
+      tipo_listagem: order.tipo_listagem || '',
+      atributos_variacao: order.atributos_variacao || '',
+
+      // ADIÇÃO: Campos do ML detalhados
       date_created: order.date_created,
       pack_id: order.pack_id?.toString() || null,
       pickup_id: order.pickup_id?.toString() || null,
       manufacturing_ending_date: order.manufacturing_ending_date || null,
-      comment: order.comments || null,
+      comment: order.comment || null,
       tags: order.tags || [],
 
-      // Dados do comprador/vendedor
-      buyer_id: order.buyer?.id?.toString() || null,
-      seller_id: order.seller?.id?.toString() || null,
+      // ADIÇÃO: Dados do comprador/vendedor
+      buyer_id: order.buyer_id || order.buyer?.id?.toString() || null,
+      seller_id: order.seller_id || order.seller?.id?.toString() || null,
 
-      // campos auxiliares
+      // ADIÇÃO: Campos de endereço detalhados
+      preferencia_entrega: order.preferencia_entrega || '',
+      endereco_completo: order.endereco_completo || '',
+      cep: order.cep || addr.zip_code || '',
+      comentario_endereco: order.comentario_endereco || '',
+
+      // ADIÇÃO: Campos de logística avançados
+      tracking_method: order.tracking_method || '',
+      substatus: order.substatus || '',
+      logistic_mode: order.logistic_mode || '',
+      logistic_type: order.logistic_type || '',
+
+      // ADIÇÃO: Campos de quantidade e status
+      quantidade_itens: order.quantidade_itens || totalItens,
+      status_original: order.status_original || order.status,
+
+      // campos auxiliares originais
       itens,
       total_itens: totalItens > 0 ? totalItens : 1,
       sku_estoque: null,
