@@ -410,13 +410,22 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'pack_id', label: 'Pack ID', default: false, category: 'ml' },
     { key: 'tags', label: 'Tags', default: false, category: 'ml' },
     
-    // Colunas de envio (baseadas no shipping da API)
-    { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
-    { key: 'shipping_mode', label: 'Modo de Envio', default: true, category: 'shipping' },
-    { key: 'shipping_method', label: 'Método de Envio', default: true, category: 'shipping' },
-    { key: 'shipping_substatus', label: 'Sub-status Envio', default: false, category: 'shipping' },
-    { key: 'forma_entrega', label: 'Forma de Entrega', default: true, category: 'shipping' },
-    { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
+     // Colunas de envio (baseadas no shipping da API)
+     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
+     
+     // Colunas específicas dos campos da API que você mencionou
+     { key: 'logistic_mode', label: 'Logistic Mode (Principal)', default: true, category: 'shipping' },
+     { key: 'logistic_type', label: 'Logistic Type', default: false, category: 'shipping' },
+     { key: 'shipping_method_type', label: 'Shipping Method Type', default: false, category: 'shipping' },
+     { key: 'delivery_type', label: 'Delivery Type', default: false, category: 'shipping' },
+     { key: 'substatus_detail', label: 'Substatus (Estado Atual)', default: true, category: 'shipping' },
+     
+     // Colunas originais mantidas para compatibilidade
+     { key: 'shipping_mode', label: 'Modo de Envio (Combinado)', default: false, category: 'shipping' },
+     { key: 'shipping_method', label: 'Método de Envio (Combinado)', default: false, category: 'shipping' },
+     { key: 'shipping_substatus', label: 'Sub-status Envio (Combinado)', default: false, category: 'shipping' },
+     { key: 'forma_entrega', label: 'Forma de Entrega (Combinado)', default: false, category: 'shipping' },
+     { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
     
     // Colunas de identificação/participantes
     { key: 'buyer_id', label: 'ID Comprador', default: false, category: 'ids' },
@@ -1121,16 +1130,22 @@ export default function SimplePedidosPage({ className }: Props) {
                   {visibleColumns.has('comment') && <th className="text-left p-3">Comentário ML</th>}
                   {visibleColumns.has('tags') && <th className="text-left p-3">Tags</th>}
                   
-                  {/* Colunas de envio */}
-                  {visibleColumns.has('shipping_id') && <th className="text-left p-3">ID do Envio</th>}
-                  {visibleColumns.has('shipping_status') && <th className="text-left p-3">Status do Envio</th>}
-                  {visibleColumns.has('shipping_mode') && <th className="text-left p-3">Modo de Envio</th>}
-                  {visibleColumns.has('shipping_method') && <th className="text-left p-3">Método de Envio</th>}
-                  {visibleColumns.has('shipping_substatus') && <th className="text-left p-3">Sub-status Envio</th>}
-                  {visibleColumns.has('forma_entrega') && <th className="text-left p-3">Forma de Entrega</th>}
-                  {visibleColumns.has('codigo_rastreamento') && <th className="text-left p-3">Código Rastreamento</th>}
-                  {visibleColumns.has('url_rastreamento') && <th className="text-left p-3">URL Rastreamento</th>}
-                  {visibleColumns.has('nome_destinatario') && <th className="text-left p-3">Nome Destinatário</th>}
+                   {/* Colunas de envio específicas da API */}
+                   {visibleColumns.has('shipping_status') && <th className="text-left p-3">Status do Envio</th>}
+                   {visibleColumns.has('logistic_mode') && <th className="text-left p-3">Logistic Mode (Principal)</th>}
+                   {visibleColumns.has('logistic_type') && <th className="text-left p-3">Logistic Type</th>}
+                   {visibleColumns.has('shipping_method_type') && <th className="text-left p-3">Shipping Method Type</th>}
+                   {visibleColumns.has('delivery_type') && <th className="text-left p-3">Delivery Type</th>}
+                   {visibleColumns.has('substatus_detail') && <th className="text-left p-3">Substatus (Estado Atual)</th>}
+                   
+                   {/* Colunas de envio combinadas (mantidas para compatibilidade) */}
+                   {visibleColumns.has('shipping_mode') && <th className="text-left p-3">Modo de Envio (Combinado)</th>}
+                   {visibleColumns.has('shipping_method') && <th className="text-left p-3">Método de Envio (Combinado)</th>}
+                   {visibleColumns.has('shipping_substatus') && <th className="text-left p-3">Sub-status Envio (Combinado)</th>}
+                   {visibleColumns.has('forma_entrega') && <th className="text-left p-3">Forma de Entrega (Combinado)</th>}
+                   {visibleColumns.has('codigo_rastreamento') && <th className="text-left p-3">Código Rastreamento</th>}
+                   {visibleColumns.has('url_rastreamento') && <th className="text-left p-3">URL Rastreamento</th>}
+                   {visibleColumns.has('nome_destinatario') && <th className="text-left p-3">Nome Destinatário</th>}
                   
                   {/* Colunas de identificação */}
                   {visibleColumns.has('buyer_id') && <th className="text-left p-3">ID Comprador</th>}
@@ -1353,91 +1368,248 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{order.shipping_id || '-'}</td>
                       )}
                       
-                      {visibleColumns.has('shipping_status') && (
-                        <td className="p-3">
-                          {(() => {
-                            const status = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status;
-                            const translatedStatus = translateShippingStatus(status);
-                            const colorClass = getShippingStatusColor(status);
-                            
-                            return (
-                              <Badge className={`text-xs border ${colorClass}`}>
-                                {translatedStatus}
-                              </Badge>
-                            );
-                          })()}
-                        </td>
-                      )}
-                      
-                      {visibleColumns.has('shipping_mode') && (
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            {(() => {
-                              // Buscar dados de logística (modo bruto da API)
-                              const logisticMode =
-                                order.shipping?.logistic?.mode ||
-                                order.raw?.shipping?.logistic?.mode ||
-                                order.logistic_mode ||
-                                order.shipping_mode ||
-                                order.shipping?.mode ||
-                                order.shipping_details?.shipping_mode;
-                              const logisticType =
-                                order.shipping?.logistic?.type ||
-                                order.raw?.shipping?.logistic?.type ||
-                                order.logistic_type ||
-                                order.shipping_details?.logistic_type;
-                              const deliveryType =
-                                order.forma_entrega ||
-                                order.delivery_type ||
-                                order.shipping?.delivery_type ||
-                                order.raw?.shipping?.delivery_type ||
-                                order.shipping_details?.delivery_type;
-                              
-                              const value = logisticType || logisticMode || deliveryType || '-';
-                              return <span>{value}</span>;
-                            })()}
-                          </div>
-                        </td>
-                      )}
-                      
-                      {visibleColumns.has('shipping_method') && (
-                        <td className="p-3">
-                          {(() => {
-                            const shippingMethod = order.shipping_method || 
-                              order.shipping?.shipping_method || 
-                              order.raw?.shipping?.shipping_method ||
-                              order.shipping_details?.shipping_method;
-                            if (!shippingMethod) return '-';
-                            if (typeof shippingMethod === 'string') return shippingMethod;
-                            return shippingMethod.name || shippingMethod.id || JSON.stringify(shippingMethod);
-                          })()}
-                        </td>
-                      )}
-                      
-                      {visibleColumns.has('shipping_substatus') && (
-                        <td className="p-3">
-                          {(() => {
-                            const rawSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.shipping_details?.substatus;
-                            return rawSubstatus || '-';
-                          })()}
-                        </td>
-                      )}
-                      
-                      {visibleColumns.has('forma_entrega') && (
-                        <td className="p-3">
-                          {(() => {
-                            const value =
-                              order.forma_entrega || 
-                              order.delivery_type || 
+                       {visibleColumns.has('shipping_status') && (
+                         <td className="p-3">
+                           {(() => {
+                             const status = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status;
+                             const translatedStatus = translateShippingStatus(status);
+                             const colorClass = getShippingStatusColor(status);
+                             
+                             return (
+                               <Badge className={`text-xs border ${colorClass}`}>
+                                 {translatedStatus}
+                               </Badge>
+                             );
+                           })()}
+                         </td>
+                       )}
+                       
+                       {/* 🆕 COLUNAS ESPECÍFICAS DOS CAMPOS DA API */}
+                       {visibleColumns.has('logistic_mode') && (
+                         <td className="p-3">
+                           <span className="text-xs font-mono">
+                             {order.shipping?.logistic?.mode || 
+                              order.raw?.shipping?.logistic?.mode || 
+                              order.logistic_mode || 
+                              '-'}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('logistic_type') && (
+                         <td className="p-3">
+                           <span className="text-xs font-mono">
+                             {order.shipping?.logistic?.type || 
+                              order.raw?.shipping?.logistic?.type || 
+                              order.logistic_type || 
+                              '-'}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('shipping_method_type') && (
+                         <td className="p-3">
+                           <span className="text-xs font-mono">
+                             {order.shipping_method?.type || 
+                              order.shipping?.shipping_method?.type || 
+                              order.raw?.shipping?.shipping_method?.type || 
+                              '-'}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('delivery_type') && (
+                         <td className="p-3">
+                           <span className="text-xs font-mono">
+                             {order.delivery_type || 
                               order.shipping?.delivery_type || 
-                              order.raw?.shipping?.delivery_type ||
-                              order.shipping?.mode || 
-                              order.raw?.shipping?.mode ||
-                              'standard';
-                            return typeof value === 'string' ? value : JSON.stringify(value);
-                          })()}
-                        </td>
-                      )}
+                              order.raw?.shipping?.delivery_type || 
+                              '-'}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('substatus_detail') && (
+                         <td className="p-3">
+                           <span className="text-xs font-mono">
+                             {order.shipping_substatus || 
+                              order.shipping?.substatus || 
+                              order.raw?.shipping?.substatus || 
+                              order.substatus || 
+                              order.raw?.substatus || 
+                              '-'}
+                           </span>
+                         </td>
+                       )}
+                      
+                       {visibleColumns.has('shipping_mode') && (
+                         <td className="p-3">
+                           <div className="flex flex-col gap-1">
+                             {(() => {
+                               // 1. logistic_mode (Principal identificador)
+                               const logisticMode = 
+                                 order.shipping?.logistic?.mode ||
+                                 order.raw?.shipping?.logistic?.mode ||
+                                 order.logistic_mode ||
+                                 order.shipping_mode ||
+                                 order.shipping_details?.shipping_mode;
+                               
+                               // 2. logistic_type (Complementar)
+                               const logisticType =
+                                 order.shipping?.logistic?.type ||
+                                 order.raw?.shipping?.logistic?.type ||
+                                 order.logistic_type ||
+                                 order.shipping_details?.logistic_type;
+                               
+                               // 3. delivery_type 
+                               const deliveryType =
+                                 order.delivery_type ||
+                                 order.shipping?.delivery_type ||
+                                 order.raw?.shipping?.delivery_type ||
+                                 order.shipping_details?.delivery_type;
+                               
+                               // 4. shipping_method.type
+                               const shippingMethodType = 
+                                 order.shipping_method?.type ||
+                                 order.shipping?.shipping_method?.type ||
+                                 order.raw?.shipping?.shipping_method?.type;
+                               
+                               // Montar display com todos os valores relevantes
+                               const parts = [];
+                               
+                               if (logisticMode) parts.push(`Mode: ${logisticMode}`);
+                               if (logisticType) parts.push(`Type: ${logisticType}`);
+                               if (deliveryType) parts.push(`Delivery: ${deliveryType}`);
+                               if (shippingMethodType) parts.push(`Method: ${shippingMethodType}`);
+                               
+                               return (
+                                 <div className="text-xs">
+                                   {parts.length > 0 ? (
+                                     parts.map((part, i) => (
+                                       <div key={i} className="text-gray-600">{part}</div>
+                                     ))
+                                   ) : (
+                                     <span className="text-muted-foreground">-</span>
+                                   )}
+                                 </div>
+                               );
+                             })()}
+                           </div>
+                         </td>
+                       )}
+                      
+                       {visibleColumns.has('shipping_method') && (
+                         <td className="p-3">
+                           <div className="flex flex-col gap-1">
+                             {(() => {
+                               const shippingMethod = order.shipping_method || 
+                                 order.shipping?.shipping_method || 
+                                 order.raw?.shipping?.shipping_method ||
+                                 order.shipping_details?.shipping_method;
+                               
+                               if (!shippingMethod) return <span className="text-muted-foreground">-</span>;
+                               
+                               if (typeof shippingMethod === 'string') {
+                                 return <span className="text-xs">{shippingMethod}</span>;
+                               }
+                               
+                               // Se for objeto, mostrar name, type, id
+                               const parts = [];
+                               if (shippingMethod.name) parts.push(`Name: ${shippingMethod.name}`);
+                               if (shippingMethod.type) parts.push(`Type: ${shippingMethod.type}`);
+                               if (shippingMethod.id) parts.push(`ID: ${shippingMethod.id}`);
+                               
+                               return (
+                                 <div className="text-xs">
+                                   {parts.length > 0 ? (
+                                     parts.map((part, i) => (
+                                       <div key={i} className="text-gray-600">{part}</div>
+                                     ))
+                                   ) : (
+                                     <span className="text-muted-foreground">Objeto complexo</span>
+                                   )}
+                                 </div>
+                               );
+                             })()}
+                           </div>
+                         </td>
+                       )}
+                      
+                       {visibleColumns.has('shipping_substatus') && (
+                         <td className="p-3">
+                           <div className="flex flex-col gap-1">
+                             {(() => {
+                               // substatus do shipping
+                               const shippingSubstatus = order.shipping_substatus || 
+                                 order.shipping?.substatus || 
+                                 order.raw?.shipping?.substatus || 
+                                 order.shipping_details?.substatus;
+                               
+                               // substatus geral (pode vir diretamente do order)
+                               const generalSubstatus = order.substatus || order.raw?.substatus;
+                               
+                               const parts = [];
+                               if (shippingSubstatus) parts.push(`Shipping: ${shippingSubstatus}`);
+                               if (generalSubstatus && generalSubstatus !== shippingSubstatus) {
+                                 parts.push(`General: ${generalSubstatus}`);
+                               }
+                               
+                               return (
+                                 <div className="text-xs">
+                                   {parts.length > 0 ? (
+                                     parts.map((part, i) => (
+                                       <div key={i} className="text-gray-600">{part}</div>
+                                     ))
+                                   ) : (
+                                     <span className="text-muted-foreground">-</span>
+                                   )}
+                                 </div>
+                               );
+                             })()}
+                           </div>
+                         </td>
+                       )}
+                      
+                       {visibleColumns.has('forma_entrega') && (
+                         <td className="p-3">
+                           <div className="flex flex-col gap-1">
+                             {(() => {
+                               // delivery_type
+                               const deliveryType = order.delivery_type || 
+                                 order.shipping?.delivery_type || 
+                                 order.raw?.shipping?.delivery_type;
+                               
+                               // forma_entrega (campo mapeado)
+                               const formaEntrega = order.forma_entrega;
+                               
+                               // shipping mode/type como complemento
+                               const shippingMode = order.shipping?.mode || 
+                                 order.raw?.shipping?.mode;
+                               
+                               const parts = [];
+                               if (deliveryType) parts.push(`Delivery: ${deliveryType}`);
+                               if (formaEntrega && formaEntrega !== deliveryType) {
+                                 parts.push(`Forma: ${formaEntrega}`);
+                               }
+                               if (shippingMode && shippingMode !== deliveryType && shippingMode !== formaEntrega) {
+                                 parts.push(`Mode: ${shippingMode}`);
+                               }
+                               
+                               return (
+                                 <div className="text-xs">
+                                   {parts.length > 0 ? (
+                                     parts.map((part, i) => (
+                                       <div key={i} className="text-gray-600">{part}</div>
+                                     ))
+                                   ) : (
+                                     <span className="text-muted-foreground">standard</span>
+                                   )}
+                                 </div>
+                               );
+                             })()}
+                           </div>
+                         </td>
+                       )}
                       
                       {visibleColumns.has('codigo_rastreamento') && (
                         <td className="p-3">{order.codigo_rastreamento || order.shipping?.tracking_number || '-'}</td>
