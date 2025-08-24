@@ -8,21 +8,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Clock, Filter, Settings, CheckSquare } from 'lucide-react';
+import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Clock, Filter, Settings, CheckSquare, CalendarIcon } from 'lucide-react';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
-import { PedidosFiltersEnhanced } from '@/features/pedidos/components/filters/PedidosFiltersEnhanced';
-import { type PedidosFiltersAdvanced } from '@/features/pedidos/hooks/usePedidosFiltersEnhanced';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
 import { mapApiStatusToLabel, getStatusBadgeVariant, mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
 import { usePedidosManager } from '@/hooks/usePedidosManager';
 import { ExportModal } from './ExportModal';
 import { SavedFiltersManager } from './SavedFiltersManager';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 type Order = {
   id: string;
@@ -402,46 +406,119 @@ export default function SimplePedidosPage({ className }: Props) {
         </div>
       </Card>
 
-      {/* 🛡️ FILTROS UNIFICADOS + CONTROLE DE COLUNAS */}
-      <div className="bg-muted/30 p-4 rounded-lg space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm">
-              Filtros ativos: {JSON.stringify(filters)}
-              {/* 🚀 FASE 2: Indicador de cache */}
-              {state.cachedAt && (
-                <span className="ml-2 text-xs text-muted-foreground">
-                  (Cache: {state.cachedAt.toLocaleTimeString()})
-                </span>
-              )}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Fonte: {state.fonte} | Total: {total} pedidos
-              {/* 🚀 FASE 2: Status de refresh */}
-              {state.isRefreshing && (
-                <span className="ml-2 animate-pulse">• Atualizando...</span>
-              )}
-            </p>
-          </div>
-          <div className="flex gap-2">
+      {/* 🛡️ FILTROS SIMPLES E FUNCIONAIS */}
+      <Card className="p-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Filtros</h3>
             <Button size="sm" variant="outline" onClick={actions.clearFilters}>
+              <Filter className="h-4 w-4 mr-2" />
               Limpar Filtros
             </Button>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Colunas
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-medium">Selecionar Colunas</h4>
-                    <Button size="sm" variant="ghost" onClick={resetToDefault}>
-                      Padrão
-                    </Button>
-                  </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Filtro por Situação */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Situação</label>
+              <Select 
+                value={Array.isArray(filters.situacao) ? filters.situacao[0] || '' : filters.situacao || ''} 
+                onValueChange={(value) => actions.setFilters({ situacao: value || undefined })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as situações" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todas as situações</SelectItem>
+                  <SelectItem value="Pendente">Pendente</SelectItem>
+                  <SelectItem value="Pago">Pago</SelectItem>
+                  <SelectItem value="Confirmado">Confirmado</SelectItem>
+                  <SelectItem value="Enviado">Enviado</SelectItem>
+                  <SelectItem value="Entregue">Entregue</SelectItem>
+                  <SelectItem value="Cancelado">Cancelado</SelectItem>
+                  <SelectItem value="Devolvido">Devolvido</SelectItem>
+                  <SelectItem value="Reembolsado">Reembolsado</SelectItem>
+                  <SelectItem value="Aguardando">Aguardando</SelectItem>
+                  <SelectItem value="Processando">Processando</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Data Início */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data Início</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !filters.dataInicio && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.dataInicio ? (
+                      format(filters.dataInicio, "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecionar data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filters.dataInicio}
+                    onSelect={(date) => actions.setFilters({ dataInicio: date })}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Data Fim */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data Fim</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !filters.dataFim && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.dataFim ? (
+                      format(filters.dataFim, "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecionar data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filters.dataFim}
+                    onSelect={(date) => actions.setFilters({ dataFim: date })}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Controle de Colunas */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Colunas</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configurar
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <h4 className="font-medium">Selecionar Colunas</h4>
@@ -450,7 +527,6 @@ export default function SimplePedidosPage({ className }: Props) {
                       </Button>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                      {/* Agrupar por categoria */}
                       {['basic', 'products', 'financial', 'status', 'mapping', 'ml', 'shipping', 'ids'].map((category) => {
                         const categoryColumns = allColumns.filter(col => col.category === category);
                         const categoryLabels = {
@@ -487,12 +563,27 @@ export default function SimplePedidosPage({ className }: Props) {
                       })}
                     </div>
                   </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Indicadores */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div>
+              Fonte: {state.fonte} | Total: {total} pedidos
+              {state.isRefreshing && <span className="ml-2 animate-pulse">• Atualizando...</span>}
+            </div>
+            {(filters.situacao || filters.dataInicio || filters.dataFim) && (
+              <div className="flex items-center gap-1">
+                <Badge variant="secondary" className="text-xs">
+                  Filtros ativos
+                </Badge>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* 🛡️ MENSAGEM DE ERRO SEGURA */}
       {error && (
