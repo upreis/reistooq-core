@@ -1376,10 +1376,18 @@ export default function SimplePedidosPage({ className }: Props) {
                                 order.raw?.shipping?.logistic?.type || 
                                 order.logistic_type;
                               
-                              // Priorizar fulfillment se for o tipo
+                              // Verificar se tem tag self_service_in (indica Flex)
+                              const tags = order.tags || order.raw?.tags || [];
+                              const hasFlexTag = tags.includes('self_service_in');
+                              
+                              // Determinar modo de envio correto
                               let modoEnvio = '-';
                               if (logisticType === 'fulfillment') {
-                                modoEnvio = 'Fulfillment (MLF)';
+                                if (hasFlexTag && logisticMode === 'me2') {
+                                  modoEnvio = 'Mercado Envios Flex';
+                                } else {
+                                  modoEnvio = 'Fulfillment (MLF)';
+                                }
                               } else if (logisticMode) {
                                 modoEnvio = translateShippingMode(logisticMode);
                               }

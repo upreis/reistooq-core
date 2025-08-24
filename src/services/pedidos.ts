@@ -236,7 +236,7 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       pickup_id: order.pickup_id?.toString() || null,
       manufacturing_ending_date: order.manufacturing_ending_date || null,
       comment: order.comment || null,
-      tags: order.tags || [],
+      tags: order.tags || order.raw?.tags || [],
 
       // ADIÇÃO: Dados do comprador/vendedor
       buyer_id: order.buyer_id || order.buyer?.id?.toString() || null,
