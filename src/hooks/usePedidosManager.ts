@@ -307,8 +307,15 @@ export function usePedidosManager(initialAccountId?: string) {
         // Tentativa 1: unified-orders com filtros
         const unifiedResult = await loadFromUnifiedOrders(apiParams);
         
-        setOrders(unifiedResult.results);
-        setTotal(unifiedResult.total);
+        // Forçar consistência do filtro "Status do Envio" no client-side
+        const shouldApplyClientFilter = Boolean(apiParams.shipping_status);
+        const filteredClientResults = shouldApplyClientFilter
+          ? applyClientSideFilters(unifiedResult.results)
+          : unifiedResult.results;
+
+        // Caso o server-side não aplique o filtro, garantimos aqui
+        setOrders(filteredClientResults);
+        setTotal(shouldApplyClientFilter ? filteredClientResults.length : unifiedResult.total);
         setFonte('tempo-real');
         
         // 🚀 FASE 2: Atualizar cache
@@ -316,9 +323,10 @@ export function usePedidosManager(initialAccountId?: string) {
         setLastQuery(cacheKey);
         
         // Debug: verificar se os SKUs estão vindo nos dados
-        console.log('[PedidosManager] Sample order data:', unifiedResult.results[0]);
-        console.log('[PedidosManager] Total orders loaded:', unifiedResult.results.length);
-        console.log('[PedidosManager] Total records available:', unifiedResult.total);
+        console.log('[PedidosManager] Sample order data:', filteredClientResults[0]);
+        console.log('[PedidosManager] Total orders loaded (raw):', unifiedResult.results.length);
+        console.log('[PedidosManager] Total orders after client filter:', filteredClientResults.length);
+        console.log('[PedidosManager] Total records available (server):', unifiedResult.total);
         console.log('[PedidosManager] Current page:', currentPage);
         
       } catch (unifiedError: any) {
