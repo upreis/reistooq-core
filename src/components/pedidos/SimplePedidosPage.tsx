@@ -126,24 +126,57 @@ export default function SimplePedidosPage({ className }: Props) {
   const translateTags = (tags: string[]): string => {
     const translations: Record<string, string> = {
       'immediate_payment': 'Pagamento Imediato',
+      'immediate payment': 'Pagamento Imediato',
       'cart': 'Carrinho',
       'mandatory_immediate_payment': 'Pagamento Imediato Obrigatório',
+      'mandatory immediate payment': 'Pagamento Imediato Obrigatório',
       'paid': 'Pago',
       'not_paid': 'Não Pago',
+      'not paid': 'Não Pago',
       'pack_order': 'Pedido Pack',
+      'pack order': 'Pedido Pack',
       'delivered': 'Entregue',
       'not_delivered': 'Não Entregue',
+      'not delivered': 'Não Entregue',
       'fbm': 'Enviado pelo Vendedor',
       'fulfillment': 'Full',
       'self_service_in': 'Auto Atendimento',
+      'self service in': 'Auto Atendimento',
       'self_service_out': 'Retirada',
+      'self service out': 'Retirada',
       'normal': 'Normal',
-      'me2': 'Mercado Envios 2'
+      'me2': 'Mercado Envios 2',
+      'no_shipping': 'Sem Frete',
+      'no shipping': 'Sem Frete',
+      'free_shipping': 'Frete Grátis',
+      'free shipping': 'Frete Grátis',
+      'express_shipping': 'Frete Expresso',
+      'express shipping': 'Frete Expresso',
+      'scheduled_delivery': 'Entrega Agendada',
+      'scheduled delivery': 'Entrega Agendada',
+      'store_pickup': 'Retirada na Loja',
+      'store pickup': 'Retirada na Loja',
+      'cross_docking': 'Cross Docking',
+      'cross docking': 'Cross Docking',
+      'same_day_delivery': 'Entrega no Mesmo Dia',
+      'same day delivery': 'Entrega no Mesmo Dia',
+      'next_day_delivery': 'Entrega no Próximo Dia',
+      'next day delivery': 'Entrega no Próximo Dia'
     };
     
     if (!Array.isArray(tags)) return '-';
     
-    return tags.map(tag => translations[tag?.toLowerCase()] || tag).join(', ') || '-';
+    return tags.map(tag => {
+      if (!tag) return '';
+      
+      // Substituir underscores por espaços para melhor tradução
+      const normalizedTag = tag.replace(/_/g, ' ').toLowerCase().trim();
+      
+      // Tentar traduzir com underscore original primeiro, depois com espaços
+      return translations[tag.toLowerCase()] || 
+             translations[normalizedTag] || 
+             tag.replace(/_/g, ' '); // Se não encontrar tradução, pelo menos substitui _ por espaço
+    }).filter(Boolean).join(', ') || '-';
   };
 
   // Função para gerar ID-Único (SKUs/Produtos + Número do Pedido)
