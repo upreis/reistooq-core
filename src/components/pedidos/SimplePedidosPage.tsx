@@ -1141,7 +1141,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('shipping_status') && (
-                        <td className="p-3">{translateShippingStatus(order.shipping_status)}</td>
+                        <td className="p-3">{translateShippingStatus(order.shipping_status || order.shipping?.status || order.raw?.shipping?.status)}</td>
                       )}
                       
                       {visibleColumns.has('shipping_mode') && (
@@ -1175,7 +1175,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {visibleColumns.has('shipping_substatus') && (
-                        <td className="p-3">{translateShippingSubstatus(order.shipping_substatus)}</td>
+                        <td className="p-3">{translateShippingSubstatus(order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus)}</td>
                       )}
                       
                       {visibleColumns.has('forma_entrega') && (
@@ -1206,16 +1206,23 @@ export default function SimplePedidosPage({ className }: Props) {
                       
                       {/* CORREÇÃO: Nome destinatário - usar dado mapeado */}
                       {visibleColumns.has('nome_destinatario') && (
-                        <td className="p-3">{order.nome_destinatario || '-'}</td>
+                        <td className="p-3">
+                          {order.nome_destinatario
+                            || order.shipping?.receiver_address?.receiver_name 
+                            || order.nome_cliente 
+                            || [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ')
+                            || order.buyer?.nickname 
+                            || '-'}
+                        </td>
                       )}
                       
-                      {/* CORREÇÃO: Colunas de identificação - usar dados mapeados */}
+                      {/* Colunas de identificação com fallbacks seguros */}
                       {visibleColumns.has('buyer_id') && (
-                        <td className="p-3">{order.buyer_id || '-'}</td>
+                        <td className="p-3">{order.buyer_id || order.buyer?.id || '-'}</td>
                       )}
                       
                       {visibleColumns.has('seller_id') && (
-                        <td className="p-3">{order.seller_id || '-'}</td>
+                        <td className="p-3">{order.seller_id || order.seller?.id || '-'}</td>
                       )}
                       
                       {visibleColumns.has('integration_account_id') && (
