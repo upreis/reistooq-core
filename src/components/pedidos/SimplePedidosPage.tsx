@@ -1900,16 +1900,7 @@ export default function SimplePedidosPage({ className }: Props) {
                         </td>
                       )}
                       
-                       
-                       {visibleColumns.has('paid_amount') && (
-                         <td className="p-3">
-                           {(() => {
-                             const amount = order.paid_amount || order.payments?.[0]?.total_paid_amount || order.raw?.payments?.[0]?.total_paid_amount;
-                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
-                           })()}
-                         </td>
-                       )}
-                       
+                        
                        
                         {visibleColumns.has('coupon_amount') && (
                           <td className="p-3">
