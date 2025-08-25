@@ -376,17 +376,51 @@ export default function SimplePedidosPage({ className }: Props) {
   
   // Helpers financeiros: receita_por_envio (Flex) e valor_liquido_vendedor
   const getReceitaPorEnvio = (order: any): number => {
+    // Se já vier calculado do backend, usar
     if (typeof order?.receita_por_envio === 'number') return order.receita_por_envio;
-    const logisticType = String(order?.unified?.logistic?.type || order?.logistic?.type || '').toLowerCase();
-    if (logisticType !== 'self_service') return 0;
-    const lead = order?.unified?.lead_time;
-    const leadCost = typeof lead?.cost === 'number' ? lead.cost : undefined;
-    const costType = (lead?.cost_type || '').toLowerCase();
-    const paymentShip = order?.payments?.[0]?.shipping_cost ?? order?.raw?.payments?.[0]?.shipping_cost;
-    const fallback = order?.shipping_cost ?? order?.shipping?.cost;
-    const value = (leadCost ?? paymentShip ?? fallback ?? 0) as number;
+
+    // Detectar o tipo logístico a partir de múltiplas fontes (como a tabela exibe)
+    const rawType =
+      order?.shipping?.logistic?.type ??
+      order?.raw?.shipping?.logistic?.type ??
+      order?.logistic_type ??
+      order?.shipping_details?.logistic_type ??
+      order?.unified?.logistic?.type ??
+      order?.logistic?.type;
+
+    const logisticType = String(rawType || '').toLowerCase().replace(/\s+/g, '_');
+    // Receita com envio só existe no Flex (self_service)
+    if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
+
+    // Preferir lead_time (enriquecido pela função unified-orders)
+    const lead =
+      order?.unified?.lead_time ??
+      order?.shipping?.lead_time ??
+      order?.raw?.shipping?.lead_time ??
+      order?.lead_time;
+
+    const leadCost =
+      typeof lead?.cost === 'number'
+        ? lead.cost
+        : typeof lead?.list_cost === 'number'
+        ? lead.list_cost
+        : undefined;
+
+    const costType = String(lead?.cost_type || '').toLowerCase();
     if (costType && costType !== 'charged') return 0;
-    return value;
+
+    // Fallbacks: custo de frete vindo do pagamento ou campos genéricos
+    const paymentShip =
+      order?.payments?.[0]?.shipping_cost ??
+      order?.raw?.payments?.[0]?.shipping_cost;
+
+    const fallback =
+      order?.valor_frete ??
+      order?.shipping_cost ??
+      order?.shipping?.cost;
+
+    const value = (leadCost ?? paymentShip ?? fallback ?? 0) as number;
+    return value || 0;
   };
   
   const getValorLiquidoVendedor = (order: any): number => {
@@ -395,7 +429,6 @@ export default function SimplePedidosPage({ className }: Props) {
     const fee = (order?.marketplace_fee ?? order?.sale_fee ?? 0) as number;
     return paid - fee + getReceitaPorEnvio(order);
   };
-  
   // Configuração corrigida de colunas (baseada na API unified-orders)
   const allColumns = [
     // Colunas básicas disponíveis na API unified-orders
