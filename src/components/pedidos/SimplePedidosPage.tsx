@@ -1394,9 +1394,8 @@ export default function SimplePedidosPage({ className }: Props) {
                        
                        {visibleColumns.has('nome_completo') && (
                          <td className="p-3">
-                           {order.nome_cliente 
-                             || [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ')
-                             || order.buyer?.nickname 
+                           {order.nome_destinatario 
+                             || order.shipping?.destination?.receiver_name
                              || '—'}
                          </td>
                        )}

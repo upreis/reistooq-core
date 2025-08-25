@@ -290,7 +290,7 @@ export function PedidosTable({
                           case 'nome_cliente':
                             return show(get(row.unified, 'nome_cliente') ?? get(row.raw, 'buyer.nickname'));
                           case 'nome_completo':
-                            return show(get(row.unified, 'nome_cliente') ?? get(row.raw, 'buyer.nickname') ?? '—');
+                            return show(get(row.unified, 'nome_destinatario') ?? get(row.raw, 'shipping.destination.receiver_name') ?? '—');
                           case 'cpf_cnpj':
                             return maskCpfCnpj(get(row.unified, 'cpf_cnpj'));
                           case 'data_pedido':
