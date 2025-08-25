@@ -521,6 +521,7 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'empresa', label: 'Empresa', default: true, category: 'basic' },
     { key: 'numero', label: 'Número do Pedido', default: true, category: 'basic' },
     { key: 'nome_cliente', label: 'Nome do Cliente', default: true, category: 'basic' },
+    { key: 'nome_completo', label: 'Nome Completo', default: true, category: 'basic' },
     { key: 'data_pedido', label: 'Data do Pedido', default: true, category: 'basic' },
     { key: 'last_updated', label: 'Última Atualização', default: false, category: 'basic' },
 
@@ -1231,7 +1232,8 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('id') && <th className="text-left p-3">ID-Único</th>}
                    {visibleColumns.has('empresa') && <th className="text-left p-3">Empresa</th>}
                    {visibleColumns.has('numero') && <th className="text-left p-3">Número do Pedido</th>}
-                  {visibleColumns.has('nome_cliente') && <th className="text-left p-3">Nome do Cliente</th>}
+                   {visibleColumns.has('nome_cliente') && <th className="text-left p-3">Nome do Cliente</th>}
+                   {visibleColumns.has('nome_completo') && <th className="text-left p-3">Nome Completo</th>}
                    {visibleColumns.has('data_pedido') && <th className="text-left p-3">Data do Pedido</th>}
                    {visibleColumns.has('last_updated') && <th className="text-left p-3">Última Atualização</th>}
                   
@@ -1381,14 +1383,23 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3 font-mono text-sm">{order.numero || order.id}</td>
                       )}
                       
-                      {visibleColumns.has('nome_cliente') && (
-                        <td className="p-3">
-                          {order.nome_cliente 
-                            || [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ')
-                            || order.buyer?.nickname 
-                            || '-'}
-                        </td>
-                      )}
+                       {visibleColumns.has('nome_cliente') && (
+                         <td className="p-3">
+                           {order.nome_cliente 
+                             || [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ')
+                             || order.buyer?.nickname 
+                             || '-'}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('nome_completo') && (
+                         <td className="p-3">
+                           {order.nome_cliente 
+                             || [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ')
+                             || order.buyer?.nickname 
+                             || '—'}
+                         </td>
+                       )}
                       
                        {visibleColumns.has('data_pedido') && (
                          <td className="p-3">{formatDate(order.data_pedido || order.date_created)}</td>
