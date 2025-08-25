@@ -531,17 +531,17 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'titulo_anuncio', label: 'Título do Produto', default: true, category: 'products' },
 
     // Financeiro - CAMPOS SEPARADOS E EXCLUSIVOS
-    { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
+    { key: 'valor_total', label: 'Valor Total', default: false, category: 'financial' },
     { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
-    { key: 'frete_pago_cliente', label: 'Frete Pago Cliente', default: true, category: 'financial' },
-    { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: true, category: 'financial' },
+    { key: 'frete_pago_cliente', label: 'Frete Pago Cliente', default: false, category: 'financial' },
+    { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: false, category: 'financial' },
     { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
-    { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
+    { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: false, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
     { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
-    { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
+    { key: 'marketplace_fee', label: 'Taxa Marketplace', default: false, category: 'financial' },
 
     // Status
     { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
