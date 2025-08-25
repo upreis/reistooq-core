@@ -27,6 +27,7 @@ export interface PedidosManagerState {
   loading: boolean;
   error: string | null;
   currentPage: number;
+  pageSize: number;
   integrationAccountId: string;
   fonte: 'banco' | 'tempo-real' | 'hibrido';
   // 🚀 FASE 2: Estados de performance
@@ -39,6 +40,7 @@ export interface PedidosManagerActions {
   setFilters: (filters: Partial<PedidosFilters>) => void;
   clearFilters: () => void;
   setPage: (page: number) => void;
+  setPageSize: (size: number) => void;
   setIntegrationAccountId: (id: string) => void;
   refetch: () => void;
   applyClientSideFilters: (orders: any[]) => any[];
@@ -69,6 +71,7 @@ export function usePedidosManager(initialAccountId?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSizeState] = useState<number>(PAGINATION.DEFAULT_PAGE_SIZE);
   const [integrationAccountId, setIntegrationAccountId] = useState(initialAccountId || '');
   const [fonte, setFonte] = useState<'banco' | 'tempo-real' | 'hibrido'>('hibrido');
   
@@ -155,13 +158,13 @@ export function usePedidosManager(initialAccountId?: string) {
     const { shipping_status, ...rest } = apiParams || {};
     const requestBody = {
       integration_account_id: integrationAccountId,
-      limit: PAGINATION.DEFAULT_PAGE_SIZE,
-      offset: (currentPage - 1) * PAGINATION.DEFAULT_PAGE_SIZE,
+      limit: pageSize,
+      offset: (currentPage - 1) * pageSize,
       enrich: true,
       include_shipping: true,
       ...rest,
       // Mapear corretamente para o edge function (usa 'status')
-      status: shipping_status ?? rest?.status,
+      status: shipping_status ?? (rest as any)?.status,
       ...getUrlParams(), // URL tem prioridade
       // Sempre enriquecer para ter os dados de SKUs e mapeamentos
       enrich_skus: true,
@@ -183,7 +186,7 @@ export function usePedidosManager(initialAccountId?: string) {
       total: data.paging?.total || data.paging?.count || data.results?.length || 0,
       serverStatusApplied: Boolean(requestBody.status)
     };
-  }, [integrationAccountId, currentPage, getUrlParams]);
+  }, [integrationAccountId, currentPage, pageSize, getUrlParams]);
 
   /**
    * Fallback para banco de dados
@@ -272,8 +275,8 @@ export function usePedidosManager(initialAccountId?: string) {
    * 🚀 FASE 2: Cache inteligente
    */
   const getCacheKey = useCallback((apiParams: any) => {
-    return JSON.stringify({ integrationAccountId, currentPage, ...apiParams });
-  }, [integrationAccountId, currentPage]);
+    return JSON.stringify({ integrationAccountId, currentPage, pageSize, ...apiParams });
+  }, [integrationAccountId, currentPage, pageSize]);
 
   const isCacheValid = useCallback((cacheKey: string) => {
     if (!cachedAt || lastQuery !== cacheKey) return false;
@@ -338,8 +341,8 @@ export function usePedidosManager(initialAccountId?: string) {
           const filteredResults = applyClientSideFilters(unifiedNoFilters.results);
           
           // Para client-side filtering, precisamos ajustar a paginação
-          const startIndex = (currentPage - 1) * PAGINATION.DEFAULT_PAGE_SIZE;
-          const endIndex = startIndex + PAGINATION.DEFAULT_PAGE_SIZE;
+          const startIndex = (currentPage - 1) * pageSize;
+          const endIndex = startIndex + pageSize;
           const paginatedResults = filteredResults.slice(startIndex, endIndex);
           
           setOrders(paginatedResults);
@@ -436,6 +439,11 @@ export function usePedidosManager(initialAccountId?: string) {
       setCurrentPage(page);
     },
     
+    setPageSize: (size: number) => {
+      setPageSizeState(size);
+      setCurrentPage(1);
+    },
+    
     setIntegrationAccountId: (id: string) => {
       setIntegrationAccountId(id);
       setCurrentPage(1);
@@ -461,6 +469,7 @@ export function usePedidosManager(initialAccountId?: string) {
     loading,
     error,
     currentPage,
+    pageSize,
     integrationAccountId,
     fonte,
     // 🚀 FASE 2: Estados de performance
@@ -488,7 +497,7 @@ export function usePedidosManager(initialAccountId?: string) {
     state,
     actions,
     // Computed values
-    totalPages: Math.ceil(total / PAGINATION.DEFAULT_PAGE_SIZE),
+    totalPages: Math.ceil(total / pageSize),
     hasActiveFilters: Object.keys(debouncedFilters).some(key => 
       debouncedFilters[key as keyof PedidosFilters] !== undefined && 
       debouncedFilters[key as keyof PedidosFilters] !== ''

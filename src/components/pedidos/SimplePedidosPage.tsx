@@ -81,6 +81,7 @@ export default function SimplePedidosPage({ className }: Props) {
   const error = state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
+  const totalPages = Math.ceil(total / (state.pageSize || 25));
 
   // Funções de tradução e mapeamento de status
   const getShippingStatusColor = (status: string): string => {
@@ -2020,27 +2021,40 @@ export default function SimplePedidosPage({ className }: Props) {
       </Card>
 
       {/* 🛡️ PAGINAÇÃO */}
-      {Math.ceil(total / 25) > 1 && (
-        <div className="flex items-center justify-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => actions.setPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-sm">
-            Página {currentPage} de {Math.ceil(total / 25)} ({total} total)
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => actions.setPage(Math.min(Math.ceil(total / 25), currentPage + 1))}
-            disabled={currentPage === Math.ceil(total / 25)}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Itens por página:</span>
+            <Select value={String(state.pageSize || 25)} onValueChange={(v) => actions.setPageSize(Number(v))}>
+              <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+              <SelectContent className="bg-background border shadow-lg z-50">
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => actions.setPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm">
+              Página {currentPage} de {totalPages} ({total} total)
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => actions.setPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
