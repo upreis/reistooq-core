@@ -254,6 +254,15 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           const shippingData = await shippingResp.json();
           
           // Enriquecer com todos os dados de shipping disponíveis
+          // Incluímos também os pagamentos do envio (para bônus Flex) e um agregado "bonus_total"
+          const shippingPayments = Array.isArray(shippingData?.payments)
+            ? shippingData.payments
+            : (Array.isArray(shippingData?.lead_time?.payments) ? shippingData.lead_time.payments : []);
+          const bonusTotal = (Array.isArray(shippingPayments) ? shippingPayments : []).reduce((acc: number, p: any) => {
+            const amt = Number(p?.amount ?? p?.value ?? p?.cost ?? 0);
+            return acc + (Number.isFinite(amt) && amt > 0 ? amt : 0);
+          }, 0);
+
           enrichedOrder.shipping = {
             ...order.shipping,
             // Dados básicos
@@ -269,16 +278,21 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             logistic: shippingData.logistic,
             lead_time: shippingData.lead_time,
             
-            // Dados importantes para "Forma Entrega"
+            // Dados importantes para "Forma Enrega"
             shipping_method: shippingData.lead_time?.shipping_method,
             delivery_type: shippingData.lead_time?.delivery_type,
             
+            // Pagamentos de envio e bônus (para Flex/self_service)
+            payments: shippingPayments,
+            shipping_payments: shippingPayments,
+            bonus: bonusTotal,
+            bonus_total: bonusTotal,
+
             // Informações adicionais
             tags: shippingData.tags,
             dimensions: shippingData.dimensions,
             declared_value: shippingData.declared_value
           };
-          
           console.log(`[unified-orders:${cid}] Enriched shipping for order ${order.id}`);
         } else {
           console.log(`[unified-orders:${cid}] Failed to fetch shipping ${order.shipping.id}: ${shippingResp.status}`);

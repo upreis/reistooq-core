@@ -527,12 +527,12 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
     { key: 'shipping_cost', label: 'Custo do Frete', default: false, category: 'financial' },
     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
-    { key: 'receita_por_envio', label: 'Receita com Envio', default: false, category: 'financial' },
-    { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: false, category: 'financial' },
+    { key: 'receita_por_envio', label: 'Receita com Envio', default: true, category: 'financial' },
+    { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
     { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
-    { key: 'marketplace_fee', label: 'Taxa Marketplace', default: false, category: 'financial' },
+    { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
 
     // Status
     { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
