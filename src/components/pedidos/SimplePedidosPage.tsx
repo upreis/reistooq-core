@@ -406,10 +406,10 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
     
     // Colunas do Mercado Livre (baseadas na API)
-    { key: 'pack_id', label: 'Pack ID', default: false, category: 'ml' },
-    { key: 'tags', label: 'Tags', default: false, category: 'ml' },
     
     // Colunas de envio (baseadas no shipping da API)
+     { key: 'pack_id', label: 'Pack ID', default: false, category: 'shipping' },
+     { key: 'tags', label: 'Tags', default: false, category: 'shipping' },
      { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
      
      // Colunas específicas dos campos da API que você mencionou
