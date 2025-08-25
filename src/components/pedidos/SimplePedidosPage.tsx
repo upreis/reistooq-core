@@ -641,6 +641,7 @@ export default function SimplePedidosPage({ className }: Props) {
       'express': 'Expresso',
       'same day': 'Mesmo dia',
       'next day': 'Dia seguinte',
+      'estimated': 'Estimado',
       'fulfillment': 'Fulfillment',
       'me2': 'Mercado Envios',
       'custom': 'Personalizado',
@@ -1625,10 +1626,26 @@ export default function SimplePedidosPage({ className }: Props) {
                       {visibleColumns.has('payment_status') && (
                         <td className="p-3">
                           <span className="text-xs">
-                            {order.payments?.[0]?.status || 
-                             order.raw?.payments?.[0]?.status || 
-                             order.payment_status || 
-                             '-'}
+                            {(() => {
+                              const status = order.payments?.[0]?.status || 
+                                           order.raw?.payments?.[0]?.status || 
+                                           order.payment_status || 
+                                           '';
+                              
+                              const statusMapping: Record<string, string> = {
+                                'approved': 'Aprovado',
+                                'pending': 'Pendente', 
+                                'authorized': 'Autorizado',
+                                'in_process': 'Em Processamento',
+                                'in_mediation': 'Em Mediação',
+                                'rejected': 'Rejeitado',
+                                'cancelled': 'Cancelado',
+                                'refunded': 'Reembolsado',
+                                'charged_back': 'Estornado'
+                              };
+                              
+                              return statusMapping[status.toLowerCase()] || status || '-';
+                            })()}
                           </span>
                         </td>
                       )}
