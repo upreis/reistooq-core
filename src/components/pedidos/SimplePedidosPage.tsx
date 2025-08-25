@@ -1347,24 +1347,24 @@ export default function SimplePedidosPage({ className }: Props) {
                   
                   {/* Colunas de produtos */}
                   {visibleColumns.has('skus_produtos') && <th className="text-left p-3">SKUs/Produtos</th>}
-                  {visibleColumns.has('quantidade_itens') && <th className="text-left p-3">Quantidade Total</th>}
+                  {visibleColumns.has('quantidade_itens') && <th className="text-left p-3">Qtd vendida</th>}
                   {visibleColumns.has('titulo_anuncio') && <th className="text-left p-3">Título do Produto</th>}
                   
                    {/* Colunas financeiras - SEPARADAS E EXCLUSIVAS */}
-                   {visibleColumns.has('valor_total') && <th className="text-left p-3">Valor Total</th>}
-                   {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
-                   {visibleColumns.has('frete_pago_cliente') && <th className="text-left p-3">Frete Pago Cliente</th>}
-                   {visibleColumns.has('receita_flex') && <th className="text-left p-3">Receita Flex (Bônus)</th>}
+                   {visibleColumns.has('valor_total') && <th className="text-left p-3">Valor do Produto</th>}
+                   {visibleColumns.has('paid_amount') && <th className="text-left p-3">Total Pago</th>}
+                   {visibleColumns.has('frete_pago_cliente') && <th className="text-left p-3">Frete Pago</th>}
+                   {visibleColumns.has('receita_flex') && <th className="text-left p-3">Receita de Frete</th>}
                    {visibleColumns.has('custo_envio_seller') && <th className="text-left p-3">Custo Envio Seller</th>}
                     {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
                     {visibleColumns.has('marketplace_fee') && <th className="text-left p-3">Taxa Marketplace</th>}
-                    {visibleColumns.has('valor_liquido_vendedor') && <th className="text-left p-3">Valor Líquido Vendedor</th>}
+                    {visibleColumns.has('valor_liquido_vendedor') && <th className="text-left p-3">Valor Liquido</th>}
                     {visibleColumns.has('payment_method') && <th className="text-left p-3">Método Pagamento</th>}
                     {visibleColumns.has('payment_status') && <th className="text-left p-3">Status Pagamento</th>}
                     {visibleColumns.has('payment_type') && <th className="text-left p-3">Tipo Pagamento</th>}
                   
                   {/* Colunas de status */}
-                  {visibleColumns.has('situacao') && <th className="text-left p-3">Status do Pagamento</th>}
+                  {visibleColumns.has('situacao') && <th className="text-left p-3">Situação do Pagamento</th>}
                   
                   
                   {/* Colunas de mapeamento */}
@@ -1384,11 +1384,11 @@ export default function SimplePedidosPage({ className }: Props) {
                   
                    {/* Colunas de envio específicas da API */}
                    {visibleColumns.has('shipping_status') && <th className="text-left p-3">Status do Envio</th>}
-                   {visibleColumns.has('logistic_mode') && <th className="text-left p-3">Logistic Mode (Principal)</th>}
+                   {visibleColumns.has('logistic_mode') && <th className="text-left p-3">Modelo Logístico</th>}
                    {visibleColumns.has('logistic_type') && <th className="text-left p-3">Tipo Logístico</th>}
-                   {visibleColumns.has('shipping_method_type') && <th className="text-left p-3">Tipo Método Envio</th>}
+                   {visibleColumns.has('shipping_method_type') && <th className="text-left p-3">Previsão de Envio</th>}
                    {visibleColumns.has('delivery_type') && <th className="text-left p-3">Tipo Entrega</th>}
-                   {visibleColumns.has('substatus_detail') && <th className="text-left p-3">Substatus (Estado Atual)</th>}
+                   {visibleColumns.has('substatus_detail') && <th className="text-left p-3">Substatus de Envio</th>}
                    
                    {/* Colunas de envio combinadas (mantidas para compatibilidade) */}
                    {visibleColumns.has('shipping_mode') && <th className="text-left p-3">Modo de Envio (Combinado)</th>}
