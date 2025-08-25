@@ -985,11 +985,11 @@ export default function SimplePedidosPage({ className }: Props) {
             </Button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             {accounts.map((acc) => (
               <label
                 key={acc.id}
-                className="flex items-center space-x-2 p-3 border rounded-lg cursor-pointer hover:bg-muted/50"
+                className="flex items-center space-x-1 px-2 py-1 border rounded-md cursor-pointer hover:bg-muted/50 text-sm"
               >
                 <Checkbox
                   checked={selectedAccounts.includes(acc.id)}
