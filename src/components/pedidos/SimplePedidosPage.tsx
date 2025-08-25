@@ -895,12 +895,6 @@ export default function SimplePedidosPage({ className }: Props) {
     } catch {}
   }, [actions]);
 
-  useEffect(() => {
-    if (integrationAccountId) {
-      actions.setIntegrationAccountId(integrationAccountId);
-    }
-  }, [integrationAccountId, actions]);
-
   // Effect para buscar pedidos de múltiplas contas
   useEffect(() => {
     if (selectedAccounts.length > 0) {

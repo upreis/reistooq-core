@@ -479,8 +479,13 @@ export function usePedidosManager(initialAccountId?: string) {
     },
     
     setIntegrationAccountId: (id: string) => {
-      setIntegrationAccountId(id);
-      setCurrentPage(1);
+      setIntegrationAccountId(prev => {
+        if (prev !== id) {
+          setCurrentPage(1);
+          return id;
+        }
+        return prev;
+      });
     },
     
     refetch: () => {
