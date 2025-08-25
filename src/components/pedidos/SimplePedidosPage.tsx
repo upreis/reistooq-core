@@ -975,7 +975,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       </Button>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                       {['basic', 'products', 'financial', 'status', 'mapping', 'ml', 'shipping', 'buyer', 'ids'].map((category) => {
+                       {['basic', 'products', 'financial', 'status', 'mapping', 'ml', 'shipping', 'address', 'buyer', 'ids'].map((category) => {
                          const categoryColumns = allColumns.filter(col => col.category === category);
                          const categoryLabels = {
                            basic: 'Básicas',
@@ -984,9 +984,10 @@ export default function SimplePedidosPage({ className }: Props) {
                            status: 'Status',
                            mapping: 'Mapeamento',
                            ml: 'Mercado Livre',
-                           shipping: 'Envio',
-                           buyer: 'Comprador',
-                           ids: 'Identificação'
+                            shipping: 'Envio',
+                            address: 'Endereço',
+                            buyer: 'Comprador',
+                            ids: 'Identificação'
                          } as const;
                          
                          if (categoryColumns.length === 0) return null;
@@ -1713,6 +1714,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       {visibleColumns.has('nome_destinatario') && (
                         <td className="p-3">
                           {order.nome_destinatario
+                            || order.shipping?.destination?.receiver_name
                             || order.shipping?.receiver_address?.receiver_name 
                             || order.nome_cliente 
                             || [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ')
@@ -1907,6 +1909,7 @@ export default function SimplePedidosPage({ className }: Props) {
                                 : (phoneObj || '').toString();
                               const phone = withArea || 
                                 order.buyer_phone ||
+                                order.shipping?.destination?.receiver_phone ||
                                 order.shipping?.receiver_address?.receiver_phone ||
                                 order.shipping_details?.receiver_address?.receiver_phone;
                               return phone || '-';
@@ -1917,7 +1920,8 @@ export default function SimplePedidosPage({ className }: Props) {
                         {/* Colunas de endereço de entrega */}
                         {visibleColumns.has('receiver_name') && (
                           <td className="p-3">
-                            {order.shipping?.receiver_address?.receiver_name || 
+                            {order.shipping?.destination?.receiver_name ||
+                             order.shipping?.receiver_address?.receiver_name || 
                              order.shipping_details?.receiver_address?.receiver_name ||
                              order.raw?.shipping?.receiver_address?.receiver_name ||
                              order.receiver_name || '-'}
@@ -1983,9 +1987,9 @@ export default function SimplePedidosPage({ className }: Props) {
                         
                         {visibleColumns.has('receiver_address_state_id') && (
                           <td className="p-3">
-                            {order.shipping?.receiver_address?.state?.id ||
+                            {order.shipping?.destination?.shipping_address?.state?.id ||
+                             order.shipping?.receiver_address?.state?.id ||
                              order.shipping_details?.receiver_address?.state?.id ||
-                             order.raw?.shipping?.receiver_address?.state?.id ||
                              order.receiver_address_state_id ||
                              order.uf || '-'}
                           </td>
@@ -1993,7 +1997,8 @@ export default function SimplePedidosPage({ className }: Props) {
                         
                         {visibleColumns.has('receiver_address_neighborhood') && (
                           <td className="p-3">
-                            {order.shipping?.receiver_address?.neighborhood?.name ||
+                            {order.shipping?.destination?.shipping_address?.neighborhood?.name ||
+                             order.shipping?.receiver_address?.neighborhood?.name ||
                              order.shipping_details?.receiver_address?.neighborhood?.name ||
                              order.raw?.shipping?.receiver_address?.neighborhood?.name ||
                              order.receiver_address_neighborhood || '-'}
