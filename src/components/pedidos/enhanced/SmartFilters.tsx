@@ -62,7 +62,7 @@ function useSmartSuggestions(data: any[] = [], filterType: string, currentValue:
             }, {} as Record<string, number>);
 
           Object.entries(clientNames)
-            .sort(([,a], [,b]) => b - a)
+            .sort(([,a], [,b]) => Number(b) - Number(a))
             .slice(0, 10)
             .forEach(([name, count]) => {
               if (name.toLowerCase().includes(value.toLowerCase())) {
@@ -70,7 +70,7 @@ function useSmartSuggestions(data: any[] = [], filterType: string, currentValue:
                   value: name,
                   label: name,
                   type: 'popular',
-                  count,
+                  count: Number(count),
                   icon: <TrendingUp className="h-4 w-4" />
                 });
               }
@@ -101,7 +101,7 @@ function useSmartSuggestions(data: any[] = [], filterType: string, currentValue:
             }, {} as Record<string, number>);
 
           Object.entries(cities)
-            .sort(([,a], [,b]) => b - a)
+            .sort(([,a], [,b]) => Number(b) - Number(a))
             .slice(0, 15)
             .forEach(([city, count]) => {
               if (city.toLowerCase().includes(value.toLowerCase())) {
@@ -109,7 +109,7 @@ function useSmartSuggestions(data: any[] = [], filterType: string, currentValue:
                   value: city,
                   label: city,
                   type: 'popular',
-                  count,
+                  count: Number(count),
                   icon: <MapPin className="h-4 w-4" />
                 });
               }
@@ -135,7 +135,7 @@ function useSmartSuggestions(data: any[] = [], filterType: string, currentValue:
             }, {} as Record<string, number>);
 
           Object.entries(statuses)
-            .sort(([,a], [,b]) => b - a)
+            .sort(([,a], [,b]) => Number(b) - Number(a))
             .forEach(([status, count]) => {
               const translated = statusMap[status as keyof typeof statusMap] || status;
               if (translated.toLowerCase().includes(value.toLowerCase())) {
@@ -143,7 +143,7 @@ function useSmartSuggestions(data: any[] = [], filterType: string, currentValue:
                   value: status,
                   label: translated,
                   type: 'popular',
-                  count,
+                  count: Number(count),
                   icon: <Star className="h-4 w-4" />
                 });
               }

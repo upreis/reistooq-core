@@ -193,21 +193,23 @@ function useAlertDetection(orders: any[] = [], integrationHealth: Record<string,
       }, {} as Record<string, number>);
 
       const dominantCity = Object.entries(cityCounts)
-        .sort(([,a], [,b]) => b - a)[0];
+        .sort(([,a], [,b]) => Number(b) - Number(a))[0];
 
       if (dominantCity && Number(dominantCity[1]) > orders.length * 0.3) {
+        const count = Number(dominantCity[1]);
+        const percentage = (count / orders.length) * 100;
         detectedAlerts.push({
           id: `geo-concentration-${Date.now()}`,
           type: 'info',
           category: 'business',
           title: 'Concentração Geográfica Alta',
-          description: `${dominantCity[1]} pedidos (${((dominantCity[1]/orders.length)*100).toFixed(1)}%) em ${dominantCity[0]}`,
+          description: `${count} pedidos (${percentage.toFixed(1)}%) em ${dominantCity[0]}`,
           details: 'Alta concentração pode indicar oportunidades de otimização logística.',
           actionRequired: false,
           createdAt: new Date(),
           updatedAt: new Date(),
           priority: 5,
-          metadata: { city: dominantCity[0], count: dominantCity[1], percentage: (dominantCity[1]/orders.length)*100 }
+          metadata: { city: dominantCity[0], count, percentage }
         });
       }
 
