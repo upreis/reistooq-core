@@ -886,6 +886,15 @@ export default function SimplePedidosPage({ className }: Props) {
     loadAccounts();
   }, []);
 
+  // Definir conta via URL (?acc= ou ?integration_account_id=)
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const acc = sp.get('acc') || sp.get('integration_account_id');
+      if (acc) actions.setIntegrationAccountId(acc);
+    } catch {}
+  }, [actions]);
+
   useEffect(() => {
     if (integrationAccountId) {
       actions.setIntegrationAccountId(integrationAccountId);
@@ -2067,8 +2076,12 @@ export default function SimplePedidosPage({ className }: Props) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => actions.setPage(currentPage + 1)}
-              disabled={!(state.hasNextPage ?? (orders.length === (state.pageSize || 25)))}
+              onClick={() => actions.setPage(total > 0 ? Math.min(currentPage + 1, Math.ceil(total / (state.pageSize || 25))) : currentPage + 1)}
+              disabled={(() => {
+                if (typeof state.hasNextPage === 'boolean') return !state.hasNextPage;
+                if (total > 0) return currentPage >= Math.ceil(total / (state.pageSize || 25));
+                return orders.length < (state.pageSize || 25);
+              })()}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
