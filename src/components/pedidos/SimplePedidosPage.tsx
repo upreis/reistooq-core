@@ -1296,9 +1296,21 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{formatMoney(order.paid_amount || 0)}</td>
                       )}
                       
-                      {visibleColumns.has('shipping_cost') && (
-                        <td className="p-3">{formatMoney(order.shipping_cost || order.shipping?.cost || 0)}</td>
-                      )}
+                        {visibleColumns.has('shipping_cost') && (
+                          <td className="p-3">
+                            {(() => {
+                              // Priorizar dados dos payments (mais confiável para frete)
+                              const shippingCost = 
+                                order.payments?.[0]?.shipping_cost ||
+                                order.raw?.payments?.[0]?.shipping_cost ||
+                                order.valor_frete ||
+                                order.shipping_cost ||
+                                order.shipping?.cost ||
+                                0;
+                              return formatMoney(shippingCost);
+                            })()}
+                          </td>
+                        )}
                       
                       {visibleColumns.has('currency_id') && (
                         <td className="p-3">{order.currency_id || 'BRL'}</td>
@@ -1694,14 +1706,22 @@ export default function SimplePedidosPage({ className }: Props) {
                          </td>
                        )}
                        
-                       {visibleColumns.has('coupon_amount') && (
-                         <td className="p-3">
-                           {(() => {
-                             const amount = order.coupon_amount || order.coupon?.amount || order.raw?.coupon?.amount;
-                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
-                           })()}
-                         </td>
-                       )}
+                        {visibleColumns.has('coupon_amount') && (
+                          <td className="p-3">
+                            {(() => {
+                              // Priorizar dados dos payments (mais confiável para desconto cupom)
+                              const amount = 
+                                order.payments?.[0]?.coupon_amount ||
+                                order.raw?.payments?.[0]?.coupon_amount ||
+                                order.coupon?.amount ||
+                                order.raw?.coupon?.amount ||
+                                order.coupon_amount ||
+                                order.valor_desconto || // fallback para desconto geral
+                                0;
+                              return amount > 0 ? formatMoney(amount) : '-';
+                            })()}
+                          </td>
+                        )}
                        
                        {visibleColumns.has('currency_id') && (
                          <td className="p-3">
@@ -1733,34 +1753,66 @@ export default function SimplePedidosPage({ className }: Props) {
                          </td>
                        )}
                        
-                       {visibleColumns.has('payment_type') && (
-                         <td className="p-3">
-                           <span className="text-xs">
-                             {order.payments?.[0]?.payment_type_id || 
-                              order.raw?.payments?.[0]?.payment_type_id || 
-                              order.payment_type || 
-                              '-'}
-                           </span>
-                         </td>
-                       )}
+                        {visibleColumns.has('payment_type') && (
+                          <td className="p-3">
+                            <span className="text-xs">
+                              {(() => {
+                                // Mapear payment_type para nomes comerciais
+                                const paymentType = 
+                                  order.payments?.[0]?.payment_type || 
+                                  order.raw?.payments?.[0]?.payment_type ||
+                                  order.payments?.[0]?.payment_type_id || 
+                                  order.raw?.payments?.[0]?.payment_type_id || 
+                                  order.payment_type;
+                                
+                                const typeMapping: Record<string, string> = {
+                                  'credit_card': 'Cartão de Crédito',
+                                  'debit_card': 'Cartão de Débito',
+                                  'ticket': 'Boleto',
+                                  'bank_transfer': 'Transferência',
+                                  'digital_wallet': 'Carteira Digital',
+                                  'digital_currency': 'Moeda Digital',
+                                  'voucher_card': 'Voucher',
+                                  'prepaid_card': 'Cartão Pré-pago'
+                                };
+                                
+                                return typeMapping[paymentType] || paymentType || '-';
+                              })()}
+                            </span>
+                          </td>
+                        )}
                        
-                       {visibleColumns.has('taxes_amount') && (
-                         <td className="p-3">
-                           {(() => {
-                             const amount = order.taxes?.amount || order.raw?.taxes?.amount || order.taxes_amount;
-                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
-                           })()}
-                         </td>
-                       )}
+                        {visibleColumns.has('taxes_amount') && (
+                          <td className="p-3">
+                            {(() => {
+                              // Priorizar dados dos payments para taxas (mais confiável)
+                              const amount = 
+                                order.payments?.[0]?.taxes_amount ||
+                                order.raw?.payments?.[0]?.taxes_amount ||
+                                order.taxes?.amount || 
+                                order.raw?.taxes?.amount || 
+                                order.taxes_amount ||
+                                0;
+                              return amount > 0 ? formatMoney(amount) : '-';
+                            })()}
+                          </td>
+                        )}
                        
-                       {visibleColumns.has('marketplace_fee') && (
-                         <td className="p-3">
-                           {(() => {
-                             const fee = order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value;
-                             return fee ? `R$ ${Number(fee).toFixed(2)}` : '-';
-                           })()}
-                         </td>
-                       )}
+                        {visibleColumns.has('marketplace_fee') && (
+                          <td className="p-3">
+                            {(() => {
+                              // Taxa do marketplace - geralmente está no sale_fee dos order_items
+                              const fee = 
+                                order.order_items?.[0]?.sale_fee ||
+                                order.raw?.order_items?.[0]?.sale_fee ||
+                                order.marketplace_fee || 
+                                order.fees?.[0]?.value || 
+                                order.raw?.fees?.[0]?.value ||
+                                0;
+                              return fee > 0 ? formatMoney(fee) : '-';
+                            })()}
+                          </td>
+                        )}
                        
                        {/* Colunas de identificação com fallbacks seguros */}
                        {visibleColumns.has('buyer_id') && (
