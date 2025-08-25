@@ -1041,55 +1041,67 @@ export default function SimplePedidosPage({ className }: Props) {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Filtro por Status do Envio - Múltipla Seleção */}
+            {/* Filtro por Status do Envio - Multi seleção no Popover (igual Colunas) */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Status do Envio</label>
-              <div className="space-y-2">
-                {[
-                  { value: 'pending', label: 'Pendente', color: 'bg-yellow-400' },
-                  { value: 'ready_to_ship', label: 'Pronto para Envio', color: 'bg-blue-400' },
-                  { value: 'shipped', label: 'Enviado', color: 'bg-purple-400' },
-                  { value: 'delivered', label: 'Entregue', color: 'bg-green-400' },
-                  { value: 'not_delivered', label: 'Não Entregue', color: 'bg-red-400' },
-                  { value: 'cancelled', label: 'Cancelado', color: 'bg-gray-400' },
-                  { value: 'handling', label: 'Processando', color: 'bg-cyan-400' },
-                  { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
-                ].map(status => {
-                  const currentStatuses = Array.isArray(filters.situacao) ? filters.situacao : (filters.situacao ? [filters.situacao] : []);
-                  const isSelected = currentStatuses.includes(status.value);
-                  
-                  return (
-                    <label key={status.value} className="flex items-center space-x-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            // Adicionar status
-                            const newStatuses = [...currentStatuses, status.value];
-                            actions.setFilters({ situacao: newStatuses });
-                          } else {
-                            // Remover status
-                            const newStatuses = currentStatuses.filter(s => s !== status.value);
-                            actions.setFilters({ situacao: newStatuses.length > 0 ? newStatuses : undefined });
-                          }
-                        }}
-                      />
-                      <div className={`w-3 h-3 rounded-full ${status.color}`}></div>
-                      <span>{status.label}</span>
-                    </label>
-                  );
-                })}
-                {Array.isArray(filters.situacao) && filters.situacao.length > 0 && (
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    onClick={() => actions.setFilters({ situacao: undefined })}
-                    className="text-xs h-6 px-2 w-full"
-                  >
-                    Limpar Status
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    <span>
+                      {Array.isArray(filters.situacao) && filters.situacao.length > 0
+                        ? `${filters.situacao.length} selecionado(s)`
+                        : 'Selecionar status'}
+                    </span>
+                    <Settings className="h-4 w-4" />
                   </Button>
-                )}
-              </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-72">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Status do Envio</h4>
+                      {Array.isArray(filters.situacao) && filters.situacao.length > 0 && (
+                        <Button size="sm" variant="ghost" onClick={() => actions.setFilters({ situacao: undefined })}>
+                          Limpar
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { value: 'pending', label: 'Pendente', color: 'bg-yellow-400' },
+                        { value: 'ready_to_ship', label: 'Pronto para Envio', color: 'bg-blue-400' },
+                        { value: 'shipped', label: 'Enviado', color: 'bg-purple-400' },
+                        { value: 'delivered', label: 'Entregue', color: 'bg-green-400' },
+                        { value: 'not_delivered', label: 'Não Entregue', color: 'bg-red-400' },
+                        { value: 'cancelled', label: 'Cancelado', color: 'bg-gray-400' },
+                        { value: 'handling', label: 'Processando', color: 'bg-cyan-400' },
+                        { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
+                      ].map((status) => {
+                        const current = Array.isArray(filters.situacao)
+                          ? filters.situacao
+                          : (filters.situacao ? [filters.situacao] : []);
+                        const isSelected = current.includes(status.value);
+                        return (
+                          <label key={status.value} className="flex items-center space-x-2 text-sm cursor-pointer">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  actions.setFilters({ situacao: [...current, status.value] });
+                                } else {
+                                  const next = current.filter((s) => s !== status.value);
+                                  actions.setFilters({ situacao: next.length > 0 ? next : undefined });
+                                }
+                              }}
+                            />
+                            <div className={`w-3 h-3 rounded-full ${status.color}`}></div>
+                            <span>{status.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Data Início */}
