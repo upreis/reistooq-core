@@ -374,6 +374,28 @@ export default function SimplePedidosPage({ className }: Props) {
     return `${skusPart}-${numeropedido}`;
   };
   
+  // Helpers financeiros: receita_por_envio (Flex) e valor_liquido_vendedor
+  const getReceitaPorEnvio = (order: any): number => {
+    if (typeof order?.receita_por_envio === 'number') return order.receita_por_envio;
+    const logisticType = String(order?.unified?.logistic?.type || order?.logistic?.type || '').toLowerCase();
+    if (logisticType !== 'self_service') return 0;
+    const lead = order?.unified?.lead_time;
+    const leadCost = typeof lead?.cost === 'number' ? lead.cost : undefined;
+    const costType = (lead?.cost_type || '').toLowerCase();
+    const paymentShip = order?.payments?.[0]?.shipping_cost ?? order?.raw?.payments?.[0]?.shipping_cost;
+    const fallback = order?.shipping_cost ?? order?.shipping?.cost;
+    const value = (leadCost ?? paymentShip ?? fallback ?? 0) as number;
+    if (costType && costType !== 'charged') return 0;
+    return value;
+  };
+  
+  const getValorLiquidoVendedor = (order: any): number => {
+    if (typeof order?.valor_liquido_vendedor === 'number') return order.valor_liquido_vendedor;
+    const paid = (order?.paid_amount ?? order?.total_paid_amount ?? order?.valor_total ?? 0) as number;
+    const fee = (order?.marketplace_fee ?? order?.sale_fee ?? 0) as number;
+    return paid - fee + getReceitaPorEnvio(order);
+  };
+  
   // Configuração corrigida de colunas (baseada na API unified-orders)
   const allColumns = [
     // Colunas básicas disponíveis na API unified-orders
@@ -1132,6 +1154,8 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
                    {visibleColumns.has('shipping_cost') && <th className="text-left p-3">Custo do Frete</th>}
                    {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
+                   {visibleColumns.has('receita_por_envio') && <th className="text-left p-3">Receita com Envio</th>}
+                   {visibleColumns.has('valor_liquido_vendedor') && <th className="text-left p-3">Valor Líquido Vendedor</th>}
                    {visibleColumns.has('payment_method') && <th className="text-left p-3">Método Pagamento</th>}
                    {visibleColumns.has('payment_status') && <th className="text-left p-3">Status Pagamento</th>}
                    {visibleColumns.has('payment_type') && <th className="text-left p-3">Tipo Pagamento</th>}
@@ -1334,11 +1358,11 @@ export default function SimplePedidosPage({ className }: Props) {
                        )}
                        
                        {visibleColumns.has('receita_por_envio') && (
-                         <td className="p-3">{formatMoney(order.receita_por_envio || 0)}</td>
+                         <td className="p-3">{formatMoney(getReceitaPorEnvio(order))}</td>
                        )}
                        
                        {visibleColumns.has('valor_liquido_vendedor') && (
-                         <td className="p-3">{formatMoney(order.valor_liquido_vendedor || 0)}</td>
+                         <td className="p-3">{formatMoney(getValorLiquidoVendedor(order))}</td>
                        )}
                       
                       {/* Colunas de pagamento */}
