@@ -152,18 +152,21 @@ export function usePedidosManager(initialAccountId?: string) {
    * Carrega pedidos da API unified-orders
    */
   const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
+    const { shipping_status, ...rest } = apiParams || {};
     const requestBody = {
       integration_account_id: integrationAccountId,
       limit: PAGINATION.DEFAULT_PAGE_SIZE,
       offset: (currentPage - 1) * PAGINATION.DEFAULT_PAGE_SIZE,
       enrich: true,
       include_shipping: true,
-      ...apiParams,
+      ...rest,
+      // Mapear corretamente para o edge function (usa 'status')
+      status: shipping_status ?? rest?.status,
       ...getUrlParams(), // URL tem prioridade
       // Sempre enriquecer para ter os dados de SKUs e mapeamentos
       enrich_skus: true,
       include_skus: true
-    };
+    } as any;
 
     // P1.2: Remover logs sensíveis que expõem dados do sistema
 
@@ -177,7 +180,8 @@ export function usePedidosManager(initialAccountId?: string) {
     return {
       results: data.results || [],
       unified: data.unified || [],
-      total: data.paging?.total || data.paging?.count || data.results?.length || 0
+      total: data.paging?.total || data.paging?.count || data.results?.length || 0,
+      serverStatusApplied: Boolean(requestBody.status)
     };
   }, [integrationAccountId, currentPage, getUrlParams]);
 
@@ -308,15 +312,15 @@ export function usePedidosManager(initialAccountId?: string) {
         // Tentativa 1: unified-orders com filtros
         const unifiedResult = await loadFromUnifiedOrders(apiParams);
         
-        // Forçar consistência do filtro "Status do Envio" no client-side
-        const shouldApplyClientFilter = Boolean(apiParams.shipping_status);
+        // Se o servidor já aplicou o status, não precisamos filtrar no client
+        const shouldApplyClientFilter = Boolean(apiParams.shipping_status) && !unifiedResult.serverStatusApplied;
         const filteredClientResults = shouldApplyClientFilter
           ? applyClientSideFilters(unifiedResult.results)
           : unifiedResult.results;
 
-        // Caso o server-side não aplique o filtro, garantimos aqui
+        // Sempre usar o total do servidor quando disponível
         setOrders(filteredClientResults);
-        setTotal(shouldApplyClientFilter ? filteredClientResults.length : unifiedResult.total);
+        setTotal(unifiedResult.total);
         setFonte('tempo-real');
         
         // 🚀 FASE 2: Atualizar cache
