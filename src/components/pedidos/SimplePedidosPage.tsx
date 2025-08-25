@@ -397,7 +397,6 @@ export default function SimplePedidosPage({ className }: Props) {
     
     // Colunas de status (baseadas no status da API)
     { key: 'situacao', label: 'Situação', default: true, category: 'status' },
-    { key: 'status_detail', label: 'Detalhes do Status', default: false, category: 'status' },
     
     // Colunas de mapeamento (processamento local)
     { key: 'mapeamento', label: 'Status Mapeamento', default: true, category: 'mapping' },
@@ -426,7 +425,6 @@ export default function SimplePedidosPage({ className }: Props) {
      { key: 'shipping_substatus', label: 'Sub-status Envio (Combinado)', default: false, category: 'shipping' },
      
      // Colunas de identificação do comprador (baseadas na API buyer.*)
-     { key: 'buyer_phone', label: 'Telefone do Comprador', default: true, category: 'buyer' },
      
      // Colunas de endereço de entrega (baseadas na API shipping.destination.shipping_address.*)
      
@@ -1141,7 +1139,7 @@ export default function SimplePedidosPage({ className }: Props) {
                   
                   {/* Colunas de status */}
                   {visibleColumns.has('situacao') && <th className="text-left p-3">Situação</th>}
-                  {visibleColumns.has('status_detail') && <th className="text-left p-3">Detalhes do Status</th>}
+                  
                   
                   {/* Colunas de mapeamento */}
                   {visibleColumns.has('mapeamento') && <th className="text-left p-3">Status Mapeamento</th>}
@@ -1358,21 +1356,6 @@ export default function SimplePedidosPage({ className }: Props) {
                         </td>
                       )}
                       
-                       {visibleColumns.has('status_detail') && (
-                         <td className="p-3">
-                           {(() => {
-                             const statusDetail = order.status_detail || order.raw?.status_detail;
-                             const shippingCost = order.shipping_cost || order.valor_frete || order.shipping?.cost || 0;
-                             const rawStatus = order.situacao || order.status || '';
-                             
-                             if (statusDetail) {
-                               return statusDetail;
-                             }
-                             
-                             return `${rawStatus} | Frete: ${formatMoney(shippingCost)}`;
-                           })()}
-                         </td>
-                       )}
                       
                       {/* Colunas de mapeamento */}
                       {visibleColumns.has('mapeamento') && (
