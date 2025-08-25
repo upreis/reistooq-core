@@ -1285,11 +1285,7 @@ export default function SimplePedidosPage({ className }: Props) {
                    {/* Colunas de envio combinadas (mantidas para compatibilidade) */}
                    {visibleColumns.has('shipping_mode') && <th className="text-left p-3">Modo de Envio (Combinado)</th>}
                    {visibleColumns.has('shipping_method') && <th className="text-left p-3">Método de Envio (Combinado)</th>}
-                   {visibleColumns.has('shipping_substatus') && <th className="text-left p-3">Sub-status Envio (Combinado)</th>}
-                   {visibleColumns.has('forma_entrega') && <th className="text-left p-3">Forma de Entrega (Combinado)</th>}
-                   {visibleColumns.has('codigo_rastreamento') && <th className="text-left p-3">Código Rastreamento</th>}
-                   {visibleColumns.has('url_rastreamento') && <th className="text-left p-3">URL Rastreamento</th>}
-                   {visibleColumns.has('nome_destinatario') && <th className="text-left p-3">Nome Destinatário</th>}
+                   
                   
                    
                     
@@ -1792,114 +1788,10 @@ export default function SimplePedidosPage({ className }: Props) {
                          </td>
                        )}
                       
-                       {visibleColumns.has('shipping_substatus') && (
-                         <td className="p-3">
-                           <div className="flex flex-col gap-1">
-                             {(() => {
-                               // substatus do shipping
-                               const shippingSubstatus = order.shipping_substatus || 
-                                 order.shipping?.substatus || 
-                                 order.raw?.shipping?.substatus || 
-                                 order.shipping_details?.substatus;
-                               
-                               // substatus geral (pode vir diretamente do order)
-                               const generalSubstatus = order.substatus || order.raw?.substatus;
-                               
-                               const parts = [];
-                               if (shippingSubstatus) parts.push(`Shipping: ${shippingSubstatus}`);
-                               if (generalSubstatus && generalSubstatus !== shippingSubstatus) {
-                                 parts.push(`General: ${generalSubstatus}`);
-                               }
-                               
-                               return (
-                                 <div className="text-xs">
-                                   {parts.length > 0 ? (
-                                     parts.map((part, i) => (
-                                       <div key={i} className="text-gray-600">{part}</div>
-                                     ))
-                                   ) : (
-                                     <span className="text-muted-foreground">-</span>
-                                   )}
-                                 </div>
-                               );
-                             })()}
-                           </div>
-                         </td>
-                       )}
+                       
                       
-                       {visibleColumns.has('forma_entrega') && (
-                         <td className="p-3">
-                           <div className="flex flex-col gap-1">
-                             {(() => {
-                               // delivery_type
-                               const deliveryType = order.delivery_type || 
-                                 order.shipping?.delivery_type || 
-                                 order.raw?.shipping?.delivery_type;
-                               
-                               // forma_entrega (campo mapeado)
-                               const formaEntrega = order.forma_entrega;
-                               
-                               // shipping mode/type como complemento
-                               const shippingMode = order.shipping?.mode || 
-                                 order.raw?.shipping?.mode;
-                               
-                               const parts = [];
-                               if (deliveryType) parts.push(`Delivery: ${deliveryType}`);
-                               if (formaEntrega && formaEntrega !== deliveryType) {
-                                 parts.push(`Forma: ${formaEntrega}`);
-                               }
-                               if (shippingMode && shippingMode !== deliveryType && shippingMode !== formaEntrega) {
-                                 parts.push(`Mode: ${shippingMode}`);
-                               }
-                               
-                               return (
-                                 <div className="text-xs">
-                                   {parts.length > 0 ? (
-                                     parts.map((part, i) => (
-                                       <div key={i} className="text-gray-600">{part}</div>
-                                     ))
-                                   ) : (
-                                     <span className="text-muted-foreground">standard</span>
-                                   )}
-                                 </div>
-                               );
-                             })()}
-                           </div>
-                         </td>
-                       )}
-                      
-                      {visibleColumns.has('codigo_rastreamento') && (
-                        <td className="p-3">{order.codigo_rastreamento || order.shipping?.tracking_number || '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('url_rastreamento') && (
-                        <td className="p-3">
-                          {order.url_rastreamento || order.shipping?.tracking_url ? (
-                            <a 
-                              href={order.url_rastreamento || order.shipping?.tracking_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
-                            >
-                              Ver rastreamento
-                            </a>
-                          ) : '-'}
-                        </td>
-                      )}
-                      
-                       {/* Nome destinatário - usar shipping.destination.receiver_name */}
-                       {visibleColumns.has('nome_destinatario') && (
-                         <td className="p-3">
-                           {order.nome_destinatario
-                             || order.shipping?.destination?.receiver_name
-                             || order.shipping?.receiver_address?.receiver_name 
-                             || order.nome_cliente 
-                             || [order.buyer?.first_name, order.buyer?.last_name].filter(Boolean).join(' ')
-                             || order.buyer?.nickname 
-                             || '-'}
-                        </td>
-                      )}
-                      
+                       
+                       
                         
                        
                         {visibleColumns.has('coupon_amount') && (
