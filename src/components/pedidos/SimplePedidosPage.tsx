@@ -577,11 +577,48 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'substatus_detail', label: 'Substatus (Estado Atual)', default: false, category: 'shipping' },
     { key: 'shipping_mode', label: 'Modo de Envio (Combinado)', default: false, category: 'shipping' },
     { key: 'shipping_method', label: 'Método de Envio (Combinado)', default: false, category: 'shipping' },
+
+    // Debug Financeiro (nomes originais da API)
+    { key: 'raw_total_amount', label: 'total_amount', default: false, category: 'debug' },
+    { key: 'raw_paid_amount', label: 'paid_amount', default: false, category: 'debug' },
+    { key: 'raw_shipping_cost', label: 'shipping.cost', default: false, category: 'debug' },
+    { key: 'raw_shipping_payments_total', label: 'shipping.payments_total', default: false, category: 'debug' },
+    { key: 'raw_shipping_costs_gross_amount', label: 'shipping.costs.gross_amount', default: false, category: 'debug' },
+    { key: 'raw_shipping_costs_receiver_cost', label: 'shipping.costs.receiver.cost', default: false, category: 'debug' },
+    { key: 'raw_shipping_costs_senders_comp_total', label: 'shipping.costs.senders_compensation_total', default: false, category: 'debug' },
+    { key: 'raw_shipping_bonus_total', label: 'shipping.bonus_total', default: false, category: 'debug' },
+    { key: 'raw_fonte', label: 'fonte', default: false, category: 'debug' },
   ];
 
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(allColumns.filter(col => col.default).map(col => col.key))
   );
+  const [debugFinanceiro, setDebugFinanceiro] = useState(false);
+
+  // Alternar exibição automática das colunas de debug quando o modo diagnóstico estiver ativo
+  const debugKeys = [
+    'raw_total_amount',
+    'raw_paid_amount',
+    'raw_shipping_cost',
+    'raw_shipping_payments_total',
+    'raw_shipping_costs_gross_amount',
+    'raw_shipping_costs_receiver_cost',
+    'raw_shipping_costs_senders_comp_total',
+    'raw_shipping_bonus_total',
+    'raw_fonte'
+  ];
+
+  useEffect(() => {
+    setVisibleColumns(prev => {
+      const next = new Set(prev);
+      if (debugFinanceiro) {
+        debugKeys.forEach(k => next.add(k));
+      } else {
+        debugKeys.forEach(k => next.delete(k));
+      }
+      return next;
+    });
+  }, [debugFinanceiro]);
 
   const toggleColumn = (key: string) => {
     setVisibleColumns(prev => {
@@ -1084,7 +1121,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       </Button>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                       {['basic', 'products', 'financial', 'status', 'mapping', 'ml', 'shipping', 'address', 'buyer', 'ids'].map((category) => {
+                       {['basic', 'products', 'financial', 'status', 'mapping', 'ml', 'shipping', 'address', 'buyer', 'ids', 'debug'].map((category) => {
                          const categoryColumns = allColumns.filter(col => col.category === category);
                          const categoryLabels = {
                            basic: 'Básicas',
@@ -1093,10 +1130,11 @@ export default function SimplePedidosPage({ className }: Props) {
                            status: 'Status',
                            mapping: 'Mapeamento',
                            ml: 'Mercado Livre',
-                            shipping: 'Envio',
-                            address: 'Endereço',
-                            buyer: 'Comprador',
-                            ids: 'Identificação'
+                           shipping: 'Envio',
+                           address: 'Endereço',
+                           buyer: 'Comprador',
+                           ids: 'Identificação',
+                           debug: 'Debug Financeiro (API)'
                          } as const;
                          
                          if (categoryColumns.length === 0) return null;
@@ -1131,11 +1169,14 @@ export default function SimplePedidosPage({ className }: Props) {
       <div className="flex items-center justify-between text-sm text-muted-foreground">
         <div className="flex items-center gap-4">
           <span>Fonte: {state.fonte} | Total: {total} pedidos</span>
+          <Button
+            size="sm"
+            variant={debugFinanceiro ? 'default' : 'outline'}
+            onClick={() => setDebugFinanceiro(v => !v)}
+          >
+            {debugFinanceiro ? 'Modo Diagnóstico: ON' : 'Modo Diagnóstico: OFF'}
+          </Button>
           {state.isRefreshing && <span className="ml-2 animate-pulse">• Atualizando...</span>}
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            onClick={() => {
               console.log('[DEBUG] === FORÇANDO ATUALIZAÇÃO COMPLETA ===');
               console.log('[DEBUG] Total de pedidos:', orders.length);
               
