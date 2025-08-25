@@ -179,11 +179,10 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       id: order.id?.toString() || '',
       numero: order.numero || order.id?.toString() || '',
       id_unico: `${skuPrincipal}-${order.id}`,
-      nome_cliente: 
-        // Priorizar sempre o nome completo do comprador
+      nome_cliente: order.nome_cliente ||
         (order.buyer?.first_name && order.buyer?.last_name
           ? `${order.buyer.first_name} ${order.buyer.last_name}`
-          : order.nome_cliente || order.buyer?.nickname || 'N/A'),
+          : order.buyer?.nickname || 'N/A'),
       cpf_cnpj: order.cpf_cnpj || order.buyer?.identification?.number || null,
       data_pedido: order.data_pedido ||
         order.date_created?.split('T')[0] ||
