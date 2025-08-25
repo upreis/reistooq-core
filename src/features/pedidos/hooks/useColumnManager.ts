@@ -1,0 +1,214 @@
+/**
+ * 🎛️ HOOK PARA GERENCIAMENTO UNIFICADO DE COLUNAS
+ * Mantém estado, persistência e ações centralizadas
+ */
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { ColumnState, ColumnActions, UseColumnManagerReturn, ColumnProfile } from '../types/columns.types';
+import { COLUMN_DEFINITIONS, DEFAULT_PROFILES, getDefaultVisibleColumns } from '../config/columns.config';
+
+const STORAGE_KEY = 'pedidos-column-preferences';
+
+// Estado inicial baseado nas configurações padrão
+const getInitialState = (): ColumnState => {
+  const defaultColumns = getDefaultVisibleColumns();
+  
+  return {
+    visibleColumns: new Set(defaultColumns.map(col => col.key)),
+    columnOrder: COLUMN_DEFINITIONS.map(col => col.key),
+    activeProfile: 'standard',
+    customProfiles: []
+  };
+};
+
+// Carregar preferências do localStorage
+const loadStoredPreferences = (): Partial<ColumnState> => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return {};
+    
+    const parsed = JSON.parse(stored);
+    
+    return {
+      visibleColumns: new Set(parsed.visibleColumns || []),
+      columnOrder: parsed.columnOrder || COLUMN_DEFINITIONS.map(col => col.key),
+      activeProfile: parsed.activeProfile || 'standard',
+      customProfiles: parsed.customProfiles || []
+    };
+  } catch (error) {
+    console.warn('Erro ao carregar preferências de colunas:', error);
+    return {};
+  }
+};
+
+// Salvar preferências no localStorage
+const savePreferences = (state: ColumnState) => {
+  try {
+    const toSave = {
+      visibleColumns: Array.from(state.visibleColumns),
+      columnOrder: state.columnOrder,
+      activeProfile: state.activeProfile,
+      customProfiles: state.customProfiles
+    };
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+  } catch (error) {
+    console.warn('Erro ao salvar preferências de colunas:', error);
+  }
+};
+
+export const useColumnManager = (): UseColumnManagerReturn => {
+  // Inicializar estado combinando padrões com preferências salvas
+  const [state, setState] = useState<ColumnState>(() => {
+    const initial = getInitialState();
+    const stored = loadStoredPreferences();
+    
+    return {
+      ...initial,
+      ...stored,
+      // Garantir que visibleColumns seja sempre um Set
+      visibleColumns: stored.visibleColumns instanceof Set 
+        ? stored.visibleColumns 
+        : new Set(stored.visibleColumns || Array.from(initial.visibleColumns))
+    };
+  });
+
+  // Salvar automaticamente quando o estado mudar
+  useEffect(() => {
+    savePreferences(state);
+  }, [state]);
+
+  // Ações para manipular colunas
+  const actions: ColumnActions = useMemo(() => ({
+    toggleColumn: useCallback((key: string) => {
+      setState(prev => {
+        const newVisible = new Set(prev.visibleColumns);
+        
+        if (newVisible.has(key)) {
+          newVisible.delete(key);
+        } else {
+          newVisible.add(key);
+        }
+        
+        return {
+          ...prev,
+          visibleColumns: newVisible,
+          activeProfile: null // Desativa perfil ao fazer alteração manual
+        };
+      });
+    }, []),
+
+    showColumn: useCallback((key: string) => {
+      setState(prev => ({
+        ...prev,
+        visibleColumns: new Set([...prev.visibleColumns, key]),
+        activeProfile: null
+      }));
+    }, []),
+
+    hideColumn: useCallback((key: string) => {
+      setState(prev => {
+        const newVisible = new Set(prev.visibleColumns);
+        newVisible.delete(key);
+        
+        return {
+          ...prev,
+          visibleColumns: newVisible,
+          activeProfile: null
+        };
+      });
+    }, []),
+
+    setVisibleColumns: useCallback((columns: string[]) => {
+      setState(prev => ({
+        ...prev,
+        visibleColumns: new Set(columns),
+        activeProfile: null
+      }));
+    }, []),
+
+    reorderColumns: useCallback((columnOrder: string[]) => {
+      setState(prev => ({
+        ...prev,
+        columnOrder,
+        activeProfile: null
+      }));
+    }, []),
+
+    loadProfile: useCallback((profileId: string) => {
+      const allProfiles = [...DEFAULT_PROFILES, ...state.customProfiles];
+      const profile = allProfiles.find(p => p.id === profileId);
+      
+      if (profile) {
+        setState(prev => ({
+          ...prev,
+          visibleColumns: new Set(profile.columns),
+          activeProfile: profileId
+        }));
+      }
+    }, [state.customProfiles]),
+
+    saveProfile: useCallback((profile: Omit<ColumnProfile, 'id'>) => {
+      const newProfile: ColumnProfile = {
+        ...profile,
+        id: `custom_${Date.now()}`
+      };
+      
+      setState(prev => ({
+        ...prev,
+        customProfiles: [...prev.customProfiles, newProfile]
+      }));
+    }, []),
+
+    deleteProfile: useCallback((profileId: string) => {
+      setState(prev => ({
+        ...prev,
+        customProfiles: prev.customProfiles.filter(p => p.id !== profileId),
+        activeProfile: prev.activeProfile === profileId ? null : prev.activeProfile
+      }));
+    }, []),
+
+    resetToDefault: useCallback(() => {
+      const defaultColumns = getDefaultVisibleColumns();
+      
+      setState(prev => ({
+        ...prev,
+        visibleColumns: new Set(defaultColumns.map(col => col.key)),
+        activeProfile: 'standard'
+      }));
+    }, []),
+
+    resetToEssentials: useCallback(() => {
+      setState(prev => ({
+        ...prev,
+        visibleColumns: new Set(COLUMN_DEFINITIONS
+          .filter(col => col.priority === 'essential')
+          .map(col => col.key)
+        ),
+        activeProfile: 'essential'
+      }));
+    }, [])
+  }), [state.customProfiles]);
+
+  // Definições de colunas visíveis na ordem correta
+  const visibleDefinitions = useMemo(() => {
+    return state.columnOrder
+      .map(key => COLUMN_DEFINITIONS.find(col => col.key === key))
+      .filter((col): col is NonNullable<typeof col> => 
+        col !== undefined && state.visibleColumns.has(col.key)
+      );
+  }, [state.visibleColumns, state.columnOrder]);
+
+  // Todos os perfis disponíveis
+  const profiles = useMemo(() => {
+    return [...DEFAULT_PROFILES, ...state.customProfiles];
+  }, [state.customProfiles]);
+
+  return {
+    state,
+    actions,
+    definitions: COLUMN_DEFINITIONS,
+    visibleDefinitions,
+    profiles
+  };
+};
