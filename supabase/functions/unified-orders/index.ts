@@ -114,8 +114,8 @@ serve(async (req) => {
     if (!authHeader) return fail("Missing Authorization header", 401, null, cid);
 
     const body = await req.json();
-    const { integration_account_id, status, date_from, date_to, seller_id, q, limit = 50, offset = 0 } = body || {};
-    console.log(`[unified-orders:${cid}] filters`, { integration_account_id, status, date_from, date_to, seller_id, q, limit, offset });
+    const { integration_account_id, status, shipping_status, date_from, date_to, seller_id, q, limit = 50, offset = 0 } = body || {};
+    console.log(`[unified-orders:${cid}] filters`, { integration_account_id, status, shipping_status, date_from, date_to, seller_id, q, limit, offset });
     if (!integration_account_id) return fail("integration_account_id é obrigatório", 400, null, cid);
 
     const sb = serviceClient();
@@ -211,18 +211,33 @@ serve(async (req) => {
     // 5) Buscar detalhes de shipping para cada pedido
     const enrichedOrders = await enrichOrdersWithShipping(json.results ?? [], accessToken, cid);
     
+    // 6) Aplicar filtros de shipping_status no servidor
+    let filteredOrders = enrichedOrders;
+    if (shipping_status) {
+      const targetStatuses = Array.isArray(shipping_status) ? shipping_status : [shipping_status];
+      filteredOrders = enrichedOrders.filter(order => {
+        const orderShippingStatus = order.shipping?.status || '';
+        return targetStatuses.some(targetStatus => 
+          orderShippingStatus.toLowerCase() === targetStatus.toLowerCase() ||
+          orderShippingStatus === targetStatus
+        );
+      });
+      console.log(`[unified-orders:${cid}] Filtered by shipping_status: ${enrichedOrders.length} -> ${filteredOrders.length}`);
+    }
+    
     // Debug: log a amostra dos dados enriquecidos
-    if (enrichedOrders.length > 0) {
+    if (filteredOrders.length > 0) {
       console.log(`[unified-orders:${cid}] Sample enriched order shipping data:`, 
-        JSON.stringify(enrichedOrders[0]?.shipping, null, 2));
+        JSON.stringify(filteredOrders[0]?.shipping, null, 2));
     }
     
     return ok({
-      results: enrichedOrders,
-      unified: transformMLOrders(enrichedOrders, integration_account_id),
-      paging: json.paging,
-      count: json.paging?.total ?? 0,
+      results: filteredOrders,
+      unified: transformMLOrders(filteredOrders, integration_account_id),
+      paging: { ...json.paging, total: filteredOrders.length },
+      count: filteredOrders.length,
       correlation_id: cid,
+      server_filtering_applied: Boolean(shipping_status)
     });
   } catch (err: any) {
     console.error(`[unified-orders:${cid}]`, err);

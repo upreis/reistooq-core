@@ -1041,68 +1041,55 @@ export default function SimplePedidosPage({ className }: Props) {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Filtro por Status do Envio */}
+            {/* Filtro por Status do Envio - Múltipla Seleção */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Status do Envio</label>
-              <Select 
-                value={Array.isArray(filters.situacao) ? filters.situacao[0] || 'all' : filters.situacao || 'all'} 
-                onValueChange={(value) => actions.setFilters({ situacao: value === 'all' ? undefined : value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  <SelectItem value="all">Todos os status</SelectItem>
-                  <SelectItem value="pending">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                      Pendente
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="ready_to_ship">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-blue-400"></div>
-                      Pronto para Envio
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="shipped">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-purple-400"></div>
-                      Enviado
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="delivered">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                      Entregue
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="not_delivered">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                      Não Entregue
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="cancelled">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-                      Cancelado
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="handling">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-cyan-400"></div>
-                      Processando
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="to_be_agreed">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-orange-400"></div>
-                      A Combinar
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {[
+                  { value: 'pending', label: 'Pendente', color: 'bg-yellow-400' },
+                  { value: 'ready_to_ship', label: 'Pronto para Envio', color: 'bg-blue-400' },
+                  { value: 'shipped', label: 'Enviado', color: 'bg-purple-400' },
+                  { value: 'delivered', label: 'Entregue', color: 'bg-green-400' },
+                  { value: 'not_delivered', label: 'Não Entregue', color: 'bg-red-400' },
+                  { value: 'cancelled', label: 'Cancelado', color: 'bg-gray-400' },
+                  { value: 'handling', label: 'Processando', color: 'bg-cyan-400' },
+                  { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
+                ].map(status => {
+                  const currentStatuses = Array.isArray(filters.situacao) ? filters.situacao : (filters.situacao ? [filters.situacao] : []);
+                  const isSelected = currentStatuses.includes(status.value);
+                  
+                  return (
+                    <label key={status.value} className="flex items-center space-x-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            // Adicionar status
+                            const newStatuses = [...currentStatuses, status.value];
+                            actions.setFilters({ situacao: newStatuses });
+                          } else {
+                            // Remover status
+                            const newStatuses = currentStatuses.filter(s => s !== status.value);
+                            actions.setFilters({ situacao: newStatuses.length > 0 ? newStatuses : undefined });
+                          }
+                        }}
+                      />
+                      <div className={`w-3 h-3 rounded-full ${status.color}`}></div>
+                      <span>{status.label}</span>
+                    </label>
+                  );
+                })}
+                {Array.isArray(filters.situacao) && filters.situacao.length > 0 && (
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={() => actions.setFilters({ situacao: undefined })}
+                    className="text-xs h-6 px-2 w-full"
+                  >
+                    Limpar Status
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Data Início */}

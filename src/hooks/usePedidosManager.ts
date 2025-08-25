@@ -114,12 +114,12 @@ export function usePedidosManager(initialAccountId?: string) {
       params.q = filters.search;
     }
 
-    // Status do Envio - usar shipping_status em vez de status
+    // Status do Envio - enviar múltiplos valores se necessário
     if (filters.situacao) {
       const situacoes = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
       if (situacoes.length > 0) {
-        // Usar diretamente o valor do filtro para shipping_status
-        params.shipping_status = situacoes[0];
+        // Para suporte a múltiplas seleções, enviar array
+        params.shipping_status = situacoes.length === 1 ? situacoes[0] : situacoes;
       }
     }
 
@@ -172,8 +172,8 @@ export function usePedidosManager(initialAccountId?: string) {
       enrich: true,
       include_shipping: true,
       ...rest,
-      // Mapear corretamente para o edge function (usa 'status')
-      status: shipping_status ?? (rest as any)?.status,
+      // Enviar shipping_status diretamente para o edge function
+      shipping_status: shipping_status,
       ...getUrlParams(), // URL tem prioridade
       // Sempre enriquecer para ter os dados de SKUs e mapeamentos
       enrich_skus: true,
@@ -325,8 +325,9 @@ export function usePedidosManager(initialAccountId?: string) {
         // Tentativa 1: unified-orders com filtros
         const unifiedResult = await loadFromUnifiedOrders(apiParams);
         
-        // Se o servidor já aplicou o status, não precisamos filtrar no client
-        const shouldApplyClientFilter = Boolean(apiParams.shipping_status) && !unifiedResult.serverStatusApplied;
+        // Se o servidor retornou que aplicou filtros, usar direto, senão aplicar client-side
+        const serverAppliedFiltering = (unifiedResult as any).server_filtering_applied;
+        const shouldApplyClientFilter = Boolean(apiParams.shipping_status) && !serverAppliedFiltering;
         const filteredClientResults = shouldApplyClientFilter
           ? applyClientSideFilters(unifiedResult.results)
           : unifiedResult.results;
