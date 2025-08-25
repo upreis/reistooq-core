@@ -392,35 +392,38 @@ export default function SimplePedidosPage({ className }: Props) {
     // Receita com envio só existe no Flex (self_service)
     if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
 
-    // Preferir lead_time (enriquecido pela função unified-orders)
+    // 1) Priorizar valor de frete pago no pagamento (receita de envio no Flex)
+    const paymentShip = Number(
+      order?.payments?.[0]?.shipping_cost ??
+      order?.raw?.payments?.[0]?.shipping_cost ??
+      0
+    );
+    if (paymentShip > 0) return paymentShip;
+
+    // 2) Tentar lead_time (enriquecido pela função unified-orders) somente se "charged"
     const lead =
       order?.unified?.lead_time ??
       order?.shipping?.lead_time ??
       order?.raw?.shipping?.lead_time ??
       order?.lead_time;
 
-    const leadCost =
-      typeof lead?.cost === 'number'
-        ? lead.cost
-        : typeof lead?.list_cost === 'number'
-        ? lead.list_cost
-        : undefined;
-
     const costType = String(lead?.cost_type || '').toLowerCase();
-    if (costType && costType !== 'charged') return 0;
+    const leadCost =
+      costType === 'charged'
+        ? (typeof lead?.cost === 'number'
+            ? lead.cost
+            : (typeof lead?.list_cost === 'number' ? lead.list_cost : undefined))
+        : undefined;
+    if (typeof leadCost === 'number' && leadCost > 0) return leadCost;
 
-    // Fallbacks: custo de frete vindo do pagamento ou campos genéricos
-    const paymentShip =
-      order?.payments?.[0]?.shipping_cost ??
-      order?.raw?.payments?.[0]?.shipping_cost;
-
-    const fallback =
+    // 3) Fallbacks genéricos
+    const fallback = Number(
       order?.valor_frete ??
       order?.shipping_cost ??
-      order?.shipping?.cost;
-
-    const value = (leadCost ?? paymentShip ?? fallback ?? 0) as number;
-    return value || 0;
+      order?.shipping?.cost ??
+      0
+    );
+    return fallback || 0;
   };
   
   const getValorLiquidoVendedor = (order: any): number => {
