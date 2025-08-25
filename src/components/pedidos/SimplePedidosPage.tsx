@@ -396,7 +396,7 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
     
     // Colunas de status (baseadas no status da API)
-    { key: 'situacao', label: 'Situação', default: true, category: 'status' },
+    { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
     
     // Colunas de mapeamento (processamento local)
     { key: 'mapeamento', label: 'Status Mapeamento', default: true, category: 'mapping' },
