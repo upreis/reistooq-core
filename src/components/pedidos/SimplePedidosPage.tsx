@@ -425,20 +425,26 @@ export default function SimplePedidosPage({ className }: Props) {
      { key: 'shipping_method', label: 'Método de Envio (Combinado)', default: false, category: 'shipping' },
      { key: 'shipping_substatus', label: 'Sub-status Envio (Combinado)', default: false, category: 'shipping' },
      
-     // Colunas do comprador (baseadas no buyer da API)
-     { key: 'buyer_nickname', label: 'Nome do Comprador', default: true, category: 'buyer' },
+     // Colunas de identificação do comprador
+     { key: 'buyer_id', label: 'ID do Comprador', default: false, category: 'buyer' },
+     { key: 'buyer_nickname', label: 'Nickname', default: false, category: 'buyer' },
      { key: 'buyer_first_name', label: 'Primeiro Nome', default: true, category: 'buyer' },
      { key: 'buyer_last_name', label: 'Sobrenome', default: true, category: 'buyer' },
+     { key: 'buyer_identification_number', label: 'CPF/CNPJ', default: true, category: 'buyer' },
+     { key: 'buyer_identification_type', label: 'Tipo Documento', default: false, category: 'buyer' },
      { key: 'buyer_email', label: 'Email do Comprador', default: true, category: 'buyer' },
      { key: 'buyer_phone', label: 'Telefone do Comprador', default: true, category: 'buyer' },
-     { key: 'buyer_address_street', label: 'Rua', default: true, category: 'buyer' },
-     { key: 'buyer_address_number', label: 'Número', default: true, category: 'buyer' },
-     { key: 'buyer_address_complement', label: 'Complemento', default: true, category: 'buyer' },
-     { key: 'buyer_address_zip_code', label: 'CEP', default: true, category: 'buyer' },
-     { key: 'buyer_address_city', label: 'Cidade', default: true, category: 'buyer' },
-     { key: 'buyer_address_state', label: 'Estado', default: true, category: 'buyer' },
-     { key: 'buyer_address_neighborhood', label: 'Bairro', default: true, category: 'buyer' },
-     { key: 'buyer_address_country', label: 'País', default: false, category: 'buyer' },
+     
+     // Colunas de endereço de entrega
+     { key: 'receiver_name', label: 'Nome do Destinatário', default: false, category: 'address' },
+     { key: 'receiver_address_street', label: 'Rua', default: true, category: 'address' },
+     { key: 'receiver_address_number', label: 'Número', default: true, category: 'address' },
+     { key: 'receiver_address_apartment', label: 'Complemento', default: true, category: 'address' },
+     { key: 'receiver_address_zip_code', label: 'CEP', default: true, category: 'address' },
+     { key: 'receiver_address_city', label: 'Cidade', default: true, category: 'address' },
+     { key: 'receiver_address_state', label: 'Estado', default: true, category: 'address' },
+     { key: 'receiver_address_state_id', label: 'Estado (Sigla)', default: false, category: 'address' },
+     { key: 'receiver_address_neighborhood', label: 'Bairro', default: true, category: 'address' },
      { key: 'forma_entrega', label: 'Forma de Entrega (Combinado)', default: false, category: 'shipping' },
      { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
     
@@ -1192,20 +1198,26 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('seller_id') && <th className="text-left p-3">ID Vendedor</th>}
                    {visibleColumns.has('integration_account_id') && <th className="text-left p-3">ID Conta Integração</th>}
                    
-                   {/* Colunas do comprador */}
-                   {visibleColumns.has('buyer_nickname') && <th className="text-left p-3">Nome do Comprador</th>}
+                   {/* Colunas de identificação do comprador */}
+                   {visibleColumns.has('buyer_id') && <th className="text-left p-3">ID do Comprador</th>}
+                   {visibleColumns.has('buyer_nickname') && <th className="text-left p-3">Nickname</th>}
                    {visibleColumns.has('buyer_first_name') && <th className="text-left p-3">Primeiro Nome</th>}
                    {visibleColumns.has('buyer_last_name') && <th className="text-left p-3">Sobrenome</th>}
+                   {visibleColumns.has('buyer_identification_number') && <th className="text-left p-3">CPF/CNPJ</th>}
+                   {visibleColumns.has('buyer_identification_type') && <th className="text-left p-3">Tipo Documento</th>}
                    {visibleColumns.has('buyer_email') && <th className="text-left p-3">Email do Comprador</th>}
                    {visibleColumns.has('buyer_phone') && <th className="text-left p-3">Telefone do Comprador</th>}
-                   {visibleColumns.has('buyer_address_street') && <th className="text-left p-3">Rua</th>}
-                   {visibleColumns.has('buyer_address_number') && <th className="text-left p-3">Número</th>}
-                   {visibleColumns.has('buyer_address_complement') && <th className="text-left p-3">Complemento</th>}
-                   {visibleColumns.has('buyer_address_zip_code') && <th className="text-left p-3">CEP</th>}
-                   {visibleColumns.has('buyer_address_city') && <th className="text-left p-3">Cidade</th>}
-                   {visibleColumns.has('buyer_address_state') && <th className="text-left p-3">Estado</th>}
-                   {visibleColumns.has('buyer_address_neighborhood') && <th className="text-left p-3">Bairro</th>}
-                   {visibleColumns.has('buyer_address_country') && <th className="text-left p-3">País</th>}
+                   
+                   {/* Colunas de endereço de entrega */}
+                   {visibleColumns.has('receiver_name') && <th className="text-left p-3">Nome do Destinatário</th>}
+                   {visibleColumns.has('receiver_address_street') && <th className="text-left p-3">Rua</th>}
+                   {visibleColumns.has('receiver_address_number') && <th className="text-left p-3">Número</th>}
+                   {visibleColumns.has('receiver_address_apartment') && <th className="text-left p-3">Complemento</th>}
+                   {visibleColumns.has('receiver_address_zip_code') && <th className="text-left p-3">CEP</th>}
+                   {visibleColumns.has('receiver_address_city') && <th className="text-left p-3">Cidade</th>}
+                   {visibleColumns.has('receiver_address_state') && <th className="text-left p-3">Estado</th>}
+                   {visibleColumns.has('receiver_address_state_id') && <th className="text-left p-3">Estado (Sigla)</th>}
+                   {visibleColumns.has('receiver_address_neighborhood') && <th className="text-left p-3">Bairro</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1845,22 +1857,41 @@ export default function SimplePedidosPage({ className }: Props) {
                           </td>
                         )}
                        
-                        {/* Colunas de identificação com fallbacks seguros */}
+                        {/* Colunas de identificação do comprador */}
                         {visibleColumns.has('buyer_id') && (
-                          <td className="p-3">{order.buyer_id || order.buyer?.id || '-'}</td>
+                          <td className="p-3">{order.buyer?.id || order.raw?.buyer?.id || order.buyer_id || '-'}</td>
                         )}
                         
-                        {/* Colunas do comprador */}
                         {visibleColumns.has('buyer_nickname') && (
-                          <td className="p-3">{order.buyer?.nickname || order.buyer_nickname || '-'}</td>
+                          <td className="p-3">{order.buyer?.nickname || order.raw?.buyer?.nickname || order.buyer_nickname || '-'}</td>
                         )}
                         
                         {visibleColumns.has('buyer_first_name') && (
-                          <td className="p-3">{order.buyer?.first_name || order.buyer?.name?.first || order.raw?.buyer?.first_name || order.buyer_first_name || '-'}</td>
+                          <td className="p-3">{order.buyer?.first_name || order.raw?.buyer?.first_name || order.buyer_first_name || '-'}</td>
                         )}
                         
                         {visibleColumns.has('buyer_last_name') && (
-                          <td className="p-3">{order.buyer?.last_name || order.buyer?.name?.last || order.raw?.buyer?.last_name || order.buyer_last_name || '-'}</td>
+                          <td className="p-3">{order.buyer?.last_name || order.raw?.buyer?.last_name || order.buyer_last_name || '-'}</td>
+                        )}
+                        
+                        {visibleColumns.has('buyer_identification_number') && (
+                          <td className="p-3">
+                            {(() => {
+                              const id = order.buyer?.identification?.number || 
+                                        order.raw?.buyer?.identification?.number ||
+                                        order.cpf_cnpj;
+                              return id ? maskCpfCnpj(id) : '-';
+                            })()}
+                          </td>
+                        )}
+                        
+                        {visibleColumns.has('buyer_identification_type') && (
+                          <td className="p-3">
+                            {order.buyer?.identification?.type || 
+                             order.raw?.buyer?.identification?.type || 
+                             (order.cpf_cnpj?.length > 11 ? 'CNPJ' : 'CPF') || 
+                             '-'}
+                          </td>
                         )}
                         
                         {visibleColumns.has('buyer_email') && (
@@ -1883,98 +1914,89 @@ export default function SimplePedidosPage({ className }: Props) {
                           </td>
                         )}
                         
-                        {visibleColumns.has('buyer_address_street') && (
+                        {/* Colunas de endereço de entrega */}
+                        {visibleColumns.has('receiver_name') && (
                           <td className="p-3">
-                            {(() => {
-                              const street = order.shipping?.receiver_address?.address_line ||
-                                           order.shipping_details?.receiver_address?.address_line ||
-                                           order.shipping?.receiver_address?.street_name ||
-                                           order.shipping_details?.receiver_address?.street_name ||
-                                           order.buyer_address?.street ||
-                                           order.buyer_address_street;
-                              return street || '-';
-                            })()}
+                            {order.shipping?.receiver_address?.receiver_name || 
+                             order.shipping_details?.receiver_address?.receiver_name ||
+                             order.raw?.shipping?.receiver_address?.receiver_name ||
+                             order.receiver_name || '-'}
                           </td>
                         )}
                         
-                        {visibleColumns.has('buyer_address_number') && (
+                        {visibleColumns.has('receiver_address_street') && (
                           <td className="p-3">
-                            {(() => {
-                              const number = order.shipping?.receiver_address?.street_number ||
-                                             order.shipping_details?.receiver_address?.street_number ||
-                                             order.buyer_address?.number ||
-                                             order.buyer_address_number;
-                              if (number) return number;
-                              const line = order.shipping?.receiver_address?.address_line ||
-                                           order.shipping_details?.receiver_address?.address_line || '';
-                              const parsed = (line.match(/\b(\d{1,6})\b/g) || []).pop();
-                              return parsed || '-';
-                            })()}
+                            {order.shipping?.receiver_address?.street_name ||
+                             order.shipping_details?.receiver_address?.street_name ||
+                             order.raw?.shipping?.receiver_address?.street_name ||
+                             order.receiver_address_street || '-'}
                           </td>
                         )}
                         
-                        {visibleColumns.has('buyer_address_complement') && (
+                        {visibleColumns.has('receiver_address_number') && (
                           <td className="p-3">
-                            {(() => {
-                              const complement = order.shipping?.receiver_address?.comment ||
-                                               order.shipping_details?.receiver_address?.comment ||
-                                               order.shipping?.receiver_address?.complement ||
-                                               order.buyer_address?.complement ||
-                                               order.buyer_address_complement;
-                              return complement || '-';
-                            })()}
+                            {order.shipping?.receiver_address?.street_number ||
+                             order.shipping_details?.receiver_address?.street_number ||
+                             order.raw?.shipping?.receiver_address?.street_number ||
+                             order.receiver_address_number || '-'}
                           </td>
                         )}
                         
-                        {visibleColumns.has('buyer_address_zip_code') && (
+                        {visibleColumns.has('receiver_address_apartment') && (
                           <td className="p-3">
-                            {(() => {
-                              const zipCode = order.shipping?.receiver_address?.zip_code ||
-                                            order.shipping_details?.receiver_address?.zip_code ||
-                                            order.buyer_address?.zip_code ||
-                                            order.buyer_address_zip_code ||
-                                            order.cep;
-                              return zipCode || '-';
-                            })()}
+                            {order.shipping?.receiver_address?.apartment ||
+                             order.shipping_details?.receiver_address?.apartment ||
+                             order.raw?.shipping?.receiver_address?.apartment ||
+                             order.receiver_address_apartment || '-'}
                           </td>
                         )}
                         
-                        {visibleColumns.has('buyer_address_city') && (
+                        {visibleColumns.has('receiver_address_zip_code') && (
                           <td className="p-3">
-                            {(() => {
-                              const city = order.shipping?.receiver_address?.city?.name ||
-                                         order.shipping_details?.receiver_address?.city?.name ||
-                                         order.buyer_address?.city ||
-                                         order.buyer_address_city ||
-                                         order.cidade;
-                              return city || '-';
-                            })()}
+                            {order.shipping?.receiver_address?.zip_code ||
+                             order.shipping_details?.receiver_address?.zip_code ||
+                             order.raw?.shipping?.receiver_address?.zip_code ||
+                             order.receiver_address_zip_code ||
+                             order.cep || '-'}
                           </td>
                         )}
                         
-                        {visibleColumns.has('buyer_address_state') && (
+                        {visibleColumns.has('receiver_address_city') && (
                           <td className="p-3">
-                            {(() => {
-                              const st = order.shipping?.receiver_address?.state ||
-                                         order.shipping_details?.receiver_address?.state || {};
-                              const state = st?.name || (typeof st?.id === 'string' ? st.id.split('-').pop() : undefined) ||
-                                            order.buyer_address?.state ||
-                                            order.buyer_address_state ||
-                                            order.uf;
-                              return state || '-';
-                            })()}
+                            {order.shipping?.receiver_address?.city?.name ||
+                             order.shipping_details?.receiver_address?.city?.name ||
+                             order.raw?.shipping?.receiver_address?.city?.name ||
+                             order.receiver_address_city ||
+                             order.cidade || '-'}
                           </td>
                         )}
                         
-                        {visibleColumns.has('buyer_address_neighborhood') && (
+                        {visibleColumns.has('receiver_address_state') && (
                           <td className="p-3">
-                            {(() => {
-                              const neighborhood = order.shipping?.receiver_address?.neighborhood?.name ||
-                                                 order.shipping_details?.receiver_address?.neighborhood?.name ||
-                                                 order.buyer_address?.neighborhood ||
-                                                 order.buyer_address_neighborhood;
-                              return neighborhood || '-';
-                            })()}
+                            {order.shipping?.receiver_address?.state?.name ||
+                             order.shipping_details?.receiver_address?.state?.name ||
+                             order.raw?.shipping?.receiver_address?.state?.name ||
+                             order.receiver_address_state ||
+                             order.uf || '-'}
+                          </td>
+                        )}
+                        
+                        {visibleColumns.has('receiver_address_state_id') && (
+                          <td className="p-3">
+                            {order.shipping?.receiver_address?.state?.id ||
+                             order.shipping_details?.receiver_address?.state?.id ||
+                             order.raw?.shipping?.receiver_address?.state?.id ||
+                             order.receiver_address_state_id ||
+                             order.uf || '-'}
+                          </td>
+                        )}
+                        
+                        {visibleColumns.has('receiver_address_neighborhood') && (
+                          <td className="p-3">
+                            {order.shipping?.receiver_address?.neighborhood?.name ||
+                             order.shipping_details?.receiver_address?.neighborhood?.name ||
+                             order.raw?.shipping?.receiver_address?.neighborhood?.name ||
+                             order.receiver_address_neighborhood || '-'}
                           </td>
                         )}
                         
