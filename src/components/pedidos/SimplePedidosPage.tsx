@@ -392,14 +392,26 @@ export default function SimplePedidosPage({ className }: Props) {
     // Receita com envio só existe no Flex (self_service)
     if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
 
-    // Fonte principal: valor de frete do pagamento (receita com envio no Flex)
-    const paymentShippingCost = Number(
-      order?.payments?.[0]?.shipping_cost ??
-      order?.raw?.payments?.[0]?.shipping_cost ??
-      0
-    );
+    // Fonte principal: shipments/{id}/payments[].amount (enriquecido pelo unified-orders)
+    const paymentArrays = [
+      order?.shipping?.payments,
+      order?.unified?.shipping?.payments,
+      order?.raw?.shipping?.payments,
+      order?.shipping_payments,
+      order?.unified?.shipping_payments
+    ].filter(Boolean);
 
-    return paymentShippingCost || 0;
+    let totalAmount = 0;
+    for (const arr of paymentArrays) {
+      if (Array.isArray(arr)) {
+        for (const p of arr) {
+          const amt = Number(p?.amount ?? 0);
+          if (!Number.isNaN(amt) && amt > 0) totalAmount += amt;
+        }
+      }
+    }
+
+    return totalAmount || 0;
   };
   
   const getValorLiquidoVendedor = (order: any): number => {
