@@ -34,6 +34,10 @@ export interface PedidosManagerState {
   cachedAt?: Date;
   lastQuery?: string;
   isRefreshing: boolean;
+  // 🚀 Paginação robusta
+  hasNextPage?: boolean;
+  hasPrevPage?: boolean;
+  paging?: { total?: number; limit?: number; offset?: number };
 }
 
 export interface PedidosManagerActions {
@@ -80,6 +84,11 @@ export function usePedidosManager(initialAccountId?: string) {
   const [lastQuery, setLastQuery] = useState<string>();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const abortControllerRef = useRef<AbortController>();
+  
+  // 🚀 Paginação do servidor e flags
+  const [paging, setPaging] = useState<{ total?: number; limit?: number; offset?: number }>();
+  const [hasNextPage, setHasNextPage] = useState<boolean>(false);
+  const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
   
   // 🚀 FASE 2: Debounce nos filtros para performance (P2.2: usando constants)
   const debouncedFilters = useDebounce(filters, DEBOUNCE.FILTER_DELAY_MS);
@@ -184,6 +193,7 @@ export function usePedidosManager(initialAccountId?: string) {
       results: data.results || [],
       unified: data.unified || [],
       total: data.paging?.total || data.paging?.count || data.results?.length || 0,
+      paging: data.paging || undefined,
       serverStatusApplied: Boolean(requestBody.status)
     };
   }, [integrationAccountId, currentPage, pageSize, getUrlParams]);
@@ -326,6 +336,19 @@ export function usePedidosManager(initialAccountId?: string) {
         setTotal(unifiedResult.total);
         setFonte('tempo-real');
         
+        // Atualizar paginação com dados do servidor (fallback se ausente)
+        const p: any = (unifiedResult as any).paging;
+        if (p && typeof p.limit === 'number' && typeof p.offset === 'number') {
+          const totalVal = (p.total ?? p.count ?? unifiedResult.total ?? 0) as number;
+          setPaging({ total: totalVal, limit: p.limit, offset: p.offset });
+          setHasPrevPage(p.offset > 0);
+          setHasNextPage(p.offset + p.limit < totalVal);
+        } else {
+          setPaging(undefined);
+          setHasPrevPage(currentPage > 1);
+          setHasNextPage(filteredClientResults.length >= pageSize);
+        }
+        
         // 🚀 FASE 2: Atualizar cache
         setCachedAt(new Date());
         setLastQuery(cacheKey);
@@ -349,6 +372,11 @@ export function usePedidosManager(initialAccountId?: string) {
           setTotal(filteredResults.length); // Total dos resultados filtrados
           setFonte('hibrido');
           
+          // Paginação fallback (client-side)
+          setPaging({ total: filteredResults.length, limit: pageSize, offset: startIndex });
+          setHasPrevPage(currentPage > 1);
+          setHasNextPage(endIndex < filteredResults.length);
+          
         } catch (fallbackError: any) {
           // P1.2: Log minimizado para evitar exposição de dados
           
@@ -357,6 +385,12 @@ export function usePedidosManager(initialAccountId?: string) {
           setOrders(dbResult.results);
           setTotal(dbResult.total);
           setFonte('banco');
+          
+          // Paginação baseada no total do banco (se disponível)
+          const totalDb = dbResult.total ?? 0;
+          setPaging({ total: totalDb, limit: pageSize, offset: (currentPage - 1) * pageSize });
+          setHasPrevPage(currentPage > 1);
+          setHasNextPage(currentPage * pageSize < totalDb);
         }
       }
       
@@ -475,7 +509,11 @@ export function usePedidosManager(initialAccountId?: string) {
     // 🚀 FASE 2: Estados de performance
     cachedAt,
     lastQuery,
-    isRefreshing
+    isRefreshing,
+    // 🚀 Paginação robusta
+    hasNextPage,
+    hasPrevPage,
+    paging
   };
 
   // Effects otimizados

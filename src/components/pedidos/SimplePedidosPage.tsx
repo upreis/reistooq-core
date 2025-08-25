@@ -2039,7 +2039,7 @@ export default function SimplePedidosPage({ className }: Props) {
       </Card>
 
       {/* 🛡️ PAGINAÇÃO */}
-      {totalPages > 1 && (
+      {orders && orders.length > 0 && (
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm">Itens por página:</span>
@@ -2057,18 +2057,18 @@ export default function SimplePedidosPage({ className }: Props) {
               variant="outline"
               size="sm"
               onClick={() => actions.setPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
+              disabled={!(state.hasPrevPage ?? (currentPage > 1))}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm">
-              Página {currentPage} de {totalPages} ({total} total)
+              Página {currentPage}{total > 0 ? ` de ${Math.ceil(total / (state.pageSize || 25))} (${total} total)` : ''}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => actions.setPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
+              onClick={() => actions.setPage(currentPage + 1)}
+              disabled={!(state.hasNextPage ?? (orders.length === (state.pageSize || 25)))}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
