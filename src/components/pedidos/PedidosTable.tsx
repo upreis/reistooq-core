@@ -288,7 +288,13 @@ export function PedidosTable({
                               </div>
                             );
                           case 'nome_cliente':
-                            return show(get(row.unified, 'nome_cliente') ?? get(row.raw, 'buyer.nickname'));
+                            // Priorizar nome completo do comprador
+                            const firstName = get(row.raw, 'buyer.first_name');
+                            const lastName = get(row.raw, 'buyer.last_name');
+                            const fullName = (firstName && lastName) 
+                              ? `${firstName} ${lastName}` 
+                              : get(row.unified, 'nome_cliente') ?? get(row.raw, 'buyer.nickname');
+                            return show(fullName);
                           case 'cpf_cnpj':
                             return maskCpfCnpj(get(row.unified, 'cpf_cnpj'));
                           case 'data_pedido':
