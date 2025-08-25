@@ -442,15 +442,10 @@ export default function SimplePedidosPage({ className }: Props) {
      { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
     
      // Colunas de valores/pagamento (baseadas na API do ML)
-     { key: 'total_amount', label: 'Valor Total (API)', default: false, category: 'financial' },
-     { key: 'paid_amount', label: 'Valor Pago', default: false, category: 'financial' },
-     { key: 'total_paid_amount', label: 'Total Pago', default: false, category: 'financial' },
-     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
-     { key: 'currency_id', label: 'Moeda', default: false, category: 'financial' },
      { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
      { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
      { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
-     { key: 'taxes_amount', label: 'Valor Taxas', default: false, category: 'financial' },
+     
      { key: 'marketplace_fee', label: 'Taxa Marketplace', default: false, category: 'financial' },
      
      // Colunas de identificação/participantes
@@ -1134,7 +1129,6 @@ export default function SimplePedidosPage({ className }: Props) {
                   {visibleColumns.has('valor_total') && <th className="text-left p-3">Valor Total</th>}
                   {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
                   {visibleColumns.has('shipping_cost') && <th className="text-left p-3">Custo do Frete</th>}
-                  {visibleColumns.has('currency_id') && <th className="text-left p-3">Moeda</th>}
                   {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
                   
                   {/* Colunas de status */}
@@ -1174,15 +1168,10 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('nome_destinatario') && <th className="text-left p-3">Nome Destinatário</th>}
                   
                    {/* Colunas de valores/pagamento */}
-                   {visibleColumns.has('total_amount') && <th className="text-left p-3">Valor Total (API)</th>}
-                   {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
-                   {visibleColumns.has('total_paid_amount') && <th className="text-left p-3">Total Pago</th>}
-                   {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
-                   {visibleColumns.has('currency_id') && <th className="text-left p-3">Moeda</th>}
                    {visibleColumns.has('payment_method') && <th className="text-left p-3">Método Pagamento</th>}
                    {visibleColumns.has('payment_status') && <th className="text-left p-3">Status Pagamento</th>}
                    {visibleColumns.has('payment_type') && <th className="text-left p-3">Tipo Pagamento</th>}
-                   {visibleColumns.has('taxes_amount') && <th className="text-left p-3">Valor Taxas</th>}
+                   
                    {visibleColumns.has('marketplace_fee') && <th className="text-left p-3">Taxa Marketplace</th>}
                    
                    {/* Colunas de identificação */}
@@ -1339,9 +1328,6 @@ export default function SimplePedidosPage({ className }: Props) {
                           </td>
                         )}
                       
-                      {visibleColumns.has('currency_id') && (
-                        <td className="p-3">{order.currency_id || 'BRL'}</td>
-                      )}
                       
                       {visibleColumns.has('coupon_amount') && (
                         <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
@@ -1691,15 +1677,6 @@ export default function SimplePedidosPage({ className }: Props) {
                         </td>
                       )}
                       
-                       {/* 🆕 COLUNAS DE VALORES/PAGAMENTO */}
-                       {visibleColumns.has('total_amount') && (
-                         <td className="p-3">
-                           {(() => {
-                             const amount = order.total_amount || order.raw?.total_amount;
-                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
-                           })()}
-                         </td>
-                       )}
                        
                        {visibleColumns.has('paid_amount') && (
                          <td className="p-3">
@@ -1710,14 +1687,6 @@ export default function SimplePedidosPage({ className }: Props) {
                          </td>
                        )}
                        
-                       {visibleColumns.has('total_paid_amount') && (
-                         <td className="p-3">
-                           {(() => {
-                             const amount = order.total_paid_amount || order.payments?.[0]?.total_paid_amount || order.raw?.payments?.[0]?.total_paid_amount;
-                             return amount ? `R$ ${Number(amount).toFixed(2)}` : '-';
-                           })()}
-                         </td>
-                       )}
                        
                         {visibleColumns.has('coupon_amount') && (
                           <td className="p-3">
@@ -1736,13 +1705,6 @@ export default function SimplePedidosPage({ className }: Props) {
                           </td>
                         )}
                        
-                       {visibleColumns.has('currency_id') && (
-                         <td className="p-3">
-                           <span className="text-xs font-mono">
-                             {order.currency_id || order.raw?.currency_id || '-'}
-                           </span>
-                         </td>
-                       )}
                        
                        {visibleColumns.has('payment_method') && (
                          <td className="p-3">
@@ -1795,21 +1757,6 @@ export default function SimplePedidosPage({ className }: Props) {
                           </td>
                         )}
                        
-                        {visibleColumns.has('taxes_amount') && (
-                          <td className="p-3">
-                            {(() => {
-                              // Priorizar dados dos payments para taxas (mais confiável)
-                              const amount = 
-                                order.payments?.[0]?.taxes_amount ||
-                                order.raw?.payments?.[0]?.taxes_amount ||
-                                order.taxes?.amount || 
-                                order.raw?.taxes?.amount || 
-                                order.taxes_amount ||
-                                0;
-                              return amount > 0 ? formatMoney(amount) : '-';
-                            })()}
-                          </td>
-                        )}
                        
                         {visibleColumns.has('marketplace_fee') && (
                           <td className="p-3">
