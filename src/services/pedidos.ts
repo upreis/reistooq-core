@@ -213,14 +213,18 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       url_rastreamento: trackingUrl,
       nome_destinatario: receiverName,
 
-      // ADIÇÃO: Campos financeiros detalhados da API
+      // ADIÇÃO: Campos financeiros detalhados da API - SEPARADOS E EXCLUSIVOS
       paid_amount: order.paid_amount || order.valor_pago_total || order.total_amount || 0,
       currency_id: order.currency_id || 'BRL',
       coupon_amount: order.coupon_amount || order.valor_desconto || 0,
       receita_produtos: order.receita_produtos || 0,
       tarifas_venda: order.tarifas_venda || 0,
       impostos: order.impostos || 0,
-      receita_envio: order.receita_envio || shippingCost,
+      
+      // CAMPOS EXCLUSIVOS DE FRETE/ENVIO
+      frete_pago_cliente: getFretePagoCliente(order), // Valor que cliente pagou de frete
+      receita_flex: getReceitaFlex(order),            // Bônus/compensação Flex para vendedor
+      custo_envio_seller: getCustoEnvioSeller(order), // Custo real de envio para o vendedor
 
       // ADIÇÃO: Campos do produto/anúncio da API
       titulo_anuncio: order.titulo_anuncio || order.order_items?.[0]?.item?.title || '',
@@ -265,6 +269,59 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       status_estoque: 'pronto_baixar' as const,
     };
   });
+}
+
+// FUNÇÕES AUXILIARES PARA CAMPOS FINANCEIROS EXCLUSIVOS
+function getFretePagoCliente(order: any): number {
+  // Valor que o CLIENTE pagou de frete (do payments ou receiver.cost)
+  const fromPayments = order.payments?.[0]?.shipping_cost || 0;
+  const fromReceiver = order.shipping?.costs?.receiver?.cost || 0;
+  const fromShippingCost = order.shipping_cost || order.valor_frete || 0;
+  
+  return Math.max(fromPayments, fromReceiver, fromShippingCost);
+}
+
+function getReceitaFlex(order: any): number {
+  // APENAS bônus/compensação que o VENDEDOR recebe no Flex
+  const logisticType = String(
+    order?.shipping?.logistic?.type || 
+    order?.logistic_type || 
+    ''
+  ).toLowerCase();
+  
+  // Só no Flex/self_service
+  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
+  
+  // 1) Bônus direto
+  const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || 0);
+  if (bonus > 0) return bonus;
+  
+  // 2) Compensação via costs.senders
+  const costs = order?.shipping?.costs;
+  if (costs?.senders && Array.isArray(costs.senders)) {
+    const compensation = costs.senders.reduce((acc: number, s: any) => {
+      const direct = Number(s?.compensation || 0);
+      const nested = Array.isArray(s?.compensations) 
+        ? s.compensations.reduce((a: number, c: any) => a + Number(c?.amount || 0), 0)
+        : 0;
+      return acc + direct + nested;
+    }, 0);
+    if (compensation > 0) return compensation;
+  }
+  
+  return 0;
+}
+
+function getCustoEnvioSeller(order: any): number {
+  // Custo real de envio para o VENDEDOR (senders[].cost)
+  const costs = order?.shipping?.costs;
+  if (costs?.senders && Array.isArray(costs.senders)) {
+    return costs.senders.reduce((acc: number, s: any) => {
+      return acc + Number(s?.cost || 0);
+    }, 0);
+  }
+  
+  return 0;
 }
 
 function mapMlStatus(mlStatus: string): string {

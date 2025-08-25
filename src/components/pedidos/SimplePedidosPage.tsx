@@ -516,10 +516,10 @@ export default function SimplePedidosPage({ className }: Props) {
       }
     }
 
-    // Receita com envio (Flex) a partir de shipments payments (evita dupla contagem)
-    const receita = getReceitaPorEnvio(order);
+    // USAR APENAS RECEITA FLEX (bônus), NÃO frete pago pelo cliente
+    const receitaFlex = order.receita_flex || getReceitaPorEnvio(order);
 
-    return Math.max(0, transactionBase - fee + receita);
+    return Math.max(0, transactionBase - fee + receitaFlex);
   };
 
   // Configuração de colunas (reposta após ajuste)
@@ -538,12 +538,13 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'quantidade_itens', label: 'Quantidade Total', default: true, category: 'products' },
     { key: 'titulo_anuncio', label: 'Título do Produto', default: true, category: 'products' },
 
-    // Financeiro
+    // Financeiro - CAMPOS SEPARADOS E EXCLUSIVOS
     { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
     { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
-    { key: 'shipping_cost', label: 'Custo do Frete', default: false, category: 'financial' },
+    { key: 'frete_pago_cliente', label: 'Frete Pago Cliente', default: true, category: 'financial' },
+    { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: true, category: 'financial' },
+    { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
-    { key: 'receita_por_envio', label: 'Receita com Envio', default: true, category: 'financial' },
     { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
@@ -1248,12 +1249,13 @@ export default function SimplePedidosPage({ className }: Props) {
                   {visibleColumns.has('quantidade_itens') && <th className="text-left p-3">Quantidade Total</th>}
                   {visibleColumns.has('titulo_anuncio') && <th className="text-left p-3">Título do Produto</th>}
                   
-                   {/* Colunas financeiras */}
+                   {/* Colunas financeiras - SEPARADAS E EXCLUSIVAS */}
                    {visibleColumns.has('valor_total') && <th className="text-left p-3">Valor Total</th>}
                    {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
-                   {visibleColumns.has('shipping_cost') && <th className="text-left p-3">Custo do Frete</th>}
+                   {visibleColumns.has('frete_pago_cliente') && <th className="text-left p-3">Frete Pago Cliente</th>}
+                   {visibleColumns.has('receita_flex') && <th className="text-left p-3">Receita Flex (Bônus)</th>}
+                   {visibleColumns.has('custo_envio_seller') && <th className="text-left p-3">Custo Envio Seller</th>}
                    {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
-                   {visibleColumns.has('receita_por_envio') && <th className="text-left p-3">Receita com Envio</th>}
                    {visibleColumns.has('valor_liquido_vendedor') && <th className="text-left p-3">Valor Líquido Vendedor</th>}
                    {visibleColumns.has('payment_method') && <th className="text-left p-3">Método Pagamento</th>}
                    {visibleColumns.has('payment_status') && <th className="text-left p-3">Status Pagamento</th>}
@@ -1435,29 +1437,39 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{formatMoney(order.paid_amount || 0)}</td>
                       )}
                       
-                        {visibleColumns.has('shipping_cost') && (
-                          <td className="p-3">
-                            {(() => {
-                              // Priorizar dados dos payments (mais confiável para frete)
-                              const shippingCost = 
-                                order.payments?.[0]?.shipping_cost ||
-                                order.raw?.payments?.[0]?.shipping_cost ||
-                                order.valor_frete ||
-                                order.shipping_cost ||
-                                order.shipping?.cost ||
-                                0;
-                              return formatMoney(shippingCost);
-                            })()}
-                          </td>
-                        )}
-                      
+                       {visibleColumns.has('frete_pago_cliente') && (
+                         <td className="p-3">
+                           {formatMoney(
+                             order.frete_pago_cliente || 
+                             order.payments?.[0]?.shipping_cost ||
+                             order.shipping?.costs?.receiver?.cost ||
+                             order.valor_frete ||
+                             0
+                           )}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('receita_flex') && (
+                         <td className="p-3">
+                           {formatMoney(
+                             order.receita_flex || 
+                             getReceitaPorEnvio(order)
+                           )}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('custo_envio_seller') && (
+                         <td className="p-3">
+                           {formatMoney(
+                             order.custo_envio_seller ||
+                             order.shipping?.costs?.senders?.[0]?.cost ||
+                             0
+                           )}
+                         </td>
+                       )}
                       
                        {visibleColumns.has('coupon_amount') && (
                          <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
-                       )}
-                       
-                       {visibleColumns.has('receita_por_envio') && (
-                         <td className="p-3">{formatMoney(getReceitaPorEnvio(order))}</td>
                        )}
                        
                        {visibleColumns.has('valor_liquido_vendedor') && (
