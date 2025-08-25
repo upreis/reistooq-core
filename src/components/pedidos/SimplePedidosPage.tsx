@@ -530,8 +530,18 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'quantidade_itens', label: 'Quantidade Total', default: true, category: 'products' },
     { key: 'titulo_anuncio', label: 'Título do Produto', default: true, category: 'products' },
 
-    // Financeiro - APENAS VALOR PAGO ATIVO POR PADRÃO
+    // Financeiro - CAMPOS SEPARADOS E EXCLUSIVOS
+    { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
     { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
+    { key: 'frete_pago_cliente', label: 'Frete Pago Cliente', default: true, category: 'financial' },
+    { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: true, category: 'financial' },
+    { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
+    { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
+    { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
+    { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
+    { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
+    { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
+    { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
 
     // Status
     { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
@@ -1232,8 +1242,18 @@ export default function SimplePedidosPage({ className }: Props) {
                   {visibleColumns.has('quantidade_itens') && <th className="text-left p-3">Quantidade Total</th>}
                   {visibleColumns.has('titulo_anuncio') && <th className="text-left p-3">Título do Produto</th>}
                   
-                    {/* Colunas financeiras - APENAS VALOR PAGO */}
-                    {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
+                   {/* Colunas financeiras - SEPARADAS E EXCLUSIVAS */}
+                   {visibleColumns.has('valor_total') && <th className="text-left p-3">Valor Total</th>}
+                   {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
+                   {visibleColumns.has('frete_pago_cliente') && <th className="text-left p-3">Frete Pago Cliente</th>}
+                   {visibleColumns.has('receita_flex') && <th className="text-left p-3">Receita Flex (Bônus)</th>}
+                   {visibleColumns.has('custo_envio_seller') && <th className="text-left p-3">Custo Envio Seller</th>}
+                   {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
+                   {visibleColumns.has('valor_liquido_vendedor') && <th className="text-left p-3">Valor Líquido Vendedor</th>}
+                   {visibleColumns.has('payment_method') && <th className="text-left p-3">Método Pagamento</th>}
+                   {visibleColumns.has('payment_status') && <th className="text-left p-3">Status Pagamento</th>}
+                   {visibleColumns.has('payment_type') && <th className="text-left p-3">Tipo Pagamento</th>}
+                   {visibleColumns.has('marketplace_fee') && <th className="text-left p-3">Taxa Marketplace</th>}
                   
                   {/* Colunas de status */}
                   {visibleColumns.has('situacao') && <th className="text-left p-3">Situação</th>}
@@ -1410,11 +1430,131 @@ export default function SimplePedidosPage({ className }: Props) {
                       )}
                       
                       {/* Colunas financeiras */}
-                       {visibleColumns.has('paid_amount') && (
-                         <td className="p-3">{formatMoney(order.paid_amount || 0)}</td>
+                      {visibleColumns.has('valor_total') && (
+                        <td className="p-3">{formatMoney(order.valor_total || order.total_amount || 0)}</td>
+                      )}
+                      
+                      {visibleColumns.has('paid_amount') && (
+                        <td className="p-3">{formatMoney(order.paid_amount || 0)}</td>
+                      )}
+                      
+                       {visibleColumns.has('frete_pago_cliente') && (
+                         <td className="p-3">
+                           {formatMoney(
+                             order.frete_pago_cliente || 
+                             order.payments?.[0]?.shipping_cost ||
+                             order.shipping?.costs?.receiver?.cost ||
+                             order.valor_frete ||
+                             0
+                           )}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('receita_flex') && (
+                         <td className="p-3">
+                           {formatMoney(
+                             order.receita_flex || 
+                             getReceitaPorEnvio(order)
+                           )}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('custo_envio_seller') && (
+                         <td className="p-3">
+                           {formatMoney(
+                             order.custo_envio_seller ||
+                             order.shipping?.costs?.senders?.[0]?.cost ||
+                             0
+                           )}
+                         </td>
                        )}
                       
+                       {visibleColumns.has('coupon_amount') && (
+                         <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('valor_liquido_vendedor') && (
+                         <td className="p-3">{formatMoney(getValorLiquidoVendedor(order))}</td>
+                       )}
                       
+                      {/* Colunas de pagamento */}
+                      {visibleColumns.has('payment_method') && (
+                        <td className="p-3">
+                          <span className="text-xs">
+                            {(() => {
+                              const method = order.payments?.[0]?.payment_method_id || 
+                                           order.raw?.payments?.[0]?.payment_method_id || 
+                                           order.payment_method || 
+                                           order.forma_pagamento;
+                              
+                              const methodMapping: Record<string, string> = {
+                                'account_money': 'Dinheiro em Conta',
+                                'visa': 'Visa',
+                                'master': 'Mastercard',
+                                'amex': 'American Express',
+                                'pix': 'PIX',
+                                'bolbradesco': 'Boleto Bradesco',
+                                'pec': 'Pagamento na Entrega'
+                              };
+                              
+                              return methodMapping[method] || method || '-';
+                            })()}
+                          </span>
+                        </td>
+                      )}
+                      
+                      {visibleColumns.has('payment_status') && (
+                        <td className="p-3">
+                          <span className="text-xs">
+                            {order.payments?.[0]?.status || 
+                             order.raw?.payments?.[0]?.status || 
+                             order.payment_status || 
+                             '-'}
+                          </span>
+                        </td>
+                      )}
+                      
+                      {visibleColumns.has('payment_type') && (
+                        <td className="p-3">
+                          <span className="text-xs">
+                            {(() => {
+                              const paymentType = order.payments?.[0]?.payment_type_id || 
+                                                order.raw?.payments?.[0]?.payment_type_id || 
+                                                order.payment_type;
+                              
+                              const typeMapping: Record<string, string> = {
+                                'account_money': 'Dinheiro em Conta',
+                                'credit_card': 'Cartão de Crédito',
+                                'debit_card': 'Cartão de Débito',
+                                'bank_transfer': 'Transferência Bancária',
+                                'digital_wallet': 'Carteira Digital',
+                                'cryptocurrency': 'Criptomoeda',
+                                'ticket': 'Boleto',
+                                'atm': 'Caixa Eletrônico',
+                                'prepaid_card': 'Cartão Pré-pago'
+                              };
+                              
+                              return typeMapping[paymentType] || paymentType || '-';
+                            })()}
+                          </span>
+                        </td>
+                      )}
+                      
+                      {visibleColumns.has('marketplace_fee') && (
+                        <td className="p-3">
+                          {(() => {
+                            // Taxa do marketplace - geralmente está no sale_fee dos order_items
+                            const fee = 
+                              order.order_items?.[0]?.sale_fee ||
+                              order.raw?.order_items?.[0]?.sale_fee ||
+                              order.marketplace_fee || 
+                              order.fees?.[0]?.value || 
+                              order.raw?.fees?.[0]?.value ||
+                              0;
+                            return fee > 0 ? formatMoney(fee) : '-';
+                          })()}
+                        </td>
+                      )}
                       
                       {/* Colunas de status */}
                       {visibleColumns.has('situacao') && (
