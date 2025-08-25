@@ -432,7 +432,7 @@ export default function SimplePedidosPage({ className }: Props) {
      { key: 'buyer_phone', label: 'Telefone do Comprador', default: true, category: 'buyer' },
      
      // Colunas de endereço de entrega (baseadas na API shipping.destination.shipping_address.*)
-     { key: 'destination_receiver_name', label: 'Nome do Destinatário', default: true, category: 'address' },
+     
      { key: 'destination_street_name', label: 'Rua', default: true, category: 'address' },
      { key: 'destination_street_number', label: 'Número', default: true, category: 'address' },
      
@@ -442,7 +442,7 @@ export default function SimplePedidosPage({ className }: Props) {
      { key: 'destination_state_name', label: 'Estado', default: true, category: 'address' },
      { key: 'destination_state_id', label: 'Estado (Sigla)', default: true, category: 'address' },
      { key: 'destination_neighborhood_name', label: 'Bairro', default: true, category: 'address' },
-     { key: 'destination_receiver_phone', label: 'Telefone do Destinatário', default: false, category: 'address' },
+     
      { key: 'forma_entrega', label: 'Forma de Entrega (Combinado)', default: false, category: 'shipping' },
      { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
     
@@ -1203,7 +1203,7 @@ export default function SimplePedidosPage({ className }: Props) {
                     {visibleColumns.has('buyer_identification_type') && <th className="text-left p-3">Tipo Documento</th>}
                    
                    {/* Colunas de endereço de entrega */}
-                   {visibleColumns.has('destination_receiver_name') && <th className="text-left p-3">Nome do Destinatário</th>}
+                   
                    {visibleColumns.has('destination_street_name') && <th className="text-left p-3">Rua</th>}
                    {visibleColumns.has('destination_street_number') && <th className="text-left p-3">Número</th>}
                    
@@ -1213,7 +1213,7 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('destination_state_name') && <th className="text-left p-3">Estado</th>}
                    {visibleColumns.has('destination_state_id') && <th className="text-left p-3">Estado (Sigla)</th>}
                    {visibleColumns.has('destination_neighborhood_name') && <th className="text-left p-3">Bairro</th>}
-                   {visibleColumns.has('destination_receiver_phone') && <th className="text-left p-3">Telefone do Destinatário</th>}
+                   
                 </tr>
               </thead>
               <tbody>
@@ -1873,15 +1873,6 @@ export default function SimplePedidosPage({ className }: Props) {
                          )}
                         
                         {/* Colunas de endereço de entrega - usando shipping.destination.shipping_address.* */}
-                        {visibleColumns.has('destination_receiver_name') && (
-                          <td className="p-3">
-                            {order.shipping?.destination?.receiver_name ||
-                             order.shipping?.receiver_address?.receiver_name || 
-                             order.shipping_details?.receiver_address?.receiver_name ||
-                             order.raw?.shipping?.receiver_address?.receiver_name ||
-                             order.receiver_name || '-'}
-                          </td>
-                        )}
                         
                         {visibleColumns.has('destination_street_name') && (
                           <td className="p-3">
@@ -1967,13 +1958,6 @@ export default function SimplePedidosPage({ className }: Props) {
                           </td>
                         )}
                         
-                        {visibleColumns.has('destination_receiver_phone') && (
-                          <td className="p-3">
-                            {order.shipping?.destination?.receiver_phone ||
-                             order.shipping?.receiver_address?.receiver_phone ||
-                             order.shipping_details?.receiver_address?.receiver_phone || '-'}
-                          </td>
-                        )}
                         
                         {visibleColumns.has('buyer_address_country') && (
                           <td className="p-3">
