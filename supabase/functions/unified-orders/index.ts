@@ -254,14 +254,34 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           const shippingData = await shippingResp.json();
           
           // Enriquecer com todos os dados de shipping disponíveis
-          // Incluímos também os pagamentos do envio (para bônus Flex) e um agregado "bonus_total"
-          const shippingPayments = Array.isArray(shippingData?.payments)
-            ? shippingData.payments
-            : (Array.isArray(shippingData?.lead_time?.payments) ? shippingData.lead_time.payments : []);
-          const bonusTotal = (Array.isArray(shippingPayments) ? shippingPayments : []).reduce((acc: number, p: any) => {
-            const amt = Number(p?.amount ?? p?.value ?? p?.cost ?? 0);
+          // Buscar pagamentos e custos do envio no novo formato (x-format-new)
+          const [payResp, costsResp] = await Promise.all([
+            fetch(`https://api.mercadolibre.com/shipments/${order.shipping.id}/payments`, {
+              headers: { Authorization: `Bearer ${accessToken}`, 'x-format-new': 'true' }
+            }),
+            fetch(`https://api.mercadolibre.com/shipments/${order.shipping.id}/costs`, {
+              headers: { Authorization: `Bearer ${accessToken}`, 'x-format-new': 'true' }
+            })
+          ]);
+
+          const paymentsData = payResp.ok ? await payResp.json() : [];
+          const costsData = costsResp.ok ? await costsResp.json() : null;
+
+          // Somente pagamentos aprovados e valores positivos
+          const approvedPayments = Array.isArray(paymentsData)
+            ? paymentsData.filter((p: any) => String(p?.status || '').toLowerCase() === 'approved')
+            : [];
+          const paymentsSum = approvedPayments.reduce((acc: number, p: any) => {
+            const amt = Number(p?.amount ?? 0);
             return acc + (Number.isFinite(amt) && amt > 0 ? amt : 0);
           }, 0);
+
+          // Compensação (bônus) ao vendedor via /costs -> senders[].compensation
+          const costsComp = Array.isArray(costsData?.senders)
+            ? costsData.senders.reduce((acc: number, s: any) => acc + (Number(s?.compensation ?? 0) || 0), 0)
+            : 0;
+
+          const bonusTotal = (costsComp > 0 ? costsComp : paymentsSum) || 0;
 
           enrichedOrder.shipping = {
             ...order.shipping,
@@ -283,8 +303,9 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             delivery_type: shippingData.lead_time?.delivery_type,
             
             // Pagamentos de envio e bônus (para Flex/self_service)
-            payments: shippingPayments,
-            shipping_payments: shippingPayments,
+            payments: approvedPayments,
+            shipping_payments: approvedPayments,
+            costs: costsData,
             bonus: bonusTotal,
             bonus_total: bonusTotal,
 
@@ -351,7 +372,16 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       }
     }
     
-    const receitaPorEnvio = shippingCost;
+    // Receita com envio (bônus Flex) priorizando compensation de /costs
+    const bonusCosts = Array.isArray(order.shipping?.costs?.senders)
+      ? order.shipping.costs.senders.reduce((acc: number, s: any) => acc + (Number(s?.compensation ?? 0) || 0), 0)
+      : 0;
+    const approvedShipPay = Array.isArray(order.shipping?.shipping_payments)
+      ? order.shipping.shipping_payments.filter((p: any) => String(p?.status || '').toLowerCase() === 'approved')
+      : [];
+    const bonusPayments = approvedShipPay.reduce((acc: number, p: any) => acc + (Number(p?.amount ?? 0) || 0), 0);
+    const receitaPorEnvio = Number(order.shipping?.bonus_total ?? order.shipping?.bonus ?? 0) || (bonusCosts > 0 ? bonusCosts : bonusPayments);
+    
     const valorPagoTotal = order.paid_amount || 0;
     
     // Debug: Log dos dados financeiros para auditoria
