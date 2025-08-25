@@ -392,7 +392,16 @@ export default function SimplePedidosPage({ className }: Props) {
     // Receita com envio só existe no Flex (self_service)
     if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
 
-    // 1) Bônus por envio via /shipments/{id}/costs -> senders[].compensation (preferencial)
+    // 0) Se o backend já calculou (shipping.bonus_total/bonus), priorizar
+    const shippingBonus = Number(
+      order?.shipping?.bonus_total ??
+      order?.shipping?.bonus ??
+      order?.unified?.shipping?.bonus_total ??
+      order?.unified?.shipping?.bonus ?? 0
+    );
+    if (Number.isFinite(shippingBonus) && shippingBonus > 0) return shippingBonus;
+
+    // 1) Bônus por envio via /shipments/{id}/costs -> senders[].compensation e senders[].compensations[].amount
     const costs =
       order?.shipping?.costs ||
       order?.raw?.shipping?.costs ||
@@ -401,15 +410,16 @@ export default function SimplePedidosPage({ className }: Props) {
     let compTotal = 0;
     if (costs?.senders && Array.isArray(costs.senders)) {
       compTotal = costs.senders.reduce((acc: number, s: any) => {
-        const c = Number(s?.compensation ?? 0);
-        return acc + (Number.isFinite(c) && c > 0 ? c : 0);
+        const direct = Number(s?.compensation ?? 0);
+        const nestedList = Array.isArray(s?.compensations) ? s.compensations : [];
+        const nestedSum = nestedList.reduce((a: number, c: any) => a + (Number(c?.amount ?? 0) || 0), 0);
+        return acc + (Number.isFinite(direct) ? direct : 0) + nestedSum;
       }, 0);
     }
 
     if (compTotal > 0) return compTotal;
 
-    // 2) Pagamentos do envio (REMOVIDO do cálculo de receita; apenas referência na UI)
-    // Mantemos fallback apenas para casos muito antigos sem /costs
+    // 2) Pagamentos do envio (fallback legado apenas se /costs não disponível)
     let paymentsTotal = 0;
     const shippingPaymentArrays = [
       order?.shipping?.payments,
@@ -430,7 +440,6 @@ export default function SimplePedidosPage({ className }: Props) {
       }
     }
 
-    if (compTotal > 0) return compTotal;
     if (paymentsTotal > 0) return paymentsTotal; // fallback legado
 
     // 3) Outros campos eventuais
