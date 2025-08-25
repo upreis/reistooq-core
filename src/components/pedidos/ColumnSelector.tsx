@@ -27,7 +27,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'data_pedido', label: 'Data Pedido', visible: true, category: 'basic' },
   { key: 'sku', label: 'SKU', visible: true, category: 'basic' },
   { key: 'quantidade', label: 'Quantidade', visible: true, category: 'basic' },
-  { key: 'situacao', label: 'Situação', visible: true, category: 'basic' },
+  { key: 'situacao', label: 'Status do Pagamento', visible: true, category: 'basic' },
   { key: 'obs', label: 'Obs', visible: true, category: 'basic' },
   
   // Colunas financeiras

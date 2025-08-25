@@ -1256,7 +1256,7 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('marketplace_fee') && <th className="text-left p-3">Taxa Marketplace</th>}
                   
                   {/* Colunas de status */}
-                  {visibleColumns.has('situacao') && <th className="text-left p-3">Situação</th>}
+                  {visibleColumns.has('situacao') && <th className="text-left p-3">Status do Pagamento</th>}
                   
                   
                   {/* Colunas de mapeamento */}
