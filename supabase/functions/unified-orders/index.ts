@@ -337,7 +337,17 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       }
     }
     
-    const receitaPorEnvio = shippingCost;
+    // Receita por envio: só existe para Fulfillment (quando ML faz o envio)
+    // Para fulfillment, a receita é uma porcentagem do custo do frete que o vendedor recebe
+    const isFulfillmentOrder = (order.shipping?.logistic?.type === 'fulfillment') || 
+                               (order.shipping?.logistic_type === 'fulfillment');
+    
+    // Receita por envio calculada apenas para fulfillment
+    // ML normalmente repassa 70-80% do frete como receita para o vendedor em fulfillment
+    const receitaPorEnvio = isFulfillmentOrder && shippingCost > 0 ? 
+                           Math.round(shippingCost * 0.75 * 100) / 100 : // 75% do frete como estimativa
+                           0;
+    
     const valorPagoTotal = order.paid_amount || 0;
     
     // Debug: Log dos dados financeiros para auditoria
@@ -348,7 +358,10 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
         first_payment_taxes: order.payments?.[0]?.taxes_amount,
         calculated_impostos: impostos,
         shipping_cost: shippingCost,
-        paid_amount: order.paid_amount
+        paid_amount: order.paid_amount,
+        is_fulfillment: isFulfillmentOrder,
+        receita_por_envio: receitaPorEnvio,
+        valor_liquido_vendedor: Math.max(0, (order.total_amount || 0) - tarifasVenda - impostos + receitaPorEnvio)
       });
     }
     
@@ -455,7 +468,8 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       receita_produtos: receitaPorProdutos,
       tarifas_venda: tarifasVenda,
       impostos: impostos,
-      receita_envio: receitaPorEnvio,
+      receita_por_envio: receitaPorEnvio, // Campo correto para o frontend
+      valor_liquido_vendedor: Math.max(0, (order.total_amount || 0) - tarifasVenda - impostos + receitaPorEnvio),
       valor_pago_total: valorPagoTotal,
       
       // Dados do Produto/Anúncio
