@@ -564,9 +564,9 @@ export default function SimplePedidosPage({ className }: Props) {
     // Envio (combinado)
     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
     { key: 'logistic_mode', label: 'Logistic Mode (Principal)', default: false, category: 'shipping' },
-    { key: 'logistic_type', label: 'Logistic Type', default: false, category: 'shipping' },
-    { key: 'shipping_method_type', label: 'Shipping Method Type', default: false, category: 'shipping' },
-    { key: 'delivery_type', label: 'Delivery Type', default: false, category: 'shipping' },
+    { key: 'logistic_type', label: 'Tipo Logístico', default: false, category: 'shipping' },
+    { key: 'shipping_method_type', label: 'Tipo Método Envio', default: false, category: 'shipping' },
+    { key: 'delivery_type', label: 'Tipo Entrega', default: false, category: 'shipping' },
     { key: 'substatus_detail', label: 'Substatus (Estado Atual)', default: false, category: 'shipping' },
     { key: 'shipping_mode', label: 'Modo de Envio (Combinado)', default: false, category: 'shipping' },
     { key: 'shipping_method', label: 'Método de Envio (Combinado)', default: false, category: 'shipping' },
@@ -1277,9 +1277,9 @@ export default function SimplePedidosPage({ className }: Props) {
                    {/* Colunas de envio específicas da API */}
                    {visibleColumns.has('shipping_status') && <th className="text-left p-3">Status do Envio</th>}
                    {visibleColumns.has('logistic_mode') && <th className="text-left p-3">Logistic Mode (Principal)</th>}
-                   {visibleColumns.has('logistic_type') && <th className="text-left p-3">Logistic Type</th>}
-                   {visibleColumns.has('shipping_method_type') && <th className="text-left p-3">Shipping Method Type</th>}
-                   {visibleColumns.has('delivery_type') && <th className="text-left p-3">Delivery Type</th>}
+                   {visibleColumns.has('logistic_type') && <th className="text-left p-3">Tipo Logístico</th>}
+                   {visibleColumns.has('shipping_method_type') && <th className="text-left p-3">Tipo Método Envio</th>}
+                   {visibleColumns.has('delivery_type') && <th className="text-left p-3">Tipo Entrega</th>}
                    {visibleColumns.has('substatus_detail') && <th className="text-left p-3">Substatus (Estado Atual)</th>}
                    
                    {/* Colunas de envio combinadas (mantidas para compatibilidade) */}
