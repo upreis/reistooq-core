@@ -538,11 +538,11 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: true, category: 'financial' },
     { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
+    { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
     { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
     { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
-    { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
 
     // Mapeamento
     { key: 'mapeamento', label: 'Status Mapeamento', default: true, category: 'mapping' },
@@ -1355,12 +1355,12 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('frete_pago_cliente') && <th className="text-left p-3">Frete Pago Cliente</th>}
                    {visibleColumns.has('receita_flex') && <th className="text-left p-3">Receita Flex (Bônus)</th>}
                    {visibleColumns.has('custo_envio_seller') && <th className="text-left p-3">Custo Envio Seller</th>}
-                   {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
-                   {visibleColumns.has('valor_liquido_vendedor') && <th className="text-left p-3">Valor Líquido Vendedor</th>}
-                   {visibleColumns.has('payment_method') && <th className="text-left p-3">Método Pagamento</th>}
-                   {visibleColumns.has('payment_status') && <th className="text-left p-3">Status Pagamento</th>}
-                   {visibleColumns.has('payment_type') && <th className="text-left p-3">Tipo Pagamento</th>}
-                   {visibleColumns.has('marketplace_fee') && <th className="text-left p-3">Taxa Marketplace</th>}
+                    {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
+                    {visibleColumns.has('marketplace_fee') && <th className="text-left p-3">Taxa Marketplace</th>}
+                    {visibleColumns.has('valor_liquido_vendedor') && <th className="text-left p-3">Valor Líquido Vendedor</th>}
+                    {visibleColumns.has('payment_method') && <th className="text-left p-3">Método Pagamento</th>}
+                    {visibleColumns.has('payment_status') && <th className="text-left p-3">Status Pagamento</th>}
+                    {visibleColumns.has('payment_type') && <th className="text-left p-3">Tipo Pagamento</th>}
                   
                   {/* Colunas de status */}
                   {visibleColumns.has('situacao') && <th className="text-left p-3">Status do Pagamento</th>}
@@ -1572,13 +1572,29 @@ export default function SimplePedidosPage({ className }: Props) {
                          </td>
                        )}
                       
-                       {visibleColumns.has('coupon_amount') && (
-                         <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
-                       )}
-                       
-                       {visibleColumns.has('valor_liquido_vendedor') && (
-                         <td className="p-3">{formatMoney(getValorLiquidoVendedor(order))}</td>
-                       )}
+                        {visibleColumns.has('coupon_amount') && (
+                          <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
+                        )}
+                        
+                        {visibleColumns.has('marketplace_fee') && (
+                          <td className="p-3">
+                            {(() => {
+                              // Taxa do marketplace - geralmente está no sale_fee dos order_items
+                              const fee = 
+                                order.order_items?.[0]?.sale_fee ||
+                                order.raw?.order_items?.[0]?.sale_fee ||
+                                order.marketplace_fee || 
+                                order.fees?.[0]?.value || 
+                                order.raw?.fees?.[0]?.value ||
+                                0;
+                              return fee > 0 ? formatMoney(fee) : '-';
+                            })()}
+                          </td>
+                        )}
+                        
+                        {visibleColumns.has('valor_liquido_vendedor') && (
+                          <td className="p-3">{formatMoney(getValorLiquidoVendedor(order))}</td>
+                        )}
                       
                       {/* Colunas de pagamento */}
                       {visibleColumns.has('payment_method') && (
@@ -1643,21 +1659,6 @@ export default function SimplePedidosPage({ className }: Props) {
                         </td>
                       )}
                       
-                      {visibleColumns.has('marketplace_fee') && (
-                        <td className="p-3">
-                          {(() => {
-                            // Taxa do marketplace - geralmente está no sale_fee dos order_items
-                            const fee = 
-                              order.order_items?.[0]?.sale_fee ||
-                              order.raw?.order_items?.[0]?.sale_fee ||
-                              order.marketplace_fee || 
-                              order.fees?.[0]?.value || 
-                              order.raw?.fees?.[0]?.value ||
-                              0;
-                            return fee > 0 ? formatMoney(fee) : '-';
-                          })()}
-                        </td>
-                      )}
                       
                       {/* Colunas de status */}
                       {visibleColumns.has('situacao') && (
