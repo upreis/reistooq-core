@@ -22,6 +22,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'id_unico', label: 'ID Único', visible: true, category: 'basic' },
   { key: 'numero', label: 'Número', visible: true, category: 'basic' },
   { key: 'nome_cliente', label: 'Cliente', visible: true, category: 'basic' },
+  { key: 'nome_completo', label: 'Nome Completo', visible: true, category: 'basic' },
   { key: 'cpf_cnpj', label: 'CPF/CNPJ', visible: true, category: 'basic' },
   { key: 'data_pedido', label: 'Data Pedido', visible: true, category: 'basic' },
   { key: 'sku', label: 'SKU', visible: true, category: 'basic' },
