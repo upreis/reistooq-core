@@ -292,7 +292,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // ====== ENVIO/SHIPPING (da imagem 3) ======
   {
     key: 'situacao',
-    label: 'Situação',
+    label: 'Status do Pagamento',
     category: 'shipping',
     priority: 'essential',
     visible: true,
@@ -322,7 +322,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'logistic_type',
-    label: 'Logistic Type',
+    label: 'Tipo Logístico',
     category: 'shipping',
     priority: 'optional',
     visible: false,
@@ -332,7 +332,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'shipping_method_type',
-    label: 'Shipping Method Type',
+    label: 'Tipo Método Envio',
     category: 'shipping',
     priority: 'optional',
     visible: false,
@@ -342,7 +342,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'delivery_type',
-    label: 'Delivery Type',
+    label: 'Tipo Entrega',
     category: 'shipping',
     priority: 'optional',
     visible: false,

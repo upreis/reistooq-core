@@ -627,6 +627,26 @@ export default function SimplePedidosPage({ className }: Props) {
     return mapApiStatusToLabel(status);
   };
 
+  const formatPt = (val?: any) => {
+    if (val === undefined || val === null || val === '') return '-';
+    const s = String(val).replace(/_/g, ' ').toLowerCase();
+    const map: Record<string,string> = {
+      'ready to ship': 'Pronto para envio',
+      'delivered': 'Entregue',
+      'delivery': 'Entrega',
+      'pickup': 'Retirada',
+      'standard': 'Padrão',
+      'express': 'Expresso',
+      'same day': 'Mesmo dia',
+      'next day': 'Dia seguinte',
+      'fulfillment': 'Fulfillment',
+      'me2': 'Mercado Envios',
+      'custom': 'Personalizado'
+    };
+    const translated = map[s] ?? s;
+    return translated.charAt(0).toUpperCase() + translated.slice(1);
+  };
+
   // Helper para testar contas
   const testAccount = async (accId: string) => {
     try {
@@ -1556,7 +1576,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       {visibleColumns.has('situacao') && (
                         <td className="p-3">
                           <Badge variant={getStatusBadgeVariant(order.situacao || order.status)}>
-                            {order.situacao || order.status || '-'}
+                            {simplificarStatus(order.situacao || order.status || '')}
                           </Badge>
                         </td>
                       )}
@@ -1651,34 +1671,37 @@ export default function SimplePedidosPage({ className }: Props) {
                        
                        {visibleColumns.has('logistic_type') && (
                          <td className="p-3">
-                           <span className="text-xs font-mono">
-                             {order.shipping?.logistic?.type || 
-                              order.raw?.shipping?.logistic?.type || 
-                              order.logistic_type || 
-                              '-'}
-                           </span>
+                           <span className="text-xs font-mono text-foreground">
+                              {formatPt(
+                                order.shipping?.logistic?.type || 
+                                order.raw?.shipping?.logistic?.type || 
+                                order.logistic_type
+                              )}
+                            </span>
                          </td>
                        )}
                        
                        {visibleColumns.has('shipping_method_type') && (
                          <td className="p-3">
-                           <span className="text-xs font-mono">
-                             {order.shipping_method?.type || 
-                              order.shipping?.shipping_method?.type || 
-                              order.raw?.shipping?.shipping_method?.type || 
-                              '-'}
-                           </span>
+                           <span className="text-xs font-mono text-foreground">
+                              {formatPt(
+                                order.shipping_method?.type || 
+                                order.shipping?.shipping_method?.type || 
+                                order.raw?.shipping?.shipping_method?.type
+                              )}
+                            </span>
                          </td>
                        )}
                        
                        {visibleColumns.has('delivery_type') && (
                          <td className="p-3">
-                           <span className="text-xs font-mono">
-                             {order.delivery_type || 
-                              order.shipping?.delivery_type || 
-                              order.raw?.shipping?.delivery_type || 
-                              '-'}
-                           </span>
+                           <span className="text-xs font-mono text-foreground">
+                              {formatPt(
+                                order.delivery_type || 
+                                order.shipping?.delivery_type || 
+                                order.raw?.shipping?.delivery_type
+                              )}
+                            </span>
                          </td>
                        )}
                        
@@ -1730,16 +1753,16 @@ export default function SimplePedidosPage({ className }: Props) {
                                // Montar display com todos os valores relevantes
                                const parts = [];
                                
-                               if (logisticMode) parts.push(`Mode: ${logisticMode}`);
-                               if (logisticType) parts.push(`Type: ${logisticType}`);
-                               if (deliveryType) parts.push(`Delivery: ${deliveryType}`);
-                               if (shippingMethodType) parts.push(`Method: ${shippingMethodType}`);
+                                if (logisticMode) parts.push(`Modo: ${formatPt(logisticMode)}`);
+                                if (logisticType) parts.push(`Tipo: ${formatPt(logisticType)}`);
+                                if (deliveryType) parts.push(`Entrega: ${formatPt(deliveryType)}`);
+                                if (shippingMethodType) parts.push(`Método: ${formatPt(shippingMethodType)}`);
                                
                                return (
                                  <div className="text-xs">
                                    {parts.length > 0 ? (
                                      parts.map((part, i) => (
-                                       <div key={i} className="text-gray-600">{part}</div>
+                                       <div key={i} className="text-foreground">{part}</div>
                                      ))
                                    ) : (
                                      <span className="text-muted-foreground">-</span>
@@ -1763,20 +1786,20 @@ export default function SimplePedidosPage({ className }: Props) {
                                if (!shippingMethod) return <span className="text-muted-foreground">-</span>;
                                
                                if (typeof shippingMethod === 'string') {
-                                 return <span className="text-xs">{shippingMethod}</span>;
+                                 return <span className="text-xs text-foreground">{formatPt(shippingMethod)}</span>;
                                }
                                
                                // Se for objeto, mostrar name, type, id
-                               const parts = [];
-                               if (shippingMethod.name) parts.push(`Name: ${shippingMethod.name}`);
-                               if (shippingMethod.type) parts.push(`Type: ${shippingMethod.type}`);
-                               if (shippingMethod.id) parts.push(`ID: ${shippingMethod.id}`);
+                                const parts = [];
+                                if (shippingMethod.name) parts.push(`Nome: ${formatPt(shippingMethod.name)}`);
+                                if (shippingMethod.type) parts.push(`Tipo: ${formatPt(shippingMethod.type)}`);
+                                if (shippingMethod.id) parts.push(`ID: ${shippingMethod.id}`);
                                
                                return (
                                  <div className="text-xs">
                                    {parts.length > 0 ? (
                                      parts.map((part, i) => (
-                                       <div key={i} className="text-gray-600">{part}</div>
+                                       <div key={i} className="text-foreground">{part}</div>
                                      ))
                                    ) : (
                                      <span className="text-muted-foreground">Objeto complexo</span>
