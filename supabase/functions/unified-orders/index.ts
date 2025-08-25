@@ -302,12 +302,32 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             shipping_method: shippingData.lead_time?.shipping_method,
             delivery_type: shippingData.lead_time?.delivery_type,
             
-            // Pagamentos de envio e bônus (para Flex/self_service)
+            // Pagamentos de envio (não usados no bônus do vendedor, apenas para referência)
             payments: approvedPayments,
             shipping_payments: approvedPayments,
             costs: costsData,
-            bonus: bonusTotal,
-            bonus_total: bonusTotal,
+
+            // Bônus por envio (Flex): SOMENTE compensações do vendedor em /costs
+            bonus: (() => {
+              const senders = Array.isArray(costsData?.senders) ? costsData.senders : [];
+              const total = senders.reduce((acc: number, s: any) => {
+                const compNum = Number(s?.compensation ?? 0);
+                const compList = Array.isArray(s?.compensations) ? s.compensations : [];
+                const compListSum = compList.reduce((a: number, c: any) => a + (Number(c?.amount ?? 0) || 0), 0);
+                return acc + (Number.isFinite(compNum) ? compNum : 0) + compListSum;
+              }, 0);
+              return total;
+            })(),
+            bonus_total: (() => {
+              const senders = Array.isArray(costsData?.senders) ? costsData.senders : [];
+              const total = senders.reduce((acc: number, s: any) => {
+                const compNum = Number(s?.compensation ?? 0);
+                const compList = Array.isArray(s?.compensations) ? s.compensations : [];
+                const compListSum = compList.reduce((a: number, c: any) => a + (Number(c?.amount ?? 0) || 0), 0);
+                return acc + (Number.isFinite(compNum) ? compNum : 0) + compListSum;
+              }, 0);
+              return total;
+            })(),
 
             // Informações adicionais
             tags: shippingData.tags,
@@ -372,15 +392,16 @@ function transformMLOrders(mlOrders: any[], integrationAccountId: string) {
       }
     }
     
-    // Receita com envio (bônus Flex) priorizando compensation de /costs
+    // Receita com envio (bônus Flex) somente pelas compensações do vendedor em /costs
     const bonusCosts = Array.isArray(order.shipping?.costs?.senders)
-      ? order.shipping.costs.senders.reduce((acc: number, s: any) => acc + (Number(s?.compensation ?? 0) || 0), 0)
+      ? order.shipping.costs.senders.reduce((acc: number, s: any) => {
+          const compNum = Number(s?.compensation ?? 0) || 0;
+          const compList = Array.isArray(s?.compensations) ? s.compensations : [];
+          const compListSum = compList.reduce((a: number, c: any) => a + (Number(c?.amount ?? 0) || 0), 0);
+          return acc + compNum + compListSum;
+        }, 0)
       : 0;
-    const approvedShipPay = Array.isArray(order.shipping?.shipping_payments)
-      ? order.shipping.shipping_payments.filter((p: any) => String(p?.status || '').toLowerCase() === 'approved')
-      : [];
-    const bonusPayments = approvedShipPay.reduce((acc: number, p: any) => acc + (Number(p?.amount ?? 0) || 0), 0);
-    const receitaPorEnvio = Number(order.shipping?.bonus_total ?? order.shipping?.bonus ?? 0) || (bonusCosts > 0 ? bonusCosts : bonusPayments);
+    const receitaPorEnvio = Number(order.shipping?.bonus_total ?? order.shipping?.bonus ?? bonusCosts) || 0;
     
     const valorPagoTotal = order.paid_amount || 0;
     

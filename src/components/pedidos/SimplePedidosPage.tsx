@@ -408,40 +408,30 @@ export default function SimplePedidosPage({ className }: Props) {
 
     if (compTotal > 0) return compTotal;
 
-    // 2) Pagamentos do envio (fallback) via /shipments/{id}/payments
+    // 2) Pagamentos do envio (REMOVIDO do cálculo de receita; apenas referência na UI)
+    // Mantemos fallback apenas para casos muito antigos sem /costs
+    let paymentsTotal = 0;
     const shippingPaymentArrays = [
-      // Direto do shipping
       order?.shipping?.payments,
       order?.raw?.shipping?.payments,
       order?.unified?.shipping?.payments,
-      // Como propriedade direta
       order?.shipping_payments,
       order?.unified?.shipping_payments,
       order?.raw?.shipping_payments,
-      // Dentro de lead_time ou outros objetos
-      order?.shipping?.lead_time?.payments,
-      order?.raw?.shipping?.lead_time?.payments,
-      // Estruturas aninhadas do ML
-      order?.shipping?.logistic?.payments,
-      order?.raw?.shipping?.logistic?.payments,
     ].filter(Boolean);
-
-    let paymentsTotal = 0;
     for (const arr of shippingPaymentArrays) {
       if (Array.isArray(arr)) {
         for (const p of arr) {
-          // considerar apenas aprovados quando houver status
           const status = String(p?.status || '').toLowerCase();
           if (status && status !== 'approved') continue;
           const amt = Number(p?.amount ?? p?.value ?? p?.cost ?? 0);
-          if (!Number.isNaN(amt) && amt > 0) {
-            paymentsTotal += amt;
-          }
+          if (!Number.isNaN(amt) && amt > 0) paymentsTotal += amt;
         }
       }
     }
 
-    if (paymentsTotal > 0) return paymentsTotal;
+    if (compTotal > 0) return compTotal;
+    if (paymentsTotal > 0) return paymentsTotal; // fallback legado
 
     // 3) Outros campos eventuais
     const flexBonusFields = [
