@@ -551,7 +551,7 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
     
     // Status
-    { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
+    { key: 'situacao', label: 'Status do Pagamento', default: true, category: 'shipping' },
 
     // Metadados ML
     { key: 'date_created', label: 'Data Criação ML', default: false, category: 'meta' },
