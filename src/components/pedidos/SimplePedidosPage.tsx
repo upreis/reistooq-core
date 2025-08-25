@@ -631,6 +631,7 @@ export default function SimplePedidosPage({ className }: Props) {
     if (val === undefined || val === null || val === '') return '-';
     const s = String(val).replace(/_/g, ' ').toLowerCase();
     const map: Record<string,string> = {
+      // Status gerais
       'ready to ship': 'Pronto para envio',
       'delivered': 'Entregue',
       'delivery': 'Entrega',
@@ -648,7 +649,43 @@ export default function SimplePedidosPage({ className }: Props) {
       'drop off': 'Ponto de entrega',
       'flex': 'Flex',
       'xd drop off': 'Ponto entrega XD',
-      'not specified': 'Não especificado'
+      'not specified': 'Não especificado',
+      // Velocidades de envio
+      'slow': 'Lento',
+      'fast': 'Rápido',
+      'three days': 'Três dias',
+      'two days': 'Dois dias',
+      'one day': 'Um dia',
+      'four days': 'Quatro dias',
+      'five days': 'Cinco dias',
+      'six days': 'Seis dias',
+      'seven days': 'Sete dias',
+      'meli delivery day': 'Dia entrega Meli',
+      'regular': 'Regular',
+      'economy': 'Econômico',
+      'premium': 'Premium',
+      // Tipos de logística
+      'self service': 'Flex',
+      'cross dock': 'Cross dock',
+      'drop ship': 'Drop ship',
+      'warehouse': 'Depósito',
+      'store': 'Loja',
+      // Tipos de entrega específicos
+      'carrier': 'Transportadora',
+      'mail': 'Correios',
+      'courier': 'Courier',
+      'freight': 'Frete',
+      'motorcycle': 'Moto',
+      'bike': 'Bicicleta',
+      'walking': 'Caminhada',
+      // Status específicos do ML
+      'pending payment': 'Pagamento pendente',
+      'payment required': 'Pagamento necessário',
+      'paid': 'Pago',
+      'approved': 'Aprovado',
+      'rejected': 'Rejeitado',
+      'cancelled': 'Cancelado',
+      'refunded': 'Reembolsado'
     };
     const translated = map[s] ?? s;
     return translated.charAt(0).toUpperCase() + translated.slice(1);
@@ -677,7 +714,20 @@ export default function SimplePedidosPage({ className }: Props) {
       'returned': 'Devolvido',
       'cancelled': 'Cancelado',
       'waiting for pickup': 'Aguardando retirada',
-      'stale shipped': 'Envio antigo'
+      'stale shipped': 'Envio antigo',
+      'claim': 'Reclamação',
+      'ready to collect': 'Pronto para retirar',
+      'collected': 'Coletado',
+      'to be agreed': 'A combinar',
+      'receiver absent': 'Destinatário ausente',
+      'under review': 'Em análise',
+      'contact failed': 'Contato falhou',
+      'under customs review': 'Revisão alfandegária',
+      'sorting': 'Triagem',
+      'at destination': 'No destino',
+      'damaged': 'Danificado',
+      'lost': 'Perdido',
+      'stolen': 'Roubado'
     };
     const translated = map[s] ?? s;
     return translated.charAt(0).toUpperCase() + translated.slice(1);
