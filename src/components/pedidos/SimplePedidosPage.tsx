@@ -416,104 +416,130 @@ export default function SimplePedidosPage({ className }: Props) {
   
   const getValorLiquidoVendedor = (order: any): number => {
     if (typeof order?.valor_liquido_vendedor === 'number') return order.valor_liquido_vendedor;
-    const paid = (order?.paid_amount ?? order?.total_paid_amount ?? order?.valor_total ?? 0) as number;
-    const fee = (order?.marketplace_fee ?? order?.sale_fee ?? 0) as number;
-    return paid - fee + getReceitaPorEnvio(order);
+
+    // Base sem frete: prioriza transaction_amount dos pagamentos
+    const paymentArrays = [
+      order?.payments,
+      order?.raw?.payments,
+      order?.unified?.payments,
+    ].filter(Boolean);
+
+    let transactionBase = 0;
+    for (const arr of paymentArrays) {
+      if (Array.isArray(arr) && arr.length) {
+        const sumTx = arr.reduce((acc: number, p: any) => {
+          const v = Number(p?.transaction_amount ?? 0);
+          return acc + (Number.isFinite(v) && v > 0 ? v : 0);
+        }, 0);
+        if (sumTx > 0) {
+          transactionBase = sumTx;
+          break;
+        }
+      }
+    }
+
+    if (!transactionBase) {
+      const totalAmount = Number(order?.total_amount ?? order?.valor_total ?? 0);
+      const paidAmount = Number(order?.paid_amount ?? order?.total_paid_amount ?? 0);
+      const shippingCost = Number(order?.shipping_cost ?? order?.lead_time?.cost ?? 0);
+      transactionBase = totalAmount || (paidAmount - (Number.isFinite(shippingCost) ? shippingCost : 0)) || paidAmount;
+    }
+
+    // Taxas: marketplace_fee ou soma de sale_fee dos itens
+    let fee = Number(order?.marketplace_fee ?? 0) || 0;
+    if (!fee) {
+      const itemsArrays = [
+        order?.order_items,
+        order?.raw?.order_items,
+        order?.unified?.order_items,
+      ].filter(Boolean);
+      for (const arr of itemsArrays) {
+        if (Array.isArray(arr) && arr.length) {
+          const sumFees = arr.reduce((acc: number, it: any) => {
+            const f = Number(it?.sale_fee ?? it?.sale_fee_amount ?? it?.fee ?? 0);
+            return acc + (Number.isFinite(f) && f > 0 ? f : 0);
+          }, 0);
+          if (sumFees > 0) {
+            fee = sumFees;
+            break;
+          }
+        }
+      }
+    }
+
+    // Receita com envio (Flex) a partir de shipments payments (evita dupla contagem)
+    const receita = getReceitaPorEnvio(order);
+
+    return Math.max(0, transactionBase - fee + receita);
   };
-  // Configuração corrigida de colunas (baseada na API unified-orders)
-  const allColumns = [
-    // Colunas básicas disponíveis na API unified-orders
+
+  // Configuração de colunas (reposta após ajuste)
+  type ColumnDef = { key: string; label: string; default: boolean; category?: string };
+  const allColumns: ColumnDef[] = [
+    // Básicas
     { key: 'id', label: 'ID-Único', default: true, category: 'basic' },
     { key: 'empresa', label: 'Empresa', default: true, category: 'basic' },
     { key: 'numero', label: 'Número do Pedido', default: true, category: 'basic' },
     { key: 'nome_cliente', label: 'Nome do Cliente', default: true, category: 'basic' },
     { key: 'data_pedido', label: 'Data do Pedido', default: true, category: 'basic' },
     { key: 'last_updated', label: 'Última Atualização', default: false, category: 'basic' },
-    
-    // Colunas de produtos/SKUs (baseadas nos order_items da API)
+
+    // Produtos
     { key: 'skus_produtos', label: 'SKUs/Produtos', default: true, category: 'products' },
     { key: 'quantidade_itens', label: 'Quantidade Total', default: true, category: 'products' },
     { key: 'titulo_anuncio', label: 'Título do Produto', default: true, category: 'products' },
-    
-    // Colunas financeiras (baseadas nos dados financeiros da API)
+
+    // Financeiro
     { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
     { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
     { key: 'shipping_cost', label: 'Custo do Frete', default: false, category: 'financial' },
     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
     { key: 'receita_por_envio', label: 'Receita com Envio', default: false, category: 'financial' },
     { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: false, category: 'financial' },
-    
-    // Colunas de status (baseadas no status da API)
+    { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
+    { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
+    { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
+    { key: 'marketplace_fee', label: 'Taxa Marketplace', default: false, category: 'financial' },
+
+    // Status
     { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
-    
-    // Colunas de mapeamento (processamento local)
+
+    // Mapeamento
     { key: 'mapeamento', label: 'Status Mapeamento', default: true, category: 'mapping' },
     { key: 'sku_estoque', label: 'SKU Estoque', default: true, category: 'mapping' },
-    { key: 'sku_kit', label: 'SKU KIT', default: true, category: 'mapping' },
-    { key: 'qtd_kit', label: 'Quantidade KIT', default: true, category: 'mapping' },
+    { key: 'sku_kit', label: 'SKU KIT', default: false, category: 'mapping' },
+    { key: 'qtd_kit', label: 'Quantidade KIT', default: false, category: 'mapping' },
     { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
-    
-    // Colunas do Mercado Livre (baseadas na API)
-    
-    // Colunas de envio (baseadas no shipping da API)
-     { key: 'pack_id', label: 'Pack ID', default: false, category: 'shipping' },
-     { key: 'tags', label: 'Tags', default: false, category: 'shipping' },
-     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
-     
-     // Colunas específicas dos campos da API que você mencionou
-     { key: 'logistic_mode', label: 'Logistic Mode (Principal)', default: true, category: 'shipping' },
-     { key: 'logistic_type', label: 'Logistic Type', default: false, category: 'shipping' },
-     { key: 'shipping_method_type', label: 'Shipping Method Type', default: false, category: 'shipping' },
-     { key: 'delivery_type', label: 'Delivery Type', default: false, category: 'shipping' },
-     { key: 'substatus_detail', label: 'Substatus (Estado Atual)', default: true, category: 'shipping' },
-     
-     // Colunas originais mantidas para compatibilidade
-     { key: 'shipping_mode', label: 'Modo de Envio (Combinado)', default: false, category: 'shipping' },
-     { key: 'shipping_method', label: 'Método de Envio (Combinado)', default: false, category: 'shipping' },
-     { key: 'shipping_substatus', label: 'Sub-status Envio (Combinado)', default: false, category: 'shipping' },
-     
-     // Colunas de identificação do comprador (baseadas na API buyer.*)
-     
-     // Colunas de endereço de entrega (baseadas na API shipping.destination.shipping_address.*)
-     
-     { key: 'destination_street_name', label: 'Rua', default: true, category: 'address' },
-     { key: 'destination_street_number', label: 'Número', default: true, category: 'address' },
-     
-     { key: 'destination_comment', label: 'Complemento', default: true, category: 'address' },
-     { key: 'destination_zip_code', label: 'CEP', default: true, category: 'address' },
-     { key: 'destination_city_name', label: 'Cidade', default: true, category: 'address' },
-     { key: 'destination_state_name', label: 'Estado', default: true, category: 'address' },
-     { key: 'destination_state_id', label: 'Estado (Sigla)', default: true, category: 'address' },
-     { key: 'destination_neighborhood_name', label: 'Bairro', default: true, category: 'address' },
-     
-     { key: 'forma_entrega', label: 'Forma de Entrega (Combinado)', default: false, category: 'shipping' },
-     { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
-    
-     // Colunas de valores/pagamento (baseadas na API do ML)
-     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
-     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
-     { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
-     
-     { key: 'marketplace_fee', label: 'Taxa Marketplace', default: false, category: 'financial' },
-     
-     // Colunas de identificação/participantes
+
+    // Metadados ML
+    { key: 'date_created', label: 'Data Criação ML', default: false, category: 'meta' },
+    { key: 'pack_id', label: 'Pack ID', default: false, category: 'meta' },
+    { key: 'pickup_id', label: 'Pickup ID', default: false, category: 'meta' },
+    { key: 'manufacturing_ending_date', label: 'Data Fim Fabricação', default: false, category: 'meta' },
+    { key: 'comment', label: 'Comentário ML', default: false, category: 'meta' },
+    { key: 'tags', label: 'Tags', default: false, category: 'meta' },
+
+    // Envio (combinado)
+    { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
+    { key: 'logistic_mode', label: 'Logistic Mode (Principal)', default: false, category: 'shipping' },
+    { key: 'logistic_type', label: 'Logistic Type', default: false, category: 'shipping' },
+    { key: 'shipping_method_type', label: 'Shipping Method Type', default: false, category: 'shipping' },
+    { key: 'delivery_type', label: 'Delivery Type', default: false, category: 'shipping' },
+    { key: 'substatus_detail', label: 'Substatus (Estado Atual)', default: false, category: 'shipping' },
+    { key: 'shipping_mode', label: 'Modo de Envio (Combinado)', default: false, category: 'shipping' },
+    { key: 'shipping_method', label: 'Método de Envio (Combinado)', default: false, category: 'shipping' },
   ];
 
-  const defaultColumns = new Set(allColumns.filter(col => col.default).map(col => col.key));
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(defaultColumns);
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
+    new Set(allColumns.filter(col => col.default).map(col => col.key))
+  );
 
-  const pageSize = 25;
-  const totalPages = pedidosManager.totalPages;
-
-  // Funções de utilidade
-  const toggleColumn = (columnKey: string) => {
-    const newVisible = new Set(visibleColumns);
-    if (newVisible.has(columnKey)) {
-      newVisible.delete(columnKey);
-    } else {
-      newVisible.add(columnKey);
-    }
-    setVisibleColumns(newVisible);
+  const toggleColumn = (key: string) => {
+    setVisibleColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
   };
 
   const resetToDefault = () => {
