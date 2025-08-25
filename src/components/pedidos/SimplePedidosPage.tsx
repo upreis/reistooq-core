@@ -641,7 +641,43 @@ export default function SimplePedidosPage({ className }: Props) {
       'next day': 'Dia seguinte',
       'fulfillment': 'Fulfillment',
       'me2': 'Mercado Envios',
-      'custom': 'Personalizado'
+      'custom': 'Personalizado',
+      'home delivery': 'Entrega domiciliar',
+      'branch office': 'Agência',
+      'cross docking': 'Cross docking',
+      'drop off': 'Ponto de entrega',
+      'flex': 'Flex',
+      'xd drop off': 'Ponto entrega XD',
+      'not specified': 'Não especificado'
+    };
+    const translated = map[s] ?? s;
+    return translated.charAt(0).toUpperCase() + translated.slice(1);
+  };
+
+  const formatLogisticType = (val?: any) => {
+    if (val === undefined || val === null || val === '') return '-';
+    const s = String(val).toLowerCase();
+    if (s === 'self service') return 'Flex';
+    return formatPt(val);
+  };
+
+  const formatSubstatus = (val?: any) => {
+    if (val === undefined || val === null || val === '') return '-';
+    const s = String(val).replace(/_/g, ' ').toLowerCase();
+    const map: Record<string,string> = {
+      'ready to ship': 'Pronto para envio',
+      'shipped': 'Enviado',
+      'in transit': 'Em trânsito',
+      'out for delivery': 'Saiu para entrega',
+      'delivered': 'Entregue',
+      'pending': 'Pendente',
+      'handling': 'Processando',
+      'ready to handle': 'Pronto para processar',
+      'not delivered': 'Não entregue',
+      'returned': 'Devolvido',
+      'cancelled': 'Cancelado',
+      'waiting for pickup': 'Aguardando retirada',
+      'stale shipped': 'Envio antigo'
     };
     const translated = map[s] ?? s;
     return translated.charAt(0).toUpperCase() + translated.slice(1);
@@ -1671,8 +1707,8 @@ export default function SimplePedidosPage({ className }: Props) {
                        
                        {visibleColumns.has('logistic_type') && (
                          <td className="p-3">
-                           <span className="text-xs font-mono text-foreground">
-                              {formatPt(
+                            <span className="text-xs font-mono text-foreground">
+                              {formatLogisticType(
                                 order.shipping?.logistic?.type || 
                                 order.raw?.shipping?.logistic?.type || 
                                 order.logistic_type
@@ -1707,14 +1743,15 @@ export default function SimplePedidosPage({ className }: Props) {
                        
                        {visibleColumns.has('substatus_detail') && (
                          <td className="p-3">
-                           <span className="text-xs font-mono">
-                             {order.shipping_substatus || 
-                              order.shipping?.substatus || 
-                              order.raw?.shipping?.substatus || 
-                              order.substatus || 
-                              order.raw?.substatus || 
-                              '-'}
-                           </span>
+                            <span className="text-xs font-mono text-foreground">
+                              {formatSubstatus(
+                                order.shipping_substatus || 
+                                order.shipping?.substatus || 
+                                order.raw?.shipping?.substatus || 
+                                order.substatus || 
+                                order.raw?.substatus
+                              )}
+                            </span>
                          </td>
                        )}
                       
