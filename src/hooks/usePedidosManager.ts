@@ -329,6 +329,27 @@ export function usePedidosManager(initialAccountId?: string) {
         console.log('[PedidosManager] Total records available (server):', unifiedResult.total);
         console.log('[PedidosManager] Current page:', currentPage);
         
+        // 🚀 ANÁLISE DOS DADOS DO COMPRADOR - Debug detalhado
+        if (filteredClientResults.length > 0) {
+          const sampleOrder = filteredClientResults[0];
+          console.log('[BUYER DEBUG] Raw order buyer data:', sampleOrder.buyer);
+          console.log('[BUYER DEBUG] Raw order shipping data:', sampleOrder.shipping);
+          console.log('[BUYER DEBUG] Raw order raw data buyer:', sampleOrder.raw?.buyer);
+          console.log('[BUYER DEBUG] Raw order raw shipping:', sampleOrder.raw?.shipping);
+          console.log('[BUYER DEBUG] Available keys in order:', Object.keys(sampleOrder));
+          
+          // Verificar especificamente os campos do comprador
+          console.log('[BUYER DEBUG] buyer.first_name:', sampleOrder.buyer?.first_name);
+          console.log('[BUYER DEBUG] buyer.last_name:', sampleOrder.buyer?.last_name);
+          console.log('[BUYER DEBUG] buyer.email:', sampleOrder.buyer?.email);
+          console.log('[BUYER DEBUG] buyer.phone:', sampleOrder.buyer?.phone);
+          console.log('[BUYER DEBUG] buyer.identification:', sampleOrder.buyer?.identification);
+          
+          // Verificar dados de endereço
+          console.log('[BUYER DEBUG] shipping.receiver_address:', sampleOrder.shipping?.receiver_address);
+          console.log('[BUYER DEBUG] shipping.destination:', sampleOrder.shipping?.destination);
+        }
+        
       } catch (unifiedError: any) {
         console.warn('[PedidosManager] Unified-orders failed:', unifiedError.message);
         
