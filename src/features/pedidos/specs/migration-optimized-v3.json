@@ -1,0 +1,235 @@
+{
+  "migration_plan": "pedidos-page-optimization-v3",
+  "priority": "high",
+  "estimated_effort": "1-2 sprints",
+  
+  "phases": {
+    "phase_1_mvp_optimized": {
+      "description": "MVP com otimizações críticas",
+      "effort": "3-5 dias",
+      "components": [
+        {
+          "action": "enhance",
+          "target": "src/components/pedidos/SimplePedidosPage.tsx",
+          "changes": [
+            "Implementar Virtual Scrolling para >500 itens",
+            "Adicionar cache inteligente com invalidação",
+            "Otimizar re-renders com React.memo",
+            "Implementar error boundaries"
+          ]
+        },
+        {
+          "action": "create", 
+          "target": "src/components/ui/VirtualTable.tsx",
+          "features": [
+            "Virtual scrolling automático",
+            "Threshold configurável (500 itens)",
+            "Progressive loading",
+            "Scroll position persistence"
+          ]
+        },
+        {
+          "action": "enhance",
+          "target": "src/hooks/usePedidosManager.ts", 
+          "changes": [
+            "Cache com TTL de 5 minutos",
+            "Debounce de 300ms nos filtros",
+            "Background refresh",
+            "Request cancellation"
+          ]
+        }
+      ]
+    },
+    
+    "phase_2_ux_enhanced": {
+      "description": "UX e interatividade melhorada",
+      "effort": "3-4 dias",
+      "components": [
+        {
+          "action": "create",
+          "target": "src/components/pedidos/enhanced/DraggableColumnsTable.tsx",
+          "features": [
+            "Drag & drop para reordenar colunas",
+            "Column resize com persistência", 
+            "Column visibility toggle",
+            "Saved column layouts"
+          ]
+        },
+        {
+          "action": "create",
+          "target": "src/components/pedidos/enhanced/SmartFilters.tsx",
+          "features": [
+            "Autocomplete com histórico",
+            "Filtros salvos/nomeados",
+            "Quick filter buttons",
+            "Advanced filter builder"
+          ]
+        },
+        {
+          "action": "create",
+          "target": "src/components/dashboard/MetricsDashboard.tsx",
+          "features": [
+            "KPIs em tempo real",
+            "Charts interativos",
+            "Drill-down capability",
+            "Export de relatórios"
+          ]
+        }
+      ]
+    },
+    
+    "phase_3_advanced": {
+      "description": "Funcionalidades avançadas",
+      "effort": "2-3 dias", 
+      "components": [
+        {
+          "action": "create",
+          "target": "src/components/alerts/ProactiveAlerts.tsx",
+          "features": [
+            "Detecção automática de problemas",
+            "Alert scoring system",
+            "Actionable suggestions",
+            "Alert history tracking"
+          ]
+        },
+        {
+          "action": "create",
+          "target": "src/hooks/useIntegrationHealth.ts",
+          "features": [
+            "Real-time health monitoring",
+            "Integration diagnostics",
+            "Performance metrics",
+            "Alert thresholds"
+          ]
+        },
+        {
+          "action": "create",
+          "target": "src/workers/DataProcessor.ts",
+          "features": [
+            "Background data processing",
+            "Heavy calculations off main thread",
+            "Batch operations",
+            "Progress reporting"
+          ]
+        }
+      ]
+    }
+  },
+  
+  "implementation_guide": {
+    "step_1_performance": {
+      "virtual_scrolling": {
+        "trigger": "data.length > 500",
+        "item_height": "60px",
+        "overscan": "10 items",
+        "implementation": "@tanstack/react-virtual"
+      },
+      
+      "caching": {
+        "strategy": "stale-while-revalidate",
+        "ttl": "5 minutes",
+        "storage": "memory + localStorage",
+        "invalidation": "on filter change"
+      },
+      
+      "debouncing": {
+        "search_filters": "300ms",
+        "api_calls": "500ms", 
+        "ui_updates": "100ms"
+      }
+    },
+    
+    "step_2_ux": {
+      "drag_drop": {
+        "library": "@dnd-kit/core",
+        "persistence": "localStorage",
+        "constraints": "horizontal only",
+        "feedback": "visual preview"
+      },
+      
+      "smart_filters": {
+        "autocomplete": "based on existing data",
+        "history": "last 20 searches",
+        "suggestions": "ML-powered",
+        "saved_filters": "unlimited with names"
+      },
+      
+      "keyboard_shortcuts": {
+        "search": "Ctrl+F",
+        "export": "Ctrl+E", 
+        "refresh": "F5",
+        "escape": "Esc to close modals"
+      }
+    },
+    
+    "step_3_monitoring": {
+      "health_checks": {
+        "frequency": "30 seconds",
+        "metrics": ["response_time", "error_rate", "uptime"],
+        "alerts": "threshold-based",
+        "dashboard": "real-time updates"
+      },
+      
+      "analytics": {
+        "user_interactions": "click tracking",
+        "performance": "Core Web Vitals",
+        "errors": "automatic reporting",
+        "usage_patterns": "heatmaps"
+      }
+    }
+  },
+  
+  "configuration": {
+    "performance_thresholds": {
+      "virtual_scrolling_trigger": 500,
+      "cache_ttl_minutes": 5,
+      "debounce_ms": 300,
+      "page_size_options": [25, 50, 100, 200]
+    },
+    
+    "feature_flags": {
+      "virtual_scrolling": true,
+      "smart_caching": true,
+      "proactive_alerts": true,
+      "drag_drop_columns": true,
+      "real_time_updates": true
+    },
+    
+    "responsive_breakpoints": {
+      "mobile": "768px",
+      "tablet": "1024px", 
+      "desktop": "1280px",
+      "wide": "1920px"
+    }
+  },
+  
+  "testing_strategy": {
+    "unit_tests": [
+      "Virtual scrolling performance",
+      "Cache invalidation logic",
+      "Filter debouncing",
+      "Drag & drop functionality"
+    ],
+    
+    "integration_tests": [
+      "API call optimization",
+      "Real-time updates",
+      "Error handling flows",
+      "Export functionality"
+    ],
+    
+    "performance_tests": [
+      "Large dataset rendering (1000+ items)",
+      "Memory usage monitoring",
+      "Cache hit/miss ratios",
+      "Core Web Vitals compliance"
+    ]
+  },
+  
+  "rollback_plan": {
+    "feature_toggles": "Instant disable via config",
+    "progressive_rollout": "10% → 50% → 100%",
+    "monitoring": "Error rate < 1%",
+    "fallback": "Original SimplePedidosPage.tsx preserved"
+  }
+}

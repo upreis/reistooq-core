@@ -1,0 +1,218 @@
+{
+  "architecture_version": "v3.0-optimized",
+  "last_updated": "2025-01-25",
+  "
+  
+  "components": {
+    "presentation_layer": {
+      "main_page": {
+        "component": "SimplePedidosPageOptimized.tsx",
+        "responsibility": "Orquestração de UI + Layout responsivo",
+        "features": [
+          "Virtual scrolling automático >500 itens",
+          "Lazy loading de componentes",
+          "Error boundaries",
+          "Loading states otimizados",
+          "Keyboard shortcuts",
+          "PWA capabilities"
+        ]
+      },
+      
+      "enhanced_components": {
+        "data_table": {
+          "component": "VirtualDataTable.tsx",
+          "features": [
+            "Virtualização inteligente",
+            "Colunas drag & drop",
+            "Resize automático",
+            "Sort/filter otimizado",
+            "Export em lote"
+          ]
+        },
+        
+        "smart_filters": {
+          "component": "IntelligentFilters.tsx", 
+          "features": [
+            "Autocomplete com ML",
+            "Filtros salvos",
+            "Histórico de pesquisas",
+            "Sugestões contextuais",
+            "Quick filters"
+          ]
+        },
+        
+        "proactive_alerts": {
+          "component": "ProactiveAlertSystem.tsx",
+          "features": [
+            "Detecção automática de problemas",
+            "Alertas personalizáveis",
+            "Actions integradas",
+            "Priority scoring",
+            "Auto-dismiss"
+          ]
+        },
+        
+        "metrics_dashboard": {
+          "component": "RealTimeMetrics.tsx",
+          "features": [
+            "KPIs em tempo real",
+            "Gráficos interativos", 
+            "Drill-down analytics",
+            "Export de relatórios",
+            "Comparação temporal"
+          ]
+        }
+      }
+    },
+    
+    "business_logic_layer": {
+      "hooks": {
+        "usePedidosManagerOptimized": {
+          "responsibility": "Estado centralizado + Performance",
+          "features": [
+            "Cache inteligente",
+            "Debounced requests",
+            "Pagination server-side",
+            "Background refresh",
+            "Error recovery"
+          ]
+        },
+        
+        "useIntelligentFilters": {
+          "responsibility": "Filtros avançados + ML",
+          "features": [
+            "Predictive suggestions",
+            "Filter combinations",
+            "Auto-save preferences",
+            "Context awareness"
+          ]
+        },
+        
+        "useRealtimeUpdates": {
+          "responsibility": "Updates em tempo real",
+          "features": [
+            "WebSocket connections",
+            "Optimistic updates",
+            "Conflict resolution",
+            "Auto-reconnection"
+          ]
+        }
+      },
+      
+      "services": {
+        "PedidosQueryService": {
+          "responsibility": "Queries otimizadas + Cache",
+          "features": [
+            "Query optimization",
+            "Smart caching",
+            "Batch operations",
+            "Connection pooling"
+          ]
+        },
+        
+        "AnalyticsService": {
+          "responsibility": "Métricas + Insights",
+          "features": [
+            "Real-time analytics",
+            "Trend analysis",
+            "Anomaly detection",
+            "Predictive insights"
+          ]
+        },
+        
+        "ExportService": {
+          "responsibility": "Exportação inteligente",
+          "features": [
+            "Streaming exports",
+            "Multiple formats",
+            "Background processing",
+            "Progress tracking"
+          ]
+        }
+      }
+    },
+    
+    "data_layer": {
+      "enhanced_queries": {
+        "unified_orders_v2": {
+          "features": [
+            "Pagination otimizada",
+            "Indexes inteligentes",
+            "Filtered aggregations",
+            "Parallel processing"
+          ]
+        },
+        
+        "realtime_subscriptions": {
+          "features": [
+            "Row-level security",
+            "Filtered channels",
+            "Batch notifications",
+            "Conflict resolution"
+          ]
+        }
+      }
+    }
+  },
+  
+  "performance_optimizations": {
+    "frontend": {
+      "virtual_scrolling": "Automático para >500 itens",
+      "lazy_loading": "Componentes e imagens sob demanda",
+      "code_splitting": "Routes e features separadas",
+      "memoization": "React.memo + useMemo otimizado",
+      "debouncing": "Filtros e pesquisas (300ms)",
+      "caching": "Query cache + localStorage smart"
+    },
+    
+    "backend": {
+      "query_optimization": "Indexes + query planning",
+      "connection_pooling": "Supabase optimized",
+      "batch_operations": "Bulk insert/update",
+      "edge_functions": "Geo-distributed processing"
+    }
+  },
+  
+  "ux_enhancements": {
+    "interactions": {
+      "keyboard_shortcuts": "Ctrl+F, Ctrl+E, Esc, etc",
+      "drag_drop": "Colunas e filtros",
+      "context_menus": "Right-click actions",
+      "bulk_actions": "Checkbox selection"
+    },
+    
+    "feedback": {
+      "loading_states": "Skeleton + progress",
+      "toast_notifications": "Success/error feedback",
+      "confirmation_dialogs": "Destructive actions",
+      "progress_indicators": "Long operations"
+    },
+    
+    "accessibility": {
+      "aria_labels": "Screen reader support",
+      "keyboard_navigation": "Tab order otimizado",
+      "color_contrast": "WCAG 2.1 AA",
+      "focus_management": "Modal e form focus"
+    }
+  },
+  
+  "data_flow": {
+    "optimized_pipeline": [
+      "1. User Input → Debounced",
+      "2. Smart Cache Check → Hit/Miss",
+      "3. Parallel API Calls → unified-orders + analytics",
+      "4. Response Streaming → Progressive loading", 
+      "5. Virtual Rendering → Only visible items",
+      "6. Background Updates → WebSocket sync"
+    ]
+  },
+  
+  "monitoring": {
+    "health_checks": {
+      "integration_health": "Real-time status monitoring",
+      "performance_metrics": "Core Web Vitals tracking",
+      "error_tracking": "Automatic error reporting",
+      "user_analytics": "Interaction patterns"
+    }
+  }
+}
