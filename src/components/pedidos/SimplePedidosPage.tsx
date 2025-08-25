@@ -456,8 +456,6 @@ export default function SimplePedidosPage({ className }: Props) {
      { key: 'marketplace_fee', label: 'Taxa Marketplace', default: false, category: 'financial' },
      
      // Colunas de identificação/participantes
-     { key: 'buyer_id', label: 'ID Comprador', default: false, category: 'ids' },
-     { key: 'seller_id', label: 'ID Vendedor', default: false, category: 'ids' }
   ];
 
   const defaultColumns = new Set(allColumns.filter(col => col.default).map(col => col.key));
@@ -1190,8 +1188,6 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('marketplace_fee') && <th className="text-left p-3">Taxa Marketplace</th>}
                    
                    {/* Colunas de identificação */}
-                   {visibleColumns.has('buyer_id') && <th className="text-left p-3">ID Comprador</th>}
-                   {visibleColumns.has('seller_id') && <th className="text-left p-3">ID Vendedor</th>}
                    {visibleColumns.has('integration_account_id') && <th className="text-left p-3">ID Conta Integração</th>}
                    
                    {/* Colunas de identificação do comprador */}
@@ -1950,9 +1946,6 @@ export default function SimplePedidosPage({ className }: Props) {
                           </td>
                         )}
                        
-                       {visibleColumns.has('seller_id') && (
-                         <td className="p-3">{order.seller_id || order.seller?.id || '-'}</td>
-                       )}
                        
                        {visibleColumns.has('integration_account_id') && (
                          <td className="p-3 font-mono text-xs">{order.integration_account_id || '-'}</td>
