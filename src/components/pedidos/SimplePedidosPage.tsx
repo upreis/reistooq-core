@@ -1292,8 +1292,8 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('nome_destinatario') && <th className="text-left p-3">Nome Destinatário</th>}
                   
                    
-                   {/* Colunas de identificação */}
-                   {visibleColumns.has('integration_account_id') && <th className="text-left p-3">ID Conta Integração</th>}
+                    
+                    {/* Colunas de endereço de entrega */}
                    
                    {/* Colunas de identificação do comprador */}
                    
@@ -2017,25 +2017,7 @@ export default function SimplePedidosPage({ className }: Props) {
                           </td>
                         )}
                         
-                        
-                        {visibleColumns.has('buyer_address_country') && (
-                          <td className="p-3">
-                            {(() => {
-                              const country = order.shipping?.receiver_address?.country?.name ||
-                                            order.shipping_details?.receiver_address?.country?.name ||
-                                            order.buyer_address?.country ||
-                                            order.buyer_address_country ||
-                                            'Brasil';
-                              return country || '-';
-                            })()}
-                          </td>
-                        )}
-                       
-                       
-                       {visibleColumns.has('integration_account_id') && (
-                         <td className="p-3 font-mono text-xs">{order.integration_account_id || '-'}</td>
-                       )}
-                    </tr>
+                     </tr>
                   );
                 })}
               </tbody>
