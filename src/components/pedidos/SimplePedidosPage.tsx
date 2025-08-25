@@ -392,21 +392,54 @@ export default function SimplePedidosPage({ className }: Props) {
     // Receita com envio só existe no Flex (self_service)
     if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
 
-    // Fonte principal: shipments/{id}/payments[].amount (enriquecido pelo unified-orders)
-    const paymentArrays = [
+    // NOVA ABORDAGEM: Buscar em múltiplas localizações de pagamentos de envio
+    const shippingPaymentArrays = [
+      // Direto do shipping
       order?.shipping?.payments,
-      order?.unified?.shipping?.payments,
       order?.raw?.shipping?.payments,
+      order?.unified?.shipping?.payments,
+      // Como propriedade direta
       order?.shipping_payments,
-      order?.unified?.shipping_payments
+      order?.unified?.shipping_payments,
+      order?.raw?.shipping_payments,
+      // Dentro de lead_time ou outros objetos
+      order?.shipping?.lead_time?.payments,
+      order?.raw?.shipping?.lead_time?.payments,
+      // Estruturas aninhadas do ML
+      order?.shipping?.logistic?.payments,
+      order?.raw?.shipping?.logistic?.payments,
     ].filter(Boolean);
 
     let totalAmount = 0;
-    for (const arr of paymentArrays) {
+    for (const arr of shippingPaymentArrays) {
       if (Array.isArray(arr)) {
         for (const p of arr) {
-          const amt = Number(p?.amount ?? 0);
-          if (!Number.isNaN(amt) && amt > 0) totalAmount += amt;
+          const amt = Number(p?.amount ?? p?.value ?? p?.cost ?? 0);
+          if (!Number.isNaN(amt) && amt > 0) {
+            console.log(`[RECEITA ENVIO] Encontrado: ${amt} em`, p);
+            totalAmount += amt;
+          }
+        }
+      }
+    }
+
+    // Se não encontrar nos payments, tentar em outras estruturas financeiras do Flex
+    if (!totalAmount) {
+      const flexBonusFields = [
+        order?.shipping_bonus,
+        order?.envio_bonus,
+        order?.flex_bonus,
+        order?.shipping?.bonus,
+        order?.raw?.shipping?.bonus,
+        order?.shipping?.lead_time?.bonus,
+        order?.raw?.shipping?.lead_time?.bonus,
+      ].filter(val => val !== undefined && val !== null);
+
+      for (const bonus of flexBonusFields) {
+        const amt = Number(bonus);
+        if (!Number.isNaN(amt) && amt > 0) {
+          console.log(`[RECEITA ENVIO] Encontrado bonus: ${amt}`);
+          totalAmount += amt;
         }
       }
     }
@@ -1983,7 +2016,7 @@ export default function SimplePedidosPage({ className }: Props) {
       </Card>
 
       {/* 🛡️ PAGINAÇÃO */}
-      {totalPages > 1 && (
+      {Math.ceil(total / 25) > 1 && (
         <div className="flex items-center justify-center gap-4">
           <Button
             variant="outline"
@@ -1994,13 +2027,13 @@ export default function SimplePedidosPage({ className }: Props) {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <span className="text-sm">
-            Página {currentPage} de {totalPages} ({total} total)
+            Página {currentPage} de {Math.ceil(total / 25)} ({total} total)
           </span>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => actions.setPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
+            onClick={() => actions.setPage(Math.min(Math.ceil(total / 25), currentPage + 1))}
+            disabled={currentPage === Math.ceil(total / 25)}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
