@@ -427,17 +427,17 @@ export default function SimplePedidosPage({ className }: Props) {
      
      // Colunas do comprador (baseadas no buyer da API)
      { key: 'buyer_nickname', label: 'Nome do Comprador', default: true, category: 'buyer' },
-     { key: 'buyer_first_name', label: 'Primeiro Nome', default: false, category: 'buyer' },
-     { key: 'buyer_last_name', label: 'Sobrenome', default: false, category: 'buyer' },
-     { key: 'buyer_email', label: 'Email do Comprador', default: false, category: 'buyer' },
-     { key: 'buyer_phone', label: 'Telefone do Comprador', default: false, category: 'buyer' },
+     { key: 'buyer_first_name', label: 'Primeiro Nome', default: true, category: 'buyer' },
+     { key: 'buyer_last_name', label: 'Sobrenome', default: true, category: 'buyer' },
+     { key: 'buyer_email', label: 'Email do Comprador', default: true, category: 'buyer' },
+     { key: 'buyer_phone', label: 'Telefone do Comprador', default: true, category: 'buyer' },
      { key: 'buyer_address_street', label: 'Rua', default: true, category: 'buyer' },
      { key: 'buyer_address_number', label: 'Número', default: true, category: 'buyer' },
-     { key: 'buyer_address_complement', label: 'Complemento', default: false, category: 'buyer' },
+     { key: 'buyer_address_complement', label: 'Complemento', default: true, category: 'buyer' },
      { key: 'buyer_address_zip_code', label: 'CEP', default: true, category: 'buyer' },
      { key: 'buyer_address_city', label: 'Cidade', default: true, category: 'buyer' },
      { key: 'buyer_address_state', label: 'Estado', default: true, category: 'buyer' },
-     { key: 'buyer_address_neighborhood', label: 'Bairro', default: false, category: 'buyer' },
+     { key: 'buyer_address_neighborhood', label: 'Bairro', default: true, category: 'buyer' },
      { key: 'buyer_address_country', label: 'País', default: false, category: 'buyer' },
      { key: 'forma_entrega', label: 'Forma de Entrega (Combinado)', default: false, category: 'shipping' },
      { key: 'nome_destinatario', label: 'Nome Destinatário', default: true, category: 'shipping' },
@@ -1856,24 +1856,28 @@ export default function SimplePedidosPage({ className }: Props) {
                         )}
                         
                         {visibleColumns.has('buyer_first_name') && (
-                          <td className="p-3">{order.buyer?.first_name || order.buyer_first_name || '-'}</td>
+                          <td className="p-3">{order.buyer?.first_name || order.buyer?.name?.first || order.raw?.buyer?.first_name || order.buyer_first_name || '-'}</td>
                         )}
                         
                         {visibleColumns.has('buyer_last_name') && (
-                          <td className="p-3">{order.buyer?.last_name || order.buyer_last_name || '-'}</td>
+                          <td className="p-3">{order.buyer?.last_name || order.buyer?.name?.last || order.raw?.buyer?.last_name || order.buyer_last_name || '-'}</td>
                         )}
                         
                         {visibleColumns.has('buyer_email') && (
-                          <td className="p-3">{order.buyer?.email || order.buyer_email || '-'}</td>
+                          <td className="p-3">{order.buyer?.email || order.raw?.buyer?.email || order.contact?.email || order.buyer_email || '-'}</td>
                         )}
                         
                         {visibleColumns.has('buyer_phone') && (
                           <td className="p-3">
                             {(() => {
-                              const phone = order.buyer?.phone?.number || 
-                                           order.buyer?.phone || 
-                                           order.buyer_phone ||
-                                           order.shipping?.receiver_address?.receiver_phone;
+                              const phoneObj = order.buyer?.phone || order.raw?.buyer?.phone;
+                              const withArea = (typeof phoneObj === 'object' && (phoneObj?.area_code || phoneObj?.number))
+                                ? `${phoneObj?.area_code ? `(${phoneObj.area_code}) ` : ''}${phoneObj?.number || ''}`.trim()
+                                : (phoneObj || '').toString();
+                              const phone = withArea || 
+                                order.buyer_phone ||
+                                order.shipping?.receiver_address?.receiver_phone ||
+                                order.shipping_details?.receiver_address?.receiver_phone;
                               return phone || '-';
                             })()}
                           </td>
@@ -1883,7 +1887,9 @@ export default function SimplePedidosPage({ className }: Props) {
                           <td className="p-3">
                             {(() => {
                               const street = order.shipping?.receiver_address?.address_line ||
+                                           order.shipping_details?.receiver_address?.address_line ||
                                            order.shipping?.receiver_address?.street_name ||
+                                           order.shipping_details?.receiver_address?.street_name ||
                                            order.buyer_address?.street ||
                                            order.buyer_address_street;
                               return street || '-';
@@ -1895,9 +1901,14 @@ export default function SimplePedidosPage({ className }: Props) {
                           <td className="p-3">
                             {(() => {
                               const number = order.shipping?.receiver_address?.street_number ||
-                                           order.buyer_address?.number ||
-                                           order.buyer_address_number;
-                              return number || '-';
+                                             order.shipping_details?.receiver_address?.street_number ||
+                                             order.buyer_address?.number ||
+                                             order.buyer_address_number;
+                              if (number) return number;
+                              const line = order.shipping?.receiver_address?.address_line ||
+                                           order.shipping_details?.receiver_address?.address_line || '';
+                              const parsed = (line.match(/\b(\d{1,6})\b/g) || []).pop();
+                              return parsed || '-';
                             })()}
                           </td>
                         )}
@@ -1905,7 +1916,9 @@ export default function SimplePedidosPage({ className }: Props) {
                         {visibleColumns.has('buyer_address_complement') && (
                           <td className="p-3">
                             {(() => {
-                              const complement = order.shipping?.receiver_address?.complement ||
+                              const complement = order.shipping?.receiver_address?.comment ||
+                                               order.shipping_details?.receiver_address?.comment ||
+                                               order.shipping?.receiver_address?.complement ||
                                                order.buyer_address?.complement ||
                                                order.buyer_address_complement;
                               return complement || '-';
@@ -1917,8 +1930,10 @@ export default function SimplePedidosPage({ className }: Props) {
                           <td className="p-3">
                             {(() => {
                               const zipCode = order.shipping?.receiver_address?.zip_code ||
+                                            order.shipping_details?.receiver_address?.zip_code ||
                                             order.buyer_address?.zip_code ||
-                                            order.buyer_address_zip_code;
+                                            order.buyer_address_zip_code ||
+                                            order.cep;
                               return zipCode || '-';
                             })()}
                           </td>
@@ -1928,6 +1943,7 @@ export default function SimplePedidosPage({ className }: Props) {
                           <td className="p-3">
                             {(() => {
                               const city = order.shipping?.receiver_address?.city?.name ||
+                                         order.shipping_details?.receiver_address?.city?.name ||
                                          order.buyer_address?.city ||
                                          order.buyer_address_city ||
                                          order.cidade;
@@ -1939,10 +1955,12 @@ export default function SimplePedidosPage({ className }: Props) {
                         {visibleColumns.has('buyer_address_state') && (
                           <td className="p-3">
                             {(() => {
-                              const state = order.shipping?.receiver_address?.state?.name ||
-                                          order.buyer_address?.state ||
-                                          order.buyer_address_state ||
-                                          order.uf;
+                              const st = order.shipping?.receiver_address?.state ||
+                                         order.shipping_details?.receiver_address?.state || {};
+                              const state = st?.name || (typeof st?.id === 'string' ? st.id.split('-').pop() : undefined) ||
+                                            order.buyer_address?.state ||
+                                            order.buyer_address_state ||
+                                            order.uf;
                               return state || '-';
                             })()}
                           </td>
@@ -1952,6 +1970,7 @@ export default function SimplePedidosPage({ className }: Props) {
                           <td className="p-3">
                             {(() => {
                               const neighborhood = order.shipping?.receiver_address?.neighborhood?.name ||
+                                                 order.shipping_details?.receiver_address?.neighborhood?.name ||
                                                  order.buyer_address?.neighborhood ||
                                                  order.buyer_address_neighborhood;
                               return neighborhood || '-';
@@ -1963,6 +1982,7 @@ export default function SimplePedidosPage({ className }: Props) {
                           <td className="p-3">
                             {(() => {
                               const country = order.shipping?.receiver_address?.country?.name ||
+                                            order.shipping_details?.receiver_address?.country?.name ||
                                             order.buyer_address?.country ||
                                             order.buyer_address_country ||
                                             'Brasil';
