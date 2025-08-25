@@ -62,9 +62,10 @@ type Props = {
 };
 
 export default function SimplePedidosPage({ className }: Props) {
-  // 🛡️ SISTEMA UNIFICADO
+  // 🛡️ SISTEMA UNIFICADO (P2.1: Corrigido - hook não pode ser memoizado diretamente)
   const pedidosManager = usePedidosManager();
-  const { filters, state, actions } = pedidosManager;
+  // P2.1: Memoização correta dos valores derivados
+  const { filters, state, actions } = useMemo(() => pedidosManager, [pedidosManager]);
   
   // Estados locais para funcionalidades específicas
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -127,8 +128,7 @@ export default function SimplePedidosPage({ className }: Props) {
   const translateShippingSubstatus = (substatus: string): string => {
     if (!substatus) return '-';
     
-    // Debug log para verificar valores reais
-    console.log('[SUBSTATUS DEBUG] Raw value:', substatus, 'Type:', typeof substatus);
+    // P1.2: Debug removido por segurança - não expor dados sensíveis
     
     const translations: Record<string, string> = {
       // Status comuns do ML
@@ -202,29 +202,20 @@ export default function SimplePedidosPage({ className }: Props) {
     const withSpacesKey = originalKey.replace(/_/g, ' ');
     const withUnderscoresKey = originalKey.replace(/\s+/g, '_');
     
-    console.log('[SUBSTATUS DEBUG] Trying keys:', {
-      original: originalKey,
-      withSpaces: withSpacesKey,
-      withUnderscores: withUnderscoresKey
-    });
+    // P1.2: Debug removido por segurança
     
-    // Tentar diferentes variações
+    // Tentar diferentes variações (P1.2: Debug removido)
     if (translations[originalKey]) {
-      console.log('[SUBSTATUS DEBUG] Found translation (original):', translations[originalKey]);
       return translations[originalKey];
     }
     
     if (translations[withSpacesKey]) {
-      console.log('[SUBSTATUS DEBUG] Found translation (spaces):', translations[withSpacesKey]);
       return translations[withSpacesKey];
     }
     
     if (translations[withUnderscoresKey]) {
-      console.log('[SUBSTATUS DEBUG] Found translation (underscores):', translations[withUnderscoresKey]);
       return translations[withUnderscoresKey];
     }
-    
-    console.log('[SUBSTATUS DEBUG] No translation found, using fallback for:', substatus);
     // Se não encontrar, substitui _ por espaços e capitaliza
     return substatus.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };

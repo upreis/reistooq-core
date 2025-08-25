@@ -57,8 +57,9 @@ export interface SavedFilter {
   createdAt: Date;
 }
 
+import { PAGINATION, CACHE, DEBOUNCE } from '@/lib/constants';
+
 const DEFAULT_FILTERS: PedidosFilters = {};
-const PAGE_SIZE = 25;
 
 export function usePedidosManager(initialAccountId?: string) {
   // Estados principais
@@ -77,8 +78,8 @@ export function usePedidosManager(initialAccountId?: string) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const abortControllerRef = useRef<AbortController>();
   
-  // 🚀 FASE 2: Debounce nos filtros para performance
-  const debouncedFilters = useDebounce(filters, 500);
+  // 🚀 FASE 2: Debounce nos filtros para performance (P2.2: usando constants)
+  const debouncedFilters = useDebounce(filters, DEBOUNCE.FILTER_DELAY_MS);
   
   // 🚀 FASE 3: Filtros salvos (localStorage)
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => {
@@ -153,8 +154,8 @@ export function usePedidosManager(initialAccountId?: string) {
   const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
     const requestBody = {
       integration_account_id: integrationAccountId,
-      limit: PAGE_SIZE,
-      offset: (currentPage - 1) * PAGE_SIZE,
+      limit: PAGINATION.DEFAULT_PAGE_SIZE,
+      offset: (currentPage - 1) * PAGINATION.DEFAULT_PAGE_SIZE,
       enrich: true,
       include_shipping: true,
       ...apiParams,
@@ -164,7 +165,7 @@ export function usePedidosManager(initialAccountId?: string) {
       include_skus: true
     };
 
-    console.info('[PedidosManager] Calling unified-orders with:', requestBody);
+    // P1.2: Remover logs sensíveis que expõem dados do sistema
 
     const { data, error } = await supabase.functions.invoke('unified-orders', {
       body: requestBody
@@ -184,7 +185,7 @@ export function usePedidosManager(initialAccountId?: string) {
    * Fallback para banco de dados
    */
   const loadFromDatabase = useCallback(async (apiParams: any) => {
-    console.info('[PedidosManager] Fallback to database');
+    // P1.2: Fallback para DB - log removido por segurança
     
     // Aqui você pode implementar a busca no banco se necessário
     // Por enquanto retorna vazio para usar o fallback client-side
@@ -273,7 +274,7 @@ export function usePedidosManager(initialAccountId?: string) {
   const isCacheValid = useCallback((cacheKey: string) => {
     if (!cachedAt || lastQuery !== cacheKey) return false;
     const cacheAge = Date.now() - cachedAt.getTime();
-    return cacheAge < 5 * 60 * 1000; // 5 minutos
+    return cacheAge < CACHE.VALIDITY_MS;
   }, [cachedAt, lastQuery]);
 
   /**
@@ -293,7 +294,7 @@ export function usePedidosManager(initialAccountId?: string) {
 
     // 🚀 FASE 2: Verificar cache
     if (!forceRefresh && isCacheValid(cacheKey)) {
-      console.log('[PedidosManager] Using cached data');
+      // P1.2: Cache usado - log removido por segurança
       return;
     }
 
@@ -322,36 +323,10 @@ export function usePedidosManager(initialAccountId?: string) {
         setCachedAt(new Date());
         setLastQuery(cacheKey);
         
-        // Debug: verificar se os SKUs estão vindo nos dados
-        console.log('[PedidosManager] Sample order data:', filteredClientResults[0]);
-        console.log('[PedidosManager] Total orders loaded (raw):', unifiedResult.results.length);
-        console.log('[PedidosManager] Total orders after client filter:', filteredClientResults.length);
-        console.log('[PedidosManager] Total records available (server):', unifiedResult.total);
-        console.log('[PedidosManager] Current page:', currentPage);
-        
-        // 🚀 ANÁLISE DOS DADOS DO COMPRADOR - Debug detalhado
-        if (filteredClientResults.length > 0) {
-          const sampleOrder = filteredClientResults[0];
-          console.log('[BUYER DEBUG] Raw order buyer data:', sampleOrder.buyer);
-          console.log('[BUYER DEBUG] Raw order shipping data:', sampleOrder.shipping);
-          console.log('[BUYER DEBUG] Raw order raw data buyer:', sampleOrder.raw?.buyer);
-          console.log('[BUYER DEBUG] Raw order raw shipping:', sampleOrder.raw?.shipping);
-          console.log('[BUYER DEBUG] Available keys in order:', Object.keys(sampleOrder));
-          
-          // Verificar especificamente os campos do comprador
-          console.log('[BUYER DEBUG] buyer.first_name:', sampleOrder.buyer?.first_name);
-          console.log('[BUYER DEBUG] buyer.last_name:', sampleOrder.buyer?.last_name);
-          console.log('[BUYER DEBUG] buyer.email:', sampleOrder.buyer?.email);
-          console.log('[BUYER DEBUG] buyer.phone:', sampleOrder.buyer?.phone);
-          console.log('[BUYER DEBUG] buyer.identification:', sampleOrder.buyer?.identification);
-          
-          // Verificar dados de endereço
-          console.log('[BUYER DEBUG] shipping.receiver_address:', sampleOrder.shipping?.receiver_address);
-          console.log('[BUYER DEBUG] shipping.destination:', sampleOrder.shipping?.destination);
-        }
+        // P1.2: Debug removido por segurança - não expor dados sensíveis
         
       } catch (unifiedError: any) {
-        console.warn('[PedidosManager] Unified-orders failed:', unifiedError.message);
+        // P1.2: Log minimizado para evitar exposição de dados
         
         try {
           // Tentativa 2: unified-orders sem filtros (aplicar client-side)
@@ -359,8 +334,8 @@ export function usePedidosManager(initialAccountId?: string) {
           const filteredResults = applyClientSideFilters(unifiedNoFilters.results);
           
           // Para client-side filtering, precisamos ajustar a paginação
-          const startIndex = (currentPage - 1) * PAGE_SIZE;
-          const endIndex = startIndex + PAGE_SIZE;
+          const startIndex = (currentPage - 1) * PAGINATION.DEFAULT_PAGE_SIZE;
+          const endIndex = startIndex + PAGINATION.DEFAULT_PAGE_SIZE;
           const paginatedResults = filteredResults.slice(startIndex, endIndex);
           
           setOrders(paginatedResults);
@@ -368,7 +343,7 @@ export function usePedidosManager(initialAccountId?: string) {
           setFonte('hibrido');
           
         } catch (fallbackError: any) {
-          console.warn('[PedidosManager] All sources failed:', fallbackError.message);
+          // P1.2: Log minimizado para evitar exposição de dados
           
           // Tentativa 3: banco de dados
           const dbResult = await loadFromDatabase(apiParams);
@@ -380,11 +355,11 @@ export function usePedidosManager(initialAccountId?: string) {
       
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        console.log('[PedidosManager] Request cancelled');
+        // P1.2: Request cancelado - log minimizado
         return;
       }
       
-      console.error('[PedidosManager] Load error:', error);
+      // P1.2: Error minimizado para não expor dados sensíveis
       setError(error.message || 'Erro ao carregar pedidos');
       setOrders([]);
       setTotal(0);
@@ -401,7 +376,7 @@ export function usePedidosManager(initialAccountId?: string) {
       
       // Carregar todos os dados sem paginação
       const apiParams = buildApiParams(debouncedFilters);
-      const allData = await loadFromUnifiedOrders({ ...apiParams, limit: 9999 });
+      const allData = await loadFromUnifiedOrders({ ...apiParams, limit: PAGINATION.EXPORT_LIMIT });
       
       if (format === 'csv') {
         const csvContent = generateCSV(allData.results);
@@ -495,7 +470,7 @@ export function usePedidosManager(initialAccountId?: string) {
     loadOrders();
   }, [loadOrders]);
 
-  // 🚀 FASE 2: Cleanup ao desmontar
+  // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -509,7 +484,7 @@ export function usePedidosManager(initialAccountId?: string) {
     state,
     actions,
     // Computed values
-    totalPages: Math.ceil(total / PAGE_SIZE),
+    totalPages: Math.ceil(total / PAGINATION.DEFAULT_PAGE_SIZE),
     hasActiveFilters: Object.keys(debouncedFilters).some(key => 
       debouncedFilters[key as keyof PedidosFilters] !== undefined && 
       debouncedFilters[key as keyof PedidosFilters] !== ''

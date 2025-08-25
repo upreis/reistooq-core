@@ -3,6 +3,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Pedido, PedidosResponse, UnifiedOrdersParams } from '@/types/pedido';
 import { fetchUnifiedOrders } from '@/services/orders';
+import { validateOrderData, processOrderArray } from '@/utils/validation';
+import { isValidOrderData } from '@/utils/typeGuards';
 
 export interface ListPedidosParams {
   integrationAccountId: string;
@@ -125,13 +127,19 @@ function parseUF(state: any): string | null {
   return name || null;
 }
 
-// Mapeia dados do ML (raw/unified) para interface da tabela – usado no fallback
+// P3.2: Mapeia dados do ML com validação (usado no fallback)
 function mapMlToUi(mlOrders: any[]): Pedido[] {
-  return mlOrders.map((order: any) => {
-    // CORREÇÃO: Usar dados diretamente da resposta unified-orders
-    const ship = order.shipping_details ?? order.shipping ?? {};
-    const addr = ship.receiver_address ?? ship.destination?.shipping_address ?? {};
-    const state = addr.state ?? {};
+  // P1.2: Validar entrada para evitar crashes
+  if (!Array.isArray(mlOrders)) {
+    return [];
+  }
+  return mlOrders
+    .filter(order => order && typeof order === 'object') // P1.2: Filtrar dados válidos
+    .map((order: any) => {
+    // P1.2: Dados seguros com validação de undefined
+    const ship = order?.shipping_details ?? order?.shipping ?? {};
+    const addr = ship?.receiver_address ?? ship?.destination?.shipping_address ?? {};
+    const state = addr?.state ?? {};
 
     const itens =
       order.order_items?.map((item: any) => ({
@@ -268,7 +276,8 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       qtd_kit: null,
       status_estoque: 'pronto_baixar' as const,
     };
-  });
+  })
+  .filter(Boolean) as Pedido[]; // P1.2: Remover entradas nulas
 }
 
 // FUNÇÕES AUXILIARES PARA CAMPOS FINANCEIROS EXCLUSIVOS
