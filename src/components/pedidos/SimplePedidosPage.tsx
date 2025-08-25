@@ -392,38 +392,14 @@ export default function SimplePedidosPage({ className }: Props) {
     // Receita com envio só existe no Flex (self_service)
     if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
 
-    // 1) Priorizar valor de frete pago no pagamento (receita de envio no Flex)
-    const paymentShip = Number(
+    // Fonte principal: valor de frete do pagamento (receita com envio no Flex)
+    const paymentShippingCost = Number(
       order?.payments?.[0]?.shipping_cost ??
       order?.raw?.payments?.[0]?.shipping_cost ??
       0
     );
-    if (paymentShip > 0) return paymentShip;
 
-    // 2) Tentar lead_time (enriquecido pela função unified-orders) somente se "charged"
-    const lead =
-      order?.unified?.lead_time ??
-      order?.shipping?.lead_time ??
-      order?.raw?.shipping?.lead_time ??
-      order?.lead_time;
-
-    const costType = String(lead?.cost_type || '').toLowerCase();
-    const leadCost =
-      costType === 'charged'
-        ? (typeof lead?.cost === 'number'
-            ? lead.cost
-            : (typeof lead?.list_cost === 'number' ? lead.list_cost : undefined))
-        : undefined;
-    if (typeof leadCost === 'number' && leadCost > 0) return leadCost;
-
-    // 3) Fallbacks genéricos
-    const fallback = Number(
-      order?.valor_frete ??
-      order?.shipping_cost ??
-      order?.shipping?.cost ??
-      0
-    );
-    return fallback || 0;
+    return paymentShippingCost || 0;
   };
   
   const getValorLiquidoVendedor = (order: any): number => {
