@@ -392,7 +392,23 @@ export default function SimplePedidosPage({ className }: Props) {
     // Receita com envio só existe no Flex (self_service)
     if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
 
-    // NOVA ABORDAGEM: Buscar em múltiplas localizações de pagamentos de envio
+    // 1) Bônus por envio via /shipments/{id}/costs -> senders[].compensation (preferencial)
+    const costs =
+      order?.shipping?.costs ||
+      order?.raw?.shipping?.costs ||
+      order?.unified?.shipping?.costs;
+
+    let compTotal = 0;
+    if (costs?.senders && Array.isArray(costs.senders)) {
+      compTotal = costs.senders.reduce((acc: number, s: any) => {
+        const c = Number(s?.compensation ?? 0);
+        return acc + (Number.isFinite(c) && c > 0 ? c : 0);
+      }, 0);
+    }
+
+    if (compTotal > 0) return compTotal;
+
+    // 2) Pagamentos do envio (fallback) via /shipments/{id}/payments
     const shippingPaymentArrays = [
       // Direto do shipping
       order?.shipping?.payments,
@@ -410,41 +426,42 @@ export default function SimplePedidosPage({ className }: Props) {
       order?.raw?.shipping?.logistic?.payments,
     ].filter(Boolean);
 
-    let totalAmount = 0;
+    let paymentsTotal = 0;
     for (const arr of shippingPaymentArrays) {
       if (Array.isArray(arr)) {
         for (const p of arr) {
+          // considerar apenas aprovados quando houver status
+          const status = String(p?.status || '').toLowerCase();
+          if (status && status !== 'approved') continue;
           const amt = Number(p?.amount ?? p?.value ?? p?.cost ?? 0);
           if (!Number.isNaN(amt) && amt > 0) {
-            console.log(`[RECEITA ENVIO] Encontrado: ${amt} em`, p);
-            totalAmount += amt;
+            paymentsTotal += amt;
           }
         }
       }
     }
 
-    // Se não encontrar nos payments, tentar em outras estruturas financeiras do Flex
-    if (!totalAmount) {
-      const flexBonusFields = [
-        order?.shipping_bonus,
-        order?.envio_bonus,
-        order?.flex_bonus,
-        order?.shipping?.bonus,
-        order?.raw?.shipping?.bonus,
-        order?.shipping?.lead_time?.bonus,
-        order?.raw?.shipping?.lead_time?.bonus,
-      ].filter(val => val !== undefined && val !== null);
+    if (paymentsTotal > 0) return paymentsTotal;
 
-      for (const bonus of flexBonusFields) {
-        const amt = Number(bonus);
-        if (!Number.isNaN(amt) && amt > 0) {
-          console.log(`[RECEITA ENVIO] Encontrado bonus: ${amt}`);
-          totalAmount += amt;
-        }
+    // 3) Outros campos eventuais
+    const flexBonusFields = [
+      order?.shipping_bonus,
+      order?.envio_bonus,
+      order?.flex_bonus,
+      order?.shipping?.bonus,
+      order?.raw?.shipping?.bonus,
+      order?.shipping?.lead_time?.bonus,
+      order?.raw?.shipping?.lead_time?.bonus,
+    ].filter(val => val !== undefined && val !== null);
+
+    for (const bonus of flexBonusFields) {
+      const amt = Number(bonus);
+      if (!Number.isNaN(amt) && amt > 0) {
+        return amt;
       }
     }
 
-    return totalAmount || 0;
+    return 0;
   };
   
   const getValorLiquidoVendedor = (order: any): number => {
