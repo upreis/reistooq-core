@@ -389,11 +389,39 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'quantidade_itens', label: 'Quantidade Total', default: true, category: 'products' },
     { key: 'titulo_anuncio', label: 'Título do Produto', default: true, category: 'products' },
     
-    // Colunas financeiras (baseadas nos dados financeiros da API)
-    { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
-    { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
-    { key: 'shipping_cost', label: 'Custo do Frete', default: false, category: 'financial' },
-    { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
+    // 💰 Valores Principais
+    { key: 'total_amount', label: 'Valor Total', default: true, category: 'financial_main' },
+    { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial_main' },
+    { key: 'transaction_amount', label: 'Valor Transação', default: false, category: 'financial_main' },
+    { key: 'total_paid_amount', label: 'Total Pago Efetivo', default: false, category: 'financial_main' },
+    
+    // 🚚 Custos de Envio
+    { key: 'shipping_cost', label: 'Custo do Frete', default: true, category: 'financial_shipping' },
+    { key: 'receita_por_envio', label: 'Receita Envio', default: false, category: 'financial_shipping' },
+    
+    // 🎫 Descontos e Cupons
+    { key: 'coupon_amount', label: 'Desconto Cupom', default: true, category: 'financial_discounts' },
+    { key: 'valor_desconto', label: 'Valor Desconto', default: false, category: 'financial_discounts' },
+    { key: 'full_unit_price', label: 'Preço Cheio', default: false, category: 'financial_discounts' },
+    
+    // 💳 Taxas e Tarifas
+    { key: 'sale_fee', label: 'Taxa Venda', default: false, category: 'financial_fees' },
+    { key: 'taxes_amount', label: 'Impostos', default: false, category: 'financial_fees' },
+    { key: 'transaction_amount_refunded', label: 'Valor Estornado', default: false, category: 'financial_fees' },
+    { key: 'overpaid_amount', label: 'Valor Pago a Mais', default: false, category: 'financial_fees' },
+    
+    // 📈 Dados Vendedor (Flex/Fulfillment)
+    { key: 'receita_por_produtos', label: 'Receita Produtos', default: false, category: 'financial_seller' },
+    { key: 'tarifas_venda', label: 'Tarifas Venda', default: false, category: 'financial_seller' },
+    { key: 'impostos', label: 'Total Impostos', default: false, category: 'financial_seller' },
+    { key: 'valor_liquido_vendedor', label: 'Valor Líquido', default: false, category: 'financial_seller' },
+    
+    // 💎 Detalhes Pagamento
+    { key: 'installments', label: 'Parcelas', default: false, category: 'financial_payment' },
+    { key: 'installment_amount', label: 'Valor Parcela', default: false, category: 'financial_payment' },
+    { key: 'payment_method_id', label: 'Método Pagamento', default: true, category: 'financial_payment' },
+    { key: 'payment_type', label: 'Tipo Pagamento', default: true, category: 'financial_payment' },
+    { key: 'currency_id', label: 'Moeda', default: false, category: 'financial_payment' },
     
     // Colunas de status (baseadas no status da API)
     { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
@@ -1125,15 +1153,39 @@ export default function SimplePedidosPage({ className }: Props) {
                   {visibleColumns.has('quantidade_itens') && <th className="text-left p-3">Quantidade Total</th>}
                   {visibleColumns.has('titulo_anuncio') && <th className="text-left p-3">Título do Produto</th>}
                   
-                   {/* Colunas financeiras */}
-                   {visibleColumns.has('valor_total') && <th className="text-left p-3">Valor Total</th>}
-                   {visibleColumns.has('paid_amount') && <th className="text-left p-3">Valor Pago</th>}
-                   {visibleColumns.has('shipping_cost') && <th className="text-left p-3">Custo do Frete</th>}
-                   {visibleColumns.has('coupon_amount') && <th className="text-left p-3">Desconto Cupom</th>}
-                   {visibleColumns.has('payment_method') && <th className="text-left p-3">Método Pagamento</th>}
-                   {visibleColumns.has('payment_status') && <th className="text-left p-3">Status Pagamento</th>}
-                   {visibleColumns.has('payment_type') && <th className="text-left p-3">Tipo Pagamento</th>}
-                   {visibleColumns.has('marketplace_fee') && <th className="text-left p-3">Taxa Marketplace</th>}
+                   {/* 💰 Valores Principais */}
+                   {visibleColumns.has('total_amount') && <th className="text-left p-3">💰 Valor Total</th>}
+                   {visibleColumns.has('paid_amount') && <th className="text-left p-3">💰 Valor Pago</th>}
+                   {visibleColumns.has('transaction_amount') && <th className="text-left p-3">💰 Valor Transação</th>}
+                   {visibleColumns.has('total_paid_amount') && <th className="text-left p-3">💰 Total Pago Efetivo</th>}
+                   
+                   {/* 🚚 Custos de Envio */}
+                   {visibleColumns.has('shipping_cost') && <th className="text-left p-3">🚚 Custo do Frete</th>}
+                   {visibleColumns.has('receita_por_envio') && <th className="text-left p-3">🚚 Receita Envio</th>}
+                   
+                   {/* 🎫 Descontos e Cupons */}
+                   {visibleColumns.has('coupon_amount') && <th className="text-left p-3">🎫 Desconto Cupom</th>}
+                   {visibleColumns.has('valor_desconto') && <th className="text-left p-3">🎫 Valor Desconto</th>}
+                   {visibleColumns.has('full_unit_price') && <th className="text-left p-3">🎫 Preço Cheio</th>}
+                   
+                   {/* 💳 Taxas e Tarifas */}
+                   {visibleColumns.has('sale_fee') && <th className="text-left p-3">💳 Taxa Venda</th>}
+                   {visibleColumns.has('taxes_amount') && <th className="text-left p-3">💳 Impostos</th>}
+                   {visibleColumns.has('transaction_amount_refunded') && <th className="text-left p-3">💳 Valor Estornado</th>}
+                   {visibleColumns.has('overpaid_amount') && <th className="text-left p-3">💳 Valor Pago a Mais</th>}
+                   
+                   {/* 📈 Dados Vendedor (Flex/Fulfillment) */}
+                   {visibleColumns.has('receita_por_produtos') && <th className="text-left p-3">📈 Receita Produtos</th>}
+                   {visibleColumns.has('tarifas_venda') && <th className="text-left p-3">📈 Tarifas Venda</th>}
+                   {visibleColumns.has('impostos') && <th className="text-left p-3">📈 Total Impostos</th>}
+                   {visibleColumns.has('valor_liquido_vendedor') && <th className="text-left p-3">📈 Valor Líquido</th>}
+                   
+                   {/* 💎 Detalhes Pagamento */}
+                   {visibleColumns.has('installments') && <th className="text-left p-3">💎 Parcelas</th>}
+                   {visibleColumns.has('installment_amount') && <th className="text-left p-3">💎 Valor Parcela</th>}
+                   {visibleColumns.has('payment_method_id') && <th className="text-left p-3">💎 Método Pagamento</th>}
+                   {visibleColumns.has('payment_type') && <th className="text-left p-3">💎 Tipo Pagamento</th>}
+                   {visibleColumns.has('currency_id') && <th className="text-left p-3">💎 Moeda</th>}
                   
                   {/* Colunas de status */}
                   {visibleColumns.has('situacao') && <th className="text-left p-3">Situação</th>}
@@ -1301,35 +1353,144 @@ export default function SimplePedidosPage({ className }: Props) {
                         </td>
                       )}
                       
-                      {/* Colunas financeiras */}
-                      {visibleColumns.has('valor_total') && (
-                        <td className="p-3">{formatMoney(order.valor_total || order.total_amount || 0)}</td>
-                      )}
-                      
-                      {visibleColumns.has('paid_amount') && (
-                        <td className="p-3">{formatMoney(order.paid_amount || 0)}</td>
-                      )}
-                      
-                        {visibleColumns.has('shipping_cost') && (
-                          <td className="p-3">
-                            {(() => {
-                              // Priorizar dados dos payments (mais confiável para frete)
-                              const shippingCost = 
-                                order.payments?.[0]?.shipping_cost ||
-                                order.raw?.payments?.[0]?.shipping_cost ||
-                                order.valor_frete ||
-                                order.shipping_cost ||
-                                order.shipping?.cost ||
-                                0;
-                              return formatMoney(shippingCost);
-                            })()}
-                          </td>
-                        )}
-                      
-                      
-                      {visibleColumns.has('coupon_amount') && (
-                        <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
-                      )}
+                       {/* 💰 Valores Principais */}
+                       {visibleColumns.has('total_amount') && (
+                         <td className="p-3">{formatMoney(order.total_amount || order.valor_total || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('paid_amount') && (
+                         <td className="p-3">{formatMoney(order.paid_amount || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('transaction_amount') && (
+                         <td className="p-3">{formatMoney(order.transaction_amount || order.payments?.[0]?.transaction_amount || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('total_paid_amount') && (
+                         <td className="p-3">{formatMoney(order.total_paid_amount || order.payments?.reduce((sum: number, p: any) => sum + (p.total_paid_amount || 0), 0) || 0)}</td>
+                       )}
+
+                       {/* 🚚 Custos de Envio */}
+                       {visibleColumns.has('shipping_cost') && (
+                         <td className="p-3">
+                           {(() => {
+                             const shippingCost = 
+                               order.payments?.[0]?.shipping_cost ||
+                               order.raw?.payments?.[0]?.shipping_cost ||
+                               order.valor_frete ||
+                               order.shipping_cost ||
+                               order.shipping?.cost ||
+                               0;
+                             return formatMoney(shippingCost);
+                           })()}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('receita_por_envio') && (
+                         <td className="p-3">{formatMoney(order.receita_por_envio || 0)}</td>
+                       )}
+
+                       {/* 🎫 Descontos e Cupons */}
+                       {visibleColumns.has('coupon_amount') && (
+                         <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('valor_desconto') && (
+                         <td className="p-3">{formatMoney(order.valor_desconto || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('full_unit_price') && (
+                         <td className="p-3">
+                           {formatMoney(order.order_items?.[0]?.full_unit_price || order.order_items?.[0]?.unit_price || 0)}
+                         </td>
+                       )}
+
+                       {/* 💳 Taxas e Tarifas */}
+                       {visibleColumns.has('sale_fee') && (
+                         <td className="p-3">
+                           {formatMoney(order.order_items?.reduce((sum: number, item: any) => sum + (item.sale_fee || 0), 0) || 0)}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('taxes_amount') && (
+                         <td className="p-3">
+                           {formatMoney(order.payments?.reduce((sum: number, p: any) => sum + (p.taxes_amount || 0), 0) || 0)}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('transaction_amount_refunded') && (
+                         <td className="p-3">{formatMoney(order.transaction_amount_refunded || order.payments?.[0]?.transaction_amount_refunded || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('overpaid_amount') && (
+                         <td className="p-3">{formatMoney(order.overpaid_amount || order.payments?.[0]?.overpaid_amount || 0)}</td>
+                       )}
+
+                       {/* 📈 Dados Vendedor (Flex/Fulfillment) */}
+                       {visibleColumns.has('receita_por_produtos') && (
+                         <td className="p-3">{formatMoney(order.receita_por_produtos || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('tarifas_venda') && (
+                         <td className="p-3">{formatMoney(order.tarifas_venda || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('impostos') && (
+                         <td className="p-3">{formatMoney(order.impostos || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('valor_liquido_vendedor') && (
+                         <td className="p-3">{formatMoney(order.valor_liquido_vendedor || 0)}</td>
+                       )}
+
+                       {/* 💎 Detalhes Pagamento */}
+                       {visibleColumns.has('installments') && (
+                         <td className="p-3">{order.payments?.[0]?.installments || order.installments || '-'}</td>
+                       )}
+                       
+                       {visibleColumns.has('installment_amount') && (
+                         <td className="p-3">{formatMoney(order.payments?.[0]?.installment_amount || order.installment_amount || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('payment_method_id') && (
+                         <td className="p-3">
+                           <span className="text-xs">
+                             {(() => {
+                               const method = order.payments?.[0]?.payment_method_id || 
+                                            order.raw?.payments?.[0]?.payment_method_id || 
+                                            order.payment_method || 
+                                            order.forma_pagamento;
+                               
+                               const methodMapping: Record<string, string> = {
+                                 'account_money': 'Dinheiro em Conta',
+                                 'visa': 'Visa',
+                                 'master': 'Mastercard',
+                                 'amex': 'American Express',
+                                 'pix': 'PIX',
+                                 'bolbradesco': 'Boleto Bradesco',
+                                 'pec': 'Pagamento na Entrega'
+                               };
+                               
+                               return methodMapping[method] || method || '-';
+                             })()}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('payment_type') && (
+                         <td className="p-3">
+                           <span className="text-xs">
+                             {order.payments?.[0]?.payment_type_id || 
+                              order.raw?.payments?.[0]?.payment_type_id || 
+                              order.payment_type || 
+                              '-'}
+                           </span>
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('currency_id') && (
+                         <td className="p-3">{order.currency_id || order.payments?.[0]?.currency_id || 'BRL'}</td>
+                       )}
                       
                       {/* Colunas de pagamento */}
                       {visibleColumns.has('payment_method') && (
