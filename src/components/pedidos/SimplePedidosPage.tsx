@@ -1781,7 +1781,7 @@ export default function SimplePedidosPage({ className }: Props) {
                        
                        {visibleColumns.has('delivery_type') && (
                          <td className="p-3">
-                           <span className="text-xs font-mono text-foreground">
+                            <span className="text-xs font-mono text-foreground">
                               {formatPt(
                                 order.delivery_type || 
                                 order.shipping?.delivery_type || 
