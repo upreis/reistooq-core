@@ -394,6 +394,8 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
     { key: 'shipping_cost', label: 'Custo do Frete', default: false, category: 'financial' },
     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
+    { key: 'receita_por_envio', label: 'Receita com Envio', default: false, category: 'financial' },
+    { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: false, category: 'financial' },
     
     // Colunas de status (baseadas no status da API)
     { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
@@ -1327,9 +1329,17 @@ export default function SimplePedidosPage({ className }: Props) {
                         )}
                       
                       
-                      {visibleColumns.has('coupon_amount') && (
-                        <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
-                      )}
+                       {visibleColumns.has('coupon_amount') && (
+                         <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('receita_por_envio') && (
+                         <td className="p-3">{formatMoney(order.receita_por_envio || 0)}</td>
+                       )}
+                       
+                       {visibleColumns.has('valor_liquido_vendedor') && (
+                         <td className="p-3">{formatMoney(order.valor_liquido_vendedor || 0)}</td>
+                       )}
                       
                       {/* Colunas de pagamento */}
                       {visibleColumns.has('payment_method') && (
