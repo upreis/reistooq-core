@@ -162,17 +162,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'custo_envio_seller',
-    label: 'Custo Envio Seller',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Custo de envio para o vendedor',
-    width: 130,
-    sortable: true
-  },
-  {
     key: 'coupon_amount',
     label: 'Desconto Cupom',
     category: 'financial',
@@ -180,6 +169,17 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Valor de desconto por cupom',
+    width: 120,
+    sortable: true
+  },
+  {
+    key: 'marketplace_fee',
+    label: 'Taxa Marketplace',
+    category: 'financial',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Taxa cobrada pelo marketplace',
     width: 120,
     sortable: true
   },
@@ -223,17 +223,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: false,
     description: 'Tipo de pagamento',
     width: 120
-  },
-  {
-    key: 'marketplace_fee',
-    label: 'Taxa Marketplace',
-    category: 'financial',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Taxa cobrada pelo marketplace',
-    width: 120,
-    sortable: true
   },
 
   // ====== MAPEAMENTO (das imagens 2 e 3) ======
