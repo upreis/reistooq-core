@@ -543,15 +543,15 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
     { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
 
-    // Status
-    { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
-
     // Mapeamento
     { key: 'mapeamento', label: 'Status Mapeamento', default: true, category: 'mapping' },
     { key: 'sku_estoque', label: 'SKU Estoque', default: true, category: 'mapping' },
     { key: 'sku_kit', label: 'SKU KIT', default: false, category: 'mapping' },
     { key: 'qtd_kit', label: 'Quantidade KIT', default: false, category: 'mapping' },
     { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
+    
+    // Status
+    { key: 'situacao', label: 'Situação', default: true, category: 'shipping' },
 
     // Metadados ML
     { key: 'date_created', label: 'Data Criação ML', default: false, category: 'meta' },
