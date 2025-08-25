@@ -969,20 +969,21 @@ export default function SimplePedidosPage({ className }: Props) {
                       </Button>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                      {['basic', 'products', 'financial', 'status', 'mapping', 'ml', 'shipping', 'ids'].map((category) => {
-                        const categoryColumns = allColumns.filter(col => col.category === category);
-                        const categoryLabels = {
-                          basic: 'Básicas',
-                          products: 'Produtos',
-                          financial: 'Financeiras', 
-                          status: 'Status',
-                          mapping: 'Mapeamento',
-                          ml: 'Mercado Livre',
-                          shipping: 'Envio',
-                          ids: 'Identificação'
-                        };
-                        
-                        if (categoryColumns.length === 0) return null;
+                       {['basic', 'products', 'financial', 'status', 'mapping', 'ml', 'shipping', 'buyer', 'ids'].map((category) => {
+                         const categoryColumns = allColumns.filter(col => col.category === category);
+                         const categoryLabels = {
+                           basic: 'Básicas',
+                           products: 'Produtos',
+                           financial: 'Financeiras', 
+                           status: 'Status',
+                           mapping: 'Mapeamento',
+                           ml: 'Mercado Livre',
+                           shipping: 'Envio',
+                           buyer: 'Comprador',
+                           ids: 'Identificação'
+                         } as const;
+                         
+                         if (categoryColumns.length === 0) return null;
                         
                         return (
                           <div key={category} className="space-y-2">
