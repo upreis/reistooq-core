@@ -426,9 +426,6 @@ export default function SimplePedidosPage({ className }: Props) {
      { key: 'shipping_substatus', label: 'Sub-status Envio (Combinado)', default: false, category: 'shipping' },
      
      // Colunas de identificação do comprador (baseadas na API buyer.*)
-     { key: 'buyer_id', label: 'ID do Comprador', default: false, category: 'buyer' },
-     { key: 'buyer_nickname', label: 'Nickname', default: false, category: 'buyer' },
-     { key: 'buyer_identification_type', label: 'Tipo Documento', default: false, category: 'buyer' },
      { key: 'buyer_phone', label: 'Telefone do Comprador', default: true, category: 'buyer' },
      
      // Colunas de endereço de entrega (baseadas na API shipping.destination.shipping_address.*)
@@ -1198,9 +1195,6 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('integration_account_id') && <th className="text-left p-3">ID Conta Integração</th>}
                    
                    {/* Colunas de identificação do comprador */}
-                   {visibleColumns.has('buyer_id') && <th className="text-left p-3">ID do Comprador</th>}
-                   {visibleColumns.has('buyer_nickname') && <th className="text-left p-3">Nickname</th>}
-                    {visibleColumns.has('buyer_identification_type') && <th className="text-left p-3">Tipo Documento</th>}
                    
                    {/* Colunas de endereço de entrega */}
                    
@@ -1855,22 +1849,6 @@ export default function SimplePedidosPage({ className }: Props) {
                         )}
                        
                         {/* Colunas de identificação do comprador - usando buyer.* da API */}
-                        {visibleColumns.has('buyer_id') && (
-                          <td className="p-3">{order.buyer?.id || order.raw?.buyer?.id || order.buyer_id || '-'}</td>
-                        )}
-                        
-                        {visibleColumns.has('buyer_nickname') && (
-                          <td className="p-3">{order.buyer?.nickname || order.raw?.buyer?.nickname || order.buyer_nickname || '-'}</td>
-                        )}
-                        
-                         {visibleColumns.has('buyer_identification_type') && (
-                           <td className="p-3">
-                             {order.buyer?.identification?.type || 
-                              order.raw?.buyer?.identification?.type || 
-                              (order.cpf_cnpj?.length > 11 ? 'CNPJ' : 'CPF') || 
-                              '-'}
-                           </td>
-                         )}
                         
                         {/* Colunas de endereço de entrega - usando shipping.destination.shipping_address.* */}
                         
