@@ -570,6 +570,9 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'endereco_rua', label: 'Rua', default: false, category: 'shipping' },
     { key: 'endereco_numero', label: 'Número', default: false, category: 'shipping' },
     { key: 'endereco_bairro', label: 'Bairro', default: false, category: 'shipping' },
+    { key: 'endereco_cep', label: 'CEP', default: false, category: 'shipping' },
+    { key: 'endereco_cidade', label: 'Cidade', default: false, category: 'shipping' },
+    { key: 'endereco_uf', label: 'UF', default: false, category: 'shipping' },
   ];
 
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
@@ -2089,6 +2092,36 @@ export default function SimplePedidosPage({ className }: Props) {
                               order.shipping_details?.receiver_address?.neighborhood?.name ||
                               order.raw?.shipping?.receiver_address?.neighborhood?.name ||
                               order.receiver_address_neighborhood || '-'}
+                           </td>
+                         )}
+                         
+                         {visibleColumns.has('endereco_cep') && (
+                           <td className="p-3">
+                             {order.shipping?.destination?.shipping_address?.zip_code ||
+                              order.shipping?.receiver_address?.zip_code ||
+                              order.shipping_details?.receiver_address?.zip_code ||
+                              order.raw?.shipping?.receiver_address?.zip_code ||
+                              order.receiver_address_zip_code || '-'}
+                           </td>
+                         )}
+                         
+                         {visibleColumns.has('endereco_cidade') && (
+                           <td className="p-3">
+                             {order.shipping?.destination?.shipping_address?.city?.name ||
+                              order.shipping?.receiver_address?.city?.name ||
+                              order.shipping_details?.receiver_address?.city?.name ||
+                              order.raw?.shipping?.receiver_address?.city?.name ||
+                              order.cidade || '-'}
+                           </td>
+                         )}
+                         
+                         {visibleColumns.has('endereco_uf') && (
+                           <td className="p-3">
+                             {order.shipping?.destination?.shipping_address?.state?.name ||
+                              order.shipping?.receiver_address?.state?.name ||
+                              order.shipping_details?.receiver_address?.state?.name ||
+                              order.raw?.shipping?.receiver_address?.state?.name ||
+                              order.uf || '-'}
                            </td>
                          )}
                          
