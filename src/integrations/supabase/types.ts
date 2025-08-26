@@ -2158,9 +2158,17 @@ export type Database = {
           pedido_exists: boolean
         }[]
       }
+      hv_fix_orphans: {
+        Args: { default_account_id?: string }
+        Returns: number
+      }
       hv_insert: {
         Args: { p: Json }
         Returns: string
+      }
+      hv_orphaned_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       log_audit_event: {
         Args: {

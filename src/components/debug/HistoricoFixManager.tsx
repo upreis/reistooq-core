@@ -21,17 +21,14 @@ export function HistoricoFixManager() {
   const checkOrphanedRecords = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('historico_vendas')
-        .select('id, status, integration_account_id')
-        .eq('status', 'baixado')
-        .is('integration_account_id', null);
+      const { data, error } = await supabase.rpc('hv_orphaned_stats');
 
       if (error) throw error;
 
+      const payload: any = (data as any) || {};
       setStats({
-        orphanedCount: data?.length || 0,
-        total: await getTotalHistoricoCount()
+        orphanedCount: payload.orphanedCount ?? 0,
+        total: payload.total ?? 0,
       });
     } catch (error: any) {
       console.error('Erro ao verificar registros órfãos:', error);
@@ -83,21 +80,18 @@ export function HistoricoFixManager() {
         throw new Error('Nenhuma conta de integração encontrada');
       }
 
-      // Atualizar registros órfãos
-      const { error: updateError } = await supabase
-        .from('historico_vendas')
-        .update({ integration_account_id: defaultAccountId })
-        .eq('status', 'baixado')
-        .is('integration_account_id', null);
+      // Corrigir via RPC (Security Definer)
+      const { data: fixed, error: fixError } = await supabase
+        .rpc('hv_fix_orphans', { default_account_id: defaultAccountId });
 
-      if (updateError) throw updateError;
+      if (fixError) throw fixError;
 
       // Verificar novamente
       await checkOrphanedRecords();
 
       toast({
         title: "✅ Correção concluída",
-        description: `${stats.orphanedCount} registros corrigidos com sucesso!`,
+        description: `${fixed ?? 0} registros corrigidos com sucesso!`,
       });
 
     } catch (error: any) {
