@@ -221,6 +221,12 @@ export class EstoqueBaixaService {
     return id;
   }
 
+  /** Util: valida UUID v4 */
+  private static isValidUUID(v: any): boolean {
+    return typeof v === 'string'
+      && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+  }
+
   /**
    * Processa a baixa de um item específico
    */
@@ -447,7 +453,7 @@ export class EstoqueBaixaService {
         obs_interna: (pedido as any).obs_interna,
         codigo_rastreamento: (pedido as any).codigo_rastreamento,
         url_rastreamento: (pedido as any).url_rastreamento,
-        integration_account_id: pedido.integration_account_id,
+        integration_account_id: EstoqueBaixaService.isValidUUID(pedido.integration_account_id as any) ? pedido.integration_account_id : undefined,
         
         // Observações do processamento
         observacoes: `Processamento automático via sistema. Detalhes: ${JSON.stringify(detalhes.map(d => ({
