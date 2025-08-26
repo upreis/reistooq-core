@@ -72,6 +72,28 @@ export const useColumnManager = (): UseColumnManagerReturn => {
         : new Set(stored.visibleColumns || Array.from(initial.visibleColumns))
     };
   });
+ 
+  // Reconciliar novas colunas adicionadas após preferências salvas
+  useEffect(() => {
+    setState(prev => {
+      const currentOrderSet = new Set(prev.columnOrder);
+      const newDefs = COLUMN_DEFINITIONS.filter(def => !currentOrderSet.has(def.key));
+      if (newDefs.length === 0) return prev;
+
+      const newOrder = [...prev.columnOrder, ...newDefs.map(d => d.key)];
+
+      const newVisible = new Set(prev.visibleColumns);
+      newDefs.forEach(def => {
+        if (def.default) newVisible.add(def.key);
+      });
+
+      return {
+        ...prev,
+        columnOrder: newOrder,
+        visibleColumns: newVisible,
+      };
+    });
+  }, []);
 
   // Salvar automaticamente quando o estado mudar
   useEffect(() => {
