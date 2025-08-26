@@ -96,8 +96,8 @@ export class EstoqueBaixaService {
 
     console.info('[EstoqueBaixa] Processando pedido:', pedido.numero);
 
-    // 1. Verificar se já foi processado no histórico
-    const idUnicoCheck = pedido.id_unico || pedido.numero || pedido.id;
+    // 1. Verificar se já foi processado no histórico (usando fórmula unificada)
+    const idUnicoCheck = this.buildIdUnico(pedido);
     const jaProcessado = await this.verificarPedidoJaProcessado(idUnicoCheck);
     if (jaProcessado) {
       console.info('[EstoqueBaixa] Pedido já processado, pulando:', pedido.numero);
@@ -146,20 +146,13 @@ export class EstoqueBaixaService {
    */
   private static async verificarPedidoJaProcessado(idUnicoPedido: string): Promise<boolean> {
     try {
-      // Usar RPC segura que já aplica RLS e escopo de organização
-      const { data, error } = await supabase
-        .rpc('get_historico_vendas_masked', { _search: idUnicoPedido, _limit: 1 });
-
+      const { data, error } = await supabase.rpc('hv_exists', { p_id_unico: idUnicoPedido });
       if (error) {
-        // Não bloquear a baixa por falhas de consulta
-        console.info('[EstoqueBaixa] RPC histórico indisponível, seguindo:', error?.message);
+        console.info('[EstoqueBaixa] hv_exists indisponível, seguindo:', error?.message);
         return false;
       }
-
-      const rows = Array.isArray(data) ? data : [];
-      const found = rows.some((r: any) => String(r?.id_unico) === String(idUnicoPedido));
-      return found;
-    } catch (error) {
+      return Boolean(data === true);
+    } catch {
       return false;
     }
   }
@@ -214,6 +207,18 @@ export class EstoqueBaixaService {
 
     console.info('[EstoqueBaixa] SKUs extraídos do pedido:', skus);
     return skus;
+  }
+
+  /**
+   * Constrói o ID-Único conforme regra: SKUs/Produtos + Número do Pedido
+   * Mantém o mesmo formato usado na lista de pedidos
+   */
+  private static buildIdUnico(pedido: Pedido): string {
+    const skus = this.extrairSkusDoPedido(pedido);
+    const skuPrincipal = skus[0]?.sku || '';
+    const numero = String(pedido.numero || pedido.id || '').trim();
+    const id = skuPrincipal ? `${skuPrincipal}-${numero}` : numero;
+    return id;
   }
 
   /**
@@ -410,7 +415,7 @@ export class EstoqueBaixaService {
       
       const historicoData = {
         // Campos básicos
-        id_unico: pedido.id_unico || pedido.numero || pedido.id,
+        id_unico: this.buildIdUnico(pedido),
         numero_pedido: pedido.numero,
         sku_produto: detalhes.map(d => d.skuPedido).join(', '),
         descricao: `Baixa automática - ${detalhes.length} item(s)`,

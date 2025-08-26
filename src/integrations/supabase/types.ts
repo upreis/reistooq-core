@@ -2123,6 +2123,10 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: undefined
       }
+      hv_exists: {
+        Args: { p_id_unico: string }
+        Returns: boolean
+      }
       hv_insert: {
         Args: { p: Json }
         Returns: string
