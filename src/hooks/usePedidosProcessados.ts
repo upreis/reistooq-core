@@ -3,10 +3,11 @@
  * Usado na página /pedidos para marcar visualmente os pedidos já processados
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { EstoqueBaixaService } from '@/services/EstoqueBaixaService';
-import { buildIdUnico } from '@/utils/idUnico';
+import { useState, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { SimpleBaixaService } from '@/services/SimpleBaixaService';
 import { Pedido } from '@/types/pedido';
+import { buildIdUnico } from '@/utils/idUnico';
 
 interface UsePedidosProcessadosReturn {
   pedidosProcessados: Set<string>;
@@ -33,8 +34,17 @@ export function usePedidosProcessados() {
       // Gerar IDs únicos para todos os pedidos
       const idsUnicos = pedidos.map(pedido => buildIdUnico(pedido));
       
-      // Verificar em lote quais já foram processados
-      const resultados = await EstoqueBaixaService.verificarPedidosProcessados(idsUnicos);
+      // Verificar via RPC simples se existem no histórico
+      const resultados = new Map<string, boolean>();
+      
+      for (const idUnico of idsUnicos) {
+        try {
+          const { data } = await supabase.rpc('hv_exists', { p_id_unico: idUnico });
+          resultados.set(idUnico, Boolean(data));
+        } catch {
+          resultados.set(idUnico, false);
+        }
+      }
       
       // Criar Set com os pedidos que já foram processados
       const processados = new Set<string>();

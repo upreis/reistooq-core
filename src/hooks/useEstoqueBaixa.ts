@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { EstoqueBaixaService, BaixaEstoqueResult } from '@/services/EstoqueBaixaService';
+import { SimpleBaixaService } from '@/services/SimpleBaixaService';
 import { Pedido } from '@/types/pedido';
 import { useToast } from '@/hooks/use-toast';
 
@@ -8,36 +8,32 @@ export function useProcessarBaixaEstoque() {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (pedidos: Pedido[]): Promise<BaixaEstoqueResult> => {
-      return EstoqueBaixaService.processarBaixaPedidos(pedidos);
+    mutationFn: async (pedidos: Pedido[]): Promise<boolean> => {
+      // Processar cada pedido de forma simples
+      let sucessos = 0;
+      for (const pedido of pedidos) {
+        const sucesso = await SimpleBaixaService.processarBaixaPedido(pedido);
+        if (sucesso) sucessos++;
+      }
+      return sucessos === pedidos.length;
     },
-    onSuccess: (result) => {
+    onSuccess: (allSuccess) => {
       // Invalidar cache relacionado
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       queryClient.invalidateQueries({ queryKey: ["historico-simple"] });
       queryClient.invalidateQueries({ queryKey: ["historico-stats"] });
-      queryClient.invalidateQueries({ queryKey: ['sku-mappings'] });
 
-      // Toast de feedback
-      if (result.success) {
-        toast({
-          title: "Baixa de estoque concluída",
-          description: result.message,
-          variant: "default",
-        });
-      } else {
-        toast({
-          title: "Baixa parcialmente concluída",
-          description: `${result.message}. Verifique os detalhes.`,
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: allSuccess ? "✅ Baixa concluída" : "⚠️ Baixa parcial",
+        description: allSuccess ? "Todos pedidos processados com sucesso" : "Alguns pedidos falharam",
+        variant: allSuccess ? "default" : "destructive",
+      });
     },
     onError: (error: Error) => {
-      console.error('Erro na baixa de estoque:', error);
+      console.error('Erro na baixa:', error);
       toast({
-        title: "Erro na baixa de estoque",
-        description: error.message || "Erro inesperado ao processar baixa",
+        title: "❌ Erro na baixa",
+        description: error.message,
         variant: "destructive",
       });
     },
