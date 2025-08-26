@@ -35,6 +35,8 @@ export type HistoricoVendaPublic = {
   sku_kit?: string;
   qtd_kit?: number;
   total_itens?: number;
+  empresa?: string;
+  integration_account_id?: string;
 };
 
 // Colunas seguras para SELECT explícito (sem dados sensíveis)
@@ -70,7 +72,9 @@ export const HISTORICO_SAFE_COLUMNS = [
   'sku_estoque',
   'sku_kit',
   'qtd_kit',
-  'total_itens'
+  'total_itens',
+  'empresa',
+  'integration_account_id'
 ] as const;
 
 export type HistoricoSafeColumn = typeof HISTORICO_SAFE_COLUMNS[number];
