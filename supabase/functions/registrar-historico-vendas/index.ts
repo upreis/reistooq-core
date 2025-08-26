@@ -82,12 +82,9 @@ export default async function handler(req: Request): Promise<Response> {
     payload.valor_unitario = payload.valor_unitario ?? 0;
     payload.valor_total = payload.valor_total ?? 0;
 
-    // Inserir
+    // Inserir via RPC com SECURITY DEFINER (bypassa RLS)
     const { data, error } = await supabase
-      .from('historico_vendas')
-      .insert(payload)
-      .select('id')
-      .single();
+      .rpc('hv_insert', { p: payload });
 
     if (error) {
       console.error('[registrar-historico-vendas] insert error', error);

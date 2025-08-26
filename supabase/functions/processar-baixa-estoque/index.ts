@@ -129,19 +129,20 @@ serve(async (req) => {
           const quantidadeVendida = (orderItems || []).reduce((sum: number, i: any) => sum + (Number(i.quantidade) || 0), 0);
 
           const { error: histError } = await supabaseService
-            .from('historico_vendas')
-            .insert({
-              id_unico: String(orderId),
-              numero_pedido: pedidoRow?.numero || String(orderId),
-              sku_produto: skus.length ? skus.join(', ') : 'BAIXA_ESTOQUE',
-              descricao: 'Baixa automática de estoque via função',
-              quantidade: quantidadeVendida || 0,
-              valor_unitario: 0,
-              valor_total: 0,
-              status: 'baixado',
-              data_pedido: pedidoRow?.data_pedido || new Date().toISOString().slice(0,10),
-              observacoes: 'Processado automaticamente',
-              integration_account_id: pedidoRow?.integration_account_id || null,
+            .rpc('hv_insert', {
+              p: {
+                id_unico: String(orderId),
+                numero_pedido: pedidoRow?.numero || String(orderId),
+                sku_produto: skus.length ? skus.join(', ') : 'BAIXA_ESTOQUE',
+                descricao: 'Baixa automática de estoque via função',
+                quantidade: quantidadeVendida || 0,
+                valor_unitario: 0,
+                valor_total: 0,
+                status: 'baixado',
+                data_pedido: pedidoRow?.data_pedido || new Date().toISOString().slice(0,10),
+                observacoes: 'Processado automaticamente',
+                integration_account_id: pedidoRow?.integration_account_id || null,
+              }
             });
 
           if (histError) {

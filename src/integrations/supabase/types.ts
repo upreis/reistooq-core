@@ -2123,6 +2123,10 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: undefined
       }
+      hv_insert: {
+        Args: { p: Json }
+        Returns: string
+      }
       log_audit_event: {
         Args: {
           p_action: string
