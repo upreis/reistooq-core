@@ -56,14 +56,14 @@ export function HistoricoSimpleFilters({
           <div className="space-y-2">
             <label className="text-sm font-medium">Status</label>
             <Select
-              value={filters.status || ''}
-              onValueChange={(value) => onFiltersChange({ status: value || undefined })}
+              value={filters.status || 'all'}
+              onValueChange={(value) => onFiltersChange({ status: value === 'all' ? undefined : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Todos os status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os status</SelectItem>
+                <SelectItem value="all">Todos os status</SelectItem>
                 <SelectItem value="concluida">Concluída</SelectItem>
                 <SelectItem value="pendente">Pendente</SelectItem>
                 <SelectItem value="cancelada">Cancelada</SelectItem>
