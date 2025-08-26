@@ -565,6 +565,11 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'substatus_detail', label: 'Substatus (Estado Atual)', default: false, category: 'shipping' },
     { key: 'shipping_mode', label: 'Modo de Envio (Combinado)', default: false, category: 'shipping' },
     { key: 'shipping_method', label: 'Método de Envio (Combinado)', default: false, category: 'shipping' },
+    
+    // Endereço
+    { key: 'endereco_rua', label: 'Rua', default: false, category: 'shipping' },
+    { key: 'endereco_numero', label: 'Número', default: false, category: 'shipping' },
+    { key: 'endereco_bairro', label: 'Bairro', default: false, category: 'shipping' },
   ];
 
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
@@ -2052,10 +2057,41 @@ export default function SimplePedidosPage({ className }: Props) {
                              order.shipping?.receiver_address?.neighborhood?.name ||
                              order.shipping_details?.receiver_address?.neighborhood?.name ||
                              order.raw?.shipping?.receiver_address?.neighborhood?.name ||
-                             order.receiver_address_neighborhood || '-'}
-                          </td>
-                        )}
-                        
+                              order.receiver_address_neighborhood || '-'}
+                           </td>
+                         )}
+                         
+                         {/* Novas colunas de endereço */}
+                         {visibleColumns.has('endereco_rua') && (
+                           <td className="p-3">
+                             {order.shipping?.destination?.shipping_address?.street_name ||
+                              order.shipping?.receiver_address?.street_name ||
+                              order.shipping_details?.receiver_address?.street_name ||
+                              order.raw?.shipping?.receiver_address?.street_name ||
+                              order.receiver_address_street_name || '-'}
+                           </td>
+                         )}
+                         
+                         {visibleColumns.has('endereco_numero') && (
+                           <td className="p-3">
+                             {order.shipping?.destination?.shipping_address?.street_number ||
+                              order.shipping?.receiver_address?.street_number ||
+                              order.shipping_details?.receiver_address?.street_number ||
+                              order.raw?.shipping?.receiver_address?.street_number ||
+                              order.receiver_address_street_number || '-'}
+                           </td>
+                         )}
+                         
+                         {visibleColumns.has('endereco_bairro') && (
+                           <td className="p-3">
+                             {order.shipping?.destination?.shipping_address?.neighborhood?.name ||
+                              order.shipping?.receiver_address?.neighborhood?.name ||
+                              order.shipping_details?.receiver_address?.neighborhood?.name ||
+                              order.raw?.shipping?.receiver_address?.neighborhood?.name ||
+                              order.receiver_address_neighborhood || '-'}
+                           </td>
+                         )}
+                         
                      </tr>
                   );
                 })}
