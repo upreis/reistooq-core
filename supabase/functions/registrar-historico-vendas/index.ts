@@ -67,6 +67,16 @@ export default async function handler(req: Request): Promise<Response> {
       if (allowedKeys.has(k)) payload[k] = v;
     }
 
+    // Sanitizar integration_account_id (deve ser UUID)
+    if (payload.integration_account_id) {
+      const val = String(payload.integration_account_id);
+      const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRe.test(val)) {
+        console.warn('[registrar-historico-vendas] integration_account_id inválido, removendo do payload:', val);
+        delete payload.integration_account_id;
+      }
+    }
+
     // data_pedido é NOT NULL na tabela
     if (!payload.data_pedido) {
       // usar data atual (YYYY-MM-DD)
@@ -166,6 +176,16 @@ export default async function handler(req: Request): Promise<Response> {
         } catch (resolveDupErr) {
           console.error('[registrar-historico-vendas] erro ao resolver duplicata:', resolveDupErr);
         }
+        // 🔁 Fallback: ainda que não tenhamos localizado via select, retornar sucesso para não travar UI
+        console.warn('[registrar-historico-vendas] ⚠️ duplicata detectada, retornando sucesso mesmo sem localizar registro. id_unico:', payload.id_unico);
+        return new Response(JSON.stringify({
+          ok: true,
+          id: null,
+          dedup: true,
+          message: 'Registro já existia (dedup sem leitura)'
+        }), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
       }
 
       return new Response(JSON.stringify({ 
