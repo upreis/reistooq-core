@@ -121,7 +121,7 @@ export function SavedFiltersManager({
                         }}>
                           <h5 className="font-medium text-sm">{filter.name}</h5>
                           <p className="text-xs text-muted-foreground">
-                            {filter.createdAt.toLocaleDateString()}
+                            {new Date(filter.createdAt).toLocaleDateString()}
                           </p>
                           
                           {/* Preview dos filtros */}
