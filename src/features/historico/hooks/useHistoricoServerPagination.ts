@@ -1,6 +1,7 @@
 // Hook otimizado para paginação server-side do histórico
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useHistoricoRealtime } from './useHistoricoRealtime';
 import { HistoricoDataService } from '../services/HistoricoDataService';
 import { 
   HistoricoFilters, 
@@ -123,6 +124,9 @@ export function useHistoricoServerPagination(options: UseHistoricoServerPaginati
   const isLoadingNextPage = isFetching && !isLoading;
   const canGoNext = pagination?.hasNextPage && !isFetching;
   const canGoPrev = pagination?.hasPrevPage && !isFetching;
+
+  // Hook para realtime updates
+  useHistoricoRealtime({ enabled: enableRealtime });
 
   return {
     // Dados
