@@ -123,14 +123,18 @@ export function usePedidosManager(initialAccountId?: string) {
       }
     }
 
-    // Datas - usar formatação local consistente
+    // Datas - validação segura antes de usar getFullYear
     if (filters.dataInicio) {
-      const d = filters.dataInicio;
-      params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const d = filters.dataInicio instanceof Date ? filters.dataInicio : new Date(filters.dataInicio);
+      if (!isNaN(d.getTime())) {
+        params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
     }
     if (filters.dataFim) {
-      const d = filters.dataFim;
-      params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const d = filters.dataFim instanceof Date ? filters.dataFim : new Date(filters.dataFim);
+      if (!isNaN(d.getTime())) {
+        params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
     }
 
     // Outros filtros
