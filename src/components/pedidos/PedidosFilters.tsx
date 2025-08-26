@@ -62,7 +62,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
   const activeFiltersCount = getActiveFiltersCount();
 
   return (
-    <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+    <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-gray-600">
       {/* Filtros Básicos */}
       <div className="flex flex-wrap gap-4 items-end">
         {/* Busca */}

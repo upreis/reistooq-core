@@ -214,7 +214,7 @@ export function PedidosTable({
 
   return (
     <div className="space-y-4 text-foreground">
-      <div className="rounded-lg border overflow-auto bg-card">
+      <div className="rounded-lg border border-gray-600 overflow-auto bg-card">
         <Table>
           <TableHeader>
             <TableRow>

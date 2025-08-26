@@ -128,7 +128,7 @@ export const OrdersTable = memo<OrdersTableProps>(({
   
   if (isLoading) {
     return (
-      <div className="rounded-md border">
+      <div className="rounded-md border border-gray-600">
         <Table>
           <TableHeader>
             <TableRow>
@@ -166,7 +166,7 @@ export const OrdersTable = memo<OrdersTableProps>(({
   }
   
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border border-gray-600">
       <Table>
         <TableHeader>
           <TableRow>

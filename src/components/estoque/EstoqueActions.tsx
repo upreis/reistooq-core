@@ -111,7 +111,7 @@ export function EstoqueActions({
   const outOfStockCount = products.filter(p => p.quantidade_atual === 0).length;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 p-4 bg-card border rounded-lg">
+    <div className="flex flex-wrap items-center gap-3 p-4 bg-card border border-gray-600 rounded-lg">
       {/* Botão Novo Produto */}
       <Button onClick={() => setProductModalOpen(true)} className="gap-2">
         <Plus className="w-4 h-4" />

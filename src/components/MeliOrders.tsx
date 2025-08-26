@@ -52,7 +52,7 @@ export default function MeliOrders({ integrationAccountId, status = 'paid', limi
   return (
     <div className="space-y-3">
       {orders.map((o: any) => (
-        <div key={o.id} className="rounded-lg border p-3">
+        <div key={o.id} className="rounded-lg border border-gray-600 p-3">
           <div className="font-medium">Pedido #{o.id}</div>
           <div>Status: {o.status}</div>
           <div>Total: {o.total_amount} {o.currency_id}</div>
