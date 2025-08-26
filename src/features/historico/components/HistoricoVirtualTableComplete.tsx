@@ -1,5 +1,5 @@
 // Tabela virtualizada com TODAS as colunas da página de pedidos
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   flexRender,
@@ -15,6 +15,7 @@ import { formatCurrency, formatDateTime } from '../utils/historicoFormatters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Copy, MoreHorizontal, ExternalLink } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { HistoricoColumnSelector, DEFAULT_HISTORICO_COLUMNS, type HistoricoColumnConfig } from './HistoricoColumnSelector';
 
 interface HistoricoVirtualTableCompleteProps {
   data: HistoricoVenda[];
@@ -33,9 +34,12 @@ export function HistoricoVirtualTableComplete({
   selectedIds = new Set(),
   onSelectionChange
 }: HistoricoVirtualTableCompleteProps) {
+  const [columnConfigs, setColumnConfigs] = useState<HistoricoColumnConfig[]>(DEFAULT_HISTORICO_COLUMNS);
   
-  // Definição de colunas EXATAMENTE iguais à página de pedidos
-  const columns = useMemo<ColumnDef<HistoricoVenda>[]>(() => [
+  const visibleColumns = columnConfigs.filter(col => col.visible);
+  
+  // Definição completa de colunas baseada exatamente na página pedidos
+  const allColumns = useMemo<ColumnDef<HistoricoVenda>[]>(() => [
     {
       id: 'select',
       header: ({ table }) => (
@@ -79,10 +83,10 @@ export function HistoricoVirtualTableComplete({
       size: 40,
     },
 
-    // COLUNAS BÁSICAS (mesma ordem da página pedidos)
+    // BÁSICAS
     {
       accessorKey: 'id_unico',
-      header: 'ID Único',
+      header: 'ID-Único',
       cell: ({ getValue }) => (
         <div className="font-mono text-xs">
           {getValue() as string}
@@ -91,8 +95,16 @@ export function HistoricoVirtualTableComplete({
       size: 120,
     },
     {
+      accessorKey: 'empresa',
+      header: 'Empresa',
+      cell: ({ getValue }) => (
+        <span>{getValue() as string || 'mercadolivre'}</span>
+      ),
+      size: 100,
+    },
+    {
       accessorKey: 'numero_pedido',
-      header: 'Número',
+      header: 'Número do Pedido',
       cell: ({ getValue, row }) => (
         <div className="flex items-center gap-2">
           <span>{getValue() as string}</span>
@@ -105,7 +117,7 @@ export function HistoricoVirtualTableComplete({
     },
     {
       accessorKey: 'cliente_nome',
-      header: 'Cliente',
+      header: 'Nome do Cliente',
       cell: ({ getValue }) => (
         <span>{getValue() as string || '—'}</span>
       ),
@@ -120,16 +132,8 @@ export function HistoricoVirtualTableComplete({
       size: 150,
     },
     {
-      accessorKey: 'cpf_cnpj',
-      header: 'CPF/CNPJ',
-      cell: ({ getValue }) => (
-        <span>{getValue() as string || '—'}</span>
-      ),
-      size: 120,
-    },
-    {
       accessorKey: 'data_pedido',
-      header: 'Data Pedido',
+      header: 'Data do Pedido',
       cell: ({ getValue }) => (
         <span className="text-sm text-muted-foreground">
           {formatDateTime(getValue() as string)}
@@ -138,8 +142,20 @@ export function HistoricoVirtualTableComplete({
       size: 110,
     },
     {
+      accessorKey: 'updated_at',
+      header: 'Última Atualização',
+      cell: ({ getValue }) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDateTime(getValue() as string)}
+        </span>
+      ),
+      size: 130,
+    },
+
+    // PRODUTOS
+    {
       accessorKey: 'sku_produto',
-      header: 'SKU',
+      header: 'SKUs/Produtos',
       cell: ({ getValue }) => (
         <span className="font-mono text-xs bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
           {getValue() as string}
@@ -149,7 +165,7 @@ export function HistoricoVirtualTableComplete({
     },
     {
       accessorKey: 'quantidade',
-      header: 'Quantidade',
+      header: 'Quantidade Total',
       cell: ({ getValue }) => (
         <span className="text-center font-medium">
           {(getValue() as number).toLocaleString('pt-BR')}
@@ -158,8 +174,111 @@ export function HistoricoVirtualTableComplete({
       size: 100,
     },
     {
+      accessorKey: 'descricao',
+      header: 'Título do Produto',
+      cell: ({ getValue }) => {
+        const desc = getValue() as string;
+        return desc ? (
+          <span className="text-xs" title={desc}>
+            {desc.length > 30 ? desc.substring(0, 30) + '...' : desc}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      },
+      size: 200,
+    },
+
+    // FINANCEIRAS
+    {
+      accessorKey: 'valor_total',
+      header: 'Valor Total',
+      cell: ({ getValue }) => (
+        <span className="font-medium text-green-600 dark:text-green-400">
+          {formatCurrency(getValue() as number)}
+        </span>
+      ),
+      size: 100,
+    },
+    {
+      accessorKey: 'valor_unitario',
+      header: 'Valor Pago',
+      cell: ({ getValue }) => (
+        <span className="text-sm">
+          {formatCurrency(getValue() as number)}
+        </span>
+      ),
+      size: 100,
+    },
+    {
+      accessorKey: 'valor_frete',
+      header: 'Frete Pago Cliente',
+      cell: ({ getValue }) => {
+        const value = getValue() as number;
+        return (
+          <span className="text-sm">
+            {value ? formatCurrency(value) : '—'}
+          </span>
+        );
+      },
+      size: 120,
+    },
+    {
+      id: 'receita_flex',
+      header: 'Receita Flex (Bônus)',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 130,
+    },
+    {
+      id: 'custo_envio_seller',
+      header: 'Custo Envio Seller',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 130,
+    },
+    {
+      accessorKey: 'valor_desconto',
+      header: 'Desconto Cupom',
+      cell: ({ getValue }) => {
+        const value = getValue() as number;
+        return (
+          <span className="text-sm text-orange-600 dark:text-orange-400">
+            {value ? formatCurrency(value) : '—'}
+          </span>
+        );
+      },
+      size: 120,
+    },
+    {
+      id: 'taxa_marketplace',
+      header: 'Taxa Marketplace',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 120,
+    },
+    {
+      id: 'valor_liquido_vendedor',
+      header: 'Valor Líquido Vendedor',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 150,
+    },
+    {
+      id: 'metodo_pagamento',
+      header: 'Método Pagamento',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 130,
+    },
+    {
       accessorKey: 'situacao',
-      header: 'Status do Pagamento',
+      header: 'Status Pagamento',
       cell: ({ getValue }) => {
         const situacao = getValue() as string;
         return situacao ? (
@@ -173,60 +292,25 @@ export function HistoricoVirtualTableComplete({
       size: 130,
     },
     {
-      accessorKey: 'observacoes',
-      header: 'Obs',
-      cell: ({ getValue }) => {
-        const obs = getValue() as string;
-        return obs ? (
-          <span className="text-xs" title={obs}>
-            {obs.length > 30 ? obs.substring(0, 30) + '...' : obs}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        );
-      },
-      size: 150,
-    },
-
-    // COLUNAS FINANCEIRAS
-    {
-      accessorKey: 'valor_total',
-      header: 'Valor Total',
-      cell: ({ getValue }) => (
-        <span className="font-medium text-green-600 dark:text-green-400">
-          {formatCurrency(getValue() as number)}
-        </span>
+      id: 'tipo_pagamento',
+      header: 'Tipo Pagamento',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
       ),
-      size: 100,
-    },
-    {
-      accessorKey: 'valor_frete',
-      header: 'Valor Frete',
-      cell: ({ getValue }) => {
-        const value = getValue() as number;
-        return (
-          <span className="text-sm">
-            {value ? formatCurrency(value) : '—'}
-          </span>
-        );
-      },
-      size: 100,
-    },
-    {
-      accessorKey: 'valor_desconto',
-      header: 'Valor Desconto',
-      cell: ({ getValue }) => {
-        const value = getValue() as number;
-        return (
-          <span className="text-sm text-orange-600 dark:text-orange-400">
-            {value ? formatCurrency(value) : '—'}
-          </span>
-        );
-      },
       size: 120,
     },
 
-    // COLUNAS DE MAPEAMENTO
+    // MAPEAMENTO
+    {
+      id: 'status_mapeamento',
+      header: 'Status Mapeamento',
+      cell: () => (
+        <Badge variant="default" className="text-xs">
+          Mapeado
+        </Badge>
+      ),
+      size: 130,
+    },
     {
       accessorKey: 'sku_estoque',
       header: 'SKU Estoque',
@@ -244,7 +328,7 @@ export function HistoricoVirtualTableComplete({
     },
     {
       accessorKey: 'sku_kit',
-      header: 'SKU Kit',
+      header: 'SKU KIT',
       cell: ({ getValue }) => {
         const sku = getValue() as string;
         return sku ? (
@@ -257,27 +341,27 @@ export function HistoricoVirtualTableComplete({
     },
     {
       accessorKey: 'qtd_kit',
-      header: 'QTD Kit',
+      header: 'Quantidade KIT',
       cell: ({ getValue }) => (
         <span className="text-center">
-          {(getValue() as number || 0).toLocaleString('pt-BR')}
-        </span>
-      ),
-      size: 80,
-    },
-    {
-      accessorKey: 'total_itens',
-      header: 'Total Itens',
-      cell: ({ getValue }) => (
-        <span className="text-center font-medium text-blue-600 dark:text-blue-400">
           {(getValue() as number || 0).toLocaleString('pt-BR')}
         </span>
       ),
       size: 100,
     },
     {
+      accessorKey: 'total_itens',
+      header: 'Total de Itens',
+      cell: ({ getValue }) => (
+        <span className="text-center font-medium text-blue-600 dark:text-blue-400">
+          {(getValue() as number || 0).toLocaleString('pt-BR')}
+        </span>
+      ),
+      size: 110,
+    },
+    {
       accessorKey: 'status',
-      header: 'Status',
+      header: 'Status da Baixa',
       cell: ({ getValue }) => {
         const status = getValue() as string;
         const variant = status === 'baixado' ? 'default' : 
@@ -288,43 +372,90 @@ export function HistoricoVirtualTableComplete({
           </Badge>
         );
       },
-      size: 100,
+      size: 120,
     },
 
-    // COLUNAS ESPECÍFICAS DO ML (ocultas por padrão)
+    // ENVIO
     {
-      accessorKey: 'numero_ecommerce',
-      header: 'Nº eCommerce',
-      cell: ({ getValue }) => {
-        const num = getValue() as string;
-        return num ? (
-          <span className="font-mono text-xs">{num}</span>
+      id: 'status_pagamento',
+      header: 'Status do Pagamento',
+      cell: ({ row }) => {
+        const situacao = row.original.situacao;
+        return situacao ? (
+          <Badge variant={situacao === 'paid' ? 'default' : 'secondary'}>
+            {situacao}
+          </Badge>
         ) : (
           <span className="text-muted-foreground">—</span>
         );
       },
+      size: 150,
+    },
+    {
+      id: 'status_envio',
+      header: 'Status do Envio',
+      cell: () => (
+        <Badge variant="secondary">
+          Entregue
+        </Badge>
+      ),
       size: 120,
     },
     {
-      accessorKey: 'numero_venda',
-      header: 'Nº Venda',
-      cell: ({ getValue }) => {
-        const num = getValue() as string;
-        return num ? (
-          <span className="font-mono text-xs">{num}</span>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        );
-      },
-      size: 100,
+      id: 'logistic_mode',
+      header: 'Logistic Mode (Principal)',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 160,
     },
     {
-      accessorKey: 'empresa',
-      header: 'Empresa',
-      cell: ({ getValue }) => (
-        <span>{getValue() as string || 'mercadolivre'}</span>
+      id: 'tipo_logistico',
+      header: 'Tipo Logístico',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
       ),
-      size: 100,
+      size: 120,
+    },
+    {
+      id: 'tipo_metodo_envio',
+      header: 'Tipo Método Envio',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 140,
+    },
+    {
+      id: 'tipo_entrega',
+      header: 'Tipo Entrega',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 110,
+    },
+    {
+      id: 'substatus',
+      header: 'Substatus (Estado Atual)',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 160,
+    },
+    {
+      id: 'modo_envio_combinado',
+      header: 'Modo de Envio (Combinado)',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 170,
+    },
+    {
+      id: 'metodo_envio_combinado',
+      header: 'Método de Envio (Combinado)',
+      cell: () => (
+        <span className="text-muted-foreground">—</span>
+      ),
+      size: 180,
     },
     {
       accessorKey: 'cidade',
@@ -342,8 +473,6 @@ export function HistoricoVirtualTableComplete({
       ),
       size: 60,
     },
-
-    // COLUNAS DE ENVIO/RASTREAMENTO
     {
       accessorKey: 'codigo_rastreamento',
       header: 'Código Rastreamento',
@@ -412,6 +541,19 @@ export function HistoricoVirtualTableComplete({
     },
   ], [data, selectedIds, onSelectionChange, onRowClick]);
 
+  // Filtrar colunas visíveis
+  const visibleColumnKeys = visibleColumns.map(col => col.key);
+  const columns = useMemo(() => {
+    return [
+      allColumns[0], // sempre incluir checkbox
+      ...allColumns.slice(1).filter(col => {
+        const key = 'id' in col && col.id ? col.id : ('accessorKey' in col ? col.accessorKey as string : '');
+        return visibleColumnKeys.includes(key);
+      }),
+      allColumns[allColumns.length - 1] // sempre incluir ações
+    ];
+  }, [allColumns, visibleColumnKeys]);
+
   // Configuração da tabela
   const table = useReactTable({
     data,
@@ -444,61 +586,71 @@ export function HistoricoVirtualTableComplete({
   }
 
   return (
-    <div
-      ref={parentRef}
-      className="relative overflow-auto border rounded-lg"
-      style={{ height: `${height}px` }}
-    >
-      <div style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
-        <Table>
-          <TableHeader className="sticky top-0 bg-background z-10">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    style={{ width: `${header.getSize()}px` }}
-                    className="border-r"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-              const row = rows[virtualItem.index];
-              return (
-                <TableRow
-                  key={row.id}
-                  data-index={virtualItem.index}
-                  ref={(node) => rowVirtualizer.measureElement(node)}
-                  style={{
-                    transform: `translateY(${virtualItem.start}px)`,
-                  }}
-                  className="absolute inset-x-0 hover:bg-muted/50 cursor-pointer"
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      style={{ width: `${cell.column.getSize()}px` }}
+    <div className="space-y-4">
+      {/* Seletor de Colunas */}
+      <div className="flex justify-end">
+        <HistoricoColumnSelector
+          columns={columnConfigs}
+          onColumnsChange={setColumnConfigs}
+        />
+      </div>
+      
+      <div
+        ref={parentRef}
+        className="relative overflow-auto border rounded-lg"
+        style={{ height: `${height}px` }}
+      >
+        <div style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>
+          <Table>
+            <TableHeader className="sticky top-0 bg-background z-10">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }}
                       className="border-r"
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                const row = rows[virtualItem.index];
+                return (
+                  <TableRow
+                    key={row.id}
+                    data-index={virtualItem.index}
+                    ref={(node) => rowVirtualizer.measureElement(node)}
+                    style={{
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}
+                    className="absolute inset-x-0 hover:bg-muted/50 cursor-pointer"
+                    onClick={() => onRowClick?.(row.original)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        style={{ width: `${cell.column.getSize()}px` }}
+                        className="border-r"
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );
