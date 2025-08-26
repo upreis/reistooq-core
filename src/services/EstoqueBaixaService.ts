@@ -146,13 +146,31 @@ export class EstoqueBaixaService {
    */
   private static async verificarPedidoJaProcessado(idUnicoPedido: string): Promise<boolean> {
     try {
-      const { data, error } = await supabase.rpc('hv_exists', { p_id_unico: idUnicoPedido });
+      // Usar o novo RPC get_historico_vendas_safe com filtro por id_unico
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', { 
+        _search: idUnicoPedido,
+        _limit: 1,
+        _offset: 0
+      });
+      
       if (error) {
-        console.info('[EstoqueBaixa] hv_exists indisponível, seguindo:', error?.message);
+        console.info('[EstoqueBaixa] Erro ao verificar histórico, assumindo não processado:', error?.message);
         return false;
       }
-      return Boolean(data === true);
-    } catch {
+      
+      // Se encontrou algum registro com este id_unico, já foi processado
+      if (Array.isArray(data) && data.length > 0) {
+        // Verificar se o id_unico realmente corresponde (match exato)
+        const found = data.some((item: any) => item.id_unico === idUnicoPedido);
+        if (found) {
+          console.info('[EstoqueBaixa] Pedido já foi processado anteriormente:', idUnicoPedido);
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.warn('[EstoqueBaixa] Erro na verificação de histórico:', error);
       return false;
     }
   }
