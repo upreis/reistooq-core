@@ -178,7 +178,7 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
     return {
       id: order.id?.toString() || '',
       numero: order.numero || order.id?.toString() || '',
-      id_unico: `${skuPrincipal}-${order.id}`,
+      id_unico: `${skuPrincipal}-${(order.numero || order.id)?.toString()}`,
       nome_cliente: order.nome_cliente ||
         (order.buyer?.first_name && order.buyer?.last_name
           ? `${order.buyer.first_name} ${order.buyer.last_name}`
@@ -487,8 +487,9 @@ export function usePedidosHybrid({
       });
 
       const mappedOrders = mapMlToUi(Array.isArray(results) ? results : []);
-      setRows(mappedOrders);
-      setTotal(mappedOrders.length);
+      const withAccount = mappedOrders.map(o => ({ ...o, integration_account_id: integrationAccountId }));
+      setRows(withAccount);
+      setTotal(withAccount.length);
       setFonte('tempo-real');
     } catch (err: any) {
       setError(err.message || 'Erro ao buscar pedidos em tempo real');
