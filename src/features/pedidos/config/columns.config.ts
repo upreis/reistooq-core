@@ -268,6 +268,17 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
+    key: 'total_itens',
+    label: 'Total de Itens',
+    category: 'mapping',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Total de itens (qtd vendida x quantidade KIT)',
+    width: 110,
+    sortable: true
+  },
+  {
     key: 'status_baixa',
     label: 'Status da Baixa',
     category: 'mapping',
@@ -480,7 +491,7 @@ export const DEFAULT_PROFILES: ColumnProfile[] = [
     description: 'Foco em mapeamento e gestão de estoque',
     columns: [
       'id', 'numero', 'skus_produtos', 'quantidade_itens',
-      'mapeamento', 'sku_estoque', 'sku_kit', 'qtd_kit', 'status_baixa'
+      'mapeamento', 'sku_estoque', 'sku_kit', 'qtd_kit', 'total_itens', 'status_baixa'
     ]
   },
   {

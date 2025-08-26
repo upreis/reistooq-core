@@ -1372,9 +1372,10 @@ export default function SimplePedidosPage({ className }: Props) {
                   {/* Colunas de mapeamento */}
                   {visibleColumns.has('mapeamento') && <th className="text-left p-3">Status Mapeamento</th>}
                   {visibleColumns.has('sku_estoque') && <th className="text-left p-3">SKU Estoque</th>}
-                  {visibleColumns.has('sku_kit') && <th className="text-left p-3">SKU KIT</th>}
-                  {visibleColumns.has('qtd_kit') && <th className="text-left p-3">Quantidade KIT</th>}
-                  {visibleColumns.has('status_baixa') && <th className="text-left p-3">Status da Baixa</th>}
+                   {visibleColumns.has('sku_kit') && <th className="text-left p-3">SKU KIT</th>}
+                   {visibleColumns.has('qtd_kit') && <th className="text-left p-3">Quantidade KIT</th>}
+                   {visibleColumns.has('total_itens') && <th className="text-left p-3">Total de Itens</th>}
+                   {visibleColumns.has('status_baixa') && <th className="text-left p-3">Status da Baixa</th>}
                   
                   {/* Colunas do Mercado Livre */}
                   {visibleColumns.has('date_created') && <th className="text-left p-3">Data Criação ML</th>}
@@ -1706,17 +1707,27 @@ export default function SimplePedidosPage({ className }: Props) {
                         <td className="p-3">{mapping?.skuEstoque || '-'}</td>
                       )}
                       
-                      {visibleColumns.has('sku_kit') && (
-                        <td className="p-3">{mapping?.skuKit || '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('qtd_kit') && (
-                        <td className="p-3">{mapping?.qtdKit || '-'}</td>
-                      )}
-                      
-                      {visibleColumns.has('status_baixa') && (
-                        <td className="p-3">{renderStatusBaixa(order.id)}</td>
-                      )}
+                       {visibleColumns.has('sku_kit') && (
+                         <td className="p-3">{mapping?.skuKit || '-'}</td>
+                       )}
+                       
+                       {visibleColumns.has('qtd_kit') && (
+                         <td className="p-3">{mapping?.qtdKit || '-'}</td>
+                       )}
+                       
+                       {visibleColumns.has('total_itens') && (
+                         <td className="p-3">
+                           {(() => {
+                             const qtdVendida = quantidadeItens || 0;
+                             const qtdKit = mapping?.qtdKit || 1;
+                             return qtdVendida * qtdKit;
+                           })()}
+                         </td>
+                       )}
+                       
+                       {visibleColumns.has('status_baixa') && (
+                         <td className="p-3">{renderStatusBaixa(order.id)}</td>
+                       )}
                       
                       {/* Colunas do Mercado Livre */}
                       {visibleColumns.has('date_created') && (
