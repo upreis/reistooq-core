@@ -549,6 +549,7 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'sku_estoque', label: 'SKU Estoque', default: true, category: 'mapping' },
     { key: 'sku_kit', label: 'SKU KIT', default: false, category: 'mapping' },
     { key: 'qtd_kit', label: 'Quantidade KIT', default: false, category: 'mapping' },
+    { key: 'total_itens', label: 'Total de Itens', default: true, category: 'mapping' },
     { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
     
     // Status
