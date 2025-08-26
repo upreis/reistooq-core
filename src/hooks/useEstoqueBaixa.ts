@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { EstoqueBaixaService, BaixaEstoqueResult } from '@/services/EstoqueBaixaService';
 import { Pedido } from '@/types/pedido';
 import { useToast } from '@/hooks/use-toast';
+import { HistoricoDataService } from '@/features/historico/services/HistoricoDataService';
 
 export function useProcessarBaixaEstoque() {
   const queryClient = useQueryClient();
@@ -13,6 +14,7 @@ export function useProcessarBaixaEstoque() {
     },
     onSuccess: (result) => {
       // Invalidar cache relacionado
+      try { HistoricoDataService.invalidateCache(); } catch (_) {}
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       queryClient.invalidateQueries({ queryKey: ["historico-vendas"] });
       queryClient.invalidateQueries({ queryKey: ['sku-mappings'] });

@@ -82,6 +82,30 @@ export default async function handler(req: Request): Promise<Response> {
     payload.valor_unitario = payload.valor_unitario ?? 0;
     payload.valor_total = payload.valor_total ?? 0;
 
+    // Garantir integration_account_id quando ausente para visibilidade no /historico
+    if (!payload.integration_account_id) {
+      try {
+        if (payload.numero_pedido) {
+          const { data: p1 } = await supabase
+            .from('pedidos')
+            .select('integration_account_id')
+            .eq('numero', String(payload.numero_pedido))
+            .maybeSingle();
+          if (p1?.integration_account_id) payload.integration_account_id = p1.integration_account_id;
+        }
+        if (!payload.integration_account_id && payload.id_unico) {
+          const { data: p2 } = await supabase
+            .from('pedidos')
+            .select('integration_account_id')
+            .eq('id', String(payload.id_unico))
+            .maybeSingle();
+          if (p2?.integration_account_id) payload.integration_account_id = p2.integration_account_id;
+        }
+      } catch (resolveErr) {
+        console.warn('[registrar-historico-vendas] Falha ao resolver integration_account_id', resolveErr);
+      }
+    }
+
     // Inserir via RPC com SECURITY DEFINER (bypassa RLS)
     const { data, error } = await supabase
       .rpc('hv_insert', { p: payload });
@@ -94,7 +118,8 @@ export default async function handler(req: Request): Promise<Response> {
       });
     }
 
-    return new Response(JSON.stringify({ ok: true, id: data?.id || null }), {
+    const insertedId = typeof data === 'string' ? data : (data?.id ?? null);
+    return new Response(JSON.stringify({ ok: true, id: insertedId }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch (e: any) {

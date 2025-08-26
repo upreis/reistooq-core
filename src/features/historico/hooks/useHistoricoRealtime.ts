@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { HistoricoDataService } from "@/features/historico/services/HistoricoDataService";
 
 type Opts = { enabled?: boolean };
 
@@ -24,6 +25,8 @@ export function useHistoricoRealtime({ enabled = false }: Opts) {
           // throttle: no máx. 1 invalidação por segundo
           if (now - lastInvalidateRef.current > 1000) {
             lastInvalidateRef.current = now;
+            // Invalida cache interno do serviço + react-query
+            try { HistoricoDataService.invalidateCache(); } catch (_) {}
             qc.invalidateQueries({ queryKey: ["historico-vendas"] });
             qc.invalidateQueries({ queryKey: ["historico"] }); // fallback
           }
