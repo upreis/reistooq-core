@@ -953,10 +953,15 @@ export default function SimplePedidosPage({ className }: Props) {
           </Button>
           
           {selectedOrders.size > 0 && (
-            <Button onClick={() => setShowBaixaModal(true)}>
-              <Package className="h-4 w-4 mr-2" />
-              Baixar Estoque ({selectedOrders.size})
-            </Button>
+            <BaixaEstoqueModal 
+              pedidos={Array.from(selectedOrders).map(id => orders.find(o => o.id === id)).filter(Boolean) as Pedido[]}
+              trigger={
+                <Button>
+                  <Package className="h-4 w-4 mr-2" />
+                  Baixar Estoque ({selectedOrders.size})
+                </Button>
+              }
+            />
           )}
         </div>
       </div>
@@ -2094,15 +2099,11 @@ export default function SimplePedidosPage({ className }: Props) {
         </div>
       )}
 
-      {/* 🛡️ MODAL DE BAIXA - Temporariamente desabilitado */}
-      {showBaixaModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-          <div className="bg-background p-6 rounded-lg">
-            <p>Modal de baixa será implementado</p>
-            <Button onClick={() => setShowBaixaModal(false)}>Fechar</Button>
-          </div>
-        </div>
-      )}
+      {/* 🛡️ MODAL DE BAIXA DE ESTOQUE - Ativo */}
+      <BaixaEstoqueModal 
+        pedidos={Array.from(selectedOrders).map(id => orders.find(o => o.id === id)).filter(Boolean) as Pedido[]}
+        trigger={null}
+      />
     </div>
   );
 }
