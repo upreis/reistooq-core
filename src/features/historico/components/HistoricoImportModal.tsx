@@ -48,6 +48,7 @@ export function HistoricoImportModal({
     includeExamples: true,
     includeFiscalFields: true,
     includeTrackingFields: true,
+    includeAdvancedFinancial: false,
     locale: 'pt-BR'
   });
 

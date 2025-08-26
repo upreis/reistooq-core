@@ -139,7 +139,8 @@ export function HistoricoSimplePage() {
       template: 'commercial' as const,
       includeExamples: false,
       includeFiscalFields: false,
-      includeTrackingFields: false
+      includeTrackingFields: false,
+      includeAdvancedFinancial: false
     };
     await exportData(config, selectedItemsList);
   };

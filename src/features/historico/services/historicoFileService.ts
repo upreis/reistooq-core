@@ -28,6 +28,7 @@ export interface TemplateConfig {
   includeExamples: boolean;
   includeFiscalFields: boolean;
   includeTrackingFields: boolean;
+  includeAdvancedFinancial?: boolean;
   locale: 'pt-BR' | 'en-US';
 }
 
@@ -51,17 +52,59 @@ export class HistoricoFileService {
   private static getLocalizedHeaders(locale: string) {
     const headers = {
       'pt-BR': {
+        // === Básicas ===
         id_unico: 'ID Único*',
+        empresa: 'Empresa',
         numero_pedido: 'Número do Pedido*',
+        nome_cliente: 'Nome do Cliente*',
+        nome_completo: 'Nome Completo',
+        data_pedido: 'Data do Pedido*',
+        ultima_atualizacao: 'Última Atualização',
+
+        // === Produtos ===
         sku_produto: 'SKU do Produto*',
-        descricao: 'Descrição*',
         quantidade: 'Quantidade*',
+        quantidade_total: 'Quantidade Total',
+        titulo_produto: 'Título do Produto',
+        descricao: 'Descrição*',
+
+        // === Financeiras ===
         valor_unitario: 'Valor Unitário*',
         valor_total: 'Valor Total*',
-        cliente_nome: 'Nome do Cliente*',
+        valor_pago: 'Valor Pago',
+        valor_frete: 'Valor do Frete',
+        valor_desconto: 'Valor do Desconto',
+        frete_pago_cliente: 'Frete Pago Cliente',
+        receita_flex_bonus: 'Receita Flex (Bônus)',
+        custo_envio_seller: 'Custo Envio Seller',
+        desconto_cupom: 'Desconto Cupom',
+        taxa_marketplace: 'Taxa Marketplace',
+        valor_liquido_vendedor: 'Valor Líquido Vendedor',
+        metodo_pagamento: 'Método Pagamento',
+        status_pagamento: 'Status Pagamento',
+        tipo_pagamento: 'Tipo Pagamento',
+
+        // === Mapeamento ===
+        status_mapeamento: 'Status Mapeamento',
+        sku_estoque: 'SKU Estoque',
+        sku_kit: 'SKU KIT',
+        quantidade_kit: 'Quantidade KIT',
+        total_itens: 'Total de Itens',
+        status_baixa: 'Status da Baixa',
+
+        // === Envio ===
+        status_envio: 'Status do Envio',
+        logistic_mode: 'Logistic Mode (Principal)',
+        tipo_logistico: 'Tipo Logístico',
+        tipo_metodo_envio: 'Tipo Método Envio',
+        tipo_entrega: 'Tipo Entrega',
+        substatus_estado_atual: 'Substatus (Estado Atual)',
+        modo_envio_combinado: 'Modo de Envio (Combinado)',
+        metodo_envio_combinado: 'Método de Envio (Combinado)',
+
+        // === Adicionais (legado e sistema) ===
         cliente_documento: 'Documento do Cliente',
         status: 'Status*',
-        data_pedido: 'Data do Pedido*',
         observacoes: 'Observações',
         codigo_rastreamento: 'Código de Rastreamento',
         url_rastreamento: 'URL de Rastreamento',
@@ -71,42 +114,53 @@ export class HistoricoFileService {
         cpf_cnpj: 'CPF/CNPJ',
         ncm: 'NCM',
         codigo_barras: 'Código de Barras',
-        valor_frete: 'Valor do Frete',
-        valor_desconto: 'Valor do Desconto',
         cidade: 'Cidade',
         uf: 'UF',
-        empresa: 'Empresa',
         numero_venda: 'Número da Venda',
         obs: 'Observações Externas',
-        obs_interna: 'Observações Internas',
-        sku_estoque: 'SKU Estoque',
-        sku_kit: 'SKU Kit',
-        qtd_kit: 'Quantidade Kit',
-        total_itens: 'Total de Itens'
+        obs_interna: 'Observações Internas'
       }
     };
     return headers[locale as keyof typeof headers] || headers['pt-BR'];
   }
 
   private static getRequiredFields(config: TemplateConfig) {
+    // Campos básicos obrigatórios
     const base = [
       'id_unico', 'numero_pedido', 'sku_produto', 'descricao',
       'quantidade', 'valor_unitario', 'valor_total',
-      'cliente_nome', 'status', 'data_pedido'
+      'nome_cliente', 'status', 'data_pedido'
     ];
 
+    // Campos fiscais
     const fiscal = [
-      'cpf_cnpj', 'ncm', 'codigo_barras', 'valor_frete',
-      'valor_desconto', 'cidade', 'uf'
+      'cpf_cnpj', 'cliente_documento', 'ncm', 'codigo_barras', 
+      'valor_frete', 'valor_desconto', 'cidade', 'uf'
     ];
 
+    // Campos de rastreamento e envio
     const tracking = [
       'codigo_rastreamento', 'url_rastreamento', 'situacao',
-      'data_prevista', 'numero_ecommerce'
+      'data_prevista', 'numero_ecommerce', 'status_envio',
+      'tipo_logistico', 'modo_envio_combinado'
     ];
 
-    let fields = [...base];
-    if (config.includeFiscalFields) fields.push(...fiscal);
+    // Campos de mapeamento e produtos
+    const mapping = [
+      'sku_estoque', 'sku_kit', 'quantidade_kit', 'total_itens',
+      'status_mapeamento', 'status_baixa', 'titulo_produto'
+    ];
+
+    // Campos financeiros avançados
+    const financial = [
+      'valor_pago', 'frete_pago_cliente', 'receita_flex_bonus',
+      'custo_envio_seller', 'desconto_cupom', 'taxa_marketplace',
+      'valor_liquido_vendedor', 'metodo_pagamento', 'status_pagamento'
+    ];
+
+    let fields = [...base, ...mapping]; // Sempre incluir básicos e mapeamento
+    
+    if (config.includeFiscalFields) fields.push(...fiscal, ...financial);
     if (config.includeTrackingFields) fields.push(...tracking);
 
     return fields;
@@ -115,34 +169,73 @@ export class HistoricoFileService {
   private static generateExampleData(config: TemplateConfig) {
     return [
       {
+        // Básicas
         id_unico: 'VENDA-2024-001',
+        empresa: 'Loja Exemplo',
         numero_pedido: 'PED-001',
+        nome_cliente: 'João da Silva',
+        nome_completo: 'João da Silva Santos',
+        data_pedido: '2024-01-15',
+        ultima_atualizacao: '2024-01-16T10:30:00Z',
+
+        // Produtos
         sku_produto: 'PROD-123',
-        descricao: 'Produto Exemplo',
         quantidade: 2,
+        quantidade_total: 2,
+        titulo_produto: 'Produto Exemplo Premium',
+        descricao: 'Produto exemplo para demonstração',
+
+        // Financeiras
         valor_unitario: 50.00,
         valor_total: 100.00,
-        cliente_nome: 'João da Silva',
+        valor_pago: 100.00,
+        valor_frete: 15.00,
+        valor_desconto: 5.00,
+        frete_pago_cliente: 15.00,
+        receita_flex_bonus: 2.50,
+        custo_envio_seller: 12.00,
+        desconto_cupom: 5.00,
+        taxa_marketplace: 8.50,
+        valor_liquido_vendedor: 79.00,
+        metodo_pagamento: 'Cartão de Crédito',
+        status_pagamento: 'Aprovado',
+        tipo_pagamento: 'À vista',
+
+        // Mapeamento
+        status_mapeamento: 'Mapeado',
+        sku_estoque: 'EST-123',
+        sku_kit: 'KIT-001',
+        quantidade_kit: 1,
+        total_itens: 2,
+        status_baixa: 'Baixado',
+
+        // Envio
+        status_envio: 'Entregue',
+        logistic_mode: 'ME2',
+        tipo_logistico: 'Correios',
+        tipo_metodo_envio: 'PAC',
+        tipo_entrega: 'Domicílio',
+        substatus_estado_atual: 'Entregue',
+        modo_envio_combinado: 'Flex',
+        metodo_envio_combinado: 'Full',
+
+        // Adicionais
         cliente_documento: '123.456.789-00',
         status: 'concluida',
-        data_pedido: '2024-01-15',
-        observacoes: 'Venda exemplo',
+        observacoes: 'Venda exemplo com todos os campos',
         codigo_rastreamento: 'BR123456789BR',
         url_rastreamento: 'https://tracking.example.com/BR123456789BR',
         situacao: 'entregue',
         data_prevista: '2024-01-20',
+        numero_ecommerce: 'ECOM-2024-001',
         cpf_cnpj: '123.456.789-00',
         ncm: '84713012',
         codigo_barras: '7891234567890',
-        valor_frete: 15.00,
-        valor_desconto: 5.00,
         cidade: 'São Paulo',
         uf: 'SP',
-        empresa: 'Loja Exemplo',
-        sku_estoque: 'EST-123',
-        sku_kit: 'KIT-001',
-        qtd_kit: 1,
-        total_itens: 2
+        numero_venda: 'VENDA-001',
+        obs: 'Observações externas',
+        obs_interna: 'Observações internas'
       }
     ];
   }
@@ -217,15 +310,31 @@ export class HistoricoFileService {
 
   private static getFieldType(field: string): string {
     const typeMap: Record<string, string> = {
+      // Quantidades e contadores
       quantidade: 'integer',
+      quantidade_total: 'integer',
+      quantidade_kit: 'integer',
+      total_itens: 'integer',
+      
+      // Valores monetários
       valor_unitario: 'decimal',
       valor_total: 'decimal',
+      valor_pago: 'decimal',
       valor_frete: 'decimal',
       valor_desconto: 'decimal',
-      qtd_kit: 'integer',
-      total_itens: 'integer',
+      frete_pago_cliente: 'decimal',
+      receita_flex_bonus: 'decimal',
+      custo_envio_seller: 'decimal',
+      desconto_cupom: 'decimal',
+      taxa_marketplace: 'decimal',
+      valor_liquido_vendedor: 'decimal',
+      
+      // Datas
       data_pedido: 'date',
-      data_prevista: 'date'
+      data_prevista: 'date',
+      ultima_atualizacao: 'datetime',
+      created_at: 'datetime',
+      updated_at: 'datetime'
     };
     return typeMap[field] || 'string';
   }
@@ -240,10 +349,10 @@ export class HistoricoFileService {
       const row = data[i];
       const rowNumber = i + 2; // +2 because Excel starts at 1 and we have header
 
-      // Required field validation
+      // Required field validation - aligned with new column structure
       const requiredFields = ['id_unico', 'numero_pedido', 'sku_produto', 'descricao', 
-                             'quantidade', 'valor_unitario', 'valor_total', 
-                             'cliente_nome', 'status', 'data_pedido'];
+                              'quantidade', 'valor_unitario', 'valor_total', 
+                              'nome_cliente', 'status', 'data_pedido'];
 
       for (const field of requiredFields) {
         if (!row[field] || row[field] === '') {
@@ -387,31 +496,43 @@ export class HistoricoFileService {
     const templates = {
       fiscal: {
         name: 'Relatório Fiscal',
-        fields: ['numero_pedido', 'data_pedido', 'cpf_cnpj', 'cliente_nome', 'sku_produto', 
-                'descricao', 'quantidade', 'valor_unitario', 'valor_total', 'ncm', 
-                'codigo_barras', 'valor_frete', 'valor_desconto', 'cidade', 'uf'],
+        fields: [
+          'numero_pedido', 'data_pedido', 'cpf_cnpj', 'nome_cliente', 'cliente_documento',
+          'sku_produto', 'descricao', 'quantidade', 'valor_unitario', 'valor_total', 
+          'ncm', 'codigo_barras', 'valor_frete', 'valor_desconto', 'cidade', 'uf',
+          'empresa', 'numero_ecommerce'
+        ],
         groupBy: 'data_pedido',
         totals: ['valor_total', 'valor_frete', 'valor_desconto']
       },
       commercial: {
         name: 'Relatório Comercial',
-        fields: ['numero_pedido', 'data_pedido', 'cliente_nome', 'sku_produto', 
-                'descricao', 'quantidade', 'valor_unitario', 'valor_total', 'status'],
+        fields: [
+          'numero_pedido', 'data_pedido', 'nome_cliente', 'sku_produto', 'titulo_produto',
+          'descricao', 'quantidade', 'valor_unitario', 'valor_total', 'status',
+          'metodo_pagamento', 'status_pagamento', 'empresa'
+        ],
         groupBy: 'status',
         totals: ['quantidade', 'valor_total']
       },
       analytics: {
         name: 'Relatório Analytics',
-        fields: ['data_pedido', 'sku_produto', 'descricao', 'quantidade', 'valor_total', 
-                'cliente_nome', 'cidade', 'uf', 'status'],
+        fields: [
+          'data_pedido', 'sku_produto', 'titulo_produto', 'quantidade', 'quantidade_total',
+          'valor_total', 'nome_cliente', 'cidade', 'uf', 'status', 'status_mapeamento',
+          'metodo_pagamento', 'tipo_logistico', 'empresa'
+        ],
         groupBy: 'sku_produto',
         totals: ['quantidade', 'valor_total'],
         analytics: true
       },
       audit: {
         name: 'Relatório de Auditoria',
-        fields: ['id', 'id_unico', 'numero_pedido', 'data_pedido', 'cliente_nome', 
-                'sku_produto', 'quantidade', 'valor_total', 'status', 'created_at', 'updated_at'],
+        fields: [
+          'id', 'id_unico', 'numero_pedido', 'data_pedido', 'nome_cliente', 'sku_produto',
+          'quantidade', 'valor_total', 'status', 'status_mapeamento', 'status_baixa',
+          'sku_estoque', 'sku_kit', 'created_at', 'updated_at', 'ultima_atualizacao'
+        ],
         groupBy: null,
         totals: ['valor_total'],
         includeMetadata: true

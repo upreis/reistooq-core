@@ -24,6 +24,7 @@ interface ExportConfig {
   includeExamples: boolean;
   includeFiscalFields: boolean;
   includeTrackingFields: boolean;
+  includeAdvancedFinancial: boolean;
   filename?: string;
 }
 
@@ -33,28 +34,28 @@ const templates = [
     name: 'Relatório Fiscal',
     description: 'Dados para relatórios fiscais e contábeis',
     icon: FileText,
-    fields: ['CPF/CNPJ', 'NCM', 'Valores', 'Endereço']
+    fields: ['CPF/CNPJ', 'NCM', 'Valores', 'Endereço', 'Impostos']
   },
   {
     id: 'commercial',
     name: 'Relatório Comercial',
     description: 'Dados comerciais e de vendas',
     icon: BarChart3,
-    fields: ['Cliente', 'Produtos', 'Vendas', 'Status']
+    fields: ['Cliente', 'Produtos', 'Vendas', 'Status', 'Pagamentos']
   },
   {
     id: 'analytics',
     name: 'Relatório Analytics',
     description: 'Dados para análise e métricas',
     icon: Database,
-    fields: ['Métricas', 'Performance', 'Tendências']
+    fields: ['Métricas', 'Performance', 'Tendências', 'Mapeamento']
   },
   {
     id: 'audit',
     name: 'Relatório de Auditoria',
     description: 'Dados completos para auditoria',
     icon: FileSpreadsheet,
-    fields: ['Todos os campos', 'Metadados', 'Timestamps']
+    fields: ['Todos os campos', 'Metadados', 'Timestamps', 'Rastreamento']
   }
 ];
 
@@ -77,7 +78,8 @@ export function HistoricoExportModal({
     template: 'commercial',
     includeExamples: false,
     includeFiscalFields: true,
-    includeTrackingFields: true
+    includeTrackingFields: true,
+    includeAdvancedFinancial: false
   });
 
   const [isExporting, setIsExporting] = useState(false);
@@ -219,7 +221,7 @@ export function HistoricoExportModal({
                 <div className="space-y-0.5">
                   <Label className="text-sm">Incluir campos fiscais</Label>
                   <div className="text-xs text-muted-foreground">
-                    CPF/CNPJ, NCM, códigos de barras
+                    CPF/CNPJ, NCM, códigos de barras, impostos
                   </div>
                 </div>
                 <Switch
@@ -234,7 +236,7 @@ export function HistoricoExportModal({
                 <div className="space-y-0.5">
                   <Label className="text-sm">Incluir campos de rastreamento</Label>
                   <div className="text-xs text-muted-foreground">
-                    Códigos de rastreamento, URLs, datas
+                    Códigos de rastreamento, URLs, datas, envio
                   </div>
                 </div>
                 <Switch
@@ -247,9 +249,24 @@ export function HistoricoExportModal({
 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
+                  <Label className="text-sm">Incluir campos financeiros avançados</Label>
+                  <div className="text-xs text-muted-foreground">
+                    Taxas, comissões, valores líquidos, métodos pagamento
+                  </div>
+                </div>
+                <Switch
+                  checked={config.includeAdvancedFinancial}
+                  onCheckedChange={(checked) => 
+                    setConfig(prev => ({ ...prev, includeAdvancedFinancial: checked }))
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
                   <Label className="text-sm">Incluir dados de exemplo</Label>
                   <div className="text-xs text-muted-foreground">
-                    Adiciona linhas de exemplo no arquivo
+                    Adiciona linhas de exemplo no arquivo template
                   </div>
                 </div>
                 <Switch

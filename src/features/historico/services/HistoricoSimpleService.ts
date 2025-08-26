@@ -1,5 +1,6 @@
 // Serviço simplificado para histórico - sem RPC, sem cache complexo
 import { supabase } from "@/integrations/supabase/client";
+import { HistoricoDataMapper } from './HistoricoDataMapper';
 
 export interface HistoricoItem {
   id: string;
@@ -104,48 +105,13 @@ export class HistoricoSimpleService {
       }
 
       const rows = Array.isArray(data) ? data : [];
-      const mapped: HistoricoItem[] = rows.map((r: any) => ({
-        id: r.id,
-        // Básicas
-        id_unico: r.id_unico,
-        empresa: r.empresa || undefined,
-        numero_pedido: r.numero_pedido,
-        nome_cliente: r.cliente_nome || undefined,
-        data_pedido: r.data_pedido,
-        ultima_atualizacao: r.updated_at,
-
-        // Produtos
-        sku_produto: r.sku_produto,
-        quantidade: Number(r.quantidade || 0),
-        descricao: r.descricao || undefined,
-
-        // Financeiras
-        valor_total: Number(r.valor_total || 0),
-        valor_unitario: Number(r.valor_unitario || 0),
-        frete_pago_cliente: Number(r.valor_frete || 0),
-        desconto_cupom: Number(r.valor_desconto || 0),
-
-        // Mapeamento
-        sku_estoque: r.sku_estoque || undefined,
-        sku_kit: r.sku_kit || undefined,
-        quantidade_kit: Number(r.qtd_kit || 0),
-        total_itens: Number(r.total_itens || 0),
-        status_baixa: r.status,
-
-        // Envio
-        codigo_rastreamento: r.codigo_rastreamento || undefined,
-        url_rastreamento: r.url_rastreamento || undefined,
-
-        // Sistema
-        status: r.status,
-        created_at: r.created_at,
-        cidade: r.cidade || undefined,
-        uf: r.uf || undefined,
-        cliente_documento: r.cliente_documento || undefined,
-        cpf_cnpj: r.cpf_cnpj || undefined,
-        observacoes: r.observacoes || undefined,
-        integration_account_id: r.integration_account_id || undefined,
-      }));
+      const mapped: HistoricoItem[] = rows.map((r: any) => {
+        // Usar o mapeador para converter dados do banco para o formato novo
+        const mappedRecord = HistoricoDataMapper.mapDatabaseToNewFormat(r);
+        
+        // Aplicar validação e limpeza
+        return HistoricoDataMapper.validateAndCleanData(mappedRecord);
+      });
 
       // Como a RPC não retorna total, usamos um heurístico simples
       const total = (page - 1) * limit + mapped.length;
@@ -184,42 +150,14 @@ export class HistoricoSimpleService {
   // Adicionar novo registro ao histórico
   static async addHistoricoItem(item: Partial<HistoricoItem>): Promise<boolean> {
     try {
+      // Validar e limpar dados antes da inserção
+      const cleanedItem = HistoricoDataMapper.validateAndCleanData(item);
+      
+      // Mapear para formato do banco
+      const dbItem = HistoricoDataMapper.mapNewFormatToDatabase(cleanedItem);
+
       const { error } = await supabase.functions.invoke('registrar-historico-vendas', {
-        body: {
-          // Básicas
-          id_unico: item.id_unico,
-          empresa: item.empresa,
-          numero_pedido: item.numero_pedido,
-          cliente_nome: item.nome_cliente || item.nome_completo,
-
-          // Produtos
-          sku_produto: item.sku_produto,
-          descricao: item.titulo_produto || item.descricao,
-          quantidade: item.quantidade || 0,
-          valor_unitario: item.valor_unitario || 0,
-          valor_total: item.valor_total || 0,
-
-          // Financeiras
-          valor_frete: item.frete_pago_cliente || 0,
-          valor_desconto: item.desconto_cupom || 0,
-
-          // Mapeamento
-          sku_estoque: item.sku_estoque,
-          sku_kit: item.sku_kit,
-          qtd_kit: item.quantidade_kit || 0,
-          total_itens: item.total_itens || 0,
-
-          // Sistema
-          status: item.status || 'baixado',
-          data_pedido: item.data_pedido || new Date().toISOString().split('T')[0],
-          cpf_cnpj: item.cpf_cnpj || item.cliente_documento,
-          cidade: item.cidade,
-          uf: item.uf,
-          codigo_rastreamento: item.codigo_rastreamento,
-          url_rastreamento: item.url_rastreamento,
-          observacoes: item.observacoes,
-          integration_account_id: item.integration_account_id
-        }
+        body: dbItem
       });
 
       if (error) {

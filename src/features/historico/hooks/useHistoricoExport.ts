@@ -8,6 +8,7 @@ interface ExportConfig {
   includeExamples: boolean;
   includeFiscalFields: boolean;
   includeTrackingFields: boolean;
+  includeAdvancedFinancial?: boolean;
   filename?: string;
 }
 
