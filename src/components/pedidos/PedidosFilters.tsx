@@ -21,9 +21,12 @@ export interface PedidosFiltersState {
 }
 
 interface PedidosFiltersProps {
-  filters: PedidosFiltersState;
-  onFiltersChange: (filters: PedidosFiltersState) => void;
+  draftFilters: PedidosFiltersState;
+  onDraftFiltersChange: (filters: PedidosFiltersState) => void;
+  onApplyFilters: () => void;
   onClearFilters: () => void;
+  onCancelChanges: () => void;
+  hasPendingChanges: boolean;
 }
 
 const SITUACOES = [
@@ -41,21 +44,28 @@ const UFS = [
   'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
-export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: PedidosFiltersProps) {
+export function PedidosFilters({ 
+  draftFilters, 
+  onDraftFiltersChange, 
+  onApplyFilters, 
+  onClearFilters, 
+  onCancelChanges, 
+  hasPendingChanges 
+}: PedidosFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleFilterChange = (key: keyof PedidosFiltersState, value: any) => {
-    onFiltersChange({ ...filters, [key]: value });
+    onDraftFiltersChange({ ...draftFilters, [key]: value });
   };
 
   const getActiveFiltersCount = () => {
     let count = 0;
-    if (filters.search) count++;
-    if (filters.situacao) count++;
-    if (filters.dataInicio || filters.dataFim) count++;
-    if (filters.cidade) count++;
-    if (filters.uf) count++;
-    if (filters.valorMin || filters.valorMax) count++;
+    if (draftFilters.search) count++;
+    if (draftFilters.situacao) count++;
+    if (draftFilters.dataInicio || draftFilters.dataFim) count++;
+    if (draftFilters.cidade) count++;
+    if (draftFilters.uf) count++;
+    if (draftFilters.valorMin || draftFilters.valorMax) count++;
     return count;
   };
 
@@ -72,7 +82,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Número, cliente, CPF/CNPJ..."
-              value={filters.search || ''}
+              value={draftFilters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="pl-10"
             />
@@ -82,7 +92,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
         {/* Situação */}
         <div className="min-w-40">
           <label className="text-sm font-medium mb-1 block">Situação</label>
-          <Select value={filters.situacao || ''} onValueChange={(value) => handleFilterChange('situacao', value || undefined)}>
+          <Select value={draftFilters.situacao || ''} onValueChange={(value) => handleFilterChange('situacao', value || undefined)}>
             <SelectTrigger>
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
@@ -104,13 +114,13 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="justify-start text-left">
                   <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dataInicio ? format(filters.dataInicio, 'dd/MM/yyyy', { locale: ptBR }) : 'Início'}
+                  {draftFilters.dataInicio ? format(draftFilters.dataInicio, 'dd/MM/yyyy', { locale: ptBR }) : 'Início'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <CalendarComponent
                   mode="single"
-                  selected={filters.dataInicio}
+                  selected={draftFilters.dataInicio}
                   onSelect={(date) => handleFilterChange('dataInicio', date)}
                   locale={ptBR}
                 />
@@ -124,13 +134,13 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="justify-start text-left">
                   <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dataFim ? format(filters.dataFim, 'dd/MM/yyyy', { locale: ptBR }) : 'Fim'}
+                  {draftFilters.dataFim ? format(draftFilters.dataFim, 'dd/MM/yyyy', { locale: ptBR }) : 'Fim'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <CalendarComponent
                   mode="single"
-                  selected={filters.dataFim}
+                  selected={draftFilters.dataFim}
                   onSelect={(date) => handleFilterChange('dataFim', date)}
                   locale={ptBR}
                 />
@@ -156,6 +166,21 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
             )}
           </Button>
           
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={onApplyFilters}
+            disabled={!hasPendingChanges && activeFiltersCount === 0}
+          >
+            Aplicar Filtros
+          </Button>
+          
+          {hasPendingChanges && (
+            <Button variant="outline" size="sm" onClick={onCancelChanges}>
+              Cancelar
+            </Button>
+          )}
+          
           {activeFiltersCount > 0 && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>
               <X className="h-4 w-4 mr-1" />
@@ -173,7 +198,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
             <label className="text-sm font-medium mb-1 block">Cidade</label>
             <Input
               placeholder="Ex: São Paulo"
-              value={filters.cidade || ''}
+              value={draftFilters.cidade || ''}
               onChange={(e) => handleFilterChange('cidade', e.target.value)}
             />
           </div>
@@ -181,7 +206,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
           {/* UF */}
           <div>
             <label className="text-sm font-medium mb-1 block">UF</label>
-            <Select value={filters.uf || ''} onValueChange={(value) => handleFilterChange('uf', value || undefined)}>
+            <Select value={draftFilters.uf || ''} onValueChange={(value) => handleFilterChange('uf', value || undefined)}>
               <SelectTrigger>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
@@ -201,7 +226,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
             <Input
               type="number"
               placeholder="0,00"
-              value={filters.valorMin || ''}
+              value={draftFilters.valorMin || ''}
               onChange={(e) => handleFilterChange('valorMin', e.target.value ? parseFloat(e.target.value) : undefined)}
             />
           </div>
@@ -212,7 +237,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
             <Input
               type="number"
               placeholder="9999,99"
-              value={filters.valorMax || ''}
+              value={draftFilters.valorMax || ''}
               onChange={(e) => handleFilterChange('valorMax', e.target.value ? parseFloat(e.target.value) : undefined)}
             />
           </div>
@@ -222,42 +247,42 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
       {/* Tags dos Filtros Ativos */}
       {activeFiltersCount > 0 && (
         <div className="flex flex-wrap gap-2 pt-2 border-t">
-          {filters.search && (
+          {draftFilters.search && (
             <Badge variant="secondary" className="gap-1">
-              Busca: {filters.search}
+              Busca: {draftFilters.search}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('search', undefined)} />
             </Badge>
           )}
-          {filters.situacao && (
+          {draftFilters.situacao && (
             <Badge variant="secondary" className="gap-1">
-              Situação: {filters.situacao}
+              Situação: {draftFilters.situacao}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', undefined)} />
             </Badge>
           )}
-          {(filters.dataInicio || filters.dataFim) && (
+          {(draftFilters.dataInicio || draftFilters.dataFim) && (
             <Badge variant="secondary" className="gap-1">
-              Período: {filters.dataInicio ? format(filters.dataInicio, 'dd/MM', { locale: ptBR }) : '...'} até {filters.dataFim ? format(filters.dataFim, 'dd/MM', { locale: ptBR }) : '...'}
+              Período: {draftFilters.dataInicio ? format(draftFilters.dataInicio, 'dd/MM', { locale: ptBR }) : '...'} até {draftFilters.dataFim ? format(draftFilters.dataFim, 'dd/MM', { locale: ptBR }) : '...'}
               <X className="h-3 w-3 cursor-pointer" onClick={() => {
                 handleFilterChange('dataInicio', undefined);
                 handleFilterChange('dataFim', undefined);
               }} />
             </Badge>
           )}
-          {filters.cidade && (
+          {draftFilters.cidade && (
             <Badge variant="secondary" className="gap-1">
-              Cidade: {filters.cidade}
+              Cidade: {draftFilters.cidade}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('cidade', undefined)} />
             </Badge>
           )}
-          {filters.uf && (
+          {draftFilters.uf && (
             <Badge variant="secondary" className="gap-1">
-              UF: {filters.uf}
+              UF: {draftFilters.uf}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('uf', undefined)} />
             </Badge>
           )}
-          {(filters.valorMin || filters.valorMax) && (
+          {(draftFilters.valorMin || draftFilters.valorMax) && (
             <Badge variant="secondary" className="gap-1">
-              Valor: R$ {filters.valorMin || '0'} - R$ {filters.valorMax || '∞'}
+              Valor: R$ {draftFilters.valorMin || '0'} - R$ {draftFilters.valorMax || '∞'}
               <X className="h-3 w-3 cursor-pointer" onClick={() => {
                 handleFilterChange('valorMin', undefined);
                 handleFilterChange('valorMax', undefined);

@@ -2,56 +2,70 @@ import { useState, useMemo } from 'react';
 import { PedidosFiltersState } from '@/components/pedidos/PedidosFilters';
 
 export function usePedidosFilters() {
-  const [filters, setFilters] = useState<PedidosFiltersState>({});
+  const [appliedFilters, setAppliedFilters] = useState<PedidosFiltersState>({});
+  const [draftFilters, setDraftFilters] = useState<PedidosFiltersState>({});
 
-  const clearFilters = () => {
-    setFilters({});
+  const applyFilters = () => {
+    setAppliedFilters(draftFilters);
   };
 
-  // Converte filtros para parâmetros da API
+  const clearFilters = () => {
+    setDraftFilters({});
+    setAppliedFilters({});
+  };
+
+  const cancelChanges = () => {
+    setDraftFilters(appliedFilters);
+  };
+
+  // Converte filtros aplicados para parâmetros da API
   const apiParams = useMemo(() => {
     const params: any = {};
 
-    if (filters.search) {
-      params.search = filters.search;
+    if (appliedFilters.search) {
+      params.search = appliedFilters.search;
     }
 
-    if (filters.situacao) {
-      params.situacao = filters.situacao;
+    if (appliedFilters.situacao) {
+      params.situacao = appliedFilters.situacao;
     }
 
-    if (filters.dataInicio) {
-      params.dataInicio = filters.dataInicio.toISOString().split('T')[0];
+    if (appliedFilters.dataInicio) {
+      params.dataInicio = appliedFilters.dataInicio.toISOString().split('T')[0];
     }
 
-    if (filters.dataFim) {
-      params.dataFim = filters.dataFim.toISOString().split('T')[0];
+    if (appliedFilters.dataFim) {
+      params.dataFim = appliedFilters.dataFim.toISOString().split('T')[0];
     }
 
-    if (filters.cidade) {
-      params.cidade = filters.cidade;
+    if (appliedFilters.cidade) {
+      params.cidade = appliedFilters.cidade;
     }
 
-    if (filters.uf) {
-      params.uf = filters.uf;
+    if (appliedFilters.uf) {
+      params.uf = appliedFilters.uf;
     }
 
-    if (filters.valorMin) {
-      params.valorMin = filters.valorMin;
+    if (appliedFilters.valorMin) {
+      params.valorMin = appliedFilters.valorMin;
     }
 
-    if (filters.valorMax) {
-      params.valorMax = filters.valorMax;
+    if (appliedFilters.valorMax) {
+      params.valorMax = appliedFilters.valorMax;
     }
 
     return params;
-  }, [filters]);
+  }, [appliedFilters]);
 
   return {
-    filters,
-    setFilters,
+    appliedFilters,
+    draftFilters,
+    setDraftFilters,
+    applyFilters,
     clearFilters,
+    cancelChanges,
     apiParams,
-    hasActiveFilters: Object.keys(filters).some(key => filters[key as keyof PedidosFiltersState] !== undefined)
+    hasActiveFilters: Object.keys(appliedFilters).some(key => appliedFilters[key as keyof PedidosFiltersState] !== undefined),
+    hasPendingChanges: JSON.stringify(draftFilters) !== JSON.stringify(appliedFilters)
   };
 }
