@@ -16,7 +16,7 @@ enabled = true
 [functions.mercadolibre-oauth-start]
 verify_jwt = false
 
-[functions.mercadolibre-oauth-callback]  
+[functions.mercadolibre-oauth-callback]
 verify_jwt = false
 
 [functions.mercadolibre-token-refresh]
@@ -37,3 +37,5 @@ verify_jwt = true
 [functions.integrations-store-secret]
 verify_jwt = true
 
+[functions.registrar-historico-vendas]
+verify_jwt = true

@@ -388,14 +388,14 @@ export class EstoqueBaixaService {
       };
 
       const { error } = await supabase
-        .from('historico_vendas')
-        .insert(historicoData);
+        .functions
+        .invoke('registrar-historico-vendas', { body: historicoData });
 
       if (error) {
-        console.error('[EstoqueBaixa] Erro ao registrar histórico:', error);
+        console.error('[EstoqueBaixa] Erro ao registrar histórico (edge):', error);
         // Não falhar o processo principal por erro no histórico
       } else {
-        console.info('[EstoqueBaixa] Registrado no histórico com todas as colunas:', pedido.numero);
+        console.info('[EstoqueBaixa] Registrado no histórico com todas as colunas via edge:', pedido.numero);
       }
     } catch (error) {
       console.error('[EstoqueBaixa] Erro ao registrar histórico:', error);
