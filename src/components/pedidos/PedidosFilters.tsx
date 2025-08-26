@@ -21,30 +21,19 @@ export interface PedidosFiltersState {
 }
 
 interface PedidosFiltersProps {
-  draftFilters: PedidosFiltersState;
-  onDraftFiltersChange: (filters: PedidosFiltersState) => void;
-  onApplyFilters: () => void;
+  filters: PedidosFiltersState;
+  onFiltersChange: (filters: PedidosFiltersState) => void;
   onClearFilters: () => void;
-  onCancelChanges: () => void;
-  hasPendingChanges: boolean;
 }
 
 const SITUACOES = [
-  { value: 'pending', label: 'Pendente' },
-  { value: 'ready_to_ship', label: 'Pronto para Envio' },
-  { value: 'shipped', label: 'Enviado' },
-  { value: 'delivered', label: 'Entregue' },
-  { value: 'not_delivered', label: 'Não Entregue' },
-  { value: 'cancelled', label: 'Cancelado' },
-  { value: 'handling', label: 'Processando' },
-  { value: 'to_be_agreed', label: 'A Combinar' }
+  'Aberto',
+  'Pago', 
+  'Confirmado',
+  'Enviado',
+  'Entregue',
+  'Cancelado'
 ];
-
-const getSituacaoLabel = (value?: string) => {
-  if (!value) return '';
-  const item = SITUACOES.find(s => s.value === value);
-  return item ? item.label : value;
-};
 
 const UFS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 
@@ -52,28 +41,21 @@ const UFS = [
   'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
-export function PedidosFilters({ 
-  draftFilters, 
-  onDraftFiltersChange, 
-  onApplyFilters, 
-  onClearFilters, 
-  onCancelChanges, 
-  hasPendingChanges 
-}: PedidosFiltersProps) {
+export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: PedidosFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleFilterChange = (key: keyof PedidosFiltersState, value: any) => {
-    onDraftFiltersChange({ ...draftFilters, [key]: value });
+    onFiltersChange({ ...filters, [key]: value });
   };
 
   const getActiveFiltersCount = () => {
     let count = 0;
-    if (draftFilters.search) count++;
-    if (draftFilters.situacao) count++;
-    if (draftFilters.dataInicio || draftFilters.dataFim) count++;
-    if (draftFilters.cidade) count++;
-    if (draftFilters.uf) count++;
-    if (draftFilters.valorMin || draftFilters.valorMax) count++;
+    if (filters.search) count++;
+    if (filters.situacao) count++;
+    if (filters.dataInicio || filters.dataFim) count++;
+    if (filters.cidade) count++;
+    if (filters.uf) count++;
+    if (filters.valorMin || filters.valorMax) count++;
     return count;
   };
 
@@ -90,7 +72,7 @@ export function PedidosFilters({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Número, cliente, CPF/CNPJ..."
-              value={draftFilters.search || ''}
+              value={filters.search || ''}
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="pl-10"
             />
@@ -100,14 +82,14 @@ export function PedidosFilters({
         {/* Situação */}
         <div className="min-w-40">
           <label className="text-sm font-medium mb-1 block">Situação</label>
-          <Select value={draftFilters.situacao || ''} onValueChange={(value) => handleFilterChange('situacao', value || undefined)}>
+          <Select value={filters.situacao || ''} onValueChange={(value) => handleFilterChange('situacao', value || undefined)}>
             <SelectTrigger>
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
             <SelectContent className="bg-background border border-border z-50">
-              {SITUACOES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
+              {SITUACOES.map((situacao) => (
+                <SelectItem key={situacao} value={situacao}>
+                  {situacao}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -122,13 +104,13 @@ export function PedidosFilters({
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="justify-start text-left">
                   <Calendar className="mr-2 h-4 w-4" />
-                  {draftFilters.dataInicio ? format(draftFilters.dataInicio, 'dd/MM/yyyy', { locale: ptBR }) : 'Início'}
+                  {filters.dataInicio ? format(filters.dataInicio, 'dd/MM/yyyy', { locale: ptBR }) : 'Início'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <CalendarComponent
                   mode="single"
-                  selected={draftFilters.dataInicio}
+                  selected={filters.dataInicio}
                   onSelect={(date) => handleFilterChange('dataInicio', date)}
                   locale={ptBR}
                 />
@@ -142,13 +124,13 @@ export function PedidosFilters({
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="justify-start text-left">
                   <Calendar className="mr-2 h-4 w-4" />
-                  {draftFilters.dataFim ? format(draftFilters.dataFim, 'dd/MM/yyyy', { locale: ptBR }) : 'Fim'}
+                  {filters.dataFim ? format(filters.dataFim, 'dd/MM/yyyy', { locale: ptBR }) : 'Fim'}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <CalendarComponent
                   mode="single"
-                  selected={draftFilters.dataFim}
+                  selected={filters.dataFim}
                   onSelect={(date) => handleFilterChange('dataFim', date)}
                   locale={ptBR}
                 />
@@ -174,21 +156,6 @@ export function PedidosFilters({
             )}
           </Button>
           
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={onApplyFilters}
-            disabled={!hasPendingChanges && activeFiltersCount === 0}
-          >
-            Aplicar Filtros
-          </Button>
-          
-          {hasPendingChanges && (
-            <Button variant="outline" size="sm" onClick={onCancelChanges}>
-              Cancelar
-            </Button>
-          )}
-          
           {activeFiltersCount > 0 && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>
               <X className="h-4 w-4 mr-1" />
@@ -206,7 +173,7 @@ export function PedidosFilters({
             <label className="text-sm font-medium mb-1 block">Cidade</label>
             <Input
               placeholder="Ex: São Paulo"
-              value={draftFilters.cidade || ''}
+              value={filters.cidade || ''}
               onChange={(e) => handleFilterChange('cidade', e.target.value)}
             />
           </div>
@@ -214,7 +181,7 @@ export function PedidosFilters({
           {/* UF */}
           <div>
             <label className="text-sm font-medium mb-1 block">UF</label>
-            <Select value={draftFilters.uf || ''} onValueChange={(value) => handleFilterChange('uf', value || undefined)}>
+            <Select value={filters.uf || ''} onValueChange={(value) => handleFilterChange('uf', value || undefined)}>
               <SelectTrigger>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
@@ -234,7 +201,7 @@ export function PedidosFilters({
             <Input
               type="number"
               placeholder="0,00"
-              value={draftFilters.valorMin || ''}
+              value={filters.valorMin || ''}
               onChange={(e) => handleFilterChange('valorMin', e.target.value ? parseFloat(e.target.value) : undefined)}
             />
           </div>
@@ -245,7 +212,7 @@ export function PedidosFilters({
             <Input
               type="number"
               placeholder="9999,99"
-              value={draftFilters.valorMax || ''}
+              value={filters.valorMax || ''}
               onChange={(e) => handleFilterChange('valorMax', e.target.value ? parseFloat(e.target.value) : undefined)}
             />
           </div>
@@ -255,42 +222,42 @@ export function PedidosFilters({
       {/* Tags dos Filtros Ativos */}
       {activeFiltersCount > 0 && (
         <div className="flex flex-wrap gap-2 pt-2 border-t">
-          {draftFilters.search && (
+          {filters.search && (
             <Badge variant="secondary" className="gap-1">
-              Busca: {draftFilters.search}
+              Busca: {filters.search}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('search', undefined)} />
             </Badge>
           )}
-          {draftFilters.situacao && (
+          {filters.situacao && (
             <Badge variant="secondary" className="gap-1">
-              Situação: {getSituacaoLabel(draftFilters.situacao)}
+              Situação: {filters.situacao}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', undefined)} />
             </Badge>
           )}
-          {(draftFilters.dataInicio || draftFilters.dataFim) && (
+          {(filters.dataInicio || filters.dataFim) && (
             <Badge variant="secondary" className="gap-1">
-              Período: {draftFilters.dataInicio ? format(draftFilters.dataInicio, 'dd/MM', { locale: ptBR }) : '...'} até {draftFilters.dataFim ? format(draftFilters.dataFim, 'dd/MM', { locale: ptBR }) : '...'}
+              Período: {filters.dataInicio ? format(filters.dataInicio, 'dd/MM', { locale: ptBR }) : '...'} até {filters.dataFim ? format(filters.dataFim, 'dd/MM', { locale: ptBR }) : '...'}
               <X className="h-3 w-3 cursor-pointer" onClick={() => {
                 handleFilterChange('dataInicio', undefined);
                 handleFilterChange('dataFim', undefined);
               }} />
             </Badge>
           )}
-          {draftFilters.cidade && (
+          {filters.cidade && (
             <Badge variant="secondary" className="gap-1">
-              Cidade: {draftFilters.cidade}
+              Cidade: {filters.cidade}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('cidade', undefined)} />
             </Badge>
           )}
-          {draftFilters.uf && (
+          {filters.uf && (
             <Badge variant="secondary" className="gap-1">
-              UF: {draftFilters.uf}
+              UF: {filters.uf}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('uf', undefined)} />
             </Badge>
           )}
-          {(draftFilters.valorMin || draftFilters.valorMax) && (
+          {(filters.valorMin || filters.valorMax) && (
             <Badge variant="secondary" className="gap-1">
-              Valor: R$ {draftFilters.valorMin || '0'} - R$ {draftFilters.valorMax || '∞'}
+              Valor: R$ {filters.valorMin || '0'} - R$ {filters.valorMax || '∞'}
               <X className="h-3 w-3 cursor-pointer" onClick={() => {
                 handleFilterChange('valorMin', undefined);
                 handleFilterChange('valorMax', undefined);
