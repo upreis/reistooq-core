@@ -344,15 +344,23 @@ export type Database = {
           codigo_rastreamento: string | null
           cpf_cnpj: string | null
           created_at: string
+          custo_envio_seller: number | null
           data_pedido: string
           data_prevista: string | null
+          desconto_cupom: number | null
           descricao: string | null
           empresa: string | null
+          frete_pago_cliente: number | null
           id: string
           id_unico: string
           integration_account_id: string | null
+          logistic_mode_principal: string | null
           meta: Json | null
+          metodo_envio_combinado: string | null
+          metodo_pagamento: string | null
+          modo_envio_combinado: string | null
           ncm: string | null
+          nome_completo: string | null
           numero_ecommerce: string | null
           numero_pedido: string
           numero_venda: string | null
@@ -362,17 +370,34 @@ export type Database = {
           pedido_id: string | null
           qtd_kit: number | null
           quantidade: number
+          quantidade_kit: number | null
+          quantidade_total: number | null
+          receita_flex_bonus: number | null
           situacao: string | null
           sku_estoque: string | null
           sku_kit: string | null
           sku_produto: string
           status: string
+          status_baixa: string | null
+          status_envio: string | null
+          status_mapeamento: string | null
+          status_pagamento: string | null
+          substatus_estado_atual: string | null
+          taxa_marketplace: number | null
+          tipo_entrega: string | null
+          tipo_logistico: string | null
+          tipo_metodo_envio: string | null
+          tipo_pagamento: string | null
+          titulo_produto: string | null
           total_itens: number | null
           uf: string | null
+          ultima_atualizacao: string | null
           updated_at: string
           url_rastreamento: string | null
           valor_desconto: number | null
           valor_frete: number | null
+          valor_liquido_vendedor: number | null
+          valor_pago: number | null
           valor_total: number
           valor_unitario: number
         }
@@ -384,15 +409,23 @@ export type Database = {
           codigo_rastreamento?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          custo_envio_seller?: number | null
           data_pedido: string
           data_prevista?: string | null
+          desconto_cupom?: number | null
           descricao?: string | null
           empresa?: string | null
+          frete_pago_cliente?: number | null
           id?: string
           id_unico: string
           integration_account_id?: string | null
+          logistic_mode_principal?: string | null
           meta?: Json | null
+          metodo_envio_combinado?: string | null
+          metodo_pagamento?: string | null
+          modo_envio_combinado?: string | null
           ncm?: string | null
+          nome_completo?: string | null
           numero_ecommerce?: string | null
           numero_pedido: string
           numero_venda?: string | null
@@ -402,17 +435,34 @@ export type Database = {
           pedido_id?: string | null
           qtd_kit?: number | null
           quantidade?: number
+          quantidade_kit?: number | null
+          quantidade_total?: number | null
+          receita_flex_bonus?: number | null
           situacao?: string | null
           sku_estoque?: string | null
           sku_kit?: string | null
           sku_produto: string
           status?: string
+          status_baixa?: string | null
+          status_envio?: string | null
+          status_mapeamento?: string | null
+          status_pagamento?: string | null
+          substatus_estado_atual?: string | null
+          taxa_marketplace?: number | null
+          tipo_entrega?: string | null
+          tipo_logistico?: string | null
+          tipo_metodo_envio?: string | null
+          tipo_pagamento?: string | null
+          titulo_produto?: string | null
           total_itens?: number | null
           uf?: string | null
+          ultima_atualizacao?: string | null
           updated_at?: string
           url_rastreamento?: string | null
           valor_desconto?: number | null
           valor_frete?: number | null
+          valor_liquido_vendedor?: number | null
+          valor_pago?: number | null
           valor_total?: number
           valor_unitario?: number
         }
@@ -424,15 +474,23 @@ export type Database = {
           codigo_rastreamento?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          custo_envio_seller?: number | null
           data_pedido?: string
           data_prevista?: string | null
+          desconto_cupom?: number | null
           descricao?: string | null
           empresa?: string | null
+          frete_pago_cliente?: number | null
           id?: string
           id_unico?: string
           integration_account_id?: string | null
+          logistic_mode_principal?: string | null
           meta?: Json | null
+          metodo_envio_combinado?: string | null
+          metodo_pagamento?: string | null
+          modo_envio_combinado?: string | null
           ncm?: string | null
+          nome_completo?: string | null
           numero_ecommerce?: string | null
           numero_pedido?: string
           numero_venda?: string | null
@@ -442,17 +500,34 @@ export type Database = {
           pedido_id?: string | null
           qtd_kit?: number | null
           quantidade?: number
+          quantidade_kit?: number | null
+          quantidade_total?: number | null
+          receita_flex_bonus?: number | null
           situacao?: string | null
           sku_estoque?: string | null
           sku_kit?: string | null
           sku_produto?: string
           status?: string
+          status_baixa?: string | null
+          status_envio?: string | null
+          status_mapeamento?: string | null
+          status_pagamento?: string | null
+          substatus_estado_atual?: string | null
+          taxa_marketplace?: number | null
+          tipo_entrega?: string | null
+          tipo_logistico?: string | null
+          tipo_metodo_envio?: string | null
+          tipo_pagamento?: string | null
+          titulo_produto?: string | null
           total_itens?: number | null
           uf?: string | null
+          ultima_atualizacao?: string | null
           updated_at?: string
           url_rastreamento?: string | null
           valor_desconto?: number | null
           valor_frete?: number | null
+          valor_liquido_vendedor?: number | null
+          valor_pago?: number | null
           valor_total?: number
           valor_unitario?: number
         }
@@ -1885,41 +1960,44 @@ export type Database = {
           _start?: string
         }
         Returns: {
-          cidade: string
-          cliente_documento: string
-          cliente_nome: string
-          codigo_barras: string
-          codigo_rastreamento: string
-          cpf_cnpj: string
           created_at: string
+          custo_envio_seller: number
           data_pedido: string
-          data_prevista: string
-          descricao: string
+          desconto_cupom: number
+          empresa: string
+          frete_pago_cliente: number
           id: string
           id_unico: string
-          ncm: string
-          numero_ecommerce: string
+          logistic_mode_principal: string
+          metodo_envio_combinado: string
+          metodo_pagamento: string
+          modo_envio_combinado: string
+          nome_cliente: string
+          nome_completo: string
           numero_pedido: string
-          numero_venda: string
-          obs: string
-          obs_interna: string
-          observacoes: string
-          pedido_id: string
-          qtd_kit: number
-          quantidade: number
-          situacao: string
+          quantidade_kit: number
+          quantidade_total: number
+          receita_flex_bonus: number
           sku_estoque: string
           sku_kit: string
           sku_produto: string
-          status: string
+          status_baixa: string
+          status_envio: string
+          status_mapeamento: string
+          status_pagamento: string
+          substatus_estado_atual: string
+          taxa_marketplace: number
+          tipo_entrega: string
+          tipo_logistico: string
+          tipo_metodo_envio: string
+          tipo_pagamento: string
+          titulo_produto: string
           total_itens: number
-          uf: string
+          ultima_atualizacao: string
           updated_at: string
-          url_rastreamento: string
-          valor_desconto: number
-          valor_frete: number
+          valor_liquido_vendedor: number
+          valor_pago: number
           valor_total: number
-          valor_unitario: number
         }[]
       }
       get_historico_vendas_safe: {
