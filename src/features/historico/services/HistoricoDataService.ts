@@ -68,7 +68,7 @@ export class HistoricoDataService {
         throw new Error(`Erro ao buscar dados: ${error.message}`);
       }
 
-      const vendas = (data || []) as HistoricoVenda[];
+      const vendas = (data || []) as any[];
       
       // Aplicar filtros adicionais
       const filteredVendas = this.applyClientFilters(vendas, filters);
@@ -117,12 +117,12 @@ export class HistoricoDataService {
   }
 
   // Buscar venda por ID
-  static async getVendaById(id: string): Promise<HistoricoVenda | null> {
+  static async getVendaById(id: string): Promise<any | null> {
     try {
       const cacheKey = `venda_${id}`;
       const cached = this.cache.get(cacheKey);
       if (cached) {
-      return cached as HistoricoVenda;
+      return cached as any;
       }
 
       const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
@@ -135,7 +135,7 @@ export class HistoricoDataService {
         throw new Error(`Erro ao buscar venda: ${error.message}`);
       }
 
-      const vendas = (data || []) as HistoricoVenda[];
+      const vendas = (data || []) as any[];
       const venda = vendas.find(v => v.id === id || v.id_unico === id) || null;
 
       if (venda) {
@@ -172,9 +172,9 @@ export class HistoricoDataService {
       ]);
 
       const options = {
-        status: [...new Set((statusResult.data || []).map(item => item.status).filter(Boolean))].sort(),
-        cidades: [...new Set((cidadesResult.data || []).map(item => item.cidade).filter(Boolean))].sort(),
-        ufs: [...new Set((ufsResult.data || []).map(item => item.uf).filter(Boolean))].sort(),
+        status: [...new Set((statusResult.data || []).map((item: any) => item.status).filter(Boolean))].sort(),
+        cidades: [...new Set((cidadesResult.data || []).map((item: any) => item.cidade).filter(Boolean))].sort(),
+        ufs: [...new Set((ufsResult.data || []).map((item: any) => item.uf).filter(Boolean))].sort(),
         situacoes: ['pendente', 'processando', 'concluida', 'cancelada', 'devolvida'] // Estático por enquanto
       };
 
@@ -264,7 +264,7 @@ export class HistoricoDataService {
     return `historico_${btoa(filterHash)}_${page}_${limit}_${sortBy}_${sortOrder}`;
   }
 
-  private static applyClientFilters(vendas: HistoricoVenda[], filters: HistoricoFilters): HistoricoVenda[] {
+  private static applyClientFilters(vendas: any[], filters: HistoricoFilters): any[] {
     let filtered = [...vendas];
 
     if (filters.status?.length) {
@@ -311,13 +311,13 @@ export class HistoricoDataService {
   }
 
   private static applySorting(
-    vendas: HistoricoVenda[],
+    vendas: any[],
     sortBy: SortableFields,
     sortOrder: 'asc' | 'desc'
-  ): HistoricoVenda[] {
+  ): any[] {
     return [...vendas].sort((a, b) => {
-      const aValue = a[sortBy as keyof HistoricoVenda];
-      const bValue = b[sortBy as keyof HistoricoVenda];
+      const aValue = a[sortBy];
+      const bValue = b[sortBy];
       
       if (aValue === null || aValue === undefined) return 1;
       if (bValue === null || bValue === undefined) return -1;
@@ -339,7 +339,7 @@ export class HistoricoDataService {
     });
   }
 
-  private static calculateSummary(vendas: HistoricoVenda[]): HistoricoSummary {
+  private static calculateSummary(vendas: any[]): HistoricoSummary {
     if (vendas.length === 0) {
       return {
         totalVendas: 0,

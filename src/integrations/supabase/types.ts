@@ -1960,27 +1960,46 @@ export type Database = {
           _start?: string
         }
         Returns: {
+          cidade: string
+          cliente_documento: string
+          cliente_nome: string
+          codigo_barras: string
+          codigo_rastreamento: string
+          cpf_cnpj: string
           created_at: string
           custo_envio_seller: number
           data_pedido: string
+          data_prevista: string
           desconto_cupom: number
+          descricao: string
           empresa: string
           frete_pago_cliente: number
           id: string
           id_unico: string
+          integration_account_id: string
           logistic_mode_principal: string
           metodo_envio_combinado: string
           metodo_pagamento: string
           modo_envio_combinado: string
-          nome_cliente: string
+          ncm: string
           nome_completo: string
+          numero_ecommerce: string
           numero_pedido: string
+          numero_venda: string
+          obs: string
+          obs_interna: string
+          observacoes: string
+          pedido_id: string
+          qtd_kit: number
+          quantidade: number
           quantidade_kit: number
           quantidade_total: number
           receita_flex_bonus: number
+          situacao: string
           sku_estoque: string
           sku_kit: string
           sku_produto: string
+          status: string
           status_baixa: string
           status_envio: string
           status_mapeamento: string
@@ -1993,11 +2012,16 @@ export type Database = {
           tipo_pagamento: string
           titulo_produto: string
           total_itens: number
+          uf: string
           ultima_atualizacao: string
           updated_at: string
+          url_rastreamento: string
+          valor_desconto: number
+          valor_frete: number
           valor_liquido_vendedor: number
           valor_pago: number
           valor_total: number
+          valor_unitario: number
         }[]
       }
       get_historico_vendas_safe: {

@@ -43,7 +43,7 @@ export class HistoricoQueryService {
         throw new Error(`Erro ao buscar histórico: ${error.message}`);
       }
 
-      const vendas = (data || []) as HistoricoVendaPublic[];
+      const vendas = (data || []) as any[];
       
       // Aplicar filtros adicionais no frontend (temporário)
       let filteredVendas = vendas;
@@ -152,7 +152,7 @@ export class HistoricoQueryService {
         throw new Error(`Erro ao buscar venda: ${error.message}`);
       }
 
-      const vendas = (data || []) as HistoricoVendaPublic[];
+      const vendas = (data || []) as any[];
       return vendas.find(v => v.id === id || v.id_unico === id) || null;
 
     } catch (error) {
@@ -174,7 +174,7 @@ export class HistoricoQueryService {
         return [];
       }
 
-      const vendas = (data || []) as HistoricoVendaPublic[];
+      const vendas = (data || []) as any[];
       const uniqueStatus = [...new Set(vendas.map(item => item.status))];
       return uniqueStatus.filter(Boolean);
 
@@ -197,7 +197,7 @@ export class HistoricoQueryService {
         return [];
       }
 
-      const vendas = (data || []) as HistoricoVendaPublic[];
+      const vendas = (data || []) as any[];
       const uniqueCidades = [...new Set(vendas.map(item => item.cidade))];
       return uniqueCidades.filter(Boolean).sort();
 
@@ -220,7 +220,7 @@ export class HistoricoQueryService {
         return [];
       }
 
-      const vendas = (data || []) as HistoricoVendaPublic[];
+      const vendas = (data || []) as any[];
       const uniqueUfs = [...new Set(vendas.map(item => item.uf))];
       return uniqueUfs.filter(Boolean).sort();
 

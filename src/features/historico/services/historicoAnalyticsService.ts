@@ -33,7 +33,7 @@ export class HistoricoAnalyticsService {
         throw new Error(`Erro ao buscar dados para analytics: ${error.message}`);
       }
 
-      const vendas = (vendasData || []) as HistoricoVenda[];
+      const vendas = (vendasData || []) as any[];
       
       // Calcular métricas de vendas
       const hoje = new Date().toISOString().split('T')[0];
