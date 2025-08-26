@@ -78,30 +78,92 @@ export const HistoricoDataTable: React.FC<HistoricoDataTableProps> = ({
       <CardContent>
         <div className="space-y-4">
           {vendas.map((venda) => (
-            <div key={venda.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
-              <div className="flex-1">
-                <div className="font-medium">{venda.descricao || venda.sku_produto}</div>
-                <div className="text-sm text-muted-foreground">
-                  Pedido: {venda.numero_pedido} • Cliente: {venda.cliente_nome}
+            <div key={venda.id} className="flex flex-col p-4 border border-gray-600 rounded-lg hover:bg-muted/50 space-y-3">
+              {/* Linha principal */}
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="font-medium">{venda.descricao || venda.sku_produto}</div>
+                  <div className="text-sm text-muted-foreground">
+                    Pedido: {venda.numero_pedido} • Cliente: {venda.cliente_nome}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {formatDate(venda.data_pedido)}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {formatDate(venda.data_pedido)}
+                
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="font-medium">{formatCurrency(venda.valor_total)}</div>
+                    <div className="text-sm text-muted-foreground">Qtd: {venda.quantidade}</div>
+                  </div>
+                  
+                  <Badge variant={venda.status === 'concluida' ? 'default' : 'secondary'}>
+                    {venda.status}
+                  </Badge>
+                  
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="font-medium">{formatCurrency(venda.valor_total)}</div>
-                  <div className="text-sm text-muted-foreground">Qtd: {venda.quantidade}</div>
+
+              {/* Linha de detalhes expandida - TODAS as colunas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs bg-muted/30 p-3 rounded">
+                <div>
+                  <strong>SKU Estoque:</strong> {venda.sku_estoque || '-'}
                 </div>
-                
-                <Badge variant={venda.status === 'concluida' ? 'default' : 'secondary'}>
-                  {venda.status}
-                </Badge>
-                
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4" />
-                </Button>
+                <div>
+                  <strong>SKU Kit:</strong> {venda.sku_kit || '-'}
+                </div>
+                <div>
+                  <strong>Qtd Kit:</strong> {venda.qtd_kit || 0}
+                </div>
+                <div>
+                  <strong>Total Itens:</strong> {venda.total_itens || 0}
+                </div>
+                <div>
+                  <strong>CPF/CNPJ:</strong> {venda.cpf_cnpj || '-'}
+                </div>
+                <div>
+                  <strong>Empresa:</strong> {venda.empresa || '-'}
+                </div>
+                <div>
+                  <strong>Cidade:</strong> {venda.cidade || '-'}
+                </div>
+                <div>
+                  <strong>UF:</strong> {venda.uf || '-'}
+                </div>
+                <div>
+                  <strong>Nº E-commerce:</strong> {venda.numero_ecommerce || '-'}
+                </div>
+                <div>
+                  <strong>Nº Venda:</strong> {venda.numero_venda || '-'}
+                </div>
+                <div>
+                  <strong>Valor Frete:</strong> {venda.valor_frete ? formatCurrency(venda.valor_frete) : '-'}
+                </div>
+                <div>
+                  <strong>Valor Desconto:</strong> {venda.valor_desconto ? formatCurrency(venda.valor_desconto) : '-'}
+                </div>
+                <div>
+                  <strong>Data Prevista:</strong> {venda.data_prevista ? formatDate(venda.data_prevista) : '-'}
+                </div>
+                <div>
+                  <strong>Código Rastreamento:</strong> {venda.codigo_rastreamento || '-'}
+                </div>
+                <div className="lg:col-span-2">
+                  <strong>URL Rastreamento:</strong> {venda.url_rastreamento ? (
+                    <a href={venda.url_rastreamento} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                      Ver rastreamento
+                    </a>
+                  ) : '-'}
+                </div>
+                <div className="lg:col-span-2">
+                  <strong>Obs:</strong> {venda.obs || '-'}
+                </div>
+                <div className="lg:col-span-4">
+                  <strong>Obs Interna:</strong> {venda.obs_interna || '-'}
+                </div>
               </div>
             </div>
           ))}

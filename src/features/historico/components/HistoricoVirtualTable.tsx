@@ -132,6 +132,14 @@ export function HistoricoVirtualTable({
       size: 120,
     },
     {
+      accessorKey: 'cidade',
+      header: 'Cidade',
+      cell: ({ getValue }) => (
+        <span className="text-sm">{getValue() as string || '-'}</span>
+      ),
+      size: 120,
+    },
+    {
       accessorKey: 'uf',
       header: 'UF',
       cell: ({ getValue }) => (
@@ -140,25 +148,69 @@ export function HistoricoVirtualTable({
       size: 60,
     },
     {
+      accessorKey: 'empresa',
+      header: 'Empresa',
+      cell: ({ getValue }) => (
+        <span className="text-sm">{getValue() as string || '-'}</span>
+      ),
+      size: 140,
+    },
+    {
+      accessorKey: 'cpf_cnpj',
+      header: 'CPF/CNPJ',
+      cell: ({ getValue }) => (
+        <span className="font-mono text-xs">{getValue() as string || '-'}</span>
+      ),
+      size: 120,
+    },
+    {
+      accessorKey: 'valor_frete',
+      header: 'Frete',
+      cell: ({ getValue }) => {
+        const valor = getValue() as number;
+        return valor ? (
+          <span className="text-sm">{formatCurrency(valor)}</span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        );
+      },
+      size: 80,
+    },
+    {
+      accessorKey: 'valor_desconto',
+      header: 'Desconto',
+      cell: ({ getValue }) => {
+        const valor = getValue() as number;
+        return valor ? (
+          <span className="text-sm text-orange-600">{formatCurrency(valor)}</span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        );
+      },
+      size: 90,
+    },
+    {
       accessorKey: 'situacao',
       header: 'Situação',
       cell: ({ getValue }) => {
         const situacao = getValue() as string;
-        return (
+        return situacao ? (
           <Badge variant="default" className="text-xs bg-green-100 text-green-800">
             {situacao}
           </Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
         );
       },
       size: 100,
     },
     {
-      accessorKey: 'numero_venda',
-      header: 'Número da Venda',
+      accessorKey: 'numero_ecommerce',
+      header: 'Nº E-commerce',
       cell: ({ getValue }) => (
-        <span className="font-mono text-xs">{getValue() as string}</span>
+        <span className="font-mono text-xs">{getValue() as string || '-'}</span>
       ),
-      size: 140,
+      size: 120,
     },
     {
       accessorKey: 'sku_estoque',

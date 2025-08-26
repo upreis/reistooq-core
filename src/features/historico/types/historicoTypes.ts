@@ -35,6 +35,8 @@ export interface HistoricoVenda {
   sku_kit?: string;
   qtd_kit?: number;
   total_itens?: number;
+  empresa?: string;
+  integration_account_id?: string;
 }
 
 export interface HistoricoFilters {
