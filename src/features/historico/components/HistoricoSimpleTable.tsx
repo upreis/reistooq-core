@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2 } from "lucide-react";
 import { HistoricoItem } from '../services/HistoricoSimpleService';
 import { ColumnConfig } from './HistoricoColumnSelector';
@@ -14,9 +15,24 @@ interface HistoricoSimpleTableProps {
   isLoading?: boolean;
   onRowClick?: (item: HistoricoItem) => void;
   onDeleteItem?: (item: HistoricoItem) => void;
+  // Seleção múltipla
+  isSelectMode?: boolean;
+  selectedItems?: Set<string>;
+  onSelectItem?: (itemId: string) => void;
+  onSelectAll?: () => void;
 }
 
-export function HistoricoSimpleTable({ data, columns, isLoading, onRowClick, onDeleteItem }: HistoricoSimpleTableProps) {
+export function HistoricoSimpleTable({ 
+  data, 
+  columns, 
+  isLoading, 
+  onRowClick, 
+  onDeleteItem,
+  isSelectMode = false,
+  selectedItems = new Set(),
+  onSelectItem,
+  onSelectAll
+}: HistoricoSimpleTableProps) {
   
   if (isLoading) {
     return (
@@ -102,6 +118,14 @@ export function HistoricoSimpleTable({ data, columns, isLoading, onRowClick, onD
       <Table>
         <TableHeader>
           <TableRow>
+            {isSelectMode && (
+              <TableHead className="w-12">
+                <Checkbox
+                  checked={data.length > 0 && data.every(item => selectedItems.has(item.id))}
+                  onCheckedChange={onSelectAll}
+                />
+              </TableHead>
+            )}
             {visibleColumns.map((column) => (
               <TableHead 
                 key={column.key}
@@ -119,13 +143,21 @@ export function HistoricoSimpleTable({ data, columns, isLoading, onRowClick, onD
           {data.map((item) => (
             <TableRow 
               key={item.id}
-              className="hover:bg-muted/50"
+              className={`hover:bg-muted/50 ${selectedItems.has(item.id) ? 'bg-muted/30' : ''}`}
             >
+              {isSelectMode && (
+                <TableCell className="w-12">
+                  <Checkbox
+                    checked={selectedItems.has(item.id)}
+                    onCheckedChange={() => onSelectItem?.(item.id)}
+                  />
+                </TableCell>
+              )}
               {visibleColumns.map((column) => (
                 <TableCell 
                   key={column.key}
-                  className={`${column.key.includes('valor') || column.key.includes('quantidade') ? 'text-right' : ''} max-w-[200px] truncate cursor-pointer`}
-                  onClick={() => onRowClick?.(item)}
+                  className={`${column.key.includes('valor') || column.key.includes('quantidade') ? 'text-right' : ''} max-w-[200px] truncate ${!isSelectMode ? 'cursor-pointer' : ''}`}
+                  onClick={() => !isSelectMode && onRowClick?.(item)}
                 >
                   {getCellValue(item, column.key)}
                 </TableCell>

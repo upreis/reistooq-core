@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { History, RefreshCw, ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react';
+import { History, RefreshCw, ChevronLeft, ChevronRight, Download, Upload, CheckSquare, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Componentes simplificados
@@ -14,9 +14,11 @@ import { HistoricoSimpleStats } from './HistoricoSimpleStats';
 import { HistoricoColumnSelector, defaultColumns, type ColumnConfig } from './HistoricoColumnSelector';
 import { HistoricoExportModal } from './HistoricoExportModal';
 import { HistoricoImportModal } from './HistoricoImportModal';
+import { HistoricoBulkActions } from './HistoricoBulkActions';
 import { useHistoricoSimple } from '../hooks/useHistoricoSimple';
 import { useHistoricoExport } from '../hooks/useHistoricoExport';
 import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
+import { useHistoricoSelection } from '../hooks/useHistoricoSelection';
 import { HistoricoDeleteService } from '../services/HistoricoDeleteService';
 import { HistoricoItem } from '../services/HistoricoSimpleService';
 
@@ -27,12 +29,26 @@ export function HistoricoSimplePage() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<HistoricoItem | null>(null);
+  const [itemsToDelete, setItemsToDelete] = useState<HistoricoItem[]>([]);
 
   // Auto refresh com real-time
   useHistoricoRealtime({ enabled: true });
   
   // Hook de exportação
   const { isExporting, exportData } = useHistoricoExport();
+
+  // Hook de seleção múltipla
+  const {
+    selectedItems,
+    isSelectMode,
+    toggleSelectMode,
+    selectItem,
+    selectAll,
+    clearSelection,
+    isSelected,
+    getSelectedItems,
+    selectedCount
+  } = useHistoricoSelection();
 
   // Hook principal simplificado
   const {
@@ -78,6 +94,23 @@ export function HistoricoSimplePage() {
     setItemToDelete(item);
   };
 
+  const handleDeleteSelected = async () => {
+    const selectedItemsList = getSelectedItems(data);
+    setItemsToDelete(selectedItemsList);
+  };
+
+  const handleExportSelected = async () => {
+    const selectedItemsList = getSelectedItems(data);
+    const config = {
+      format: 'xlsx' as const,
+      template: 'commercial' as const,
+      includeExamples: false,
+      includeFiscalFields: false,
+      includeTrackingFields: false
+    };
+    await exportData(config, selectedItemsList);
+  };
+
   const confirmDelete = async () => {
     if (!itemToDelete) return;
     
@@ -86,6 +119,27 @@ export function HistoricoSimplePage() {
       refetch(); // Atualizar lista após exclusão
     }
     setItemToDelete(null);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (itemsToDelete.length === 0) return;
+    
+    let successCount = 0;
+    for (const item of itemsToDelete) {
+      const success = await HistoricoDeleteService.deleteItem(item.id);
+      if (success) successCount++;
+    }
+    
+    if (successCount > 0) {
+      refetch();
+      clearSelection();
+      toast({
+        title: "Exclusão concluída",
+        description: `${successCount} registros excluídos com sucesso.`
+      });
+    }
+    
+    setItemsToDelete([]);
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -136,6 +190,15 @@ export function HistoricoSimplePage() {
             />
             
             <Button
+              variant={isSelectMode ? "default" : "outline"}
+              size="sm"
+              onClick={toggleSelectMode}
+            >
+              {isSelectMode ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+              {isSelectMode ? 'Sair da Seleção' : 'Selecionar'}
+            </Button>
+
+            <Button
               variant="outline"
               size="sm"
               onClick={() => refetch()}
@@ -171,6 +234,19 @@ export function HistoricoSimplePage() {
         hasFilters={hasFilters}
       />
 
+      {/* Ações em lote */}
+      {isSelectMode && (
+        <HistoricoBulkActions
+          selectedCount={selectedCount}
+          selectedItems={getSelectedItems(data)}
+          onExportSelected={handleExportSelected}
+          onDeleteSelected={handleDeleteSelected}
+          onClearSelection={clearSelection}
+          onSelectAll={() => selectAll(data)}
+          isProcessing={isFetching}
+        />
+      )}
+
       {/* Tabela */}
       <Card>
         <CardHeader>
@@ -198,6 +274,10 @@ export function HistoricoSimplePage() {
             isLoading={isLoading}
             onRowClick={handleRowClick}
             onDeleteItem={handleDeleteItem}
+            isSelectMode={isSelectMode}
+            selectedItems={selectedItems}
+            onSelectItem={selectItem}
+            onSelectAll={() => selectAll(data)}
           />
         </CardContent>
       </Card>
@@ -339,6 +419,30 @@ export function HistoricoSimplePage() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmação de exclusão em lote */}
+      <AlertDialog open={itemsToDelete.length > 0} onOpenChange={() => setItemsToDelete([])}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão em Lote</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir{' '}
+              <strong>{itemsToDelete.length} registro{itemsToDelete.length > 1 ? 's' : ''}</strong>?
+              <br />
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir Todos
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -288,12 +288,14 @@ export const HistoricoPageLayout: React.FC = () => {
           </Card>
 
           {/* Ações em Lote */}
+          {/* 
           <HistoricoBulkActions
             selectedCount={0} // Implementar seleção
             onBulkAction={handleBulkAction}
             isLoading={paginationHook.isLoadingMore}
             totalItems={paginationHook.summary?.totalVendas || 0}
           />
+          */}
 
           {/* Tabela de Dados */}
           <Card>

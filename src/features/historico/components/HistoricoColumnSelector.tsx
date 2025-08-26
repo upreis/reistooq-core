@@ -85,6 +85,12 @@ interface HistoricoColumnSelectorProps {
 
 export function HistoricoColumnSelector({ columns, onColumnsChange }: HistoricoColumnSelectorProps) {
   const [tempColumns, setTempColumns] = useState<ColumnConfig[]>(columns);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Sincronizar tempColumns quando as colunas mudarem
+  React.useEffect(() => {
+    setTempColumns(columns);
+  }, [columns]);
 
   const handleColumnToggle = (columnKey: string, visible: boolean) => {
     setTempColumns(prev => 
@@ -96,6 +102,7 @@ export function HistoricoColumnSelector({ columns, onColumnsChange }: HistoricoC
 
   const handleSave = () => {
     onColumnsChange(tempColumns);
+    setIsOpen(false);
   };
 
   const handleReset = () => {
@@ -114,7 +121,7 @@ export function HistoricoColumnSelector({ columns, onColumnsChange }: HistoricoC
   }, {} as Record<string, ColumnConfig[]>);
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Settings className="h-4 w-4 mr-2" />
