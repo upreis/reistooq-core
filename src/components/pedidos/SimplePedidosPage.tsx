@@ -30,6 +30,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
 import { buildIdUnico } from '@/utils/idUnico';
+import { PedidosDashboard } from './dashboard/PedidosDashboard';
+import { PedidosAlerts } from './dashboard/PedidosAlerts';
 
 type Order = {
   id: string;
@@ -903,6 +905,19 @@ export default function SimplePedidosPage({ className }: Props) {
   // Render principal
   return (
     <div className={`space-y-6 p-6 ${className}`}>
+      {/* 🚀 DASHBOARD INTELIGENTE - Novo componente independente */}
+      <PedidosDashboard 
+        orders={orders}
+        loading={loading}
+        onRefresh={actions.refetch}
+        className="animate-fade-in"
+      />
+
+      {/* 🚨 ALERTAS INTELIGENTES - Novo componente independente */}
+      {orders && orders.length > 0 && (
+        <PedidosAlerts orders={orders} className="animate-fade-in" />
+      )}
+
       {/* 🛡️ HEADER BLINDADO */}
       <div className="flex items-center justify-between">
         <div>
