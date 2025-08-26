@@ -1,7 +1,7 @@
-// src/pages/Historico.tsx
-import { HistoricoNewPageLayout } from "@/features/historico/components/HistoricoNewPageLayout";
+// src/pages/Historico.tsx - Versão simplificada
+import { HistoricoSimplePage } from "@/features/historico/components/HistoricoSimplePage";
 
 export default function Historico() {
-  console.info('HISTORICO refatorado', new Date().toISOString());
-  return <HistoricoNewPageLayout />; 
+  console.info('HISTORICO simplificado carregado', new Date().toISOString());
+  return <HistoricoSimplePage />; 
 }
