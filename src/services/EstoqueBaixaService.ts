@@ -233,10 +233,13 @@ export class EstoqueBaixaService {
    */
   private static buildIdUnico(pedido: Pedido): string {
     const skus = this.extrairSkusDoPedido(pedido);
-    const skuPrincipal = skus[0]?.sku || '';
-    const numero = String(pedido.numero || pedido.id || '').trim();
-    const id = skuPrincipal ? `${skuPrincipal}-${numero}` : numero;
-    return id;
+    const numeropedido = pedido.numero || pedido.id || '';
+    
+    // Montar SKUs da mesma forma que na página /pedidos
+    const skusList = skus.map(s => s.sku).filter(Boolean);
+    const skusPart = skusList.length > 0 ? skusList.join('+') : 'NO-SKU';
+    
+    return `${skusPart}-${numeropedido}`;
   }
 
   /** Util: valida UUID v4 */
