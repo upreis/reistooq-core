@@ -1,10 +1,10 @@
 // Mapeamento de dados entre os formatos antigo e novo das colunas
 export class HistoricoDataMapper {
   
-  // Mapear dados do banco para o formato das novas colunas
   static mapDatabaseToNewFormat(dbRecord: any): any {
     return {
       // === Básicas ===
+      id: dbRecord.id,
       id_unico: dbRecord.id_unico,
       empresa: dbRecord.empresa,
       numero_pedido: dbRecord.numero_pedido,
@@ -55,7 +55,6 @@ export class HistoricoDataMapper {
       metodo_envio_combinado: dbRecord.metodo_envio_combinado,
 
       // === Adicionais/Sistema ===
-      id: dbRecord.id,
       cliente_documento: dbRecord.cliente_documento,
       status: dbRecord.status,
       observacoes: dbRecord.observacoes,
