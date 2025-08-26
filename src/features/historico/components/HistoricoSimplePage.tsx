@@ -25,7 +25,21 @@ import { HistoricoItem } from '../services/HistoricoSimpleService';
 export function HistoricoSimplePage() {
   const { toast } = useToast();
   const [selectedItem, setSelectedItem] = useState<HistoricoItem | null>(null);
-  const [columns, setColumns] = useState<ColumnConfig[]>(defaultColumns);
+  
+  // Persistência de colunas no localStorage
+  const [columns, setColumns] = useState<ColumnConfig[]>(() => {
+    try {
+      const savedColumns = localStorage.getItem('historico-columns-config');
+      if (savedColumns) {
+        const parsed = JSON.parse(savedColumns);
+        return Array.isArray(parsed) ? parsed : defaultColumns;
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configuração de colunas:', error);
+    }
+    return defaultColumns;
+  });
+  
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<HistoricoItem | null>(null);
@@ -68,6 +82,25 @@ export function HistoricoSimplePage() {
     changePageSize,
     refetch,
   } = useHistoricoSimple();
+
+  // Salvar configuração de colunas no localStorage
+  const handleColumnsChange = (newColumns: ColumnConfig[]) => {
+    setColumns(newColumns);
+    try {
+      localStorage.setItem('historico-columns-config', JSON.stringify(newColumns));
+      toast({
+        title: "Configuração salva",
+        description: "Configuração de colunas salva com sucesso!"
+      });
+    } catch (error) {
+      console.error('Erro ao salvar configuração de colunas:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar a configuração de colunas.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleRowClick = (item: HistoricoItem) => {
     setSelectedItem(item);
@@ -160,6 +193,10 @@ export function HistoricoSimplePage() {
               <p className="text-sm text-muted-foreground">
                 Sistema completo com todas as colunas dos pedidos
               </p>
+              {/* Indicador de versão para debug */}
+              <div className="text-xs text-green-600 font-mono bg-green-50 px-2 py-1 rounded">
+                ✅ HistoricoSimplePage v2.0 - Seleção Múltipla Ativa
+              </div>
             </div>
           </div>
           
@@ -186,7 +223,7 @@ export function HistoricoSimplePage() {
             
             <HistoricoColumnSelector
               columns={columns}
-              onColumnsChange={setColumns}
+              onColumnsChange={handleColumnsChange}
             />
             
             <Button
