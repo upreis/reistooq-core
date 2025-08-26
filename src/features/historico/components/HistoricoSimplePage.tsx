@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { History, RefreshCw, ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,6 +17,7 @@ import { HistoricoImportModal } from './HistoricoImportModal';
 import { useHistoricoSimple } from '../hooks/useHistoricoSimple';
 import { useHistoricoExport } from '../hooks/useHistoricoExport';
 import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
+import { HistoricoDeleteService } from '../services/HistoricoDeleteService';
 import { HistoricoItem } from '../services/HistoricoSimpleService';
 
 export function HistoricoSimplePage() {
@@ -24,6 +26,7 @@ export function HistoricoSimplePage() {
   const [columns, setColumns] = useState<ColumnConfig[]>(defaultColumns);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<HistoricoItem | null>(null);
 
   // Auto refresh com real-time
   useHistoricoRealtime({ enabled: true });
@@ -69,6 +72,20 @@ export function HistoricoSimplePage() {
       title: "Importação concluída",
       description: "Dados importados com sucesso. Atualizando lista..."
     });
+  };
+
+  const handleDeleteItem = async (item: HistoricoItem) => {
+    setItemToDelete(item);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    
+    const success = await HistoricoDeleteService.deleteItem(itemToDelete.id);
+    if (success) {
+      refetch(); // Atualizar lista após exclusão
+    }
+    setItemToDelete(null);
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -180,6 +197,7 @@ export function HistoricoSimplePage() {
             columns={columns}
             isLoading={isLoading}
             onRowClick={handleRowClick}
+            onDeleteItem={handleDeleteItem}
           />
         </CardContent>
       </Card>
@@ -301,6 +319,30 @@ export function HistoricoSimplePage() {
         onOpenChange={setImportModalOpen}
         onImportSuccess={handleImportSuccess}
       />
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o pedido{' '}
+              <strong>{itemToDelete?.numero_pedido}</strong>?
+              <br />
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }

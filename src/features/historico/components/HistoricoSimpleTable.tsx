@@ -3,6 +3,8 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 import { HistoricoItem } from '../services/HistoricoSimpleService';
 import { ColumnConfig } from './HistoricoColumnSelector';
 
@@ -11,9 +13,10 @@ interface HistoricoSimpleTableProps {
   columns: ColumnConfig[];
   isLoading?: boolean;
   onRowClick?: (item: HistoricoItem) => void;
+  onDeleteItem?: (item: HistoricoItem) => void;
 }
 
-export function HistoricoSimpleTable({ data, columns, isLoading, onRowClick }: HistoricoSimpleTableProps) {
+export function HistoricoSimpleTable({ data, columns, isLoading, onRowClick, onDeleteItem }: HistoricoSimpleTableProps) {
   
   if (isLoading) {
     return (
@@ -107,23 +110,41 @@ export function HistoricoSimpleTable({ data, columns, isLoading, onRowClick }: H
                 {column.label}
               </TableHead>
             ))}
+            {onDeleteItem && (
+              <TableHead className="w-16">Ações</TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((item) => (
             <TableRow 
               key={item.id}
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => onRowClick?.(item)}
+              className="hover:bg-muted/50"
             >
               {visibleColumns.map((column) => (
                 <TableCell 
                   key={column.key}
-                  className={`${column.key.includes('valor') || column.key.includes('quantidade') ? 'text-right' : ''} max-w-[200px] truncate`}
+                  className={`${column.key.includes('valor') || column.key.includes('quantidade') ? 'text-right' : ''} max-w-[200px] truncate cursor-pointer`}
+                  onClick={() => onRowClick?.(item)}
                 >
                   {getCellValue(item, column.key)}
                 </TableCell>
               ))}
+              {onDeleteItem && (
+                <TableCell className="w-16">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteItem(item);
+                    }}
+                    className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
