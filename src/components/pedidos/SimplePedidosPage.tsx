@@ -32,6 +32,7 @@ import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
 import { buildIdUnico } from '@/utils/idUnico';
 import { PedidosDashboard } from './dashboard/PedidosDashboard';
 import { PedidosAlerts } from './dashboard/PedidosAlerts';
+import { HistoricoFixManager } from '@/components/debug/HistoricoFixManager';
 
 type Order = {
   id: string;
@@ -917,6 +918,9 @@ export default function SimplePedidosPage({ className }: Props) {
       {orders && orders.length > 0 && (
         <PedidosAlerts orders={orders} className="animate-fade-in" />
       )}
+
+      {/* 🛠️ UTILITÁRIO DE CORREÇÃO DE HISTÓRICO */}
+      <HistoricoFixManager />
 
       {/* 🛡️ HEADER BLINDADO */}
       <div className="flex items-center justify-between">

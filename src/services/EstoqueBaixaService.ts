@@ -549,7 +549,6 @@ export class EstoqueBaixaService {
       console.error('[EstoqueBaixa] Erro ao registrar histórico:', error);
     }
   }
-  }
 
   /**
    * ⚠️ CORREÇÃO CRÍTICA: Garantir integration_account_id válido
@@ -582,3 +581,4 @@ export class EstoqueBaixaService {
     console.warn('[EstoqueBaixa] Usando integration_account_id padrão - dados podem não aparecer no histórico');
     return '550e8400-e29b-41d4-a716-446655440000'; // Account padrão
   }
+}

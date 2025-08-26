@@ -1864,6 +1864,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      fix_historico_integration_accounts: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       gerar_sku_automatico: {
         Args: { org_id: string; prefixo?: string }
         Returns: string
