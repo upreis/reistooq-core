@@ -106,13 +106,52 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
+    // Dedup: se houver id_unico, evitar inserção duplicada
+    if (payload.id_unico) {
+      try {
+        const { data: existing } = await supabase
+          .from('historico_vendas')
+          .select('id')
+          .eq('id_unico', String(payload.id_unico))
+          .maybeSingle();
+        if (existing?.id) {
+          return new Response(JSON.stringify({ ok: true, id: existing.id, dedup: true }), {
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+      } catch (lookupErr) {
+        console.warn('[registrar-historico-vendas] lookup existing failed', lookupErr);
+      }
+    }
+
     // Inserir via RPC com SECURITY DEFINER (bypassa RLS)
-    const { data, error } = await supabase
-      .rpc('hv_insert', { p: payload });
+    const { data, error } = await supabase.rpc('hv_insert', { p: payload });
 
     if (error) {
+      // Se for violação de unicidade (23505), buscar e retornar o existente
+      const isDuplicate = (error as any)?.code === '23505' ||
+        String((error as any)?.message || '').toLowerCase().includes('duplicate key') ||
+        String((error as any)?.details || '').toLowerCase().includes('already exists');
+
+      if (isDuplicate && payload.id_unico) {
+        try {
+          const { data: existing } = await supabase
+            .from('historico_vendas')
+            .select('id')
+            .eq('id_unico', String(payload.id_unico))
+            .maybeSingle();
+          if (existing?.id) {
+            return new Response(JSON.stringify({ ok: true, id: existing.id, dedup: true }), {
+              headers: { 'Content-Type': 'application/json', ...corsHeaders },
+            });
+          }
+        } catch (resolveDupErr) {
+          console.warn('[registrar-historico-vendas] duplicate resolve failed', resolveDupErr);
+        }
+      }
+
       console.error('[registrar-historico-vendas] insert error', error);
-      return new Response(JSON.stringify({ ok: false, error: error.message }), {
+      return new Response(JSON.stringify({ ok: false, error: (error as any)?.message || 'insert failed' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
