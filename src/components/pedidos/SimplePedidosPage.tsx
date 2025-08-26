@@ -1421,7 +1421,10 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('destination_street_number') && <th className="text-left p-3">Número</th>}
                    
                    {visibleColumns.has('destination_comment') && <th className="text-left p-3">Complemento</th>}
-                   {visibleColumns.has('destination_zip_code') && <th className="text-left p-3">CEP</th>}
+                    {visibleColumns.has('destination_zip_code') && <th className="text-left p-3">CEP</th>}
+                    {visibleColumns.has('endereco_rua') && <th className="text-left p-3">Rua</th>}
+                    {visibleColumns.has('endereco_numero') && <th className="text-left p-3">Número</th>}
+                    {visibleColumns.has('endereco_bairro') && <th className="text-left p-3">Bairro</th>}
                    {visibleColumns.has('destination_city_name') && <th className="text-left p-3">Cidade</th>}
                    {visibleColumns.has('destination_state_name') && <th className="text-left p-3">Estado</th>}
                    {visibleColumns.has('destination_state_id') && <th className="text-left p-3">Estado (Sigla)</th>}

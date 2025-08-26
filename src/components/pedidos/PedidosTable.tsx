@@ -322,8 +322,14 @@ export function PedidosTable({
                             return show(get(row.unified, 'cidade') ?? get(row.raw, 'shipping_details.receiver_address.city.name'));
                           case 'uf':
                             return show(get(row.unified, 'uf') ?? get(row.raw, 'shipping_details.receiver_address.state.id'));
-                          case 'cep':
-                            return show(get(row.raw, 'shipping_details.receiver_address.zip_code'));
+                           case 'cep':
+                             return show(get(row.raw, 'shipping_details.receiver_address.zip_code'));
+                           case 'endereco_rua':
+                             return show(get(row.unified, 'endereco_rua') ?? get(row.raw, 'shipping_details.receiver_address.street_name') ?? get(row.raw, 'shipping.receiver_address.street_name'));
+                           case 'endereco_numero':
+                             return show(get(row.unified, 'endereco_numero') ?? get(row.raw, 'shipping_details.receiver_address.street_number') ?? get(row.raw, 'shipping.receiver_address.street_number'));
+                           case 'endereco_bairro':
+                             return show(get(row.unified, 'endereco_bairro') ?? get(row.raw, 'shipping_details.receiver_address.neighborhood.name') ?? get(row.raw, 'shipping.receiver_address.neighborhood.name'));
                            case 'shipping_status':
                              const shippingStatus = get(row.raw, 'shipping_details.status');
                              const shippingSubstatus = get(row.raw, 'shipping_details.substatus');

@@ -66,6 +66,9 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'cidade', label: 'Cidade', visible: true, category: 'basic' },
   { key: 'uf', label: 'UF', visible: true, category: 'basic' },
   { key: 'cep', label: 'CEP', visible: true, category: 'basic' },
+  { key: 'endereco_rua', label: 'Rua', visible: false, category: 'basic' },
+  { key: 'endereco_numero', label: 'Número', visible: false, category: 'basic' },
+  { key: 'endereco_bairro', label: 'Bairro', visible: false, category: 'basic' },
 
   // Envio (ML)
   { key: 'shipping_status', label: 'Status do Envio', visible: true, category: 'ml' },
