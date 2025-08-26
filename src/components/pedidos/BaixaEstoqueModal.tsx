@@ -196,14 +196,18 @@ export function BaixaEstoqueModal({ pedidos, trigger }: BaixaEstoqueModalProps) 
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pedidos.map((pedido) => (
-                      <TableRow key={pedido.id}>
-                        <TableCell className="font-mono text-xs">{pedido.numero}</TableCell>
-                        <TableCell>{pedido.nome_cliente}</TableCell>
-                        <TableCell>R$ {pedido.valor_total?.toFixed(2) || '0,00'}</TableCell>
-                        <TableCell>{new Date(pedido.data_pedido).toLocaleDateString('pt-BR')}</TableCell>
-                      </TableRow>
-                    ))}
+                    {pedidos.map((pedido) => {
+                      const d = new Date(pedido.data_pedido);
+                      const dataFmt = isNaN(d.getTime()) ? '-' : d.toLocaleDateString('pt-BR');
+                      return (
+                        <TableRow key={pedido.id}>
+                          <TableCell className="font-mono text-xs">{pedido.numero}</TableCell>
+                          <TableCell>{pedido.nome_cliente}</TableCell>
+                          <TableCell>R$ {(pedido.valor_total ?? 0).toFixed(2)}</TableCell>
+                          <TableCell>{dataFmt}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>

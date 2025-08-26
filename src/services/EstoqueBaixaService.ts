@@ -169,24 +169,44 @@ export class EstoqueBaixaService {
    */
   private static extrairSkusDoPedido(pedido: Pedido): { sku: string; quantidade: number }[] {
     const skus: { sku: string; quantidade: number }[] = [];
-    
-    // Tenta extrair da observação (formato comum: "SKU123 (2x), SKU456 (1x)")
-    if (pedido.obs) {
+
+    // 1) Itens estruturados (preferível)
+    const items = (pedido as any)?.order_items as any[] | undefined;
+    if (Array.isArray(items) && items.length > 0) {
+      for (const det of items) {
+        const itm = det?.item || {};
+        const skuRaw = itm?.seller_sku || itm?.id || (det?.seller_sku);
+        const q = Number(det?.quantity ?? det?.requested_quantity?.value ?? 1);
+        if (skuRaw) skus.push({ sku: String(skuRaw).trim(), quantidade: Number.isFinite(q) && q > 0 ? q : 1 });
+      }
+    }
+
+    // 2) Array simples de SKUs caso exista
+    if (skus.length === 0) {
+      const list = (pedido as any)?.skus as any[] | undefined;
+      if (Array.isArray(list)) {
+        for (const entry of list) {
+          if (!entry) continue;
+          if (typeof entry === 'string') skus.push({ sku: entry.trim(), quantidade: 1 });
+          else if (typeof entry === 'object' && entry.sku) skus.push({ sku: String(entry.sku).trim(), quantidade: Number(entry.quantidade ?? 1) });
+        }
+      }
+    }
+
+    // 3) Observação textual (ex: "SKU123 (2x), SKU456 (1x)")
+    if (skus.length === 0 && pedido.obs) {
       const regex = /([A-Z0-9\-]+)\s*\((\d+)x\)|([A-Z0-9\-]+)/gi;
       let match;
-      
       while ((match = regex.exec(pedido.obs)) !== null) {
         if (match[1] && match[2]) {
-          // Formato com quantidade: SKU123 (2x)
           skus.push({ sku: match[1].trim(), quantidade: parseInt(match[2]) });
         } else if (match[3]) {
-          // Formato simples: SKU123
           skus.push({ sku: match[3].trim(), quantidade: 1 });
         }
       }
     }
 
-    // Fallback: usar o número do pedido como SKU se não encontrou nada
+    // 4) Fallback extremo
     if (skus.length === 0 && pedido.numero) {
       skus.push({ sku: pedido.numero, quantidade: 1 });
     }
