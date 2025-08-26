@@ -86,7 +86,7 @@ export class HistoricoSimpleService {
     hasMore: boolean;
   }> {
     try {
-      // ✅ CORREÇÃO FINAL: usar nova RPC 'get_historico_vendas_safe' com parâmetros corretos
+      // ✅ CORREÇÃO FINAL: usar RPC 'get_historico_vendas_safe' com parâmetros corretos
       const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
         _limit: limit,
         _offset: (page - 1) * limit,
