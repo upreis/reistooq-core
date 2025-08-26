@@ -1,4 +1,4 @@
-// Página simplificada de histórico - sem complexidade desnecessária
+// Página completa de histórico - com seletor de colunas
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,14 @@ import { useToast } from '@/hooks/use-toast';
 import { HistoricoSimpleTable } from './HistoricoSimpleTable';
 import { HistoricoSimpleFilters } from './HistoricoSimpleFilters';
 import { HistoricoSimpleStats } from './HistoricoSimpleStats';
+import { HistoricoColumnSelector, defaultColumns, type ColumnConfig } from './HistoricoColumnSelector';
 import { useHistoricoSimple } from '../hooks/useHistoricoSimple';
 import { HistoricoItem } from '../services/HistoricoSimpleService';
 
 export function HistoricoSimplePage() {
   const { toast } = useToast();
   const [selectedItem, setSelectedItem] = useState<HistoricoItem | null>(null);
+  const [columns, setColumns] = useState<ColumnConfig[]>(defaultColumns);
 
   // Hook principal simplificado
   const {
@@ -40,7 +42,7 @@ export function HistoricoSimplePage() {
     setSelectedItem(item);
     toast({
       title: "Item Selecionado",
-      description: `Pedido ${item.numero_pedido} - ${item.cliente_nome}`
+      description: `Pedido ${item.numero_pedido} - ${item.nome_cliente || item.nome_completo || 'Cliente'}`
     });
   };
 
@@ -60,12 +62,16 @@ export function HistoricoSimplePage() {
             <div>
               <h1 className="text-2xl font-bold">Histórico de Vendas</h1>
               <p className="text-sm text-muted-foreground">
-                Versão simplificada - sem complexidade desnecessária
+                Sistema completo com todas as colunas dos pedidos
               </p>
             </div>
           </div>
           
           <div className="flex items-center gap-4">
+            <HistoricoColumnSelector
+              columns={columns}
+              onColumnsChange={setColumns}
+            />
             <Button
               variant="outline"
               size="sm"
@@ -122,6 +128,7 @@ export function HistoricoSimplePage() {
         <CardContent className="p-0">
           <HistoricoSimpleTable
             data={data}
+            columns={columns}
             isLoading={isLoading}
             onRowClick={handleRowClick}
           />
@@ -188,7 +195,7 @@ export function HistoricoSimplePage() {
                 <strong>SKU:</strong> {selectedItem.sku_produto}
               </div>
               <div>
-                <strong>Cliente:</strong> {selectedItem.cliente_nome || '-'}
+                <strong>Cliente:</strong> {selectedItem.nome_cliente || selectedItem.nome_completo || '-'}
               </div>
               <div>
                 <strong>Status:</strong>{' '}
@@ -204,6 +211,28 @@ export function HistoricoSimplePage() {
                   currency: 'BRL'
                 })}
               </div>
+              {selectedItem.sku_estoque && (
+                <div>
+                  <strong>SKU Estoque:</strong> {selectedItem.sku_estoque}
+                </div>
+              )}
+              {selectedItem.status_mapeamento && (
+                <div>
+                  <strong>Status Mapeamento:</strong>{' '}
+                  <Badge variant="outline">{selectedItem.status_mapeamento}</Badge>
+                </div>
+              )}
+              {selectedItem.status_baixa && (
+                <div>
+                  <strong>Status Baixa:</strong>{' '}
+                  <Badge variant="outline">{selectedItem.status_baixa}</Badge>
+                </div>
+              )}
+              {selectedItem.total_itens && (
+                <div>
+                  <strong>Total de Itens:</strong> {selectedItem.total_itens}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

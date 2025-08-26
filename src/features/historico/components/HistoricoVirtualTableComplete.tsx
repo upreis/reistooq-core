@@ -15,7 +15,7 @@ import { formatCurrency, formatDateTime } from '../utils/historicoFormatters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Copy, MoreHorizontal, ExternalLink } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { HistoricoColumnSelector, DEFAULT_HISTORICO_COLUMNS, type HistoricoColumnConfig } from './HistoricoColumnSelector';
+import { HistoricoColumnSelector, defaultColumns, type ColumnConfig } from './HistoricoColumnSelector';
 
 interface HistoricoVirtualTableCompleteProps {
   data: HistoricoVenda[];
@@ -34,7 +34,7 @@ export function HistoricoVirtualTableComplete({
   selectedIds = new Set(),
   onSelectionChange
 }: HistoricoVirtualTableCompleteProps) {
-  const [columnConfigs, setColumnConfigs] = useState<HistoricoColumnConfig[]>(DEFAULT_HISTORICO_COLUMNS);
+  const [columnConfigs, setColumnConfigs] = useState<ColumnConfig[]>(defaultColumns);
   
   const visibleColumns = columnConfigs.filter(col => col.visible);
   

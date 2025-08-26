@@ -1,17 +1,19 @@
-// Tabela simples para histórico - sem virtualização complexa
+// Tabela completa para histórico - com todas as colunas dos pedidos
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HistoricoItem } from '../services/HistoricoSimpleService';
+import { ColumnConfig } from './HistoricoColumnSelector';
 
 interface HistoricoSimpleTableProps {
   data: HistoricoItem[];
+  columns: ColumnConfig[];
   isLoading?: boolean;
   onRowClick?: (item: HistoricoItem) => void;
 }
 
-export function HistoricoSimpleTable({ data, isLoading, onRowClick }: HistoricoSimpleTableProps) {
+export function HistoricoSimpleTable({ data, columns, isLoading, onRowClick }: HistoricoSimpleTableProps) {
   
   if (isLoading) {
     return (
@@ -32,14 +34,19 @@ export function HistoricoSimpleTable({ data, isLoading, onRowClick }: HistoricoS
   }
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'concluida':
+      case 'baixado':
         return 'default';
       case 'pendente':
         return 'secondary';
       case 'cancelada':
         return 'destructive';
-      case 'baixado':
+      case 'mapeado':
+        return 'outline';
+      case 'aprovado':
+        return 'default';
+      case 'enviado':
         return 'outline';
       default:
         return 'secondary';
@@ -53,6 +60,36 @@ export function HistoricoSimpleTable({ data, isLoading, onRowClick }: HistoricoS
     });
   };
 
+  const visibleColumns = columns.filter(col => col.visible);
+
+  const getCellValue = (item: HistoricoItem, columnKey: string): any => {
+    const value = (item as any)[columnKey];
+
+    
+    // Formatações especiais por tipo de campo
+    if (columnKey.includes('data') && value) {
+      return new Date(value).toLocaleDateString('pt-BR');
+    }
+    
+    if (columnKey.includes('valor') && typeof value === 'number') {
+      return formatCurrency(value);
+    }
+    
+    if (columnKey.includes('quantidade') && typeof value === 'number') {
+      return value;
+    }
+    
+    if (columnKey.includes('status') && value) {
+      return (
+        <Badge variant={getStatusColor(value)}>
+          {value}
+        </Badge>
+      );
+    }
+    
+    return value || '-';
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
@@ -62,16 +99,14 @@ export function HistoricoSimpleTable({ data, isLoading, onRowClick }: HistoricoS
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Data</TableHead>
-            <TableHead>Pedido</TableHead>
-            <TableHead>SKU</TableHead>
-            <TableHead>Produto</TableHead>
-            <TableHead>Cliente</TableHead>
-            <TableHead className="text-right">Qtd</TableHead>
-            <TableHead className="text-right">Valor Unit.</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Local</TableHead>
+            {visibleColumns.map((column) => (
+              <TableHead 
+                key={column.key}
+                className={column.key.includes('valor') || column.key.includes('quantidade') ? 'text-right' : ''}
+              >
+                {column.label}
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -81,36 +116,14 @@ export function HistoricoSimpleTable({ data, isLoading, onRowClick }: HistoricoS
               className="cursor-pointer hover:bg-muted/50"
               onClick={() => onRowClick?.(item)}
             >
-              <TableCell className="font-medium">
-                {formatDate(item.data_pedido)}
-              </TableCell>
-              <TableCell>{item.numero_pedido}</TableCell>
-              <TableCell className="font-mono text-sm">
-                {item.sku_produto}
-              </TableCell>
-              <TableCell className="max-w-[200px] truncate">
-                {item.descricao || '-'}
-              </TableCell>
-              <TableCell className="max-w-[150px] truncate">
-                {item.cliente_nome || '-'}
-              </TableCell>
-              <TableCell className="text-right">
-                {item.quantidade}
-              </TableCell>
-              <TableCell className="text-right">
-                {formatCurrency(item.valor_unitario)}
-              </TableCell>
-              <TableCell className="text-right font-medium">
-                {formatCurrency(item.valor_total)}
-              </TableCell>
-              <TableCell>
-                <Badge variant={getStatusColor(item.status)}>
-                  {item.status}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {item.cidade && item.uf ? `${item.cidade}, ${item.uf}` : '-'}
-              </TableCell>
+              {visibleColumns.map((column) => (
+                <TableCell 
+                  key={column.key}
+                  className={`${column.key.includes('valor') || column.key.includes('quantidade') ? 'text-right' : ''} max-w-[200px] truncate`}
+                >
+                  {getCellValue(item, column.key)}
+                </TableCell>
+              ))}
             </TableRow>
           ))}
         </TableBody>
