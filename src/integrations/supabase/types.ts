@@ -1806,6 +1806,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      backfill_historico_vendas_orphans: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       cleanup_expired_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
