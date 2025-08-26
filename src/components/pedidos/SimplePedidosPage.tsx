@@ -1712,19 +1712,19 @@ export default function SimplePedidosPage({ className }: Props) {
                          <td className="p-3">{mapping?.skuKit || '-'}</td>
                        )}
                        
-                       {visibleColumns.has('qtd_kit') && (
-                         <td className="p-3">{mapping?.qtdKit || '-'}</td>
-                       )}
-                       
-                       {visibleColumns.has('total_itens') && (
-                         <td className="p-3">
-                           {(() => {
-                             const qtdVendida = quantidadeItens || 0;
-                             const qtdKit = mapping?.qtdKit || 1;
-                             return qtdVendida * qtdKit;
-                           })()}
-                         </td>
-                       )}
+                        {visibleColumns.has('qtd_kit') && (
+                          <td className="p-3">{mapping?.quantidade || '-'}</td>
+                        )}
+                        
+                        {visibleColumns.has('total_itens') && (
+                          <td className="p-3">
+                            {(() => {
+                              const qtdVendida = quantidadeItens || 0;
+                              const qtdKit = mapping?.quantidade || 1;
+                              return qtdVendida * qtdKit;
+                            })()}
+                          </td>
+                        )}
                        
                        {visibleColumns.has('status_baixa') && (
                          <td className="p-3">{renderStatusBaixa(order.id)}</td>

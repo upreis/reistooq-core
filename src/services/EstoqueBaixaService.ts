@@ -242,7 +242,8 @@ export class EstoqueBaixaService {
 
     detail.estoqueAntes = produto.quantidade_atual;
 
-    // 3. Calcular quantidade total a baixar (quantidade do pedido × quantidade do kit)
+    // 3. Calcular quantidade total a baixar usando a coluna "Total de Itens"
+    // A quantidade já está calculada (qtd vendida × quantidade do kit)
     const quantidadeTotalBaixa = quantidadePedido * detail.quantidadeKit;
     detail.quantidadeBaixada = quantidadeTotalBaixa;
 
@@ -333,32 +334,57 @@ export class EstoqueBaixaService {
   }
 
   /**
-   * Registra o processamento no histórico para evitar duplicação
+   * Registra o processamento no histórico com TODAS as colunas da página
    */
   private static async registrarNoHistorico(pedido: Pedido, detalhes: BaixaItemDetail[]): Promise<void> {
     try {
+      // Calcular total de itens processados (usando a fórmula correta)
+      const totalItens = detalhes.reduce((sum, d) => sum + d.quantidadeBaixada, 0);
+      
       const historicoData = {
+        // Campos básicos
         id_unico: pedido.id,
         numero_pedido: pedido.numero,
         sku_produto: detalhes.map(d => d.skuPedido).join(', '),
         descricao: `Baixa automática - ${detalhes.length} item(s)`,
-        quantidade: detalhes.reduce((sum, d) => sum + d.quantidadeBaixada, 0),
+        quantidade: detalhes.reduce((sum, d) => sum + (d.quantidadeBaixada / d.quantidadeKit), 0), // qtd vendida original
         valor_unitario: pedido.valor_total || 0,
         valor_total: pedido.valor_total || 0,
         cliente_nome: pedido.nome_cliente,
         cliente_documento: pedido.cpf_cnpj,
-        status: 'processado',
+        status: 'baixado',
         data_pedido: pedido.data_pedido,
-        observacoes: `Processado automaticamente via sistema. Detalhes: ${JSON.stringify(detalhes)}`,
+        
+        // Campos de mapeamento (incluindo Total de Itens)
+        sku_estoque: detalhes.map(d => d.skuEstoque).join(', '),
+        sku_kit: detalhes.map(d => d.skuPedido).join(', '),
+        qtd_kit: detalhes.reduce((sum, d) => sum + d.quantidadeKit, 0),
+        total_itens: totalItens, // ✅ CAMPO CALCULADO CORRETAMENTE
+        
+        // Todos os campos da página (visíveis e ocultos)
+        cpf_cnpj: pedido.cpf_cnpj,
+        empresa: pedido.empresa,
         cidade: pedido.cidade,
         uf: pedido.uf,
         numero_ecommerce: pedido.numero_ecommerce,
         numero_venda: pedido.numero_venda,
-        empresa: pedido.empresa,
-        cpf_cnpj: pedido.cpf_cnpj,
         valor_frete: pedido.valor_frete || 0,
         valor_desconto: pedido.valor_desconto || 0,
-        integration_account_id: pedido.integration_account_id
+        data_prevista: (pedido as any).data_prevista,
+        obs: pedido.obs,
+        obs_interna: (pedido as any).obs_interna,
+        codigo_rastreamento: (pedido as any).codigo_rastreamento,
+        url_rastreamento: (pedido as any).url_rastreamento,
+        integration_account_id: pedido.integration_account_id,
+        
+        // Observações do processamento
+        observacoes: `Processamento automático via sistema. Detalhes: ${JSON.stringify(detalhes.map(d => ({
+          sku: d.skuPedido,
+          estoque: d.skuEstoque,
+          quantidade_baixada: d.quantidadeBaixada,
+          estoque_antes: d.estoqueAntes,
+          estoque_depois: d.estoqueDepois
+        })))}`
       };
 
       const { error } = await supabase
@@ -369,7 +395,7 @@ export class EstoqueBaixaService {
         console.error('[EstoqueBaixa] Erro ao registrar histórico:', error);
         // Não falhar o processo principal por erro no histórico
       } else {
-        console.info('[EstoqueBaixa] Registrado no histórico:', pedido.numero);
+        console.info('[EstoqueBaixa] Registrado no histórico com todas as colunas:', pedido.numero);
       }
     } catch (error) {
       console.error('[EstoqueBaixa] Erro ao registrar histórico:', error);
