@@ -145,20 +145,20 @@ export class EstoqueBaixaService {
    */
   private static async verificarPedidoJaProcessado(idUnicoPedido: string): Promise<boolean> {
     try {
+      // Usar RPC segura que já aplica RLS e escopo de organização
       const { data, error } = await supabase
-        .from('historico_vendas')
-        .select('id')
-        .eq('id_unico', idUnicoPedido)
-        .maybeSingle();
+        .rpc('get_historico_vendas_safe', { _search: idUnicoPedido, _limit: 1 });
 
       if (error) {
-        console.warn('[EstoqueBaixa] Erro ao verificar histórico:', error);
-        return false; // Em caso de erro, assumir que não foi processado
+        // Não bloquear a baixa por falhas de consulta
+        console.info('[EstoqueBaixa] RPC histórico indisponível, seguindo:', error?.message);
+        return false;
       }
 
-      return !!data;
+      const rows = Array.isArray(data) ? data : [];
+      const found = rows.some((r: any) => String(r?.id_unico) === String(idUnicoPedido));
+      return found;
     } catch (error) {
-      console.warn('[EstoqueBaixa] Erro ao verificar histórico:', error);
       return false;
     }
   }
@@ -275,15 +275,24 @@ export class EstoqueBaixaService {
       return detail;
     }
 
-    // 5. Efetuar a baixa no estoque
+    // 5. Efetuar a baixa no estoque (com fallback por SKU)
     const novaQuantidade = produto.quantidade_atual - quantidadeTotalBaixa;
-    const { error } = await supabase
+    let updateQuery = supabase
       .from('produtos')
       .update({ 
         quantidade_atual: novaQuantidade,
         updated_at: new Date().toISOString()
-      })
-      .eq('id', produto.id);
+      });
+
+    if (produto.id) {
+      updateQuery = updateQuery.eq('id', produto.id);
+    } else {
+      // Fallback seguro: atualizar pelo SKU interno quando o id não estiver disponível
+      updateQuery = updateQuery.eq('sku_interno', detail.skuEstoque!)
+        .eq('ativo', true);
+    }
+
+    const { error } = await updateQuery;
 
     if (error) {
       detail.status = 'error';
@@ -444,15 +453,27 @@ export class EstoqueBaixaService {
         })))}`
       };
 
-      const { error } = await supabase
+      // Executar com timeout curto para não travar o fluxo da UI
+      const timeout = new Promise<{ error: any }>((resolve) =>
+        setTimeout(() => resolve({ error: new Error('timeout') }), 2000)
+      );
+
+      const invokePromise = supabase
         .functions
         .invoke('registrar-historico-vendas', { body: historicoData });
 
-      if (error) {
+      const { error } = await Promise.race([
+        invokePromise,
+        timeout,
+      ]) as any;
+
+      if (error && String(error?.message || error) !== 'timeout') {
         console.error('[EstoqueBaixa] Erro ao registrar histórico (edge):', error);
         // Não falhar o processo principal por erro no histórico
+      } else if (String(error?.message || error) === 'timeout') {
+        console.warn('[EstoqueBaixa] Registro de histórico em background (timeout 2s).');
       } else {
-        console.info('[EstoqueBaixa] Registrado no histórico com todas as colunas via edge:', pedido.numero);
+        console.info('[EstoqueBaixa] Registrado no histórico (edge):', pedido.numero);
       }
     } catch (error) {
       console.error('[EstoqueBaixa] Erro ao registrar histórico:', error);
