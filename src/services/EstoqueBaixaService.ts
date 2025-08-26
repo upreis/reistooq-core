@@ -551,34 +551,16 @@ export class EstoqueBaixaService {
   }
 
   /**
-   * ⚠️ CORREÇÃO CRÍTICA: Garantir integration_account_id válido
-   * Sem integration_account_id, dados não aparecem no frontend devido ao RLS
+   * Garante um integration_account_id válido somente quando já está presente no pedido.
+   * Caso contrário, retorna null para que o Edge Function resolva automaticamente
+   * a conta via número do pedido (mais confiável e seguro com RLS).
    */
   private static garantirIntegrationAccountId(pedido: Pedido): string | null {
-    // 1. Tentar usar o ID do pedido
-    if (pedido.integration_account_id) {
-      return pedido.integration_account_id;
+    const candidate = (pedido as any).integration_account_id;
+    if (typeof candidate === 'string' && this.isValidUUID(candidate)) {
+      return candidate;
     }
-
-    // 2. Fallback: buscar por dados do pedido (empresa, marketplace)
-    if (pedido.empresa) {
-      // Mapear empresas conhecidas para account_ids
-      const empresaMapeamento: Record<string, string> = {
-        'mercadolivre': '550e8400-e29b-41d4-a716-446655440000',
-        'shopee': '550e8400-e29b-41d4-a716-446655440001',
-        'magazine': '550e8400-e29b-41d4-a716-446655440002',
-        'sistema': '550e8400-e29b-41d4-a716-446655440003'
-      };
-      
-      const empresaKey = pedido.empresa.toLowerCase();
-      if (empresaMapeamento[empresaKey]) {
-        console.warn('[EstoqueBaixa] Usando integration_account_id por empresa:', empresaKey);
-        return empresaMapeamento[empresaKey];
-      }
-    }
-
-    // 3. Último fallback: usar account padrão do sistema
-    console.warn('[EstoqueBaixa] Usando integration_account_id padrão - dados podem não aparecer no histórico');
-    return '550e8400-e29b-41d4-a716-446655440000'; // Account padrão
+    // Não force IDs fictícios. Deixe o servidor resolver por pedidos.
+    return null;
   }
 }
