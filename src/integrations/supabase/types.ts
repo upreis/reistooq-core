@@ -1853,6 +1853,10 @@ export type Database = {
           token: string
         }[]
       }
+      debug_historico_visibilidade: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       ensure_current_org: {
         Args: Record<PropertyKey, never>
         Returns: Json
