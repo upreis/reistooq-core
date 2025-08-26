@@ -1,4 +1,6 @@
+// 🛡️ PÁGINA PROTEGIDA - Sistema de Permissões Ativo
 import { useState, useEffect, useCallback } from "react";
+import { EstoqueGuard } from '@/core/estoque/guards/EstoqueGuard';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EstoqueActions } from "@/components/estoque/EstoqueActions";
@@ -328,7 +330,7 @@ const Estoque = () => {
   );
 
   return (
-    <>
+    <EstoqueGuard>
       <div className="space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -427,7 +429,7 @@ const Estoque = () => {
           </CardContent>
         </Card>
       </div>
-    </>
+    </EstoqueGuard>
   );
 };
 

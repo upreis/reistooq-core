@@ -1,7 +1,11 @@
-// src/pages/Historico.tsx - Versão simplificada
+// 🛡️ PÁGINA PROTEGIDA - Sistema de Permissões Ativo
+import { HistoricoGuard } from '@/core/historico/guards/HistoricoGuard';
 import { HistoricoSimplePage } from "@/features/historico/components/HistoricoSimplePage";
 
 export default function Historico() {
-  console.info('HISTORICO simplificado carregado', new Date().toISOString());
-  return <HistoricoSimplePage />; 
+  return (
+    <HistoricoGuard>
+      <HistoricoSimplePage />
+    </HistoricoGuard>
+  );
 }
