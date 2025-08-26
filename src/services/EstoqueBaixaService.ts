@@ -453,7 +453,7 @@ export class EstoqueBaixaService {
         obs_interna: (pedido as any).obs_interna,
         codigo_rastreamento: (pedido as any).codigo_rastreamento,
         url_rastreamento: (pedido as any).url_rastreamento,
-        integration_account_id: EstoqueBaixaService.isValidUUID(pedido.integration_account_id as any) ? pedido.integration_account_id : undefined,
+        integration_account_id: pedido.integration_account_id,
         
         // Observações do processamento
         observacoes: `Processamento automático via sistema. Detalhes: ${JSON.stringify(detalhes.map(d => ({

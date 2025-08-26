@@ -74,7 +74,7 @@ export interface HistoricoFilters {
 
 export class HistoricoSimpleService {
   
-  // Buscar dados do histórico usando tabela direta (quando possível) ou fallback
+  // Buscar dados reais do histórico via RPC segura (com RLS e máscara de PII)
   static async getHistorico(
     filters: HistoricoFilters = {},
     page: number = 1,
@@ -85,183 +85,76 @@ export class HistoricoSimpleService {
     hasMore: boolean;
   }> {
     try {
-      // Dados mock com todas as colunas para demonstração
-      const mockData: HistoricoItem[] = [
-        {
-          id: '1',
-          // Básicas
-          id_unico: 'PED001-001',
-          empresa: 'Loja ABC',
-          numero_pedido: 'PED001',
-          nome_cliente: 'Cliente A',
-          nome_completo: 'Cliente A Silva',
-          data_pedido: '2024-08-26',
-          ultima_atualizacao: '2024-08-26T10:30:00Z',
-
-          // Produtos
-          sku_produto: 'SKU123',
-          skus_produtos: 'SKU123, SKU124',
-          quantidade: 2,
-          quantidade_total: 2,
-          titulo_produto: 'Produto Teste 1',
-          descricao: 'Descrição detalhada do produto',
-
-          // Financeiras
-          valor_total: 100.00,
-          valor_unitario: 50.00,
-          valor_pago: 100.00,
-          frete_pago_cliente: 15.00,
-          receita_flex_bonus: 5.00,
-          custo_envio_seller: 10.00,
-          desconto_cupom: 0.00,
-          taxa_marketplace: 12.00,
-          valor_liquido_vendedor: 78.00,
-          metodo_pagamento: 'Cartão de Crédito',
-          status_pagamento: 'Aprovado',
-          tipo_pagamento: 'credit_card',
-
-          // Mapeamento
-          status_mapeamento: 'Mapeado',
-          sku_estoque: 'EST123',
-          sku_kit: 'KIT123',
-          quantidade_kit: 1,
-          total_itens: 2,
-          status_baixa: 'Baixado',
-
-          // Envio
-          status_envio: 'Enviado',
-          logistic_mode: 'me2',
-          tipo_logistico: 'Mercado Envios',
-          tipo_metodo_envio: 'Standard',
-          tipo_entrega: 'Domicílio',
-          substatus_estado_atual: 'Em trânsito',
-          modo_envio_combinado: 'Padrão',
-          metodo_envio_combinado: 'Correios',
-
-          // Sistema
-          status: 'concluida',
-          created_at: '2024-08-26T10:00:00Z',
-          cidade: 'São Paulo',
-          uf: 'SP',
-          cliente_documento: '123.456.789-00',
-          cpf_cnpj: '123.456.789-00',
-          codigo_rastreamento: 'BR123456789BR',
-          url_rastreamento: 'https://rastreamento.correios.com.br',
-          observacoes: 'Pedido processado automaticamente',
-          integration_account_id: 'acc-123'
-        },
-        {
-          id: '2',
-          // Básicas
-          id_unico: 'PED002-001',
-          empresa: 'Loja XYZ',
-          numero_pedido: 'PED002',
-          nome_cliente: 'Cliente B',
-          nome_completo: 'Cliente B Santos',
-          data_pedido: '2024-08-25',
-          ultima_atualizacao: '2024-08-25T15:45:00Z',
-
-          // Produtos
-          sku_produto: 'SKU456',
-          skus_produtos: 'SKU456',
-          quantidade: 1,
-          quantidade_total: 1,
-          titulo_produto: 'Produto Teste 2',
-          descricao: 'Outro produto para teste',
-
-          // Financeiras
-          valor_total: 75.00,
-          valor_unitario: 75.00,
-          valor_pago: 75.00,
-          frete_pago_cliente: 12.00,
-          receita_flex_bonus: 3.00,
-          custo_envio_seller: 8.00,
-          desconto_cupom: 5.00,
-          taxa_marketplace: 9.00,
-          valor_liquido_vendedor: 58.00,
-          metodo_pagamento: 'PIX',
-          status_pagamento: 'Aprovado',
-          tipo_pagamento: 'pix',
-
-          // Mapeamento
-          status_mapeamento: 'Pendente',
-          sku_estoque: 'EST456',
-          sku_kit: null,
-          quantidade_kit: 0,
-          total_itens: 1,
-          status_baixa: 'Pendente',
-
-          // Envio
-          status_envio: 'Preparando',
-          logistic_mode: 'fulfillment',
-          tipo_logistico: 'Full',
-          tipo_metodo_envio: 'Express',
-          tipo_entrega: 'Retirada',
-          substatus_estado_atual: 'Preparando envio',
-          modo_envio_combinado: 'Expresso',
-          metodo_envio_combinado: 'Transportadora',
-
-          // Sistema
-          status: 'pendente',
-          created_at: '2024-08-25T15:30:00Z',
-          cidade: 'Rio de Janeiro',
-          uf: 'RJ',
-          cliente_documento: '987.654.321-00',
-          cpf_cnpj: '987.654.321-00',
-          codigo_rastreamento: null,
-          url_rastreamento: null,
-          observacoes: 'Aguardando mapeamento',
-          integration_account_id: 'acc-456'
-        }
-      ];
-
-      // Aplicar filtros simples
-      let filtered = mockData;
-      
-      if (filters.search) {
-        const search = filters.search.toLowerCase();
-        filtered = filtered.filter(item => 
-          item.numero_pedido.toLowerCase().includes(search) ||
-          item.sku_produto.toLowerCase().includes(search) ||
-          item.titulo_produto?.toLowerCase().includes(search) ||
-          item.descricao?.toLowerCase().includes(search) ||
-          item.nome_cliente?.toLowerCase().includes(search) ||
-          item.nome_completo?.toLowerCase().includes(search) ||
-          item.empresa?.toLowerCase().includes(search) ||
-          item.sku_estoque?.toLowerCase().includes(search) ||
-          item.codigo_rastreamento?.toLowerCase().includes(search)
-        );
-      }
-
-      if (filters.status) {
-        filtered = filtered.filter(item => item.status === filters.status);
-      }
-
-      if (filters.dataInicio) {
-        filtered = filtered.filter(item => item.data_pedido >= filters.dataInicio!);
-      }
-
-      if (filters.dataFim) {
-        filtered = filtered.filter(item => item.data_pedido <= filters.dataFim!);
-      }
-
-      // Paginação simples
-      const offset = (page - 1) * limit;
-      const paginatedData = filtered.slice(offset, offset + limit);
-      
-      return {
-        data: paginatedData,
-        total: filtered.length,
-        hasMore: offset + limit < filtered.length
+      const params: any = {
+        _limit: limit,
+        _offset: (page - 1) * limit,
       };
 
-    } catch (error) {
-      console.error('Erro ao buscar histórico:', error);
-      return {
-        data: [],
-        total: 0,
-        hasMore: false
-      };
+      if (filters.search && String(filters.search).trim() !== '') {
+        params._search = String(filters.search).trim();
+      }
+      if (filters.dataInicio) params._start = filters.dataInicio;
+      if (filters.dataFim) params._end = filters.dataFim;
+
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', params);
+
+      if (error) {
+        console.error('[Historico] RPC get_historico_vendas_safe erro:', error.message);
+        return { data: [], total: 0, hasMore: false };
+      }
+
+      const rows = Array.isArray(data) ? data : [];
+      const mapped: HistoricoItem[] = rows.map((r: any) => ({
+        id: r.id,
+        // Básicas
+        id_unico: r.id_unico,
+        empresa: r.empresa || undefined,
+        numero_pedido: r.numero_pedido,
+        nome_cliente: r.cliente_nome || undefined,
+        data_pedido: r.data_pedido,
+        ultima_atualizacao: r.updated_at,
+
+        // Produtos
+        sku_produto: r.sku_produto,
+        quantidade: Number(r.quantidade || 0),
+        descricao: r.descricao || undefined,
+
+        // Financeiras
+        valor_total: Number(r.valor_total || 0),
+        valor_unitario: Number(r.valor_unitario || 0),
+        frete_pago_cliente: Number(r.valor_frete || 0),
+        desconto_cupom: Number(r.valor_desconto || 0),
+
+        // Mapeamento
+        sku_estoque: r.sku_estoque || undefined,
+        sku_kit: r.sku_kit || undefined,
+        quantidade_kit: Number(r.qtd_kit || 0),
+        total_itens: Number(r.total_itens || 0),
+        status_baixa: r.status,
+
+        // Envio
+        codigo_rastreamento: r.codigo_rastreamento || undefined,
+        url_rastreamento: r.url_rastreamento || undefined,
+
+        // Sistema
+        status: r.status,
+        created_at: r.created_at,
+        cidade: r.cidade || undefined,
+        uf: r.uf || undefined,
+        cliente_documento: r.cliente_documento || undefined,
+        cpf_cnpj: r.cpf_cnpj || undefined,
+        observacoes: r.observacoes || undefined,
+        integration_account_id: r.integration_account_id || undefined,
+      }));
+
+      // Como a RPC não retorna total, usamos um heurístico simples
+      const total = (page - 1) * limit + mapped.length;
+      const hasMore = mapped.length === limit;
+
+      return { data: mapped, total, hasMore };
+    } catch (error: any) {
+      console.error('Erro ao buscar histórico:', error.message || error);
+      return { data: [], total: 0, hasMore: false };
     }
   }
 
@@ -272,26 +165,25 @@ export class HistoricoSimpleService {
     ticketMedio: number;
   }> {
     try {
-      // Mock stats baseados nos dados completos
-      return {
-        totalVendas: 2,
-        valorTotal: 175.00,
-        ticketMedio: 87.50
-      };
-    } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
-      return {
-        totalVendas: 0,
-        valorTotal: 0,
-        ticketMedio: 0
-      };
+      // Por simplicidade, fazemos uma amostra do último page para calcular métricas básicas
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
+        _limit: 100,
+        _offset: 0,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+      const totalVendas = rows.length;
+      const valorTotal = rows.reduce((s: number, r: any) => s + Number(r?.valor_total || 0), 0);
+      const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
+      return { totalVendas, valorTotal, ticketMedio };
+    } catch {
+      return { totalVendas: 0, valorTotal: 0, ticketMedio: 0 };
     }
   }
 
   // Adicionar novo registro ao histórico
   static async addHistoricoItem(item: Partial<HistoricoItem>): Promise<boolean> {
     try {
-      // Tentar usar edge function se disponível
       const { error } = await supabase.functions.invoke('registrar-historico-vendas', {
         body: {
           // Básicas
