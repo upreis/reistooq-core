@@ -18,6 +18,7 @@ import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
+import { buildIdUnico } from '@/utils/idUnico';
 import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
 import { mapApiStatusToLabel, getStatusBadgeVariant, mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
@@ -811,17 +812,13 @@ export default function SimplePedidosPage({ className }: Props) {
               .in('sku_pedido', skusPedido)
               .eq('ativo', true);
 
-            // Verificar se já foi baixado no histórico (usar o MESMO id_unico da baixa)
-            const idUnicoPedido = generateUniqueId(pedido);
+            // Verificar se já foi baixado no histórico usando hv_exists
+            const idUnicoPedido = buildIdUnico(pedido);
 
-            const { data: historicoCheck } = await supabase
-              .rpc('get_historico_vendas_safe', {
-                _search: idUnicoPedido,
-                _limit: 1,
-                _offset: 0,
+            const { data: jaProcessado } = await supabase
+              .rpc('hv_exists', {
+                p_id_unico: idUnicoPedido
               });
-
-            const jaProcessado = !!historicoCheck && historicoCheck.length > 0;
             
             let skuEstoque = null;
             let skuKit = null;
