@@ -309,20 +309,57 @@ export class EstoqueBaixaService {
    * Busca o mapeamento de SKU na tabela de De-Para
    */
   private static async buscarMapeamentoSku(skuPedido: string): Promise<MapeamentoSku | null> {
+    const sku = String(skuPedido || '').trim();
+    const skuUpper = sku.toUpperCase();
+
     try {
-      const { data, error } = await supabase
+      // 1) Match exato em sku_pedido
+      let q = supabase
         .from('mapeamentos_depara')
         .select('sku_pedido, sku_correspondente, sku_simples, quantidade')
-        .eq('sku_pedido', skuPedido)
         .eq('ativo', true)
+        .eq('sku_pedido', sku)
         .maybeSingle();
+      let { data, error } = await q;
+      if (!error && data) return data as MapeamentoSku;
 
-      if (error) {
-        console.error('[EstoqueBaixa] Erro ao buscar mapeamento:', error);
-        return null;
-      }
+      // 2) Match exato uppercase (muitos cadastros ficam em caixa alta)
+      ({ data, error } = await supabase
+        .from('mapeamentos_depara')
+        .select('sku_pedido, sku_correspondente, sku_simples, quantidade')
+        .eq('ativo', true)
+        .eq('sku_pedido', skuUpper)
+        .maybeSingle());
+      if (!error && data) return data as MapeamentoSku;
 
-      return data as MapeamentoSku | null;
+      // 3) ILIKE begins-with/end-with (tolerante a sufixos)
+      ({ data, error } = await supabase
+        .from('mapeamentos_depara')
+        .select('sku_pedido, sku_correspondente, sku_simples, quantidade')
+        .eq('ativo', true)
+        .ilike('sku_pedido', `%${sku}%`)
+        .maybeSingle());
+      if (!error && data) return data as MapeamentoSku;
+
+      // 4) Tentar sku_simples (algumas lojas mapeiam no campo alternativo)
+      ({ data, error } = await supabase
+        .from('mapeamentos_depara')
+        .select('sku_pedido, sku_correspondente, sku_simples, quantidade')
+        .eq('ativo', true)
+        .eq('sku_simples', sku)
+        .maybeSingle());
+      if (!error && data) return data as MapeamentoSku;
+
+      // 5) sku_simples uppercase
+      ({ data, error } = await supabase
+        .from('mapeamentos_depara')
+        .select('sku_pedido, sku_correspondente, sku_simples, quantidade')
+        .eq('ativo', true)
+        .eq('sku_simples', skuUpper)
+        .maybeSingle());
+      if (!error && data) return data as MapeamentoSku;
+
+      return null;
     } catch (error) {
       console.error('[EstoqueBaixa] Erro ao buscar mapeamento:', error);
       return null;
