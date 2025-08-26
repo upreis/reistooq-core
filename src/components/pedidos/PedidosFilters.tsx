@@ -30,13 +30,21 @@ interface PedidosFiltersProps {
 }
 
 const SITUACOES = [
-  'Aberto',
-  'Pago', 
-  'Confirmado',
-  'Enviado',
-  'Entregue',
-  'Cancelado'
+  { value: 'pending', label: 'Pendente' },
+  { value: 'ready_to_ship', label: 'Pronto para Envio' },
+  { value: 'shipped', label: 'Enviado' },
+  { value: 'delivered', label: 'Entregue' },
+  { value: 'not_delivered', label: 'Não Entregue' },
+  { value: 'cancelled', label: 'Cancelado' },
+  { value: 'handling', label: 'Processando' },
+  { value: 'to_be_agreed', label: 'A Combinar' }
 ];
+
+const getSituacaoLabel = (value?: string) => {
+  if (!value) return '';
+  const item = SITUACOES.find(s => s.value === value);
+  return item ? item.label : value;
+};
 
 const UFS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 
@@ -97,9 +105,9 @@ export function PedidosFilters({
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
             <SelectContent className="bg-background border border-border z-50">
-              {SITUACOES.map((situacao) => (
-                <SelectItem key={situacao} value={situacao}>
-                  {situacao}
+              {SITUACOES.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -255,7 +263,7 @@ export function PedidosFilters({
           )}
           {draftFilters.situacao && (
             <Badge variant="secondary" className="gap-1">
-              Situação: {draftFilters.situacao}
+              Situação: {getSituacaoLabel(draftFilters.situacao)}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', undefined)} />
             </Badge>
           )}
