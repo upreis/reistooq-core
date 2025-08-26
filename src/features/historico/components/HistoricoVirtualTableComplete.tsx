@@ -34,7 +34,7 @@ export function HistoricoVirtualTableComplete({
   onSelectionChange
 }: HistoricoVirtualTableCompleteProps) {
   
-  // Definição completa de colunas baseada na configuração de pedidos
+  // Definição de colunas EXATAMENTE iguais à página de pedidos
   const columns = useMemo<ColumnDef<HistoricoVenda>[]>(() => [
     {
       id: 'select',
@@ -78,39 +78,58 @@ export function HistoricoVirtualTableComplete({
       enableHiding: false,
       size: 40,
     },
-    
-    // BÁSICAS - mesma ordem da página de pedidos
+
+    // COLUNAS BÁSICAS (mesma ordem da página pedidos)
     {
       accessorKey: 'id_unico',
-      header: 'ID-Único',
+      header: 'ID Único',
       cell: ({ getValue }) => (
-        <span className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+        <div className="font-mono text-xs">
           {getValue() as string}
-        </span>
+        </div>
       ),
       size: 120,
     },
     {
       accessorKey: 'numero_pedido',
-      header: 'Número do Pedido',
-      cell: ({ getValue }) => (
-        <span className="font-mono text-sm font-medium">
-          {getValue() as string}
-        </span>
+      header: 'Número',
+      cell: ({ getValue, row }) => (
+        <div className="flex items-center gap-2">
+          <span>{getValue() as string}</span>
+          <Badge variant="outline" className="text-xs bg-emerald-500/10">
+            Histórico
+          </Badge>
+        </div>
       ),
       size: 120,
     },
     {
       accessorKey: 'cliente_nome',
-      header: 'Nome do Cliente',
+      header: 'Cliente',
       cell: ({ getValue }) => (
-        <span className="font-medium">{getValue() as string}</span>
+        <span>{getValue() as string || '—'}</span>
       ),
       size: 150,
     },
     {
+      accessorKey: 'cliente_documento',
+      header: 'Nome Completo',
+      cell: ({ getValue }) => (
+        <span>{getValue() as string || '—'}</span>
+      ),
+      size: 150,
+    },
+    {
+      accessorKey: 'cpf_cnpj',
+      header: 'CPF/CNPJ',
+      cell: ({ getValue }) => (
+        <span>{getValue() as string || '—'}</span>
+      ),
+      size: 120,
+    },
+    {
       accessorKey: 'data_pedido',
-      header: 'Data do Pedido',
+      header: 'Data Pedido',
       cell: ({ getValue }) => (
         <span className="text-sm text-muted-foreground">
           {formatDateTime(getValue() as string)}
@@ -118,21 +137,19 @@ export function HistoricoVirtualTableComplete({
       ),
       size: 110,
     },
-
-    // PRODUTOS
     {
       accessorKey: 'sku_produto',
-      header: 'SKUs/Produtos',
+      header: 'SKU',
       cell: ({ getValue }) => (
         <span className="font-mono text-xs bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
           {getValue() as string}
         </span>
       ),
-      size: 180,
+      size: 150,
     },
     {
       accessorKey: 'quantidade',
-      header: 'Quantidade Total',
+      header: 'Quantidade',
       cell: ({ getValue }) => (
         <span className="text-center font-medium">
           {(getValue() as number).toLocaleString('pt-BR')}
@@ -141,22 +158,37 @@ export function HistoricoVirtualTableComplete({
       size: 100,
     },
     {
-      accessorKey: 'descricao',
-      header: 'Título do Produto',
+      accessorKey: 'situacao',
+      header: 'Status do Pagamento',
       cell: ({ getValue }) => {
-        const desc = getValue() as string;
-        return desc ? (
-          <span className="text-sm" title={desc}>
-            {desc.length > 30 ? desc.substring(0, 30) + '...' : desc}
-          </span>
+        const situacao = getValue() as string;
+        return situacao ? (
+          <Badge variant={situacao === 'paid' ? 'default' : 'secondary'}>
+            {situacao}
+          </Badge>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-muted-foreground">—</span>
         );
       },
-      size: 200,
+      size: 130,
+    },
+    {
+      accessorKey: 'observacoes',
+      header: 'Obs',
+      cell: ({ getValue }) => {
+        const obs = getValue() as string;
+        return obs ? (
+          <span className="text-xs" title={obs}>
+            {obs.length > 30 ? obs.substring(0, 30) + '...' : obs}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      },
+      size: 150,
     },
 
-    // FINANCEIRAS
+    // COLUNAS FINANCEIRAS
     {
       accessorKey: 'valor_total',
       header: 'Valor Total',
@@ -168,43 +200,33 @@ export function HistoricoVirtualTableComplete({
       size: 100,
     },
     {
-      accessorKey: 'valor_unitario',
-      header: 'Valor Unitário',
-      cell: ({ getValue }) => (
-        <span className="text-sm">
-          {formatCurrency(getValue() as number)}
-        </span>
-      ),
-      size: 100,
-    },
-    {
       accessorKey: 'valor_frete',
-      header: 'Frete Pago Cliente',
+      header: 'Valor Frete',
       cell: ({ getValue }) => {
         const value = getValue() as number;
         return (
           <span className="text-sm">
-            {value ? formatCurrency(value) : '-'}
+            {value ? formatCurrency(value) : '—'}
           </span>
         );
       },
-      size: 120,
+      size: 100,
     },
     {
       accessorKey: 'valor_desconto',
-      header: 'Desconto Cupom',
+      header: 'Valor Desconto',
       cell: ({ getValue }) => {
         const value = getValue() as number;
         return (
           <span className="text-sm text-orange-600 dark:text-orange-400">
-            {value ? formatCurrency(value) : '-'}
+            {value ? formatCurrency(value) : '—'}
           </span>
         );
       },
       size: 120,
     },
 
-    // MAPEAMENTO
+    // COLUNAS DE MAPEAMENTO
     {
       accessorKey: 'sku_estoque',
       header: 'SKU Estoque',
@@ -215,47 +237,47 @@ export function HistoricoVirtualTableComplete({
             {sku}
           </span>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-muted-foreground">—</span>
         );
       },
       size: 120,
     },
     {
       accessorKey: 'sku_kit',
-      header: 'SKU KIT',
+      header: 'SKU Kit',
       cell: ({ getValue }) => {
         const sku = getValue() as string;
         return sku ? (
           <span className="font-mono text-xs">{sku}</span>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-muted-foreground">—</span>
         );
       },
       size: 100,
     },
     {
       accessorKey: 'qtd_kit',
-      header: 'Quantidade KIT',
+      header: 'QTD Kit',
       cell: ({ getValue }) => (
         <span className="text-center">
+          {(getValue() as number || 0).toLocaleString('pt-BR')}
+        </span>
+      ),
+      size: 80,
+    },
+    {
+      accessorKey: 'total_itens',
+      header: 'Total Itens',
+      cell: ({ getValue }) => (
+        <span className="text-center font-medium text-blue-600 dark:text-blue-400">
           {(getValue() as number || 0).toLocaleString('pt-BR')}
         </span>
       ),
       size: 100,
     },
     {
-      accessorKey: 'total_itens',
-      header: 'Total de Itens',
-      cell: ({ getValue }) => (
-        <span className="text-center font-medium text-blue-600 dark:text-blue-400">
-          {(getValue() as number || 0).toLocaleString('pt-BR')}
-        </span>
-      ),
-      size: 110,
-    },
-    {
       accessorKey: 'status',
-      header: 'Status da Baixa',
+      header: 'Status',
       cell: ({ getValue }) => {
         const status = getValue() as string;
         const variant = status === 'baixado' ? 'default' : 
@@ -266,55 +288,22 @@ export function HistoricoVirtualTableComplete({
           </Badge>
         );
       },
-      size: 120,
-    },
-
-    // ENVIO/SHIPPING
-    {
-      accessorKey: 'situacao',
-      header: 'Status do Pagamento',
-      cell: ({ getValue }) => {
-        const situacao = getValue() as string;
-        return situacao ? (
-          <Badge variant={situacao === 'paid' ? 'default' : 'secondary'}>
-            {situacao}
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        );
-      },
-      size: 110,
-    },
-    {
-      accessorKey: 'cidade',
-      header: 'Cidade',
-      cell: ({ getValue }) => (
-        <span className="text-sm">{getValue() as string || '-'}</span>
-      ),
       size: 100,
     },
-    {
-      accessorKey: 'uf',
-      header: 'UF',
-      cell: ({ getValue }) => (
-        <span className="text-sm font-mono">{getValue() as string || '-'}</span>
-      ),
-      size: 60,
-    },
 
-    // METADADOS
+    // COLUNAS ESPECÍFICAS DO ML (ocultas por padrão)
     {
       accessorKey: 'numero_ecommerce',
-      header: 'Nº E-commerce',
+      header: 'Nº eCommerce',
       cell: ({ getValue }) => {
         const num = getValue() as string;
         return num ? (
           <span className="font-mono text-xs">{num}</span>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-muted-foreground">—</span>
         );
       },
-      size: 130,
+      size: 120,
     },
     {
       accessorKey: 'numero_venda',
@@ -324,11 +313,37 @@ export function HistoricoVirtualTableComplete({
         return num ? (
           <span className="font-mono text-xs">{num}</span>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-muted-foreground">—</span>
         );
       },
       size: 100,
     },
+    {
+      accessorKey: 'empresa',
+      header: 'Empresa',
+      cell: ({ getValue }) => (
+        <span>{getValue() as string || 'mercadolivre'}</span>
+      ),
+      size: 100,
+    },
+    {
+      accessorKey: 'cidade',
+      header: 'Cidade',
+      cell: ({ getValue }) => (
+        <span className="text-sm">{getValue() as string || '—'}</span>
+      ),
+      size: 100,
+    },
+    {
+      accessorKey: 'uf',
+      header: 'UF',
+      cell: ({ getValue }) => (
+        <span className="text-sm font-mono">{getValue() as string || '—'}</span>
+      ),
+      size: 60,
+    },
+
+    // COLUNAS DE ENVIO/RASTREAMENTO
     {
       accessorKey: 'codigo_rastreamento',
       header: 'Código Rastreamento',
@@ -349,7 +364,7 @@ export function HistoricoVirtualTableComplete({
             </Button>
           </div>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-muted-foreground">—</span>
         );
       },
       size: 150,
@@ -371,25 +386,10 @@ export function HistoricoVirtualTableComplete({
             <ExternalLink className="h-3 w-3" />
           </Button>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-muted-foreground">—</span>
         );
       },
       size: 120,
-    },
-    {
-      accessorKey: 'observacoes',
-      header: 'Observações',
-      cell: ({ getValue }) => {
-        const obs = getValue() as string;
-        return obs ? (
-          <span className="text-xs" title={obs}>
-            {obs.length > 20 ? obs.substring(0, 20) + '...' : obs}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        );
-      },
-      size: 150,
     },
 
     // AÇÕES
