@@ -24,7 +24,8 @@ export function useHistoricoRealtime({ enabled = false }: Opts) {
           // throttle: no máx. 1 invalidação por segundo
           if (now - lastInvalidateRef.current > 1000) {
             lastInvalidateRef.current = now;
-            qc.invalidateQueries({ queryKey: ["historico"] });
+            qc.invalidateQueries({ queryKey: ["historico-vendas"] });
+            qc.invalidateQueries({ queryKey: ["historico"] }); // fallback
           }
         }
       )

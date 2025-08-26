@@ -147,7 +147,7 @@ export class EstoqueBaixaService {
     try {
       // Usar RPC segura que já aplica RLS e escopo de organização
       const { data, error } = await supabase
-        .rpc('get_historico_vendas_safe', { _search: idUnicoPedido, _limit: 1 });
+        .rpc('get_historico_vendas_masked', { _search: idUnicoPedido, _limit: 1 });
 
       if (error) {
         // Não bloquear a baixa por falhas de consulta
@@ -455,7 +455,7 @@ export class EstoqueBaixaService {
 
       // Executar com timeout curto para não travar o fluxo da UI
       const timeout = new Promise<{ error: any }>((resolve) =>
-        setTimeout(() => resolve({ error: new Error('timeout') }), 2000)
+        setTimeout(() => resolve({ error: new Error('timeout') }), 5000)
       );
 
       const invokePromise = supabase
@@ -471,9 +471,18 @@ export class EstoqueBaixaService {
         console.error('[EstoqueBaixa] Erro ao registrar histórico (edge):', error);
         // Não falhar o processo principal por erro no histórico
       } else if (String(error?.message || error) === 'timeout') {
-        console.warn('[EstoqueBaixa] Registro de histórico em background (timeout 2s).');
+        console.warn('[EstoqueBaixa] Registro de histórico em background (timeout 5s).');
       } else {
-        console.info('[EstoqueBaixa] Registrado no histórico (edge):', pedido.numero);
+        console.info('[EstoqueBaixa] ✅ Registrado no histórico com sucesso:', pedido.numero);
+        
+        // Toast de sucesso visual para o usuário
+        if (typeof window !== 'undefined' && (window as any).showToast) {
+          (window as any).showToast({
+            title: "Histórico atualizado",
+            description: `Pedido ${pedido.numero} registrado no histórico`,
+            variant: "default"
+          });
+        }
       }
     } catch (error) {
       console.error('[EstoqueBaixa] Erro ao registrar histórico:', error);

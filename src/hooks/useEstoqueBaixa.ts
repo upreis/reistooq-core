@@ -14,7 +14,7 @@ export function useProcessarBaixaEstoque() {
     onSuccess: (result) => {
       // Invalidar cache relacionado
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
-      queryClient.invalidateQueries({ queryKey: ['historico_vendas'] });
+      queryClient.invalidateQueries({ queryKey: ["historico-vendas"] });
       queryClient.invalidateQueries({ queryKey: ['sku-mappings'] });
 
       // Toast de feedback

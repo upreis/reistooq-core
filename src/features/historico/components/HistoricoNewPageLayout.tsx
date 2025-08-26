@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { History, TrendingUp, Filter, Download, RefreshCw, FileSpreadsheet, Upload } from 'lucide-react';
 
 // Componentes modularizados
-import { HistoricoVirtualTableEnhanced } from './HistoricoVirtualTableEnhanced';
+import { HistoricoVirtualTableComplete } from './HistoricoVirtualTableComplete';
 import { HistoricoSmartFilters } from './HistoricoSmartFilters';
 import { HistoricoAdvancedDashboard } from './HistoricoAdvancedDashboard';
 import { HistoricoFileManager } from './HistoricoFileManager';
@@ -282,7 +282,7 @@ export function HistoricoNewPageLayout() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <HistoricoVirtualTableEnhanced
+          <HistoricoVirtualTableComplete
             data={vendas}
             isLoading={isLoading}
             onRowClick={handleRowClick}
