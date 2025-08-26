@@ -1916,13 +1916,22 @@ export type Database = {
         }[]
       }
       get_historico_vendas_safe: {
-        Args: {
-          _end?: string
-          _limit?: number
-          _offset?: number
-          _search?: string
-          _start?: string
-        }
+        Args:
+          | {
+              _end?: string
+              _limit?: number
+              _offset?: number
+              _search?: string
+              _start?: string
+            }
+          | {
+              _end?: string
+              _limit?: number
+              _offset?: number
+              _search?: string
+              _start?: string
+              _status?: string
+            }
         Returns: {
           cidade: string
           cliente_documento: string

@@ -86,40 +86,18 @@ export class HistoricoSimpleService {
     hasMore: boolean;
   }> {
     try {
-      // ❌ ERRO IDENTIFICADO: estava usando RPC inexistente 'get_historico_vendas_safe'
-      // ✅ CORREÇÃO: usar consulta direta na tabela historico_vendas com RLS
-      
-      let query = supabase
-        .from('historico_vendas')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false });
-
-      // Aplicar filtros
-      if (filters.search && String(filters.search).trim() !== '') {
-        const searchTerm = String(filters.search).trim();
-        query = query.or(`sku_produto.ilike.%${searchTerm}%,numero_pedido.ilike.%${searchTerm}%,descricao.ilike.%${searchTerm}%`);
-      }
-
-      if (filters.dataInicio) {
-        query = query.gte('data_pedido', filters.dataInicio);
-      }
-
-      if (filters.dataFim) {
-        query = query.lte('data_pedido', filters.dataFim);
-      }
-
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-
-      // Aplicar paginação
-      const offset = (page - 1) * limit;
-      query = query.range(offset, offset + limit - 1);
-
-      const { data, error, count } = await query;
+      // ✅ CORREÇÃO FINAL: usar nova RPC 'get_historico_vendas_safe' com parâmetros corretos
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
+        _limit: limit,
+        _offset: (page - 1) * limit,
+        _search: filters.search || null,
+        _start: filters.dataInicio || null,
+        _end: filters.dataFim || null,
+        _status: filters.status || null
+      });
 
       if (error) {
-        console.error('[Historico] Erro na consulta direta:', error.message);
+        console.error('[Historico] Erro na RPC get_historico_vendas_safe:', error.message);
         return { data: [], total: 0, hasMore: false };
       }
 
@@ -132,10 +110,11 @@ export class HistoricoSimpleService {
         return HistoricoDataMapper.validateAndCleanData(mappedRecord);
       });
 
-      const total = count || 0;
-      const hasMore = mapped.length === limit;
+      // Usar contagem heurística já que a RPC não retorna total
+      const total = rows.length > 0 ? (page - 1) * limit + rows.length : 0;
+      const hasMore = rows.length === limit;
 
-      console.log(`[Historico] ✅ Dados recuperados: ${mapped.length} registros de ${total} total`);
+      console.log(`[Historico] ✅ Dados recuperados via RPC: ${mapped.length} registros`);
       
       return { data: mapped, total, hasMore };
     } catch (error: any) {
@@ -151,16 +130,18 @@ export class HistoricoSimpleService {
     ticketMedio: number;
   }> {
     try {
-      // ❌ ERRO IDENTIFICADO: estava usando RPC inexistente 'get_historico_vendas_safe'
-      // ✅ CORREÇÃO: usar consulta direta na tabela historico_vendas com RLS
-      
-      const { data, error } = await supabase
-        .from('historico_vendas')
-        .select('valor_total')
-        .limit(1000); // Amostra de 1000 para calcular estatísticas
+      // ✅ CORREÇÃO FINAL: usar RPC 'get_historico_vendas_safe' para estatísticas
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
+        _limit: 1000,
+        _offset: 0,
+        _search: null,
+        _start: null,
+        _end: null,
+        _status: null
+      });
 
       if (error) {
-        console.error('[Historico] Erro ao buscar estatísticas:', error.message);
+        console.error('[Historico] Erro ao buscar estatísticas via RPC:', error.message);
         return { totalVendas: 0, valorTotal: 0, ticketMedio: 0 };
       }
 
