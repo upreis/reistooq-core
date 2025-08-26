@@ -284,7 +284,7 @@ export function PedidosTable({
                           case 'id_unico':
                             return (
                               <div className="font-mono text-xs">
-                                {show(get(row.unified, 'id') ?? get(row.raw, 'id'))}
+                                {show(get(row.unified, 'id_unico') ?? get(row.raw, 'id_unico') ?? get(row.unified, 'id') ?? get(row.raw, 'id'))}
                               </div>
                             );
                           case 'nome_cliente':

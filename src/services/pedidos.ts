@@ -94,12 +94,13 @@ export async function listPedidos({
         (sum: number, item: any) => sum + (item.quantidade || 0),
         0
       );
-      const skuPrincipal =
-        itens[0]?.sku || pedido.obs?.split(',')[0]?.trim() || '';
+      const skus: string[] = itens.map((it: any) => it?.sku).filter(Boolean);
+      const numeroParte: string = String(pedido.numero || pedido.id || '').trim();
+      const idUnicoCalculado = `${skus.length > 0 ? skus.join('+') : 'NO-SKU'}-${numeroParte}`;
 
       return {
         ...pedido,
-        id_unico: skuPrincipal ? `${skuPrincipal}-${pedido.numero}` : pedido.numero,
+        id_unico: idUnicoCalculado,
         itens,
         total_itens: totalItens > 0 ? totalItens : 1,
         sku_estoque: null,
@@ -152,7 +153,7 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
 
     const totalItens = itens.reduce((sum: number, it: any) => sum + it.quantidade, 0);
     const skuPrincipal = itens[0]?.sku || order.id?.toString() || '';
-
+    const skusTodos: string[] = itens.map((i: any) => i.sku).filter(Boolean);
     // CORREÇÃO: Usar dados diretos da API unified-orders - fulfillment vem em logistic.type
     const isFullfillment = order.is_fulfillment || 
       order.logistic_type === 'fulfillment' || 
@@ -178,7 +179,7 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
     return {
       id: order.id?.toString() || '',
       numero: order.numero || order.id?.toString() || '',
-      id_unico: `${skuPrincipal}-${(order.numero || order.id)?.toString()}`,
+      id_unico: `${skusTodos.length ? skusTodos.join('+') : 'NO-SKU'}-${(order.numero || order.id)?.toString()}`,
       nome_cliente: order.nome_cliente ||
         (order.buyer?.first_name && order.buyer?.last_name
           ? `${order.buyer.first_name} ${order.buyer.last_name}`

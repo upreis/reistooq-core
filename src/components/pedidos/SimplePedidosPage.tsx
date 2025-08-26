@@ -18,7 +18,7 @@ import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
-import { buildIdUnico } from '@/utils/idUnico';
+
 import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
 import { mapApiStatusToLabel, getStatusBadgeVariant, mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
@@ -813,7 +813,7 @@ export default function SimplePedidosPage({ className }: Props) {
               .eq('ativo', true);
 
             // Verificar se já foi baixado no histórico usando hv_exists
-            const idUnicoPedido = buildIdUnico(pedido);
+            const idUnicoPedido = (pedido as any).id_unico || generateUniqueId(pedido);
 
             const { data: jaProcessado } = await supabase
               .rpc('hv_exists', {
@@ -1448,7 +1448,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       </td>
                       
                       {visibleColumns.has('id') && (
-                        <td className="p-3 font-mono text-sm">{generateUniqueId(order)}</td>
+                        <td className="p-3 font-mono text-sm">{order.id_unico || generateUniqueId(order)}</td>
                       )}
                       
                       {visibleColumns.has('empresa') && (

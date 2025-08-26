@@ -98,7 +98,7 @@ export class EstoqueBaixaService {
     console.info('[EstoqueBaixa] Processando pedido:', pedido.numero);
 
     // Verificar se já foi processado
-    const idUnicoPedido = buildIdUnico(pedido);
+    const idUnicoPedido = pedido.id_unico ?? buildIdUnico(pedido);
     const jaProcessado = await this.verificarPedidoJaProcessado(idUnicoPedido);
 
     if (jaProcessado) {
@@ -365,7 +365,7 @@ export class EstoqueBaixaService {
       const totalItens = detalhes.reduce((sum, d) => sum + d.quantidadeBaixada, 0);
       
       const historicoData = {
-        id_unico: buildIdUnico(pedido),
+        id_unico: pedido.id_unico ?? buildIdUnico(pedido),
         numero_pedido: pedido.numero,
         sku_produto: detalhes.map(d => d.skuPedido).join(', '),
         descricao: `Baixa automática - ${detalhes.length} item(s)`,
