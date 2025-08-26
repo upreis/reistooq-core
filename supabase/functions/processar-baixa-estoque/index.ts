@@ -114,6 +114,95 @@ serve(async (req) => {
         processedCount++;
         console.log(`Pedido ${orderId} processado com sucesso`);
 
+        // Registrar no histórico de vendas (mínimo necessário)
+        try {
+          // Buscar dados do pedido
+          const { data: pedidoRow } = await supabase
+            .from('pedidos')
+            .select('id, numero, nome_cliente, cpf_cnpj, data_pedido, valor_total, valor_frete, valor_desconto, numero_ecommerce, numero_venda, cidade, uf, empresa, integration_account_id, codigo_rastreamento, url_rastreamento')
+            .eq('id', orderId)
+            .maybeSingle();
+
+          // Buscar itens do pedido
+          const { data: itens } = await supabase
+            .from('itens_pedidos')
+            .select('sku, quantidade')
+            .eq('pedido_id', orderId);
+
+          const skus = (itens || []).map(i => i.sku).filter(Boolean);
+          const quantidadeVendida = (itens || []).reduce((sum, i) => sum + (i.quantidade || 0), 0);
+
+          // Buscar de-para para calcular total_itens e sku_estoque
+          let total_itens = 0;
+          let qtd_kit = 0;
+          let sku_estoque_list: string[] = [];
+          if (skus.length > 0) {
+            const { data: depara } = await supabase
+              .from('mapeamentos_depara')
+              .select('sku_pedido, sku_correspondente, sku_simples, quantidade, ativo')
+              .eq('ativo', true)
+              .in('sku_pedido', skus);
+
+            const map = new Map<string, { sku_correspondente: string | null; sku_simples: string | null; quantidade: number }>();
+            for (const m of (depara || [])) {
+              map.set(m.sku_pedido, { sku_correspondente: m.sku_correspondente, sku_simples: m.sku_simples, quantidade: m.quantidade || 1 });
+            }
+
+            for (const it of (itens || [])) {
+              const m = map.get(it.sku) || { sku_correspondente: null, sku_simples: null, quantidade: 1 };
+              const kit = Math.max(1, Number(m.quantidade || 1));
+              qtd_kit += kit;
+              total_itens += (Number(it.quantidade || 0) * kit);
+              const estoqueSku = m.sku_correspondente || m.sku_simples;
+              if (estoqueSku) sku_estoque_list.push(estoqueSku);
+            }
+          }
+
+          const payload: Record<string, any> = {
+            id_unico: orderId,
+            numero_pedido: pedidoRow?.numero || String(orderId),
+            sku_produto: skus.join(', '),
+            descricao: `Baixa automática via função`;
+            quantidade: quantidadeVendida,
+            valor_unitario: 0,
+            valor_total: Number(pedidoRow?.valor_total || 0),
+            cliente_nome: pedidoRow?.nome_cliente || null,
+            cliente_documento: pedidoRow?.cpf_cnpj || null,
+            status: 'baixado',
+            data_pedido: pedidoRow?.data_pedido || new Date().toISOString().slice(0,10),
+            sku_estoque: sku_estoque_list.join(', '),
+            sku_kit: skus.join(', '),
+            qtd_kit,
+            total_itens,
+            cpf_cnpj: pedidoRow?.cpf_cnpj || null,
+            empresa: pedidoRow?.empresa || null,
+            cidade: pedidoRow?.cidade || null,
+            uf: pedidoRow?.uf || null,
+            numero_ecommerce: pedidoRow?.numero_ecommerce || null,
+            numero_venda: pedidoRow?.numero_venda || null,
+            valor_frete: Number(pedidoRow?.valor_frete || 0),
+            valor_desconto: Number(pedidoRow?.valor_desconto || 0),
+            obs: null,
+            obs_interna: null,
+            codigo_rastreamento: pedidoRow?.codigo_rastreamento || null,
+            url_rastreamento: pedidoRow?.url_rastreamento || null,
+            integration_account_id: pedidoRow?.integration_account_id || null,
+            observacoes: `Edge function processar-baixa-estoque`
+          };
+
+          const { error: histError } = await supabase
+            .from('historico_vendas')
+            .insert(payload);
+
+          if (histError) {
+            console.error(`[Processar Baixa Estoque] Erro ao registrar histórico do pedido ${orderId}:`, histError.message);
+          } else {
+            console.log(`[Processar Baixa Estoque] Histórico registrado para pedido ${orderId}`);
+          }
+        } catch (e) {
+          console.error(`[Processar Baixa Estoque] Falha ao registrar histórico para ${orderId}:`, e);
+        }
+
       } catch (error) {
         console.error(`Erro ao processar pedido ${orderId}:`, error);
         errors.push(`Pedido ${orderId}: ${error.message}`);
