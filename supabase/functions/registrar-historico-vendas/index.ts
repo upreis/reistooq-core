@@ -106,59 +106,88 @@ export default async function handler(req: Request): Promise<Response> {
       }
     }
 
-    // Dedup: se houver id_unico, evitar inserção duplicada
+    // 🔧 DEDUPLICAÇÃO MELHORADA - verificar múltiplas formas de duplicata
     if (payload.id_unico) {
       try {
         const { data: existing } = await supabase
           .from('historico_vendas')
-          .select('id')
+          .select('id, integration_account_id')
           .eq('id_unico', String(payload.id_unico))
           .maybeSingle();
+          
         if (existing?.id) {
-          return new Response(JSON.stringify({ ok: true, id: existing.id, dedup: true }), {
+          console.log('[registrar-historico-vendas] ✅ registro já existe, retornando ID:', existing.id);
+          return new Response(JSON.stringify({ 
+            ok: true, 
+            id: existing.id, 
+            dedup: true,
+            message: 'Registro já existe no histórico' 
+          }), {
             headers: { 'Content-Type': 'application/json', ...corsHeaders },
           });
         }
       } catch (lookupErr) {
-        console.warn('[registrar-historico-vendas] lookup existing failed', lookupErr);
+        console.warn('[registrar-historico-vendas] erro na consulta de duplicata:', lookupErr);
       }
     }
 
-    // Inserir via RPC com SECURITY DEFINER (bypassa RLS)
+    // 🔧 INSERÇÃO via RPC com SECURITY DEFINER (bypassa RLS)
+    console.log('[registrar-historico-vendas] tentando inserir via RPC hv_insert...');
     const { data, error } = await supabase.rpc('hv_insert', { p: payload });
 
     if (error) {
-      // Se for violação de unicidade (23505), buscar e retornar o existente
+      console.error('[registrar-historico-vendas] ❌ erro na inserção:', error);
+      
+      // 🔧 TRATAMENTO ROBUSTO de duplicatas (23505)
       const isDuplicate = (error as any)?.code === '23505' ||
-        String((error as any)?.message || '').toLowerCase().includes('duplicate key') ||
+        String((error as any)?.message || '').toLowerCase().includes('duplicate') ||
         String((error as any)?.details || '').toLowerCase().includes('already exists');
 
       if (isDuplicate && payload.id_unico) {
+        console.log('[registrar-historico-vendas] 🔄 detectada duplicata 23505, buscando registro existente...');
         try {
           const { data: existing } = await supabase
             .from('historico_vendas')
-            .select('id')
+            .select('id, integration_account_id')
             .eq('id_unico', String(payload.id_unico))
             .maybeSingle();
+            
           if (existing?.id) {
-            return new Response(JSON.stringify({ ok: true, id: existing.id, dedup: true }), {
+            console.log('[registrar-historico-vendas] ✅ registro duplicado encontrado:', existing.id);
+            return new Response(JSON.stringify({ 
+              ok: true, 
+              id: existing.id, 
+              dedup: true,
+              message: 'Registro já existia (duplicata resolvida)'
+            }), {
               headers: { 'Content-Type': 'application/json', ...corsHeaders },
             });
           }
         } catch (resolveDupErr) {
-          console.warn('[registrar-historico-vendas] duplicate resolve failed', resolveDupErr);
+          console.error('[registrar-historico-vendas] erro ao resolver duplicata:', resolveDupErr);
         }
       }
 
-      console.error('[registrar-historico-vendas] insert error', error);
-      return new Response(JSON.stringify({ ok: false, error: (error as any)?.message || 'insert failed' }), {
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        error: (error as any)?.message || 'Falha na inserção',
+        code: (error as any)?.code,
+        details: (error as any)?.details
+      }), {
         status: 400,
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
+    // 🔧 SUCESSO na inserção
+    console.log('[registrar-historico-vendas] ✅ inserção bem-sucedida:', data);
     const insertedId = typeof data === 'string' ? data : (data?.id ?? null);
-    return new Response(JSON.stringify({ ok: true, id: insertedId }), {
+    return new Response(JSON.stringify({ 
+      ok: true, 
+      id: insertedId,
+      message: 'Histórico registrado com sucesso',
+      integration_account_id: payload.integration_account_id
+    }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   } catch (e: any) {

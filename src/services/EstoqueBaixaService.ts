@@ -459,9 +459,12 @@ export class EstoqueBaixaService {
         setTimeout(() => resolve({ error: new Error('timeout') }), 5000)
       );
 
-      const invokePromise = supabase
-        .functions
-        .invoke('registrar-historico-vendas', { body: historicoData });
+      const invokePromise = supabase.functions.invoke('registrar-historico-vendas', { 
+        body: historicoData 
+      }).then(response => {
+        console.log('[EstoqueBaixa] ✅ Resposta da edge function:', response);
+        return response;
+      });
 
       const { error } = await Promise.race([
         invokePromise,
