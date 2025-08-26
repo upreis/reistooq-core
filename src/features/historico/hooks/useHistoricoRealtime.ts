@@ -29,6 +29,8 @@ export function useHistoricoRealtime({ enabled = false }: Opts) {
             try { HistoricoDataService.invalidateCache(); } catch (_) {}
             qc.invalidateQueries({ queryKey: ["historico-vendas"] });
             qc.invalidateQueries({ queryKey: ["historico"] }); // fallback
+            qc.invalidateQueries({ queryKey: ["historico-simple"] });
+            qc.invalidateQueries({ queryKey: ["historico-stats"] });
           }
         }
       )
