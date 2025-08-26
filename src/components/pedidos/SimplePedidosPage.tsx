@@ -811,11 +811,16 @@ export default function SimplePedidosPage({ className }: Props) {
               .in('sku_pedido', skusPedido)
               .eq('ativo', true);
 
-            // Verificar se já foi baixado no histórico
+            // Verificar se já foi baixado no histórico (usar o MESMO id_unico da baixa)
+            const skuPrincipal = skusPedido[0] || '';
+            const numeroPedido = String(pedido.numero || pedido.id || '').trim();
+            const idUnicoPedido = skuPrincipal ? `${skuPrincipal}-${numeroPedido}` : numeroPedido;
+
             const { data: historicoCheck } = await supabase
               .rpc('get_historico_vendas_safe', {
-                _search: pedido.id,
-                _limit: 1
+                _search: idUnicoPedido,
+                _limit: 1,
+                _offset: 0,
               });
 
             const jaProcessado = !!historicoCheck && historicoCheck.length > 0;
