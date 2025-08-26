@@ -30,6 +30,7 @@ serve(async (req) => {
 
   try {
     const supabase = makeClient(req.headers.get("Authorization"));
+    const supabaseService = makeClient(null);
     const body = await req.json();
     
     console.log('[Processar Baixa Estoque] Request body:', body);
@@ -127,7 +128,7 @@ serve(async (req) => {
           const skus = (orderItems || []).map((i: any) => i.sku).filter(Boolean);
           const quantidadeVendida = (orderItems || []).reduce((sum: number, i: any) => sum + (Number(i.quantidade) || 0), 0);
 
-          const { error: histError } = await supabase
+          const { error: histError } = await supabaseService
             .from('historico_vendas')
             .insert({
               id_unico: String(orderId),

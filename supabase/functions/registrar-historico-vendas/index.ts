@@ -16,7 +16,8 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const authHeader = req.headers.get('Authorization');
-  const supabase = makeClient(authHeader);
+  // Use serviço (bypass RLS) para inserir no histórico
+  const supabase = makeClient(null);
 
   try {
     const body = await req.json();
