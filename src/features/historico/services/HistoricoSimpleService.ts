@@ -75,7 +75,7 @@ export interface HistoricoFilters {
 
 export class HistoricoSimpleService {
   
-  // Buscar dados reais do histórico via RPC segura (com RLS e máscara de PII)
+  // Buscar registros de histórico com filtros opcionais
   static async getHistorico(
     filters: HistoricoFilters = {},
     page: number = 1,
@@ -86,21 +86,40 @@ export class HistoricoSimpleService {
     hasMore: boolean;
   }> {
     try {
-      const params: any = {
-        _limit: limit,
-        _offset: (page - 1) * limit,
-      };
+      // ❌ ERRO IDENTIFICADO: estava usando RPC inexistente 'get_historico_vendas_safe'
+      // ✅ CORREÇÃO: usar consulta direta na tabela historico_vendas com RLS
+      
+      let query = supabase
+        .from('historico_vendas')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
 
+      // Aplicar filtros
       if (filters.search && String(filters.search).trim() !== '') {
-        params._search = String(filters.search).trim();
+        const searchTerm = String(filters.search).trim();
+        query = query.or(`sku_produto.ilike.%${searchTerm}%,numero_pedido.ilike.%${searchTerm}%,descricao.ilike.%${searchTerm}%`);
       }
-      if (filters.dataInicio) params._start = filters.dataInicio;
-      if (filters.dataFim) params._end = filters.dataFim;
 
-      const { data, error } = await supabase.rpc('get_historico_vendas_safe', params);
+      if (filters.dataInicio) {
+        query = query.gte('data_pedido', filters.dataInicio);
+      }
+
+      if (filters.dataFim) {
+        query = query.lte('data_pedido', filters.dataFim);
+      }
+
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+
+      // Aplicar paginação
+      const offset = (page - 1) * limit;
+      query = query.range(offset, offset + limit - 1);
+
+      const { data, error, count } = await query;
 
       if (error) {
-        console.error('[Historico] RPC get_historico_vendas_safe erro:', error.message);
+        console.error('[Historico] Erro na consulta direta:', error.message);
         return { data: [], total: 0, hasMore: false };
       }
 
@@ -113,10 +132,11 @@ export class HistoricoSimpleService {
         return HistoricoDataMapper.validateAndCleanData(mappedRecord);
       });
 
-      // Como a RPC não retorna total, usamos um heurístico simples
-      const total = (page - 1) * limit + mapped.length;
+      const total = count || 0;
       const hasMore = mapped.length === limit;
 
+      console.log(`[Historico] ✅ Dados recuperados: ${mapped.length} registros de ${total} total`);
+      
       return { data: mapped, total, hasMore };
     } catch (error: any) {
       console.error('Erro ao buscar histórico:', error.message || error);
@@ -131,18 +151,29 @@ export class HistoricoSimpleService {
     ticketMedio: number;
   }> {
     try {
-      // Por simplicidade, fazemos uma amostra do último page para calcular métricas básicas
-      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
-        _limit: 100,
-        _offset: 0,
-      });
-      if (error) throw error;
+      // ❌ ERRO IDENTIFICADO: estava usando RPC inexistente 'get_historico_vendas_safe'
+      // ✅ CORREÇÃO: usar consulta direta na tabela historico_vendas com RLS
+      
+      const { data, error } = await supabase
+        .from('historico_vendas')
+        .select('valor_total')
+        .limit(1000); // Amostra de 1000 para calcular estatísticas
+
+      if (error) {
+        console.error('[Historico] Erro ao buscar estatísticas:', error.message);
+        return { totalVendas: 0, valorTotal: 0, ticketMedio: 0 };
+      }
+
       const rows = Array.isArray(data) ? data : [];
       const totalVendas = rows.length;
       const valorTotal = rows.reduce((s: number, r: any) => s + Number(r?.valor_total || 0), 0);
       const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
+      
+      console.log(`[Historico] ✅ Estatísticas: ${totalVendas} vendas, R$ ${valorTotal.toFixed(2)} total`);
+      
       return { totalVendas, valorTotal, ticketMedio };
-    } catch {
+    } catch (error: any) {
+      console.error('[Historico] Erro ao calcular estatísticas:', error.message);
       return { totalVendas: 0, valorTotal: 0, ticketMedio: 0 };
     }
   }
