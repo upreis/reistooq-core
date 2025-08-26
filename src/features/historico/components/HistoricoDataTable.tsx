@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { HistoricoDeleteService } from '../services/HistoricoDeleteService';
+import { useHistoricoExport } from '../hooks/useHistoricoExport';
 import { HistoricoVenda, HistoricoPagination, SortableFields } from '../types/historicoTypes';
 import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
@@ -29,6 +33,12 @@ export const HistoricoDataTable: React.FC<HistoricoDataTableProps> = ({
 }) => {
   // Log de montagem temporário
   React.useEffect(() => { console.debug("mounted: HistoricoDataTable"); }, []);
+  const { toast } = useToast();
+  const { isExporting, exportData } = useHistoricoExport();
+
+  const [isSelectMode, setIsSelectMode] = React.useState(false);
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -38,6 +48,51 @@ export const HistoricoDataTable: React.FC<HistoricoDataTableProps> = ({
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('pt-BR');
+  };
+
+  const toggleItem = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllOnPage = () => {
+    setSelected(new Set((vendas || []).map(v => v.id)));
+  };
+
+  const clearSelection = () => setSelected(new Set());
+
+  const exportSelected = async () => {
+    try {
+      const selectedItems = (vendas || []).filter(v => selected.has(v.id));
+      if (selectedItems.length === 0) return;
+      await exportData({
+        format: 'xlsx',
+        template: 'commercial',
+        includeExamples: false,
+        includeFiscalFields: false,
+        includeTrackingFields: false
+      }, selectedItems as any[]);
+    } catch (e: any) {
+      console.error(e);
+    }
+  };
+
+  const deleteSelected = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    let ok = 0;
+    for (const id of ids) {
+      const success = await HistoricoDeleteService.deleteItem(id);
+      if (success) ok++;
+    }
+    if (ok > 0) {
+      toast({ title: 'Exclusão', description: `${ok} registro(s) excluídos.` });
+      clearSelection();
+      onRefresh();
+    }
   };
 
   if (isLoading) {
@@ -73,21 +128,51 @@ export const HistoricoDataTable: React.FC<HistoricoDataTableProps> = ({
   return (
     <>
       <CardHeader>
-        <CardTitle>Histórico de Vendas</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle>Histórico de Vendas</CardTitle>
+          <Button
+            variant={isSelectMode ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setIsSelectMode(prev => !prev)}
+          >
+            {isSelectMode ? 'Sair da Seleção' : 'Selecionar'}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
+        {selected.size > 0 && (
+          <div className="flex items-center justify-between mb-4 p-3 border rounded">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{selected.size} selecionado(s)</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={selectAllOnPage}>Selecionar todos</Button>
+              <Button variant="outline" size="sm" onClick={exportSelected} disabled={isExporting}>Exportar Selecionados</Button>
+              <Button variant="outline" size="sm" onClick={deleteSelected} className="text-destructive hover:text-destructive border-destructive/20 hover:bg-destructive/10">Excluir Selecionados</Button>
+              <Button variant="ghost" size="sm" onClick={clearSelection}>Limpar</Button>
+            </div>
+          </div>
+        )}
         <div className="space-y-4">
           {vendas.map((venda) => (
-            <div key={venda.id} className="flex flex-col p-4 border border-gray-600 rounded-lg hover:bg-muted/50 space-y-3">
+            <div key={venda.id} className={`flex flex-col p-4 border rounded-lg hover:bg-muted/50 space-y-3 ${selected.has(venda.id) ? 'bg-muted/30 border-primary/40' : 'border-gray-600'}`}>
               {/* Linha principal */}
               <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="font-medium">{venda.descricao || venda.sku_produto}</div>
-                  <div className="text-sm text-muted-foreground">
-                    Pedido: {venda.numero_pedido} • Cliente: {venda.cliente_nome}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatDate(venda.data_pedido)}
+                <div className="flex items-center gap-3 flex-1">
+                  {isSelectMode && (
+                    <Checkbox
+                      checked={selected.has(venda.id)}
+                      onCheckedChange={() => toggleItem(venda.id)}
+                    />
+                  )}
+                  <div className="flex-1">
+                    <div className="font-medium">{venda.descricao || venda.sku_produto}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Pedido: {venda.numero_pedido} • Cliente: {venda.cliente_nome}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDate(venda.data_pedido)}
+                    </div>
                   </div>
                 </div>
                 
