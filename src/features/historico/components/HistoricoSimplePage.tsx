@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { History, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { History, RefreshCw, ChevronLeft, ChevronRight, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 // Componentes simplificados
@@ -11,13 +11,25 @@ import { HistoricoSimpleTable } from './HistoricoSimpleTable';
 import { HistoricoSimpleFilters } from './HistoricoSimpleFilters';
 import { HistoricoSimpleStats } from './HistoricoSimpleStats';
 import { HistoricoColumnSelector, defaultColumns, type ColumnConfig } from './HistoricoColumnSelector';
+import { HistoricoExportModal } from './HistoricoExportModal';
+import { HistoricoImportModal } from './HistoricoImportModal';
 import { useHistoricoSimple } from '../hooks/useHistoricoSimple';
+import { useHistoricoExport } from '../hooks/useHistoricoExport';
+import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
 import { HistoricoItem } from '../services/HistoricoSimpleService';
 
 export function HistoricoSimplePage() {
   const { toast } = useToast();
   const [selectedItem, setSelectedItem] = useState<HistoricoItem | null>(null);
   const [columns, setColumns] = useState<ColumnConfig[]>(defaultColumns);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+
+  // Auto refresh com real-time
+  useHistoricoRealtime({ enabled: true });
+  
+  // Hook de exportação
+  const { isExporting, exportData } = useHistoricoExport();
 
   // Hook principal simplificado
   const {
@@ -46,6 +58,19 @@ export function HistoricoSimplePage() {
     });
   };
 
+  const handleExport = async (config: any) => {
+    await exportData(config, data);
+  };
+
+  const handleImportSuccess = () => {
+    setImportModalOpen(false);
+    refetch();
+    toast({
+      title: "Importação concluída",
+      description: "Dados importados com sucesso. Atualizando lista..."
+    });
+  };
+
   const totalPages = Math.ceil(total / limit);
   const canGoPrev = page > 1;
   const canGoNext = hasMore;
@@ -68,10 +93,31 @@ export function HistoricoSimplePage() {
           </div>
           
           <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportModalOpen(true)}
+              disabled={isFetching}
+            >
+              <Upload className="h-4 w-4" />
+              Importar
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExportModalOpen(true)}
+              disabled={isFetching || isExporting || total === 0}
+            >
+              <Download className="h-4 w-4" />
+              {isExporting ? 'Exportando...' : 'Exportar'}
+            </Button>
+            
             <HistoricoColumnSelector
               columns={columns}
               onColumnsChange={setColumns}
             />
+            
             <Button
               variant="outline"
               size="sm"
@@ -86,8 +132,11 @@ export function HistoricoSimplePage() {
               <div className="font-medium">
                 {total.toLocaleString()} registros
               </div>
-              <div className="text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2">
                 {hasFilters && <Badge variant="secondary">Filtrado</Badge>}
+                <Badge variant="outline" className="text-xs">
+                  Auto-refresh ativo
+                </Badge>
               </div>
             </div>
           </div>
@@ -237,6 +286,21 @@ export function HistoricoSimplePage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Modais */}
+      <HistoricoExportModal
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        totalRecords={total}
+        onExport={handleExport}
+        isLoading={isFetching}
+      />
+
+      <HistoricoImportModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
+        onImportSuccess={handleImportSuccess}
+      />
     </main>
   );
 }
