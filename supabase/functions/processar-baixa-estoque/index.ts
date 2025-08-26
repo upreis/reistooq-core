@@ -114,22 +114,33 @@ serve(async (req) => {
         processedCount++;
         console.log(`Pedido ${orderId} processado com sucesso`);
 
-        // Registrar histórico simplificado
+        // Registrar histórico (mínimo necessário para aparecer na página /historico)
         try {
+          // Buscar dados essenciais do pedido
+          const { data: pedidoRow } = await supabase
+            .from('pedidos')
+            .select('numero, data_pedido, integration_account_id')
+            .eq('id', orderId)
+            .maybeSingle();
+
+          // Coletar SKUs e quantidade total vendida a partir dos itens já carregados
+          const skus = (orderItems || []).map((i: any) => i.sku).filter(Boolean);
+          const quantidadeVendida = (orderItems || []).reduce((sum: number, i: any) => sum + (Number(i.quantidade) || 0), 0);
+
           const { error: histError } = await supabase
             .from('historico_vendas')
             .insert({
               id_unico: String(orderId),
-              numero_pedido: String(orderId),
-              sku_produto: 'BAIXA_ESTOQUE',
+              numero_pedido: pedidoRow?.numero || String(orderId),
+              sku_produto: skus.length ? skus.join(', ') : 'BAIXA_ESTOQUE',
               descricao: 'Baixa automática de estoque via função',
-              quantidade: 1,
+              quantidade: quantidadeVendida || 0,
               valor_unitario: 0,
               valor_total: 0,
               status: 'baixado',
-              data_pedido: new Date().toISOString().slice(0,10),
+              data_pedido: pedidoRow?.data_pedido || new Date().toISOString().slice(0,10),
               observacoes: 'Processado automaticamente',
-              integration_account_id: null
+              integration_account_id: pedidoRow?.integration_account_id || null,
             });
 
           if (histError) {
