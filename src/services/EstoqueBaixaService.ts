@@ -34,6 +34,9 @@ export interface ProdutoEstoque {
   sku_interno: string;
   nome: string;
   quantidade_atual: number;
+  preco_venda?: number;
+  preco_custo?: number;
+  categoria?: string;
 }
 
 export class EstoqueBaixaService {
@@ -179,6 +182,7 @@ export class EstoqueBaixaService {
     quantidadePedido: number, 
     pedido: Pedido
   ): Promise<BaixaItemDetail> {
+    const idUnicoPedido = pedido.id_unico ?? buildIdUnico(pedido);
     const detail: BaixaItemDetail = {
       skuPedido,
       quantidadeKit: 0,
@@ -257,6 +261,81 @@ export class EstoqueBaixaService {
 
     detail.estoqueDepois = novaQuantidade;
     detail.status = 'success';
+
+    // 6. Registrar no histórico com TODOS os dados do pedido
+    const historicoData = {
+      // Identificação
+      id_unico: idUnicoPedido,
+      numero_pedido: pedido.numero || pedido.id || '', // Campo correto - não usar id_unico aqui
+      sku_produto: skuPedido,
+      descricao: produto.nome || `Produto ${detail.skuEstoque}`,
+      
+      // Quantidades e valores
+      quantidade: quantidadeTotalBaixa,
+      valor_unitario: produto.preco_venda || 0,
+      valor_total: (produto.preco_venda || 0) * quantidadeTotalBaixa,
+      valor_frete: pedido.valor_frete || 0,
+      valor_desconto: pedido.valor_desconto || 0,
+      
+      // Cliente
+      cliente_nome: pedido.nome_cliente || 'Cliente não identificado',
+      cliente_documento: pedido.cpf_cnpj || '',
+      
+      // Status e observações
+      status: 'baixado',
+      observacoes: `Baixa automática de estoque - SKU: ${skuPedido} → ${detail.skuEstoque}`,
+      
+      // Datas
+      data_pedido: pedido.data_pedido || new Date().toISOString().split('T')[0],
+      data_prevista: (pedido as any).data_prevista || null,
+      
+      // Localização
+      cidade: pedido.cidade || '',
+      uf: pedido.uf || '',
+      
+      // Números de controle
+      numero_ecommerce: pedido.numero_ecommerce || '',
+      numero_venda: pedido.numero_venda || pedido.id || '',
+      
+      // Empresa/Marketplace
+      empresa: pedido.empresa || 'Sistema',
+      
+      // Rastreamento
+      codigo_rastreamento: (pedido as any).codigo_rastreamento || '',
+      url_rastreamento: (pedido as any).url_rastreamento || '',
+      
+      // Observações
+      obs: (pedido as any).obs || '',
+      obs_interna: (pedido as any).obs_interna || '',
+      
+      // SKUs e quantidades
+      sku_estoque: detail.skuEstoque,
+      sku_kit: '', // Será implementado quando houver kits
+      qtd_kit: detail.quantidadeKit || 0,
+      total_itens: pedido.total_itens || 1,
+      
+      // Conta de integração
+      integration_account_id: pedido.integration_account_id,
+      
+      // Campos extras em meta (dados complexos do pedido)
+      meta: {
+        pedido_original_id: pedido.id,
+        situacao: pedido.situacao,
+        fonte_dados: 'baixa_estoque_automatica',
+        mapeamento_sku: {
+          sku_pedido: skuPedido,
+          sku_interno: detail.skuEstoque,
+          quantidade_mapeada: quantidadeTotalBaixa
+        },
+        produto_detalhes: {
+          nome: produto.nome,
+          categoria: produto.categoria,
+          preco_custo: produto.preco_custo
+        }
+      }
+    };
+
+    await this.registrarNoHistoricoSimples(historicoData);
 
     console.info('[EstoqueBaixa] Baixa realizada:', {
       sku: detail.skuEstoque,
@@ -340,7 +419,7 @@ export class EstoqueBaixaService {
     try {
       const { data, error } = await supabase
         .from('produtos')
-        .select('id, sku_interno, nome, quantidade_atual')
+        .select('id, sku_interno, nome, quantidade_atual, preco_venda, preco_custo, categoria')
         .eq('sku_interno', skuInterno)
         .eq('ativo', true)
         .maybeSingle();
@@ -358,7 +437,61 @@ export class EstoqueBaixaService {
   }
 
   /**
-   * Registra o processamento no histórico
+   * Registra um item no histórico (nova versão simplificada)
+   */
+  private static async registrarNoHistoricoSimples(historicoData: any): Promise<void> {
+    try {
+      const { error } = await supabase.functions.invoke('registrar-historico-vendas', { 
+        body: historicoData 
+      });
+
+      if (error) {
+        console.error('[EstoqueBaixa] Erro ao registrar histórico:', error);
+      } else {
+        console.info('[EstoqueBaixa] ✅ Registrado no histórico com sucesso:', historicoData.numero_pedido);
+      }
+    } catch (error) {
+      console.error('[EstoqueBaixa] Erro ao registrar histórico:', error);
+    }
+  }
+
+  /**
+   * Verifica múltiplos pedidos de uma vez (otimização de performance)
+   */
+  static async verificarPedidosProcessados(idsUnicos: string[]): Promise<Map<string, boolean>> {
+    const resultado = new Map<string, boolean>();
+    
+    if (idsUnicos.length === 0) return resultado;
+
+    try {
+      const { data, error } = await supabase.rpc('hv_exists_many', {
+        p_ids_unicos: idsUnicos
+      });
+
+      if (error) {
+        console.error('Erro ao verificar pedidos processados em lote:', error);
+        // Fallback: marcar todos como não processados
+        idsUnicos.forEach(id => resultado.set(id, false));
+        return resultado;
+      }
+
+      if (data && Array.isArray(data)) {
+        data.forEach((item: any) => {
+          resultado.set(item.id_unico, item.pedido_exists === true);
+        });
+      }
+
+      return resultado;
+    } catch (error) {
+      console.error('Erro inesperado ao verificar pedidos em lote:', error);
+      // Fallback: marcar todos como não processados
+      idsUnicos.forEach(id => resultado.set(id, false));
+      return resultado;
+    }
+  }
+
+  /**
+   * Registra o processamento no histórico (método antigo - manter para compatibilidade)
    */
   private static async registrarNoHistorico(pedido: Pedido, detalhes: BaixaItemDetail[]): Promise<void> {
     try {

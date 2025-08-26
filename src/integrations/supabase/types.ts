@@ -351,6 +351,7 @@ export type Database = {
           id: string
           id_unico: string
           integration_account_id: string | null
+          meta: Json | null
           ncm: string | null
           numero_ecommerce: string | null
           numero_pedido: string
@@ -390,6 +391,7 @@ export type Database = {
           id?: string
           id_unico: string
           integration_account_id?: string | null
+          meta?: Json | null
           ncm?: string | null
           numero_ecommerce?: string | null
           numero_pedido: string
@@ -429,6 +431,7 @@ export type Database = {
           id?: string
           id_unico?: string
           integration_account_id?: string | null
+          meta?: Json | null
           ncm?: string | null
           numero_ecommerce?: string | null
           numero_pedido?: string
@@ -2143,6 +2146,13 @@ export type Database = {
       hv_exists: {
         Args: { p_id_unico: string }
         Returns: boolean
+      }
+      hv_exists_many: {
+        Args: { p_ids_unicos: string[] }
+        Returns: {
+          id_unico: string
+          pedido_exists: boolean
+        }[]
       }
       hv_insert: {
         Args: { p: Json }

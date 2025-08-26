@@ -28,6 +28,8 @@ import { SavedFiltersManager } from './SavedFiltersManager';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
+import { buildIdUnico } from '@/utils/idUnico';
 
 type Order = {
   id: string;
@@ -74,6 +76,9 @@ export default function SimplePedidosPage({ className }: Props) {
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [mappingData, setMappingData] = useState<Map<string, any>>(new Map());
   const [showBaixaModal, setShowBaixaModal] = useState(false);
+  
+  // Hook para verificar pedidos já processados
+  const { pedidosProcessados, verificarPedidos, isLoading: loadingProcessados, isPedidoProcessado } = usePedidosProcessados();
   
   // Aliases para compatibilidade
   const orders = state.orders;
@@ -345,27 +350,12 @@ export default function SimplePedidosPage({ className }: Props) {
     }).filter(Boolean).join(', ') || '-';
   };
 
-  // Função para gerar ID-Único (SKUs/Produtos + Número do Pedido)
-  const generateUniqueId = (order: any): string => {
-    const numeropedido = order.numero || order.id || '';
-    
-    // Extrair SKUs dos itens do pedido
-    let skus: string[] = [];
-    
-    if (order.order_items && Array.isArray(order.order_items)) {
-      skus = order.order_items.map((item: any) => 
-        item.sku || item.seller_sku || item.item?.seller_sku || item.item?.id
-      ).filter(Boolean);
-    } else if (order.skus && Array.isArray(order.skus)) {
-      skus = order.skus;
-    } else if (order.sku) {
-      skus = [order.sku];
+  // Verificar pedidos processados sempre que a lista de pedidos mudar
+  useEffect(() => {
+    if (orders && orders.length > 0) {
+      verificarPedidos(orders);
     }
-    
-    // Montar ID único
-    const skusPart = skus.length > 0 ? skus.join('+') : 'NO-SKU';
-    return `${skusPart}-${numeropedido}`;
-  };
+  }, [orders, verificarPedidos]);
   
   // Helpers financeiros: receita_por_envio (Flex) e valor_liquido_vendedor
   const getReceitaPorEnvio = (order: any): number => {
@@ -813,7 +803,7 @@ export default function SimplePedidosPage({ className }: Props) {
               .eq('ativo', true);
 
             // Verificar se já foi baixado no histórico usando hv_exists
-            const idUnicoPedido = (pedido as any).id_unico || generateUniqueId(pedido);
+            const idUnicoPedido = (pedido as any).id_unico || buildIdUnico(pedido);
 
             const { data: jaProcessado } = await supabase
               .rpc('hv_exists', {
@@ -1448,7 +1438,7 @@ export default function SimplePedidosPage({ className }: Props) {
                       </td>
                       
                       {visibleColumns.has('id') && (
-                        <td className="p-3 font-mono text-sm">{order.id_unico || generateUniqueId(order)}</td>
+                        <td className="p-3 font-mono text-sm">{order.id_unico || buildIdUnico(order)}</td>
                       )}
                       
                       {visibleColumns.has('empresa') && (
