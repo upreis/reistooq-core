@@ -29,12 +29,12 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-background border-b">
+    <header className="sticky top-0 z-40 bg-background border-b border-gray-600">
       <div className="flex items-center gap-2 px-4 h-14">
         {/* Hamburger (mobile only) */}
         <button
           type="button"
-          className="inline-flex md:hidden items-center justify-center rounded p-2 border"
+          className="inline-flex md:hidden items-center justify-center rounded p-2 border border-gray-600"
           aria-controls="app-sidebar"
           aria-expanded={isMobileSidebarOpen}
           aria-label={isMobileSidebarOpen ? "Fechar menu" : "Abrir menu"}
@@ -47,7 +47,7 @@ export default function Header() {
         {/* Desktop Sidebar Toggle */}
         <button
           type="button"
-          className="hidden md:inline-flex items-center justify-center rounded p-2 border ml-2"
+          className="hidden md:inline-flex items-center justify-center rounded p-2 border border-gray-600 ml-2"
           aria-label={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           data-testid="sidebar-desktop-toggle"

@@ -172,7 +172,7 @@ const SidebarContent = memo(({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-[hsl(var(--border))]">
+      <div className="p-4 border-b border-gray-600">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center shrink-0">
             <LucideIcons.Package className="w-5 h-5 text-white" />
@@ -243,7 +243,7 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
 
   return (
     <aside className={cn(
-      "hidden md:flex md:flex-col md:shrink-0 bg-[hsl(var(--background))] border-r border-[hsl(var(--border))]",
+      "hidden md:flex md:flex-col md:shrink-0 bg-[hsl(var(--background))] border-r border-gray-600",
       "transition-[width] duration-200 overflow-visible", // changed from overflow-y-auto to overflow-visible
       desktopWidth
     )}>
