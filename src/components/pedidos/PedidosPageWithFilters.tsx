@@ -42,7 +42,7 @@ export function PedidosPageWithFilters() {
         hasPendingChanges={hasPendingChanges}
       />
       
-      <SimplePedidosPage manager={pedidosManager} disableInternalFilters />
+      <SimplePedidosPage manager={pedidosManager} />
     </div>
   );
 }
