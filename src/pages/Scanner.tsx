@@ -1,454 +1,222 @@
-import React, { useState, useCallback } from 'react';
-
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Scan, Search, Package, Plus, Check, Zap, BarChart3 } from "lucide-react";
+import { Package, Search, TrendingUp } from "lucide-react";
 import { toast } from 'sonner';
-import { InstallPrompt } from "@/components/ui/InstallPrompt";
-import { stockMovementService } from "@/features/scanner/services/StockMovementService";
-
-// Feature Flags
-import { FEATURES } from "@/config/features";
-
-// Scanner V2 Components  
-import { ScannerV2 } from "@/components/scanner/ScannerV2";
-import { ScannerFallback } from "@/components/scanner/ScannerFallback";
-
-// Legacy Scanner Imports (fallback)
-import { useScannerCore } from "@/features/scanner/hooks/useScannerCore";
-import { ScannerCore } from "@/features/scanner/components/ScannerCore";
-import { ScannerSearch } from "@/features/scanner/components/ScannerSearch";
-import { ScannerHistory } from "@/features/scanner/components/ScannerHistory";
-import { ScannerActions } from "@/features/scanner/components/ScannerActions";
-import { ScannedProduct, ScanAction, ScannerError } from "@/features/scanner/types/scanner.types";
+import { SimpleMobileScanner } from "@/components/scanner/SimpleMobileScanner";
+import { productService } from "@/features/scanner/services/ProductService";
+import { ScannedProduct } from "@/features/scanner/types/scanner.types";
 
 const Scanner = () => {
-  const [manualCode, setManualCode] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<ScannedProduct | null>(null);
-  const [activeView, setActiveView] = useState<'scanner' | 'search' | 'history'>('scanner');
-  const [scannerInitFailed, setScannerInitFailed] = useState(false);
+  const [scannedProduct, setScannedProduct] = useState<ScannedProduct | null>(null);
+  const [scanHistory, setScanHistory] = useState<{ code: string; timestamp: Date; product?: ScannedProduct }[]>([]);
 
-  // Debug do ambiente
-  console.log('🎯 Scanner Page - Ambiente:', {
-    isSecureContext: window.isSecureContext,
-    hasMediaDevices: !!navigator.mediaDevices,
-    hasGetUserMedia: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
-    userAgent: navigator.userAgent,
-    protocol: window.location.protocol
-  });
-
-  // Main scanner hook
-  const scanner = useScannerCore({
-    enableContinuousMode: true,
-    enableSound: true,
-    enableVibration: true,
-    onScanSuccess: (result) => {
-      console.log('✅ Scan successful:', result);
-      if (result.product) {
-        setSelectedProduct(result.product);
-      }
-    },
-    onScanError: (error) => {
-      console.error('❌ Scan error:', error);
-    },
-    onProductFound: (product) => {
-      console.log('✅ Product found:', product);
-      setSelectedProduct(product);
-    },
-    onProductNotFound: (code) => {
-      console.warn('⚠️ Product not found:', code);
-      toast.error(`Produto não encontrado: ${code}`);
-    }
-  });
-
-  // Handle manual code search
-  const handleManualSearch = useCallback(async () => {
-    if (!manualCode.trim()) return;
+  const handleScanResult = async (code: string) => {
+    console.log('📱 Código escaneado:', code);
     
     try {
-      await scanner.actions.scanBarcode(manualCode.trim());
-      setManualCode("");
-    } catch (error) {
-      console.error('❌ Manual search failed:', error);
+      // Buscar produto por código
+      const product = await productService.getByBarcodeOrSku(code);
+      
+      const historyEntry = {
+        code,
+        timestamp: new Date(),
+        product: product || undefined
+      };
+      
+      setScanHistory(prev => [historyEntry, ...prev.slice(0, 9)]);
+      
+      if (product) {
+        setScannedProduct(product);
+        toast.success(`Produto encontrado: ${product.nome}`);
+        
+        // Vibração de sucesso
+        if ('vibrate' in navigator) {
+          navigator.vibrate([100, 50, 100]);
+        }
+      } else {
+        toast.error(`Produto não encontrado: ${code}`);
+        setScannedProduct(null);
+      }
+    } catch (error: any) {
+      console.error('❌ Erro ao buscar produto:', error);
       toast.error('Erro ao buscar produto');
+      
+      // Adicionar ao histórico mesmo com erro
+      setScanHistory(prev => [{
+        code,
+        timestamp: new Date()
+      }, ...prev.slice(0, 9)]);
     }
-  }, [manualCode, scanner.actions]);
+  };
 
-  // Handle product selection from search
-  const handleProductSelect = useCallback((product: ScannedProduct) => {
-    setSelectedProduct(product);
-    setActiveView('scanner');
-  }, []);
+  const handleScanError = (error: string) => {
+    toast.error(error);
+  };
 
-  // Handle scanner actions with real stock integration
-  const handleScannerAction = useCallback(async (action: ScanAction, data?: any) => {
-    console.log('🎯 Scanner action:', action, data);
-    
-    if (!selectedProduct) {
-      toast.warning('Selecione um produto primeiro');
-      return;
-    }
-    
-    switch (action) {
-      case ScanAction.VIEW:
-        // Navigate to product detail
-        window.open(`/produtos/${selectedProduct.id}`, '_blank');
-        break;
-      
-      case ScanAction.EDIT_PRODUCT:
-        // Navigate to product edit
-        window.open(`/produtos/${selectedProduct.id}/edit`, '_blank');
-        break;
-      
-      case ScanAction.STOCK_IN:
-        const quantity = prompt('Quantidade para entrada:', '1');
-        if (quantity && parseInt(quantity) > 0) {
-          const result = await stockMovementService.processStockIn({
-            produto_id: selectedProduct.id,
-            tipo: 'entrada',
-            quantidade: parseInt(quantity),
-            motivo: 'Entrada via Scanner',
-            observacoes: 'Processado via scanner mobile'
-          });
-          
-          if (result.success) {
-            toast.success('Entrada de estoque registrada!');
-          } else {
-            toast.error(result.error || 'Erro ao processar entrada');
-          }
-        }
-        break;
-      
-      case ScanAction.STOCK_OUT:
-        const outQuantity = prompt('Quantidade para saída:', '1');
-        if (outQuantity && parseInt(outQuantity) > 0) {
-          const result = await stockMovementService.processStockOut({
-            produto_id: selectedProduct.id,
-            tipo: 'saida',
-            quantidade: parseInt(outQuantity),
-            motivo: 'Saída via Scanner',
-            observacoes: 'Processado via scanner mobile'
-          });
-          
-          if (result.success) {
-            toast.success('Saída de estoque registrada!');
-          } else {
-            toast.error(result.error || 'Erro ao processar saída');
-          }
-        }
-        break;
-      
-      case ScanAction.STOCK_ADJUST:
-        const newQuantity = prompt('Nova quantidade:', '0');
-        if (newQuantity !== null) {
-          const result = await stockMovementService.processStockAdjustment({
-            produto_id: selectedProduct.id,
-            tipo: 'ajuste',
-            quantidade: parseInt(newQuantity),
-            motivo: 'Ajuste via Scanner',
-            observacoes: 'Ajuste realizado via scanner mobile'
-          });
-          
-          if (result.success) {
-            toast.success('Ajuste de estoque realizado!');
-          } else {
-            toast.error(result.error || 'Erro ao processar ajuste');
-          }
-        }
-        break;
-      
-      default:
-        console.log('Unknown action:', action);
-    }
-  }, [selectedProduct]);
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('pt-BR', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(price);
+  };
 
   return (
-    <>
-      <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-lg mx-auto space-y-6">
         
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Scanner de Código de Barras</h1>
-            <p className="text-muted-foreground">
-              Leia códigos de barras para gerenciar seu estoque em tempo real
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {scanner.state.isActive && (
-              <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                Scanner Ativo
-              </Badge>
-            )}
-            <Badge variant="outline">
-              {scanner.state.sessionStats.scans_successful} sucessos hoje
-            </Badge>
-          </div>
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold">Scanner Mobile</h1>
+          <p className="text-muted-foreground text-sm">
+            Escaneie códigos de barras para consultar produtos
+          </p>
         </div>
 
-        {/* View Toggle */}
-        <div className="flex gap-2">
-          <Button
-            variant={activeView === 'scanner' ? 'default' : 'outline'}
-            onClick={() => setActiveView('scanner')}
-          >
-            <Scan className="w-4 h-4 mr-2" />
-            Scanner
-          </Button>
-          <Button
-            variant={activeView === 'search' ? 'default' : 'outline'}
-            onClick={() => setActiveView('search')}
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Buscar
-          </Button>
-          <Button
-            variant={activeView === 'history' ? 'default' : 'outline'}
-            onClick={() => setActiveView('history')}
-          >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Histórico
-          </Button>
-        </div>
+        {/* Scanner Component */}
+        <SimpleMobileScanner 
+          onScanResult={handleScanResult}
+          onError={handleScanError}
+        />
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Left Column - Scanner/Search/History */}
-          <div className="lg:col-span-2">
-            {activeView === 'scanner' && (
-              <div className="space-y-6">
-                {/* Teste de Câmera Debug */}
-                <Card className="bg-yellow-50 border-yellow-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                      <span className="text-sm font-medium">Teste de Câmera</span>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={async () => {
-                        console.log('🎯 Testando acesso à câmera...');
-                        try {
-                          const stream = await navigator.mediaDevices.getUserMedia({ 
-                            video: { 
-                              facingMode: 'environment',
-                              width: { ideal: 1920 },
-                              height: { ideal: 1080 }
-                            } 
-                          });
-                          console.log('✅ Câmera acessada com sucesso!', stream);
-                          toast.success('Câmera funcionando!');
-                          stream.getTracks().forEach(track => track.stop());
-                        } catch (error) {
-                          console.error('❌ Erro ao acessar câmera:', error);
-                          toast.error(`Erro na câmera: ${error.message}`);
-                        }
-                      }}
+        {/* Product Info */}
+        {scannedProduct && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Package className="w-5 h-5 text-primary" />
+                Produto Encontrado
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div>
+                <h3 className="font-semibold text-lg">{scannedProduct.nome}</h3>
+                <p className="text-sm text-muted-foreground">
+                  SKU: {scannedProduct.sku_interno}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Preço</p>
+                  <p className="font-semibold text-lg">
+                    {formatPrice(scannedProduct.preco_venda || 0)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Estoque</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-lg">
+                      {scannedProduct.quantidade_atual}
+                    </p>
+                    <Badge 
+                      variant={scannedProduct.quantidade_atual > 0 ? "secondary" : "destructive"}
+                      className="text-xs"
                     >
-                      Testar Câmera
-                    </Button>
-                  </CardContent>
-                </Card>
-                {/* Scanner V2 or Fallback */}
-                {FEATURES.SCANNER_V2 && !scannerInitFailed ? (
-                  <ScannerV2
-                    onProductFound={(product) => {
-                      console.log('✅ Product found via Scanner V2:', product);
-                      setSelectedProduct(product);
-                    }}
-                    onError={(error) => {
-                      console.error('❌ Scanner V2 error:', error);
-                      toast.error(`Erro no scanner: ${error}`);
-                      // If initialization fails, switch to fallback
-                      if (error.includes('inicializar') || error.includes('câmera') || error.includes('permission')) {
-                        console.log('🔄 Switching to fallback scanner');
-                        setScannerInitFailed(true);
-                        toast.warning('Usando modo alternativo do scanner');
-                      }
-                    }}
-                  />
-                ) : (
-                  <ScannerFallback
-                    onProductFound={(product) => {
-                      console.log('✅ Product found via Fallback:', product);
-                      setSelectedProduct(product);
-                    }}
-                    onError={(error) => {
-                      console.error('❌ Scanner fallback error:', error);
-                      toast.error(`Erro no scanner alternativo: ${error}`);
-                    }}
-                  />
-                )}
+                      {scannedProduct.quantidade_atual > 0 ? "Disponível" : "Sem estoque"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
 
-                {/* Manual Input - Legacy fallback */}
-                {scannerInitFailed && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Search className="w-5 h-5" />
-                        Busca Manual (Alternativa)
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                          Digite o código de barras manualmente:
-                        </label>
-                          <div className="flex flex-col sm:flex-row gap-2">
-                          <Input
-                            placeholder="Digite o código de barras..."
-                            value={manualCode}
-                            onChange={(e) => setManualCode(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleManualSearch();
-                              }
-                            }}
-                            className="w-full sm:flex-1"
-                          />
-                          <Button
-                            variant="outline"
-                            onClick={handleManualSearch}
-                            disabled={!manualCode.trim()}
-                            className="w-full sm:w-auto"
-                          >
-                            <Search className="w-4 h-4" />
-                          </Button>
-                        </div>
+              {scannedProduct.descricao && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Descrição</p>
+                  <p className="text-sm">{scannedProduct.descricao}</p>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button size="sm" className="flex-1">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Ver Detalhes
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1">
+                  <Search className="w-4 h-4 mr-2" />
+                  Movimentar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Scan History */}
+        {scanHistory.length > 0 && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center justify-between text-lg">
+                Histórico de Escaneamentos
+                <Badge variant="secondary">{scanHistory.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {scanHistory.map((scan, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <code className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                          {scan.code}
+                        </code>
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(scan.timestamp)}
+                        </span>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                      
+                      {scan.product ? (
+                        <div className="text-sm">
+                          <p className="font-medium text-primary">{scan.product.nome}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Estoque: {scan.product.quantidade_atual}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Produto não encontrado
+                        </p>
+                      )}
+                    </div>
+                    
+                    <Badge 
+                      variant={scan.product ? "secondary" : "outline"}
+                      className="ml-2"
+                    >
+                      {scan.product ? "✓" : "✗"}
+                    </Badge>
+                  </div>
+                ))}
               </div>
-            )}
+            </CardContent>
+          </Card>
+        )}
 
-            {activeView === 'search' && (
-              <ScannerSearch
-                onProductSelect={handleProductSelect}
-              />
-            )}
-
-            {activeView === 'history' && (
-              <ScannerHistory />
-            )}
-          </div>
-
-          {/* Right Column - Actions */}
-          <div>
-            <ScannerActions
-              product={selectedProduct || undefined}
-              onAction={handleScannerAction}
-            />
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Ações Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <Button 
-                variant="outline" 
-                className="h-20 flex flex-col gap-2"
-                onClick={() => {
-                  if (selectedProduct) {
-                    handleScannerAction(ScanAction.STOCK_IN);
-                  } else {
-                    toast.warning('Selecione um produto primeiro');
-                  }
-                }}
-              >
-                <Plus className="w-6 h-6" />
-                <span>Entrada de Estoque</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex flex-col gap-2"
-                onClick={() => {
-                  if (selectedProduct) {
-                    handleScannerAction(ScanAction.STOCK_OUT);
-                  } else {
-                    toast.warning('Selecione um produto primeiro');
-                  }
-                }}
-              >
-                <Package className="w-6 h-6" />
-                <span>Saída de Estoque</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex flex-col gap-2"
-                onClick={() => {
-                  if (selectedProduct) {
-                    handleScannerAction(ScanAction.STOCK_CHECK);
-                  } else {
-                    toast.warning('Selecione um produto primeiro');
-                  }
-                }}
-              >
-                <Check className="w-6 h-6" />
-                <span>Conferência</span>
-              </Button>
-              <Button 
-                variant="outline" 
-                className="h-20 flex flex-col gap-2"
-                onClick={() => setActiveView('search')}
-              >
-                <Search className="w-6 h-6" />
-                <span>Consultar Produto</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Session Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5" />
-              Estatísticas da Sessão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-primary">
-                  {scanner.state.sessionStats.scans_attempted}
-                </div>
-                <div className="text-sm text-muted-foreground">Tentativas</div>
-              </div>
-              
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {scanner.state.sessionStats.scans_successful}
-                </div>
-                <div className="text-sm text-muted-foreground">Sucessos</div>
-              </div>
-              
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">
-                  {scanner.state.sessionStats.unique_products}
-                </div>
-                <div className="text-sm text-muted-foreground">Produtos Únicos</div>
-              </div>
-              
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">
-                  {Math.floor(scanner.state.sessionStats.session_duration / 60)}m
-                </div>
-                <div className="text-sm text-muted-foreground">Duração</div>
+        {/* Instructions */}
+        <Card className="bg-muted/20">
+          <CardContent className="p-4">
+            <div className="text-center space-y-2">
+              <h4 className="font-medium">Como usar:</h4>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>1. Toque em "Iniciar Scanner"</p>
+                <p>2. Permita o acesso à câmera</p>
+                <p>3. Aponte para o código de barras</p>
+                <p>4. Aguarde o reconhecimento automático</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
 };
 
