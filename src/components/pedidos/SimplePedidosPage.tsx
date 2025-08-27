@@ -1422,14 +1422,7 @@ export default function SimplePedidosPage({ className }: Props) {
                    {visibleColumns.has('shipping_mode') && <th className="text-left p-3">Modo de Envio (Combinado)</th>}
                    {visibleColumns.has('shipping_method') && <th className="text-left p-3">Método de Envio (Combinado)</th>}
                    
-                  
-                   
-                    
-                    {/* Colunas de endereço de entrega */}
-                   
-                   {/* Colunas de identificação do comprador */}
-                   
-                    {/* Colunas de endereço de entrega */}
+                     {/* Colunas de endereço de entrega */}
                     {visibleColumns.has('endereco_rua') && <th className="text-left p-3">Rua</th>}
                     {visibleColumns.has('endereco_numero') && <th className="text-left p-3">Número</th>}
                      {visibleColumns.has('endereco_bairro') && <th className="text-left p-3">Bairro</th>}
