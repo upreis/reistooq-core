@@ -1949,23 +1949,6 @@ export default function SimplePedidosPage({ className }: Props) {
                        
                         
                        
-                        {visibleColumns.has('coupon_amount') && (
-                          <td className="p-3">
-                            {(() => {
-                              // Priorizar dados dos payments (mais confiável para desconto cupom)
-                              const amount = 
-                                order.payments?.[0]?.coupon_amount ||
-                                order.raw?.payments?.[0]?.coupon_amount ||
-                                order.coupon?.amount ||
-                                order.raw?.coupon?.amount ||
-                                order.coupon_amount ||
-                                order.valor_desconto || // fallback para desconto geral
-                                0;
-                              return amount > 0 ? formatMoney(amount) : '-';
-                            })()}
-                          </td>
-                        )}
-                       
                        
                         {/* Colunas de identificação do comprador - usando buyer.* da API */}
                         
