@@ -41,6 +41,14 @@ export class MapeamentoService {
         ])
       );
 
+      // 🤖 INTELIGÊNCIA AUTOMÁTICA: Criar mapeamentos para SKUs sem correspondência
+      const skusSemMapeamento = skusPedido.filter(sku => !mapeamentosMap.has(sku));
+      
+      if (skusSemMapeamento.length > 0) {
+        console.log(`🤖 Criando mapeamentos automáticos para ${skusSemMapeamento.length} SKUs:`, skusSemMapeamento);
+        await this.criarMapeamentosAutomaticos(skusSemMapeamento);
+      }
+
       // Retorna resultado para todos os SKUs
       return skusPedido.map(sku => ({
         skuPedido: sku,
@@ -67,6 +75,59 @@ export class MapeamentoService {
       skuPedido,
       temMapeamento: false
     };
+  }
+
+  /**
+   * 🤖 CRIA MAPEAMENTOS AUTOMÁTICOS para SKUs sem correspondência
+   * Evita duplicatas e preenche apenas o sku_pedido
+   */
+  static async criarMapeamentosAutomaticos(skusPedido: string[]): Promise<void> {
+    if (skusPedido.length === 0) return;
+
+    try {
+      // Verificar se já existem registros (evitar duplicatas)
+      const { data: existentes, error: errorCheck } = await supabase
+        .from('mapeamentos_depara')
+        .select('sku_pedido')
+        .in('sku_pedido', skusPedido);
+
+      if (errorCheck) {
+        console.error('Erro ao verificar SKUs existentes:', errorCheck);
+        return;
+      }
+
+      const skusExistentes = new Set((existentes || []).map(item => item.sku_pedido));
+      const skusParaCriar = skusPedido.filter(sku => !skusExistentes.has(sku));
+
+      if (skusParaCriar.length === 0) {
+        console.log('✅ Todos os SKUs já possuem registros no De-Para');
+        return;
+      }
+
+      // Criar novos mapeamentos com apenas sku_pedido preenchido
+      const novosMapeamentos = skusParaCriar.map(sku => ({
+        sku_pedido: sku,
+        sku_correspondente: null,
+        sku_simples: null, 
+        quantidade: 1,
+        ativo: true,
+        motivo_criacao: 'auto_detectado',
+        data_mapeamento: new Date().toISOString()
+      }));
+
+      const { error: errorInsert } = await supabase
+        .from('mapeamentos_depara')
+        .insert(novosMapeamentos);
+
+      if (errorInsert) {
+        console.error('Erro ao criar mapeamentos automáticos:', errorInsert);
+      } else {
+        console.log(`✅ Criados ${skusParaCriar.length} mapeamentos automáticos:`, skusParaCriar);
+      }
+
+    } catch (err) {
+      console.error('Erro na criação automática de mapeamentos:', err);
+    }
   }
 
   /**
