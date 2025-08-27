@@ -40,7 +40,7 @@ const defaultColumns: ColumnConfig[] = [
   { key: 'taxa_marketplace', label: 'Taxa Marketplace', category: 'financeiras', visible: false },
   { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', category: 'financeiras', visible: false },
   { key: 'metodo_pagamento', label: 'Método Pagamento', category: 'financeiras', visible: false },
-  { key: 'status_pagamento', label: 'Status Pagamento', category: 'financeiras', visible: false },
+  { key: 'status_pagamento', label: 'Status do Pagamento', category: 'envio', visible: true },
   { key: 'tipo_pagamento', label: 'Tipo Pagamento', category: 'financeiras', visible: false },
 
   // === SEÇÃO MAPEAMENTO ===
@@ -53,20 +53,20 @@ const defaultColumns: ColumnConfig[] = [
 
   // === SEÇÃO ENVIO ===
   { key: 'status', label: 'Status (Pagamento)', category: 'envio', visible: false },
-  { key: 'status_envio', label: 'Status do Envio', category: 'envio', visible: false },
-  { key: 'logistic_mode_principal', label: 'Logistic Mode (Principal)', category: 'envio', visible: false },
-  { key: 'tipo_logistico', label: 'Tipo Logístico', category: 'envio', visible: false },
-  { key: 'tipo_metodo_envio', label: 'Tipo Método Envio', category: 'envio', visible: false },
-  { key: 'tipo_entrega', label: 'Tipo Entrega', category: 'envio', visible: false },
-  { key: 'substatus_estado_atual', label: 'Substatus (Estado Atual)', category: 'envio', visible: false },
-  { key: 'modo_envio_combinado', label: 'Modo de Envio (Combinado)', category: 'envio', visible: false },
-  { key: 'metodo_envio_combinado', label: 'Método de Envio (Combinado)', category: 'envio', visible: false },
-  { key: 'rua', label: 'Rua', category: 'envio', visible: false },
-  { key: 'numero', label: 'Número', category: 'envio', visible: false },
-  { key: 'bairro', label: 'Bairro', category: 'envio', visible: false },
-  { key: 'cep', label: 'CEP', category: 'envio', visible: false },
-  { key: 'cidade', label: 'Cidade', category: 'envio', visible: false },
-  { key: 'uf', label: 'UF', category: 'envio', visible: false },
+  { key: 'status_envio', label: 'Status do Envio', category: 'envio', visible: true },
+  { key: 'logistic_mode_principal', label: 'Logistic Mode (Principal)', category: 'envio', visible: true },
+  { key: 'tipo_logistico', label: 'Tipo Logístico', category: 'envio', visible: true },
+  { key: 'tipo_metodo_envio', label: 'Tipo Método Envio', category: 'envio', visible: true },
+  { key: 'tipo_entrega', label: 'Tipo Entrega', category: 'envio', visible: true },
+  { key: 'substatus_estado_atual', label: 'Substatus (Estado Atual)', category: 'envio', visible: true },
+  { key: 'modo_envio_combinado', label: 'Modo de Envio (Combinado)', category: 'envio', visible: true },
+  { key: 'metodo_envio_combinado', label: 'Método de Envio (Combinado)', category: 'envio', visible: true },
+  { key: 'rua', label: 'Rua', category: 'envio', visible: true },
+  { key: 'numero', label: 'Número', category: 'envio', visible: true },
+  { key: 'bairro', label: 'Bairro', category: 'envio', visible: true },
+  { key: 'cep', label: 'CEP', category: 'envio', visible: true },
+  { key: 'cidade', label: 'Cidade', category: 'envio', visible: true },
+  { key: 'uf', label: 'UF', category: 'envio', visible: true },
 ];
 
 const categoryLabels = {
