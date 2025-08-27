@@ -15,6 +15,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +76,8 @@ export function EstoqueTable({
   const [movementQuantity, setMovementQuantity] = useState<number>(0);
   const [movementReason, setMovementReason] = useState("");
   const [imageUploadProduct, setImageUploadProduct] = useState<Product | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   const getStockStatus = (product: Product) => {
     if (product.quantidade_atual === 0) {
@@ -257,7 +270,10 @@ export function EstoqueTable({
     },
     {
       label: "Excluir",
-      onClick: (product: Product) => onDeleteProduct(product.id),
+      onClick: (product: Product) => {
+        setProductToDelete(product);
+        setDeleteDialogOpen(true);
+      },
       icon: <Trash2 className="w-4 h-4" />,
       variant: "destructive" as const
     }
@@ -384,6 +400,34 @@ export function EstoqueTable({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o produto "{productToDelete?.nome}"?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (productToDelete) {
+                  onDeleteProduct(productToDelete.id);
+                  setDeleteDialogOpen(false);
+                  setProductToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
