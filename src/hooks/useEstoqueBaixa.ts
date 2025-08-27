@@ -27,6 +27,7 @@ export function useProcessarBaixaEstoque() {
       queryClient.invalidateQueries({ queryKey: ["historico-simple"] });
       queryClient.invalidateQueries({ queryKey: ["historico-stats"] });
       queryClient.invalidateQueries({ queryKey: ["historico-vendas"] });
+      queryClient.invalidateQueries({ queryKey: ["historico-vendas"] });
 
       toast({
         title: allSuccess ? "✅ Baixa concluída" : "⚠️ Baixa parcial",

@@ -1,6 +1,6 @@
 // Serviço simplificado para histórico - sem RPC, sem cache complexo
 import { supabase } from "@/integrations/supabase/client";
-import { HistoricoDataMapper } from './HistoricoDataMapper';
+import { listarHistoricoVendas } from '@/services/HistoricoService';
 
 export interface HistoricoItem {
   id: string;
@@ -82,39 +82,61 @@ export class HistoricoSimpleService {
     hasMore: boolean;
   }> {
     try {
-      // ✅ CORREÇÃO FINAL: usar RPC 'get_historico_vendas_safe' com parâmetros corretos
-      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
-        _limit: limit,
-        _offset: (page - 1) * limit,
-        _search: filters.search || null,
-        _start: filters.dataInicio || null,
-        _end: filters.dataFim || null,
-        _status: filters.status || null
-      });
+      console.log('🔍 Buscando histórico com filtros:', { filters, page, limit });
 
-      if (error) {
-        console.error('[Historico] Erro na RPC get_historico_vendas_safe:', error.message);
-        return { data: [], total: 0, hasMore: false };
-      }
+      // Usar SELECT direto ao invés de RPC
+      const result = await listarHistoricoVendas({ page, pageSize: limit });
 
-      const rows = Array.isArray(data) ? data : [];
-      const mapped: HistoricoItem[] = rows.map((r: any) => {
-        // Usar o mapeador para converter dados do banco para o formato novo
-        const mappedRecord = HistoricoDataMapper.mapDatabaseToNewFormat(r);
-        
-        // Aplicar validação e limpeza
-        return HistoricoDataMapper.validateAndCleanData(mappedRecord);
-      });
+      // Mapear dados para o formato esperado
+      const data: HistoricoItem[] = (result.data || []).map((item: any) => ({
+        id: item.id,
+        id_unico: item.id_unico || item.numero_pedido || '',
+        numero_pedido: item.numero_pedido || '',
+        cliente_nome: item.cliente_nome || item.cliente || '',
+        nome_completo: item.cliente_nome || item.nome_completo || '',
+        sku_produto: item.sku_produto || '',
+        sku_estoque: item.sku_estoque || '',
+        sku_kit: item.sku_kit || '',
+        quantidade_total: Number(item.quantidade_total) || Number(item.quantidade) || 0,
+        qtd_kit: Number(item.qtd_kit) || 0,
+        total_itens: Number(item.total_itens) || Number(item.itens) || 0,
+        titulo_produto: item.titulo_produto || '',
+        valor_total: Number(item.valor_total) || Number(item.total) || 0,
+        valor_pago: Number(item.valor_pago) || 0,
+        frete_pago_cliente: Number(item.frete_pago_cliente) || 0,
+        receita_flex_bonus: Number(item.receita_flex_bonus) || 0,
+        custo_envio_seller: Number(item.custo_envio_seller) || 0,
+        desconto_cupom: Number(item.desconto_cupom) || 0,
+        taxa_marketplace: Number(item.taxa_marketplace) || 0,
+        valor_liquido_vendedor: Number(item.valor_liquido_vendedor) || 0,
+        metodo_pagamento: item.metodo_pagamento || '',
+        status_pagamento: item.status_pagamento || '',
+        tipo_pagamento: item.tipo_pagamento || '',
+        status_mapeamento: item.status_mapeamento || '',
+        status_baixa: item.status_baixa || '',
+        status: item.status || '',
+        status_envio: item.status_envio || '',
+        cidade: item.cidade || '',
+        uf: item.uf || '',
+        empresa: item.empresa || item.origem || '',
+        data_pedido: item.data_pedido || '',
+        ultima_atualizacao: item.ultima_atualizacao || item.updated_at || '',
+        created_at: item.created_at || '',
+        integration_account_id: item.integration_account_id || ''
+      }));
 
-      // Usar contagem heurística já que a RPC não retorna total
-      const total = rows.length > 0 ? (page - 1) * limit + rows.length : 0;
-      const hasMore = rows.length === limit;
+      const hasMore = data.length === limit;
 
-      console.log(`[Historico] ✅ Dados recuperados via RPC: ${mapped.length} registros`);
-      
-      return { data: mapped, total, hasMore };
+      console.log('✅ Dados processados:', { total: result.total, hasMore, dataLength: data.length });
+
+      return {
+        data,
+        total: result.total,
+        hasMore
+      };
+
     } catch (error: any) {
-      console.error('Erro ao buscar histórico:', error.message || error);
+      console.error('❌ Erro ao buscar histórico:', error);
       return { data: [], total: 0, hasMore: false };
     }
   }
@@ -126,31 +148,29 @@ export class HistoricoSimpleService {
     ticketMedio: number;
   }> {
     try {
-      // ✅ CORREÇÃO FINAL: usar RPC 'get_historico_vendas_safe' para estatísticas
-      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
-        _limit: 1000,
-        _offset: 0,
-        _search: null,
-        _start: null,
-        _end: null,
-        _status: null
-      });
+      console.log('📊 Buscando estatísticas do histórico');
+
+      // Usar SELECT direto para stats
+      const { data, error } = await supabase
+        .from('historico_vendas')
+        .select('total, valor_total');
 
       if (error) {
-        console.error('[Historico] Erro ao buscar estatísticas via RPC:', error.message);
+        console.error('❌ Erro ao buscar stats:', error);
         return { totalVendas: 0, valorTotal: 0, ticketMedio: 0 };
       }
 
-      const rows = Array.isArray(data) ? data : [];
-      const totalVendas = rows.length;
-      const valorTotal = rows.reduce((s: number, r: any) => s + Number(r?.valor_total || 0), 0);
+      const totalVendas = data?.length || 0;
+      const valorTotal = data?.reduce((sum: number, item: any) => 
+        sum + (Number(item.total) || Number(item.valor_total) || 0), 0) || 0;
       const ticketMedio = totalVendas > 0 ? valorTotal / totalVendas : 0;
-      
-      console.log(`[Historico] ✅ Estatísticas: ${totalVendas} vendas, R$ ${valorTotal.toFixed(2)} total`);
-      
+
+      console.log('📊 Stats calculadas:', { totalVendas, valorTotal, ticketMedio });
+
       return { totalVendas, valorTotal, ticketMedio };
+
     } catch (error: any) {
-      console.error('[Historico] Erro ao calcular estatísticas:', error.message);
+      console.error('❌ Erro ao calcular estatísticas:', error);
       return { totalVendas: 0, valorTotal: 0, ticketMedio: 0 };
     }
   }
@@ -158,15 +178,21 @@ export class HistoricoSimpleService {
   // Adicionar novo registro ao histórico
   static async addHistoricoItem(item: Partial<HistoricoItem>): Promise<boolean> {
     try {
-      // Validar e limpar dados antes da inserção
-      const cleanedItem = HistoricoDataMapper.validateAndCleanData(item);
-      
-      // Mapear para formato do banco
-      const dbItem = HistoricoDataMapper.mapNewFormatToDatabase(cleanedItem);
+      // Mapear para formato da tabela
+      const dbItem = {
+        numero_pedido: item.numero_pedido || '',
+        id_unico: item.id_unico || item.numero_pedido || '',
+        sku_produto: item.sku_produto || 'BAIXA_ESTOQUE',
+        data_pedido: item.data_pedido || new Date().toISOString().split('T')[0],
+        status: item.status || 'baixado',
+        valor_total: item.valor_total || 0,
+        cliente_nome: item.cliente_nome || '',
+        created_by: null // Será definido pela RLS
+      };
 
-      const { error } = await supabase.functions.invoke('registrar-historico-vendas', {
-        body: dbItem
-      });
+      const { error } = await supabase
+        .from('historico_vendas')
+        .insert(dbItem);
 
       if (error) {
         console.error('Erro ao registrar no histórico:', error);

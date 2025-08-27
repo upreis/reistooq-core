@@ -28,23 +28,17 @@ export async function criarSnapshot(pedido: PedidoLike) {
   const { data: au } = await supabase.auth.getUser();
   if (!au?.user) throw new Error('Usuário não autenticado');
 
-  const numeroResolvido = resolveNumero(pedido);
-  
   const row = {
-    // Campos obrigatórios da tabela
     created_by: au.user.id,
-    numero_pedido: numeroResolvido,
-    data_pedido: new Date().toISOString().split('T')[0], // Data de hoje
-    id_unico: numeroResolvido || `SNAPSHOT-${Date.now()}`,
+    numero_pedido: resolveNumero(pedido),
+    id_unico: resolveNumero(pedido),
     sku_produto: 'BAIXA_ESTOQUE',
-    valor_total: toNum(pedido.valor_total ?? pedido.total),
-    valor_unitario: toNum(pedido.valor_total ?? pedido.total),
-    quantidade: Array.isArray(pedido.itens) ? pedido.itens.length : 1,
-    
-    // Campos opcionais/extras que criamos
+    data_pedido: new Date().toISOString().split('T')[0],
     origem: pedido.empresa ?? pedido.origem ?? 'MercadoLivre',
-    status: pedido.situacao ?? pedido.status ?? 'baixado',
+    status: pedido.situacao ?? pedido.status ?? null,
     cliente_nome: pedido.nome_cliente ?? pedido.cliente ?? null,
+    valor_total: toNum(pedido.valor_total ?? pedido.total),
+    total_itens: Array.isArray(pedido.itens) ? pedido.itens.length : 0,
     raw: pedido,
   };
 
@@ -56,4 +50,11 @@ export async function criarSnapshot(pedido: PedidoLike) {
 
   if (error) throw error;
   return data;
+}
+
+// Manter a classe original para compatibilidade
+export class HistoricoSnapshotService {
+  static async criarSnapshot(pedido: PedidoLike) {
+    return criarSnapshot(pedido);
+  }
 }
