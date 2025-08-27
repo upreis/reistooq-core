@@ -20,8 +20,8 @@ export class HistoricoSnapshotService {
       // Criar dados do snapshot exatamente como aparecem na tela
       const snapshot = {
         // IDs e referências básicas
-        id_unico: `${pedido.sku_estoque || 'NO-SKU'}-${pedido.numero}`,
-        numero_pedido: pedido.numero,
+        id_unico: `${pedido.sku_estoque || 'NO-SKU'}-${pedido.numero || pedido.id}`,
+        numero_pedido: pedido.numero || String(pedido.id),
         pedido_id: pedido.id,
         
         // Dados do cliente (exatos da tela)
@@ -37,14 +37,14 @@ export class HistoricoSnapshotService {
         quantidade_total: pedido.total_itens || 1,
         qtd_kit: pedido.qtd_kit || 0,
         total_itens: pedido.total_itens || 1,
-        descricao: `Baixa de estoque - ${pedido.numero}`,
+        descricao: `Baixa de estoque - ${pedido.numero || pedido.id}`,
         
         // Valores financeiros (exatos da tela)
-        valor_total: pedido.valor_total || 0,
-        valor_unitario: pedido.total_itens > 0 ? (pedido.valor_total || 0) / pedido.total_itens : (pedido.valor_total || 0),
-        valor_frete: pedido.valor_frete || 0,
-        valor_desconto: pedido.valor_desconto || 0,
-        valor_pago: pedido.paid_amount || pedido.valor_total || 0,
+        valor_total: Number(pedido.valor_total) || 0,
+        valor_unitario: (pedido.total_itens && pedido.total_itens > 0) ? (Number(pedido.valor_total) || 0) / pedido.total_itens : (Number(pedido.valor_total) || 0),
+        valor_frete: Number(pedido.valor_frete) || 0,
+        valor_desconto: Number(pedido.valor_desconto) || 0,
+        valor_pago: Number(pedido.paid_amount || pedido.valor_total) || 0,
         
         // Dados geográficos
         cidade: pedido.cidade || '',
