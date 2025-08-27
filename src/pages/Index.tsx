@@ -4,8 +4,11 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { IntelligentDashboard } from "@/features/dashboard/components/IntelligentDashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { useState, useEffect } from "react";
 import { useProducts } from "@/hooks/useProducts";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   TrendingUp,
   ShoppingCart,
@@ -14,7 +17,13 @@ import {
   AlertTriangle,
   MoreHorizontal,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  User,
+  Settings,
+  LogOut,
+  Bell,
+  Sun,
+  Moon
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 
@@ -57,6 +66,8 @@ const Index = () => {
   });
   const [loading, setLoading] = useState(true);
   const { getProductStats } = useProducts();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadStats();
@@ -80,6 +91,11 @@ const Index = () => {
     }).format(value);
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -93,6 +109,49 @@ const Index = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header móvel com ícones de ação */}
+      <div className="md:hidden flex items-center justify-between bg-background border rounded-lg p-4 mb-4">
+        <h2 className="text-lg font-semibold">Dashboard</h2>
+        <div className="flex items-center gap-2">
+          {/* Sino de alertas */}
+          <Button variant="ghost" size="icon" className="relative h-8 w-8">
+            <Bell className="h-4 w-4" />
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-destructive-foreground rounded-full text-xs flex items-center justify-center">
+              3
+            </span>
+          </Button>
+          
+          {/* Toggle tema */}
+          <div className="h-8 w-8 flex items-center justify-center">
+            <ThemeToggle />
+          </div>
+          
+          {/* Perfil */}
+          <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+            <Link to="/profile">
+              <User className="h-4 w-4" />
+            </Link>
+          </Button>
+          
+          {/* Configurações */}
+          <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+            <Link to="/config">
+              <Settings className="h-4 w-4" />
+            </Link>
+          </Button>
+          
+          {/* Sair */}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-8 w-8 text-destructive hover:text-destructive" 
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       {/* Dashboard Inteligente */}
       <IntelligentDashboard />
       
