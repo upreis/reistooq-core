@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { SimpleBaixaService } from '@/services/SimpleBaixaService';
+import { HistoricoSnapshotService } from '@/services/HistoricoSnapshotService';
 import { Pedido } from '@/types/pedido';
 import { useToast } from '@/hooks/use-toast';
 
@@ -9,10 +9,10 @@ export function useProcessarBaixaEstoque() {
 
   return useMutation({
     mutationFn: async (pedidos: Pedido[]): Promise<boolean> => {
-      // Processar cada pedido de forma simples
+      // Processar cada pedido criando snapshot simples
       let sucessos = 0;
       for (const pedido of pedidos) {
-        const sucesso = await SimpleBaixaService.processarBaixaPedido(pedido);
+        const sucesso = await HistoricoSnapshotService.criarSnapshot(pedido);
         if (sucesso) sucessos++;
       }
       return sucessos === pedidos.length;
