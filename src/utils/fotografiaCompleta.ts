@@ -51,6 +51,10 @@ export interface FotografiaPedido {
   total_itens: number;
   status_baixa: string;
   
+  // 🎯 CAMPOS PARA BAIXA DE ESTOQUE (CORRETOS)
+  sku_baixa_estoque: string;        // SKU KIT é usado para baixa
+  quantidade_baixa_estoque: number; // Total de Itens é usado para baixa
+  
   // ===== ENVIO =====
   status_envio: string;
   logistic_mode_principal: string;
@@ -189,13 +193,15 @@ export function fotografarPedidoCompleto(
   
   // Mapping data
   const mapping = mappingData.get(order.id);
-  console.log('🔍 DEBUG Mapping:', {
+  console.log('🔍 DEBUG Mapping para Baixa de Estoque:', {
     orderId: order.id,
     orderNumber: order.numero,
     hasMapping: !!mapping,
-    mappingKeys: Array.from(mappingData.keys()),
-    quantidadeKit: mapping?.quantidade,
-    skuKit: mapping?.skuKit
+    // ✅ Campos CORRETOS para baixa de estoque:
+    skuKit_para_baixa: mapping?.skuKit,           // SKU KIT (será usado na baixa)
+    quantidade_para_baixa: mapping?.quantidade,   // Quantidade (será multiplicada)
+    // Campos antigos (só para exibição):
+    skuEstoque_display: mapping?.skuEstoque
   });
   
   // SKUs e quantidades (exatamente como na UI)
@@ -342,6 +348,14 @@ export function fotografarPedidoCompleto(
     sku_kit: mapping?.skuKit || '-',
     quantidade_kit: mapping?.quantidade || 0,
     total_itens: (() => {
+      const qtdVendida = quantidadeItens || 0;
+      const qtdKit = mapping?.quantidade || 1;
+      return qtdVendida * qtdKit;
+    })(),
+    
+    // 🎯 CAMPOS PARA BAIXA DE ESTOQUE (CORRETOS)
+    sku_baixa_estoque: mapping?.skuKit || '-',        // SKU KIT é usado para baixa
+    quantidade_baixa_estoque: (() => {                // Total de Itens é usado para baixa
       const qtdVendida = quantidadeItens || 0;
       const qtdKit = mapping?.quantidade || 1;
       return qtdVendida * qtdKit;
@@ -556,6 +570,10 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     quantidade_kit: fotografia.quantidade_kit,
     total_itens: fotografia.total_itens,
     status_baixa: 'concluida',
+    
+    // 🎯 CAMPOS USADOS PARA BAIXA DE ESTOQUE:
+    sku_para_baixa: fotografia.sku_baixa_estoque,        // SKU KIT
+    quantidade_para_baixa: fotografia.quantidade_baixa_estoque, // Total de Itens
     
     // Pagamento
     metodo_pagamento: fotografia.metodo_pagamento,
