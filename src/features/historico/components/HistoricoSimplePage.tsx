@@ -21,6 +21,7 @@ import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
 import { useHistoricoSelection } from '../hooks/useHistoricoSelection';
 import { HistoricoDeleteService } from '../services/HistoricoDeleteService';
 import { HistoricoItem } from '../services/HistoricoSimpleService';
+import { criarSnapshot } from '@/services/HistoricoSnapshotService';
 
 export function HistoricoSimplePage() {
   const { toast } = useToast();
@@ -197,6 +198,35 @@ export function HistoricoSimplePage() {
     setItemsToDelete([]);
   };
 
+  // Função de teste DEV-ONLY
+  const handleDevTestSnapshot = async () => {
+    try {
+      await criarSnapshot({
+        id: 'TEST-E2E',
+        numero_pedido: 'TEST-E2E',
+        empresa: 'Teste',
+        situacao: 'Pago',
+        nome_cliente: 'QA',
+        valor_total: 12.34,
+        itens: [{ sku: 'X', q: 1, preco: 12.34 }]
+      });
+      
+      refetch(); // Invalidar cache
+      toast({
+        title: "✅ Snapshot de teste criado",
+        description: "Snapshot TEST-E2E criado com sucesso!",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Erro ao criar snapshot de teste:', error);
+      toast({
+        title: "❌ Erro no teste",
+        description: String(error),
+        variant: "destructive"
+      });
+    }
+  };
+
   const totalPages = Math.ceil(total / pageSize);
   const canGoPrev = page > 1;
   const canGoNext = hasMore;
@@ -232,6 +262,19 @@ export function HistoricoSimplePage() {
               <Upload className="h-4 w-4" />
               Importar
             </Button>
+
+            {/* Botão DEV-ONLY para teste */}
+            {process.env.NODE_ENV === 'development' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDevTestSnapshot}
+                disabled={isFetching}
+                className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+              >
+                ➕ Inserir snapshot de teste
+              </Button>
+            )}
             
             <Button
               variant="outline"
