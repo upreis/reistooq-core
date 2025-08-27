@@ -10,20 +10,37 @@ const toNum = (x: any) => {
 
 // mapeia o objeto da linha de /pedidos para snapshot
 export function pedidoToSnapshot(p: any) {
+  // Extrair valor_total de múltiplas fontes
+  let valorTotal = toNum(p.valor_total ?? p.total);
+  
+  // Se não encontrou, tentar extrair do payments (Mercado Livre)
+  if (!valorTotal && p.payments && Array.isArray(p.payments)) {
+    valorTotal = p.payments.reduce((sum: number, payment: any) => {
+      return sum + (toNum(payment.transaction_amount ?? payment.total_paid_amount) ?? 0);
+    }, 0);
+  }
+  
+  // Se ainda não encontrou, tentar raw.payments
+  if (!valorTotal && p.raw?.payments && Array.isArray(p.raw.payments)) {
+    valorTotal = p.raw.payments.reduce((sum: number, payment: any) => {
+      return sum + (toNum(payment.transaction_amount ?? payment.total_paid_amount) ?? 0);
+    }, 0);
+  }
+
   return {
     id_unico: String(p.id ?? p.numero ?? p.numero_pedido ?? ''),
     numero_pedido: String(p.numero ?? p.numero_pedido ?? p.id ?? ''),
     empresa: p.empresa ?? 'MercadoLivre',
-    nome_cliente: p.nome_cliente ?? null,
+    nome_cliente: p.nome_cliente ?? p.buyer?.nickname ?? null,
     situacao: p.situacao ?? p.status ?? null,
-    data_pedido: (p.data_pedido ?? p.created_at ?? '').slice(0,10) || null,
+    data_pedido: (p.data_pedido ?? p.created_at ?? p.date_created ?? '').slice(0,10) || null,
 
-    valor_total: toNum(p.valor_total ?? p.total),
-    valor_frete: toNum(p.valor_frete),
+    valor_total: valorTotal,
+    valor_frete: toNum(p.valor_frete ?? p.shipping?.cost),
     valor_desconto: toNum(p.valor_desconto ?? p.discount),
 
-    cidade: p.cidade ?? p.shipping?.receiver_address?.city ?? null,
-    uf: p.uf ?? p.shipping?.receiver_address?.state ?? null,
+    cidade: p.cidade ?? p.shipping?.receiver_address?.city ?? p.shipping?.destination?.shipping_address?.city ?? null,
+    uf: p.uf ?? p.shipping?.receiver_address?.state ?? p.shipping?.destination?.shipping_address?.state?.id ?? null,
     codigo_rastreamento: p.codigo_rastreamento ?? p.shipping?.tracking_number ?? null,
 
     raw: p, // guarda tudo
