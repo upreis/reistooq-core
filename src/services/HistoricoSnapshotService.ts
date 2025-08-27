@@ -207,10 +207,14 @@ export async function criarSnapshot(pedido: PedidoLike) {
   
   console.log('[row-inserido]', data); // Log 3: objeto retornado após insert
   
-  // Log 4: Verificar se conseguimos ler a linha recém-inserida usando a mesma query do histórico
+  // Log 4: Verificar se conseguimos ler a linha recém-inserida
   try {
-    const { buscarHistoricoPorId } = await import('@/services/HistoricoService');
-    await buscarHistoricoPorId(data.id);
+    const { data: verification } = await supabase
+      .from('historico_vendas')
+      .select('*')
+      .eq('id', data.id)
+      .single();
+    console.log('[historico-verificacao]', verification);
   } catch (err) {
     console.warn('Não foi possível validar leitura:', err);
   }

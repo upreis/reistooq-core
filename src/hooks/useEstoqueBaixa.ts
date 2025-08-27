@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { criarSnapshot } from '@/services/HistoricoSnapshotService';
+import { salvarSnapshotBaixa } from '@/utils/snapshot';
 import { Pedido } from '@/types/pedido';
 import { useToast } from '@/hooks/use-toast';
 
@@ -9,12 +9,12 @@ export function useProcessarBaixaEstoque() {
 
   return useMutation({
     mutationFn: async (pedidos: Pedido[]): Promise<boolean> => {
-      // Processar cada pedido criando snapshot simples
+      // Processar cada pedido criando snapshot direto
       let sucessos = 0;
       for (const pedido of pedidos) {
         try {
-          console.log('[linha-pedido]', pedido); // Log 1: objeto da linha selecionada
-          await criarSnapshot(pedido);
+          console.log('[linha-pedido]', pedido);
+          await salvarSnapshotBaixa(pedido);
           sucessos++;
         } catch (error) {
           console.error('Erro ao criar snapshot:', error);
@@ -27,7 +27,6 @@ export function useProcessarBaixaEstoque() {
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       queryClient.invalidateQueries({ queryKey: ["historico-simple"] });
       queryClient.invalidateQueries({ queryKey: ["historico-stats"] });
-      queryClient.invalidateQueries({ queryKey: ["historico-vendas"] });
       queryClient.invalidateQueries({ queryKey: ["historico-vendas"] });
 
       toast({
