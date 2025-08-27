@@ -36,22 +36,35 @@ export async function salvarSnapshotBaixa(pedido: any) {
   const created_by = s?.session?.user?.id;
   if (!created_by) throw new Error('Usuário não autenticado');
 
+  // Logar a linha recebida da página de pedidos
   console.log('[linha-pedido]', pedido);
 
-  const snapshot = pedidoToSnapshot(pedido);
-  const row = { 
-    ...snapshot,
+  // Normalizar campos básicos
+  const snap = pedidoToSnapshot(pedido);
+  const valorTotal = toNum(pedido.valor_total ?? pedido.total) ?? 0;
+  const valorUnit = toNum(pedido.valor_unitario) ?? valorTotal;
+  const numeroPedido = String(pedido.numero ?? pedido.numero_pedido ?? pedido.id ?? snap.id_unico ?? '');
+  const dataPedido = (snap.data_pedido || new Date().toISOString().slice(0,10));
+
+  // Montar linha respeitando NOT NULLs da tabela existente
+  const row = {
+    ...snap,
     created_by,
     origem: 'baixa_estoque',
-    // Garantir que data_pedido não seja null
-    data_pedido: snapshot.data_pedido || new Date().toISOString().slice(0,10)
-  };
+    numero_pedido: numeroPedido,
+    status: 'baixado',
+    sku_produto: 'BAIXA_ESTOQUE',
+    quantidade: 1,
+    valor_unitario: valorUnit,
+    valor_total: valorTotal,
+    data_pedido: dataPedido
+  } as any;
 
   console.log('[dados-para-salvar]', row);
 
   const { data, error } = await supabase
     .from('historico_vendas')
-    .upsert(row as any, { onConflict: 'id_unico,origem' }) // idempotente
+    .upsert(row, { onConflict: 'id_unico,origem' }) // idempotente
     .select()
     .single();
 
@@ -59,7 +72,7 @@ export async function salvarSnapshotBaixa(pedido: any) {
     console.error('[erro-snapshot]', error);
     throw error;
   }
-  
+
   console.log('[snapshot-salvo]', data);
   return data;
 }
