@@ -84,46 +84,50 @@ export class HistoricoSimpleService {
     try {
       console.log('🔍 Buscando histórico com filtros:', { filters, page, limit });
 
-      // Usar SELECT direto ao invés de RPC
+      // Usar SELECT direto da tabela historico_vendas (sem RPC)
       const result = await listarHistoricoVendas({ page, pageSize: limit });
 
       // Mapear dados para o formato esperado
-      const data: HistoricoItem[] = (result.data || []).map((item: any) => ({
-        id: item.id,
-        id_unico: item.id_unico || item.numero_pedido || '',
-        numero_pedido: item.numero_pedido || '',
-        cliente_nome: item.cliente_nome || item.cliente || '',
-        nome_completo: item.cliente_nome || item.nome_completo || '',
-        sku_produto: item.sku_produto || '',
-        sku_estoque: item.sku_estoque || '',
-        sku_kit: item.sku_kit || '',
-        quantidade_total: Number(item.quantidade_total) || Number(item.quantidade) || 0,
-        qtd_kit: Number(item.qtd_kit) || 0,
-        total_itens: Number(item.total_itens) || Number(item.itens) || 0,
-        titulo_produto: item.titulo_produto || '',
-        valor_total: Number(item.valor_total) || Number(item.total) || 0,
-        valor_pago: Number(item.valor_pago) || 0,
-        frete_pago_cliente: Number(item.frete_pago_cliente) || 0,
-        receita_flex_bonus: Number(item.receita_flex_bonus) || 0,
-        custo_envio_seller: Number(item.custo_envio_seller) || 0,
-        desconto_cupom: Number(item.desconto_cupom) || 0,
-        taxa_marketplace: Number(item.taxa_marketplace) || 0,
-        valor_liquido_vendedor: Number(item.valor_liquido_vendedor) || 0,
-        metodo_pagamento: item.metodo_pagamento || '',
-        status_pagamento: item.status_pagamento || '',
-        tipo_pagamento: item.tipo_pagamento || '',
-        status_mapeamento: item.status_mapeamento || '',
-        status_baixa: item.status_baixa || '',
-        status: item.status || '',
-        status_envio: item.status_envio || '',
-        cidade: item.cidade || '',
-        uf: item.uf || '',
-        empresa: item.empresa || item.origem || '',
-        data_pedido: item.data_pedido || '',
-        ultima_atualizacao: item.ultima_atualizacao || item.updated_at || '',
-        created_at: item.created_at || '',
-        integration_account_id: item.integration_account_id || ''
-      }));
+      const data: HistoricoItem[] = (result.data || []).map((item: any) => {
+        console.log('[HistoricoSimpleService] Mapeando item:', item);
+        
+        return {
+          id: item.id,
+          id_unico: item.id_unico || item.numero_pedido || '',
+          numero_pedido: item.numero_pedido || '',
+          cliente_nome: item.cliente_nome || item.nome_cliente || '',
+          nome_completo: item.nome_completo || item.cliente_nome || '',
+          sku_produto: item.sku_produto || '',
+          sku_estoque: item.sku_estoque || '',
+          sku_kit: item.sku_kit || '',
+          quantidade_total: Number(item.quantidade_total) || Number(item.quantidade) || 0,
+          qtd_kit: Number(item.qtd_kit) || 0,
+          total_itens: Number(item.total_itens) || Number(item.itens) || 0,
+          titulo_produto: item.titulo_produto || item.descricao || '',
+          valor_total: Number(item.valor_total) || Number(item.total) || 0,
+          valor_pago: Number(item.valor_pago) || 0,
+          frete_pago_cliente: Number(item.frete_pago_cliente) || Number(item.valor_frete) || 0,
+          receita_flex_bonus: Number(item.receita_flex_bonus) || 0,
+          custo_envio_seller: Number(item.custo_envio_seller) || 0,
+          desconto_cupom: Number(item.desconto_cupom) || Number(item.valor_desconto) || 0,
+          taxa_marketplace: Number(item.taxa_marketplace) || 0,
+          valor_liquido_vendedor: Number(item.valor_liquido_vendedor) || 0,
+          metodo_pagamento: item.metodo_pagamento || '',
+          status_pagamento: item.status_pagamento || '',
+          tipo_pagamento: item.tipo_pagamento || '',
+          status_mapeamento: item.status_mapeamento || '',
+          status_baixa: item.status_baixa || '',
+          status: item.status || 'baixado',
+          status_envio: item.status_envio || '',
+          cidade: item.cidade || '',
+          uf: item.uf || '',
+          empresa: item.empresa || '',
+          data_pedido: item.data_pedido || '',
+          ultima_atualizacao: item.ultima_atualizacao || item.updated_at || '',
+          created_at: item.created_at || '',
+          integration_account_id: item.integration_account_id || ''
+        };
+      });
 
       const hasMore = data.length === limit;
 

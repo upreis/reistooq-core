@@ -83,13 +83,15 @@ export function HistoricoSimplePage() {
     selectedCount
   } = useHistoricoSelection();
 
-  // Hook principal simplificado
+  // Hook principal simplificado - direto do HistoricoService
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const { data: response, isLoading, refetch } = useHistoricoVendas(page, pageSize);
   const data = response?.data || [];
   const total = response?.total || 0;
   const isFetching = isLoading;
+  
+  console.log('[HistoricoSimplePage] Dados carregados:', { data: data.length, total, isLoading });
   
   const goToPage = (newPage: number) => setPage(newPage);
   const changePageSize = (size: number) => {

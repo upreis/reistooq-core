@@ -16,7 +16,8 @@ export async function listarHistoricoVendas({ page = 1, pageSize = 20 } = {}) {
   console.log('[historico-leitura]', { 
     query: 'select * from historico_vendas order by created_at desc', 
     count, 
-    primeirasLinhas: data?.slice(0, 2) 
+    primeirasLinhas: data?.slice(0, 2),
+    totalEntries: data?.length || 0
   });
 
   return { data: data ?? [], total: count ?? 0 };
