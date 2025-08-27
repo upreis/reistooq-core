@@ -1,4 +1,5 @@
 
+// 🛡️ PÁGINA PROTEGIDA - NÃO MODIFICAR SEM AUTORIZAÇÃO EXPLÍCITA
 import { WelcomeCard } from "@/components/dashboard/WelcomeCard";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { IntelligentDashboard } from "@/features/dashboard/components/IntelligentDashboard";

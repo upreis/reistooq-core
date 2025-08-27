@@ -1,4 +1,4 @@
-// 🛡️ PÁGINA PROTEGIDA - Sistema de Permissões Ativo
+// 🛡️ PÁGINA PROTEGIDA - NÃO MODIFICAR SEM AUTORIZAÇÃO EXPLÍCITA
 import { useState, useEffect, useCallback } from "react";
 import { EstoqueGuard } from '@/core/estoque/guards/EstoqueGuard';
 
