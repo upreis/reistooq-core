@@ -461,7 +461,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess }: Product
             {/* Upload de Imagem */}
             <div className="space-y-2">
               <FormLabel>Imagem do Produto</FormLabel>
-              <div className="border-2 border-dashed border-border rounded-lg p-6">
+              <div className="border-2 border-dashed border-border rounded-lg p-6 relative">
                 {imagePreview ? (
                   <div className="relative">
                     <img
@@ -497,7 +497,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess }: Product
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  className="absolute inset-0 opacity-0 cursor-pointer"
                 />
               </div>
             </div>
