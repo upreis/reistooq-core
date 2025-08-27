@@ -473,6 +473,37 @@ export function fotografarPedidoCompleto(
  * Converte fotografia para formato do banco de dados
  */
 export function fotografiaParaBanco(fotografia: FotografiaPedido) {
+  // Normalizar datas para formatos aceitos pelo Postgres
+  const parseDateBR = (s: any): string | null => {
+    if (!s) return null;
+    if (typeof s === 'string') {
+      const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (m) {
+        // dd/mm/yyyy -> yyyy-mm-dd
+        return `${m[3]}-${m[2]}-${m[1]}`;
+      }
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+  };
+
+  const parseDateTime = (s: any): string | null => {
+    if (!s) return null;
+    if (typeof s === 'string') {
+      const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (m) {
+        // dd/mm/yyyy -> ISO datetime at midnight UTC
+        const iso = new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00Z`).toISOString();
+        return iso;
+      }
+    }
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  };
+
+  const dataPedidoISO = parseDateBR(fotografia.data_pedido) || new Date().toISOString().slice(0, 10);
+  const ultimaAtualizacaoISO = parseDateTime(fotografia.ultima_atualizacao) || null;
+
   return {
     id_unico: fotografia.id_unico,
     numero_pedido: fotografia.numero_pedido,
@@ -537,9 +568,9 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     bairro: fotografia.bairro,
     cep: fotografia.cep,
     
-    // Metadados
-    data_pedido: fotografia.data_pedido,
-    ultima_atualizacao: fotografia.ultima_atualizacao,
+    // Metadados (datas normalizadas)
+    data_pedido: dataPedidoISO,
+    ultima_atualizacao: ultimaAtualizacaoISO,
     integration_account_id: fotografia.integration_account_id,
     numero_ecommerce: fotografia.numero_ecommerce,
     numero_venda: fotografia.numero_venda,
