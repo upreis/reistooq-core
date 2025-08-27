@@ -154,7 +154,7 @@ export function EstoqueTable({
       <div className="min-w-[800px] md:min-w-full">
         <div className="space-y-4">
           {/* Table Header */}
-          <div className="grid grid-cols-13 gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium">
+          <div className="grid grid-cols-12 gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium">
         <div className="flex items-center">
           <Checkbox
             checked={allSelected}
@@ -168,7 +168,7 @@ export function EstoqueTable({
         <div className="flex items-center cursor-pointer" onClick={() => onSort('codigo_barras')}>
           Código de Barras {getSortIcon('codigo_barras')}
         </div>
-        <div className="col-span-3 flex items-center cursor-pointer" onClick={() => onSort('nome')}>
+        <div className="col-span-2 flex items-center cursor-pointer" onClick={() => onSort('nome')}>
           Produto {getSortIcon('nome')}
         </div>
         <div className="flex items-center cursor-pointer" onClick={() => onSort('sku_interno')}>
@@ -197,7 +197,7 @@ export function EstoqueTable({
           return (
             <div
               key={product.id}
-              className={`grid grid-cols-13 gap-4 py-4 px-4 border rounded-lg hover:bg-muted/30 transition-colors ${
+              className={`grid grid-cols-12 gap-4 py-4 px-4 border rounded-lg hover:bg-muted/30 transition-colors ${
                 isSelected ? 'bg-muted/50 border-primary' : ''
               }`}
             >
@@ -218,7 +218,7 @@ export function EstoqueTable({
               </div>
 
               {/* Product Info */}
-              <div className="col-span-3 flex items-center space-x-3">
+              <div className="col-span-2 flex items-center space-x-3">
                 <div className="relative w-12 h-12 bg-muted rounded-lg flex items-center justify-center group">
                   {product.url_imagem ? (
                     <img 
