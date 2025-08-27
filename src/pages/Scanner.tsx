@@ -5,43 +5,97 @@ import { Badge } from "@/components/ui/badge";
 import { Package, Search, TrendingUp } from "lucide-react";
 import { toast } from 'sonner';
 import { SimpleMobileScanner } from "@/components/scanner/SimpleMobileScanner";
+import { ProductModal } from "@/components/estoque/ProductModal";
 import { productService } from "@/features/scanner/services/ProductService";
 import { ScannedProduct } from "@/features/scanner/types/scanner.types";
+import { useProducts, Product } from "@/hooks/useProducts";
 
 const Scanner = () => {
   const [scannedProduct, setScannedProduct] = useState<ScannedProduct | null>(null);
   const [scanHistory, setScanHistory] = useState<{ code: string; timestamp: Date; product?: ScannedProduct }[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
+  const [scannedCode, setScannedCode] = useState<string>("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const { getProducts } = useProducts();
+
+  const loadProducts = async () => {
+    try {
+      const data = await getProducts();
+      setProducts(data);
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+    }
+  };
 
   const handleScanResult = async (code: string) => {
     console.log('📱 Código escaneado:', code);
+    setScannedCode(code);
     
     try {
-      // Buscar produto por código
-      const product = await productService.getByBarcodeOrSku(code);
+      // Recarregar produtos antes de buscar
+      await loadProducts();
       
-      const historyEntry = {
-        code,
-        timestamp: new Date(),
-        product: product || undefined
-      };
+      // Buscar produto no banco local
+      const existingProduct = products.find(p => 
+        p.codigo_barras === code || p.sku_interno === code
+      );
       
-      setScanHistory(prev => [historyEntry, ...prev.slice(0, 9)]);
-      
-      if (product) {
-        setScannedProduct(product);
-        toast.success(`Produto encontrado: ${product.nome}`);
+      if (existingProduct) {
+        // Produto existe - abrir modal para editar
+        setCurrentProduct(existingProduct);
+        setScannedProduct({
+          id: existingProduct.id,
+          nome: existingProduct.nome,
+          sku_interno: existingProduct.sku_interno,
+          codigo_barras: existingProduct.codigo_barras || '',
+          quantidade_atual: existingProduct.quantidade_atual,
+          estoque_minimo: existingProduct.estoque_minimo,
+          estoque_maximo: existingProduct.estoque_maximo,
+          preco_venda: existingProduct.preco_venda || 0,
+          preco_custo: existingProduct.preco_custo || 0,
+          localizacao: existingProduct.localizacao || '',
+          descricao: existingProduct.descricao || '',
+          url_imagem: existingProduct.url_imagem || '',
+          categoria: existingProduct.categoria || '',
+          ativo: existingProduct.ativo,
+          created_at: existingProduct.created_at,
+          updated_at: existingProduct.updated_at,
+          organization_id: existingProduct.organization_id
+        });
+        setIsModalOpen(true);
+        toast.success(`Produto encontrado: ${existingProduct.nome} - Toque para editar`);
         
         // Vibração de sucesso
         if ('vibrate' in navigator) {
           navigator.vibrate([100, 50, 100]);
         }
       } else {
-        toast.error(`Produto não encontrado: ${code}`);
+        // Produto não existe - abrir modal para criar novo com código preenchido
+        setCurrentProduct(null);
         setScannedProduct(null);
+        setIsModalOpen(true);
+        toast.success(`Código: ${code} - Criar novo produto`);
       }
+      
+      // Adicionar ao histórico
+      const historyEntry = {
+        code,
+        timestamp: new Date(),
+        product: existingProduct ? {
+          id: existingProduct.id,
+          nome: existingProduct.nome,
+          sku_interno: existingProduct.sku_interno,
+          quantidade_atual: existingProduct.quantidade_atual,
+          preco_venda: existingProduct.preco_venda || 0
+        } as ScannedProduct : undefined
+      };
+      
+      setScanHistory(prev => [historyEntry, ...prev.slice(0, 9)]);
+      
     } catch (error: any) {
-      console.error('❌ Erro ao buscar produto:', error);
-      toast.error('Erro ao buscar produto');
+      console.error('❌ Erro ao processar código:', error);
+      toast.error('Erro ao processar código');
       
       // Adicionar ao histórico mesmo com erro
       setScanHistory(prev => [{
@@ -69,6 +123,13 @@ const Scanner = () => {
     }).format(price);
   };
 
+  const handleModalSuccess = async () => {
+    await loadProducts();
+    setIsModalOpen(false);
+    setCurrentProduct(null);
+    setScannedProduct(null);
+  };
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-lg mx-auto space-y-6">
@@ -85,6 +146,14 @@ const Scanner = () => {
         <SimpleMobileScanner 
           onScanResult={handleScanResult}
           onError={handleScanError}
+        />
+
+        {/* Modal do Produto */}
+        <ProductModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          product={currentProduct}
+          onSuccess={handleModalSuccess}
         />
 
         {/* Product Info */}
@@ -135,13 +204,13 @@ const Scanner = () => {
               )}
 
               <div className="flex gap-2 pt-2">
-                <Button size="sm" className="flex-1">
+                <Button 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setIsModalOpen(true)}
+                >
                   <TrendingUp className="w-4 h-4 mr-2" />
-                  Ver Detalhes
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1">
-                  <Search className="w-4 h-4 mr-2" />
-                  Movimentar
+                  Editar Produto
                 </Button>
               </div>
             </CardContent>
