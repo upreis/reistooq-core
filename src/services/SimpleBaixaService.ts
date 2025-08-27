@@ -87,15 +87,22 @@ export class SimpleBaixaService {
         status_baixa: pedido.status_estoque || '',
         
         // ===== SEÇÃO ENVIO =====
-        status: 'baixado',
-        status_envio: pedido.status_detail || '',
-        logistic_mode_principal: '', // Campo não disponível no tipo atual
-        tipo_logistico: '', // Campo não disponível no tipo atual
-        tipo_metodo_envio: '', // Campo não disponível no tipo atual
-        tipo_entrega: '', // Campo não disponível no tipo atual
-        substatus_estado_atual: pedido.status_detail || '',
-        modo_envio_combinado: '', // Campo não disponível no tipo atual
-        metodo_envio_combinado: '', // Campo não disponível no tipo atual
+        status: 'baixado', // Status do Pagamento
+        status_envio: pedido.status_detail || '', // Status do Envio
+        logistic_mode_principal: '', // Logistic Mode (Principal)
+        tipo_logistico: '', // Tipo Logístico
+        tipo_metodo_envio: '', // Tipo Método Envio
+        tipo_entrega: '', // Tipo Entrega
+        substatus_estado_atual: pedido.status_detail || '', // Substatus (Estado Atual)
+        modo_envio_combinado: '', // Modo de Envio (Combinado)
+        metodo_envio_combinado: '', // Método de Envio (Combinado)
+        // Endereço de envio
+        rua: '', // Rua
+        numero: '', // Numero
+        bairro: '', // Bairro
+        cep: '', // CEP
+        cidade: pedido.cidade || '', // Cidade
+        uf: pedido.uf || '', // UF
         
         // ===== CAMPOS TÉCNICOS =====
         integration_account_id: integrationAccountId,
@@ -111,8 +118,6 @@ export class SimpleBaixaService {
         
         // ===== CAMPOS OPCIONAIS (podem estar vazios) =====
         cliente_documento: '',
-        cidade: pedido.cidade || '',
-        uf: pedido.uf || '',
         valor_frete: pedido.valor_frete || 0,
         valor_desconto: pedido.valor_desconto || 0,
         ncm: '',
