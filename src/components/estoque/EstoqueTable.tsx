@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MobileTable from "@/components/mobile/MobileTable";
 
 interface EstoqueTableProps {
   products: Product[];
@@ -137,6 +138,131 @@ export function EstoqueTable({
   const allSelected = products.length > 0 && selectedProducts.length === products.length;
   const someSelected = selectedProducts.length > 0 && selectedProducts.length < products.length;
 
+  const columns = [
+    {
+      key: "nome",
+      label: "Produto",
+      primary: true,
+      sortable: true,
+      render: (value: string, product: Product) => (
+        <div className="flex items-center space-x-3">
+          <div className="relative w-10 h-10 bg-muted rounded-lg flex items-center justify-center group">
+            {product.url_imagem ? (
+              <img 
+                src={product.url_imagem} 
+                alt={product.nome} 
+                className="w-full h-full object-cover rounded-lg"
+              />
+            ) : (
+              <Package className="w-4 h-4 text-muted-foreground" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-sm truncate">{product.nome}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {product.descricao || "Sem descrição"}
+            </p>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: "codigo_barras",
+      label: "Código",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-xs font-mono text-muted-foreground">
+          {value || "Sem código"}
+        </span>
+      )
+    },
+    {
+      key: "sku_interno",
+      label: "SKU",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+          {value}
+        </span>
+      )
+    },
+    {
+      key: "categoria",
+      label: "Categoria", 
+      sortable: true,
+      render: (value: string) => value || "N/A"
+    },
+    {
+      key: "quantidade_atual",
+      label: "Estoque",
+      sortable: true,
+      render: (value: number, product: Product) => {
+        const stockStatus = getStockStatus(product);
+        return (
+          <div className="text-center">
+            <span className="text-lg font-bold block">{value}</span>
+            <Badge variant={stockStatus.variant} className="text-xs">
+              {stockStatus.label}
+            </Badge>
+          </div>
+        );
+      }
+    },
+    {
+      key: "estoque_range",
+      label: "Mín/Máx",
+      render: (_, product: Product) => (
+        <div className="text-xs">
+          <div>Mín: {product.estoque_minimo}</div>
+          <div>Máx: {product.estoque_maximo}</div>
+        </div>
+      )
+    },
+    {
+      key: "precos",
+      label: "Preços",
+      render: (_, product: Product) => (
+        <div className="text-xs">
+          <div>Custo: {formatPrice(product.preco_custo)}</div>
+          <div>Venda: {formatPrice(product.preco_venda)}</div>
+        </div>
+      )
+    },
+    {
+      key: "ultima_movimentacao",
+      label: "Última Mov.",
+      render: (value: string) => (
+        <span className="text-xs text-muted-foreground">
+          {value ? formatDate(value) : "N/A"}
+        </span>
+      )
+    }
+  ];
+
+  const actions = [
+    {
+      label: "Movimentar",
+      onClick: (product: Product) => {
+        setSelectedProductForMovement(product);
+        setMovementModalOpen(true);
+      },
+      icon: <Edit className="w-4 h-4" />,
+      variant: "outline" as const
+    },
+    {
+      label: "Editar",
+      onClick: onEditProduct,
+      icon: <Eye className="w-4 h-4" />,
+      variant: "outline" as const
+    },
+    {
+      label: "Excluir",
+      onClick: (product: Product) => onDeleteProduct(product.id),
+      icon: <Trash2 className="w-4 h-4" />,
+      variant: "destructive" as const
+    }
+  ];
+
   if (products.length === 0) {
     return (
       <div className="text-center py-12">
@@ -150,187 +276,20 @@ export function EstoqueTable({
   }
 
   return (
-    <div className="w-full overflow-x-auto -mx-4 sm:mx-0">
-      <div className="min-w-[800px] md:min-w-full">
-        <div className="space-y-4">
-          {/* Table Header */}
-          <div className="grid grid-cols-12 gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium">
-        <div className="flex items-center">
-          <Checkbox
-            checked={allSelected}
-            onCheckedChange={onSelectAll}
-            aria-label="Selecionar todos"
-            ref={(el) => {
-              if (el) (el as any).indeterminate = someSelected;
-            }}
-          />
-        </div>
-        <div className="flex items-center cursor-pointer" onClick={() => onSort('codigo_barras')}>
-          Código de Barras {getSortIcon('codigo_barras')}
-        </div>
-        <div className="col-span-2 flex items-center cursor-pointer" onClick={() => onSort('nome')}>
-          Produto {getSortIcon('nome')}
-        </div>
-        <div className="flex items-center cursor-pointer" onClick={() => onSort('sku_interno')}>
-          SKU {getSortIcon('sku_interno')}
-        </div>
-        <div className="flex items-center cursor-pointer" onClick={() => onSort('categoria')}>
-          Categoria {getSortIcon('categoria')}
-        </div>
-        <div className="flex items-center cursor-pointer" onClick={() => onSort('quantidade_atual')}>
-          Estoque {getSortIcon('quantidade_atual')}
-        </div>
-        <div className="flex items-center">Mín/Máx</div>
-        <div className="flex items-center">Preços</div>
-        <div className="flex items-center">Status</div>
-        <div className="flex items-center">Última Mov.</div>
-        <div className="flex items-center">Ações</div>
-      </div>
-
-      {/* Product Rows */}
-      <div className="space-y-2">
-        {products.map((product) => {
-          const stockStatus = getStockStatus(product);
-          const StockIcon = stockStatus.icon;
-          const isSelected = selectedProducts.includes(product.id);
-          
-          return (
-            <div
-              key={product.id}
-              className={`grid grid-cols-12 gap-4 py-4 px-4 border rounded-lg hover:bg-muted/30 transition-colors ${
-                isSelected ? 'bg-muted/50 border-primary' : ''
-              }`}
-            >
-              {/* Checkbox */}
-              <div className="flex items-center">
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => onSelectProduct(product.id)}
-                  aria-label={`Selecionar ${product.nome}`}
-                />
-              </div>
-
-              {/* Código de Barras */}
-              <div className="flex items-center">
-                <span className="text-xs font-mono text-muted-foreground">
-                  {product.codigo_barras || "Sem código"}
-                </span>
-              </div>
-
-              {/* Product Info */}
-              <div className="col-span-2 flex items-center space-x-3">
-                <div className="relative w-12 h-12 bg-muted rounded-lg flex items-center justify-center group">
-                  {product.url_imagem ? (
-                    <img 
-                      src={product.url_imagem} 
-                      alt={product.nome} 
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <Package className="w-6 h-6 text-muted-foreground" />
-                  )}
-                  {/* Upload overlay */}
-                  <div className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                       onClick={() => setImageUploadProduct(product)}>
-                    <Upload className="w-4 h-4 text-white" />
-                  </div>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">{product.nome}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {product.descricao || "Sem descrição"}
-                  </p>
-                </div>
-              </div>
-
-              {/* SKU */}
-              <div className="flex items-center">
-                <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                  {product.sku_interno}
-                </span>
-              </div>
-
-              {/* Category */}
-              <div className="flex items-center">
-                <span className="text-sm">{product.categoria || "N/A"}</span>
-              </div>
-
-              {/* Current Stock */}
-              <div className="flex items-center">
-                <div className="text-center">
-                  <span className="text-lg font-bold block">{product.quantidade_atual}</span>
-                  <span className="text-xs text-muted-foreground">unidades</span>
-                </div>
-              </div>
-
-              {/* Min/Max */}
-              <div className="flex items-center">
-                <div className="text-xs">
-                  <div>Mín: {product.estoque_minimo}</div>
-                  <div>Máx: {product.estoque_maximo}</div>
-                </div>
-              </div>
-
-              {/* Prices */}
-              <div className="flex items-center">
-                <div className="text-xs">
-                  <div>Custo: {formatPrice(product.preco_custo)}</div>
-                  <div>Venda: {formatPrice(product.preco_venda)}</div>
-                </div>
-              </div>
-
-              {/* Status */}
-              <div className="flex items-center">
-                <Badge variant={stockStatus.variant} className="text-xs">
-                  <StockIcon className="w-3 h-3 mr-1" />
-                  {stockStatus.label}
-                </Badge>
-              </div>
-
-              {/* Last Movement */}
-              <div className="flex items-center">
-                <span className="text-xs text-muted-foreground">
-                  {product.ultima_movimentacao 
-                    ? formatDate(product.ultima_movimentacao)
-                    : "N/A"
-                  }
-                </span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => {
-                      setSelectedProductForMovement(product);
-                      setMovementModalOpen(true);
-                    }}>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Movimentar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEditProduct(product)}>
-                      <Eye className="w-4 h-4 mr-2" />
-                      Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => onDeleteProduct(product.id)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Excluir
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <>
+      <MobileTable
+        data={products}
+        columns={columns}
+        selectedItems={selectedProducts}
+        onSelectItem={onSelectProduct}
+        onSelectAll={onSelectAll}
+        keyField="id"
+        actions={actions}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSort={onSort}
+        emptyMessage="Nenhum produto encontrado. Cadastre produtos para gerenciar o estoque."
+      />
 
       {/* Movement Modal */}
       <Dialog open={movementModalOpen} onOpenChange={setMovementModalOpen}>
@@ -425,8 +384,6 @@ export function EstoqueTable({
           </div>
         </DialogContent>
       </Dialog>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

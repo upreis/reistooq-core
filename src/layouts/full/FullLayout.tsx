@@ -7,6 +7,9 @@ import Header from "./vertical/header/Header";
 import { AnnouncementTicker } from "@/components/ui/AnnouncementTicker";
 import { AnnouncementProvider, useAnnouncements } from "@/contexts/AnnouncementContext";
 import { useLayoutSingleton } from "@/layouts/guards/LayoutSingleton";
+import AppMobileHeader from "@/components/layout/AppMobileHeader";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const CollapsedReopenTab: React.FC = () => {
   const { setIsSidebarCollapsed } = useSidebarUI();
@@ -31,43 +34,67 @@ const InnerLayout = () => {
   const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed } = useSidebarUI();
   const { isHidden, isCollapsed } = useAnnouncements();
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   const offset = !isHidden && !isCollapsed ? "pt-12" : "";
 
   // Fechar drawer mobile ao trocar de rota
   useEffect(() => { setIsMobileSidebarOpen(false); }, [location.pathname, setIsMobileSidebarOpen]);
 
+  // Get page title from route
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path === "/") return "Dashboard";
+    if (path === "/estoque") return "Estoque";
+    if (path === "/pedidos") return "Pedidos";
+    if (path === "/scanner") return "Scanner";
+    if (path === "/historico") return "Histórico";
+    if (path === "/config") return "Configurações";
+    return "Sistema";
+  };
+
   return (
     <SidebarProvider>
-      <AnnouncementTicker />
-      <div className={`flex min-h-screen w-full bg-background ${offset}`}>
-        {/* Enhanced Sidebar - integrated with SidebarUIProvider */}
-        <EnhancedSidebar 
-          navItems={ENHANCED_NAV_ITEMS}
-          isMobile={isMobileSidebarOpen}
-          onMobileClose={() => setIsMobileSidebarOpen(false)}
-          isCollapsed={isSidebarCollapsed}
-        />
+      <div className="w-full overflow-x-hidden">
+        {/* Mobile Header */}
+        {isMobile && <AppMobileHeader title={getPageTitle()} />}
+        
+        {/* Desktop Layout */}
+        {!isMobile && <AnnouncementTicker />}
+        
+        <div className={`flex min-h-screen w-full bg-background ${!isMobile ? offset : ""}`}>
+          {/* Enhanced Sidebar - hidden on mobile */}
+          {!isMobile && (
+            <EnhancedSidebar 
+              navItems={ENHANCED_NAV_ITEMS}
+              isMobile={false}
+              onMobileClose={() => {}}
+              isCollapsed={isSidebarCollapsed}
+            />
+          )}
 
-        {/* Overlay mobile - única instância */}
-        {isMobileSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/40 md:hidden z-30"
-            onClick={() => setIsMobileSidebarOpen(false)}
-            aria-hidden="true"
-          />
-        )}
+          {/* Rail button when collapsed - desktop only */}
+          {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
-        {/* Rail button when collapsed */}
-        {isSidebarCollapsed && <CollapsedReopenTab />}
-
-        {/* Conteúdo */}
-        <div className="flex-1 min-w-0 flex flex-col">
-          <Header />
-          <main className="flex-1 min-h-0 overflow-auto p-6">
-            <Outlet />
-          </main>
+          {/* Conteúdo */}
+          <div className="flex-1 min-w-0 flex flex-col w-full">
+            {/* Desktop Header */}
+            {!isMobile && <Header />}
+            
+            <main className={`flex-1 min-h-0 overflow-auto w-full ${
+              isMobile 
+                ? "p-3 pb-20" // mobile padding + bottom nav space
+                : "p-6" // desktop padding
+            }`}>
+              <div className="w-full max-w-full overflow-x-hidden">
+                <Outlet />
+              </div>
+            </main>
+          </div>
         </div>
+        
+        {/* Mobile Bottom Navigation */}
+        {isMobile && <MobileBottomNav />}
       </div>
     </SidebarProvider>
   );
