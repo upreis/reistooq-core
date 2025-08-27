@@ -22,6 +22,7 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<any>(null);
+  const captureInputRef = useRef<HTMLInputElement>(null);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -32,49 +33,57 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
 
   const startCamera = async () => {
     try {
-      console.log('🚀 Iniciando câmera...');
+      console.log('🚀 Iniciando câmera...', {
+        secure: window.isSecureContext,
+        hasMediaDevices: !!navigator.mediaDevices,
+        ua: navigator.userAgent
+      });
+
+      if (!(window.isSecureContext || location.hostname === 'localhost')) {
+        const msg = 'Use HTTPS (ou localhost) para acessar a câmera';
+        toast.error(msg);
+        onError?.(msg);
+        return;
+      }
       
-      // Stop existing stream
+      // Parar stream anterior
       stopCamera();
       
-      // Request camera permission with mobile-optimized constraints
+      // Solicitar permissão com constraints amigáveis para mobile
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment', // Back camera
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 }
-        }
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
       });
       
       setStream(mediaStream);
       
-      // Set video source
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        
-        // Wait for video to be ready
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().then(() => {
-            console.log('✅ Vídeo iniciado com sucesso');
-            setIsScanning(true);
-            startScanner();
-          }).catch(err => {
-            console.error('❌ Erro ao reproduzir vídeo:', err);
-            onError?.('Erro ao iniciar vídeo da câmera');
-          });
-        };
+        // Mostrar o vídeo já para evitar "tela preta" enquanto play() resolve
+        setIsScanning(true);
+        try {
+          await videoRef.current.play();
+          console.log('✅ Vídeo iniciou');
+        } catch (err: any) {
+          console.error('❌ Erro ao dar play no vídeo:', err);
+          onError?.('Não foi possível iniciar o vídeo da câmera');
+        }
+        // Iniciar decodificação
+        startScanner();
       }
       
     } catch (error: any) {
       console.error('❌ Erro ao acessar câmera:', error);
-      
       let errorMessage = 'Erro ao acessar câmera';
       if (error.name === 'NotAllowedError') {
-        errorMessage = 'Permissão de câmera negada. Permita o acesso à câmera nas configurações.';
+        errorMessage = 'Permissão de câmera negada. Ative nas configurações do navegador.';
       } else if (error.name === 'NotFoundError') {
-        errorMessage = 'Câmera não encontrada no dispositivo.';
+        errorMessage = 'Nenhuma câmera encontrada neste dispositivo.';
       }
-      
       toast.error(errorMessage);
       onError?.(errorMessage);
     }
@@ -187,6 +196,29 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
     }
   };
 
+  const handleNativeCapture = () => {
+    captureInputRef.current?.click();
+  };
+
+  const handleCaptureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const url = URL.createObjectURL(file);
+      const { BrowserMultiFormatReader } = await import('@zxing/browser');
+      const reader = new BrowserMultiFormatReader();
+      const result = await reader.decodeFromImageUrl(url);
+      const code = result.getText();
+      toast.success(`Código lido da foto: ${code}`);
+      onScanResult?.(code);
+    } catch (err) {
+      console.error('❌ Erro ao ler código da foto:', err);
+      toast.error('Não foi possível ler o código da imagem');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
   return (
     <div className="w-full max-w-md mx-auto space-y-4">
       {/* Scanner Card */}
@@ -264,15 +296,25 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
           )}
 
           {/* Manual Input Toggle */}
-          <Button 
-            onClick={() => setShowManualInput(!showManualInput)} 
-            variant="outline" 
-            size="lg" 
-            className="w-full h-12"
-          >
-            <Search className="w-5 h-5 mr-2" />
-            Digitar Código
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              onClick={() => setShowManualInput(!showManualInput)} 
+              variant="outline" 
+              size="lg" 
+              className="w-full h-12"
+            >
+              <Search className="w-5 h-5 mr-2" />
+              Digitar Código
+            </Button>
+            <Button 
+              onClick={handleNativeCapture}
+              variant="outline"
+              size="lg"
+              className="w-full sm:w-auto h-12"
+            >
+              Usar câmera (foto)
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -309,6 +351,16 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
         <p>• Mantenha o código dentro da área marcada</p>
         <p>• Aguarde o scanner reconhecer automaticamente</p>
       </div>
+
+      {/* Hidden input for native camera capture fallback */}
+      <input 
+        ref={captureInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleCaptureChange}
+      />
     </div>
   );
 };
