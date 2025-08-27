@@ -35,7 +35,7 @@ export class MapeamentoService {
         (data || []).map(item => [
           item.sku_pedido,
           {
-            skuEstoque: item.sku_correspondente || item.sku_simples,
+            skuEstoque: item.sku_simples, // Apenas SKU Unitário, sem fallback
             quantidadeKit: item.quantidade || 1
           }
         ])
