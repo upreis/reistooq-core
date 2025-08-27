@@ -155,9 +155,6 @@ export function EstoqueTable({
         <div className="space-y-4">
           {/* Table Header */}
           <div className="grid grid-cols-13 gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium">
-        <div className="flex items-center cursor-pointer" onClick={() => onSort('codigo_barras')}>
-          Código de Barras {getSortIcon('codigo_barras')}
-        </div>
         <div className="flex items-center">
           <Checkbox
             checked={allSelected}
@@ -167,6 +164,9 @@ export function EstoqueTable({
               if (el) (el as any).indeterminate = someSelected;
             }}
           />
+        </div>
+        <div className="flex items-center cursor-pointer" onClick={() => onSort('codigo_barras')}>
+          Código de Barras {getSortIcon('codigo_barras')}
         </div>
         <div className="col-span-3 flex items-center cursor-pointer" onClick={() => onSort('nome')}>
           Produto {getSortIcon('nome')}
@@ -201,6 +201,15 @@ export function EstoqueTable({
                 isSelected ? 'bg-muted/50 border-primary' : ''
               }`}
             >
+              {/* Checkbox */}
+              <div className="flex items-center">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => onSelectProduct(product.id)}
+                  aria-label={`Selecionar ${product.nome}`}
+                />
+              </div>
+
               {/* Código de Barras */}
               <div className="flex items-center">
                 {product.codigo_barras ? (
@@ -212,14 +221,6 @@ export function EstoqueTable({
                     Sem código
                   </span>
                 )}
-              </div>
-              {/* Checkbox */}
-              <div className="flex items-center">
-                <Checkbox
-                  checked={isSelected}
-                  onCheckedChange={() => onSelectProduct(product.id)}
-                  aria-label={`Selecionar ${product.nome}`}
-                />
               </div>
 
               {/* Product Info */}
