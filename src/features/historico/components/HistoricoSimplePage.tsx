@@ -26,13 +26,31 @@ export function HistoricoSimplePage() {
   const { toast } = useToast();
   const [selectedItem, setSelectedItem] = useState<HistoricoItem | null>(null);
   
-  // Persistência de colunas no localStorage
+  // Persistência de colunas no localStorage com atualização forçada
   const [columns, setColumns] = useState<ColumnConfig[]>(() => {
     try {
       const savedColumns = localStorage.getItem('historico-columns-config');
       if (savedColumns) {
         const parsed = JSON.parse(savedColumns);
-        return Array.isArray(parsed) ? parsed : defaultColumns;
+        
+        // Verificar se as colunas salvas têm todas as novas colunas
+        const defaultKeys = defaultColumns.map(col => col.key);
+        const savedKeys = parsed.map((col: ColumnConfig) => col.key);
+        const hasAllNewColumns = defaultKeys.every(key => savedKeys.includes(key));
+        
+        // Se não tem todas as novas colunas, usar as padrão
+        if (!hasAllNewColumns || !Array.isArray(parsed)) {
+          localStorage.setItem('historico-columns-config', JSON.stringify(defaultColumns));
+          return defaultColumns;
+        }
+        
+        // Mesclar colunas salvas com novas colunas padrão
+        const mergedColumns = defaultColumns.map(defaultCol => {
+          const savedCol = parsed.find((col: ColumnConfig) => col.key === defaultCol.key);
+          return savedCol || defaultCol;
+        });
+        
+        return mergedColumns;
       }
     } catch (error) {
       console.error('Erro ao carregar configuração de colunas:', error);
