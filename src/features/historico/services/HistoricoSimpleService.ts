@@ -87,9 +87,16 @@ export class HistoricoSimpleService {
       // Usar SELECT direto da tabela historico_vendas (sem RPC)
       const result = await listarHistoricoVendas({ page, pageSize: limit });
 
+      console.log('[HistoricoSimpleService] Resultado bruto:', result);
+
       // Mapear dados para o formato esperado
       const data: HistoricoItem[] = (result.data || []).map((item: any) => {
-        console.log('[HistoricoSimpleService] Mapeando item:', item);
+        console.log('[HistoricoSimpleService] Mapeando item:', { 
+          id: item.id, 
+          numero_pedido: item.numero_pedido,
+          nome_cliente: item.nome_cliente,
+          valor_total: item.valor_total
+        });
         
         return {
           id: item.id,

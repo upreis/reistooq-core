@@ -36,17 +36,18 @@ export async function salvarSnapshotBaixa(pedido: any) {
   const created_by = s?.session?.user?.id;
   if (!created_by) throw new Error('Usuário não autenticado');
 
+  console.log('[linha-pedido]', pedido);
+
+  const snapshot = pedidoToSnapshot(pedido);
   const row = { 
-    ...pedidoToSnapshot(pedido), 
+    ...snapshot,
     created_by,
-    // campos obrigatórios da nova estrutura
-    sku_produto: 'BAIXA_ESTOQUE',
-    numero_pedido: String(pedido.numero ?? pedido.numero_pedido ?? pedido.id ?? ''),
-    quantidade: 1,
-    valor_unitario: toNum(pedido.valor_total ?? pedido.total) || 0,
-    data_pedido: (pedido.data_pedido ?? pedido.created_at ?? '').slice(0,10) || new Date().toISOString().slice(0,10),
-    status: 'baixado'
+    origem: 'baixa_estoque',
+    // Garantir que data_pedido não seja null
+    data_pedido: snapshot.data_pedido || new Date().toISOString().slice(0,10)
   };
+
+  console.log('[dados-para-salvar]', row);
 
   const { data, error } = await supabase
     .from('historico_vendas')
@@ -54,7 +55,11 @@ export async function salvarSnapshotBaixa(pedido: any) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[erro-snapshot]', error);
+    throw error;
+  }
+  
   console.log('[snapshot-salvo]', data);
   return data;
 }
