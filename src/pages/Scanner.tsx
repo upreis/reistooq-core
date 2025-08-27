@@ -16,15 +16,29 @@ const Scanner = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [scannedCode, setScannedCode] = useState<string>("");
-  const [products, setProducts] = useState<Product[]>([]);
   const { getProducts } = useProducts();
 
-  const loadProducts = async () => {
+  const findProductByCode = async (code: string): Promise<Product | null> => {
     try {
-      const data = await getProducts();
-      setProducts(data);
+      console.log('🔍 Buscando produto por código:', code);
+      
+      // Busca direta no banco por código de barras ou SKU
+      const products = await getProducts({
+        search: code,
+        limit: 10
+      });
+      
+      // Encontrar produto que tenha exatamente esse código
+      const exactMatch = products.find(p => 
+        p.codigo_barras === code || p.sku_interno === code
+      );
+      
+      console.log(exactMatch ? '✅ Produto encontrado!' : '❌ Produto não encontrado');
+      return exactMatch || null;
+      
     } catch (error) {
-      console.error('Erro ao carregar produtos:', error);
+      console.error('Erro ao buscar produto:', error);
+      return null;
     }
   };
 
@@ -33,13 +47,8 @@ const Scanner = () => {
     setScannedCode(code);
     
     try {
-      // Recarregar produtos antes de buscar
-      await loadProducts();
-      
-      // Buscar produto no banco local
-      const existingProduct = products.find(p => 
-        p.codigo_barras === code || p.sku_interno === code
-      );
+      // Buscar produto diretamente no banco
+      const existingProduct = await findProductByCode(code);
       
       if (existingProduct) {
         // Produto existe - abrir modal para editar
@@ -124,7 +133,7 @@ const Scanner = () => {
   };
 
   const handleModalSuccess = async () => {
-    await loadProducts();
+    // Não precisa recarregar todos os produtos
     setIsModalOpen(false);
     setCurrentProduct(null);
     setScannedProduct(null);
