@@ -163,6 +163,7 @@ const Scanner = () => {
           onOpenChange={setIsModalOpen}
           product={currentProduct}
           onSuccess={handleModalSuccess}
+          initialBarcode={!currentProduct ? scannedCode : undefined}
         />
 
         {/* Product Info */}

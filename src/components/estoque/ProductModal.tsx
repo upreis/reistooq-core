@@ -68,9 +68,10 @@ interface ProductModalProps {
   onOpenChange: (open: boolean) => void;
   product?: Product | null;
   onSuccess: () => void;
+  initialBarcode?: string;
 }
 
-export function ProductModal({ open, onOpenChange, product, onSuccess }: ProductModalProps) {
+export function ProductModal({ open, onOpenChange, product, onSuccess, initialBarcode }: ProductModalProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -113,11 +114,14 @@ export function ProductModal({ open, onOpenChange, product, onSuccess }: Product
       });
       setImagePreview(product.url_imagem || null);
     } else if (!product && open) {
-      form.reset();
+      form.reset({
+        ...form.getValues(),
+        codigo_barras: initialBarcode || "",
+      });
       setImageFile(null);
       setImagePreview(null);
     }
-  }, [product, open, form]);
+  }, [product, open, form, initialBarcode]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
