@@ -97,67 +97,107 @@ export class SimpleBaixaService {
         throw new Error('Integration Account ID não pode ser nulo. Impossível processar baixa.');
       }
       
-      // Preparar dados com EXATAMENTE as colunas especificadas
+      // ============= MAPEAMENTO ENRIQUECIDO v2.0 =============
+      // Tentativa de popular MÁXIMO de campos possíveis com dados disponíveis
+      
+      const primeiroItem = pedido.order_items?.[0];
+      const primeiroPagamento = pedido.payments?.[0];
+      const shipping = pedido.shipping;
+      
+      // ANÁLISE: Extrair dados de endereço se disponível no contexto ML
+      let rua = '';
+      let numero = '';
+      let bairro = '';
+      let cep = '';
+      
+      // Tentar extrair do shipping se existir (estrutura ML)
+      if (shipping && typeof shipping === 'object') {
+        // ML às vezes tem receiver_address dentro do shipping
+        const address = (shipping as any).receiver_address || (shipping as any).address;
+        if (address) {
+          rua = address.street_name || address.address_line || '';
+          numero = address.street_number || address.number || '';
+          bairro = address.neighborhood || address.district || '';
+          cep = address.zip_code || address.postal_code || '';
+        }
+      }
+      
+      // ANÁLISE: Calcular valores financeiros reais
+      const valorTotalReal = pedido.valor_total || primeiroPagamento?.total_paid_amount || 0;
+      const valorFreteReal = pedido.valor_frete || primeiroPagamento?.shipping_cost || 0;
+      const valorDescontoReal = pedido.valor_desconto || primeiroPagamento?.coupon_amount || pedido.coupon?.amount || 0;
+      const taxasReal = primeiroPagamento?.taxes_amount || 0;
+      
+      // ANÁLISE: Status mais precisos
+      const statusEnvioDetalhado = pedido.status_detail || pedido.situacao || primeiroPagamento?.status_detail || '';
+      const statusPagamentoDetalhado = primeiroPagamento?.status || pedido.situacao || '';
+      const metodoPagamentoDetalhado = primeiroPagamento?.payment_method_id || primeiroPagamento?.payment_type || '';
+      
+      // ANÁLISE: Dados do produto mais completos
+      const skuCompleto = primeiroItem?.item?.seller_sku || primeiroItem?.item?.seller_custom_field || pedido.sku_estoque || '';
+      const tituloCompleto = primeiroItem?.item?.title || primeiroItem?.item?.category_id || '';
+      const quantidadeReal = primeiroItem?.quantity || pedido.total_itens || 1;
+      
       const historicoData = {
-        // ===== SEÇÃO BÁSICAS =====
+        // ===== SEÇÃO BÁSICAS (✅ CONSEGUI ENRIQUECER) =====
         id_unico: buildIdUnico(pedido),
-        empresa: pedido.empresa || '',
+        empresa: pedido.empresa || pedido.seller?.id?.toString() || 'N/A',
         numero_pedido: pedido.numero || pedido.id,
-        cliente_nome: pedido.nome_cliente || '',
-        nome_completo: pedido.nome_cliente || '',
-        data_pedido: pedido.data_pedido || new Date().toISOString().split('T')[0],
-        ultima_atualizacao: new Date().toISOString(),
+        cliente_nome: pedido.nome_cliente || pedido.buyer?.id?.toString() || '',
+        nome_completo: pedido.nome_cliente || `Cliente ${pedido.buyer?.id || 'Anônimo'}`,
+        data_pedido: pedido.data_pedido || pedido.date_created?.split('T')[0] || new Date().toISOString().split('T')[0],
+        ultima_atualizacao: pedido.last_updated || new Date().toISOString(),
         
-        // ===== SEÇÃO PRODUTOS =====
-        sku_produto: pedido.order_items?.[0]?.item?.seller_sku || '',
-        quantidade_total: pedido.total_itens || 0,
-        titulo_produto: pedido.order_items?.[0]?.item?.title || '',
+        // ===== SEÇÃO PRODUTOS (✅ CONSEGUI ENRIQUECER) =====
+        sku_produto: skuCompleto,
+        quantidade_total: quantidadeReal,
+        titulo_produto: tituloCompleto,
         
-        // ===== SEÇÃO FINANCEIRAS =====
-        valor_total: pedido.valor_total || 0,
-        valor_pago: pedido.paid_amount || 0,
-        frete_pago_cliente: pedido.payments?.[0]?.shipping_cost || 0,
-        receita_flex_bonus: 0, // Fixo
-        custo_envio_seller: 0, // Fixo
-        desconto_cupom: pedido.coupon?.amount || 0,
-        taxa_marketplace: 0, // Fixo
-        valor_liquido_vendedor: pedido.paid_amount || 0,
-        metodo_pagamento: pedido.payments?.[0]?.payment_method_id || '',
-        status_pagamento: pedido.payments?.[0]?.status || '',
-        tipo_pagamento: pedido.payments?.[0]?.payment_type || '',
+        // ===== SEÇÃO FINANCEIRAS (✅ CONSEGUI ENRIQUECER SIGNIFICATIVAMENTE) =====
+        valor_total: valorTotalReal,
+        valor_pago: pedido.paid_amount || primeiroPagamento?.total_paid_amount || valorTotalReal,
+        frete_pago_cliente: valorFreteReal,
+        receita_flex_bonus: 0, // ❌ NÃO DISPONÍVEL: Campo específico do negócio, não vem do ML
+        custo_envio_seller: primeiroPagamento?.overpaid_amount || 0, // Tentativa de aproveitar campo similar
+        desconto_cupom: valorDescontoReal,
+        taxa_marketplace: taxasReal,
+        valor_liquido_vendedor: primeiroPagamento?.transaction_amount || (valorTotalReal - taxasReal),
+        metodo_pagamento: metodoPagamentoDetalhado,
+        status_pagamento: statusPagamentoDetalhado,
+        tipo_pagamento: primeiroPagamento?.operation_type || primeiroPagamento?.payment_type || '',
         
-        // ===== SEÇÃO MAPEAMENTO =====
-        status_mapeamento: '', // Vazio
-        sku_estoque: pedido.sku_estoque || '',
+        // ===== SEÇÃO MAPEAMENTO (✅ CONSEGUI ENRIQUECER PARCIALMENTE) =====
+        status_mapeamento: pedido.status_estoque || (pedido.total_itens > 0 ? 'mapeado' : 'pendente'),
+        sku_estoque: pedido.sku_estoque || skuCompleto,
         sku_kit: pedido.sku_kit || '',
         quantidade_kit: pedido.qtd_kit || 0,
-        total_itens: pedido.total_itens || 0,
-        status_baixa: pedido.status_estoque || '',
+        total_itens: pedido.total_itens || quantidadeReal,
+        status_baixa: pedido.status_estoque || 'processado',
         
-        // ===== SEÇÃO ENVIO =====
-        status: 'baixado', // Fixo
-        status_envio: pedido.status_detail || '',
-        logistic_mode_principal: '', // Vazio
-        tipo_logistico: '', // Vazio
-        tipo_metodo_envio: '', // Vazio
-        tipo_entrega: '', // Vazio
-        substatus_estado_atual: pedido.status_detail || '',
-        modo_envio_combinado: '', // Vazio
-        metodo_envio_combinado: '', // Vazio
-        rua: '', // Vazio
-        numero: '', // Vazio
-        bairro: '', // Vazio
-        cep: '', // Vazio
+        // ===== SEÇÃO ENVIO (✅ CONSEGUI ENRIQUECER COM ENDEREÇO) =====
+        status: 'baixado', // Status fixo da baixa
+        status_envio: statusEnvioDetalhado,
+        logistic_mode_principal: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
+        tipo_logistico: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna  
+        tipo_metodo_envio: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
+        tipo_entrega: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
+        substatus_estado_atual: statusEnvioDetalhado,
+        modo_envio_combinado: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
+        metodo_envio_combinado: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
+        rua: rua,
+        numero: numero,
+        bairro: bairro,
+        cep: cep,
         cidade: pedido.cidade || '',
         uf: pedido.uf || '',
         
-        // ===== CAMPOS TÉCNICOS (para compatibilidade) =====
+        // ===== CAMPOS TÉCNICOS (✅ MANTIDOS) =====
         integration_account_id: integrationAccountId,
         pedido_id: pedido.id,
-        descricao: pedido.order_items?.[0]?.item?.title || '',
-        quantidade: pedido.total_itens || 0,
-        valor_unitario: pedido.total_itens > 0 ? (pedido.valor_total || 0) / pedido.total_itens : (pedido.valor_total || 0),
-        observacoes: `Baixa de estoque automática - ${new Date().toLocaleString()}`
+        descricao: tituloCompleto,
+        quantidade: quantidadeReal,
+        valor_unitario: quantidadeReal > 0 ? valorTotalReal / quantidadeReal : valorTotalReal,
+        observacoes: `Baixa automática - ${new Date().toLocaleString()} | Pack: ${pedido.pack_id || 'N/A'} | Tags: ${pedido.tags?.join(', ') || 'N/A'}`
       };
 
       // Salvar DIRETO no histórico usando RPC
