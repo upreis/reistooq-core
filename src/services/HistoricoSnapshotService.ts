@@ -99,7 +99,7 @@ function pedidoParaSnapshot(pedido: PedidoLike, userId: string) {
     id_unico: idUnico,
     numero_pedido: idUnico,
     empresa: String(pedido.empresa || pedido.origem || 'MercadoLivre'),
-    nome_cliente: pedido.nome_cliente || pedido.cliente || null,
+    cliente_nome: pedido.nome_cliente || pedido.cliente || null,
     nome_completo: pedido.nome_cliente || pedido.cliente || null,
     data_pedido: new Date().toISOString().split('T')[0],
     ultima_atualizacao: new Date().toISOString(),
@@ -143,11 +143,7 @@ function pedidoParaSnapshot(pedido: PedidoLike, userId: string) {
     modo_envio_combinado: logistic.mode || null,
     metodo_envio_combinado: shipping.shipping_method?.name || null,
     
-    // Endereço completo
-    rua: endereco.street_name || pedido.rua || null,
-    numero: endereco.street_number || pedido.numero_endereco || null,
-    bairro: endereco.neighborhood || pedido.bairro || null,
-    cep: endereco.zip_code || pedido.cep || null,
+    // Endereço (apenas colunas existentes no schema)
     cidade: endereco.city || pedido.cidade || null,
     uf: endereco.state || pedido.uf || null,
     
@@ -186,11 +182,21 @@ export async function criarSnapshot(pedido: PedidoLike) {
   }
   
   const row = pedidoParaSnapshot(pedido, userId);
-  console.log('[row-montado]', row); // Log 2: row montado antes do insert
+
+  // Filtra apenas colunas existentes no schema de public.historico_vendas
+  const allowed = new Set([
+    'desconto_cupom','pedido_id','codigo_barras','ncm','observacoes','status','cliente_documento','cliente_nome','created_by','raw','total_itens','qtd_kit','valor_desconto','quantidade','meta','data_prevista','valor_frete','skus_produtos','origem','metodo_envio_combinado','modo_envio_combinado','updated_at','created_at','data_pedido','valor_total','valor_unitario','id','integration_account_id','taxa_marketplace','valor_liquido_vendedor','quantidade_kit','substatus_estado_atual','tipo_entrega','tipo_metodo_envio','tipo_logistico','logistic_mode_principal','status_envio','status_baixa','status_mapeamento','tipo_pagamento','status_pagamento','metodo_pagamento','titulo_produto','nome_completo','empresa','id_unico','sku_kit','sku_estoque','numero_venda','numero_ecommerce','codigo_rastreamento','situacao','url_rastreamento','uf','cidade','numero_pedido','sku_produto','descricao','obs_interna','obs','ultima_atualizacao','quantidade_total','valor_pago','frete_pago_cliente','receita_flex_bonus','custo_envio_seller','cpf_cnpj'
+  ] as const);
+
+  const sanitizedRow: Record<string, any> = Object.fromEntries(
+    Object.entries(row).filter(([k]) => allowed.has(k as any))
+  );
+
+  console.log('[row-montado]', sanitizedRow); // Log 2: row montado antes do insert (sanitizado)
   
   const { data, error } = await supabase
     .from('historico_vendas')
-    .insert(row)
+    .insert(sanitizedRow as any)
     .select()
     .single();
   
