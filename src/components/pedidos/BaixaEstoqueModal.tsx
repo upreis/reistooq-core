@@ -24,9 +24,16 @@ import { Package, CheckCircle } from 'lucide-react';
 interface BaixaEstoqueModalProps {
   pedidos: Pedido[];
   trigger?: React.ReactNode;
+  // 📸 Contexto da UI para fotografia completa
+  contextoDaUI?: {
+    mappingData?: Map<string, any>;
+    accounts?: any[];
+    selectedAccounts?: string[];
+    integrationAccountId?: string;
+  };
 }
 
-export function BaixaEstoqueModal({ pedidos, trigger }: BaixaEstoqueModalProps) {
+export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoqueModalProps) {
   const [open, setOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processed, setProcessed] = useState(false);
@@ -37,7 +44,11 @@ export function BaixaEstoqueModal({ pedidos, trigger }: BaixaEstoqueModalProps) 
     setIsProcessing(true);
     
     try {
-      await processarBaixa.mutateAsync(pedidos);
+      // 📸 Passar contexto da UI para fotografia completa
+      await processarBaixa.mutateAsync({
+        pedidos,
+        contextoDaUI
+      });
       setProcessed(true);
     } catch (error) {
       console.error('Erro ao processar baixa:', error);
