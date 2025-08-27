@@ -29,9 +29,10 @@ export class SimpleBaixaService {
       const { data: result, error: rpcError } = await supabase
         .rpc('fix_historico_integration_accounts');
 
-      if (!rpcError && result?.default_account_id) {
-        console.log('✅ RPC criou/encontrou account:', result.default_account_id);
-        return result.default_account_id;
+      if (!rpcError && result && typeof result === 'object' && 'default_account_id' in result) {
+        const accountId = (result as any).default_account_id;
+        console.log('✅ RPC criou/encontrou account:', accountId);
+        return accountId;
       }
 
       console.log('⚠️ RPC falhou:', rpcError, 'Buscando qualquer conta da organização...');
@@ -54,7 +55,7 @@ export class SimpleBaixaService {
         .from('integration_accounts')
         .insert({
           name: 'Sistema Padrão (Auto-criado)',
-          provider: 'sistema',
+          provider: 'tiny', // Usar provider válido
           is_active: true
         })
         .select('id')
