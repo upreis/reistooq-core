@@ -344,6 +344,7 @@ export type Database = {
           codigo_rastreamento: string | null
           cpf_cnpj: string | null
           created_at: string
+          created_by: string | null
           custo_envio_seller: number | null
           data_pedido: string
           data_prevista: string | null
@@ -367,11 +368,13 @@ export type Database = {
           obs: string | null
           obs_interna: string | null
           observacoes: string | null
+          origem: string | null
           pedido_id: string | null
           qtd_kit: number | null
           quantidade: number
           quantidade_kit: number | null
           quantidade_total: number | null
+          raw: Json | null
           receita_flex_bonus: number | null
           situacao: string | null
           sku_estoque: string | null
@@ -409,6 +412,7 @@ export type Database = {
           codigo_rastreamento?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           custo_envio_seller?: number | null
           data_pedido: string
           data_prevista?: string | null
@@ -432,11 +436,13 @@ export type Database = {
           obs?: string | null
           obs_interna?: string | null
           observacoes?: string | null
+          origem?: string | null
           pedido_id?: string | null
           qtd_kit?: number | null
           quantidade?: number
           quantidade_kit?: number | null
           quantidade_total?: number | null
+          raw?: Json | null
           receita_flex_bonus?: number | null
           situacao?: string | null
           sku_estoque?: string | null
@@ -474,6 +480,7 @@ export type Database = {
           codigo_rastreamento?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          created_by?: string | null
           custo_envio_seller?: number | null
           data_pedido?: string
           data_prevista?: string | null
@@ -497,11 +504,13 @@ export type Database = {
           obs?: string | null
           obs_interna?: string | null
           observacoes?: string | null
+          origem?: string | null
           pedido_id?: string | null
           qtd_kit?: number | null
           quantidade?: number
           quantidade_kit?: number | null
           quantidade_total?: number | null
+          raw?: Json | null
           receita_flex_bonus?: number | null
           situacao?: string | null
           sku_estoque?: string | null

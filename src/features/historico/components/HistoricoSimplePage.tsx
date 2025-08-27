@@ -15,7 +15,7 @@ import { HistoricoColumnSelector, defaultColumns, type ColumnConfig } from './Hi
 import { HistoricoExportModal } from './HistoricoExportModal';
 import { HistoricoImportModal } from './HistoricoImportModal';
 import { HistoricoBulkActions } from './HistoricoBulkActions';
-import { useHistoricoSimple } from '../hooks/useHistoricoSimple';
+import { useHistoricoVendas } from '../hooks/useHistoricoVendas';
 import { useHistoricoExport } from '../hooks/useHistoricoExport';
 import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
 import { useHistoricoSelection } from '../hooks/useHistoricoSelection';
@@ -83,23 +83,26 @@ export function HistoricoSimplePage() {
   } = useHistoricoSelection();
 
   // Hook principal simplificado
-  const {
-    data,
-    total,
-    hasMore,
-    stats,
-    filters,
-    page,
-    limit,
-    isLoading,
-    isFetching,
-    hasFilters,
-    updateFilters,
-    clearFilters,
-    goToPage,
-    changePageSize,
-    refetch,
-  } = useHistoricoSimple();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const { data: response, isLoading, refetch } = useHistoricoVendas(page, pageSize);
+  const data = response?.data || [];
+  const total = response?.total || 0;
+  const isFetching = isLoading;
+  
+  const goToPage = (newPage: number) => setPage(newPage);
+  const changePageSize = (size: number) => {
+    setPageSize(size);
+    setPage(1);
+  };
+  
+  // Valores padrão para compatibilidade
+  const hasMore = data.length === pageSize;
+  const stats = { totalVendas: total, valorTotal: 0, ticketMedio: 0 };
+  const filters = {};
+  const hasFilters = false;
+  const updateFilters = () => {};
+  const clearFilters = () => {};
 
   // Salvar configuração de colunas no localStorage
   const handleColumnsChange = (newColumns: ColumnConfig[]) => {
@@ -194,7 +197,7 @@ export function HistoricoSimplePage() {
     setItemsToDelete([]);
   };
 
-  const totalPages = Math.ceil(total / limit);
+  const totalPages = Math.ceil(total / pageSize);
   const canGoPrev = page > 1;
   const canGoNext = hasMore;
 
@@ -312,7 +315,7 @@ export function HistoricoSimplePage() {
             {/* Controles de paginação no header */}
             <div className="flex items-center gap-2">
               <select
-                value={limit}
+                value={pageSize}
                 onChange={(e) => changePageSize(Number(e.target.value))}
                 className="px-3 py-1 border rounded text-sm"
               >

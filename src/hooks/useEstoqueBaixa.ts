@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { HistoricoSnapshotService } from '@/services/HistoricoSnapshotService';
+import { criarSnapshot } from '@/services/HistoricoSnapshotService';
 import { Pedido } from '@/types/pedido';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,8 +12,12 @@ export function useProcessarBaixaEstoque() {
       // Processar cada pedido criando snapshot simples
       let sucessos = 0;
       for (const pedido of pedidos) {
-        const sucesso = await HistoricoSnapshotService.criarSnapshot(pedido);
-        if (sucesso) sucessos++;
+        try {
+          await criarSnapshot(pedido);
+          sucessos++;
+        } catch (error) {
+          console.error('Erro ao criar snapshot:', error);
+        }
       }
       return sucessos === pedidos.length;
     },
@@ -22,6 +26,7 @@ export function useProcessarBaixaEstoque() {
       queryClient.invalidateQueries({ queryKey: ['produtos'] });
       queryClient.invalidateQueries({ queryKey: ["historico-simple"] });
       queryClient.invalidateQueries({ queryKey: ["historico-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["historico-vendas"] });
 
       toast({
         title: allSuccess ? "✅ Baixa concluída" : "⚠️ Baixa parcial",
