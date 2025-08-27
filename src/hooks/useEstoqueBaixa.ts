@@ -13,6 +13,7 @@ export function useProcessarBaixaEstoque() {
       let sucessos = 0;
       for (const pedido of pedidos) {
         try {
+          console.log('[linha-pedido]', pedido); // Log 1: objeto da linha selecionada
           await criarSnapshot(pedido);
           sucessos++;
         } catch (error) {

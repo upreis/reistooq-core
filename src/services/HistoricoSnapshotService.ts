@@ -87,6 +87,7 @@ function pedidoParaSnapshot(pedido: PedidoLike, userId: string) {
   const shipping = pedido.shipping || pedido.raw?.shipping || pedido.unified?.shipping || {};
   const logistic = shipping.logistic || {};
   const payments = pedido.payments || pedido.raw?.payments || [];
+  const endereco = shipping.receiver_address || pedido.endereco || {};
   
   return {
     // Auditoria
@@ -121,9 +122,9 @@ function pedidoParaSnapshot(pedido: PedidoLike, userId: string) {
     desconto_cupom: toSafeNumber(pedido.valor_desconto || pedido.discount),
     taxa_marketplace: toSafeNumber(pedido.taxa_marketplace || 0),
     valor_liquido_vendedor: toSafeNumber(pedido.valor_liquido_vendedor || 0),
-    metodo_pagamento: payments[0]?.payment_method_id || null,
-    status_pagamento: payments[0]?.status || null,
-    tipo_pagamento: payments[0]?.payment_type_id || null,
+    metodo_pagamento: payments[0]?.payment_method_id || pedido.metodo_pagamento || null,
+    status_pagamento: payments[0]?.status || pedido.status_pagamento || null,
+    tipo_pagamento: payments[0]?.payment_type_id || pedido.tipo_pagamento || null,
     
     // Mapeamento
     status_mapeamento: 'processado',
@@ -132,34 +133,46 @@ function pedidoParaSnapshot(pedido: PedidoLike, userId: string) {
     quantidade_kit: 0,
     status_baixa: 'baixado',
     
-    // Envio
+    // Envio - campos de endereço expandidos
     status_envio: shipping.status || pedido.situacao || null,
     logistic_mode_principal: logistic.mode || null,
     tipo_logistico: logistic.type || null,
-    tipo_metodo_envio: shipping.shipping_method?.name || null,
-    tipo_entrega: shipping.delivery_type || null,
-    substatus_estado_atual: shipping.substatus || null,
+    tipo_metodo_envio: shipping.shipping_method?.name || pedido.tipo_metodo_envio || null,
+    tipo_entrega: shipping.delivery_type || pedido.tipo_entrega || null,
+    substatus_estado_atual: shipping.substatus || pedido.substatus_estado_atual || null,
     modo_envio_combinado: logistic.mode || null,
     metodo_envio_combinado: shipping.shipping_method?.name || null,
     
-    // Localização
-    cidade: pedido.cidade || shipping.receiver_address?.city || null,
-    uf: pedido.uf || shipping.receiver_address?.state || null,
+    // Endereço completo
+    rua: endereco.street_name || pedido.rua || null,
+    numero: endereco.street_number || pedido.numero_endereco || null,
+    bairro: endereco.neighborhood || pedido.bairro || null,
+    cep: endereco.zip_code || pedido.cep || null,
+    cidade: endereco.city || pedido.cidade || null,
+    uf: endereco.state || pedido.uf || null,
     
     // Outros campos existentes
     situacao: pedido.situacao || pedido.status || 'baixado',
     data_prevista: pedido.data_prevista || null,
     codigo_rastreamento: pedido.codigo_rastreamento || shipping.tracking_number || null,
     url_rastreamento: pedido.url_rastreamento || shipping.tracking_url || null,
-    numero_ecommerce: String(pedido.numero_ecommerce || ''),
-    numero_venda: String(pedido.numero_venda || ''),
+    numero_ecommerce: String(pedido.numero_ecommerce || pedido.numero || ''),
+    numero_venda: String(pedido.numero_venda || pedido.numero || ''),
     valor_frete: toSafeNumber(shipping.cost || pedido.valor_frete),
     valor_desconto: toSafeNumber(pedido.valor_desconto || pedido.discount),
     
     // Campos obrigatórios com defaults
     status: 'baixado',
-    quantidade: 1,
+    quantidade: toSafeNumber(pedido.quantidade_total || 1),
     valor_unitario: toSafeNumber(pedido.valor_total || pedido.total),
+    
+    // CPF/CNPJ
+    cpf_cnpj: pedido.cpf_cnpj || pedido.documento_cliente || null,
+    cliente_documento: pedido.cpf_cnpj || pedido.documento_cliente || null,
+    
+    // Descrição do produto
+    descricao: Array.isArray(pedido.itens) && pedido.itens[0] ? 
+      String(pedido.itens[0].descricao || pedido.itens[0].nome || pedido.itens[0].title || '') : ''
   };
 }
 
@@ -173,6 +186,7 @@ export async function criarSnapshot(pedido: PedidoLike) {
   }
   
   const row = pedidoParaSnapshot(pedido, userId);
+  console.log('[row-montado]', row); // Log 2: row montado antes do insert
   
   const { data, error } = await supabase
     .from('historico_vendas')
@@ -183,6 +197,16 @@ export async function criarSnapshot(pedido: PedidoLike) {
   if (error) {
     console.error('Erro ao inserir snapshot:', error);
     throw error;
+  }
+  
+  console.log('[row-inserido]', data); // Log 3: objeto retornado após insert
+  
+  // Log 4: Verificar se conseguimos ler a linha recém-inserida usando a mesma query do histórico
+  try {
+    const { buscarHistoricoPorId } = await import('@/services/HistoricoService');
+    await buscarHistoricoPorId(data.id);
+  } catch (err) {
+    console.warn('Não foi possível validar leitura:', err);
   }
   
   return data;

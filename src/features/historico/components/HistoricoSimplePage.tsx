@@ -246,12 +246,17 @@ export function HistoricoSimplePage() {
         ]
       };
       
-      await criarSnapshot(pedidoMock);
+      const resultado = await criarSnapshot(pedidoMock);
+      console.log('[TESTE-COMPLETO] ID criado:', resultado.id);
       
-      refetch(); // Invalidar cache
+      // Aguardar um momento e recarregar dados
+      setTimeout(() => {
+        refetch(); // Invalidar cache
+      }, 500);
+      
       toast({
         title: "✅ Snapshot de teste criado",
-        description: `Snapshot ${pedidoMock.numero} criado com todos os campos!`,
+        description: `Snapshot ${pedidoMock.numero} criado com ID: ${resultado.id}. Verifique os logs no console!`,
         variant: "default"
       });
     } catch (error) {
