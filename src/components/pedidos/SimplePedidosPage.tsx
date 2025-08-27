@@ -968,6 +968,12 @@ export default function SimplePedidosPage({ className }: Props) {
           {selectedOrders.size > 0 && (
             <BaixaEstoqueModal 
               pedidos={Array.from(selectedOrders).map(id => orders.find(o => o.id === id)).filter(Boolean) as Pedido[]}
+              contextoDaUI={{
+                mappingData,
+                accounts,
+                selectedAccounts,
+                integrationAccountId
+              }}
               trigger={
                 <Button>
                   <Package className="h-4 w-4 mr-2" />
@@ -2086,6 +2092,12 @@ export default function SimplePedidosPage({ className }: Props) {
       {/* 🛡️ MODAL DE BAIXA DE ESTOQUE - Ativo */}
       <BaixaEstoqueModal 
         pedidos={Array.from(selectedOrders).map(id => orders.find(o => o.id === id)).filter(Boolean) as Pedido[]}
+        contextoDaUI={{
+          mappingData,
+          accounts,
+          selectedAccounts,
+          integrationAccountId
+        }}
         trigger={null}
       />
     </div>

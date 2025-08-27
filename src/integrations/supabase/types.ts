@@ -337,6 +337,8 @@ export type Database = {
       }
       historico_vendas: {
         Row: {
+          bairro: string | null
+          cep: string | null
           cidade: string | null
           cliente_documento: string | null
           cliente_nome: string | null
@@ -362,6 +364,7 @@ export type Database = {
           modo_envio_combinado: string | null
           ncm: string | null
           nome_completo: string | null
+          numero: string | null
           numero_ecommerce: string | null
           numero_pedido: string
           numero_venda: string | null
@@ -376,6 +379,7 @@ export type Database = {
           quantidade_total: number | null
           raw: Json | null
           receita_flex_bonus: number | null
+          rua: string | null
           situacao: string | null
           sku_estoque: string | null
           sku_kit: string | null
@@ -406,6 +410,8 @@ export type Database = {
           valor_unitario: number
         }
         Insert: {
+          bairro?: string | null
+          cep?: string | null
           cidade?: string | null
           cliente_documento?: string | null
           cliente_nome?: string | null
@@ -431,6 +437,7 @@ export type Database = {
           modo_envio_combinado?: string | null
           ncm?: string | null
           nome_completo?: string | null
+          numero?: string | null
           numero_ecommerce?: string | null
           numero_pedido: string
           numero_venda?: string | null
@@ -445,6 +452,7 @@ export type Database = {
           quantidade_total?: number | null
           raw?: Json | null
           receita_flex_bonus?: number | null
+          rua?: string | null
           situacao?: string | null
           sku_estoque?: string | null
           sku_kit?: string | null
@@ -475,6 +483,8 @@ export type Database = {
           valor_unitario?: number
         }
         Update: {
+          bairro?: string | null
+          cep?: string | null
           cidade?: string | null
           cliente_documento?: string | null
           cliente_nome?: string | null
@@ -500,6 +510,7 @@ export type Database = {
           modo_envio_combinado?: string | null
           ncm?: string | null
           nome_completo?: string | null
+          numero?: string | null
           numero_ecommerce?: string | null
           numero_pedido?: string
           numero_venda?: string | null
@@ -514,6 +525,7 @@ export type Database = {
           quantidade_total?: number | null
           raw?: Json | null
           receita_flex_bonus?: number | null
+          rua?: string | null
           situacao?: string | null
           sku_estoque?: string | null
           sku_kit?: string | null

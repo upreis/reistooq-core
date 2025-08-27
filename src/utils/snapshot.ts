@@ -24,6 +24,7 @@ export async function salvarSnapshotBaixa(
     }
 
     console.log('📸 Iniciando fotografia completa do pedido:', pedido.id || pedido.numero);
+    console.log('🔧 NOVA FUNÇÃO FOTOGRAFIA ATIVA - Versão 2.0!');
 
     // 📸 FOTOGRAFAR PEDIDO COMPLETO (como aparece na UI)
     const fotografia: FotografiaPedido = fotografarPedidoCompleto(
