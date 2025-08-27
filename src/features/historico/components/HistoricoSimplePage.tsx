@@ -201,20 +201,57 @@ export function HistoricoSimplePage() {
   // Função de teste DEV-ONLY
   const handleDevTestSnapshot = async () => {
     try {
-      await criarSnapshot({
-        id: 'TEST-E2E',
-        numero_pedido: 'TEST-E2E',
-        empresa: 'Teste',
+      // Criar um pedido mock mais completo para testar o normalizador
+      const pedidoMock = {
+        id: `TEST-E2E-${Date.now()}`,
+        numero: `PEDIDO-${Date.now()}`,
+        numero_ecommerce: 'ML123456789',
+        empresa: 'MercadoLivre',
+        origem: 'marketplace',
         situacao: 'Pago',
-        nome_cliente: 'QA',
-        valor_total: 12.34,
-        itens: [{ sku: 'X', q: 1, preco: 12.34 }]
-      });
+        status: 'paid',
+        nome_cliente: 'Cliente QA Teste',
+        cliente: 'Cliente QA Teste',
+        valor_total: 89.50,
+        valor_pago: 89.50,
+        valor_frete: 15.90,
+        valor_desconto: 5.00,
+        cidade: 'São Paulo',
+        uf: 'SP',
+        codigo_rastreamento: 'BR123456789QA',
+        data_prevista: '2025-09-01',
+        itens: [
+          { sku: 'PROD-001', nome: 'Produto Teste 1', quantidade: 2, preco: 25.00 },
+          { sku: 'PROD-002', nome: 'Produto Teste 2', quantidade: 1, preco: 39.50 }
+        ],
+        skus: ['PROD-001', 'PROD-002'],
+        shipping: {
+          cost: 15.90,
+          status: 'shipped',
+          tracking_number: 'BR123456789QA',
+          logistic: {
+            type: 'self_service',
+            mode: 'me2'
+          },
+          shipping_method: {
+            name: 'Mercado Envios'
+          }
+        },
+        payments: [
+          { 
+            payment_method_id: 'credit_card',
+            status: 'approved',
+            payment_type_id: 'credit_card'
+          }
+        ]
+      };
+      
+      await criarSnapshot(pedidoMock);
       
       refetch(); // Invalidar cache
       toast({
         title: "✅ Snapshot de teste criado",
-        description: "Snapshot TEST-E2E criado com sucesso!",
+        description: `Snapshot ${pedidoMock.numero} criado com todos os campos!`,
         variant: "default"
       });
     } catch (error) {

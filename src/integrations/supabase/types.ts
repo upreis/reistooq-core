@@ -380,6 +380,7 @@ export type Database = {
           sku_estoque: string | null
           sku_kit: string | null
           sku_produto: string
+          skus_produtos: string | null
           status: string
           status_baixa: string | null
           status_envio: string | null
@@ -448,6 +449,7 @@ export type Database = {
           sku_estoque?: string | null
           sku_kit?: string | null
           sku_produto: string
+          skus_produtos?: string | null
           status?: string
           status_baixa?: string | null
           status_envio?: string | null
@@ -516,6 +518,7 @@ export type Database = {
           sku_estoque?: string | null
           sku_kit?: string | null
           sku_produto?: string
+          skus_produtos?: string | null
           status?: string
           status_baixa?: string | null
           status_envio?: string | null
