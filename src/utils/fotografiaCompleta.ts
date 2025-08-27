@@ -189,6 +189,14 @@ export function fotografarPedidoCompleto(
   
   // Mapping data
   const mapping = mappingData.get(order.id);
+  console.log('🔍 DEBUG Mapping:', {
+    orderId: order.id,
+    orderNumber: order.numero,
+    hasMapping: !!mapping,
+    mappingKeys: Array.from(mappingData.keys()),
+    quantidadeKit: mapping?.quantidade,
+    skuKit: mapping?.skuKit
+  });
   
   // SKUs e quantidades (exatamente como na UI)
   const skus = order.skus || order.order_items?.map((item: any) => item.item?.seller_sku) || [];
