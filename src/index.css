@@ -47,9 +47,9 @@
 @layer base {
   /* MaterialM theme variables are applied via JavaScript */
   :root {
-    /* Default gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(21 89% 64%), hsl(21 89% 74%));
-    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(158 64% 52%));
+  /* Default gradients - Nova Paleta */
+    --gradient-primary: linear-gradient(135deg, hsl(210 73% 15%), hsl(210 73% 25%));
+    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(158 64% 52%));
     --gradient-warning: linear-gradient(135deg, hsl(43 96% 56%), hsl(43 96% 66%));
     --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
 
@@ -59,15 +59,15 @@
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
-    /* Status Colors - Applied dynamically by ThemeProvider */
-    --status-success: hsl(142 76% 36%);
-    --status-success-bg: hsl(142 76% 36% / 0.1);
+    /* Status Colors - Nova Paleta */
+    --status-success: hsl(142 71% 45%);
+    --status-success-bg: hsl(142 71% 45% / 0.1);
     --status-warning: hsl(43 96% 56%);
     --status-warning-bg: hsl(43 96% 56% / 0.1);
     --status-error: hsl(0 84% 60%);
     --status-error-bg: hsl(0 84% 60% / 0.1);
-    --status-info: hsl(217 78% 51%);
-    --status-info-bg: hsl(217 78% 51% / 0.1);
+    --status-info: hsl(214 95% 60%);
+    --status-info-bg: hsl(214 95% 60% / 0.1);
 
     /* Interactive States */
     --interactive-hover: hsl(var(--primary) / 0.8);
@@ -85,7 +85,7 @@
     --gradient-status-success: linear-gradient(135deg, var(--status-success), hsl(158 64% 52%));
     --gradient-status-warning: linear-gradient(135deg, var(--status-warning), hsl(43 96% 66%));
     --gradient-status-error: linear-gradient(135deg, var(--status-error), hsl(0 84% 70%));
-    --gradient-status-info: linear-gradient(135deg, var(--status-info), hsl(217 78% 61%));
+    --gradient-status-info: linear-gradient(135deg, var(--status-info), hsl(214 95% 70%));
   }
 }
 
