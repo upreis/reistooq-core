@@ -795,23 +795,40 @@ export default function SimplePedidosPage({ className }: Props) {
     const processarMapeamentos = async () => {
       if (orders.length === 0) return;
       
+      // 🤖 Extrair TODOS os SKUs dos pedidos
+      const todosSKUs = orders.flatMap(pedido => 
+        pedido.skus?.filter(Boolean) || 
+        pedido.order_items?.map((item: any) => item.item?.seller_sku).filter(Boolean) || 
+        []
+      );
+
+      // ✨ USAR MapeamentoService com lógica automática de criação
+      let verificacoesMapeamento: any[] = [];
+      if (todosSKUs.length > 0) {
+        try {
+          verificacoesMapeamento = await MapeamentoService.verificarMapeamentos(todosSKUs);
+          console.log(`🔍 Verificados ${todosSKUs.length} SKUs, ${verificacoesMapeamento.filter(v => v.temMapeamento).length} com mapeamento`);
+        } catch (error) {
+          console.error('Erro ao verificar mapeamentos:', error);
+          verificacoesMapeamento = [];
+        }
+      }
+
+      // Criar mapa de verificações por SKU
+      const verificacoesMap = new Map(
+        verificacoesMapeamento.map(v => [v.skuPedido, v])
+      );
+      
       const novosMapping = new Map();
       
       for (const pedido of orders) {
         try {
-          // Extrair SKUs dos dados recebidos
+          // Extrair SKUs deste pedido específico
           const skusPedido = pedido.skus?.filter(Boolean) || 
                             pedido.order_items?.map((item: any) => item.item?.seller_sku).filter(Boolean) || 
                             [];
           
           if (skusPedido.length > 0) {
-            // Buscar mapeamentos
-            const { data: mapeamentos } = await supabase
-              .from('mapeamentos_depara')
-              .select('sku_pedido, sku_correspondente, sku_simples, quantidade')
-              .in('sku_pedido', skusPedido)
-              .eq('ativo', true);
-
             // Verificar se já foi baixado no histórico usando hv_exists
             const idUnicoPedido = (pedido as any).id_unico || buildIdUnico(pedido);
 
@@ -820,17 +837,23 @@ export default function SimplePedidosPage({ className }: Props) {
                 p_id_unico: idUnicoPedido
               });
             
+            // Buscar primeiro SKU que tem mapeamento válido
+            const skuComMapeamento = skusPedido.find(sku => {
+              const verificacao = verificacoesMap.get(sku);
+              return verificacao?.temMapeamento && verificacao?.skuEstoque;
+            });
+
             let skuEstoque = null;
             let skuKit = null;
             let qtdKit = 0;
             let totalItens = pedido.quantidade_itens || 0;
             let statusBaixa = 'sem_estoque';
 
-            if (mapeamentos && mapeamentos.length > 0) {
-               const mapeamento = mapeamentos[0];
-               skuEstoque = mapeamento.sku_correspondente || '';  // SKU Correto (de-para)
-               skuKit = mapeamento.sku_simples || '';             // SKU Unitário (de-para)  
-               qtdKit = mapeamento.quantidade || 1;               // Quantidade (de-para)
+            if (skuComMapeamento) {
+              const verificacao = verificacoesMap.get(skuComMapeamento);
+              skuEstoque = verificacao.skuEstoque;
+              skuKit = verificacao.skuEstoque; // Para compatibilidade, usar o mesmo SKU
+              qtdKit = verificacao.quantidadeKit || 1;
               
               if (jaProcessado) {
                 statusBaixa = 'pedido_baixado';
@@ -854,7 +877,7 @@ export default function SimplePedidosPage({ className }: Props) {
             novosMapping.set(pedido.id, {
               skuEstoque,
               skuKit,
-              quantidade: qtdKit, // Corrigido para 'quantidade' que é usado na UI
+              quantidade: qtdKit,
               totalItens,
               statusBaixa,
               jaProcessado
