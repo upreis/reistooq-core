@@ -18,12 +18,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'TrendingUp' 
       },
       { 
-        id: 'ecommerce-dash', 
-        label: 'eCommerce', 
-        path: '/ecommerce', 
-        icon: 'ShoppingCart' 
-      },
-      { 
         id: 'crm-dash', 
         label: 'CRM', 
         path: '/crm', 
