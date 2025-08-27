@@ -854,7 +854,7 @@ export default function SimplePedidosPage({ className }: Props) {
             novosMapping.set(pedido.id, {
               skuEstoque,
               skuKit,
-              qtdKit,
+              quantidade: qtdKit, // Corrigido para 'quantidade' que é usado na UI
               totalItens,
               statusBaixa,
               jaProcessado
