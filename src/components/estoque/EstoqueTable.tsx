@@ -151,10 +151,10 @@ export function EstoqueTable({
 
   return (
     <div className="w-full overflow-x-auto -mx-4 sm:mx-0">
-      <div className="min-w-[800px] md:min-w-full">
+      <div className="min-w-[720px] md:min-w-full">
         <div className="space-y-4">
           {/* Table Header */}
-          <div className="grid grid-cols-13 gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium">
+          <div className="grid grid-cols-12 gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium">
         <div className="flex items-center">
           <Checkbox
             checked={allSelected}
@@ -164,9 +164,6 @@ export function EstoqueTable({
               if (el) (el as any).indeterminate = someSelected;
             }}
           />
-        </div>
-        <div className="flex items-center cursor-pointer" onClick={() => onSort('codigo_barras')}>
-          Código de Barras {getSortIcon('codigo_barras')}
         </div>
         <div className="col-span-3 flex items-center cursor-pointer" onClick={() => onSort('nome')}>
           Produto {getSortIcon('nome')}
@@ -197,7 +194,7 @@ export function EstoqueTable({
           return (
             <div
               key={product.id}
-              className={`grid grid-cols-13 gap-4 py-4 px-4 border rounded-lg hover:bg-muted/30 transition-colors ${
+              className={`grid grid-cols-12 gap-4 py-4 px-4 border rounded-lg hover:bg-muted/30 transition-colors ${
                 isSelected ? 'bg-muted/50 border-primary' : ''
               }`}
             >
@@ -208,19 +205,6 @@ export function EstoqueTable({
                   onCheckedChange={() => onSelectProduct(product.id)}
                   aria-label={`Selecionar ${product.nome}`}
                 />
-              </div>
-
-              {/* Código de Barras */}
-              <div className="flex items-center">
-                {product.codigo_barras ? (
-                  <span className="text-xs font-mono bg-muted px-2 py-1 rounded">
-                    {product.codigo_barras}
-                  </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground italic">
-                    Sem código
-                  </span>
-                )}
               </div>
 
               {/* Product Info */}
@@ -246,6 +230,11 @@ export function EstoqueTable({
                   <p className="text-xs text-muted-foreground truncate">
                     {product.descricao || "Sem descrição"}
                   </p>
+                  {product.codigo_barras && (
+                    <p className="text-xs text-muted-foreground font-mono">
+                      {product.codigo_barras}
+                    </p>
+                  )}
                 </div>
               </div>
 
