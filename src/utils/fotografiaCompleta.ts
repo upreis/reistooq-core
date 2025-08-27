@@ -509,7 +509,9 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     numero_pedido: fotografia.numero_pedido,
     sku_produto: fotografia.skus_produtos.split(',')[0]?.trim() || 'BAIXA_ESTOQUE',
     descricao: fotografia.titulo_produto,
+    titulo_produto: fotografia.titulo_produto, // Mapeamento correto para a coluna titulo_produto
     quantidade: fotografia.quantidade_total,
+    quantidade_total: fotografia.quantidade_total, // Mapeamento correto para a coluna quantidade_total
     valor_unitario: fotografia.quantidade_total > 0 ? 
       Number(fotografia.valor_total) / fotografia.quantidade_total : 0,
     valor_total: Number(fotografia.valor_total),
