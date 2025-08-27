@@ -827,10 +827,10 @@ export default function SimplePedidosPage({ className }: Props) {
             let statusBaixa = 'sem_estoque';
 
             if (mapeamentos && mapeamentos.length > 0) {
-              const mapeamento = mapeamentos[0];
-              skuEstoque = mapeamento.sku_correspondente || mapeamento.sku_simples;
-              skuKit = mapeamento.sku_pedido;
-              qtdKit = mapeamento.quantidade || 1;
+               const mapeamento = mapeamentos[0];
+               skuEstoque = mapeamento.sku_correspondente || '';  // SKU Correto (de-para)
+               skuKit = mapeamento.sku_simples || '';             // SKU Unitário (de-para)  
+               qtdKit = mapeamento.quantidade || 1;               // Quantidade (de-para)
               
               if (jaProcessado) {
                 statusBaixa = 'pedido_baixado';
