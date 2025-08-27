@@ -4,35 +4,72 @@ import { buildIdUnico } from '@/utils/idUnico';
 
 export class SimpleBaixaService {
   /**
-   * Busca ou cria integration_account padrão para a organização
+   * Busca ou cria integration_account padrão para a organização - VERSÃO ROBUSTA
    */
-  static async getDefaultIntegrationAccount(): Promise<string | null> {
+  static async getDefaultIntegrationAccount(): Promise<string> {
     try {
-      // Buscar conta ativa da organização atual
+      console.log('🔍 Buscando integration_account padrão...');
+      
+      // PASSO 1: Buscar conta ativa da organização atual
       const { data: accounts, error } = await supabase
         .from('integration_accounts')
-        .select('id')
+        .select('id, name, provider')
         .eq('is_active', true)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!error && accounts?.id) {
+        console.log('✅ Encontrou conta ativa:', accounts);
         return accounts.id;
       }
 
-      // Se não encontrou, usar a função do banco para criar/buscar padrão
+      console.log('⚠️ Nenhuma conta ativa encontrada, tentando fix_historico_integration_accounts...');
+
+      // PASSO 2: Tentar criar/buscar via RPC
       const { data: result, error: rpcError } = await supabase
         .rpc('fix_historico_integration_accounts');
 
-      if (rpcError) {
-        console.error('❌ Erro ao buscar/criar integration_account padrão:', rpcError);
-        return null;
+      if (!rpcError && result?.default_account_id) {
+        console.log('✅ RPC criou/encontrou account:', result.default_account_id);
+        return result.default_account_id;
       }
 
-      return (result as any)?.default_account_id || null;
+      console.log('⚠️ RPC falhou:', rpcError, 'Buscando qualquer conta da organização...');
+
+      // PASSO 3: Fallback - buscar QUALQUER conta da organização
+      const { data: anyAccount, error: anyError } = await supabase
+        .from('integration_accounts')
+        .select('id, name, provider')
+        .limit(1)
+        .maybeSingle();
+
+      if (!anyError && anyAccount?.id) {
+        console.log('✅ Usando conta fallback:', anyAccount);
+        return anyAccount.id;
+      }
+
+      // PASSO 4: Último recurso - criar conta padrão
+      console.log('🔧 Criando conta padrão de emergência...');
+      const { data: newAccount, error: createError } = await supabase
+        .from('integration_accounts')
+        .insert({
+          name: 'Sistema Padrão (Auto-criado)',
+          provider: 'sistema',
+          is_active: true
+        })
+        .select('id')
+        .single();
+
+      if (!createError && newAccount?.id) {
+        console.log('✅ Conta padrão criada:', newAccount.id);
+        return newAccount.id;
+      }
+
+      throw new Error(`Falhou em obter/criar integration_account. Último erro: ${createError?.message || 'Desconhecido'}`);
+      
     } catch (error) {
-      console.error('❌ Erro ao buscar integration_account:', error);
-      return null;
+      console.error('❌ Erro crítico ao buscar integration_account:', error);
+      throw new Error(`Impossível obter integration_account: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   }
 
@@ -43,10 +80,20 @@ export class SimpleBaixaService {
     try {
       console.log('📦 Processando baixa com TODAS as colunas da página /pedidos:', pedido.numero);
       
-      // Buscar integration_account_id padrão se necessário
+      // Buscar integration_account_id OBRIGATÓRIO
       let integrationAccountId = pedido.integration_account_id;
       if (!integrationAccountId) {
-        integrationAccountId = await this.getDefaultIntegrationAccount();
+        try {
+          integrationAccountId = await this.getDefaultIntegrationAccount();
+        } catch (error) {
+          console.error('❌ Falha crítica ao obter integration_account_id:', error);
+          throw new Error(`Não foi possível processar a baixa: ${error instanceof Error ? error.message : 'Erro ao obter conta de integração'}`);
+        }
+      }
+      
+      // Validação final - NUNCA deve ser null
+      if (!integrationAccountId) {
+        throw new Error('Integration Account ID não pode ser nulo. Impossível processar baixa.');
       }
       
       // Preparar dados com EXATAMENTE as colunas especificadas
