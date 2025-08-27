@@ -851,8 +851,8 @@ export default function SimplePedidosPage({ className }: Props) {
 
             if (skuComMapeamento) {
               const verificacao = verificacoesMap.get(skuComMapeamento);
-              skuEstoque = verificacao.skuEstoque;
-              skuKit = verificacao.skuEstoque; // Para compatibilidade, usar o mesmo SKU
+              skuEstoque = verificacao.skuEstoque;     // sku_correspondente (SKU Correto)
+              skuKit = verificacao.skuKit;             // sku_simples (SKU Unitário)  
               qtdKit = verificacao.quantidadeKit || 1;
               
               if (jaProcessado) {

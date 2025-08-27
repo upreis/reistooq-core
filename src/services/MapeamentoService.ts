@@ -4,7 +4,8 @@ import { Pedido } from '@/types/pedido';
 export interface MapeamentoVerificacao {
   skuPedido: string;
   temMapeamento: boolean;
-  skuEstoque?: string;
+  skuEstoque?: string;      // sku_correspondente (SKU Correto) 
+  skuKit?: string;          // sku_simples (SKU Unitário)
   quantidadeKit?: number;
 }
 
@@ -35,7 +36,8 @@ export class MapeamentoService {
         (data || []).map(item => [
           item.sku_pedido,
           {
-            skuEstoque: item.sku_simples, // Apenas SKU Unitário, sem fallback
+            skuEstoque: item.sku_correspondente, // SKU Correto (para coluna SKU Estoque)
+            skuKit: item.sku_simples,           // SKU Unitário (para coluna SKU Kit)
             quantidadeKit: item.quantidade || 1
           }
         ])
@@ -53,7 +55,8 @@ export class MapeamentoService {
       return skusPedido.map(sku => ({
         skuPedido: sku,
         temMapeamento: mapeamentosMap.has(sku),
-        skuEstoque: mapeamentosMap.get(sku)?.skuEstoque,
+        skuEstoque: mapeamentosMap.get(sku)?.skuEstoque,  // sku_correspondente
+        skuKit: mapeamentosMap.get(sku)?.skuKit,          // sku_simples
         quantidadeKit: mapeamentosMap.get(sku)?.quantidadeKit
       }));
 
