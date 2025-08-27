@@ -15,12 +15,21 @@ interface AppMobileHeaderProps {
 }
 
 const MOBILE_NAV_ITEMS = [
-  { label: "Dashboard", href: "/", icon: "📊" },
+  { label: "Dashboard", href: "/", icon: "🏠" },
+  { label: "Analytics", href: "/analytics", icon: "📊" },
+  { label: "E-Commerce", href: "/ecommerce", icon: "🛍️" },
+  { label: "CRM", href: "/crm", icon: "👥" },
   { label: "Estoque", href: "/estoque", icon: "📦" },
   { label: "Pedidos", href: "/pedidos", icon: "🛒" },
   { label: "Scanner", href: "/scanner", icon: "📱" },
+  { label: "De-Para", href: "/de-para", icon: "🔄" },
+  { label: "Alertas", href: "/alertas", icon: "🚨" },
+  { label: "Configurações", href: "/configuracoes", icon: "⚙️" },
   { label: "Histórico", href: "/historico", icon: "📋" },
-  { label: "Configurações", href: "/config", icon: "⚙️" },
+  { label: "Teste API", href: "/teste-api", icon: "🔧" },
+  { label: "Calendário", href: "/apps/calendar", icon: "📅" },
+  { label: "Notas", href: "/apps/notes", icon: "📝" },
+  { label: "Chat", href: "/apps/chats", icon: "💬" },
 ];
 
 export default function AppMobileHeader({ title, actions }: AppMobileHeaderProps) {

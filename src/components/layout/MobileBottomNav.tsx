@@ -25,8 +25,8 @@ const NAV_ITEMS = [
     icon: ShoppingCart,
   },
   {
-    label: "Relatórios",
-    href: "/historico",
+    label: "Mais",
+    href: "/apps/notes", // página temporária, será acessível via menu hambúrguer
     icon: BarChart3,
   },
 ];
