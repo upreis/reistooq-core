@@ -45,37 +45,44 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
         onError?.(msg);
         return;
       }
-      
+
+      // Garantir atributos necessários para iOS Safari
+      if (videoRef.current) {
+        const v = videoRef.current;
+        v.setAttribute('autoplay', 'true');
+        v.setAttribute('muted', 'true');
+        v.setAttribute('playsinline', 'true');
+        v.muted = true;
+        // @ts-ignore - playsInline pode não existir em alguns tipos
+        v.playsInline = true;
+      }
+
       // Parar stream anterior
       stopCamera();
-      
-      // Solicitar permissão com constraints amigáveis para mobile
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
-      
-      setStream(mediaStream);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        // Mostrar o vídeo já para evitar "tela preta" enquanto play() resolve
-        setIsScanning(true);
+
+      // Mostrar o container do vídeo imediatamente
+      setIsScanning(true);
+
+      // Assim que o ZXing anexar o stream ao <video>, garantimos play()
+      const onLoaded = async () => {
+        if (!videoRef.current) return;
         try {
           await videoRef.current.play();
           console.log('✅ Vídeo iniciou');
-        } catch (err: any) {
+          const s = (videoRef.current.srcObject as MediaStream) || null;
+          if (s) setStream(s);
+        } catch (err) {
           console.error('❌ Erro ao dar play no vídeo:', err);
           onError?.('Não foi possível iniciar o vídeo da câmera');
+        } finally {
+          videoRef.current?.removeEventListener('loadedmetadata', onLoaded);
         }
-        // Iniciar decodificação
-        startScanner();
-      }
-      
+      };
+      videoRef.current?.addEventListener('loadedmetadata', onLoaded);
+
+      // Iniciar decodificação (ZXing gerencia getUserMedia e anexa ao <video>)
+      startScanner();
+
     } catch (error: any) {
       console.error('❌ Erro ao acessar câmera:', error);
       let errorMessage = 'Erro ao acessar câmera';
