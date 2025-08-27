@@ -4,26 +4,23 @@ import { HistoricoDataMapper } from './HistoricoDataMapper';
 
 export interface HistoricoItem {
   id: string;
-  // === Básicas ===
+  
+  // === SEÇÃO BÁSICAS ===
   id_unico: string;
   empresa?: string;
   numero_pedido: string;
-  nome_cliente?: string;
+  cliente_nome?: string;
   nome_completo?: string;
   data_pedido: string;
   ultima_atualizacao?: string;
 
-  // === Produtos ===
+  // === SEÇÃO PRODUTOS ===
   sku_produto: string;
-  skus_produtos?: string;
-  quantidade: number;
   quantidade_total?: number;
   titulo_produto?: string;
-  descricao?: string;
 
-  // === Financeiras ===
+  // === SEÇÃO FINANCEIRAS ===
   valor_total: number;
-  valor_unitario: number;
   valor_pago?: number;
   frete_pago_cliente?: number;
   receita_flex_bonus?: number;
@@ -35,7 +32,7 @@ export interface HistoricoItem {
   status_pagamento?: string;
   tipo_pagamento?: string;
 
-  // === Mapeamento ===
+  // === SEÇÃO MAPEAMENTO ===
   status_mapeamento?: string;
   sku_estoque?: string;
   sku_kit?: string;
@@ -43,26 +40,25 @@ export interface HistoricoItem {
   total_itens?: number;
   status_baixa?: string;
 
-  // === Envio ===
+  // === SEÇÃO ENVIO ===
+  status: string; // Status do pagamento ('baixado')
   status_envio?: string;
-  logistic_mode?: string;
+  logistic_mode_principal?: string;
   tipo_logistico?: string;
   tipo_metodo_envio?: string;
   tipo_entrega?: string;
   substatus_estado_atual?: string;
   modo_envio_combinado?: string;
   metodo_envio_combinado?: string;
-
-  // === Sistema ===
-  status: string;
-  created_at: string;
+  rua?: string;
+  numero?: string;
+  bairro?: string;
+  cep?: string;
   cidade?: string;
   uf?: string;
-  cliente_documento?: string;
-  cpf_cnpj?: string;
-  codigo_rastreamento?: string;
-  url_rastreamento?: string;
-  observacoes?: string;
+
+  // === SISTEMA ===
+  created_at: string;
   integration_account_id?: string;
 }
 

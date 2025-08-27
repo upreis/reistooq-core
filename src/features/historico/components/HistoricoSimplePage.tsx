@@ -106,7 +106,7 @@ export function HistoricoSimplePage() {
     setSelectedItem(item);
     toast({
       title: "Item Selecionado",
-      description: `Pedido ${item.numero_pedido} - ${item.nome_cliente || item.nome_completo || 'Cliente'}`
+      description: `Pedido ${item.numero_pedido} - ${item.cliente_nome || item.nome_completo || 'Cliente'}`
     });
   };
 
@@ -380,14 +380,14 @@ export function HistoricoSimplePage() {
                 <strong>SKU:</strong> {selectedItem.sku_produto}
               </div>
               <div>
-                <strong>Cliente:</strong> {selectedItem.nome_cliente || selectedItem.nome_completo || '-'}
+                <strong>Cliente:</strong> {selectedItem.cliente_nome || selectedItem.nome_completo || '-'}
               </div>
               <div>
                 <strong>Status:</strong>{' '}
                 <Badge variant="outline">{selectedItem.status}</Badge>
               </div>
               <div>
-                <strong>Quantidade:</strong> {selectedItem.quantidade}
+                <strong>Quantidade:</strong> {selectedItem.quantidade_total}
               </div>
               <div>
                 <strong>Valor Total:</strong>{' '}

@@ -16,21 +16,21 @@ interface ColumnConfig {
 }
 
 const defaultColumns: ColumnConfig[] = [
-  // === Básicas ===
+  // === SEÇÃO BÁSICAS ===
   { key: 'id_unico', label: 'ID Único', category: 'basicas', visible: true },
   { key: 'empresa', label: 'Empresa', category: 'basicas', visible: true },
   { key: 'numero_pedido', label: 'Número do Pedido', category: 'basicas', visible: true },
-  { key: 'nome_cliente', label: 'Nome do Cliente', category: 'basicas', visible: true },
+  { key: 'cliente_nome', label: 'Cliente Nome', category: 'basicas', visible: true },
   { key: 'nome_completo', label: 'Nome Completo', category: 'basicas', visible: false },
   { key: 'data_pedido', label: 'Data do Pedido', category: 'basicas', visible: true },
   { key: 'ultima_atualizacao', label: 'Última Atualização', category: 'basicas', visible: false },
 
-  // === Produtos ===
-  { key: 'sku_produto', label: 'SKUs/Produtos', category: 'produtos', visible: true },
+  // === SEÇÃO PRODUTOS ===
+  { key: 'sku_produto', label: 'SKU Produto', category: 'produtos', visible: true },
   { key: 'quantidade_total', label: 'Quantidade Total', category: 'produtos', visible: true },
   { key: 'titulo_produto', label: 'Título do Produto', category: 'produtos', visible: true },
 
-  // === Financeiras ===
+  // === SEÇÃO FINANCEIRAS ===
   { key: 'valor_total', label: 'Valor Total', category: 'financeiras', visible: true },
   { key: 'valor_pago', label: 'Valor Pago', category: 'financeiras', visible: false },
   { key: 'frete_pago_cliente', label: 'Frete Pago Cliente', category: 'financeiras', visible: false },
@@ -43,7 +43,7 @@ const defaultColumns: ColumnConfig[] = [
   { key: 'status_pagamento', label: 'Status Pagamento', category: 'financeiras', visible: false },
   { key: 'tipo_pagamento', label: 'Tipo Pagamento', category: 'financeiras', visible: false },
 
-  // === Mapeamento ===
+  // === SEÇÃO MAPEAMENTO ===
   { key: 'status_mapeamento', label: 'Status Mapeamento', category: 'mapeamento', visible: true },
   { key: 'sku_estoque', label: 'SKU Estoque', category: 'mapeamento', visible: true },
   { key: 'sku_kit', label: 'SKU KIT', category: 'mapeamento', visible: true },
@@ -51,15 +51,22 @@ const defaultColumns: ColumnConfig[] = [
   { key: 'total_itens', label: 'Total de Itens', category: 'mapeamento', visible: true },
   { key: 'status_baixa', label: 'Status da Baixa', category: 'mapeamento', visible: true },
 
-  // === Envio ===
+  // === SEÇÃO ENVIO ===
+  { key: 'status', label: 'Status (Pagamento)', category: 'envio', visible: false },
   { key: 'status_envio', label: 'Status do Envio', category: 'envio', visible: false },
-  { key: 'logistic_mode', label: 'Logistic Mode (Principal)', category: 'envio', visible: false },
+  { key: 'logistic_mode_principal', label: 'Logistic Mode (Principal)', category: 'envio', visible: false },
   { key: 'tipo_logistico', label: 'Tipo Logístico', category: 'envio', visible: false },
   { key: 'tipo_metodo_envio', label: 'Tipo Método Envio', category: 'envio', visible: false },
   { key: 'tipo_entrega', label: 'Tipo Entrega', category: 'envio', visible: false },
   { key: 'substatus_estado_atual', label: 'Substatus (Estado Atual)', category: 'envio', visible: false },
   { key: 'modo_envio_combinado', label: 'Modo de Envio (Combinado)', category: 'envio', visible: false },
   { key: 'metodo_envio_combinado', label: 'Método de Envio (Combinado)', category: 'envio', visible: false },
+  { key: 'rua', label: 'Rua', category: 'envio', visible: false },
+  { key: 'numero', label: 'Número', category: 'envio', visible: false },
+  { key: 'bairro', label: 'Bairro', category: 'envio', visible: false },
+  { key: 'cep', label: 'CEP', category: 'envio', visible: false },
+  { key: 'cidade', label: 'Cidade', category: 'envio', visible: false },
+  { key: 'uf', label: 'UF', category: 'envio', visible: false },
 ];
 
 const categoryLabels = {

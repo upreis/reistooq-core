@@ -49,14 +49,14 @@ export class SimpleBaixaService {
         integrationAccountId = await this.getDefaultIntegrationAccount();
       }
       
-      // Preparar dados para histórico - TODAS AS COLUNAS DAS IMAGENS
+      // Preparar dados com EXATAMENTE as colunas especificadas
       const historicoData = {
         // ===== SEÇÃO BÁSICAS =====
         id_unico: buildIdUnico(pedido),
         empresa: pedido.empresa || '',
         numero_pedido: pedido.numero || pedido.id,
         cliente_nome: pedido.nome_cliente || '',
-        nome_completo: pedido.nome_cliente || '', // Usando nome_cliente como nome_completo
+        nome_completo: pedido.nome_cliente || '',
         data_pedido: pedido.data_pedido || new Date().toISOString().split('T')[0],
         ultima_atualizacao: new Date().toISOString(),
         
@@ -69,17 +69,17 @@ export class SimpleBaixaService {
         valor_total: pedido.valor_total || 0,
         valor_pago: pedido.paid_amount || 0,
         frete_pago_cliente: pedido.payments?.[0]?.shipping_cost || 0,
-        receita_flex_bonus: 0, // Campo não disponível no tipo atual
-        custo_envio_seller: 0, // Campo não disponível no tipo atual
+        receita_flex_bonus: 0, // Fixo
+        custo_envio_seller: 0, // Fixo
         desconto_cupom: pedido.coupon?.amount || 0,
-        taxa_marketplace: 0, // Campo não disponível no tipo atual
+        taxa_marketplace: 0, // Fixo
         valor_liquido_vendedor: pedido.paid_amount || 0,
         metodo_pagamento: pedido.payments?.[0]?.payment_method_id || '',
         status_pagamento: pedido.payments?.[0]?.status || '',
         tipo_pagamento: pedido.payments?.[0]?.payment_type || '',
         
         // ===== SEÇÃO MAPEAMENTO =====
-        status_mapeamento: '', // Campo não disponível - será preenchido pela lógica de mapeamento
+        status_mapeamento: '', // Vazio
         sku_estoque: pedido.sku_estoque || '',
         sku_kit: pedido.sku_kit || '',
         quantidade_kit: pedido.qtd_kit || 0,
@@ -87,48 +87,29 @@ export class SimpleBaixaService {
         status_baixa: pedido.status_estoque || '',
         
         // ===== SEÇÃO ENVIO =====
-        status: 'baixado', // Status do Pagamento
-        status_envio: pedido.status_detail || '', // Status do Envio
-        logistic_mode_principal: '', // Logistic Mode (Principal)
-        tipo_logistico: '', // Tipo Logístico
-        tipo_metodo_envio: '', // Tipo Método Envio
-        tipo_entrega: '', // Tipo Entrega
-        substatus_estado_atual: pedido.status_detail || '', // Substatus (Estado Atual)
-        modo_envio_combinado: '', // Modo de Envio (Combinado)
-        metodo_envio_combinado: '', // Método de Envio (Combinado)
-        // Endereço de envio
-        rua: '', // Rua
-        numero: '', // Numero
-        bairro: '', // Bairro
-        cep: '', // CEP
-        cidade: pedido.cidade || '', // Cidade
-        uf: pedido.uf || '', // UF
+        status: 'baixado', // Fixo
+        status_envio: pedido.status_detail || '',
+        logistic_mode_principal: '', // Vazio
+        tipo_logistico: '', // Vazio
+        tipo_metodo_envio: '', // Vazio
+        tipo_entrega: '', // Vazio
+        substatus_estado_atual: pedido.status_detail || '',
+        modo_envio_combinado: '', // Vazio
+        metodo_envio_combinado: '', // Vazio
+        rua: '', // Vazio
+        numero: '', // Vazio
+        bairro: '', // Vazio
+        cep: '', // Vazio
+        cidade: pedido.cidade || '',
+        uf: pedido.uf || '',
         
-        // ===== CAMPOS TÉCNICOS =====
+        // ===== CAMPOS TÉCNICOS (para compatibilidade) =====
         integration_account_id: integrationAccountId,
         pedido_id: pedido.id,
-        numero_ecommerce: pedido.numero_ecommerce || '',
-        numero_venda: pedido.numero_venda || '',
-        
-        // ===== CAMPOS PADRÃO (calculados) =====
-        quantidade: pedido.total_itens || 1,
+        descricao: pedido.order_items?.[0]?.item?.title || '',
+        quantidade: pedido.total_itens || 0,
         valor_unitario: pedido.total_itens > 0 ? (pedido.valor_total || 0) / pedido.total_itens : (pedido.valor_total || 0),
-        descricao: `Baixa automática com dados completos - Pedido ${pedido.numero || pedido.id}`,
-        observacoes: `Baixa processada com TODAS as colunas da página /pedidos - ${new Date().toLocaleString()}`,
-        
-        // ===== CAMPOS OPCIONAIS (podem estar vazios) =====
-        cliente_documento: '',
-        valor_frete: pedido.valor_frete || 0,
-        valor_desconto: pedido.valor_desconto || 0,
-        ncm: '',
-        codigo_barras: '',
-        data_prevista: null,
-        obs: pedido.obs || '',
-        obs_interna: '',
-        url_rastreamento: '',
-        situacao: pedido.situacao || '',
-        codigo_rastreamento: '',
-        qtd_kit: pedido.qtd_kit || 0
+        observacoes: `Baixa de estoque automática - ${new Date().toLocaleString()}`
       };
 
       // Salvar DIRETO no histórico usando RPC
