@@ -37,11 +37,11 @@ export class SimpleBaixaService {
   }
 
   /**
-   * Processa baixa de estoque e salva no histórico - CORRIGIDO CONFORME USUÁRIO
+   * Processa baixa de estoque e salva no histórico - TODAS AS COLUNAS DA PÁGINA /PEDIDOS
    */
   static async processarBaixaPedido(pedido: Pedido): Promise<boolean> {
     try {
-      console.log('📦 Processando baixa simples para pedido:', pedido.numero);
+      console.log('📦 Processando baixa com TODAS as colunas da página /pedidos:', pedido.numero);
       
       // Buscar integration_account_id padrão se necessário
       let integrationAccountId = pedido.integration_account_id;
@@ -49,53 +49,81 @@ export class SimpleBaixaService {
         integrationAccountId = await this.getDefaultIntegrationAccount();
       }
       
-      // Preparar dados para histórico - CORRIGIDO baseado no feedback do usuário
+      // Preparar dados para histórico - TODAS AS COLUNAS DAS IMAGENS
       const historicoData = {
+        // ===== SEÇÃO BÁSICAS =====
         id_unico: buildIdUnico(pedido),
-        numero_pedido: pedido.numero || pedido.id, // ✅ "Número do Pedido"
-        sku_produto: pedido.order_items?.[0]?.item?.seller_sku || 'BAIXA_ESTOQUE',
-        descricao: `Baixa automática - Pedido ${pedido.numero || pedido.id}`,
-        quantidade: pedido.total_itens || 1,
-        valor_unitario: pedido.total_itens > 0 ? (pedido.valor_total || 0) / pedido.total_itens : (pedido.valor_total || 0), // ✅ CORRIGIDO: valor unitário real
-        valor_total: pedido.valor_total || 0,
-        cliente_nome: pedido.nome_cliente || 'Cliente', // ✅ "Nome Completo"
-        // ✅ cpf_cnpj REMOVIDO por questões de LGPD
-        status: 'baixado',
+        empresa: pedido.empresa || '',
+        numero_pedido: pedido.numero || pedido.id,
+        cliente_nome: pedido.nome_cliente || '',
+        nome_completo: pedido.nome_cliente || '', // Usando nome_cliente como nome_completo
         data_pedido: pedido.data_pedido || new Date().toISOString().split('T')[0],
-        observacoes: `Baixa automática via sistema - ${new Date().toLocaleString()}`,
+        ultima_atualizacao: new Date().toISOString(),
         
-        // Campos de localização - ✅ "Cidade" e "UF"
-        cidade: pedido.cidade || '',
-        uf: pedido.uf || '',
+        // ===== SEÇÃO PRODUTOS =====
+        sku_produto: pedido.order_items?.[0]?.item?.seller_sku || '',
+        quantidade_total: pedido.total_itens || 0,
+        titulo_produto: pedido.order_items?.[0]?.item?.title || '',
         
-        // Campos financeiros
-        valor_frete: pedido.valor_frete || 0,
-        valor_desconto: pedido.valor_desconto || 0,
+        // ===== SEÇÃO FINANCEIRAS =====
+        valor_total: pedido.valor_total || 0,
+        valor_pago: pedido.paid_amount || 0,
+        frete_pago_cliente: pedido.payments?.[0]?.shipping_cost || 0,
+        receita_flex_bonus: 0, // Campo não disponível no tipo atual
+        custo_envio_seller: 0, // Campo não disponível no tipo atual
+        desconto_cupom: pedido.coupon?.amount || 0,
+        taxa_marketplace: 0, // Campo não disponível no tipo atual
+        valor_liquido_vendedor: pedido.paid_amount || 0,
+        metodo_pagamento: pedido.payments?.[0]?.payment_method_id || '',
+        status_pagamento: pedido.payments?.[0]?.status || '',
+        tipo_pagamento: pedido.payments?.[0]?.payment_type || '',
         
-        // Campos de identificação
+        // ===== SEÇÃO MAPEAMENTO =====
+        status_mapeamento: '', // Campo não disponível - será preenchido pela lógica de mapeamento
+        sku_estoque: pedido.sku_estoque || '',
+        sku_kit: pedido.sku_kit || '',
+        quantidade_kit: pedido.qtd_kit || 0,
+        total_itens: pedido.total_itens || 0,
+        status_baixa: pedido.status_estoque || '',
+        
+        // ===== SEÇÃO ENVIO =====
+        status: 'baixado',
+        status_envio: pedido.status_detail || '',
+        logistic_mode_principal: '', // Campo não disponível no tipo atual
+        tipo_logistico: '', // Campo não disponível no tipo atual
+        tipo_metodo_envio: '', // Campo não disponível no tipo atual
+        tipo_entrega: '', // Campo não disponível no tipo atual
+        substatus_estado_atual: pedido.status_detail || '',
+        modo_envio_combinado: '', // Campo não disponível no tipo atual
+        metodo_envio_combinado: '', // Campo não disponível no tipo atual
+        
+        // ===== CAMPOS TÉCNICOS =====
+        integration_account_id: integrationAccountId,
         pedido_id: pedido.id,
         numero_ecommerce: pedido.numero_ecommerce || '',
-        numero_venda: pedido.numero_venda || pedido.id,
+        numero_venda: pedido.numero_venda || '',
         
-        // Campos de estoque
-        total_itens: pedido.total_itens || 1,
+        // ===== CAMPOS PADRÃO (calculados) =====
+        quantidade: pedido.total_itens || 1,
+        valor_unitario: pedido.total_itens > 0 ? (pedido.valor_total || 0) / pedido.total_itens : (pedido.valor_total || 0),
+        descricao: `Baixa automática com dados completos - Pedido ${pedido.numero || pedido.id}`,
+        observacoes: `Baixa processada com TODAS as colunas da página /pedidos - ${new Date().toLocaleString()}`,
         
-        // Empresa e conta
-        empresa: pedido.empresa || 'Sistema',
-        integration_account_id: integrationAccountId, // ✅ CORRIGIDO: nunca mais NULL
-        
-        // Campos opcionais (vazios por enquanto)
+        // ===== CAMPOS OPCIONAIS (podem estar vazios) =====
+        cliente_documento: '',
+        cidade: pedido.cidade || '',
+        uf: pedido.uf || '',
+        valor_frete: pedido.valor_frete || 0,
+        valor_desconto: pedido.valor_desconto || 0,
         ncm: '',
         codigo_barras: '',
         data_prevista: null,
-        obs: '',
+        obs: pedido.obs || '',
         obs_interna: '',
         url_rastreamento: '',
         situacao: pedido.situacao || '',
         codigo_rastreamento: '',
-        sku_estoque: '',
-        sku_kit: '',
-        qtd_kit: 0
+        qtd_kit: pedido.qtd_kit || 0
       };
 
       // Salvar DIRETO no histórico usando RPC
