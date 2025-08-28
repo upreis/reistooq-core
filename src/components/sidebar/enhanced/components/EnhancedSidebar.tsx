@@ -8,6 +8,7 @@ import { SidebarItemWithChildren } from './SidebarItemWithChildren';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface EnhancedSidebarProps {
   navItems: NavSection[];
@@ -174,8 +175,54 @@ const SidebarContent = memo(({
   externalIsCollapsed?: boolean;
 }) => {
   const { state, actions, utils } = useSidebarState();
+  const { hasPermission } = useUserPermissions();
   // Use external collapsed state if provided (from SidebarUIProvider)
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : (!isMobile && state.expanded === false);
+
+  // Map route paths to permission keys
+  const getPermissionForPath = (path?: string): string | null => {
+    if (!path) return null;
+    if (path === '/') return 'dashboard:view';
+    if (path.startsWith('/analytics')) return 'analytics:view';
+    if (path.startsWith('/oms')) return 'oms:view';
+    if (path.startsWith('/apps/ecommerce')) return 'ecommerce:view';
+    if (path.startsWith('/apps/user-profile')) return 'userprofile:view';
+    if (path.startsWith('/apps/calendar')) return 'calendar:view';
+    if (path.startsWith('/apps/notes')) return 'notes:view';
+    if (path.startsWith('/estoque')) return 'estoque:view';
+    if (path.startsWith('/pedidos')) return 'orders:read';
+    if (path.startsWith('/scanner')) return 'scanner:use';
+    if (path.startsWith('/de-para')) return 'depara:view';
+    if (path.startsWith('/alertas')) return 'alerts:view';
+    if (path.startsWith('/configuracoes')) return 'settings:view';
+    if (path.startsWith('/historico')) return 'historico:view';
+    if (path.startsWith('/admin')) return 'admin:access';
+    if (path.startsWith('/_demo') || path.startsWith('/theme-pages') || path.startsWith('/widgets') || path.startsWith('/icons')) return 'demo:access';
+    return null;
+  };
+
+  // Recursively filter items by permission
+  const filterItems = (items: NavItem[]): NavItem[] => {
+    const result: NavItem[] = [];
+    for (const item of items) {
+      const children = item.children ? filterItems(item.children) : undefined;
+      const required = getPermissionForPath(item.path);
+      const visible = required ? hasPermission(required) : true;
+      if (children && children.length > 0) {
+        result.push({ ...item, children });
+      } else if (visible) {
+        result.push({ ...item, children: undefined });
+      }
+    }
+    return result;
+  };
+
+  const filteredNav = navItems
+    .map((section) => ({
+      ...section,
+      items: filterItems(section.items)
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <TooltipProvider delayDuration={150} disableHoverableContent>
@@ -214,7 +261,7 @@ const SidebarContent = memo(({
           role="navigation"
           aria-label="Navegação principal"
         >
-          {navItems.map((section) => (
+          {filteredNav.map((section) => (
             <SidebarSection
               key={section.id}
               section={section}
