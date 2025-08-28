@@ -10,18 +10,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         label: 'Dashboard', 
         path: '/', 
         icon: 'LayoutDashboard' 
-      },
-      { 
-        id: 'analytics', 
-        label: 'Analytics', 
-        path: '/analytics', 
-        icon: 'TrendingUp' 
-      },
-      { 
-        id: 'crm-dash', 
-        label: 'CRM', 
-        path: '/crm', 
-        icon: 'Users' 
       }
     ]
   },
