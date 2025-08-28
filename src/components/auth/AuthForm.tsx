@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock, User, Building } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PasswordResetForm } from "./PasswordResetForm";
 
 interface AuthFormProps {
   mode: "login" | "signup";
@@ -19,8 +20,19 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
   const [nomeEmpresa, setNomeEmpresa] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
   
   const { signIn, signUp } = useAuth();
+
+  // Se estiver mostrando formulário de reset, renderizar ele
+  if (showResetForm) {
+    return (
+      <PasswordResetForm
+        mode="request"
+        onBack={() => setShowResetForm(false)}
+      />
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,6 +192,19 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
           >
             {loading ? "Processando..." : (mode === "login" ? "Entrar" : "Criar conta")}
           </Button>
+
+          {mode === "login" && (
+            <div className="text-center">
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => setShowResetForm(true)}
+                className="p-0 h-auto text-sm text-muted-foreground hover:text-primary"
+              >
+                Esqueci minha senha
+              </Button>
+            </div>
+          )}
         </form>
 
         <div className="mt-6 text-center">
