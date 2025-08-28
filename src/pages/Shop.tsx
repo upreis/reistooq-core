@@ -123,7 +123,23 @@ export default function Shop() {
                   }`}
                   onClick={() => setSelectedCategory(category.id)}
                 >
-                  <span className="mr-2">{category.icone || "📦"}</span>
+                  <span className="mr-2">
+                    {category.icone === 'Car' ? '🚗' :
+                     category.icone === 'Coffee' ? '☕' :
+                     category.icone === 'Sparkles' ? '✨' :
+                     category.icone === 'Smartphone' ? '📱' :
+                     category.icone === 'Home' ? '🏠' :
+                     category.icone === 'Book' ? '📚' :
+                     category.icone === 'Heart' ? '❤️' :
+                     category.icone === 'Gamepad2' ? '🎮' :
+                     category.icone === 'Hammer' ? '🔨' :
+                     category.icone === 'Laptop' ? '💻' :
+                     category.icone === 'Shirt' ? '👕' :
+                     category.icone === 'Package' ? '📦' :
+                     category.icone === 'Star' ? '⭐' :
+                     category.icone === 'Circle' ? '⚪' :
+                     '📦'}
+                  </span>
                   {category.nome} ({category.products_count})
                 </Button>
               ))}
