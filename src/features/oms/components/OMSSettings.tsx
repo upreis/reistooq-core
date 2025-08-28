@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { 
   Settings,
   Bell,
@@ -26,8 +27,14 @@ import {
   EyeOff,
   Key,
   Workflow,
-  BarChart3
+  BarChart3,
+  RefreshCw,
+  Link,
+  Unlink,
+  TestTube
 } from "lucide-react";
+import { useIntegrations } from "../hooks/useIntegrations";
+import { useOMSAutomation } from "../hooks/useOMSAutomation";
 
 export function OMSSettings() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -35,6 +42,43 @@ export function OMSSettings() {
   const [lowStockAlerts, setLowStockAlerts] = useState(true);
   const [automaticApproval, setAutomaticApproval] = useState(false);
   const [twoFactorAuth, setTwoFactorAuth] = useState(false);
+  const [testCep, setTestCep] = useState('');
+  const [testCnpj, setTestCnpj] = useState('');
+  
+  const { integrations, loading, connectIntegration, disconnectIntegration, syncIntegration, testCEPApi, validateCNPJ } = useIntegrations();
+  const { rules, toggleRule } = useOMSAutomation();
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'connected': return 'bg-green-500';
+      case 'error': return 'bg-red-500';
+      case 'disconnected': return 'bg-gray-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'connected': return 'Conectado';
+      case 'error': return 'Erro';
+      case 'disconnected': return 'Desconectado';
+      default: return 'Desconhecido';
+    }
+  };
+
+  const handleTestCEP = async () => {
+    if (testCep) {
+      const result = await testCEPApi(testCep.replace(/\D/g, ''));
+      console.log('Resultado CEP:', result);
+    }
+  };
+
+  const handleTestCNPJ = async () => {
+    if (testCnpj) {
+      const result = await validateCNPJ(testCnpj.replace(/\D/g, ''));
+      console.log('Resultado CNPJ:', result);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -413,6 +457,25 @@ export function OMSSettings() {
                     <Zap className="w-4 h-4 mr-2" />
                     Criar Nova Regra de Automação
                   </Button>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="font-medium mb-4">Regras de Automação Ativas</h4>
+                <div className="space-y-3">
+                  {rules.map((rule) => (
+                    <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{rule.name}</p>
+                        <p className="text-sm text-muted-foreground">{rule.description}</p>
+                        <Badge variant="outline" className="mt-1">{rule.type}</Badge>
+                      </div>
+                      <Switch
+                        checked={rule.enabled}
+                        onCheckedChange={() => toggleRule(rule.id)}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             </CardContent>

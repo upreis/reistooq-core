@@ -20,12 +20,18 @@ import {
   Download,
   BarChart3,
   PieChart,
-  Activity
+  Activity,
+  Brain,
+  Zap,
+  Layout
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, Area, AreaChart } from "recharts";
 import { useOrders } from "@/hooks/useOrders";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { OMSPredictiveAnalytics } from "./OMSPredictiveAnalytics";
+import { OMSDragDropDashboard } from "./OMSDragDropDashboard";
+import { useOMSAutomation } from "../hooks/useOMSAutomation";
 
 // Mock data for demonstration
 const salesData = [
@@ -57,6 +63,9 @@ const orderStatusData = [
 export function OMSDashboard() {
   const [period, setPeriod] = useState("30d");
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  
+  const { rules, executeAutomations } = useOMSAutomation();
   
   // Fetch real data
   const { orders, stats, isLoading } = useOrders();
@@ -252,15 +261,17 @@ export function OMSDashboard() {
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="vendas" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="vendas">Vendas & Performance</TabsTrigger>
-          <TabsTrigger value="pedidos">Status de Pedidos</TabsTrigger>
-          <TabsTrigger value="produtos">Top Produtos</TabsTrigger>
-          <TabsTrigger value="alertas">Alertas & Ações</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="ai">IA Preditiva</TabsTrigger>
+          <TabsTrigger value="custom">Dashboard Custom</TabsTrigger>
+          <TabsTrigger value="automation">Automação</TabsTrigger>
+          <TabsTrigger value="alerts">Alertas</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="vendas" className="space-y-6">
+        <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Sales Trend Chart */}
             <Card className="lg:col-span-2">
@@ -346,7 +357,7 @@ export function OMSDashboard() {
           </div>
         </TabsContent>
 
-        <TabsContent value="pedidos" className="space-y-6">
+        <TabsContent value="analytics" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Order Status Distribution */}
             <Card>
@@ -393,6 +404,84 @@ export function OMSDashboard() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="ai" className="space-y-6">
+          <OMSPredictiveAnalytics />
+        </TabsContent>
+
+        <TabsContent value="custom" className="space-y-6">
+          <OMSDragDropDashboard />
+        </TabsContent>
+
+        <TabsContent value="automation" className="space-y-6">
+          {/* Active Automations */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center">
+                  <Zap className="w-5 h-5 mr-2" />
+                  Automações Ativas
+                </CardTitle>
+                <Badge variant="secondary">{rules.filter(r => r.enabled).length} ativas</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {rules.filter(r => r.enabled).map((rule) => (
+                  <div key={rule.id} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <Zap className="w-4 h-4 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{rule.name}</p>
+                        <p className="text-sm text-muted-foreground">{rule.description}</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-green-100 text-green-700">
+                      {rule.type}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Workflow Visualization */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Fluxo Order-to-Cash</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-4 overflow-x-auto pb-4">
+                {[
+                  { step: "Cotação", icon: DollarSign, status: "completed" },
+                  { step: "Pedido", icon: ShoppingCart, status: "active" },
+                  { step: "Reserva", icon: Package, status: "pending" },
+                  { step: "Faturamento", icon: BarChart3, status: "pending" },
+                  { step: "Expedição", icon: Truck, status: "pending" },
+                  { step: "Cobrança", icon: DollarSign, status: "pending" },
+                  { step: "Pós-venda", icon: Users, status: "pending" }
+                ].map((step, index) => (
+                  <div key={step.step} className="flex items-center space-x-2">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      step.status === 'completed' ? 'bg-green-500' :
+                      step.status === 'active' ? 'bg-blue-500' : 'bg-gray-300'
+                    }`}>
+                      <step.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{step.step}</p>
+                    </div>
+                    {index < 6 && (
+                      <div className="w-8 h-0.5 bg-gray-300"></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="produtos" className="space-y-6">
