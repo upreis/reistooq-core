@@ -139,45 +139,35 @@ export class ShopService {
   }
 
   static async getCategories(): Promise<ShopCategory[]> {
-    const { data, error } = await supabase
-      .from('categorias_produtos')
-      .select('*')
+    // Derivar categorias diretamente dos produtos e calcular contagem no cliente
+    const { data: rows, error } = await supabase
+      .from('produtos')
+      .select('categoria')
       .eq('ativo', true)
-      .order('ordem', { ascending: true });
+      .not('categoria', 'is', null);
 
     if (error) {
       throw new Error(`Erro ao buscar categorias: ${error.message}`);
     }
 
-    // Para cada categoria, contamos os produtos usando categoria_id ou nome
-    const categories = data || [];
-    const categoriesWithCount = await Promise.all(
-      categories.map(async (category) => {
-        // Primeiro tenta buscar por categoria_id
-        const { count: countById } = await supabase
-          .from('produtos')
-          .select('*', { count: 'exact', head: true })
-          .eq('ativo', true)
-          .eq('categoria_id', category.id);
+    const counts = new Map<string, number>();
+    (rows || []).forEach((r: any) => {
+      const nome = r.categoria as string;
+      if (!nome) return;
+      counts.set(nome, (counts.get(nome) || 0) + 1);
+    });
 
-        // Se não encontrar por ID, tenta buscar por nome da categoria
-        const { count: countByName } = await supabase
-          .from('produtos')
-          .select('*', { count: 'exact', head: true })
-          .eq('ativo', true)
-          .eq('categoria', category.nome);
+    const categories: ShopCategory[] = Array.from(counts.entries()).map(([nome, qty]) => ({
+      id: nome,
+      nome,
+      products_count: qty,
+      ativo: true,
+    } as ShopCategory));
 
-        // Usa o maior valor encontrado
-        const totalCount = Math.max(countById || 0, countByName || 0);
+    // Ordenar por nome
+    categories.sort((a, b) => a.nome.localeCompare(b.nome));
 
-        return {
-          ...category,
-          products_count: totalCount,
-        };
-      })
-    );
-
-    return categoriesWithCount;
+    return categories;
   }
 
   static async getProduct(id: string): Promise<ShopProduct | null> {
