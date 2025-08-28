@@ -13,10 +13,7 @@ import { useSystemValidator } from "@/utils/SystemValidator";
 import FullLayout from "@/layouts/full/FullLayout";
 
 // Import pages
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Analytics from "./pages/Analytics";
-import ECommerce from "./pages/ECommerce";
 import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import Scanner from "./pages/Scanner";
@@ -65,9 +62,7 @@ function App() {
                   
                   {/* Todas as outras rotas são protegidas com novo layout */}
                   <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/ecommerce" element={<ECommerce />} />
+                    <Route path="/" element={<CRM />} />
                     <Route path="/crm" element={<CRM />} />
                     
                     {/* eCommerce App Routes */}
