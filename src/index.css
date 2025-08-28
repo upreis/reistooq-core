@@ -97,6 +97,21 @@
     --gradient-status-error: linear-gradient(135deg, var(--status-error), hsl(0 84% 70%));
     --gradient-status-info: linear-gradient(135deg, var(--status-info), hsl(214 95% 70%));
   }
+
+  /* Light theme tokens */
+  :root[data-theme="light"] {
+    --bg: #F7F8FA;
+    --surface: #FFF;
+    --text: #0F172A;
+    --text-muted: #475569;
+    --border: #E5E7EB;
+    --primary: #0F2A4A;
+    --primary-weak: #0F2A4A14;
+    --accent: #F5B301;
+    --success: #16A34A;
+    --warn: #F59E0B;
+    --error: #DC2626;
+  }
 }
 
 @layer base {
@@ -118,6 +133,36 @@
   
   [data-collapsed="true"] .group .truncate {
     @apply opacity-0 pointer-events-none w-0;
+  }
+
+  /* Top Banner Styling */
+  .top-banner {
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  /* Selected Chip Styling */
+  .chip--selected {
+    background: #0F2A4A14;
+    border-color: #0F2A4A33;
+    color: #0F2A4A;
+  }
+
+  /* Card Styling */
+  .card {
+    border: 1px solid #E5E7EB;
+  }
+
+  /* Table Sticky Headers */
+  .table thead {
+    position: sticky;
+    top: var(--header-h, 0);
+    background: #FFF;
+    border-bottom: 1px solid #E5E7EB;
   }
 
   /* Animation Utilities - 3 Fases Implementadas */
@@ -153,5 +198,17 @@
       transform: scale(1);
       opacity: 1;
     }
+  }
+}
+
+/* Input Focus and Placeholder Styles */
+@layer base {
+  input::placeholder {
+    color: #94A3B8;
+  }
+  
+  input:focus {
+    outline: 2px solid #0F2A4A66;
+    outline-offset: 2px;
   }
 }
