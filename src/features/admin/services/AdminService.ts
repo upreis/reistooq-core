@@ -245,8 +245,22 @@ export class AdminService {
   }
 
   async updateUser(id: string, data: Partial<UserProfile>): Promise<UserProfile> {
-    // Admin users can update profiles through service role backend only
-    throw new Error('User updates must be performed through secure backend operations');
+    // Remove roles from data since they can't be updated directly here
+    const { roles, ...updateData } = data;
+    
+    const { data: updatedProfile, error } = await supabase
+      .rpc('admin_update_profile', {
+        _user_id: id,
+        _updates: updateData
+      })
+      .single();
+
+    if (error) {
+      console.error('Error updating user profile:', error);
+      throw new Error(`Failed to update user: ${error.message}`);
+    }
+
+    return updatedProfile as UserProfile;
   }
 
   async deleteUser(id: string): Promise<void> {

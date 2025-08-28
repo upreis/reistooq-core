@@ -197,6 +197,15 @@ export const UserManager: React.FC = () => {
   const handleAssignRole = async (roleId: string) => {
     if (!editingUser) return;
     await assignRole(editingUser.id, roleId);
+    // Find the role that was assigned
+    const assignedRole = roles.find(r => r.id === roleId);
+    if (assignedRole) {
+      // Update the editing user state immediately to show the new role
+      setEditingUser(prev => prev ? {
+        ...prev,
+        roles: [assignedRole] // Since assignRole removes existing and adds new
+      } : null);
+    }
   };
 
   const getInitials = (name?: string) => {
