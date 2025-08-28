@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { useSidebarUI } from "@/context/SidebarUIContext";
 import { EnhancedSidebar, SidebarProvider } from "@/components/sidebar/enhanced";
 import { ENHANCED_NAV_ITEMS } from "@/config/enhanced-nav";
@@ -62,30 +63,36 @@ const InnerLayout = () => {
         {/* Desktop Layout */}
         {!isMobile && <AnnouncementTicker />}
         
-        <div className={`flex min-h-screen w-full bg-background ${!isMobile ? offset : ""}`}>
-          {/* Enhanced Sidebar - hidden on mobile */}
+        <div className={`w-full bg-background ${!isMobile ? offset : ""}`}>
+          {/* Enhanced Sidebar - fixed position on desktop */}
           {!isMobile && (
-            <EnhancedSidebar 
-              navItems={ENHANCED_NAV_ITEMS}
-              isMobile={false}
-              onMobileClose={() => {}}
-              isCollapsed={isSidebarCollapsed}
-            />
+            <aside className="fixed inset-y-0 left-0 z-40 w-16 lg:w-20 bg-[hsl(var(--background))] border-r border-[hsl(var(--border))] overflow-y-auto">
+              <EnhancedSidebar 
+                navItems={ENHANCED_NAV_ITEMS}
+                isMobile={false}
+                onMobileClose={() => {}}
+                isCollapsed={isSidebarCollapsed}
+              />
+            </aside>
           )}
 
           {/* Rail button when collapsed - desktop only */}
           {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
-          {/* Conteúdo */}
-          <div className="flex-1 min-w-0 flex flex-col w-full">
+          {/* Content with left padding for fixed sidebar */}
+          <div className={cn(
+            "flex-1 min-w-0 flex flex-col w-full",
+            !isMobile ? "pl-16 lg:pl-20" : ""
+          )}>
             {/* Desktop Header */}
             {!isMobile && <Header />}
             
-            <main className={`flex-1 min-h-0 overflow-auto w-full ${
+            <main className={cn(
+              "h-screen overflow-y-auto w-full",
               isMobile 
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
-            }`}>
+            )}>
               <div className="w-full max-w-full overflow-x-hidden">
                 <Outlet />
               </div>
