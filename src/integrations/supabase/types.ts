@@ -35,6 +35,84 @@ export type Database = {
         }
         Relationships: []
       }
+      access_attempts: {
+        Row: {
+          attempt_time: string | null
+          blocked_reason: string | null
+          email: string | null
+          id: string
+          ip_address: unknown | null
+          session_id: string | null
+          success: boolean
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attempt_time?: string | null
+          blocked_reason?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: unknown | null
+          session_id?: string | null
+          success: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attempt_time?: string | null
+          blocked_reason?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: unknown | null
+          session_id?: string | null
+          success?: boolean
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      access_schedule: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          organization_id: string
+          role_id: string | null
+          start_time: string
+          timezone: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          organization_id: string
+          role_id?: string | null
+          start_time: string
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          organization_id?: string
+          role_id?: string | null
+          start_time?: string
+          timezone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           active: boolean | null
@@ -108,39 +186,54 @@ export type Database = {
         Row: {
           action: string
           created_at: string
+          duration_ms: number | null
           id: string
           ip_address: unknown | null
+          module: string | null
           new_values: Json | null
           old_values: Json | null
           organization_id: string
           resource_id: string | null
           resource_type: string
+          session_id: string | null
+          severity: string | null
+          source_function: string | null
           user_agent: string | null
           user_id: string | null
         }
         Insert: {
           action: string
           created_at?: string
+          duration_ms?: number | null
           id?: string
           ip_address?: unknown | null
+          module?: string | null
           new_values?: Json | null
           old_values?: Json | null
           organization_id: string
           resource_id?: string | null
           resource_type: string
+          session_id?: string | null
+          severity?: string | null
+          source_function?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
         Update: {
           action?: string
           created_at?: string
+          duration_ms?: number | null
           id?: string
           ip_address?: unknown | null
+          module?: string | null
           new_values?: Json | null
           old_values?: Json | null
           organization_id?: string
           resource_id?: string | null
           resource_type?: string
+          session_id?: string | null
+          severity?: string | null
+          source_function?: string | null
           user_agent?: string | null
           user_id?: string | null
         }
@@ -215,6 +308,48 @@ export type Database = {
           tipo?: string | null
           updated_at?: string
           valor?: string
+        }
+        Relationships: []
+      }
+      data_subject_requests: {
+        Row: {
+          id: string
+          notes: string | null
+          organization_id: string
+          processed_at: string | null
+          processed_by: string | null
+          request_type: string
+          requested_at: string | null
+          requested_by_email: string
+          response_data: Json | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          notes?: string | null
+          organization_id: string
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type: string
+          requested_at?: string | null
+          requested_by_email: string
+          response_data?: Json | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type?: string
+          requested_at?: string | null
+          requested_by_email?: string
+          response_data?: Json | null
+          status?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1222,6 +1357,42 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          token: string
+          used: boolean | null
+          used_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          ip_address?: unknown | null
+          token: string
+          used?: boolean | null
+          used_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          token?: string
+          used?: boolean | null
+          used_at?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       pedidos: {
         Row: {
           cidade: string | null
@@ -1701,6 +1872,48 @@ export type Database = {
         }
         Relationships: []
       }
+      system_backups: {
+        Row: {
+          backup_type: string
+          checksum: string | null
+          completed_at: string | null
+          error_message: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          organization_id: string
+          retention_until: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          backup_type: string
+          checksum?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          organization_id: string
+          retention_until?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          backup_type?: string
+          checksum?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          organization_id?: string
+          retention_until?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       tiny_v3_audit: {
         Row: {
           action: string
@@ -1912,6 +2125,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      check_access_schedule: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       cleanup_expired_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1965,6 +2182,10 @@ export type Database = {
       }
       fix_historico_integration_accounts: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      generate_password_reset_token: {
+        Args: { _email: string }
         Returns: Json
       }
       gerar_sku_automatico: {
@@ -2295,6 +2516,20 @@ export type Database = {
       hv_orphaned_stats: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      log_audit_enhanced: {
+        Args: {
+          p_action: string
+          p_duration_ms?: number
+          p_module?: string
+          p_new_values?: Json
+          p_old_values?: Json
+          p_resource_id?: string
+          p_resource_type: string
+          p_severity?: string
+          p_source_function?: string
+        }
+        Returns: undefined
       }
       log_audit_event: {
         Args: {

@@ -251,6 +251,11 @@ export const AdminDashboard: React.FC = () => {
           <SystemAlertsManager />
         </TabsContent>
 
+        {/* Security Tab */}
+        <TabsContent value="security">
+          <SecurityDashboard />
+        </TabsContent>
+
         {/* Audit Tab */}
         <TabsContent value="audit">
           <AuditLogsViewer />
