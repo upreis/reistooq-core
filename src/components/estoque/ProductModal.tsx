@@ -51,11 +51,11 @@ const productSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
   categoria: z.string().optional(),
   descricao: z.string().optional(),
-  quantidade_atual: z.number().min(0, "Quantidade deve ser positiva").default(0),
-  estoque_minimo: z.number().min(0, "Estoque mínimo deve ser positivo").default(0),
-  estoque_maximo: z.number().min(0, "Estoque máximo deve ser positivo").default(0),
-  preco_custo: z.number().min(0, "Preço de custo deve ser positivo").optional(),
-  preco_venda: z.number().min(0, "Preço de venda deve ser positivo").optional(),
+  quantidade_atual: z.coerce.number().min(0, "Quantidade deve ser positiva"),
+  estoque_minimo: z.coerce.number().min(0, "Estoque mínimo deve ser positivo"),
+  estoque_maximo: z.coerce.number().min(0, "Estoque máximo deve ser positivo"),
+  preco_custo: z.coerce.number().min(0, "Preço de custo deve ser positivo").optional(),
+  preco_venda: z.coerce.number().min(0, "Preço de venda deve ser positivo").optional(),
   codigo_barras: z.string().optional(),
   localizacao: z.string().optional(),
   status: z.string().default("ativo"),
@@ -85,11 +85,11 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       nome: "",
       categoria: "",
       descricao: "",
-      quantidade_atual: 0,
-      estoque_minimo: 0,
-      estoque_maximo: 0,
-      preco_custo: 0,
-      preco_venda: 0,
+      quantidade_atual: "" as any,
+      estoque_minimo: "" as any,
+      estoque_maximo: "" as any,
+      preco_custo: "" as any,
+      preco_venda: "" as any,
       codigo_barras: "",
       localizacao: "",
       status: "ativo",
@@ -115,8 +115,18 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       setImagePreview(product.url_imagem || null);
     } else if (!product && open) {
       form.reset({
-        ...form.getValues(),
+        sku_interno: "",
+        nome: "",
+        categoria: "",
+        descricao: "",
+        quantidade_atual: "" as any,
+        estoque_minimo: "" as any,
+        estoque_maximo: "" as any,
+        preco_custo: "" as any,
+        preco_venda: "" as any,
         codigo_barras: initialBarcode || "",
+        localizacao: "",
+        status: "ativo",
       });
       setImageFile(null);
       setImagePreview(null);
@@ -334,8 +344,9 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                       <Input
                         type="number"
                         min="0"
+                        placeholder=""
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -354,8 +365,9 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                       <Input
                         type="number"
                         min="0"
+                        placeholder=""
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -374,8 +386,9 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                       <Input
                         type="number"
                         min="0"
+                        placeholder=""
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -395,9 +408,9 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                         type="number"
                         min="0"
                         step="0.01"
-                        placeholder="0.00"
+                        placeholder=""
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -417,9 +430,9 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                         type="number"
                         min="0"
                         step="0.01"
-                        placeholder="0.00"
+                        placeholder=""
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
