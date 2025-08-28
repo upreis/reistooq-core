@@ -2182,9 +2182,17 @@ export type Database = {
       create_invitation: {
         Args: { _email: string; _expires_in_days?: number; _role_id: string }
         Returns: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
           id: string
+          invited_by: string
+          organization_id: string
+          role_id: string
+          status: string
           token: string
-        }[]
+        }
       }
       debug_historico_visibilidade: {
         Args: Record<PropertyKey, never>
