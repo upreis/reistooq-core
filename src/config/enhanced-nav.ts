@@ -24,7 +24,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           },
           {
             id: 'oms-pedidos',
-            label: 'Gestão de Pedidos',
+            label: 'Vendas Direta/Atacado',
             path: '/oms/pedidos',
             icon: 'ShoppingCart'
           },
@@ -160,7 +160,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       },
       { 
         id: 'pedidos', 
-        label: 'Pedidos', 
+        label: 'Vendas Marketplace', 
         path: '/pedidos', 
         icon: 'Receipt'
       },
