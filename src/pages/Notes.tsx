@@ -96,8 +96,17 @@ const Notes = () => {
                           <h4 className="font-medium text-sm mb-1">{note.title}</h4>
                           <p className="text-xs text-muted-foreground">{note.date}</p>
                         </div>
-                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                          <Trash2 className="h-3 w-3" />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 hover:bg-muted active:bg-foreground group"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Add delete logic here
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3 group-active:text-background transition-colors" />
                         </Button>
                       </div>
                     </CardContent>
