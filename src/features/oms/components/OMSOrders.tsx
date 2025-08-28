@@ -46,15 +46,15 @@ export function OMSOrders() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Gestão de Pedidos</h1>
-          <p className="text-muted-foreground">
-            Gerencie todos os pedidos do seu Order-to-Cash
-          </p>
+          <p className="text-muted-foreground">Gerencie todos os pedidos do seu Order-to-Cash</p>
+          {orderDialogOpen && (
+            <Badge variant="secondary" className="mt-2">Novo pedido: formulário aberto</Badge>
+          )}
         </div>
-        <Button onClick={() => {
+        <Button type="button" onClick={() => {
           console.log('Botão Novo Pedido clicado');
           setOrderDialogOpen(true);
         }}>
