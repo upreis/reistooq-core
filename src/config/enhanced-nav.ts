@@ -178,6 +178,32 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         path: '/historico', 
         icon: 'History' 
       },
+      { 
+        id: 'teste-api', 
+        label: 'Teste API Financeiro', 
+        path: '/teste-api', 
+        icon: 'TestTube',
+        badge: {
+          content: 'TESTE',
+          variant: 'destructive'
+        }
+      }
+    ]
+  },
+  {
+    id: 'mobile-tools',
+    group: 'Mobile',
+    items: [
+      {
+        id: 'mobile-experience',
+        label: 'Experiência Mobile',
+        path: '/mobile-experience',
+        icon: 'Smartphone',
+        badge: {
+          content: 'NOVO',
+          variant: 'default'
+        }
+      }
     ]
   }
 ];
