@@ -294,11 +294,17 @@ export class AdminService {
   }
 
   async createInvitation(data: InvitationCreate): Promise<Invitation> {
+    // Calcular dias entre agora e a data de expiração
+    const expiresAt = new Date(data.expires_at);
+    const now = new Date();
+    const diffTime = expiresAt.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
     const { data: invitation, error } = await supabase
       .rpc('create_invitation', {
         _email: data.email,
         _role_id: data.role_id,
-        _expires_in_days: data.expires_in_days || 7
+        _expires_in_days: Math.max(1, diffDays) // Mínimo de 1 dia
       })
       .single();
 

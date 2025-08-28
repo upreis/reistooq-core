@@ -62,7 +62,7 @@ export interface Invitation {
 export interface InvitationCreate {
   email: string;
   role_id: string;
-  expires_in_days?: number;
+  expires_at: string; // ISO date string
 }
 
 export interface UserPermissionOverride {
