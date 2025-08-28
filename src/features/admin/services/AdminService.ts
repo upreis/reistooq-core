@@ -221,14 +221,20 @@ export class AdminService {
       if (orgId) {
         const { data: assignments } = await supabase
           .from('user_role_assignments')
-          .select('user_id, role:roles(id, name, slug, is_system, organization_id, created_at, updated_at)')
+          .select("user_id, role:roles(id, name, slug, is_system, organization_id, created_at, updated_at, role_permissions(permission_key, app_permissions(key, name, description)))")
           .eq('organization_id', orgId);
 
         if (assignments) {
           const rolesByUser = new Map<string, Role[]>();
           assignments.forEach((row: any) => {
             const arr = rolesByUser.get(row.user_id) ?? [];
-            if (row.role) arr.push(row.role as Role);
+            if (row.role) {
+              const role = {
+                ...row.role,
+                permissions: row.role.role_permissions?.map((rp: any) => rp.app_permissions) || []
+              } as Role;
+              arr.push(role);
+            }
             rolesByUser.set(row.user_id, arr);
           });
 
