@@ -200,7 +200,11 @@ export class AdminService {
 
   async getUsers(): Promise<UserProfile[]> {
     const { data, error } = await supabase
-      .rpc('admin_list_profiles')
+      .rpc('admin_list_profiles', {
+        _search: null,
+        _limit: 100,
+        _offset: 0
+      })
       .order('nome_completo');
 
     if (error) {
@@ -311,6 +315,21 @@ export class AdminService {
     if (error) {
       console.error('Error creating invitation:', error);
       throw new Error(`Failed to create invitation: ${error.message}`);
+    }
+
+    // Send invitation email
+    try {
+      const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
+        body: { invitation_id: invitation.id }
+      });
+
+      if (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        // Don't fail the entire operation if email sending fails
+      }
+    } catch (emailErr) {
+      console.error('Failed to send invitation email:', emailErr);
+      // Continue without failing - invitation was created successfully
     }
 
     return invitation as Invitation;
