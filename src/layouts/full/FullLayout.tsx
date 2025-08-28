@@ -62,26 +62,30 @@ const InnerLayout = () => {
         {/* Desktop Layout */}
         {!isMobile && <AnnouncementTicker />}
         
-        <div className={`flex min-h-screen w-full bg-background ${!isMobile ? offset : ""}`}>
-          {/* Enhanced Sidebar - hidden on mobile */}
+        <div className="relative min-h-screen w-full bg-background">
+          {/* Enhanced Sidebar - fixed position, hidden on mobile */}
           {!isMobile && (
-            <EnhancedSidebar 
-              navItems={ENHANCED_NAV_ITEMS}
-              isMobile={false}
-              onMobileClose={() => {}}
-              isCollapsed={isSidebarCollapsed}
-            />
+            <div className={`fixed top-0 left-0 h-screen z-40 ${offset}`}>
+              <EnhancedSidebar 
+                navItems={ENHANCED_NAV_ITEMS}
+                isMobile={false}
+                onMobileClose={() => {}}
+                isCollapsed={isSidebarCollapsed}
+              />
+            </div>
           )}
 
           {/* Rail button when collapsed - desktop only */}
           {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
           {/* Conteúdo */}
-          <div className="flex-1 min-w-0 flex flex-col w-full">
+          <div className={`flex flex-col min-h-screen w-full ${
+            !isMobile ? (isSidebarCollapsed ? "ml-16" : "ml-64") : ""
+          }`}>
             {/* Desktop Header */}
             {!isMobile && <Header />}
             
-            <main className={`flex-1 min-h-0 overflow-auto w-full ${
+            <main className={`flex-1 overflow-auto ${
               isMobile 
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
