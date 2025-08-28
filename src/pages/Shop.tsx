@@ -1,119 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Heart, ShoppingCart, Star, Plus } from "lucide-react";
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  rating: number;
-  image: string;
-  isOnSale?: boolean;
-  category: string;
-}
-
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Cute Soft Teddybear",
-    price: 285,
-    originalPrice: 345,
-    rating: 3,
-    image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=300&h=300&fit=crop",
-    isOnSale: true,
-    category: "toys"
-  },
-  {
-    id: 2,
-    name: "MacBook Air Pro",
-    price: 650,
-    originalPrice: 900,
-    rating: 3,
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=300&fit=crop",
-    isOnSale: true,
-    category: "electronics"
-  },
-  {
-    id: 3,
-    name: "Gaming Console",
-    price: 25,
-    originalPrice: 31,
-    rating: 3,
-    image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=300&h=300&fit=crop",
-    isOnSale: true,
-    category: "electronics"
-  },
-  {
-    id: 4,
-    name: "Boat Headphone",
-    price: 50,
-    originalPrice: 65,
-    rating: 3,
-    image: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=300&h=300&fit=crop",
-    isOnSale: true,
-    category: "electronics"
-  },
-  {
-    id: 5,
-    name: "Toy Dino for Fun",
-    price: 210,
-    originalPrice: 250,
-    rating: 3,
-    image: "https://images.unsplash.com/photo-1559081842-559de29b8ad3?w=300&h=300&fit=crop",
-    isOnSale: true,
-    category: "toys"
-  },
-  {
-    id: 6,
-    name: "Red Velvet Dress",
-    price: 150,
-    originalPrice: 200,
-    rating: 3,
-    image: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=300&h=300&fit=crop",
-    isOnSale: true,
-    category: "fashion"
-  },
-];
-
-const categories = [
-  { id: "all", name: "All", icon: "🛍️" },
-  { id: "fashion", name: "Fashion", icon: "👕" },
-  { id: "books", name: "Books", icon: "📚" },
-  { id: "toys", name: "Toys", icon: "🧸" },
-  { id: "electronics", name: "Electronics", icon: "📱" },
-];
+import { Search, Heart, ShoppingCart, Star, Package } from "lucide-react";
+import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
+import { ShopProduct } from "@/features/shop/types/shop.types";
 
 const sortOptions = [
   { id: "newest", name: "Newest" },
-  { id: "price-high-low", name: "Price: High-Low" },
-  { id: "price-low-high", name: "Price: Low-High" },
-  { id: "discounted", name: "Discounted" },
-];
-
-const genderOptions = [
-  { id: "all", name: "All" },
-  { id: "men", name: "Men" },
-  { id: "women", name: "Women" },
-  { id: "kids", name: "Kids" },
+  { id: "price_desc", name: "Price: High-Low" },
+  { id: "price_asc", name: "Price: Low-High" },
+  { id: "name", name: "A-Z" },
 ];
 
 const priceRanges = [
   { id: "all", name: "All" },
-  { id: "0-50", name: "0-50" },
-  { id: "50-100", name: "50-100" },
-  { id: "100-200", name: "100-200" },
+  { id: "0-50", name: "$0 - $50" },
+  { id: "50-100", name: "$50 - $100" },
+  { id: "100-200", name: "$100 - $200" },
+  { id: "200+", name: "$200+" },
 ];
 
 export default function Shop() {
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedSort, setSelectedSort] = useState("newest");
-  const [selectedGender, setSelectedGender] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSort, setSelectedSort] = useState<string>("newest");
   const [selectedPriceRange, setSelectedPriceRange] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const {
+    products,
+    categories,
+    isLoading,
+    filters,
+    updateFilters,
+    totalPages,
+    hasNextPage,
+    hasPrevPage,
+    total
+  } = useShopProducts();
+
+  // Sync local state with hook filters
+  useEffect(() => {
+    const priceRange: { min?: number; max?: number } = {};
+    
+    if (selectedPriceRange !== "all") {
+      const range = selectedPriceRange.split("-");
+      if (range.length === 2) {
+        priceRange.min = parseInt(range[0]);
+        priceRange.max = parseInt(range[1]);
+      } else if (selectedPriceRange === "200+") {
+        priceRange.min = 200;
+      }
+    }
+
+    updateFilters({
+      search: searchQuery,
+      categoria: selectedCategory || undefined,
+      sortBy: selectedSort as any,
+      priceRange,
+      page: 1
+    });
+  }, [searchQuery, selectedCategory, selectedSort, selectedPriceRange, updateFilters]);
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }).map((_, index) => (
@@ -152,7 +100,19 @@ export default function Shop() {
               <h3 className="font-semibold">Filter By Category</h3>
             </CardHeader>
             <CardContent className="space-y-2">
-              {categories.map((category) => (
+              <Button
+                variant={selectedCategory === "" ? "default" : "ghost"}
+                className={`w-full justify-start ${
+                  selectedCategory === ""
+                    ? "bg-blue-500 hover:bg-blue-600 text-white"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setSelectedCategory("")}
+              >
+                <span className="mr-2">🛍️</span>
+                Todas
+              </Button>
+              {categories?.map((category) => (
                 <Button
                   key={category.id}
                   variant={selectedCategory === category.id ? "default" : "ghost"}
@@ -163,8 +123,8 @@ export default function Shop() {
                   }`}
                   onClick={() => setSelectedCategory(category.id)}
                 >
-                  <span className="mr-2">{category.icon}</span>
-                  {category.name}
+                  <span className="mr-2">{category.icone || "📦"}</span>
+                  {category.nome} ({category.products_count})
                 </Button>
               ))}
             </CardContent>
@@ -193,30 +153,23 @@ export default function Shop() {
             </CardContent>
           </Card>
 
-          {/* By Gender */}
+          {/* Stock Status */}
           <Card>
             <CardHeader className="pb-3">
-              <h3 className="font-semibold">By Gender</h3>
+              <h3 className="font-semibold">Status do Estoque</h3>
             </CardHeader>
             <CardContent className="space-y-2">
-              {genderOptions.map((option) => (
-                <div key={option.id} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id={`gender-${option.id}`}
-                    name="gender"
-                    checked={selectedGender === option.id}
-                    onChange={() => setSelectedGender(option.id)}
-                    className="text-orange-500"
-                  />
-                  <label
-                    htmlFor={`gender-${option.id}`}
-                    className="text-sm text-muted-foreground cursor-pointer"
-                  >
-                    {option.name}
-                  </label>
+              <div className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>Total de produtos:</span>
+                  <span className="font-medium">{total}</span>
                 </div>
-              ))}
+                {!isLoading && (
+                  <div className="mt-2 text-xs">
+                    {products?.length} produtos exibidos
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -265,63 +218,132 @@ export default function Shop() {
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {products.map((product) => (
-              <Card key={product.id} className="group hover:shadow-lg transition-shadow">
-                <CardHeader className="p-0">
-                  <div className="relative overflow-hidden rounded-t-lg">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute top-2 right-2 flex gap-2">
-                      <Button size="icon" variant="ghost" className="bg-white/80 hover:bg-white">
-                        <Heart className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" className="bg-blue-500 hover:bg-blue-600 text-white">
-                        <ShoppingCart className="h-4 w-4" />
-                      </Button>
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <div className="h-48 bg-muted rounded-t-lg" />
+                  <CardContent className="p-4 space-y-2">
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                    <div className="h-4 bg-muted rounded w-1/4" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : products && products.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {products.map((product: ShopProduct) => (
+                <Card key={product.id} className="group hover:shadow-lg transition-shadow">
+                  <CardHeader className="p-0">
+                    <div className="relative overflow-hidden rounded-t-lg">
+                      {product.url_imagem ? (
+                        <img
+                          src={product.url_imagem}
+                          alt={product.nome}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=300&fit=crop&q=80`;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-48 bg-muted flex items-center justify-center">
+                          <Package className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <Button size="icon" variant="ghost" className="bg-white/80 hover:bg-white">
+                          <Heart className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" className="bg-blue-500 hover:bg-blue-600 text-white">
+                          <ShoppingCart className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {product.isOnSale && (
+                        <Badge className="absolute top-2 left-2 bg-orange-500 hover:bg-orange-600">
+                          Promoção
+                        </Badge>
+                      )}
+                      {product.stock_status === 'low_stock' && (
+                        <Badge className="absolute top-2 left-2 bg-yellow-500 hover:bg-yellow-600">
+                          Estoque Baixo
+                        </Badge>
+                      )}
+                      {product.stock_status === 'out_of_stock' && (
+                        <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-600">
+                          Sem Estoque
+                        </Badge>
+                      )}
                     </div>
-                    {product.isOnSale && (
-                      <Badge className="absolute top-2 left-2 bg-orange-500 hover:bg-orange-600">
-                        Sale
-                      </Badge>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold mb-2 line-clamp-2">{product.nome}</h3>
+                    {product.categoria && (
+                      <p className="text-xs text-muted-foreground mb-2">{product.categoria}</p>
                     )}
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold mb-2">{product.name}</h3>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg font-bold">${product.price}</span>
-                    {product.originalPrice && (
-                      <span className="text-muted-foreground line-through">
-                        ${product.originalPrice}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-lg font-bold">
+                        R$ {product.preco_venda?.toFixed(2) || "0,00"}
                       </span>
+                      {product.originalPrice && (
+                        <span className="text-muted-foreground line-through text-sm">
+                          R$ {product.originalPrice.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {renderStars(product.rating || 0)}
+                        <span className="text-xs text-muted-foreground ml-1">
+                          ({product.reviews_count || 0})
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        Estoque: {product.quantidade_atual}
+                      </span>
+                    </div>
+                    {product.descricao && (
+                      <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                        {product.descricao}
+                      </p>
                     )}
-                  </div>
-                  <div className="flex items-center">
-                    {renderStars(product.rating)}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+              <p className="text-muted-foreground">
+                Tente ajustar os filtros ou a pesquisa para encontrar produtos.
+              </p>
+            </div>
+          )}
 
           {/* Pagination */}
-          <div className="flex items-center justify-center gap-2 mt-8">
-            <Button variant="outline" disabled>
-              Previous
-            </Button>
-            <Button variant="default" className="bg-blue-500 hover:bg-blue-600">
-              1
-            </Button>
-            <Button variant="outline">2</Button>
-            <Button variant="outline">3</Button>
-            <Button variant="outline">
-              Next
-            </Button>
-          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <Button 
+                variant="outline" 
+                disabled={!hasPrevPage}
+                onClick={() => updateFilters({ page: filters.page - 1 })}
+              >
+                Anterior
+              </Button>
+              <span className="px-4 py-2 text-sm text-muted-foreground">
+                Página {filters.page} de {totalPages}
+              </span>
+              <Button 
+                variant="outline"
+                disabled={!hasNextPage}
+                onClick={() => updateFilters({ page: filters.page + 1 })}
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
