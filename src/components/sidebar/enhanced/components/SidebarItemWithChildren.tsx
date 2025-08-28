@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useRef, useCallback, useMemo, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
@@ -30,9 +30,6 @@ export function SidebarItemWithChildren({
   calculateFlyoutPosition
 }: SidebarItemWithChildrenProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [flyoutOpen, setFlyoutOpen] = useState(false);
-  const [flyoutPosition, setFlyoutPosition] = useState<FlyoutPosition>({ top: 0, left: 0, maxHeight: 300 });
-  const hoverTimeoutRef = useRef<NodeJS.Timeout>();
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -61,38 +58,6 @@ export function SidebarItemWithChildren({
   // Check if flyout is pinned
   const isFlyoutPinned = actions.isFlyoutOpen(item.id);
 
-  const handleMouseEnter = useCallback(() => {
-    if (!isCollapsed || isMobile || pointerType !== 'mouse') return;
-    if (!SIDEBAR_BEHAVIOR.collapsed.hoverOpensFlyout) return;
-
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-
-    hoverTimeoutRef.current = setTimeout(() => {
-      if (buttonRef.current) {
-        const position = calculateFlyoutPosition(buttonRef.current);
-        setFlyoutPosition(position);
-        setFlyoutOpen(true);
-      }
-    }, 120);
-  }, [isCollapsed, isMobile, pointerType, calculateFlyoutPosition]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-
-    if (!isCollapsed || isFlyoutPinned) return;
-
-    // Delay closing to allow mouse to move to flyout
-    setTimeout(() => {
-      if (!isFlyoutPinned) {
-        setFlyoutOpen(false);
-      }
-    }, 200);
-  }, [isCollapsed, isFlyoutPinned]);
-
   const handleParentClick = useCallback((e: React.MouseEvent) => {
     // Prevent navigation for items WITH children only
     const hasChildren = item.children && item.children.length > 0;
@@ -102,17 +67,11 @@ export function SidebarItemWithChildren({
     
     if (isCollapsed && !isMobile) {
       if (SIDEBAR_BEHAVIOR.collapsed.clickOpensFlyout && hasChildren) {
-        if (buttonRef.current) {
-          const position = calculateFlyoutPosition(buttonRef.current);
-          setFlyoutPosition(position);
-          setFlyoutOpen(true);
-          
-          // Pin the flyout when clicked
-          actions.openFlyout(item.id, { 
-            pinned: true, 
-            ttlMs: SIDEBAR_BEHAVIOR.pinOnClickMs 
-          });
-        }
+        // Pin the flyout when clicked
+        actions.openFlyout(item.id, { 
+          pinned: true, 
+          ttlMs: SIDEBAR_BEHAVIOR.pinOnClickMs 
+        });
       }
       return;
     }
@@ -128,15 +87,7 @@ export function SidebarItemWithChildren({
       // Default toggle behavior
       actions.toggleGroup(item.id);
     }
-  }, [isCollapsed, isMobile, item.children, item.id, calculateFlyoutPosition, actions, navigate]);
-
-  const handleFocus = useCallback(() => {
-    if (isCollapsed && !isMobile && buttonRef.current) {
-      const position = calculateFlyoutPosition(buttonRef.current);
-      setFlyoutPosition(position);
-      setFlyoutOpen(true);
-    }
-  }, [isCollapsed, isMobile, calculateFlyoutPosition]);
+  }, [isCollapsed, isMobile, item.children, item.id, actions, navigate]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -144,44 +95,22 @@ export function SidebarItemWithChildren({
       handleParentClick(e as any);
     }
     if (e.key === 'ArrowRight') {
-      if (isCollapsed) {
-        // Open flyout when collapsed
-        if (buttonRef.current) {
-          const position = calculateFlyoutPosition(buttonRef.current);
-          setFlyoutPosition(position);
-          setFlyoutOpen(true);
-        }
-      } else {
+      if (!isCollapsed) {
         // Open group when expanded
         actions.openGroup(item.id);
       }
     }
     if (e.key === 'ArrowLeft') {
-      if (isCollapsed) {
-        setFlyoutOpen(false);
-        actions.closeFlyout(item.id);
-      } else {
+      if (!isCollapsed) {
         actions.closeGroup(item.id);
       }
     }
-    if (e.key === 'Escape') {
-      actions.closeFlyout(item.id);
-      setFlyoutOpen(false);
-    }
-  }, [handleParentClick, isCollapsed, actions, item.id, calculateFlyoutPosition]);
-
-  const closeFlyout = useCallback(() => {
-    setFlyoutOpen(false);
-    actions.closeFlyout(item.id);
-  }, [actions, item.id]);
+  }, [handleParentClick, isCollapsed, actions, item.id]);
 
   const button = (
     <button
       ref={buttonRef}
       onClick={handleParentClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onFocus={handleFocus}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
@@ -247,7 +176,6 @@ export function SidebarItemWithChildren({
               <button
                 ref={buttonRef}
                 onClick={handleParentClick}
-                onFocus={handleFocus}
                 onKeyDown={handleKeyDown}
                 type="button"
                 className={cn(
@@ -265,7 +193,6 @@ export function SidebarItemWithChildren({
               side="right"
               align="start"
               sideOffset={12}
-              forceMount
               onPointerDownOutside={(e) => e.currentTarget?.dispatchEvent?.(new Event("mouseleave"))}
               className="w-72 p-0 z-[60] border border-white/10 rounded-xl overflow-hidden"
             >
@@ -349,18 +276,6 @@ export function SidebarItemWithChildren({
         </div>
       )}
 
-      {/* Flyout portal when collapsed */}
-      {isCollapsed && !isMobile && item.children && (
-        <SidebarFlyout
-          isOpen={flyoutOpen || isFlyoutPinned}
-          position={flyoutPosition}
-          items={item.children}
-          onClose={closeFlyout}
-          isActive={utils.isActive}
-          pointerType={pointerType}
-          isPinned={isFlyoutPinned}
-        />
-      )}
     </div>
   );
 }
