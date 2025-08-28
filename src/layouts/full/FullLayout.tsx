@@ -60,9 +60,13 @@ const InnerLayout = () => {
         {isMobile && <AppMobileHeader title={getPageTitle()} />}
         
         {/* Desktop Layout */}
-        {!isMobile && <AnnouncementTicker />}
+        {!isMobile && (
+          <div className={`${isSidebarCollapsed ? 'ml-[72px]' : 'ml-72'}`}>
+            <AnnouncementTicker />
+          </div>
+        )}
         
-        <div className={`w-full bg-background ${!isMobile ? offset : ""} min-h-screen`}>
+        <div className={`w-full bg-background min-h-screen`}>
           {/* Enhanced Sidebar - agora será renderizada como fixed */}
           {!isMobile && (
             <EnhancedSidebar 
@@ -79,7 +83,7 @@ const InnerLayout = () => {
           {/* Conteúdo principal com margem para sidebar */}
           <div className={`flex flex-col min-w-0 min-h-screen ${
             !isMobile ? (isSidebarCollapsed ? 'ml-[72px]' : 'ml-72') : ''
-          }`}>
+          } ${!isMobile ? offset : ''}`}>
             {/* Desktop Header */}
             {!isMobile && <Header />}
             
