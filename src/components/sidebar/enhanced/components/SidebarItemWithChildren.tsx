@@ -5,7 +5,7 @@ import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavItem, FlyoutPosition } from '../types/sidebar.types';
 import { SidebarFlyout } from './SidebarFlyout';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { useSidebar } from '../SidebarContext';
 import { SIDEBAR_BEHAVIOR } from '@/config/sidebar-behavior';
 
@@ -241,15 +241,13 @@ export function SidebarItemWithChildren({
     <div>
       {/* For items with children, use Popover when collapsed instead of tooltip */}
       {!isMobile && isCollapsed ? (
-        <Popover open={flyoutOpen} onOpenChange={setFlyoutOpen}>
-          <PopoverTrigger asChild>
+        <HoverCard openDelay={80} closeDelay={120}>
+          <HoverCardTrigger asChild>
             <button
               ref={buttonRef}
-              onClick={handleParentClick}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              onFocus={handleFocus}
-              onKeyDown={handleKeyDown}
+              type="button"
+              aria-haspopup="menu"
+              aria-label={item.label}
               className={cn(
                 'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors',
                 'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
@@ -257,22 +255,17 @@ export function SidebarItemWithChildren({
                   ? 'bg-[#F2C94C] text-black [&_svg]:text-current'
                   : 'text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--accent))]'
               )}
-              aria-haspopup="menu"
-              aria-expanded={flyoutOpen}
-              aria-label={item.label}
             >
               <Icon className="h-5 w-5 text-current" />
             </button>
-          </PopoverTrigger>
-          <PopoverContent
+          </HoverCardTrigger>
+          <HoverCardContent
             side="right"
             align="start"
             sideOffset={12}
+            forceMount
             className="w-72 p-0 z-[60]"
-            onMouseEnter={() => setFlyoutOpen(true)}
-            onMouseLeave={() => setFlyoutOpen(false)}
           >
-            {/* Header replaces tooltip */}
             <div className="px-4 py-3 text-sm font-medium bg-[#F2C94C] text-black rounded-t-lg">
               {item.label}
             </div>
@@ -285,7 +278,6 @@ export function SidebarItemWithChildren({
                   <NavLink
                     key={child.id || child.path || child.label}
                     to={child.path || '#'}
-                    onClick={() => setFlyoutOpen(false)}
                     className={cn(
                       'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                       'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
@@ -300,8 +292,8 @@ export function SidebarItemWithChildren({
                 );
               })}
             </div>
-          </PopoverContent>
-        </Popover>
+          </HoverCardContent>
+        </HoverCard>
       ) : (
         button
       )}
