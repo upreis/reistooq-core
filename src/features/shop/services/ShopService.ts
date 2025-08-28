@@ -5,7 +5,7 @@ export class ShopService {
   static async getProducts(filters: ShopFilters) {
     let query = supabase
       .from('produtos')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('ativo', true)
       .order('created_at', { ascending: false });
 
