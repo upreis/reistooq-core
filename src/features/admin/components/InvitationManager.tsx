@@ -8,11 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Mail, Plus, RotateCcw, X, Calendar, Shield, User, Copy } from 'lucide-react';
+import { Mail, Plus, RotateCcw, X, CalendarIcon, Shield, User, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import type { InvitationCreate, Invitation } from '../types/admin.types';
 
 interface InvitationFormProps {
@@ -25,18 +30,23 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
   const [formData, setFormData] = useState({
     email: '',
     role_id: '',
-    expires_in_days: 7
+    expires_at: undefined as Date | undefined
   });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email.trim() || !formData.role_id) return;
+    if (!formData.email.trim() || !formData.role_id || !formData.expires_at) return;
     
     setLoading(true);
     try {
-      await onSave(formData);
-      setFormData({ email: '', role_id: '', expires_in_days: 7 });
+      const invitationData = {
+        email: formData.email,
+        role_id: formData.role_id,
+        expires_at: formData.expires_at.toISOString()
+      };
+      await onSave(invitationData);
+      setFormData({ email: '', role_id: '', expires_at: undefined });
       onCancel();
     } catch (err) {
       console.error('Failed to create invitation:', err);
@@ -82,29 +92,42 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="expires_in_days">Válido por (dias)</Label>
-        <Select 
-          value={formData.expires_in_days.toString()} 
-          onValueChange={(value) => setFormData(prev => ({ ...prev, expires_in_days: parseInt(value) }))}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">1 dia</SelectItem>
-            <SelectItem value="3">3 dias</SelectItem>
-            <SelectItem value="7">7 dias</SelectItem>
-            <SelectItem value="14">14 dias</SelectItem>
-            <SelectItem value="30">30 dias</SelectItem>
-          </SelectContent>
-        </Select>
+        <Label htmlFor="expires_at">Data de Expiração *</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !formData.expires_at && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {formData.expires_at ? (
+                format(formData.expires_at, "PPP", { locale: ptBR })
+              ) : (
+                <span>Selecione uma data</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={formData.expires_at}
+              onSelect={(date) => setFormData(prev => ({ ...prev, expires_at: date }))}
+              disabled={(date) => date < new Date()}
+              initialFocus
+              className="pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={loading || !formData.email.trim() || !formData.role_id}>
+        <Button type="submit" disabled={loading || !formData.email.trim() || !formData.role_id || !formData.expires_at}>
           {loading ? 'Enviando...' : 'Enviar Convite'}
         </Button>
       </div>
@@ -252,14 +275,14 @@ export const InvitationManager: React.FC = () => {
                           {invitation.role.name}
                         </div>
                       )}
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        Expira em {new Date(invitation.expires_at).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        Criado em {new Date(invitation.created_at).toLocaleDateString()}
-                      </div>
+                       <div className="flex items-center gap-1">
+                         <CalendarIcon className="w-4 h-4" />
+                         Expira em {new Date(invitation.expires_at).toLocaleDateString('pt-BR')}
+                       </div>
+                       <div className="flex items-center gap-1">
+                         <User className="w-4 h-4" />
+                         Criado em {new Date(invitation.created_at).toLocaleDateString('pt-BR')}
+                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
