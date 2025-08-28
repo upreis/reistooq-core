@@ -15,7 +15,8 @@ export class ShopService {
     }
 
     if (filters.categoria) {
-      query = query.eq('categoria', filters.categoria);
+      // Busca por categoria_id ou por nome da categoria
+      query = query.or(`categoria_id.eq.${filters.categoria},categoria.eq.${filters.categoria}`);
     }
 
     if (filters.priceRange.min !== undefined) {
@@ -148,19 +149,30 @@ export class ShopService {
       throw new Error(`Erro ao buscar categorias: ${error.message}`);
     }
 
-    // Para cada categoria, contamos os produtos manualmente
+    // Para cada categoria, contamos os produtos usando categoria_id ou nome
     const categories = data || [];
     const categoriesWithCount = await Promise.all(
       categories.map(async (category) => {
-        const { count } = await supabase
+        // Primeiro tenta buscar por categoria_id
+        const { count: countById } = await supabase
+          .from('produtos')
+          .select('*', { count: 'exact', head: true })
+          .eq('ativo', true)
+          .eq('categoria_id', category.id);
+
+        // Se não encontrar por ID, tenta buscar por nome da categoria
+        const { count: countByName } = await supabase
           .from('produtos')
           .select('*', { count: 'exact', head: true })
           .eq('ativo', true)
           .eq('categoria', category.nome);
 
+        // Usa o maior valor encontrado
+        const totalCount = Math.max(countById || 0, countByName || 0);
+
         return {
           ...category,
-          products_count: count || 0,
+          products_count: totalCount,
         };
       })
     );
