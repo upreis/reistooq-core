@@ -43,6 +43,7 @@ import Banners from "./pages/Banners";
 import Charts from "./pages/Charts";
 import SolarIcons from "./pages/SolarIcons";
 import AdminPage from "./pages/AdminPage";
+import AcceptInvite from "./pages/AcceptInvite";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,8 @@ function App() {
                 <Routes>
                   {/* Rota pública de autenticação */}
                   <Route path="/auth" element={<Auth />} />
+                  {/* Rota pública para aceitar convites */}
+                  <Route path="/convite/:token" element={<AcceptInvite />} />
                   
                   {/* Todas as outras rotas são protegidas com novo layout */}
                   <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>

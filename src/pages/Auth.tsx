@@ -1,20 +1,29 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/ui/Logo";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const invite = searchParams.get('invite');
 
   useEffect(() => {
-    // Se o usuário já está logado, redireciona para o dashboard
-    if (user && !loading) {
-      navigate("/", { replace: true });
-    }
-  }, [user, loading, navigate]);
+    const acceptIfNeeded = async () => {
+      if (user && !loading) {
+        if (invite) {
+          // Aceitar convite automaticamente após autenticação
+          await supabase.rpc('accept_invitation_secure', { _token: invite });
+        }
+        navigate('/', { replace: true });
+      }
+    };
+    acceptIfNeeded();
+  }, [user, loading, invite, navigate]);
 
   const handleToggleMode = () => {
     setMode(mode === "login" ? "signup" : "login");
