@@ -182,11 +182,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'teste-api', 
         label: 'Teste API Financeiro', 
         path: '/teste-api', 
-        icon: 'TestTube',
-        badge: {
-          content: 'TESTE',
-          variant: 'destructive'
-        }
+        icon: 'TestTube'
       }
     ]
   },
