@@ -44,6 +44,7 @@ import Charts from "./pages/Charts";
 import SolarIcons from "./pages/SolarIcons";
 import MobileExperience from "./pages/MobileExperience";
 import TesteAPI from "./pages/TesteAPI";
+import AdminPage from "./pages/AdminPage";
 
 const queryClient = new QueryClient();
 
@@ -100,6 +101,7 @@ function App() {
                     <Route path="/mobile-experience" element={<MobileExperience />} />
                     <Route path="/historico" element={<Historico />} />
                     <Route path="/teste-api" element={<TesteAPI />} />
+                    <Route path="/admin" element={<AdminPage />} />
 
                     {/* Demo Routes (protected) */}
                     <Route path="/_demo/faq" element={<FAQ />} />
