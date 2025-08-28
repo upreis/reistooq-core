@@ -19,8 +19,8 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    const client = makeClient(authHeader);
+    // Always use service role client (no user RLS)
+    const client = makeClient(null);
     
     const body = await req.json();
     const { invitation_id } = body;
@@ -57,9 +57,9 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (invError || !invitation) {
-      console.error('Invitation query error:', invError);
+      console.error('Invitation query error:', invError, 'id:', invitation_id);
       return new Response(
-        JSON.stringify({ error: "Invitation not found" }),
+        JSON.stringify({ error: "Invitation not found", details: invError?.message, id: invitation_id }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
