@@ -199,7 +199,8 @@ export class AdminService {
   // ==================== USERS ====================
 
   async getUsers(): Promise<UserProfile[]> {
-    const { data, error } = await supabase
+    // 1) Load basic profiles via secured RPC (includes masking as needed)
+    const { data: profiles, error } = await supabase
       .rpc('admin_list_profiles', {
         _search: null,
         _limit: 100,
@@ -212,7 +213,35 @@ export class AdminService {
       throw new Error(`Failed to fetch users: ${error.message}`);
     }
 
-    return (data || []) as UserProfile[];
+    const users = (profiles || []) as UserProfile[];
+
+    // 2) Enrich with roles assigned in the current organization
+    try {
+      const { data: orgId } = await supabase.rpc('get_current_org_id');
+      if (orgId) {
+        const { data: assignments } = await supabase
+          .from('user_role_assignments')
+          .select('user_id, role:roles(id, name, slug, is_system, organization_id, created_at, updated_at)')
+          .eq('organization_id', orgId);
+
+        if (assignments) {
+          const rolesByUser = new Map<string, Role[]>();
+          assignments.forEach((row: any) => {
+            const arr = rolesByUser.get(row.user_id) ?? [];
+            if (row.role) arr.push(row.role as Role);
+            rolesByUser.set(row.user_id, arr);
+          });
+
+          users.forEach(u => {
+            u.roles = rolesByUser.get(u.id) ?? [];
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Could not enrich users with roles:', e);
+    }
+
+    return users;
   }
 
   async updateUser(id: string, data: Partial<UserProfile>): Promise<UserProfile> {
