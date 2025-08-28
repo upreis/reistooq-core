@@ -62,33 +62,32 @@ const InnerLayout = () => {
         {/* Desktop Layout */}
         {!isMobile && <AnnouncementTicker />}
         
-        <div className={`flex w-full bg-background ${!isMobile ? offset : ""} min-h-screen`}>
-          {/* Enhanced Sidebar - fixed position on desktop */}
+        <div className={`w-full bg-background ${!isMobile ? offset : ""} min-h-screen`}>
+          {/* Enhanced Sidebar - agora será renderizada como fixed */}
           {!isMobile && (
-            <div className="relative">
-              <EnhancedSidebar 
-                navItems={ENHANCED_NAV_ITEMS}
-                isMobile={false}
-                onMobileClose={() => {}}
-                isCollapsed={isSidebarCollapsed}
-              />
-            </div>
+            <EnhancedSidebar 
+              navItems={ENHANCED_NAV_ITEMS}
+              isMobile={false}
+              onMobileClose={() => {}}
+              isCollapsed={isSidebarCollapsed}
+            />
           )}
 
           {/* Rail button when collapsed - desktop only */}
           {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
-          {/* Conteúdo com scroll independente */}
-          <div className="flex-1 min-w-0 flex flex-col">
+          {/* Conteúdo principal com margem para sidebar */}
+          <div className={`flex flex-col min-w-0 min-h-screen ${
+            !isMobile ? (isSidebarCollapsed ? 'ml-[72px]' : 'ml-72') : ''
+          }`}>
             {/* Desktop Header */}
             {!isMobile && <Header />}
             
-            <main className={`flex-1 overflow-x-hidden min-w-0 ${
+            <main className={`flex-1 min-w-0 ${
               isMobile 
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
             }`}>
-
               <div className="w-full min-w-0 overflow-x-hidden">
                 <Outlet />
               </div>

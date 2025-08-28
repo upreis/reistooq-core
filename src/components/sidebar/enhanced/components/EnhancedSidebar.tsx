@@ -301,8 +301,8 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
 
   return (
     <aside className={cn(
-      "hidden md:flex md:flex-col md:shrink-0 bg-[hsl(var(--background))] border-r border-[hsl(var(--border))]",
-      "transition-[width] duration-200 overflow-visible", // changed from overflow-y-auto to overflow-visible
+      "fixed top-0 left-0 h-screen bg-[hsl(var(--background))] border-r border-[hsl(var(--border))] z-40",
+      "transition-[width] duration-200 overflow-y-auto", 
       desktopWidth
     )}>
       <SidebarContent navItems={navItems} isMobile={false} externalIsCollapsed={externalIsCollapsed} />
