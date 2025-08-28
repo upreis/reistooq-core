@@ -45,6 +45,7 @@ import Charts from "./pages/Charts";
 import SolarIcons from "./pages/SolarIcons";
 import AdminPage from "./pages/AdminPage";
 import AcceptInvite from "./pages/AcceptInvite";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,8 @@ function App() {
                 <Routes>
                   {/* Rota pública de autenticação */}
                   <Route path="/auth" element={<Auth />} />
+                  {/* Rota pública para redefinição de senha */}
+                  <Route path="/auth/reset-password" element={<ResetPassword />} />
                   {/* Rota pública para aceitar convites */}
                   <Route path="/convite/:token" element={<AcceptInvite />} />
                   
