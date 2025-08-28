@@ -62,31 +62,33 @@ const InnerLayout = () => {
         {/* Desktop Layout */}
         {!isMobile && <AnnouncementTicker />}
         
-        <div className={`flex min-h-screen w-full bg-background ${!isMobile ? offset : ""}`}>
-          {/* Enhanced Sidebar - hidden on mobile */}
+        <div className={`flex w-full bg-background ${!isMobile ? offset : ""}`} style={{ height: !isMobile ? `calc(100vh - ${!isHidden && !isCollapsed ? '48px' : '0px'})` : 'auto' }}>
+          {/* Enhanced Sidebar - fixed position on desktop */}
           {!isMobile && (
-            <EnhancedSidebar 
-              navItems={ENHANCED_NAV_ITEMS}
-              isMobile={false}
-              onMobileClose={() => {}}
-              isCollapsed={isSidebarCollapsed}
-            />
+            <div className="relative">
+              <EnhancedSidebar 
+                navItems={ENHANCED_NAV_ITEMS}
+                isMobile={false}
+                onMobileClose={() => {}}
+                isCollapsed={isSidebarCollapsed}
+              />
+            </div>
           )}
 
           {/* Rail button when collapsed - desktop only */}
           {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
-          {/* Conteúdo */}
-          <div className="flex-1 min-w-0 flex flex-col w-full">
+          {/* Conteúdo com scroll independente */}
+          <div className="flex-1 min-w-0 flex flex-col w-full overflow-hidden">
             {/* Desktop Header */}
             {!isMobile && <Header />}
             
-            <main className={`flex-1 min-h-0 overflow-auto w-full ${
+            <main className={`flex-1 overflow-y-auto overflow-x-hidden w-full ${
               isMobile 
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
             }`}>
-              <div className="w-full max-w-full overflow-x-hidden">
+              <div className="w-full max-w-full">
                 <Outlet />
               </div>
             </main>
