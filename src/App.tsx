@@ -13,7 +13,10 @@ import { useSystemValidator } from "@/utils/SystemValidator";
 import FullLayout from "@/layouts/full/FullLayout";
 
 // Import pages
+import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import Analytics from "./pages/Analytics";
+import ECommerce from "./pages/ECommerce";
 import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import Scanner from "./pages/Scanner";
@@ -40,8 +43,6 @@ import Cards from "./pages/Cards";
 import Banners from "./pages/Banners";
 import Charts from "./pages/Charts";
 import SolarIcons from "./pages/SolarIcons";
-import MobileExperience from "./pages/MobileExperience";
-import TesteAPI from "./pages/TesteAPI";
 
 const queryClient = new QueryClient();
 
@@ -64,8 +65,9 @@ function App() {
                   
                   {/* Todas as outras rotas são protegidas com novo layout */}
                   <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
-                   <Route path="/" element={<CRM />} />
-                    <Route path="/analytics" element={<CRM />} />
+                    <Route path="/" element={<Index />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/ecommerce" element={<ECommerce />} />
                     <Route path="/crm" element={<CRM />} />
                     
                     {/* eCommerce App Routes */}
@@ -95,9 +97,6 @@ function App() {
                     <Route path="/alertas" element={<Alertas />} />
                     <Route path="/configuracoes" element={<IntegracoesPage />} />
                     <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
-                    <Route path="/mobile-experience" element={<MobileExperience />} />
-                    <Route path="/historico" element={<Historico />} />
-                    <Route path="/teste-api" element={<TesteAPI />} />
 
                     {/* Demo Routes (protected) */}
                     <Route path="/_demo/faq" element={<FAQ />} />

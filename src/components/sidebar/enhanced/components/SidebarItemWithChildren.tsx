@@ -181,7 +181,9 @@ export function SidebarItemWithChildren({
                 className={cn(
                   'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors shadow-sm',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
-                  'bg-[#F2C94C] text-black'
+                  hasActiveChild
+                    ? 'bg-[#F2C94C] text-black'
+                    : 'bg-transparent text-slate-300 hover:bg-white/[0.06] hover:text-white'
                 )}
                 aria-haspopup="menu"
                 aria-label={item.label}

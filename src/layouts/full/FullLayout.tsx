@@ -62,33 +62,35 @@ const InnerLayout = () => {
         {/* Desktop Layout */}
         {!isMobile && <AnnouncementTicker />}
         
-        <div className={`flex w-full bg-background ${!isMobile ? offset : ""}`} style={{ height: !isMobile ? `calc(100vh - ${!isHidden && !isCollapsed ? '48px' : '0px'})` : 'auto' }}>
+        <div className={`w-full bg-background ${!isMobile ? offset : ""}`}>
           {/* Enhanced Sidebar - fixed position on desktop */}
           {!isMobile && (
-            <div className="relative">
-              <EnhancedSidebar 
-                navItems={ENHANCED_NAV_ITEMS}
-                isMobile={false}
-                onMobileClose={() => {}}
-                isCollapsed={isSidebarCollapsed}
-              />
-            </div>
+            <aside className="fixed inset-y-0 left-0 z-40 w-16 lg:w-20 bg-[hsl(var(--background))] border-r border-[hsl(var(--border))] overflow-y-auto">
+              <div className="h-full py-4">
+                <EnhancedSidebar 
+                  navItems={ENHANCED_NAV_ITEMS}
+                  isMobile={false}
+                  onMobileClose={() => {}}
+                  isCollapsed={isSidebarCollapsed}
+                />
+              </div>
+            </aside>
           )}
 
           {/* Rail button when collapsed - desktop only */}
           {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
-          {/* Conteúdo com scroll independente */}
-          <div className="flex-1 min-w-0 flex flex-col w-full overflow-hidden">
+          {/* Content with left padding for fixed sidebar */}
+          <div className={`flex-1 min-w-0 flex flex-col w-full ${!isMobile ? "pl-16 lg:pl-20" : ""}`}>
             {/* Desktop Header */}
             {!isMobile && <Header />}
             
-            <main className={`flex-1 overflow-y-auto overflow-x-hidden w-full ${
+            <main className={`h-screen overflow-y-auto w-full ${
               isMobile 
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
             }`}>
-              <div className="w-full max-w-full">
+              <div className="w-full max-w-full overflow-x-hidden">
                 <Outlet />
               </div>
             </main>
