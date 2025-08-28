@@ -31,6 +31,8 @@ import UserProfile from "./pages/UserProfile";
 import Calendar from "./pages/Calendar";
 import Notes from "./pages/Notes";
 import CRM from "./pages/CRM";
+import Dashboard from "./pages/Dashboard";
+import Analytics from "./pages/Analytics";
 import Chats from "./pages/Chats";
 import FAQ from "./pages/FAQ";
 import Pricing from "./pages/Pricing";
@@ -64,8 +66,8 @@ function App() {
                   
                   {/* Todas as outras rotas são protegidas com novo layout */}
                   <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
-                   <Route path="/" element={<CRM />} />
-                    <Route path="/analytics" element={<CRM />} />
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/analytics" element={<Analytics />} />
                     <Route path="/crm" element={<CRM />} />
                     
                     {/* eCommerce App Routes */}
