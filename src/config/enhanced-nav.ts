@@ -12,10 +12,47 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'LayoutDashboard' 
       },
       {
-        id: 'crm',
-        label: 'CRM',
-        path: '/crm',
-        icon: 'UserRound'
+        id: 'oms',
+        label: 'OMS - Order Management',
+        icon: 'ShoppingBag',
+        children: [
+          {
+            id: 'oms-dashboard',
+            label: 'Dashboard OMS',
+            path: '/oms',
+            icon: 'BarChart3'
+          },
+          {
+            id: 'oms-pedidos',
+            label: 'Gestão de Pedidos',
+            path: '/oms/pedidos',
+            icon: 'ShoppingCart'
+          },
+          {
+            id: 'oms-clientes',
+            label: 'Clientes',
+            path: '/oms/clientes',
+            icon: 'Users'
+          },
+          {
+            id: 'oms-fornecedores',
+            label: 'Fornecedores',
+            path: '/oms/fornecedores',
+            icon: 'Building'
+          },
+          {
+            id: 'oms-relatorios',
+            label: 'Relatórios',
+            path: '/oms/relatorios',
+            icon: 'FileBarChart'
+          },
+          {
+            id: 'oms-configuracoes',
+            label: 'Configurações OMS',
+            path: '/oms/configuracoes',
+            icon: 'Settings'
+          }
+        ]
       },
       {
         id: 'analytics',

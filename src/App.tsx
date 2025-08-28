@@ -30,7 +30,7 @@ import EditProduct from "./pages/EditProduct";
 import UserProfile from "./pages/UserProfile";
 import Calendar from "./pages/Calendar";
 import Notes from "./pages/Notes";
-import CRM from "./pages/CRM";
+import OMS from "./pages/OMS";
 import Dashboard from "./pages/Dashboard";
 import Analytics from "./pages/Analytics";
 import Chats from "./pages/Chats";
@@ -68,7 +68,7 @@ function App() {
                   <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/crm" element={<CRM />} />
+                    <Route path="/oms/*" element={<OMS />} />
                     
                     {/* eCommerce App Routes */}
                     <Route path="/apps/ecommerce/shop" element={<Shop />} />
@@ -111,7 +111,8 @@ function App() {
                     <Route path="/_demo/icons" element={<SolarIcons />} />
 
                     {/* Legacy redirects (protected) */}
-                    <Route path="/dashboards/crm" element={<CRM />} />
+                    <Route path="/dashboards/crm" element={<OMS />} />
+                    <Route path="/crm" element={<OMS />} />
                     <Route path="/theme-pages/faq" element={<FAQ />} />
                     <Route path="/theme-pages/pricing" element={<Pricing />} />
                     <Route path="/theme-pages/account-settings" element={<AccountSettings />} />
