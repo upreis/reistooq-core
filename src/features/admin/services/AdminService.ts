@@ -229,6 +229,14 @@ export class AdminService {
     // Get current organization ID
     const { data: orgData } = await supabase.rpc('get_current_org_id');
     
+    // First, remove any existing role assignments for this user in this organization
+    await supabase
+      .from('user_role_assignments')
+      .delete()
+      .eq('user_id', userId)
+      .eq('organization_id', orgData);
+    
+    // Then, insert the new role assignment
     const { error } = await supabase
       .from('user_role_assignments')
       .insert({
