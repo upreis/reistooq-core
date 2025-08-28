@@ -153,11 +153,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'alertas', 
         label: 'Alertas', 
         path: '/alertas', 
-        icon: 'Bell',
-        badge: {
-          content: '2',
-          variant: 'destructive'
-        }
+        icon: 'Bell'
       },
       {
         id: 'configuracoes',
