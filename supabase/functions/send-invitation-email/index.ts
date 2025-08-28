@@ -2,6 +2,7 @@ import { corsHeaders, makeClient } from "../_shared/client.ts";
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const FROM_EMAIL = Deno.env.get("RESEND_FROM") || "Sistema <convites@reistoq.com.br>";
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -62,7 +63,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email via Resend
     const emailResult = await resend.emails.send({
-      from: "Sistema <convites@convite.reistoq.com.br>",
+      from: FROM_EMAIL,
       to: [invitation.email],
       subject: `Convite para ${invitation.organizacoes?.nome || 'organização'}`,
       html: `
