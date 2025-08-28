@@ -103,22 +103,5 @@ export function PermissionRoute({
   }
 
   // Acesso autorizado - renderizar children
-  return (
-    <div>
-      {/* Header de status (só em dev) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-muted/30 border-b px-4 py-2 text-xs text-muted-foreground flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="h-3 w-3 text-green-600" />
-            <span>Acesso Autorizado</span>
-          </div>
-          <div>
-            Permissões: {permissions.slice(0, 3).join(', ')}{permissions.length > 3 ? '...' : ''}
-          </div>
-        </div>
-      )}
-      
-      {children}
-    </div>
-  );
+  return children;
 }
