@@ -212,6 +212,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         label: 'Teste API Financeiro', 
         path: '/teste-api', 
         icon: 'TestTube'
+      },
+      { 
+        id: 'admin', 
+        label: 'Administração', 
+        path: '/admin', 
+        icon: 'Shield' 
       }
     ]
   },
