@@ -62,30 +62,26 @@ const InnerLayout = () => {
         {/* Desktop Layout */}
         {!isMobile && <AnnouncementTicker />}
         
-        <div className={`w-full bg-background ${!isMobile ? offset : ""}`}>
-          {/* Enhanced Sidebar - fixed position on desktop */}
+        <div className={`flex min-h-screen w-full bg-background ${!isMobile ? offset : ""}`}>
+          {/* Enhanced Sidebar - hidden on mobile */}
           {!isMobile && (
-            <aside className="fixed inset-y-0 left-0 z-40 w-16 lg:w-20 bg-[hsl(var(--background))] border-r border-[hsl(var(--border))] overflow-y-auto">
-              <div className="h-full py-4">
-                <EnhancedSidebar 
-                  navItems={ENHANCED_NAV_ITEMS}
-                  isMobile={false}
-                  onMobileClose={() => {}}
-                  isCollapsed={isSidebarCollapsed}
-                />
-              </div>
-            </aside>
+            <EnhancedSidebar 
+              navItems={ENHANCED_NAV_ITEMS}
+              isMobile={false}
+              onMobileClose={() => {}}
+              isCollapsed={isSidebarCollapsed}
+            />
           )}
 
           {/* Rail button when collapsed - desktop only */}
           {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
-          {/* Content with left padding for fixed sidebar */}
-          <div className={`flex-1 min-w-0 flex flex-col w-full ${!isMobile ? "pl-16 lg:pl-20" : ""}`}>
+          {/* Conteúdo */}
+          <div className="flex-1 min-w-0 flex flex-col w-full">
             {/* Desktop Header */}
             {!isMobile && <Header />}
             
-            <main className={`h-screen overflow-y-auto w-full ${
+            <main className={`flex-1 min-h-0 overflow-auto w-full ${
               isMobile 
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding

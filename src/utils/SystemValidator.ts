@@ -173,10 +173,7 @@ class SystemValidator {
     }
 
     if (errors.length === 0 && warnings.length === 0) {
-      // Reduzir spam no console - só logar em desenvolvimento se necessário
-      if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
-        console.log('✅ Sistema validado com sucesso - Nenhum problema detectado');
-      }
+      console.log('✅ Sistema validado com sucesso - Nenhum problema detectado');
     }
   }
 
@@ -215,32 +212,24 @@ class SystemValidator {
       attributes: true
     });
 
-    // Validação periódica reduzida para evitar overhead
+    // Validação periódica
     setInterval(() => {
       this.runValidation();
-    }, 300000); // A cada 5 minutos ao invés de 30 segundos
+    }, 30000); // A cada 30 segundos
   }
 }
 
 // 🎯 HOOK PARA USAR O VALIDATOR EM COMPONENTES
 export function useSystemValidator() {
   const validator = SystemValidator.getInstance();
-  // Iniciar monitoramento apenas uma vez, com throttling
+  // Iniciar monitoramento quando o componente monta
   useEffect(() => {
-    let mounted = true;
-    
-    // Delay inicial para evitar multiple calls
-    const timer = setTimeout(() => {
-      if (mounted) {
-        validator.startContinuousMonitoring();
-      }
-    }, 1000);
+    validator.startContinuousMonitoring();
     
     return () => {
-      mounted = false;
-      clearTimeout(timer);
+      // Cleanup se necessário
     };
-  }, []); // Dependency array vazia para rodar apenas uma vez
+  }, [validator]);
 
   return {
     runValidation: () => validator.runValidation(),
