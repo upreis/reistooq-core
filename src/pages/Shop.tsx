@@ -8,18 +8,18 @@ import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
 import { ShopProduct } from "@/features/shop/types/shop.types";
 
 const sortOptions = [
-  { id: "newest", name: "Newest" },
-  { id: "price_desc", name: "Price: High-Low" },
-  { id: "price_asc", name: "Price: Low-High" },
+  { id: "newest", name: "Mais Recentes" },
+  { id: "price_desc", name: "Preço: Maior-Menor" },
+  { id: "price_asc", name: "Preço: Menor-Maior" },
   { id: "name", name: "A-Z" },
 ];
 
 const priceRanges = [
-  { id: "all", name: "All" },
-  { id: "0-50", name: "$0 - $50" },
-  { id: "50-100", name: "$50 - $100" },
-  { id: "100-200", name: "$100 - $200" },
-  { id: "200+", name: "$200+" },
+  { id: "all", name: "Todos" },
+  { id: "0-50", name: "R$ 0 - R$ 50" },
+  { id: "50-100", name: "R$ 50 - R$ 100" },
+  { id: "100-200", name: "R$ 100 - R$ 200" },
+  { id: "200+", name: "R$ 200+" },
 ];
 
 export default function Shop() {
@@ -79,15 +79,15 @@ export default function Shop() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold text-foreground">Shop App</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Loja Virtual</h1>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>🏠</span>
             <span>/</span>
-            <span className="text-orange-500">Shop</span>
+            <span className="text-orange-500">Loja</span>
           </div>
         </div>
         <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-          Shop
+          Comprar
         </Button>
       </div>
 
@@ -97,7 +97,7 @@ export default function Shop() {
           {/* Filter By Category */}
           <Card>
             <CardHeader className="pb-3">
-              <h3 className="font-semibold">Filter By Category</h3>
+              <h3 className="font-semibold">Filtrar por Categoria</h3>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button
@@ -149,7 +149,7 @@ export default function Shop() {
           {/* Sort By */}
           <Card>
             <CardHeader className="pb-3">
-              <h3 className="font-semibold">Sort By</h3>
+              <h3 className="font-semibold">Ordenar por</h3>
             </CardHeader>
             <CardContent className="space-y-2">
               {sortOptions.map((option) => (
@@ -192,7 +192,7 @@ export default function Shop() {
           {/* By Pricing */}
           <Card>
             <CardHeader className="pb-3">
-              <h3 className="font-semibold">By Pricing</h3>
+              <h3 className="font-semibold">Filtrar por Preço</h3>
             </CardHeader>
             <CardContent className="space-y-2">
               {priceRanges.map((range) => (
@@ -221,11 +221,11 @@ export default function Shop() {
         <div className="lg:col-span-3 space-y-6">
           {/* Search Bar */}
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Products</h2>
+            <h2 className="text-xl font-semibold">Produtos</h2>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search Products"
+                placeholder="Buscar Produtos"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 w-80"
