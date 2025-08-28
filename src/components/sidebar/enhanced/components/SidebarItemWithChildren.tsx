@@ -241,12 +241,8 @@ export function SidebarItemWithChildren({
     <div>
       {/* For items with children, use HoverCard when collapsed instead of tooltip */}
       {!isMobile && isCollapsed ? (
-        <div
-          className="relative"
-          onPointerEnter={() => setFlyoutOpen(true)}
-          onPointerLeave={() => setFlyoutOpen(false)}
-        >
-          <HoverCard open={flyoutOpen} onOpenChange={setFlyoutOpen} openDelay={80} closeDelay={120}>
+        <div className="relative">
+          <HoverCard openDelay={80} closeDelay={120}>
             <HoverCardTrigger asChild>
               <button
                 ref={buttonRef}
@@ -255,12 +251,11 @@ export function SidebarItemWithChildren({
                 onKeyDown={handleKeyDown}
                 type="button"
                 className={cn(
-                  'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors',
+                  'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors shadow-sm',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
-                  'bg-[#F2C94C] text-black shadow-sm [&_svg]:text-current [&_svg]:stroke-current'
+                  'bg-[#F2C94C] text-black'
                 )}
                 aria-haspopup="menu"
-                aria-expanded={flyoutOpen}
                 aria-label={item.label}
               >
                 <Icon className="h-5 w-5 text-current" />
@@ -271,6 +266,7 @@ export function SidebarItemWithChildren({
               align="start"
               sideOffset={12}
               forceMount
+              onPointerDownOutside={(e) => e.currentTarget?.dispatchEvent?.(new Event("mouseleave"))}
               className="w-72 p-0 z-[60] border border-white/10 rounded-xl overflow-hidden"
             >
               {/* Header replaces tooltip */}
@@ -286,7 +282,6 @@ export function SidebarItemWithChildren({
                     <NavLink
                       key={child.id || child.path || child.label}
                       to={child.path || '#'}
-                      onClick={() => setFlyoutOpen(false)}
                       className={cn(
                         'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                         'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
