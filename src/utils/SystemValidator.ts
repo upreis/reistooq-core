@@ -15,6 +15,8 @@ class SystemValidator {
   private static instance: SystemValidator;
   private validationResults: ValidationResult[] = [];
   private isEnabled = true;
+  private consolePatched = false;
+  private originalConsoleLog: ((...args: any[]) => void) | null = null;
 
   static getInstance(): SystemValidator {
     if (!SystemValidator.instance) {
@@ -70,20 +72,35 @@ class SystemValidator {
       // Ignorar erros de acesso ao localStorage
     }
 
-    // Verificar console logs suspeitos
-    const originalLog = console.log;
-    console.log = (...args: any[]) => {
-      const message = args.join(' ').toLowerCase();
-      if (message.includes('password') || message.includes('secret') || message.includes('token')) {
-        results.push({
-          type: 'error',
-          category: 'security',
-          message: 'ERRO DE SEGURANÇA: Log com dados sensíveis detectado',
-          fix: 'Remover console.log com dados sensíveis'
-        });
-      }
-      originalLog.apply(console, args);
-    };
+    // Verificar console logs suspeitos (patch idempotente)
+    if (!this.consolePatched) {
+      const nativeLog = (console as any).__nativeLog || console.log.bind(console);
+      this.originalConsoleLog = nativeLog;
+      (console as any).__nativeLog = nativeLog;
+
+      console.log = (...args: any[]) => {
+        let message = '';
+        try {
+          message = args
+            .map((a) => (typeof a === 'string' ? a : ''))
+            .join(' ')
+            .toLowerCase();
+        } catch {}
+
+        if (message && (message.includes('password') || message.includes('secret') || message.includes('token'))) {
+          this.validationResults.push({
+            type: 'error',
+            category: 'security',
+            message: 'ERRO DE SEGURANÇA: Log com dados sensíveis detectado',
+            fix: 'Remover console.log com dados sensíveis'
+          });
+        }
+
+        this.originalConsoleLog?.apply(console, args);
+      };
+
+      this.consolePatched = true;
+    }
 
     return results;
   }
