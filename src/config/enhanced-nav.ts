@@ -153,12 +153,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'Notebook' 
       },
       { 
-        id: 'chat', 
-        label: 'Chat', 
-        path: '/apps/chats', 
-        icon: 'MessageSquare' 
-      },
-      { 
         id: 'estoque', 
         label: 'Gestão de Estoque', 
         path: '/estoque', 

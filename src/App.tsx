@@ -33,7 +33,7 @@ import Notes from "./pages/Notes";
 import OMS from "./pages/OMS";
 import Dashboard from "./pages/Dashboard";
 import Analytics from "./pages/Analytics";
-import Chats from "./pages/Chats";
+
 import FAQ from "./pages/FAQ";
 import Pricing from "./pages/Pricing";
 import Auth from "./pages/Auth";
@@ -86,7 +86,7 @@ function App() {
                     {/* Other App Routes */}
                     <Route path="/apps/calendar" element={<Calendar />} />
                     <Route path="/apps/notes" element={<Notes />} />
-                    <Route path="/apps/chats" element={<Chats />} />
+                    
                     
                     {/* Custom Business Routes */}
                     <Route path="/estoque" element={<Estoque />} />
