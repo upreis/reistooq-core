@@ -2,7 +2,8 @@ import { corsHeaders, makeClient } from "../_shared/client.ts";
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const FROM_EMAIL = Deno.env.get("RESEND_FROM") || "Sistema <convites@reistoq.com.br>";
+const DEFAULT_FROM = "Sistema <convite@convite.reistoq.com.br>";
+const FROM_EMAIL = Deno.env.get("RESEND_FROM") || DEFAULT_FROM;
 
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
@@ -31,18 +32,27 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get invitation details
+    // Secrets sanity checks
+    if (!Deno.env.get('RESEND_API_KEY')) {
+      console.error('Missing RESEND_API_KEY secret');
+      return new Response(
+        JSON.stringify({ error: 'Email service not configured', details: 'RESEND_API_KEY is missing' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!FROM_EMAIL || !FROM_EMAIL.includes('@')) {
+      console.error('Invalid FROM_EMAIL:', FROM_EMAIL);
+      return new Response(
+        JSON.stringify({ error: 'Invalid sender address', details: 'Configure RESEND_FROM with a verified domain (ex: Sistema <convite@convite.reistoq.com.br>)' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get invitation details (no nested relations to avoid FK dependency)
     const { data: invitation, error: invError } = await client
       .from('invitations')
-      .select(`
-        *,
-        roles (
-          name
-        ),
-        organizacoes (
-          nome
-        )
-      `)
+      .select('*')
       .eq('id', invitation_id)
       .single();
 
@@ -53,6 +63,18 @@ const handler = async (req: Request): Promise<Response> => {
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Optionally resolve names for email content
+    let orgName: string | undefined = undefined;
+    let roleName: string | undefined = undefined;
+    try {
+      const { data: org } = await client.from('organizacoes').select('nome').eq('id', invitation.organization_id).single();
+      orgName = org?.nome;
+    } catch { /* ignore */ }
+    try {
+      const { data: role } = await client.from('roles').select('name').eq('id', invitation.role_id).single();
+      roleName = role?.name;
+    } catch { /* ignore */ }
 
     console.log('Found invitation:', invitation.id, 'for email:', invitation.email);
 
@@ -65,12 +87,12 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResult = await resend.emails.send({
       from: FROM_EMAIL,
       to: [invitation.email],
-      subject: `Convite para ${invitation.organizacoes?.nome || 'organização'}`,
+      subject: `Convite para ${orgName || 'organização'}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2>Você foi convidado!</h2>
           <p>Olá,</p>
-          <p>Você foi convidado para participar da organização <strong>${invitation.organizacoes?.nome || 'organização'}</strong> como <strong>${invitation.roles?.name || 'usuário'}</strong>.</p>
+          <p>Você foi convidado para participar da organização <strong>${orgName || 'organização'}</strong> como <strong>${roleName || 'usuário'}</strong>.</p>
           
           <div style="text-align: center; margin: 30px 0;">
             <a href="${inviteUrl}" 
