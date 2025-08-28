@@ -11,10 +11,10 @@ import AppMobileHeader from "@/components/layout/AppMobileHeader";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const CollapsedReopenTab: React.FC = () => {
+const CollapsedReopenTab: React.FC<{ offset: string }> = ({ offset }) => {
   const { setIsSidebarCollapsed } = useSidebarUI();
   return (
-    <div className="fixed left-0 top-16 hidden md:flex h-screen w-4 z-50 items-center justify-center" style={{ pointerEvents: 'none' }}>
+    <div className={`fixed left-0 top-16 hidden md:flex h-screen w-4 z-50 items-center justify-center ${offset}`} style={{ pointerEvents: 'none' }}>
       <button
         type="button"
         aria-label="Expandir menu"
@@ -76,14 +76,18 @@ const InnerLayout = () => {
           )}
 
           {/* Rail button when collapsed - desktop only */}
-          {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
+          {!isMobile && isSidebarCollapsed && <CollapsedReopenTab offset={offset} />}
 
           {/* Conteúdo */}
           <div className={`flex flex-col min-h-screen w-full ${
             !isMobile ? (isSidebarCollapsed ? "ml-16" : "ml-64") : ""
           }`}>
             {/* Desktop Header */}
-            {!isMobile && <Header />}
+            {!isMobile && (
+              <div className={offset}>
+                <Header />
+              </div>
+            )}
             
             <main className={`flex-1 overflow-auto ${
               isMobile 
