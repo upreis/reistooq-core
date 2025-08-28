@@ -3,6 +3,8 @@ import { Megaphone, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lu
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { useAnnouncements } from "@/contexts/AnnouncementContext";
+import { useSidebarUI } from "@/context/SidebarUIContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Announcement {
   id: string;
@@ -38,6 +40,8 @@ const mockAnnouncements: Announcement[] = [
 export function AnnouncementTicker() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { isHidden, setIsHidden, setHasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
+  const { isSidebarCollapsed } = useSidebarUI();
+  const isMobile = useIsMobile();
   const [announcements] = useState(mockAnnouncements.filter(a => a.active));
   
   useEffect(() => {
@@ -73,11 +77,12 @@ export function AnnouncementTicker() {
     setCurrentIndex((prev) => (prev - 1 + announcements.length) % announcements.length);
   };
 
+  const leftOffset = isMobile ? 0 : (isSidebarCollapsed ? 72 : 288);
   return (
     <div className={cn(
-      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out h-12",
+      "fixed top-0 z-50 transition-all duration-300 ease-in-out h-12",
       getAnnouncementStyle()
-    )}>
+    )} style={{ left: leftOffset, right: 0 }}>
       <div className="flex items-center justify-between px-3 py-2 h-full">
         <div className="flex items-center gap-3 flex-1">
           <Megaphone className="h-4 w-4 flex-shrink-0" strokeWidth={2.5} />
