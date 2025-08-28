@@ -310,11 +310,15 @@ export class AdminService {
         _role_id: data.role_id,
         _expires_in_days: Math.max(1, diffDays) // Mínimo de 1 dia
       })
-      .single();
+      .single() as { data: Invitation | null; error: any };
 
     if (error) {
       console.error('Error creating invitation:', error);
       throw new Error(`Failed to create invitation: ${error.message}`);
+    }
+
+    if (!invitation) {
+      throw new Error('Failed to create invitation: no data returned');
     }
 
     // Send invitation email

@@ -57,7 +57,7 @@ export default async (req: Request): Promise<Response> => {
 
     // Send email via Resend
     const emailResult = await resend.emails.send({
-      from: "Sistema <convites@reistoq.com.br>",
+      from: "Sistema <convites@convite.reistoq.com.br>",
       to: [invitation.email],
       subject: `Convite para ${invitation.organizacoes?.nome || 'organização'}`,
       html: `
