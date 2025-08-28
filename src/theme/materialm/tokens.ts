@@ -1,31 +1,31 @@
 // MaterialM Theme Tokens - Nova Paleta Navy & Amber
 export const MATERIALM_DARK = {
-  '--background': '210 40% 7%', // #0B1220
-  '--foreground': '210 40% 90%', // #E5E7EB
+  '--background': '213 42% 7%', // #0B1221
+  '--foreground': '213 42% 94%', // #E7EEF9
 
-  '--card': '220 40% 10%', // #0F172A
-  '--card-foreground': '210 40% 90%', // #E5E7EB
-  '--popover': '220 40% 10%', // #0F172A
-  '--popover-foreground': '210 40% 90%', // #E5E7EB
+  '--card': '213 48% 12%', // #101A2B
+  '--card-foreground': '213 42% 94%', // #E7EEF9
+  '--popover': '213 52% 10%', // #0D1627
+  '--popover-foreground': '213 42% 94%', // #E7EEF9
 
-  '--primary': '210 73% 15%', // Navy #0B1F3B
-  '--primary-foreground': '0 0% 100%',
+  '--primary': '43 89% 61%', // Gold #F5C242
+  '--primary-foreground': '213 42% 7%', // #0B1221
 
   '--secondary': '215 25% 17%', // #1F2937
-  '--secondary-foreground': '210 40% 90%',
+  '--secondary-foreground': '213 42% 94%',
 
-  '--muted': '215 25% 17%', // #1F2937
-  '--muted-foreground': '215 25% 65%', // #94A3B8
+  '--muted': '213 48% 13%', // #0F1C2D
+  '--muted-foreground': '213 26% 70%', // #A8B3C7
 
-  '--accent': '43 96% 56%', // Amber #F59E0B
-  '--accent-foreground': '220 40% 10%',
+  '--accent': '43 89% 61%', // Gold #F5C242
+  '--accent-foreground': '213 42% 7%', // #0B1221
 
   '--destructive': '0 84% 60%', // #EF4444
   '--destructive-foreground': '0 0% 100%',
 
-  '--border': '215 25% 17%', // #1F2937
-  '--input': '215 25% 17%',
-  '--ring': '215 25% 20%',
+  '--border': '213 30% 21%', // #263347
+  '--input': '213 30% 21%',
+  '--ring': '43 89% 61%',
 
   // Sidebar colors
   '--sidebar-background': '210 40% 7%',

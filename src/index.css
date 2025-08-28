@@ -70,10 +70,20 @@
     --status-info-bg: hsl(214 95% 60% / 0.1);
 
     /* Interactive States */
-    --interactive-hover: hsl(var(--primary) / 0.8);
-    --interactive-active: hsl(var(--primary) / 0.9);
-    --interactive-disabled: hsl(var(--muted) / 0.5);
+    --interactive-hover: hsl(43 100% 67%); /* #FFD45A */
+    --interactive-active: hsl(43 89% 43%); /* #C99212 */
+    --interactive-disabled: hsl(43 48% 28% / 0.4); /* #6B5A24 with 40% opacity */
     --interactive-focus: hsl(var(--primary) / 0.2);
+
+    /* Button State Colors */
+    --button-hover: hsl(43 100% 67%); /* #FFD45A */
+    --button-active: hsl(43 89% 43%); /* #C99212 */
+    --button-disabled: hsl(43 48% 28% / 0.4); /* #6B5A24 */
+
+    /* Table Enhancement */
+    --table-header-dark: hsl(213 48% 13%); /* #0F1C2D */
+    --table-zebra-1: hsl(213 56% 9%); /* #0B1424 */
+    --table-zebra-2: hsl(213 52% 11%); /* #0D192A */
 
     /* Table Specific - Applied dynamically by ThemeProvider */
     --table-header-bg: hsl(var(--muted) / 0.3);
