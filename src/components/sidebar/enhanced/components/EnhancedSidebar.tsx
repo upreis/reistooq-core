@@ -245,8 +245,7 @@ const SidebarContent = memo(({
 SidebarContent.displayName = 'SidebarContent';
 
 export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isCollapsed: externalIsCollapsed }: EnhancedSidebarProps) => {
-  const { state } = useSidebarState();
-  
+  // Não usar estado interno se externo for fornecido para evitar conflitos
   if (isMobile) {
     return (
       <div className="fixed inset-0 z-50 bg-[hsl(var(--background))] overflow-y-auto">
@@ -259,12 +258,9 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
     );
   }
 
-  // Use external collapsed state if provided, otherwise use internal state
-  const collapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : !state.expanded;
-  const desktopWidth = collapsed ? "md:w-[72px]" : "md:w-72";
-
+  // Desktop sidebar - agora só renderiza conteúdo
   return (
-    <div className="h-full">
+    <div className="h-full flex flex-col">
       <SidebarContent navItems={navItems} isMobile={false} externalIsCollapsed={externalIsCollapsed} />
     </div>
   );
