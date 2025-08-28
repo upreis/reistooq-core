@@ -9,6 +9,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarUIProvider } from "@/context/SidebarUIContext";
 import { MobileProvider } from "@/contexts/MobileContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import { useSystemValidator } from "@/utils/SystemValidator";
 import FullLayout from "@/layouts/full/FullLayout";
 
@@ -97,10 +98,14 @@ function App() {
                     <Route path="/scanner" element={<Scanner />} />
                     <Route path="/de-para" element={<DePara />} />
                     <Route path="/alertas" element={<Alertas />} />
-                    <Route path="/configuracoes" element={<IntegracoesPage />} />
-                    <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
-                    <Route path="/historico" element={<Historico />} />
-                    <Route path="/admin" element={<AdminPage />} />
+                     <Route path="/configuracoes" element={<IntegracoesPage />} />
+                     <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
+                     <Route path="/historico" element={<Historico />} />
+                     <Route path="/admin" element={
+                       <PermissionRoute requiredAny={['users:read', 'roles:manage', 'invites:manage', 'system:audit']}>
+                         <AdminPage />
+                       </PermissionRoute>
+                     } />
 
                     {/* Demo Routes (protected) */}
                     <Route path="/_demo/faq" element={<FAQ />} />

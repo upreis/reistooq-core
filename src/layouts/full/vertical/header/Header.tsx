@@ -14,15 +14,16 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { QuickAppsModal } from "@/components/layout/QuickAppsModal";
-import jonathanAvatar from "@/assets/jonathan-avatar.jpg";
 import { useAnnouncements } from "@/contexts/AnnouncementContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarUI } from "@/context/SidebarUIContext";
+import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 export default function Header() {
   const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed } = useSidebarUI();
   const { isHidden, setIsHidden, hasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { user, signOut } = useAuth();
+  const { profile, displayName, fullName, initials } = useCurrentProfile();
 
   const handleSignOut = async () => {
     await signOut();
@@ -160,24 +161,24 @@ export default function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2 h-auto p-2">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={jonathanAvatar} alt="Jonathan Deo" />
-                  <AvatarFallback>JD</AvatarFallback>
+                  <AvatarImage src={profile?.avatar_url} alt={fullName} />
+                  <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
                 <div className="text-left hidden sm:block">
-                  <p className="text-sm font-medium">Jonathan Deo</p>
-                  <p className="text-xs text-muted-foreground">Admin</p>
+                  <p className="text-sm font-medium">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">{profile?.cargo || 'Usuário'}</p>
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <div className="flex items-center gap-3 p-3">
                 <Avatar className="w-12 h-12">
-                  <AvatarImage src={jonathanAvatar} alt={user?.email || "Usuário"} />
-                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                  <AvatarImage src={profile?.avatar_url} alt={fullName} />
+                  <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium">{user?.email || "Usuário"}</p>
-                  <p className="text-xs text-muted-foreground">Usuário</p>
+                  <p className="text-sm font-medium">{fullName}</p>
+                  <p className="text-xs text-muted-foreground">{profile?.cargo || 'Usuário'}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </div>
