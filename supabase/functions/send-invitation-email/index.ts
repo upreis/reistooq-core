@@ -3,7 +3,7 @@ import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-export default async (req: Request): Promise<Response> => {
+const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -46,14 +46,19 @@ export default async (req: Request): Promise<Response> => {
       .single();
 
     if (invError || !invitation) {
+      console.error('Invitation query error:', invError);
       return new Response(
         JSON.stringify({ error: "Invitation not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log('Found invitation:', invitation.id, 'for email:', invitation.email);
+
     // Generate invitation URL
     const inviteUrl = `${req.headers.get('origin') || 'https://reistoq.com.br'}/convite/${invitation.token}`;
+
+    console.log('Sending email to:', invitation.email);
 
     // Send email via Resend
     const emailResult = await resend.emails.send({
@@ -91,10 +96,12 @@ export default async (req: Request): Promise<Response> => {
     if (emailResult.error) {
       console.error('Resend error:', emailResult.error);
       return new Response(
-        JSON.stringify({ error: "Failed to send email" }),
+        JSON.stringify({ error: "Failed to send email", details: emailResult.error }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log('Email sent successfully:', emailResult.data?.id);
 
     return new Response(
       JSON.stringify({ 
@@ -108,13 +115,10 @@ export default async (req: Request): Promise<Response> => {
   } catch (error) {
     console.error('Error sending invitation email:', error);
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ error: "Internal server error", details: error.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-}
+};
 
-// This is required for the Supabase Edge Function runtime
-Deno.serve(async (req: Request) => {
-  return await (globalThis as any).default(req);
-});
+Deno.serve(handler);
