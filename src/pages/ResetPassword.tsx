@@ -8,14 +8,19 @@ import { PasswordResetForm } from '@/components/auth/PasswordResetForm';
 export default function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // Verifica diferentes tipos de parâmetros que o Supabase pode enviar
   const token = searchParams.get('token');
+  const accessToken = searchParams.get('access_token');
+  const refreshToken = searchParams.get('refresh_token');
+  const type = searchParams.get('type');
 
   useEffect(() => {
-    // Se não há token, redirecionar para solicitar reset
-    if (!token) {
+    // Se não há nenhum token ou se o tipo não é recovery, redirecionar para solicitar reset
+    if (!token && !accessToken && type !== 'recovery') {
       navigate('/auth');
     }
-  }, [token, navigate]);
+  }, [token, accessToken, type, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -31,7 +36,7 @@ export default function ResetPassword() {
 
         {/* Formulário de Reset */}
         <PasswordResetForm 
-          mode="reset"
+          mode={token || accessToken || type === 'recovery' ? 'reset' : 'request'}
           onBack={() => navigate('/auth')}
         />
 
