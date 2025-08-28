@@ -20,7 +20,7 @@ export default function PageContainer({
     lg: "max-w-lg",
     xl: "max-w-xl",
     "2xl": "max-w-2xl",
-    full: "max-w-full"
+    full: "w-full"
   };
 
   const paddingClasses = {
@@ -32,12 +32,12 @@ export default function PageContainer({
 
   return (
     <div className={cn(
-      "w-full mx-auto overflow-x-hidden",
+      "w-full min-w-0 overflow-x-hidden",
       maxWidthClasses[maxWidth],
       paddingClasses[padding],
       className
     )}>
-      <div className="w-full max-w-full overflow-x-hidden">
+      <div className="w-full min-w-0 overflow-x-hidden">
         {children}
       </div>
     </div>

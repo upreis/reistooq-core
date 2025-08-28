@@ -28,10 +28,18 @@
   /* Prevent flex/grid children from overflowing */
   .flex > * {
     min-width: 0;
+    max-width: 100%;
   }
   
   .grid > * {
     min-width: 0;
+    max-width: 100%;
+  }
+  
+  /* Ensure main content areas don't overflow */
+  main, .main-content {
+    min-width: 0;
+    overflow-x: hidden;
   }
   
   /* Mobile text handling */
