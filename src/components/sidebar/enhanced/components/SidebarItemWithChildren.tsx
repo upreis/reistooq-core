@@ -5,7 +5,7 @@ import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavItem, FlyoutPosition } from '../types/sidebar.types';
 import { SidebarFlyout } from './SidebarFlyout';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { SidebarTooltip } from './SidebarTooltip';
 import { useSidebar } from '../SidebarContext';
 import { SIDEBAR_BEHAVIOR } from '@/config/sidebar-behavior';
 
@@ -189,20 +189,19 @@ export function SidebarItemWithChildren({
         'group w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
         'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
         hasActiveChild
-          ? 'bg-[hsl(var(--accent))] text-[#0B1220] border-l-2 border-[hsl(var(--primary))] [&_svg]:text-[#0B1220] [&_svg]:stroke-[#0B1220]'
+          ? 'bg-[hsl(var(--accent))] text-[hsl(var(--primary))] border-l-2 border-[hsl(var(--primary))]'
           : 'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
       )}
       aria-expanded={!isCollapsed ? isOpen : undefined}
       aria-haspopup="true"
       aria-controls={!isCollapsed ? `submenu-${item.id}` : undefined}
     >
-      <Icon className={cn("h-5 w-5 shrink-0", hasActiveChild && "text-[#0B1220] stroke-[#0B1220]")} />
+      <Icon className="h-5 w-5 shrink-0" />
       
       {/* Label - hidden when collapsed */}
       <span className={cn(
         'truncate transition-opacity duration-200',
-        !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
-        hasActiveChild && 'text-[#0B1220]'
+        !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'
       )}>
         {item.label}
       </span>
@@ -239,69 +238,11 @@ export function SidebarItemWithChildren({
 
   return (
     <div>
-      {/* For items with children, use Popover when collapsed instead of tooltip */}
+      {/* Main button with tooltip when collapsed */}
       {!isMobile && isCollapsed ? (
-        <Popover open={flyoutOpen} onOpenChange={setFlyoutOpen}>
-          <PopoverTrigger asChild>
-            <button
-              ref={buttonRef}
-              onClick={handleParentClick}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              onFocus={handleFocus}
-              onKeyDown={handleKeyDown}
-              className={cn(
-                'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors',
-                'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
-                hasActiveChild
-                  ? 'bg-[#F2C94C] text-black [&_svg]:text-current'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--accent))]'
-              )}
-              aria-haspopup="menu"
-              aria-expanded={flyoutOpen}
-              aria-label={item.label}
-            >
-              <Icon className="h-5 w-5 text-current" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            side="right"
-            align="start"
-            sideOffset={12}
-            className="w-72 p-0 z-[60]"
-            onMouseEnter={() => setFlyoutOpen(true)}
-            onMouseLeave={() => setFlyoutOpen(false)}
-          >
-            {/* Header replaces tooltip */}
-            <div className="px-4 py-3 text-sm font-medium bg-[#F2C94C] text-black rounded-t-lg">
-              {item.label}
-            </div>
-            <div className="p-2 space-y-1">
-              {item.children?.map((child) => {
-                const ChildIcon = getIconComponent(child.icon);
-                const childActive = child.path ? utils.isActive(child.path) : false;
-                
-                return (
-                  <NavLink
-                    key={child.id || child.path || child.label}
-                    to={child.path || '#'}
-                    onClick={() => setFlyoutOpen(false)}
-                    className={cn(
-                      'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                      'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
-                      childActive
-                        ? 'bg-[hsl(var(--accent))] text-[#0B1220] [&_svg]:text-[#0B1220]'
-                        : 'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
-                    )}
-                  >
-                    <ChildIcon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{child.label}</span>
-                  </NavLink>
-                );
-              })}
-            </div>
-          </PopoverContent>
-        </Popover>
+        <SidebarTooltip content={item.label} disabled={!isCollapsed}>
+          {button}
+        </SidebarTooltip>
       ) : (
         button
       )}
@@ -327,11 +268,11 @@ export function SidebarItemWithChildren({
                   'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
                   childActive
-                    ? 'bg-[hsl(var(--accent))] text-[#0B1220] border-l-2 border-[hsl(var(--primary))] [&_svg]:text-[#0B1220]'
+                    ? 'bg-[hsl(var(--accent))] text-[hsl(var(--primary))] border-l-2 border-[hsl(var(--primary))]'
                     : 'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
                 )}
               >
-                <ChildIcon className={cn("h-4 w-4 shrink-0", childActive && "text-[#0B1220]")} />
+                <ChildIcon className="h-4 w-4 shrink-0" />
                 <span className="truncate">{child.label}</span>
                 {child.badge && (
                   <span className={cn(
