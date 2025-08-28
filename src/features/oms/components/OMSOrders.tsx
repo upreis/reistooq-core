@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,12 @@ import {
   Clock
 } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
+import { OrderDialog } from "./OrderDialog";
 
 export function OMSOrders() {
   const { orders, isLoading } = useOrders();
+  const [orderDialogOpen, setOrderDialogOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState(null);
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -50,7 +54,7 @@ export function OMSOrders() {
             Gerencie todos os pedidos do seu Order-to-Cash
           </p>
         </div>
-        <Button>
+        <Button onClick={() => setOrderDialogOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Novo Pedido
         </Button>
@@ -115,7 +119,14 @@ export function OMSOrders() {
                         <Button size="sm" variant="ghost">
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="ghost">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingOrder(order);
+                            setOrderDialogOpen(true);
+                          }}
+                        >
                           <Edit className="w-4 h-4" />
                         </Button>
                       </div>
@@ -141,6 +152,17 @@ export function OMSOrders() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog para criar/editar pedidos */}
+      <OrderDialog
+        open={orderDialogOpen}
+        onOpenChange={(open) => {
+          setOrderDialogOpen(open);
+          if (!open) setEditingOrder(null);
+        }}
+        initialData={editingOrder}
+        mode={editingOrder ? 'edit' : 'create'}
+      />
     </div>
   );
 }
