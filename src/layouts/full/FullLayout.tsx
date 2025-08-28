@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { useSidebarUI } from "@/context/SidebarUIContext";
 import { EnhancedSidebar, SidebarProvider } from "@/components/sidebar/enhanced";
 import { ENHANCED_NAV_ITEMS } from "@/config/enhanced-nav";
@@ -79,15 +80,19 @@ const InnerLayout = () => {
           {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
           {/* Content with left padding for fixed sidebar */}
-          <div className={`flex-1 min-w-0 flex flex-col w-full ${!isMobile ? "pl-16 lg:pl-20" : ""}`}>
+          <div className={cn(
+            "flex-1 min-w-0 flex flex-col w-full",
+            !isMobile ? "pl-16 lg:pl-20" : ""
+          )}>
             {/* Desktop Header */}
             {!isMobile && <Header />}
             
-            <main className={`h-screen overflow-y-auto w-full ${
+            <main className={cn(
+              "h-screen overflow-y-auto w-full",
               isMobile 
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
-            }`}>
+            )}>
               <div className="w-full max-w-full overflow-x-hidden">
                 <Outlet />
               </div>
