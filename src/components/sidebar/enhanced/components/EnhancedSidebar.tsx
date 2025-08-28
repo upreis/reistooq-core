@@ -7,6 +7,7 @@ import { useActiveRoute } from '../hooks/useActiveRoute';
 import { SidebarItemWithChildren } from './SidebarItemWithChildren';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { NavSection, NavItem } from '../types/sidebar.types';
+import { Logo } from '@/components/ui/Logo';
 
 interface EnhancedSidebarProps {
   navItems: NavSection[];
@@ -182,9 +183,7 @@ const SidebarContent = memo(({
         {/* Header */}
         <div className="p-4 border-b border-[hsl(var(--border))]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center shrink-0">
-              <LucideIcons.Package className="w-5 h-5 text-white" />
-            </div>
+            <Logo size="md" />
             <div className={cn(
               'transition-opacity duration-200',
               !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'

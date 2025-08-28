@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/auth/AuthForm";
 import { useAuth } from "@/contexts/AuthContext";
+import { Logo } from "@/components/ui/Logo";
 
 const Auth = () => {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -35,6 +36,9 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-4">
+            <Logo size="lg" />
+          </div>
           <h1 className="text-4xl font-bold text-primary mb-2">REISTOQ</h1>
           <p className="text-muted-foreground">
             Sistema de Gestão de Estoque Inteligente
