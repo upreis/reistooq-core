@@ -78,8 +78,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Found invitation:', invitation.id, 'for email:', invitation.email);
 
-    // Generate invitation URL
-    const inviteUrl = `${req.headers.get('origin') || 'https://reistoq.com.br'}/convite/${invitation.token}`;
+    // Generate invitation URL - use production domain
+    const inviteUrl = `https://258a105b-decd-40ba-b5d1-b7ec18beb5b0.lovableproject.com/convite/${invitation.token}`;
 
     console.log('Sending email to:', invitation.email);
 
