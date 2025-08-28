@@ -5,7 +5,7 @@ import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NavItem, FlyoutPosition } from '../types/sidebar.types';
 import { SidebarFlyout } from './SidebarFlyout';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useSidebar } from '../SidebarContext';
 import { SIDEBAR_BEHAVIOR } from '@/config/sidebar-behavior';
 
@@ -239,66 +239,69 @@ export function SidebarItemWithChildren({
 
   return (
     <div>
-      {/* For items with children, use HoverCard when collapsed instead of tooltip */}
+      {/* For items with children, use Popover when collapsed instead of tooltip */}
       {!isMobile && isCollapsed ? (
-        <div className="relative">
-          <HoverCard openDelay={80} closeDelay={120}>
-            <HoverCardTrigger asChild>
-              <button
-                ref={buttonRef}
-                onClick={handleParentClick}
-                onFocus={handleFocus}
-                onKeyDown={handleKeyDown}
-                type="button"
-                className={cn(
-                  'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors shadow-sm',
-                  'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
-                  'bg-[#F2C94C] text-black'
-                )}
-                aria-haspopup="menu"
-                aria-label={item.label}
-              >
-                <Icon className="h-5 w-5 text-current" />
-              </button>
-            </HoverCardTrigger>
-            <HoverCardContent
-              side="right"
-              align="start"
-              sideOffset={12}
-              forceMount
-              onPointerDownOutside={(e) => e.currentTarget?.dispatchEvent?.(new Event("mouseleave"))}
-              className="w-72 p-0 z-[60] border border-white/10 rounded-xl overflow-hidden"
+        <Popover open={flyoutOpen} onOpenChange={setFlyoutOpen}>
+          <PopoverTrigger asChild>
+            <button
+              ref={buttonRef}
+              onClick={handleParentClick}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onFocus={handleFocus}
+              onKeyDown={handleKeyDown}
+              className={cn(
+                'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors',
+                'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
+                hasActiveChild
+                  ? 'bg-[#F2C94C] text-black [&_svg]:text-current'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-[hsl(var(--accent))]'
+              )}
+              aria-haspopup="menu"
+              aria-expanded={flyoutOpen}
+              aria-label={item.label}
             >
-              {/* Header replaces tooltip */}
-              <div className="px-4 py-3 text-sm font-medium bg-[#F2C94C] text-black">
-                {item.label}
-              </div>
-              <div className="p-2 space-y-1">
-                {item.children?.map((child) => {
-                  const ChildIcon = getIconComponent(child.icon);
-                  const childActive = child.path ? utils.isActive(child.path) : false;
-                  
-                  return (
-                    <NavLink
-                      key={child.id || child.path || child.label}
-                      to={child.path || '#'}
-                      className={cn(
-                        'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                        'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
-                        childActive
-                          ? 'bg-[hsl(var(--accent))] text-[#0B1220] [&_svg]:text-[#0B1220]'
-                          : 'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
-                      )}
-                    >
-                      <ChildIcon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{child.label}</span>
-                    </NavLink>
-                  );
-                })}
-              </div>
-            </HoverCardContent>
-          </HoverCard>
-        </div>
+              <Icon className="h-5 w-5 text-current" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="right"
+            align="start"
+            sideOffset={12}
+            className="w-72 p-0 z-[60]"
+            onMouseEnter={() => setFlyoutOpen(true)}
+            onMouseLeave={() => setFlyoutOpen(false)}
+          >
+            {/* Header replaces tooltip */}
+            <div className="px-4 py-3 text-sm font-medium bg-[#F2C94C] text-black rounded-t-lg">
+              {item.label}
+            </div>
+            <div className="p-2 space-y-1">
+              {item.children?.map((child) => {
+                const ChildIcon = getIconComponent(child.icon);
+                const childActive = child.path ? utils.isActive(child.path) : false;
+                
+                return (
+                  <NavLink
+                    key={child.id || child.path || child.label}
+                    to={child.path || '#'}
+                    onClick={() => setFlyoutOpen(false)}
+                    className={cn(
+                      'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                      'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
+                      childActive
+                        ? 'bg-[hsl(var(--accent))] text-[#0B1220] [&_svg]:text-[#0B1220]'
+                        : 'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
+                    )}
+                  >
+                    <ChildIcon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{child.label}</span>
+                  </NavLink>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
       ) : (
         button
       )}
