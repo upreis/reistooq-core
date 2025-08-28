@@ -198,11 +198,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'mobile-experience',
         label: 'Experiência Mobile',
         path: '/mobile-experience',
-        icon: 'Smartphone',
-        badge: {
-          content: 'NOVO',
-          variant: 'default'
-        }
+        icon: 'Smartphone'
       }
     ]
   }

@@ -9,13 +9,13 @@ export function Logo({ className = "", size = "md" }: LogoProps) {
   const { theme } = useTheme();
   
   const logoSrc = theme?.includes("dark")
-    ? "/lovable-uploads/b09fad5b-efd5-4af4-b334-6a715c818a37.png" // Logo para dark
+    ? "/lovable-uploads/2ac629b1-e95b-44dd-985f-2ce75a5d0ee6.png" // Logo para dark (novo)
     : "/lovable-uploads/0b9a365e-610c-4fd7-b7bf-99b682141403.png"; // Logo para light
   
   const sizeClasses = {
-    sm: "h-6 w-6",
-    md: "h-8 w-8", 
-    lg: "h-12 w-12"
+    sm: "h-8 w-8",
+    md: "h-10 w-10", 
+    lg: "h-16 w-16"
   };
 
   return (
