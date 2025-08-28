@@ -93,14 +93,42 @@ function App() {
                     
                     
                     {/* Custom Business Routes */}
-                    <Route path="/estoque" element={<Estoque />} />
-                    <Route path="/pedidos" element={<Pedidos />} />
-                    <Route path="/scanner" element={<Scanner />} />
-                    <Route path="/de-para" element={<DePara />} />
+                    <Route path="/estoque" element={
+                      <PermissionRoute requiredPermissions={['estoque:view']}>
+                        <Estoque />
+                      </PermissionRoute>
+                    } />
+                    <Route path="/pedidos" element={
+                      <PermissionRoute requiredPermissions={['orders:read']}>
+                        <Pedidos />
+                      </PermissionRoute>
+                    } />
+                    <Route path="/scanner" element={
+                      <PermissionRoute requiredPermissions={['scanner:use']}>
+                        <Scanner />
+                      </PermissionRoute>
+                    } />
+                    <Route path="/de-para" element={
+                      <PermissionRoute requiredPermissions={['depara:view']}>
+                        <DePara />
+                      </PermissionRoute>
+                    } />
                     <Route path="/alertas" element={<Alertas />} />
-                     <Route path="/configuracoes" element={<IntegracoesPage />} />
-                     <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
-                     <Route path="/historico" element={<Historico />} />
+                     <Route path="/configuracoes" element={
+                       <PermissionRoute requiredPermissions={['settings:view']}>
+                         <IntegracoesPage />
+                       </PermissionRoute>
+                     } />
+                     <Route path="/configuracoes/integracoes" element={
+                       <PermissionRoute requiredPermissions={['settings:view']}>
+                         <IntegracoesPage />
+                       </PermissionRoute>
+                     } />
+                     <Route path="/historico" element={
+                       <PermissionRoute requiredPermissions={['historico:view']}>
+                         <Historico />
+                       </PermissionRoute>
+                     } />
                      <Route path="/admin" element={
                        <PermissionRoute requiredAny={['users:read', 'roles:manage', 'invites:manage', 'system:audit']}>
                          <AdminPage />
