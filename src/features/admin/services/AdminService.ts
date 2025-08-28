@@ -255,23 +255,42 @@ export class AdminService {
   // ==================== INVITATIONS ====================
 
   async getInvitations(): Promise<Invitation[]> {
-    const { data, error } = await supabase
+    // First get the invitations
+    const { data: invitations, error: invError } = await supabase
       .from('invitations')
-      .select(`
-        *,
-        roles (
-          id,
-          name
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching invitations:', error);
-      throw new Error(`Failed to fetch invitations: ${error.message}`);
+    if (invError) {
+      console.error('Error fetching invitations:', invError);
+      throw new Error(`Failed to fetch invitations: ${invError.message}`);
     }
 
-    return (data || []) as Invitation[];
+    if (!invitations || invitations.length === 0) {
+      return [];
+    }
+
+    // Get the roles separately
+    const roleIds = [...new Set(invitations.map(inv => inv.role_id))];
+    const { data: roles, error: roleError } = await supabase
+      .from('roles')
+      .select('id, name, slug, is_system, organization_id, created_at, updated_at')
+      .in('id', roleIds);
+
+    if (roleError) {
+      console.error('Error fetching roles:', roleError);
+      throw new Error(`Failed to fetch roles: ${roleError.message}`);
+    }
+
+    // Map roles to invitations
+    const roleMap = new Map(roles?.map(role => [role.id, role]) || []);
+    
+    const transformedData = invitations.map(invitation => ({
+      ...invitation,
+      role: roleMap.get(invitation.role_id) || null
+    }));
+
+    return transformedData as Invitation[];
   }
 
   async createInvitation(data: InvitationCreate): Promise<Invitation> {

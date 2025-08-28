@@ -1837,40 +1837,54 @@ export type Database = {
         Row: {
           active: boolean | null
           created_at: string
+          created_by: string | null
           expires_at: string | null
           href: string | null
           id: string
           kind: string
           link_label: string | null
           message: string
+          organization_id: string | null
           priority: number | null
           updated_at: string
         }
         Insert: {
           active?: boolean | null
           created_at?: string
+          created_by?: string | null
           expires_at?: string | null
           href?: string | null
           id?: string
           kind: string
           link_label?: string | null
           message: string
+          organization_id?: string | null
           priority?: number | null
           updated_at?: string
         }
         Update: {
           active?: boolean | null
           created_at?: string
+          created_by?: string | null
           expires_at?: string | null
           href?: string | null
           id?: string
           kind?: string
           link_label?: string | null
           message?: string
+          organization_id?: string | null
           priority?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "system_alerts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_backups: {
         Row: {
