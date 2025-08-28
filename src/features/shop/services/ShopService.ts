@@ -15,8 +15,9 @@ export class ShopService {
     }
 
     if (filters.categoria) {
-      // Busca por categoria_id ou por nome da categoria
-      query = query.or(`categoria_id.eq.${filters.categoria},categoria.eq.${filters.categoria}`);
+      const v = filters.categoria;
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+      query = isUuid ? query.eq('categoria_id', v) : query.eq('categoria', v);
     }
 
     if (filters.priceRange.min !== undefined) {
