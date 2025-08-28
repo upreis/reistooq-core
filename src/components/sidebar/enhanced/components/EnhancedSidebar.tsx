@@ -82,20 +82,7 @@ const SidebarSingleItem = memo(({
   return !isMobile && isCollapsed ? (
     <Tooltip delayDuration={150}>
       <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={item.label}
-          aria-current={itemActive ? "page" : undefined}
-          onClick={() => item.path && (window.location.href = item.path)}
-          className={cn(
-            "h-11 w-11 rounded-2xl transition-colors shadow-sm flex items-center justify-center",
-            itemActive
-              ? "bg-[#F2C94C] text-black"
-              : "bg-transparent text-slate-300 hover:bg-white/[0.06] hover:text-white"
-          )}
-        >
-          <Icon className="h-5 w-5 text-current" />
-        </button>
+        {link}
       </TooltipTrigger>
       <TooltipContent side="right" sideOffset={12}>
         {item.label}
@@ -264,9 +251,13 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
   const desktopWidth = collapsed ? "md:w-[72px]" : "md:w-72";
 
   return (
-    <div className="h-full">
+    <aside className={cn(
+      "hidden md:flex md:flex-col md:shrink-0 bg-[hsl(var(--background))] border-r border-[hsl(var(--border))]",
+      "transition-[width] duration-200 overflow-visible", // changed from overflow-y-auto to overflow-visible
+      desktopWidth
+    )}>
       <SidebarContent navItems={navItems} isMobile={false} externalIsCollapsed={externalIsCollapsed} />
-    </div>
+    </aside>
   );
 });
 
