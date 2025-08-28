@@ -118,20 +118,20 @@ export function SidebarItemWithChildren({
         'group w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
         'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
         hasActiveChild
-          ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
-          : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
+          ? 'bg-[hsl(var(--accent))] text-[#0B1220] border-l-2 border-[hsl(var(--primary))] [&_svg]:text-[#0B1220] [&_svg]:stroke-[#0B1220]'
+          : 'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
       )}
       aria-expanded={!isCollapsed ? isOpen : undefined}
       aria-haspopup="true"
       aria-controls={!isCollapsed ? `submenu-${item.id}` : undefined}
     >
-      <Icon className={cn("h-5 w-5 shrink-0", hasActiveChild && "text-[hsl(var(--brand-yellow-foreground))]")} />
+      <Icon className={cn("h-5 w-5 shrink-0", hasActiveChild && "text-[#0B1220] stroke-[#0B1220]")} />
       
       {/* Label - hidden when collapsed */}
       <span className={cn(
         'truncate transition-opacity duration-200',
         !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
-        hasActiveChild && 'text-[hsl(var(--brand-yellow-foreground))]'
+        hasActiveChild && 'text-[#0B1220]'
       )}>
         {item.label}
       </span>
@@ -181,9 +181,7 @@ export function SidebarItemWithChildren({
                 className={cn(
                   'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors shadow-sm',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
-                  hasActiveChild 
-                    ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))]'
-                    : 'hover:bg-[hsl(var(--interactive-hover))] bg-transparent'
+                  'bg-[#F2C94C] text-black'
                 )}
                 aria-haspopup="menu"
                 aria-label={item.label}
@@ -199,7 +197,7 @@ export function SidebarItemWithChildren({
               className="w-72 p-0 z-[60] border border-white/10 rounded-xl overflow-hidden"
             >
               {/* Header replaces tooltip */}
-              <div className="px-4 py-3 text-sm font-medium bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))]">
+              <div className="px-4 py-3 text-sm font-medium bg-[#F2C94C] text-black">
                 {item.label}
               </div>
               <div className="p-2 space-y-1">
@@ -215,8 +213,8 @@ export function SidebarItemWithChildren({
                         'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                         'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
                         childActive
-                          ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
-                          : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
+                          ? 'bg-[hsl(var(--accent))] text-[#0B1220] [&_svg]:text-[#0B1220]'
+                          : 'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
                       )}
                     >
                       <ChildIcon className="h-4 w-4 shrink-0" />
@@ -253,11 +251,11 @@ export function SidebarItemWithChildren({
                   'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
                   childActive
-                    ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
-                    : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
+                    ? 'bg-[hsl(var(--accent))] text-[#0B1220] border-l-2 border-[hsl(var(--primary))] [&_svg]:text-[#0B1220]'
+                    : 'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
                 )}
               >
-                <ChildIcon className={cn("h-4 w-4 shrink-0", childActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
+                <ChildIcon className={cn("h-4 w-4 shrink-0", childActive && "text-[#0B1220]")} />
                 <span className="truncate">{child.label}</span>
                 {child.badge && (
                   <span className={cn(

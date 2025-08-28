@@ -53,10 +53,6 @@
     --gradient-warning: linear-gradient(135deg, hsl(43 96% 56%), hsl(43 96% 66%));
     --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
 
-    /* Brand Colors */
-    --brand-yellow: hsl(43 96% 56%); /* #F2C94C */
-    --brand-yellow-foreground: hsl(0 0% 7%); /* #0B1220 - dark text for yellow bg */
-
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -74,13 +70,13 @@
     --status-info-bg: hsl(214 95% 60% / 0.1);
 
     /* Interactive States */
-    --interactive-hover: hsl(var(--muted) / 0.7); /* Neutral hover - not yellow */
+    --interactive-hover: hsl(43 100% 67%); /* #FFD45A */
     --interactive-active: hsl(43 89% 43%); /* #C99212 */
     --interactive-disabled: hsl(43 48% 28% / 0.4); /* #6B5A24 with 40% opacity */
     --interactive-focus: hsl(var(--primary) / 0.2);
 
     /* Button State Colors */
-    --button-hover: hsl(var(--muted) / 0.7); /* Neutral hover - not yellow */
+    --button-hover: hsl(43 100% 67%); /* #FFD45A */
     --button-active: hsl(43 89% 43%); /* #C99212 */
     --button-disabled: hsl(43 48% 28% / 0.4); /* #6B5A24 */
 

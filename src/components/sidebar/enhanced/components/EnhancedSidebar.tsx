@@ -42,15 +42,15 @@ const SidebarSingleItem = memo(({
         'group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
         'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
         itemActive
-          ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
-          : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
+          ? 'bg-[hsl(var(--accent))] text-[#0B1220] border-l-2 border-[hsl(var(--primary))] [&_svg]:text-[#0B1220] [&_svg]:stroke-[#0B1220]'
+          : 'hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
       )}
     >
-      <Icon className={cn("h-5 w-5 shrink-0", itemActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
+      <Icon className={cn("h-5 w-5 shrink-0", itemActive && "text-[#0B1220] stroke-[#0B1220]")} />
       <span className={cn(
         'truncate transition-opacity duration-200',
         !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
-        itemActive && 'text-[hsl(var(--brand-yellow-foreground))]'
+        itemActive && 'text-[#0B1220]'
       )}>
         {item.label}
       </span>
