@@ -12,7 +12,7 @@ import { UserManager } from './UserManager';
 import { InvitationManager } from './InvitationManager';
 import { SystemAlertsManager } from './SystemAlertsManager';
 import { AuditLogsViewer } from './AuditLogsViewer';
-
+import { SecurityDashboard } from '@/features/security/components/SecurityDashboard';
 import { useRoles, useUsers, useInvitations, useSystemAlerts } from '../hooks/useAdmin';
 
 export const AdminDashboard: React.FC = () => {
@@ -188,9 +188,9 @@ export const AdminDashboard: React.FC = () => {
             <Mail className="h-4 w-4" />
             Convites
           </TabsTrigger>
-          <TabsTrigger value="alerts" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            Alertas
+          <TabsTrigger value="security" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Segurança
           </TabsTrigger>
           <TabsTrigger value="audit" className="flex items-center gap-2">
             <History className="h-4 w-4" />
@@ -244,11 +244,6 @@ export const AdminDashboard: React.FC = () => {
         {/* Invitations Tab */}
         <TabsContent value="invitations">
           <InvitationManager />
-        </TabsContent>
-
-        {/* Alerts Tab */}
-        <TabsContent value="alerts">
-          <SystemAlertsManager />
         </TabsContent>
 
         {/* Security Tab */}
