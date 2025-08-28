@@ -55,14 +55,14 @@ const InnerLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="w-full overflow-x-hidden">
+      <div className="min-h-screen w-full overflow-x-hidden">
         {/* Mobile Header */}
         {isMobile && <AppMobileHeader title={getPageTitle()} />}
         
         {/* Desktop Layout */}
         {!isMobile && <AnnouncementTicker />}
         
-        <div className={`flex w-full bg-background ${!isMobile ? offset : ""}`} style={{ height: !isMobile ? `calc(100vh - ${!isHidden && !isCollapsed ? '48px' : '0px'})` : 'auto' }}>
+        <div className={`flex w-full bg-background ${!isMobile ? offset : ""} min-h-screen`}>
           {/* Enhanced Sidebar - fixed position on desktop */}
           {!isMobile && (
             <div className="relative">
@@ -79,22 +79,22 @@ const InnerLayout = () => {
           {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
           {/* Conteúdo com scroll independente */}
-          <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-w-0 flex flex-col">
             {/* Desktop Header */}
             {!isMobile && <Header />}
             
-            <main className={`flex-1 overflow-y-auto overflow-x-hidden min-w-0 ${
+            <main className={`flex-1 overflow-x-hidden min-w-0 ${
               isMobile 
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
             }`}>
+
               <div className="w-full min-w-0 overflow-x-hidden">
                 <Outlet />
               </div>
             </main>
           </div>
         </div>
-        
         {/* Mobile Bottom Navigation */}
         {isMobile && <MobileBottomNav />}
       </div>
