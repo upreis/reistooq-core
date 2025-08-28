@@ -5,12 +5,7 @@ export class ShopService {
   static async getProducts(filters: ShopFilters) {
     let query = supabase
       .from('produtos')
-      .select(`
-        *,
-        categoria_id,
-        categorias_produtos!left(nome, icone, cor),
-        produto_imagens!left(url_imagem, nome_arquivo, principal, ordem)
-      `)
+      .select('*')
       .eq('ativo', true)
       .order('created_at', { ascending: false });
 
@@ -91,13 +86,7 @@ export class ShopService {
       discount_percentage: product.preco_custo > 0 
         ? Math.round(((product.preco_custo - product.preco_venda) / product.preco_custo) * 100)
         : undefined,
-      images: (product.produto_imagens || []).map((img: any, index: number) => ({
-        id: `${product.id}-${index}`,
-        url_imagem: img.url_imagem,
-        nome_arquivo: img.nome_arquivo,
-        principal: img.principal,
-        ordem: img.ordem,
-      })),
+      images: [], // Simplificado por agora - será implementado quando as imagens forem configuradas
       rating: Math.floor(Math.random() * 3) + 3, // Mock rating for now
       reviews_count: Math.floor(Math.random() * 100),
     }));
@@ -151,10 +140,7 @@ export class ShopService {
   static async getCategories(): Promise<ShopCategory[]> {
     const { data, error } = await supabase
       .from('categorias_produtos')
-      .select(`
-        *,
-        produtos!inner(count)
-      `)
+      .select('*')
       .eq('ativo', true)
       .order('ordem', { ascending: true });
 
@@ -162,21 +148,30 @@ export class ShopService {
       throw new Error(`Erro ao buscar categorias: ${error.message}`);
     }
 
-    return (data || []).map(category => ({
-      ...category,
-      products_count: category.produtos?.length || 0,
-    }));
+    // Para cada categoria, contamos os produtos manualmente
+    const categories = data || [];
+    const categoriesWithCount = await Promise.all(
+      categories.map(async (category) => {
+        const { count } = await supabase
+          .from('produtos')
+          .select('*', { count: 'exact', head: true })
+          .eq('ativo', true)
+          .eq('categoria', category.nome);
+
+        return {
+          ...category,
+          products_count: count || 0,
+        };
+      })
+    );
+
+    return categoriesWithCount;
   }
 
   static async getProduct(id: string): Promise<ShopProduct | null> {
     const { data, error } = await supabase
       .from('produtos')
-      .select(`
-        *,
-        categoria_id,
-        categorias_produtos!left(nome, icone, cor),
-        produto_imagens!left(url_imagem, nome_arquivo, principal, ordem)
-      `)
+      .select('*')
       .eq('id', id)
       .eq('ativo', true)
       .single();
@@ -194,13 +189,7 @@ export class ShopService {
       discount_percentage: data.preco_custo > 0 
         ? Math.round(((data.preco_custo - data.preco_venda) / data.preco_custo) * 100)
         : undefined,
-      images: (data.produto_imagens || []).map((img: any, index: number) => ({
-        id: `${data.id}-${index}`,
-        url_imagem: img.url_imagem,
-        nome_arquivo: img.nome_arquivo,
-        principal: img.principal,
-        ordem: img.ordem,
-      })),
+      images: [], // Simplificado por agora
       rating: Math.floor(Math.random() * 3) + 3,
       reviews_count: Math.floor(Math.random() * 100),
     };
