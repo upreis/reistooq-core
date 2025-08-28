@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { useSidebarState } from '../hooks/useSidebarState';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { SidebarItemWithChildren } from './SidebarItemWithChildren';
-import { SidebarTooltip } from './SidebarTooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { NavSection, NavItem } from '../types/sidebar.types';
 
 interface EnhancedSidebarProps {
@@ -78,10 +78,16 @@ const SidebarSingleItem = memo(({
     </NavLink>
   );
 
+  // For solo items (no children), use Tooltip when collapsed
   return !isMobile && isCollapsed ? (
-    <SidebarTooltip content={item.label} disabled={!isCollapsed}>
-      {link}
-    </SidebarTooltip>
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        {link}
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={12}>
+        {item.label}
+      </TooltipContent>
+    </Tooltip>
   ) : (
     link
   );
@@ -171,53 +177,55 @@ const SidebarContent = memo(({
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : (!isMobile && state.expanded === false);
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-[hsl(var(--border))]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center shrink-0">
-            <LucideIcons.Package className="w-5 h-5 text-white" />
+    <TooltipProvider delayDuration={150} disableHoverableContent>
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="p-4 border-b border-[hsl(var(--border))]">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center shrink-0">
+              <LucideIcons.Package className="w-5 h-5 text-white" />
+            </div>
+            <div className={cn(
+              'transition-opacity duration-200',
+              !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'
+            )}>
+              <h1 className="text-lg font-bold text-[hsl(var(--foreground))] truncate">REISTOQ</h1>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] truncate">Admin Dashboard</p>
+            </div>
+            
+            {/* Mobile close button */}
+            {isMobile && onMobileClose && (
+              <button
+                onClick={onMobileClose}
+                className="ml-auto p-1.5 rounded-md hover:bg-[hsl(var(--accent))] transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
+                aria-label="Fechar menu"
+              >
+                <LucideIcons.X className="w-4 h-4" />
+              </button>
+            )}
           </div>
-          <div className={cn(
-            'transition-opacity duration-200',
-            !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'
-          )}>
-            <h1 className="text-lg font-bold text-[hsl(var(--foreground))] truncate">REISTOQ</h1>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] truncate">Admin Dashboard</p>
-          </div>
-          
-          {/* Mobile close button */}
-          {isMobile && onMobileClose && (
-            <button
-              onClick={onMobileClose}
-              className="ml-auto p-1.5 rounded-md hover:bg-[hsl(var(--accent))] transition-colors focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]"
-              aria-label="Fechar menu"
-            >
-              <LucideIcons.X className="w-4 h-4" />
-            </button>
-          )}
         </div>
-      </div>
 
-      {/* Navigation */}
-      <nav 
-        className="p-4 space-y-6 flex-1 overflow-y-auto"
-        role="navigation"
-        aria-label="Navegação principal"
-      >
-        {navItems.map((section) => (
-          <SidebarSection
-            key={section.id}
-            section={section}
-            isCollapsed={isCollapsed}
-            isMobile={isMobile}
-            sidebarState={state}
-            actions={actions}
-            utils={utils}
-          />
-        ))}
-      </nav>
-    </div>
+        {/* Navigation */}
+        <nav 
+          className="p-4 space-y-6 flex-1 overflow-y-auto"
+          role="navigation"
+          aria-label="Navegação principal"
+        >
+          {navItems.map((section) => (
+            <SidebarSection
+              key={section.id}
+              section={section}
+              isCollapsed={isCollapsed}
+              isMobile={isMobile}
+              sidebarState={state}
+              actions={actions}
+              utils={utils}
+            />
+          ))}
+        </nav>
+      </div>
+    </TooltipProvider>
   );
 });
 
