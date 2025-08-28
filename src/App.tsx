@@ -42,8 +42,6 @@ import Cards from "./pages/Cards";
 import Banners from "./pages/Banners";
 import Charts from "./pages/Charts";
 import SolarIcons from "./pages/SolarIcons";
-import MobileExperience from "./pages/MobileExperience";
-import TesteAPI from "./pages/TesteAPI";
 import AdminPage from "./pages/AdminPage";
 
 const queryClient = new QueryClient();
@@ -98,9 +96,7 @@ function App() {
                     <Route path="/alertas" element={<Alertas />} />
                     <Route path="/configuracoes" element={<IntegracoesPage />} />
                     <Route path="/configuracoes/integracoes" element={<IntegracoesPage />} />
-                    <Route path="/mobile-experience" element={<MobileExperience />} />
                     <Route path="/historico" element={<Historico />} />
-                    <Route path="/teste-api" element={<TesteAPI />} />
                     <Route path="/admin" element={<AdminPage />} />
 
                     {/* Demo Routes (protected) */}

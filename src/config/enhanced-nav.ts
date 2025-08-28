@@ -208,28 +208,10 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'History' 
       },
       { 
-        id: 'teste-api', 
-        label: 'Teste API Financeiro', 
-        path: '/teste-api', 
-        icon: 'TestTube'
-      },
-      { 
         id: 'admin', 
         label: 'Administração', 
         path: '/admin', 
         icon: 'Shield' 
-      }
-    ]
-  },
-  {
-    id: 'mobile-tools',
-    group: 'Mobile',
-    items: [
-      {
-        id: 'mobile-experience',
-        label: 'Experiência Mobile',
-        path: '/mobile-experience',
-        icon: 'Smartphone'
       }
     ]
   }
