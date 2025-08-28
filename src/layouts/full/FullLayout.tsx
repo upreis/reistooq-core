@@ -66,14 +66,12 @@ const InnerLayout = () => {
           {/* Enhanced Sidebar - fixed position on desktop */}
           {!isMobile && (
             <aside className="fixed inset-y-0 left-0 z-40 w-16 lg:w-20 bg-[hsl(var(--background))] border-r border-[hsl(var(--border))] overflow-y-auto">
-              <div className="h-full py-4">
-                <EnhancedSidebar 
-                  navItems={ENHANCED_NAV_ITEMS}
-                  isMobile={false}
-                  onMobileClose={() => {}}
-                  isCollapsed={isSidebarCollapsed}
-                />
-              </div>
+              <EnhancedSidebar 
+                navItems={ENHANCED_NAV_ITEMS}
+                isMobile={false}
+                onMobileClose={() => {}}
+                isCollapsed={isSidebarCollapsed}
+              />
             </aside>
           )}
 
