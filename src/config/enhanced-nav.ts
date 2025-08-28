@@ -13,7 +13,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       },
       {
         id: 'oms',
-        label: 'OMS - Order Management',
+        label: 'Vendas',
         icon: 'ShoppingBag',
         children: [
           {

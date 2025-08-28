@@ -14,7 +14,7 @@ const OMS = () => {
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>🏢</span>
         <span>/</span>
-        <span className="text-primary">Order Management System</span>
+        <span className="text-primary">Vendas</span>
       </div>
 
       <Routes>
