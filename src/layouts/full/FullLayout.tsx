@@ -11,10 +11,10 @@ import AppMobileHeader from "@/components/layout/AppMobileHeader";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const CollapsedReopenTab: React.FC<{ offset: string }> = ({ offset }) => {
+const CollapsedReopenTab: React.FC = () => {
   const { setIsSidebarCollapsed } = useSidebarUI();
   return (
-    <div className={`fixed left-0 top-16 hidden md:flex h-screen w-4 z-50 items-center justify-center ${offset}`} style={{ pointerEvents: 'none' }}>
+    <div className="fixed left-0 top-16 hidden md:flex h-screen w-4 z-50 items-center justify-center" style={{ pointerEvents: 'none' }}>
       <button
         type="button"
         aria-label="Expandir menu"
@@ -62,10 +62,10 @@ const InnerLayout = () => {
         {/* Desktop Layout */}
         {!isMobile && <AnnouncementTicker />}
         
-        <div className="relative min-h-screen w-full bg-background">
-          {/* Enhanced Sidebar - fixed position, hidden on mobile */}
+        <div className={`flex w-full bg-background ${!isMobile ? offset : ""}`} style={{ height: !isMobile ? `calc(100vh - ${!isHidden && !isCollapsed ? '48px' : '0px'})` : 'auto' }}>
+          {/* Enhanced Sidebar - fixed position on desktop */}
           {!isMobile && (
-            <div className={`fixed top-0 left-0 h-screen z-40 ${offset}`}>
+            <div className="relative">
               <EnhancedSidebar 
                 navItems={ENHANCED_NAV_ITEMS}
                 isMobile={false}
@@ -76,25 +76,19 @@ const InnerLayout = () => {
           )}
 
           {/* Rail button when collapsed - desktop only */}
-          {!isMobile && isSidebarCollapsed && <CollapsedReopenTab offset={offset} />}
+          {!isMobile && isSidebarCollapsed && <CollapsedReopenTab />}
 
-          {/* Conteúdo */}
-          <div className={`flex flex-col min-h-screen w-full ${
-            !isMobile ? (isSidebarCollapsed ? "ml-16" : "ml-64") : ""
-          }`}>
+          {/* Conteúdo com scroll independente */}
+          <div className="flex-1 min-w-0 flex flex-col w-full overflow-hidden">
             {/* Desktop Header */}
-            {!isMobile && (
-              <div className={offset}>
-                <Header />
-              </div>
-            )}
+            {!isMobile && <Header />}
             
-            <main className={`flex-1 overflow-auto ${
+            <main className={`flex-1 overflow-y-auto overflow-x-hidden w-full ${
               isMobile 
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
             }`}>
-              <div className="w-full max-w-full overflow-x-hidden">
+              <div className="w-full max-w-full">
                 <Outlet />
               </div>
             </main>
