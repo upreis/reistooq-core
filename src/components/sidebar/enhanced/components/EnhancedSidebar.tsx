@@ -183,7 +183,10 @@ const SidebarContent = memo(({
         {/* Header */}
         <div className="p-4 border-b border-[hsl(var(--border))]">
           <div className="flex items-center gap-3">
-            <Logo size="md" />
+            {/* Logo sempre do mesmo tamanho, independente do estado collapsed */}
+            <div className="flex-shrink-0">
+              <Logo size="md" />
+            </div>
             <div className={cn(
               'transition-opacity duration-200',
               !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'

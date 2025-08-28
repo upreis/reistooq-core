@@ -131,11 +131,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'pedidos', 
         label: 'Pedidos', 
         path: '/pedidos', 
-        icon: 'Receipt',
-        badge: {
-          content: '5',
-          variant: 'warning'
-        }
+        icon: 'Receipt'
       },
       { 
         id: 'scanner', 
