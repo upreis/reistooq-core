@@ -2,7 +2,7 @@ import { corsHeaders, makeClient } from "../_shared/client.ts";
 import { Resend } from "npm:resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const DEFAULT_FROM = "Sistema <convite@convite.reistoq.com.br>";
+const DEFAULT_FROM = "Sistema <no-reply@convite.reistoq.com.br>";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM") || DEFAULT_FROM;
 
 const handler = async (req: Request): Promise<Response> => {
