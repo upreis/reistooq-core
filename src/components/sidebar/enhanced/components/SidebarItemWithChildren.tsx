@@ -181,7 +181,9 @@ export function SidebarItemWithChildren({
                 className={cn(
                   'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors shadow-sm',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
-                  'bg-[#F2C94C] text-black'
+                  hasActiveChild
+                    ? 'bg-[#F2C94C] text-black'
+                    : 'bg-transparent hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]'
                 )}
                 aria-haspopup="menu"
                 aria-label={item.label}
@@ -197,7 +199,12 @@ export function SidebarItemWithChildren({
               className="w-72 p-0 z-[60] border border-white/10 rounded-xl overflow-hidden"
             >
               {/* Header replaces tooltip */}
-              <div className="px-4 py-3 text-sm font-medium bg-[#F2C94C] text-black">
+              <div className={cn(
+                "px-4 py-3 text-sm font-medium",
+                hasActiveChild
+                  ? "bg-[#F2C94C] text-black"
+                  : "bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))]"
+              )}>
                 {item.label}
               </div>
               <div className="p-2 space-y-1">
