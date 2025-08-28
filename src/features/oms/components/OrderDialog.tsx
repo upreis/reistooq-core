@@ -12,6 +12,7 @@ interface OrderDialogProps {
 }
 
 export function OrderDialog({ open, onOpenChange, initialData, mode }: OrderDialogProps) {
+  console.log('OrderDialog renderizado - open:', open, 'mode:', mode);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 

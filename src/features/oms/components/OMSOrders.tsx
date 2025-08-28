@@ -54,7 +54,10 @@ export function OMSOrders() {
             Gerencie todos os pedidos do seu Order-to-Cash
           </p>
         </div>
-        <Button onClick={() => setOrderDialogOpen(true)}>
+        <Button onClick={() => {
+          console.log('Botão Novo Pedido clicado');
+          setOrderDialogOpen(true);
+        }}>
           <Plus className="w-4 h-4 mr-2" />
           Novo Pedido
         </Button>
@@ -157,6 +160,7 @@ export function OMSOrders() {
       <OrderDialog
         open={orderDialogOpen}
         onOpenChange={(open) => {
+          console.log('Dialog state mudou para:', open);
           setOrderDialogOpen(open);
           if (!open) setEditingOrder(null);
         }}
