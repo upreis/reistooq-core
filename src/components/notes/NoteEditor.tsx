@@ -220,7 +220,7 @@ export function NoteEditor({
                 <Badge 
                   key={tag} 
                   variant="secondary" 
-                  className="gap-1 cursor-pointer hover:bg-secondary/80 bg-background/80 text-foreground border border-border"
+                  className="gap-1 cursor-pointer hover:bg-secondary/80 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600"
                   onClick={() => handleRemoveTag(tag)}
                 >
                   {tag}

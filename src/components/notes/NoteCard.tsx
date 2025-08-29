@@ -67,11 +67,11 @@ export const NoteCard = memo(function NoteCard({
                 {note.isPinned && (
                   <Pin className="h-3 w-3 text-primary fill-current" />
                 )}
-                <h4 className="font-medium text-sm text-foreground truncate">
+                <h4 className="font-medium text-sm text-foreground dark:text-gray-100 truncate">
                   {note.title}
                 </h4>
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-gray-400">
                 <Calendar className="h-3 w-3" />
                 <span>{formatDate(note.updatedAt, true)}</span>
               </div>
@@ -115,7 +115,7 @@ export const NoteCard = memo(function NoteCard({
 
           {/* Conteúdo */}
           {note.content && (
-            <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
+            <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-3 leading-relaxed">
               {truncateText(note.content, 120)}
             </p>
           )}
@@ -123,12 +123,12 @@ export const NoteCard = memo(function NoteCard({
           {/* Tags */}
           {note.tags.length > 0 && (
             <div className="flex items-center gap-1 flex-wrap">
-              <Tag className="h-3 w-3 text-muted-foreground" />
+              <Tag className="h-3 w-3 text-gray-600 dark:text-gray-400" />
               {note.tags.slice(0, 3).map((tag) => (
                 <Badge 
                   key={tag} 
                   variant="outline" 
-                  className="text-xs px-2 py-0.5 h-5 bg-background/50 text-foreground border-border hover:bg-background/80"
+                  className="text-xs px-2 py-0.5 h-5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
                 >
                   {tag}
                 </Badge>
@@ -136,7 +136,7 @@ export const NoteCard = memo(function NoteCard({
               {note.tags.length > 3 && (
                 <Badge 
                   variant="outline" 
-                  className="text-xs px-2 py-0.5 h-5 bg-background/50 text-foreground border-border"
+                  className="text-xs px-2 py-0.5 h-5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600"
                 >
                   +{note.tags.length - 3}
                 </Badge>

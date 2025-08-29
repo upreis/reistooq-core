@@ -141,7 +141,7 @@ export function NotesSearch({ filter, onFilterChange, onResetFilter }: NotesSear
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2">
           {filter.searchQuery && (
-            <Badge variant="secondary" className="gap-1 bg-background/80 text-foreground border border-border">
+            <Badge variant="secondary" className="gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600">
               Busca: "{filter.searchQuery}"
               <X 
                 className="h-3 w-3 cursor-pointer" 
@@ -150,7 +150,7 @@ export function NotesSearch({ filter, onFilterChange, onResetFilter }: NotesSear
             </Badge>
           )}
           {filter.selectedColor && (
-            <Badge variant="secondary" className="gap-1 bg-background/80 text-foreground border border-border">
+            <Badge variant="secondary" className="gap-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-600">
               Cor: {colorOptions.find(c => c.value === filter.selectedColor)?.label}
               <X 
                 className="h-3 w-3 cursor-pointer" 
