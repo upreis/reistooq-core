@@ -164,7 +164,7 @@ export function AnnouncementTicker() {
 
   // Announcement banner styling
   const getAnnouncementStyle = () => {
-    return 'bg-amber-500/10 border border-amber-500/30 text-amber-200';
+    return 'bg-gray-200 border border-gray-300 text-black dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-200';
   };
 
   const nextAnnouncement = () => {
@@ -231,7 +231,7 @@ export function AnnouncementTicker() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleAlertClick(currentAnnouncement)}
-                  className="h-6 px-2 hover:bg-amber-500/20 text-xs"
+                  className="h-6 px-2 hover:bg-gray-300 dark:hover:bg-amber-500/20 text-xs"
                 >
                   {currentAnnouncement.link_label || 'Ver mais'}
                   <ExternalLink className="h-3 w-3 ml-1" />
@@ -248,7 +248,7 @@ export function AnnouncementTicker() {
                 variant="ghost"
                 size="sm"
                 onClick={prevAnnouncement}
-                className="h-6 w-6 p-0 hover:bg-amber-500/20"
+                className="h-6 w-6 p-0 hover:bg-gray-300 dark:hover:bg-amber-500/20"
               >
                 <ChevronLeft className="h-3 w-3" strokeWidth={2.5} />
               </Button>
@@ -261,7 +261,7 @@ export function AnnouncementTicker() {
                 variant="ghost"
                 size="sm"
                 onClick={nextAnnouncement}
-                className="h-6 w-6 p-0 hover:bg-amber-500/20"
+                className="h-6 w-6 p-0 hover:bg-gray-300 dark:hover:bg-amber-500/20"
               >
                 <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
               </Button>
@@ -272,7 +272,7 @@ export function AnnouncementTicker() {
              variant="ghost"
              size="sm"
              onClick={() => handleDismissAlert(currentAnnouncement.id)}
-             className="h-6 w-6 p-0 hover:bg-amber-500/20"
+              className="h-6 w-6 p-0 hover:bg-gray-300 dark:hover:bg-amber-500/20"
              title="Dispensar este alerta"
            >
              <X className="h-3 w-3" strokeWidth={2.5} />
@@ -282,7 +282,7 @@ export function AnnouncementTicker() {
              variant="ghost"
              size="sm"
              onClick={() => setIsCollapsed(true)}
-             className="h-6 w-6 p-0 hover:bg-amber-500/20"
+             className="h-6 w-6 p-0 hover:bg-gray-300 dark:hover:bg-amber-500/20"
              title="Recolher anúncios"
            >
              <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
