@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarGrid } from '@/components/calendar/CalendarGrid';
 import { CalendarFilters } from '@/components/calendar/CalendarFilters';
 import { EventModal } from '@/components/calendar/EventModal';
+import { MobileCalendarView } from '@/components/calendar/MobileCalendarView';
 import { useLogisticCalendar } from '@/hooks/useLogisticCalendar';
 import { useCalendarNotifications } from '@/hooks/useCalendarNotifications';
+import { useSmartNotifications } from '@/hooks/useSmartNotifications';
+import { integrationService } from '@/services/integrationService';
 import { LogisticEvent, CalendarViewMode } from '@/types/logistics';
+import { useToast } from '@/hooks/use-toast';
 
 const Calendar: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -29,12 +33,40 @@ const Calendar: React.FC = () => {
     refreshEvents
   } = useLogisticCalendar();
 
+  const { toast } = useToast();
+
   // Integração com sistema de avisos
   useCalendarNotifications({
     events: upcomingNotifications,
-    onCreateSystemAlert: (alert) => {
-      // TODO: Integrar com sistema de avisos do AnnouncementTicker
-      console.log('Novo alerta do calendário:', alert);
+    onCreateSystemAlert: async (alert) => {
+      // Integrar com sistema de avisos do AnnouncementTicker
+      const success = await integrationService.sendSystemAlert(alert);
+      if (!success) {
+        console.error('Falha ao enviar alerta para o sistema');
+      }
+    }
+  });
+
+  // Notificações inteligentes e automação
+  useSmartNotifications({
+    events,
+    onCreateSystemAlert: async (alert) => {
+      await integrationService.sendSystemAlert(alert);
+    },
+    onConflictDetected: (conflicts) => {
+      toast({
+        title: '⚠️ Conflito de Horários Detectado',
+        description: `${conflicts.length} eventos com horários conflitantes`,
+        variant: 'destructive',
+        duration: 8000
+      });
+    },
+    onSuggestOptimization: (suggestion) => {
+      toast({
+        title: '💡 Sugestão de Otimização',
+        description: suggestion.message,
+        duration: 10000
+      });
     }
   });
 
@@ -93,7 +125,19 @@ const Calendar: React.FC = () => {
         <span className="text-primary">Calendário Logístico</span>
       </div>
 
-      <Card>
+      {/* Vista Mobile */}
+      <MobileCalendarView
+        currentDate={currentDate}
+        events={events}
+        metrics={metrics}
+        onDateChange={setCurrentDate}
+        onEventClick={handleEventClick}
+        onAddEvent={handleAddEvent}
+        onDayClick={handleDayClick}
+      />
+
+      {/* Vista Desktop */}
+      <Card className="hidden lg:block">
         <CardContent className="p-6">
           <CalendarHeader
             currentDate={currentDate}

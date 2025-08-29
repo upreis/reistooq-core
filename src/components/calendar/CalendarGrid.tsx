@@ -37,29 +37,29 @@ const getEventIcon = (type: LogisticEvent['type']) => {
 };
 
 const getEventColor = (type: LogisticEvent['type'], status: LogisticEvent['status'], priority: LogisticEvent['priority']) => {
-  // Cores baseadas no status primeiro
-  if (status === 'completed') return 'bg-green-500 text-white';
-  if (status === 'cancelled') return 'bg-gray-400 text-white';
-  if (status === 'delayed') return 'bg-red-500 text-white';
+  // Cores baseadas no status primeiro usando design system
+  if (status === 'completed') return 'bg-success text-success-foreground';
+  if (status === 'cancelled') return 'bg-muted text-muted-foreground';
+  if (status === 'delayed') return 'bg-destructive text-destructive-foreground';
   
   // Depois por prioridade
-  if (priority === 'critical') return 'bg-red-600 text-white';
-  if (priority === 'high') return 'bg-orange-500 text-white';
+  if (priority === 'critical') return 'bg-destructive text-destructive-foreground animate-pulse';
+  if (priority === 'high') return 'bg-warning text-warning-foreground';
   
-  // Por último, por tipo
+  // Por último, por tipo usando tokens semânticos
   switch (type) {
     case 'delivery':
-      return 'bg-blue-500 text-white';
+      return 'bg-primary text-primary-foreground';
     case 'pickup':
-      return 'bg-purple-500 text-white';
+      return 'bg-secondary text-secondary-foreground';
     case 'deadline':
-      return 'bg-yellow-600 text-white';
+      return 'bg-warning text-warning-foreground';
     case 'transport':
-      return 'bg-indigo-500 text-white';
+      return 'bg-info text-info-foreground';
     case 'meeting':
-      return 'bg-green-600 text-white';
+      return 'bg-success text-success-foreground';
     default:
-      return 'bg-gray-500 text-white';
+      return 'bg-muted text-muted-foreground';
   }
 };
 
@@ -118,8 +118,9 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
           key={day}
           onClick={() => onDayClick(date)}
           className={cn(
-            "h-24 p-2 border border-muted hover:bg-muted/50 transition-colors text-left relative",
-            isToday && "bg-primary/10 border-primary"
+            "h-16 sm:h-20 md:h-24 p-1 sm:p-2 border border-muted hover:bg-muted/50 transition-all duration-200 text-left relative touch-manipulation",
+            isToday && "bg-primary/10 border-primary ring-2 ring-primary/20",
+            "active:scale-98 transform"
           )}
         >
           <div className={cn(
@@ -129,8 +130,8 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
             {day}
           </div>
           
-          <div className="space-y-1 max-h-16 overflow-hidden">
-            {dayEvents.slice(0, 2).map((event) => (
+          <div className="space-y-0.5 sm:space-y-1 max-h-12 sm:max-h-14 md:max-h-16 overflow-hidden">
+            {dayEvents.slice(0, window.innerWidth < 640 ? 1 : 2).map((event) => (
               <div
                 key={event.id}
                 onClick={(e) => {
@@ -138,14 +139,14 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                   onEventClick(event);
                 }}
                 className={cn(
-                  "text-xs px-1.5 py-0.5 rounded cursor-pointer truncate flex items-center space-x-1 relative",
+                  "text-xs px-1 sm:px-1.5 py-0.5 rounded cursor-pointer truncate flex items-center space-x-1 relative",
                   getEventColor(event.type, event.status, event.priority),
-                  "hover:opacity-90 transition-opacity"
+                  "hover:scale-105 active:scale-95 transition-all duration-200 touch-manipulation"
                 )}
                 title={`${event.title} - ${event.time || 'Horário não definido'}`}
               >
-                {getEventIcon(event.type)}
-                <span className="truncate">{event.title}</span>
+                <span className="hidden sm:inline">{getEventIcon(event.type)}</span>
+                <span className="truncate text-[10px] sm:text-xs">{event.title}</span>
                 {getPriorityIndicator(event.priority)}
               </div>
             ))}
