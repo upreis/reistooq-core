@@ -126,11 +126,30 @@ serve(async (req) => {
           });
 
           // Buscar produto no estoque usando o SKU Estoque (sku_correspondente)
-          const { data: produto, error: produtoError } = await supabaseService
-            .from('produtos')
-            .select('id, sku_interno, quantidade_atual, nome')
-            .eq('sku_interno', skuEstoque)
-            .maybeSingle();
+          let produto: any = null;
+          let produtoError: any = null;
+          // Tentativa 1: por SKU + integration_account
+          {
+            const res = await supabaseService
+              .from('produtos')
+              .select('id, sku_interno, quantidade_atual, nome, integration_account_id')
+              .eq('sku_interno', skuEstoque)
+              .eq('integration_account_id', pedidoRow.integration_account_id)
+              .maybeSingle();
+            produto = res.data;
+            produtoError = res.error;
+          }
+          // Fallback: apenas por SKU se não encontrou
+          if (!produto) {
+            console.warn(`Produto com SKU ${skuEstoque} não encontrado na conta ${pedidoRow.integration_account_id}, tentando fallback por SKU apenas...`);
+            const res2 = await supabaseService
+              .from('produtos')
+              .select('id, sku_interno, quantidade_atual, nome, integration_account_id')
+              .eq('sku_interno', skuEstoque)
+              .maybeSingle();
+            if (!res2.error && res2.data) produto = res2.data;
+            else produtoError = produtoError || res2.error;
+          }
 
           if (produtoError || !produto) {
             console.warn(`Produto não encontrado para SKU Estoque ${skuEstoque}`);
