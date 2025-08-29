@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Clock, Filter, Settings, CheckSquare, CalendarIcon } from 'lucide-react';
+import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search } from 'lucide-react';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
@@ -70,7 +70,7 @@ export default function SimplePedidosPage({ className }: Props) {
   // 🛡️ SISTEMA UNIFICADO (P2.1: Corrigido - hook não pode ser memoizado diretamente)
   const pedidosManager = usePedidosManager();
   // P2.1: Memoização correta dos valores derivados
-  const { filters, state, actions } = useMemo(() => pedidosManager, [pedidosManager]);
+  const { filters, appliedFilters, state, actions, hasPendingChanges } = useMemo(() => pedidosManager, [pedidosManager]);
   
   // Estados locais para funcionalidades específicas
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -979,6 +979,18 @@ export default function SimplePedidosPage({ className }: Props) {
             isLoading={loading}
           />
           
+          {/* 🔄 BOTÃO APLICAR FILTROS */}
+          {hasPendingChanges && (
+            <Button
+              onClick={actions.applyFilters}
+              disabled={loading || state.isRefreshing}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Aplicar Filtros
+            </Button>
+          )}
+          
           <Button
             variant="outline"
             onClick={actions.refetch}
@@ -1101,6 +1113,14 @@ export default function SimplePedidosPage({ className }: Props) {
               Limpar Filtros
             </Button>
           </div>
+          
+          {/* 🔄 Aviso de mudanças pendentes */}
+          {hasPendingChanges && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800">
+              <Filter className="h-4 w-4" />
+              <span className="text-sm">Filtros alterados. Clique em "Aplicar Filtros" para atualizar os resultados.</span>
+            </div>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Filtro por Status do Envio - Multi seleção no Popover (igual Colunas) */}

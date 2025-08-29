@@ -24,6 +24,7 @@ interface PedidosFiltersProps {
   filters: PedidosFiltersState;
   onFiltersChange: (filters: PedidosFiltersState) => void;
   onClearFilters: () => void;
+  hasPendingChanges?: boolean; // 🔄 Indicador de mudanças pendentes
 }
 
 const SITUACOES = [
@@ -41,7 +42,7 @@ const UFS = [
   'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
 ];
 
-export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: PedidosFiltersProps) {
+export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPendingChanges }: PedidosFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleFilterChange = (key: keyof PedidosFiltersState, value: any) => {
@@ -63,6 +64,14 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters }: Ped
 
   return (
     <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-gray-600">
+      {/* 🔄 Aviso de mudanças pendentes */}
+      {hasPendingChanges && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800">
+          <Filter className="h-4 w-4" />
+          <span className="text-sm">Filtros alterados. Clique em "Aplicar Filtros" para atualizar os resultados.</span>
+        </div>
+      )}
+      
       {/* Filtros Básicos */}
       <div className="flex flex-wrap gap-4 items-end">
         {/* Busca */}

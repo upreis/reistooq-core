@@ -43,6 +43,7 @@ export interface PedidosManagerState {
 export interface PedidosManagerActions {
   setFilters: (filters: Partial<PedidosFilters>) => void;
   clearFilters: () => void;
+  applyFilters: () => void; // 🔄 Nova ação para aplicar filtros manualmente
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   setIntegrationAccountId: (id: string) => void;
@@ -70,6 +71,8 @@ const DEFAULT_FILTERS: PedidosFilters = {};
 export function usePedidosManager(initialAccountId?: string) {
   // Estados principais
   const [filters, setFiltersState] = useState<PedidosFilters>(DEFAULT_FILTERS);
+  const [pendingFilters, setPendingFilters] = useState<PedidosFilters>(DEFAULT_FILTERS); // 🔄 Filtros pendentes
+  const [appliedFilters, setAppliedFilters] = useState<PedidosFilters>(DEFAULT_FILTERS); // 🔄 Filtros aplicados
   const [orders, setOrders] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -90,8 +93,8 @@ export function usePedidosManager(initialAccountId?: string) {
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
   const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
   
-  // 🚀 FASE 2: Debounce nos filtros para performance (P2.2: usando constants)
-  const debouncedFilters = useDebounce(filters, DEBOUNCE.FILTER_DELAY_MS);
+  // 🔄 Usar appliedFilters no lugar de filters para debounce
+  const debouncedFilters = useDebounce(appliedFilters, DEBOUNCE.FILTER_DELAY_MS);
   
   // 🚀 FASE 3: Filtros salvos (localStorage)
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => {
@@ -220,9 +223,9 @@ export function usePedidosManager(initialAccountId?: string) {
     if (!orders.length) return orders;
 
     return orders.filter(order => {
-      // Filtro de busca
-      if (debouncedFilters.search) {
-        const searchTerm = debouncedFilters.search.toLowerCase();
+      // Filtro de busca - usar appliedFilters no lugar de debouncedFilters
+      if (appliedFilters.search) {
+        const searchTerm = appliedFilters.search.toLowerCase();
         const searchableFields = [
           order.id,
           order.numero,
@@ -236,9 +239,9 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de status - MODIFICADO para usar shipping_status
-      if (debouncedFilters.situacao) {
-        const selectedStatuses = Array.isArray(debouncedFilters.situacao) ? debouncedFilters.situacao : [debouncedFilters.situacao];
+      // Filtro de status - MODIFICADO para usar shipping_status e appliedFilters
+      if (appliedFilters.situacao) {
+        const selectedStatuses = Array.isArray(appliedFilters.situacao) ? appliedFilters.situacao : [appliedFilters.situacao];
         
         // Usar shipping_status como referência principal
         const orderShippingStatus = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || '';
@@ -255,35 +258,35 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de data
-      if (debouncedFilters.dataInicio || debouncedFilters.dataFim) {
+      // Filtro de data - usar appliedFilters
+      if (appliedFilters.dataInicio || appliedFilters.dataFim) {
         const orderDate = new Date(order.data_pedido || order.date_created);
         
-        if (debouncedFilters.dataInicio && orderDate < debouncedFilters.dataInicio) {
+        if (appliedFilters.dataInicio && orderDate < appliedFilters.dataInicio) {
           return false;
         }
-        if (debouncedFilters.dataFim && orderDate > debouncedFilters.dataFim) {
+        if (appliedFilters.dataFim && orderDate > appliedFilters.dataFim) {
           return false;
         }
       }
 
-      // Outros filtros
-      if (debouncedFilters.cidade && !order.cidade?.toLowerCase().includes(debouncedFilters.cidade.toLowerCase())) {
+      // Outros filtros - usar appliedFilters
+      if (appliedFilters.cidade && !order.cidade?.toLowerCase().includes(appliedFilters.cidade.toLowerCase())) {
         return false;
       }
-      if (debouncedFilters.uf && order.uf !== debouncedFilters.uf) {
+      if (appliedFilters.uf && order.uf !== appliedFilters.uf) {
         return false;
       }
-      if (debouncedFilters.valorMin !== undefined && (order.valor_total || 0) < debouncedFilters.valorMin) {
+      if (appliedFilters.valorMin !== undefined && (order.valor_total || 0) < appliedFilters.valorMin) {
         return false;
       }
-      if (debouncedFilters.valorMax !== undefined && (order.valor_total || 0) > debouncedFilters.valorMax) {
+      if (appliedFilters.valorMax !== undefined && (order.valor_total || 0) > appliedFilters.valorMax) {
         return false;
       }
 
       return true;
     });
-  }, [debouncedFilters]);
+  }, [appliedFilters]); // 🔄 Dependência alterada para appliedFilters
 
   /**
    * 🚀 FASE 2: Cache inteligente
@@ -310,7 +313,7 @@ export function usePedidosManager(initialAccountId?: string) {
     }
     abortControllerRef.current = new AbortController();
 
-    const apiParams = buildApiParams(debouncedFilters);
+    const apiParams = buildApiParams(appliedFilters); // 🔄 Usar appliedFilters
     const cacheKey = getCacheKey(apiParams);
 
     // 🚀 FASE 2: Verificar cache
@@ -413,15 +416,15 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [integrationAccountId, debouncedFilters, currentPage, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
+  }, [integrationAccountId, appliedFilters, currentPage, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]); // 🔄 Dependência alterada
 
   // 🚀 FASE 3: Exportação de dados
   const exportData = useCallback(async (format: 'csv' | 'xlsx') => {
     try {
       setLoading(true);
       
-      // Carregar todos os dados sem paginação
-      const apiParams = buildApiParams(debouncedFilters);
+      // Carregar todos os dados sem paginação - usar appliedFilters
+      const apiParams = buildApiParams(appliedFilters);
       const allData = await loadFromUnifiedOrders({ ...apiParams, limit: PAGINATION.EXPORT_LIMIT });
       
       if (format === 'csv') {
@@ -436,43 +439,62 @@ export function usePedidosManager(initialAccountId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [buildApiParams, debouncedFilters, loadFromUnifiedOrders]);
+  }, [buildApiParams, appliedFilters, loadFromUnifiedOrders]); // 🔄 Dependência alterada
 
   // 🚀 FASE 3: Gerenciamento de filtros salvos
   const saveCurrentFilters = useCallback((name: string) => {
     const newFilter: SavedFilter = {
       id: Date.now().toString(),
       name,
-      filters: { ...debouncedFilters },
+      filters: { ...appliedFilters }, // 🔄 Salvar filtros aplicados
       createdAt: new Date()
     };
     
     const updated = [...savedFilters, newFilter];
     setSavedFilters(updated);
     localStorage.setItem('pedidos-saved-filters', JSON.stringify(updated));
-  }, [debouncedFilters, savedFilters]);
+  }, [appliedFilters, savedFilters]); // 🔄 Dependência corrigida
 
   const loadSavedFilters = useCallback((name: string) => {
     const saved = savedFilters.find(f => f.name === name);
     if (saved) {
-      setFiltersState(saved.filters);
+      setPendingFilters(saved.filters); // 🔄 Carregar nos filtros pendentes
+      setAppliedFilters(saved.filters); // 🔄 E aplicar imediatamente
       setCurrentPage(1);
     }
   }, [savedFilters]);
 
   const getSavedFilters = useCallback(() => savedFilters, [savedFilters]);
 
+  // 🔄 Nova função para aplicar filtros manualmente
+  const applyFilters = useCallback(() => {
+    console.log('🔄 Aplicando filtros manualmente:', pendingFilters);
+    setAppliedFilters({ ...pendingFilters });
+    setCurrentPage(1);
+    // Limpar cache para forçar nova busca
+    setCachedAt(undefined);
+    setLastQuery(undefined);
+  }, [pendingFilters]);
+
   // Actions melhoradas
   const actions: PedidosManagerActions = useMemo(() => ({
     setFilters: (newFilters: Partial<PedidosFilters>) => {
-      setFiltersState(prev => ({ ...prev, ...newFilters }));
-      setCurrentPage(1); // Reset page when filters change
+      console.log('🔄 Atualizando filtros pendentes:', newFilters);
+      setPendingFilters(prev => ({ ...prev, ...newFilters }));
+      // NÃO resetar página nem aplicar automaticamente
     },
     
     clearFilters: () => {
-      setFiltersState(DEFAULT_FILTERS);
+      console.log('🔄 Limpando todos os filtros');
+      setPendingFilters(DEFAULT_FILTERS);
+      setAppliedFilters(DEFAULT_FILTERS);
       setCurrentPage(1);
+      // Limpar cache
+      setCachedAt(undefined);
+      setLastQuery(undefined);
     },
+
+    applyFilters, // 🔄 Nova ação
     
     setPage: (page: number) => {
       setCurrentPage(page);
@@ -487,6 +509,9 @@ export function usePedidosManager(initialAccountId?: string) {
       setIntegrationAccountId(prev => {
         if (prev !== id) {
           setCurrentPage(1);
+          // Limpar cache quando mudar conta
+          setCachedAt(undefined);
+          setLastQuery(undefined);
           return id;
         }
         return prev;
@@ -504,7 +529,7 @@ export function usePedidosManager(initialAccountId?: string) {
     saveCurrentFilters,
     loadSavedFilters,
     getSavedFilters
-  }), [loadOrders, applyClientSideFilters, exportData, saveCurrentFilters, loadSavedFilters, getSavedFilters]);
+  }), [applyFilters, loadOrders, applyClientSideFilters, exportData, saveCurrentFilters, loadSavedFilters, getSavedFilters]);
 
   // State object melhorado
   const state: PedidosManagerState = {
@@ -526,10 +551,17 @@ export function usePedidosManager(initialAccountId?: string) {
     paging
   };
 
-  // Effects otimizados
+  // Effects otimizados - 🔄 Carregar apenas na primeira vez ou quando integrationAccountId mudar
   useEffect(() => {
-    loadOrders();
-  }, [loadOrders]);
+    // Carregar dados apenas na primeira vez (quando integrationAccountId está definido)
+    if (integrationAccountId && Object.keys(appliedFilters).every(key => 
+      appliedFilters[key as keyof PedidosFilters] === undefined || 
+      appliedFilters[key as keyof PedidosFilters] === ''
+    )) {
+      console.log('🔄 Carregamento inicial automático');
+      loadOrders();
+    }
+  }, [integrationAccountId]); // 🔄 Apenas quando a conta mudar
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
@@ -541,15 +573,17 @@ export function usePedidosManager(initialAccountId?: string) {
   }, []);
 
   return {
-    filters: debouncedFilters, // 🚀 FASE 2: Usar filtros com debounce
+    filters: pendingFilters, // 🔄 Retornar filtros pendentes para a UI
+    appliedFilters, // 🔄 Filtros que estão realmente aplicados
     state,
     actions,
     // Computed values
     totalPages: Math.ceil(total / pageSize),
-    hasActiveFilters: Object.keys(debouncedFilters).some(key => 
-      debouncedFilters[key as keyof PedidosFilters] !== undefined && 
-      debouncedFilters[key as keyof PedidosFilters] !== ''
-    )
+    hasActiveFilters: Object.keys(appliedFilters).some(key => 
+      appliedFilters[key as keyof PedidosFilters] !== undefined && 
+      appliedFilters[key as keyof PedidosFilters] !== ''
+    ),
+    hasPendingChanges: JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters) // 🔄 Indicador de mudanças pendentes
   };
 }
 
