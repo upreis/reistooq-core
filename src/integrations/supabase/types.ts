@@ -2166,6 +2166,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      baixar_estoque_direto: {
+        Args: { p_baixas: Json }
+        Returns: Json
+      }
       check_access_schedule: {
         Args: { _user_id: string }
         Returns: boolean

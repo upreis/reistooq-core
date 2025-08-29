@@ -4,7 +4,6 @@ import { Pedido } from '@/types/pedido';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-
 interface ProcessarBaixaParams {
   pedidos: Pedido[];
   contextoDaUI?: {
@@ -22,31 +21,47 @@ export function useProcessarBaixaEstoque() {
   return useMutation({
     mutationFn: async ({ pedidos, contextoDaUI }: ProcessarBaixaParams): Promise<boolean> => {
       try {
-        // 1) Tentar processar via Edge Function (debita estoque e registra histórico)
-        const orderIds = pedidos.map(p => p.id);
-        const { data, error } = await supabase.functions.invoke('processar-baixa-estoque', {
-          body: {
-            orderIds,
-            action: 'baixar_estoque'
-          },
-          headers: { 'Content-Type': 'application/json' }
+        // Extrair SKU KIT + Total de Itens dos pedidos
+        const baixas = pedidos.map(pedido => {
+          // Pegar sku_kit e total_itens do pedido
+          const sku = pedido.sku_kit || '';
+          const quantidade = Number(pedido.total_itens || 0);
+          
+          return {
+            sku: sku.trim(),
+            quantidade: quantidade
+          };
+        }).filter(baixa => baixa.sku && baixa.quantidade > 0);
+
+        if (baixas.length === 0) {
+          throw new Error('Nenhum pedido válido para baixa (SKU KIT e Total de Itens são obrigatórios)');
+        }
+
+        // Chamar função SQL direta para baixa de estoque
+        const { data, error } = await supabase.rpc('baixar_estoque_direto', {
+          p_baixas: baixas
         });
+
         if (error) throw error;
-        // Sucesso somente se a Edge Function reportar success=true
-        return Boolean((data as any)?.success);
-      } catch (err) {
-        console.warn('Falha na Edge Function, usando fallback de snapshot:', err);
-        // 2) Fallback: salvar snapshots (não debita estoque)
-        let sucessos = 0;
-        for (const pedido of pedidos) {
-          try {
-            await salvarSnapshotBaixa(pedido, contextoDaUI);
-            sucessos++;
-          } catch (e) {
-            console.error('Erro ao criar snapshot:', e);
+
+        const result = data as any;
+        
+        // Registrar histórico para pedidos com baixa bem-sucedida (mantém fluxo original)
+        if (result.success && contextoDaUI) {
+          // Salvar snapshots apenas para histórico (não afeta estoque)
+          for (const pedido of pedidos) {
+            try {
+              await salvarSnapshotBaixa(pedido, contextoDaUI);
+            } catch (e) {
+              console.warn('Erro ao salvar histórico:', e);
+            }
           }
         }
-        return sucessos === pedidos.length;
+
+        return result.success;
+      } catch (err) {
+        console.error('Erro na baixa de estoque:', err);
+        throw err;
       }
     },
     onSuccess: (allSuccess) => {
