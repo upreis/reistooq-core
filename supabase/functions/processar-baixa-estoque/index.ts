@@ -57,18 +57,7 @@ serve(async (req) => {
         // Buscar itens do pedido
         const { data: orderItems, error: itemsError } = await supabase
           .from('itens_pedidos')
-          .select(`
-            id,
-            sku,
-            quantidade,
-            pedido_id,
-            produtos!inner(
-              id,
-              sku_interno,
-              quantidade_atual,
-              nome
-            )
-          `)
+          .select('id, sku, quantidade, pedido_id')
           .eq('pedido_id', orderId);
 
         if (itemsError) {
@@ -85,14 +74,36 @@ serve(async (req) => {
 
         // Processar baixa de estoque para cada item
         for (const item of orderItems) {
-          const produto = item.produtos;
-          
-          if (!produto) {
-            console.warn(`Produto não encontrado para SKU ${item.sku}`);
+          // Buscar mapeamento do SKU do pedido para SKU do estoque
+          const { data: mapeamento } = await supabase
+            .from('mapeamentos_depara')
+            .select('sku_correspondente, quantidade')
+            .eq('sku_pedido', item.sku)
+            .eq('ativo', true)
+            .maybeSingle();
+
+          if (!mapeamento || !mapeamento.sku_correspondente) {
+            console.warn(`Mapeamento não encontrado para SKU ${item.sku}`);
+            errors.push(`SKU ${item.sku}: mapeamento não encontrado`);
             continue;
           }
 
-          const novaQuantidade = Math.max(0, produto.quantidade_atual - item.quantidade);
+          // Buscar produto no estoque usando o SKU mapeado
+          const { data: produto, error: produtoError } = await supabase
+            .from('produtos')
+            .select('id, sku_interno, quantidade_atual, nome')
+            .eq('sku_interno', mapeamento.sku_correspondente)
+            .maybeSingle();
+
+          if (produtoError || !produto) {
+            console.warn(`Produto não encontrado para SKU ${mapeamento.sku_correspondente}`);
+            errors.push(`SKU ${mapeamento.sku_correspondente}: produto não encontrado`);
+            continue;
+          }
+
+          // Calcular quantidade total a debitar (item.quantidade * mapeamento.quantidade)
+          const quantidadeDebitar = item.quantidade * (mapeamento.quantidade || 1);
+          const novaQuantidade = Math.max(0, produto.quantidade_atual - quantidadeDebitar);
           
           // Atualizar quantidade do produto
           const { error: updateError } = await supabase
@@ -108,7 +119,7 @@ serve(async (req) => {
             errors.push(`Produto ${produto.nome}: ${updateError.message}`);
             errorCount++;
           } else {
-            console.log(`Baixa realizada: ${produto.nome} - ${produto.quantidade_atual} → ${novaQuantidade}`);
+            console.log(`Baixa realizada: ${produto.nome} (${item.sku} → ${mapeamento.sku_correspondente}) - ${produto.quantidade_atual} → ${novaQuantidade} (-${quantidadeDebitar})`);
           }
         }
 
