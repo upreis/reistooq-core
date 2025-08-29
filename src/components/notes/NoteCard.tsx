@@ -28,12 +28,12 @@ interface NoteCardProps {
 }
 
 const colorClasses = {
-  amarelo: 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100 dark:bg-yellow-950 dark:border-yellow-800',
-  azul: 'bg-blue-50 border-blue-200 hover:bg-blue-100 dark:bg-blue-950 dark:border-blue-800',
-  rosa: 'bg-pink-50 border-pink-200 hover:bg-pink-100 dark:bg-pink-950 dark:border-pink-800',
-  verde: 'bg-green-50 border-green-200 hover:bg-green-100 dark:bg-green-950 dark:border-green-800',
-  roxo: 'bg-purple-50 border-purple-200 hover:bg-purple-100 dark:bg-purple-950 dark:border-purple-800',
-  laranja: 'bg-orange-50 border-orange-200 hover:bg-orange-100 dark:bg-orange-950 dark:border-orange-800',
+  amarelo: 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100 dark:bg-yellow-950/20 dark:border-yellow-800/30 dark:hover:bg-yellow-900/30',
+  azul: 'bg-blue-50 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/20 dark:border-blue-800/30 dark:hover:bg-blue-900/30',
+  rosa: 'bg-pink-50 border-pink-200 hover:bg-pink-100 dark:bg-pink-950/20 dark:border-pink-800/30 dark:hover:bg-pink-900/30',
+  verde: 'bg-green-50 border-green-200 hover:bg-green-100 dark:bg-green-950/20 dark:border-green-800/30 dark:hover:bg-green-900/30',
+  roxo: 'bg-purple-50 border-purple-200 hover:bg-purple-100 dark:bg-purple-950/20 dark:border-purple-800/30 dark:hover:bg-purple-900/30',
+  laranja: 'bg-orange-50 border-orange-200 hover:bg-orange-100 dark:bg-orange-950/20 dark:border-orange-800/30 dark:hover:bg-orange-900/30',
 };
 
 export const NoteCard = memo(function NoteCard({ 
@@ -83,7 +83,7 @@ export const NoteCard = memo(function NoteCard({
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-6 w-6 opacity-60 hover:opacity-100 transition-opacity text-foreground hover:bg-background/80"
                 >
                   <MoreVertical className="h-3 w-3" />
                 </Button>
@@ -115,7 +115,7 @@ export const NoteCard = memo(function NoteCard({
 
           {/* Conteúdo */}
           {note.content && (
-            <p className="text-xs text-muted-foreground line-clamp-3">
+            <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
               {truncateText(note.content, 120)}
             </p>
           )}
@@ -128,13 +128,16 @@ export const NoteCard = memo(function NoteCard({
                 <Badge 
                   key={tag} 
                   variant="outline" 
-                  className="text-xs px-1 py-0 h-5"
+                  className="text-xs px-2 py-0.5 h-5 bg-background/50 text-foreground border-border hover:bg-background/80"
                 >
                   {tag}
                 </Badge>
               ))}
               {note.tags.length > 3 && (
-                <Badge variant="outline" className="text-xs px-1 py-0 h-5">
+                <Badge 
+                  variant="outline" 
+                  className="text-xs px-2 py-0.5 h-5 bg-background/50 text-foreground border-border"
+                >
                   +{note.tags.length - 3}
                 </Badge>
               )}
