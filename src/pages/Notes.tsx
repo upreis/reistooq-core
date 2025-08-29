@@ -2,12 +2,14 @@
 // P4: Página principal de notas com arquitetura modular
 import { useState, useCallback } from 'react';
 import { useNotes } from '@/hooks/useNotes';
+import { useToastFeedback } from '@/hooks/useToastFeedback';
 import { NotesHeader } from '@/components/notes/NotesHeader';
 import { NotesSearch } from '@/components/notes/NotesSearch';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { NoteEditor } from '@/components/notes/NoteEditor';
 import { CreateNoteData, UpdateNoteData } from '@/types/notes';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Loader2, FileText } from 'lucide-react';
 
 const Notes = () => {
@@ -71,6 +73,14 @@ const Notes = () => {
     setSelectedNoteId(null);
   }, [filter, setFilter, setSelectedNoteId]);
 
+  // Teste do sistema de toast
+  const { showSuccess, showError, showInfo } = useToastFeedback();
+  const handleTestToast = useCallback(() => {
+    showSuccess("Sistema de notificações funcionando!");
+    setTimeout(() => showInfo("Esta é uma notificação de informação"), 500);
+    setTimeout(() => showError("E esta é uma de erro para teste"), 1000);
+  }, [showSuccess, showError, showInfo]);
+
   const handleDeleteNote = useCallback(async (noteId: string) => {
     if (window.confirm('Tem certeza que deseja excluir esta nota?')) {
       await deleteNote(noteId);
@@ -101,6 +111,18 @@ const Notes = () => {
         onFilterChange={setFilter}
         onResetFilter={resetFilter}
       />
+
+      {/* Botão de teste do toast (temporário) */}
+      <div className="flex justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleTestToast}
+          className="mb-4"
+        >
+          🔔 Testar Notificações
+        </Button>
+      </div>
 
       {/* Error State */}
       {error && (
