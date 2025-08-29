@@ -22,7 +22,7 @@ export interface ExternalSystemAlert {
 }
 
 class IntegrationService {
-  private baseUrl = process.env.VITE_API_URL || 'https://api.example.com';
+  private baseUrl = import.meta.env.VITE_API_URL || 'https://api.example.com';
   
   // Simulação de API de rastreamento
   async getTrackingInfo(trackingCode: string): Promise<TrackingInfo | null> {
