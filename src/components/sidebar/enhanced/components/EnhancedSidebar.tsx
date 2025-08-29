@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { NavLink } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSidebar } from '../SidebarContext';
+import { useSidebarState } from '../hooks/useSidebarState';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { SidebarItemWithChildren } from './SidebarItemWithChildren';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -174,7 +174,7 @@ const SidebarContent = memo(({
   onMobileClose?: () => void;
   externalIsCollapsed?: boolean;
 }) => {
-  const { state, actions, utils } = useSidebar();
+  const { state, actions, utils } = useSidebarState();
   const { hasPermission } = useUserPermissions();
   // Use external collapsed state if provided (from SidebarUIProvider)
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : (!isMobile && state.expanded === false);
@@ -281,7 +281,7 @@ const SidebarContent = memo(({
 SidebarContent.displayName = 'SidebarContent';
 
 export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isCollapsed: externalIsCollapsed }: EnhancedSidebarProps) => {
-  const { state } = useSidebar();
+  const { state } = useSidebarState();
   
   if (isMobile) {
     return (

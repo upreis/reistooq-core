@@ -192,18 +192,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             label: 'Integrações', 
             path: '/configuracoes/integracoes', 
             icon: 'Zap' 
-          },
-          { 
-            id: 'configuracoes-gerais', 
-            label: 'Configurações Gerais', 
-            path: '/configuracoes/gerais', 
-            icon: 'Settings' 
-          },
-          { 
-            id: 'configuracoes-usuarios', 
-            label: 'Usuários', 
-            path: '/configuracoes/usuarios', 
-            icon: 'Users' 
           }
         ]
       },
