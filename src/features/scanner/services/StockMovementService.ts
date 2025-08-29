@@ -258,36 +258,18 @@ class StockMovementService {
       // Se não encontrou (produto possivelmente órfão), aplicar fallback corrigindo organization_id
       if (error && error.code === 'PGRST116') {
         console.warn('🔄 [StockService] Produto possivelmente órfão. Aplicando fallback com organization_id...');
-        const { error: fallbackErr, data: fallbackData } = await supabase
+        const { error: fallbackErr } = await supabase
           .from('produtos')
           .update({ quantidade_atual: newQuantity, ultima_movimentacao: new Date().toISOString(), organization_id: orgId })
           .eq('id', productId)
           .is('organization_id', null)
           .select('id')
           .single();
-        if (fallbackErr) {
-          console.error('❌ [StockService] Fallback também falhou:', fallbackErr);
-          throw fallbackErr;
-        }
-        if (!fallbackData) {
-          console.error('❌ [StockService] Produto não encontrado nem como órfão');
-          return false;
-        }
-        console.log('✅ [StockService] Produto órfão corrigido com sucesso');
+        if (fallbackErr) throw fallbackErr;
         return true;
       }
 
-      if (error) {
-        console.error('❌ [StockService] Erro na atualização do produto:', error);
-        throw error;
-      }
-      
-      if (!data) {
-        console.error('❌ [StockService] Produto não encontrado ou não atualizado');
-        return false;
-      }
-      
-      console.log('✅ [StockService] Produto atualizado com sucesso:', data);
+      if (error) throw error;
       return true;
     } catch (error) {
       console.error('❌ [StockService] Failed to update product stock:', error);

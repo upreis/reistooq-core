@@ -31,45 +31,7 @@ serve(async (req) => {
   try {
     const supabaseUser = makeClient(req.headers.get("Authorization"));
     const supabaseService = makeClient(null);
-
-    // Parsing robusto do corpo da requisição (suporta JSON, form e texto)
-    let body: any = null;
-    try {
-      const ct = req.headers.get('content-type') || '';
-      const cl = req.headers.get('content-length') || 'unknown';
-      console.log('[Processar Baixa Estoque] Headers:', { 'content-type': ct, 'content-length': cl });
-
-      if (ct.includes('application/json')) {
-        body = await req.json();
-      } else if (ct.includes('application/x-www-form-urlencoded')) {
-        const form = await req.formData();
-        body = Object.fromEntries(form.entries());
-        if (typeof body.orderIds === 'string') {
-          try { body.orderIds = JSON.parse(body.orderIds as string); } catch {}
-        }
-      } else {
-        const text = await req.text();
-        console.log('[Processar Baixa Estoque] Raw body length:', text ? text.length : 0);
-        if (text && text.trim() !== '') {
-          try { body = JSON.parse(text); } catch (e) {
-            console.warn('[Processar Baixa Estoque] Não foi possível parsear como JSON.');
-          }
-        }
-      }
-    } catch (parseError) {
-      console.error('[Processar Baixa Estoque] Erro ao ler corpo:', parseError);
-    }
-
-    if (!body) {
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Corpo da requisição vazio" 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-    
+    const body = await req.json();
     console.log('[Processar Baixa Estoque] Request body:', body);
     
     const { orderIds, action = 'baixar_estoque' } = body;
@@ -93,25 +55,12 @@ serve(async (req) => {
       try {
         console.log(`Processando pedido: ${orderId}`);
         
-        // Buscar dados básicos do pedido para obter os SKUs (tenta por id e por numero)
-        let pedidoRow: any = null;
-        {
-          const byId = await supabaseService
-            .from('pedidos')
-            .select('id, numero, data_pedido, integration_account_id')
-            .eq('id', orderId)
-            .maybeSingle();
-          if (!byId.error && byId.data) pedidoRow = byId.data;
-        }
-        if (!pedidoRow) {
-          console.warn(`Pedido ${orderId} não encontrado por id. Tentando por numero...`);
-          const byNumero = await supabaseService
-            .from('pedidos')
-            .select('id, numero, data_pedido, integration_account_id')
-            .eq('numero', String(orderId))
-            .maybeSingle();
-          if (!byNumero.error && byNumero.data) pedidoRow = byNumero.data;
-        }
+        // Buscar dados básicos do pedido para obter os SKUs
+        const { data: pedidoRow } = await supabaseService
+          .from('pedidos')
+          .select('numero, data_pedido, integration_account_id')
+          .eq('id', orderId)
+          .maybeSingle();
 
         if (!pedidoRow) {
           console.error(`Pedido ${orderId} não encontrado`);
@@ -124,7 +73,7 @@ serve(async (req) => {
         const { data: orderItems, error: itemsError } = await supabaseService
           .from('itens_pedidos')
           .select('sku, quantidade')
-          .eq('pedido_id', pedidoRow.id);
+          .eq('pedido_id', orderId);
 
         if (itemsError || !orderItems) {
           console.error(`Erro ao buscar itens do pedido ${orderId}:`, itemsError);
