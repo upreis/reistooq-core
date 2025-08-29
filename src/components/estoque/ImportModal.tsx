@@ -49,6 +49,7 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
     { key: 'nome', label: 'Nome', required: true },
     { key: 'categoria', label: 'Categoria', required: false },
     { key: 'descricao', label: 'Descrição', required: false },
+    { key: 'url_imagem', label: 'URL da Imagem', required: false },
     { key: 'quantidade_atual', label: 'Quantidade Atual', required: false },
     { key: 'estoque_minimo', label: 'Estoque Mínimo', required: false },
     { key: 'estoque_maximo', label: 'Estoque Máximo', required: false },
@@ -66,6 +67,7 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
         'Produto Exemplo',
         'Eletrônicos',
         'Descrição do produto exemplo',
+        'https://exemplo.com/imagem.jpg',
         '10',
         '5',
         '100',
@@ -111,6 +113,15 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
     
     if (!row.nome || row.nome.trim() === '') {
       errors.push(`Linha ${index + 2}: Nome é obrigatório`);
+    }
+
+    // Validar URL da imagem se fornecida
+    if (row.url_imagem && row.url_imagem.trim() !== '') {
+      try {
+        new URL(row.url_imagem.trim());
+      } catch {
+        errors.push(`Linha ${index + 2}: URL da imagem inválida`);
+      }
     }
 
     // Validar tipos numéricos
@@ -208,6 +219,7 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
           nome: row.nome?.trim(),
           categoria: row.categoria?.trim() || null,
           descricao: row.descricao?.trim() || null,
+          url_imagem: row.url_imagem?.trim() || null,
           quantidade_atual: Number(row.quantidade_atual) || 0,
           estoque_minimo: Number(row.estoque_minimo) || 0,
           estoque_maximo: Number(row.estoque_maximo) || 0,
@@ -345,6 +357,7 @@ export function ImportModal({ open, onOpenChange, onSuccess }: ImportModalProps)
                 <li>Use apenas arquivos Excel (.xlsx ou .xls)</li>
                 <li>SKU Interno e Nome são obrigatórios</li>
                 <li>SKUs devem ser únicos (não pode duplicar)</li>
+                <li>URL da Imagem deve ser um link válido (opcional)</li>
                 <li>Baixe o template para ver o formato correto</li>
               </ul>
             </AlertDescription>
