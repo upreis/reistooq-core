@@ -31,28 +31,39 @@ serve(async (req) => {
   try {
     const supabaseUser = makeClient(req.headers.get("Authorization"));
     const supabaseService = makeClient(null);
-    
-    // Validar se há conteúdo no corpo da requisição
-    const text = await req.text();
-    if (!text || text.trim() === '') {
-      console.error('[Processar Baixa Estoque] Corpo da requisição vazio');
+
+    // Parsing robusto do corpo da requisição (suporta JSON, form e texto)
+    let body: any = null;
+    try {
+      const ct = req.headers.get('content-type') || '';
+      const cl = req.headers.get('content-length') || 'unknown';
+      console.log('[Processar Baixa Estoque] Headers:', { 'content-type': ct, 'content-length': cl });
+
+      if (ct.includes('application/json')) {
+        body = await req.json();
+      } else if (ct.includes('application/x-www-form-urlencoded')) {
+        const form = await req.formData();
+        body = Object.fromEntries(form.entries());
+        if (typeof body.orderIds === 'string') {
+          try { body.orderIds = JSON.parse(body.orderIds as string); } catch {}
+        }
+      } else {
+        const text = await req.text();
+        console.log('[Processar Baixa Estoque] Raw body length:', text ? text.length : 0);
+        if (text && text.trim() !== '') {
+          try { body = JSON.parse(text); } catch (e) {
+            console.warn('[Processar Baixa Estoque] Não foi possível parsear como JSON.');
+          }
+        }
+      }
+    } catch (parseError) {
+      console.error('[Processar Baixa Estoque] Erro ao ler corpo:', parseError);
+    }
+
+    if (!body) {
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Corpo da requisição vazio" 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
-    let body;
-    try {
-      body = JSON.parse(text);
-    } catch (parseError) {
-      console.error('[Processar Baixa Estoque] Erro ao fazer parse do JSON:', parseError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "JSON inválido no corpo da requisição" 
       }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
