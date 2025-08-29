@@ -67,7 +67,7 @@ export const NoteCard = memo(function NoteCard({
                 {note.isPinned && (
                   <Pin className="h-3 w-3 text-primary fill-current" />
                 )}
-                <h4 className="font-medium text-sm text-foreground dark:text-gray-100 truncate">
+                <h4 className="font-bold text-sm text-gray-900 dark:text-white truncate">
                   {note.title}
                 </h4>
               </div>
