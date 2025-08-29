@@ -63,7 +63,7 @@ const routeMatches = (current: string, target: string) => {
 };
 export function AnnouncementTicker() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
+  const [dismissedAlerts, setDismissedAlerts] = useState<Map<string, string>>(new Map());
   const { isHidden, setIsHidden, setHasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { isSidebarCollapsed } = useSidebarUI();
   const isMobile = useIsMobile();
@@ -77,10 +77,12 @@ export function AnnouncementTicker() {
     const loadDismissed = async () => {
       const { data, error } = await supabase
         .from('user_dismissed_notifications')
-        .select('notification_id')
+        .select('notification_id, dismissed_at')
         .eq('notification_type', 'system_alert');
       if (!error && data) {
-        setDismissedAlerts(new Set((data as any[]).map((d) => d.notification_id)));
+        const map = new Map<string, string>();
+        (data as any[]).forEach((d) => map.set(d.notification_id, d.dismissed_at));
+        setDismissedAlerts(map);
       }
     };
     loadDismissed();
@@ -96,8 +98,9 @@ export function AnnouncementTicker() {
           return false;
         }
         
-        // Se o alerta foi dispensado pelo usuário
-        if (dismissedAlerts.has(a.id)) {
+        // Se o alerta foi dispensado pelo usuário (e não sofreu atualização depois)
+        const dismissedAt = dismissedAlerts.get(a.id);
+        if (dismissedAt && new Date(a.updated_at) <= new Date(dismissedAt)) {
           return false;
         }
         
@@ -154,7 +157,11 @@ export function AnnouncementTicker() {
   const handleDismissAlert = async (alertId: string) => {
     try {
       await dismissAlert(alertId);
-      setDismissedAlerts(prev => new Set([...prev, alertId]));
+      setDismissedAlerts(prev => {
+        const next = new Map(prev);
+        next.set(alertId, new Date().toISOString());
+        return next;
+      });
       
       // Se é o último alerta ou só tem um, ajustar índice
       if (announcements.length <= 1) {
