@@ -1846,6 +1846,9 @@ export type Database = {
           message: string
           organization_id: string | null
           priority: number | null
+          target_roles: string[] | null
+          target_routes: string[] | null
+          target_users: string[] | null
           updated_at: string
         }
         Insert: {
@@ -1860,6 +1863,9 @@ export type Database = {
           message: string
           organization_id?: string | null
           priority?: number | null
+          target_roles?: string[] | null
+          target_routes?: string[] | null
+          target_users?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -1874,6 +1880,9 @@ export type Database = {
           message?: string
           organization_id?: string | null
           priority?: number | null
+          target_roles?: string[] | null
+          target_routes?: string[] | null
+          target_users?: string[] | null
           updated_at?: string
         }
         Relationships: [

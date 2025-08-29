@@ -93,7 +93,7 @@ export default function MobileTable({
         <div className="min-w-full">
           {/* Table Header */}
           <div className="grid gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium mb-4"
-               style={{ gridTemplateColumns: `${selectableItems ? '40px ' : ''}repeat(${columns.length}, 1fr) ${actions.length > 0 ? '100px' : ''}` }}>
+               style={{ gridTemplateColumns: `${selectableItems ? '40px ' : ''}repeat(${columns.length}, 1fr) ${actions.length > 0 ? '120px' : ''}` }}>
             {selectableItems && (
               <div className="flex items-center">
                 <Checkbox
@@ -135,7 +135,7 @@ export default function MobileTable({
                     "grid gap-4 py-4 px-4 border rounded-lg hover:bg-muted/30 transition-colors",
                     isSelected && "bg-muted/50 border-primary"
                   )}
-                  style={{ gridTemplateColumns: `${selectableItems ? '40px ' : ''}repeat(${columns.length}, 1fr) ${actions.length > 0 ? '100px' : ''}` }}
+                  style={{ gridTemplateColumns: `${selectableItems ? '40px ' : ''}repeat(${columns.length}, 1fr) ${actions.length > 0 ? '120px' : ''}` }}
                 >
                   {selectableItems && (
                     <div className="flex items-center">
@@ -154,17 +154,17 @@ export default function MobileTable({
                     </div>
                   ))}
                   {actions.length > 0 && (
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-end gap-1">
                       {actions.map((action, index) => (
                         <Button
                           key={index}
                           variant={action.variant || "outline"}
                           size="sm"
                           onClick={() => action.onClick(item)}
-                          className="text-xs"
+                          className="text-xs px-2 h-8"
+                          title={action.label}
                         >
                           {action.icon}
-                          {action.label}
                         </Button>
                       ))}
                     </div>

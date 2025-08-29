@@ -57,8 +57,9 @@ export function useToastFeedback() {
     });
   }, [toast]);
 
-  const dismissToast = useCallback((toastId: string) => {
-    // Implementar dismiss se necessário - por enquanto o shadcn/ui handle isso
+  const dismissToast = useCallback((toastId?: string) => {
+    const { dismiss } = useToast();
+    dismiss(toastId);
   }, []);
 
   return {

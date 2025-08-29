@@ -45,11 +45,11 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
     
     try {
       // 📸 Passar contexto da UI para fotografia completa
-      await processarBaixa.mutateAsync({
+      const ok = await processarBaixa.mutateAsync({
         pedidos,
         contextoDaUI
       });
-      setProcessed(true);
+      setProcessed(Boolean(ok));
     } catch (error) {
       console.error('Erro ao processar baixa:', error);
     } finally {

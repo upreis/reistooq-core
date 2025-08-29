@@ -24,7 +24,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           },
           {
             id: 'oms-pedidos',
-            label: 'Gestão de Pedidos',
+            label: 'Vendas Direta/Atacado',
             path: '/oms/pedidos',
             icon: 'ShoppingCart'
           },
@@ -51,6 +51,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             label: 'Configurações OMS',
             path: '/oms/configuracoes',
             icon: 'Settings'
+          },
+          {
+            id: 'vendas-marketplace',
+            label: 'Vendas Marketplace',
+            path: '/pedidos',
+            icon: 'Store'
           }
         ]
       },
@@ -157,12 +163,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         label: 'Gestão de Estoque', 
         path: '/estoque', 
         icon: 'Boxes' 
-      },
-      { 
-        id: 'pedidos', 
-        label: 'Pedidos', 
-        path: '/pedidos', 
-        icon: 'Receipt'
       },
       { 
         id: 'scanner', 

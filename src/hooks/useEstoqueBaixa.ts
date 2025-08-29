@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { salvarSnapshotBaixa } from '@/utils/snapshot';
 import { Pedido } from '@/types/pedido';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+
 
 interface ProcessarBaixaParams {
   pedidos: Pedido[];
@@ -19,18 +21,33 @@ export function useProcessarBaixaEstoque() {
 
   return useMutation({
     mutationFn: async ({ pedidos, contextoDaUI }: ProcessarBaixaParams): Promise<boolean> => {
-      // 📸 Processar cada pedido com fotografia completa
-      let sucessos = 0;
-      for (const pedido of pedidos) {
-        try {
-          console.log('📸 [linha-pedido]', pedido);
-          await salvarSnapshotBaixa(pedido, contextoDaUI);
-          sucessos++;
-        } catch (error) {
-          console.error('❌ Erro ao criar snapshot:', error);
+      try {
+        // 1) Tentar processar via Edge Function (debita estoque e registra histórico)
+        const orderIds = pedidos.map(p => p.id);
+        const { data, error } = await supabase.functions.invoke('processar-baixa-estoque', {
+          body: {
+            orderIds,
+            action: 'baixar_estoque'
+          },
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (error) throw error;
+        // Sucesso somente se a Edge Function reportar success=true
+        return Boolean((data as any)?.success);
+      } catch (err) {
+        console.warn('Falha na Edge Function, usando fallback de snapshot:', err);
+        // 2) Fallback: salvar snapshots (não debita estoque)
+        let sucessos = 0;
+        for (const pedido of pedidos) {
+          try {
+            await salvarSnapshotBaixa(pedido, contextoDaUI);
+            sucessos++;
+          } catch (e) {
+            console.error('Erro ao criar snapshot:', e);
+          }
         }
+        return sucessos === pedidos.length;
       }
-      return sucessos === pedidos.length;
     },
     onSuccess: (allSuccess) => {
       // Invalidar cache relacionado

@@ -11,6 +11,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -312,6 +313,9 @@ export function EstoqueTable({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Movimentação de Estoque</DialogTitle>
+            <DialogDescription>
+              Registre entradas, saídas ou ajustes no estoque do produto selecionado.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>

@@ -13,8 +13,11 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Bell, Plus, Edit, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
+import { Bell, Plus, Edit, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Info, CheckCircle, XCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import type { SystemAlert } from '../types/admin.types';
+import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const ALERT_KINDS = [
   { value: 'info', label: 'Informativo', icon: Info, color: 'text-blue-500' },
@@ -23,11 +26,83 @@ const ALERT_KINDS = [
   { value: 'success', label: 'Sucesso', icon: CheckCircle, color: 'text-green-500' }
 ];
 
+// DB atualmente valida apenas alguns tipos; evitamos erros de constraint
+const ALLOWED_KINDS_DB = ['info', 'warning'];
+const AVAILABLE_KINDS = ALERT_KINDS.filter(k => ALLOWED_KINDS_DB.includes(k.value));
+
 const PRIORITY_OPTIONS = [
   { value: 0, label: 'Baixa' },
   { value: 1, label: 'Normal' },
   { value: 2, label: 'Alta' },
   { value: 3, label: 'Crítica' }
+];
+
+// Estrutura das rotas do sistema baseada nas rotas reais (src/App.tsx e src/pages/OMS.tsx)
+const SYSTEM_ROUTES = [
+  {
+    section: 'DASHBOARDS',
+    routes: [
+      { path: '/', label: 'Dashboard' },
+      { path: '/analytics', label: 'Analytics' },
+    ]
+  },
+  {
+    section: 'OMS (Vendas)',
+    routes: [
+      { path: '/oms', label: 'Dashboard OMS' },
+      { path: '/oms/pedidos', label: 'Pedidos (OMS)' },
+      { path: '/oms/clientes', label: 'Clientes (OMS)' },
+      { path: '/oms/fornecedores', label: 'Fornecedores (OMS)' },
+      { path: '/oms/relatorios', label: 'Relatórios (OMS)' },
+      { path: '/oms/configuracoes', label: 'Configurações OMS' },
+    ]
+  },
+  {
+    section: 'eCommerce',
+    routes: [
+      { path: '/apps/ecommerce/shop', label: 'Loja' },
+      { path: '/apps/ecommerce/detail', label: 'Detalhes do Produto' },
+      { path: '/apps/ecommerce/list', label: 'Lista de Produtos' },
+      { path: '/apps/ecommerce/checkout', label: 'Checkout' },
+      { path: '/apps/ecommerce/addproduct', label: 'Adicionar Produto' },
+      { path: '/apps/ecommerce/editproduct', label: 'Editar Produto' },
+    ]
+  },
+  {
+    section: 'Perfil do Usuário',
+    routes: [
+      { path: '/apps/user-profile/profile', label: 'Perfil' },
+      { path: '/apps/user-profile/followers', label: 'Seguidores' },
+      { path: '/apps/user-profile/friends', label: 'Amigos' },
+      { path: '/apps/user-profile/gallery', label: 'Galeria' },
+    ]
+  },
+  {
+    section: 'APLICAÇÕES',
+    routes: [
+      { path: '/apps/calendar', label: 'Calendário' },
+      { path: '/apps/notes', label: 'Notas' },
+      { path: '/estoque', label: 'Gestão de Estoque' },
+      { path: '/pedidos', label: 'Pedidos' },
+      { path: '/scanner', label: 'Scanner' },
+      { path: '/de-para', label: 'De-Para' },
+      { path: '/alertas', label: 'Alertas' },
+    ]
+  },
+  {
+    section: 'CONFIGURAÇÕES',
+    routes: [
+      { path: '/configuracoes', label: 'Configurações' },
+      { path: '/configuracoes/integracoes', label: 'Integrações' },
+      { path: '/historico', label: 'Histórico' },
+    ]
+  },
+  {
+    section: 'ADMINISTRAÇÃO',
+    routes: [
+      { path: '/admin', label: 'Administração' },
+    ]
+  }
 ];
 
 interface AlertFormProps {
@@ -44,9 +119,41 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
     active: alert?.active ?? true,
     href: alert?.href || '',
     link_label: alert?.link_label || '',
-    expires_at: alert?.expires_at ? new Date(alert.expires_at).toISOString().slice(0, 16) : ''
+    expires_at: alert?.expires_at ? new Date(alert.expires_at).toISOString().slice(0, 16) : '',
   });
+  const [selectedRoutes, setSelectedRoutes] = useState<string[]>(alert?.target_routes || []);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['DASHBOARDS']));
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const toggleSection = (section: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
+    } else {
+      newExpanded.add(section);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  const toggleRoute = (routePath: string) => {
+    setSelectedRoutes(prev => 
+      prev.includes(routePath) 
+        ? prev.filter(r => r !== routePath)
+        : [...prev, routePath]
+    );
+  };
+
+  const selectAllInSection = (sectionRoutes: any[]) => {
+    const sectionPaths = sectionRoutes.map(r => r.path);
+    const allSelected = sectionPaths.every(path => selectedRoutes.includes(path));
+    
+    if (allSelected) {
+      setSelectedRoutes(prev => prev.filter(r => !sectionPaths.includes(r)));
+    } else {
+      setSelectedRoutes(prev => [...new Set([...prev, ...sectionPaths])]);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,20 +161,30 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
     
     setLoading(true);
     try {
+      const normalizedKind = (ALLOWED_KINDS_DB as string[]).includes(formData.kind)
+        ? formData.kind
+        : 'warning';
+
       const submitData = {
         message: formData.message,
-        kind: formData.kind as any,
+        kind: normalizedKind as any,
         priority: formData.priority,
         active: formData.active,
         href: formData.href || undefined,
         link_label: formData.link_label || undefined,
-        expires_at: formData.expires_at || undefined
+        expires_at: formData.expires_at || undefined,
+        target_routes: selectedRoutes.length > 0 ? selectedRoutes : undefined
       };
 
       await onSave(submitData);
       onCancel();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save alert:', err);
+      toast({
+        title: 'Erro ao salvar alerta',
+        description: err?.message || 'Não foi possível salvar o alerta.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -97,7 +214,7 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {ALERT_KINDS.map(kind => {
+              {AVAILABLE_KINDS.map(kind => {
                 const Icon = kind.icon;
                 return (
                   <SelectItem key={kind.value} value={kind.value}>
@@ -142,28 +259,31 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="href">Link (opcional)</Label>
+          <Label htmlFor="href">Link de direcionamento (opcional)</Label>
           <Input
             id="href"
             value={formData.href}
             onChange={(e) => setFormData(prev => ({ ...prev, href: e.target.value }))}
-            placeholder="https://exemplo.com"
-            type="url"
+            placeholder="/admin, /produtos, /dashboard ou URL externa"
           />
+          <p className="text-sm text-muted-foreground">
+            Use rotas internas (/admin) ou URLs completas (https://exemplo.com)
+          </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="link_label">Texto do Link</Label>
-          <Input
-            id="link_label"
-            value={formData.link_label}
-            onChange={(e) => setFormData(prev => ({ ...prev, link_label: e.target.value }))}
-            placeholder="Saiba mais"
-            disabled={!formData.href}
-          />
-        </div>
+        {formData.href && (
+          <div className="space-y-2">
+            <Label htmlFor="link_label">Texto do botão/link</Label>
+            <Input
+              id="link_label"
+              value={formData.link_label}
+              onChange={(e) => setFormData(prev => ({ ...prev, link_label: e.target.value }))}
+              placeholder="Ver detalhes, Acessar página, etc."
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -174,6 +294,83 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
           value={formData.expires_at}
           onChange={(e) => setFormData(prev => ({ ...prev, expires_at: e.target.value }))}
         />
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Páginas onde o alerta será exibido</Label>
+          <p className="text-sm text-muted-foreground">
+            Deixe vazio para mostrar em todas as páginas, ou selecione páginas específicas
+          </p>
+        </div>
+
+        <div className="border rounded-lg p-4 max-h-80 overflow-y-auto">
+          <div className="space-y-3">
+            {SYSTEM_ROUTES.map((section) => {
+              const sectionRoutes = section.routes;
+              const allSelected = sectionRoutes.every(route => selectedRoutes.includes(route.path));
+              const someSelected = sectionRoutes.some(route => selectedRoutes.includes(route.path));
+              const isExpanded = expandedSections.has(section.section);
+
+              return (
+                <div key={section.section}>
+                  <Collapsible open={isExpanded} onOpenChange={() => toggleSection(section.section)}>
+                    <div className="flex items-center justify-between py-1">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={allSelected}
+                          ref={(ref: any) => {
+                            if (ref) ref.indeterminate = someSelected && !allSelected;
+                          }}
+                          onCheckedChange={() => selectAllInSection(sectionRoutes)}
+                        />
+                        <CollapsibleTrigger className="flex items-center space-x-1 text-sm font-medium hover:text-primary">
+                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          <span>{section.section}</span>
+                        </CollapsibleTrigger>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {sectionRoutes.filter(r => selectedRoutes.includes(r.path)).length}/{sectionRoutes.length}
+                      </span>
+                    </div>
+                    
+                    <CollapsibleContent className="ml-6 space-y-2">
+                      {sectionRoutes.map((route) => (
+                        <div key={route.path} className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={selectedRoutes.includes(route.path)}
+                            onCheckedChange={() => toggleRoute(route.path)}
+                          />
+                          <Label className="text-sm font-normal cursor-pointer">
+                            {route.label}
+                          </Label>
+                          <span className="text-xs text-muted-foreground">({route.path})</span>
+                        </div>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              );
+            })}
+          </div>
+          
+          {selectedRoutes.length > 0 && (
+            <div className="mt-4 pt-3 border-t">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedRoutes.length} página(s) selecionada(s)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedRoutes([])}
+                >
+                  Limpar seleção
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex justify-end gap-2 pt-4">

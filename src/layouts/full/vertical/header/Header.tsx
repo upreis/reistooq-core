@@ -30,7 +30,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-background border-b">
+    <header className={`sticky z-40 bg-background border-b transition-all duration-300 ${hasAnnouncements && !isCollapsed && !isHidden ? 'top-12' : 'top-0'}`}>
       <div className="flex items-center gap-2 px-4 h-14">
         {/* Hamburger (mobile only) */}
         <button
