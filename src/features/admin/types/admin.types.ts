@@ -83,6 +83,9 @@ export interface SystemAlert {
   href?: string;
   link_label?: string;
   expires_at?: string;
+  target_users?: string[];
+  target_roles?: string[];
+  target_routes?: string[];
   created_at: string;
   updated_at: string;
 }

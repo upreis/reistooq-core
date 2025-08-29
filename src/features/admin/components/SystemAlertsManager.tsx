@@ -49,7 +49,8 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
     active: alert?.active ?? true,
     href: alert?.href || '',
     link_label: alert?.link_label || '',
-    expires_at: alert?.expires_at ? new Date(alert.expires_at).toISOString().slice(0, 16) : ''
+    expires_at: alert?.expires_at ? new Date(alert.expires_at).toISOString().slice(0, 16) : '',
+    target_routes: alert?.target_routes ? alert.target_routes.join(', ') : ''
   });
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -64,6 +65,10 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
         ? formData.kind
         : 'warning';
 
+      const targetRoutes = formData.target_routes
+        ? formData.target_routes.split(',').map(r => r.trim()).filter(Boolean)
+        : undefined;
+
       const submitData = {
         message: formData.message,
         kind: normalizedKind as any,
@@ -71,7 +76,8 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
         active: formData.active,
         href: formData.href || undefined,
         link_label: formData.link_label || undefined,
-        expires_at: formData.expires_at || undefined
+        expires_at: formData.expires_at || undefined,
+        target_routes: targetRoutes
       };
 
       await onSave(submitData);
@@ -157,28 +163,31 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="href">Link (opcional)</Label>
+          <Label htmlFor="href">Link de direcionamento (opcional)</Label>
           <Input
             id="href"
             value={formData.href}
             onChange={(e) => setFormData(prev => ({ ...prev, href: e.target.value }))}
-            placeholder="https://exemplo.com"
-            type="url"
+            placeholder="/admin, /produtos, /dashboard ou URL externa"
           />
+          <p className="text-sm text-muted-foreground">
+            Use rotas internas (/admin) ou URLs completas (https://exemplo.com)
+          </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="link_label">Texto do Link</Label>
-          <Input
-            id="link_label"
-            value={formData.link_label}
-            onChange={(e) => setFormData(prev => ({ ...prev, link_label: e.target.value }))}
-            placeholder="Saiba mais"
-            disabled={!formData.href}
-          />
-        </div>
+        {formData.href && (
+          <div className="space-y-2">
+            <Label htmlFor="link_label">Texto do botão/link</Label>
+            <Input
+              id="link_label"
+              value={formData.link_label}
+              onChange={(e) => setFormData(prev => ({ ...prev, link_label: e.target.value }))}
+              placeholder="Ver detalhes, Acessar página, etc."
+            />
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -189,6 +198,28 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
           value={formData.expires_at}
           onChange={(e) => setFormData(prev => ({ ...prev, expires_at: e.target.value }))}
         />
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label>Segmentação (opcional)</Label>
+          <p className="text-sm text-muted-foreground">
+            Deixe vazio para mostrar a todos os usuários da organização
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="target_routes">Rotas específicas</Label>
+          <Input
+            id="target_routes"
+            value={formData.target_routes}
+            onChange={(e) => setFormData(prev => ({ ...prev, target_routes: e.target.value }))}
+            placeholder="/admin, /produtos, /dashboard"
+          />
+          <p className="text-sm text-muted-foreground">
+            Separar por vírgula. Ex: /admin, /produtos. Deixe vazio para mostrar em todas as páginas.
+          </p>
+        </div>
       </div>
 
       <div className="flex justify-end gap-2 pt-4">
