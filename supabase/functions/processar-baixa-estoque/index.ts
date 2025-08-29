@@ -54,57 +54,100 @@ serve(async (req) => {
     // Processar cada pedido
     for (const orderId of orderIds) {
       try {
-        // Buscar itens do pedido
-        const { data: orderItems, error: itemsError } = await supabase
-          .from('itens_pedidos')
-          .select('id, sku, quantidade, pedido_id')
-          .eq('pedido_id', orderId);
+        console.log(`Processando pedido: ${orderId}`);
+        
+        // Buscar dados básicos do pedido para obter os SKUs
+        const { data: pedidoRow } = await supabase
+          .from('pedidos')
+          .select('numero, data_pedido, integration_account_id')
+          .eq('id', orderId)
+          .maybeSingle();
 
-        if (itemsError) {
-          console.error(`Erro ao buscar itens do pedido ${orderId}:`, itemsError);
-          errors.push(`Pedido ${orderId}: ${itemsError.message}`);
+        if (!pedidoRow) {
+          console.error(`Pedido ${orderId} não encontrado`);
+          errors.push(`Pedido ${orderId}: não encontrado`);
           errorCount++;
           continue;
         }
 
-        if (!orderItems || orderItems.length === 0) {
-          console.log(`Nenhum item encontrado para o pedido ${orderId}`);
+        // Buscar itens do pedido para obter os SKUs originais  
+        const { data: orderItems, error: itemsError } = await supabase
+          .from('itens_pedidos')
+          .select('sku, quantidade')
+          .eq('pedido_id', orderId);
+
+        if (itemsError || !orderItems) {
+          console.error(`Erro ao buscar itens do pedido ${orderId}:`, itemsError);
+          errors.push(`Pedido ${orderId}: ${itemsError?.message || 'itens não encontrados'}`);
+          errorCount++;
           continue;
         }
 
-        // Processar baixa de estoque para cada item
-        for (const item of orderItems) {
-          // Buscar mapeamento do SKU do pedido para SKU do estoque
+        console.log(`Encontrados ${orderItems.length} itens para pedido ${orderId}`);
+
+        // Calcular quantidade total vendida (soma das quantidades dos itens)
+        const quantidadeVendida = orderItems.reduce((sum, item) => sum + (item.quantidade || 0), 0);
+
+        // Processar cada SKU único do pedido através dos mapeamentos
+        const skusUnicos = [...new Set(orderItems.map(item => item.sku))];
+        
+        for (const skuPedido of skusUnicos) {
+          console.log(`Processando SKU do pedido: ${skuPedido}`);
+          
+          // Buscar mapeamento ativo para este SKU  
           const { data: mapeamento } = await supabase
             .from('mapeamentos_depara')
-            .select('sku_correspondente, quantidade')
-            .eq('sku_pedido', item.sku)
+            .select('sku_correspondente, sku_simples, quantidade')
+            .eq('sku_pedido', skuPedido)
             .eq('ativo', true)
             .maybeSingle();
 
-          if (!mapeamento || !mapeamento.sku_correspondente) {
-            console.warn(`Mapeamento não encontrado para SKU ${item.sku}`);
-            errors.push(`SKU ${item.sku}: mapeamento não encontrado`);
+          if (!mapeamento) {
+            console.warn(`Mapeamento não encontrado para SKU ${skuPedido}`);
+            errors.push(`SKU ${skuPedido}: mapeamento não encontrado`);
             continue;
           }
 
-          // Buscar produto no estoque usando o SKU mapeado
+          // O SKU KIT que aparece na UI é o sku_simples (SKU Unitário) 
+          const skuKit = mapeamento.sku_simples;
+          // O SKU Estoque é o sku_correspondente (SKU Correto)
+          const skuEstoque = mapeamento.sku_correspondente;
+          // Quantidade por kit do mapeamento
+          const qtdKit = mapeamento.quantidade || 1;
+
+          console.log(`Mapeamento encontrado:`, {
+            skuPedido,
+            skuKit,
+            skuEstoque, 
+            qtdKit,
+            quantidadeVendida
+          });
+
+          // Buscar produto no estoque usando o SKU Estoque (sku_correspondente)
           const { data: produto, error: produtoError } = await supabase
             .from('produtos')
             .select('id, sku_interno, quantidade_atual, nome')
-            .eq('sku_interno', mapeamento.sku_correspondente)
+            .eq('sku_interno', skuEstoque)
             .maybeSingle();
 
           if (produtoError || !produto) {
-            console.warn(`Produto não encontrado para SKU ${mapeamento.sku_correspondente}`);
-            errors.push(`SKU ${mapeamento.sku_correspondente}: produto não encontrado`);
+            console.warn(`Produto não encontrado para SKU Estoque ${skuEstoque}`);
+            errors.push(`SKU Estoque ${skuEstoque}: produto não encontrado`);
             continue;
           }
 
-          // Calcular quantidade total a debitar (item.quantidade * mapeamento.quantidade)
-          const quantidadeDebitar = item.quantidade * (mapeamento.quantidade || 1);
-          const novaQuantidade = Math.max(0, produto.quantidade_atual - quantidadeDebitar);
+          // Total de Itens = quantidade vendida × quantidade do kit
+          const totalItens = quantidadeVendida * qtdKit;
+          const novaQuantidade = Math.max(0, produto.quantidade_atual - totalItens);
           
+          console.log(`Baixa calculada:`, {
+            produtoNome: produto.nome,
+            skuInterno: produto.sku_interno,
+            estoqueAtual: produto.quantidade_atual,
+            totalItensADebitar: totalItens,
+            novaQuantidade
+          });
+
           // Atualizar quantidade do produto
           const { error: updateError } = await supabase
             .from('produtos')
@@ -119,50 +162,42 @@ serve(async (req) => {
             errors.push(`Produto ${produto.nome}: ${updateError.message}`);
             errorCount++;
           } else {
-            console.log(`Baixa realizada: ${produto.nome} (${item.sku} → ${mapeamento.sku_correspondente}) - ${produto.quantidade_atual} → ${novaQuantidade} (-${quantidadeDebitar})`);
+            console.log(`✅ Baixa realizada: ${produto.nome} (${skuPedido} → ${skuKit} → ${skuEstoque}) - ${produto.quantidade_atual} → ${novaQuantidade} (-${totalItens})`);
           }
         }
 
         processedCount++;
-        console.log(`Pedido ${orderId} processado com sucesso`);
+        console.log(`✅ Pedido ${orderId} processado com sucesso`);
 
-        // Registrar histórico (mínimo necessário para aparecer na página /historico)
+        // Registrar histórico (usando dados calculados)
         try {
-          // Buscar dados essenciais do pedido
-          const { data: pedidoRow } = await supabase
-            .from('pedidos')
-            .select('numero, data_pedido, integration_account_id')
-            .eq('id', orderId)
-            .maybeSingle();
-
-          // Coletar SKUs e quantidade total vendida a partir dos itens já carregados
-          const skus = (orderItems || []).map((i: any) => i.sku).filter(Boolean);
-          const quantidadeVendida = (orderItems || []).reduce((sum: number, i: any) => sum + (Number(i.quantidade) || 0), 0);
+          const skusProcessados = skusUnicos.join(', ');
+          const totalGeralItens = quantidadeVendida; // Soma total
 
           const { error: histError } = await supabaseService
             .rpc('hv_insert', {
               p: {
                 id_unico: String(orderId),
-                numero_pedido: pedidoRow?.numero || String(orderId),
-                sku_produto: skus.length ? skus.join(', ') : 'BAIXA_ESTOQUE',
-                descricao: 'Baixa automática de estoque via função',
-                quantidade: quantidadeVendida || 0,
+                numero_pedido: pedidoRow.numero || String(orderId),
+                sku_produto: skusProcessados,
+                descricao: `Baixa automática: ${skusProcessados}`,
+                quantidade: totalGeralItens,
                 valor_unitario: 0,
                 valor_total: 0,
                 status: 'baixado',
-                data_pedido: pedidoRow?.data_pedido || new Date().toISOString().slice(0,10),
-                observacoes: 'Processado automaticamente',
-                integration_account_id: pedidoRow?.integration_account_id || null,
+                data_pedido: pedidoRow.data_pedido || new Date().toISOString().slice(0,10),
+                observacoes: `Processado automaticamente - Total de itens: ${totalGeralItens}`,
+                integration_account_id: pedidoRow.integration_account_id,
               }
             });
 
           if (histError) {
-            console.error(`[Processar Baixa Estoque] Erro ao registrar histórico:`, histError.message);
+            console.error(`Erro ao registrar histórico:`, histError.message);
           } else {
-            console.log(`[Processar Baixa Estoque] Histórico registrado para pedido ${orderId}`);
+            console.log(`✅ Histórico registrado para pedido ${orderId}`);
           }
         } catch (e) {
-          console.error(`[Processar Baixa Estoque] Falha ao registrar histórico:`, e);
+          console.error(`Falha ao registrar histórico:`, e);
         }
 
       } catch (error) {
