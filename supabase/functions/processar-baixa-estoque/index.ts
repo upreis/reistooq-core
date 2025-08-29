@@ -29,9 +29,10 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUser = makeClient(req.headers.get("Authorization"));
+    const supabase = makeClient(req.headers.get("Authorization"));
     const supabaseService = makeClient(null);
     const body = await req.json();
+    
     console.log('[Processar Baixa Estoque] Request body:', body);
     
     const { orderIds, action = 'baixar_estoque' } = body;
@@ -53,127 +54,48 @@ serve(async (req) => {
     // Processar cada pedido
     for (const orderId of orderIds) {
       try {
-        console.log(`Processando pedido: ${orderId}`);
-        
-        // Buscar dados básicos do pedido para obter os SKUs
-        const { data: pedidoRow } = await supabaseService
-          .from('pedidos')
-          .select('numero, data_pedido, integration_account_id')
-          .eq('id', orderId)
-          .maybeSingle();
-
-        if (!pedidoRow) {
-          console.error(`Pedido ${orderId} não encontrado`);
-          errors.push(`Pedido ${orderId}: não encontrado`);
-          errorCount++;
-          continue;
-        }
-
-        // Buscar itens do pedido para obter os SKUs originais  
-        const { data: orderItems, error: itemsError } = await supabaseService
+        // Buscar itens do pedido
+        const { data: orderItems, error: itemsError } = await supabase
           .from('itens_pedidos')
-          .select('sku, quantidade')
+          .select(`
+            id,
+            sku,
+            quantidade,
+            pedido_id,
+            produtos!inner(
+              id,
+              sku_interno,
+              quantidade_atual,
+              nome
+            )
+          `)
           .eq('pedido_id', orderId);
 
-        if (itemsError || !orderItems) {
+        if (itemsError) {
           console.error(`Erro ao buscar itens do pedido ${orderId}:`, itemsError);
-          errors.push(`Pedido ${orderId}: ${itemsError?.message || 'itens não encontrados'}`);
+          errors.push(`Pedido ${orderId}: ${itemsError.message}`);
           errorCount++;
           continue;
         }
 
-        console.log(`Encontrados ${orderItems.length} itens para pedido ${orderId}`);
+        if (!orderItems || orderItems.length === 0) {
+          console.log(`Nenhum item encontrado para o pedido ${orderId}`);
+          continue;
+        }
 
-        // Processar por SKU único do pedido através dos mapeamentos
-        const skusUnicos = [...new Set(orderItems.map(item => item.sku))];
-        let totalDebitadoGeral = 0;
-        
-        for (const skuPedido of skusUnicos) {
-          console.log(`Processando SKU do pedido: ${skuPedido}`);
-          // Quantidade vendida SOMENTE deste SKU no pedido
-          const quantidadeVendidaSku = orderItems
-            .filter(item => item.sku === skuPedido)
-            .reduce((sum, item) => sum + (item.quantidade || 0), 0);
+        // Processar baixa de estoque para cada item
+        for (const item of orderItems) {
+          const produto = item.produtos;
           
-          // Buscar mapeamento ativo para este SKU  
-          const { data: mapeamento } = await supabaseService
-            .from('mapeamentos_depara')
-            .select('sku_correspondente, sku_simples, quantidade')
-            .eq('sku_pedido', skuPedido)
-            .eq('ativo', true)
-            .maybeSingle();
-
-           if (!mapeamento) {
-             console.warn(`Mapeamento não encontrado para SKU ${skuPedido}`);
-             errors.push(`SKU ${skuPedido}: mapeamento não encontrado`);
-             errorCount++;
-             continue;
-           }
-
-          // O SKU KIT que aparece na UI é o sku_simples (SKU Unitário) 
-          const skuKit = mapeamento.sku_simples;
-          // O SKU Estoque é o sku_correspondente (SKU Correto)
-          const skuEstoque = mapeamento.sku_correspondente;
-          // Quantidade por kit do mapeamento
-          const qtdKit = mapeamento.quantidade || 1;
-
-          console.log(`Mapeamento encontrado:`, {
-            skuPedido,
-            skuKit,
-            skuEstoque, 
-            qtdKit,
-            quantidadeVendida: quantidadeVendidaSku
-          });
-
-          // Buscar produto no estoque usando o SKU Estoque (sku_correspondente)
-          let produto: any = null;
-          let produtoError: any = null;
-          // Tentativa 1: por SKU + integration_account
-          {
-            const res = await supabaseService
-              .from('produtos')
-              .select('id, sku_interno, quantidade_atual, nome, integration_account_id')
-              .eq('sku_interno', skuEstoque)
-              .eq('integration_account_id', pedidoRow.integration_account_id)
-              .maybeSingle();
-            produto = res.data;
-            produtoError = res.error;
-          }
-          // Fallback: apenas por SKU se não encontrou
           if (!produto) {
-            console.warn(`Produto com SKU ${skuEstoque} não encontrado na conta ${pedidoRow.integration_account_id}, tentando fallback por SKU apenas...`);
-            const res2 = await supabaseService
-              .from('produtos')
-              .select('id, sku_interno, quantidade_atual, nome, integration_account_id')
-              .eq('sku_interno', skuEstoque)
-              .maybeSingle();
-            if (!res2.error && res2.data) produto = res2.data;
-            else produtoError = produtoError || res2.error;
-          }
-
-          if (produtoError || !produto) {
-            console.warn(`Produto não encontrado para SKU Estoque ${skuEstoque}`);
-            errors.push(`SKU Estoque ${skuEstoque}: produto não encontrado`);
-            errorCount++;
+            console.warn(`Produto não encontrado para SKU ${item.sku}`);
             continue;
           }
 
-          // Total de Itens = quantidade vendida (deste SKU) × quantidade do kit
-          const quantidadeVendidaSkuNum = Number(quantidadeVendidaSku) || 0;
-          const qtdKitNum = Number(qtdKit) || 1;
-          const totalItens = quantidadeVendidaSkuNum * qtdKitNum;
-          const novaQuantidade = Math.max(0, Number(produto.quantidade_atual ?? 0) - totalItens);
+          const novaQuantidade = Math.max(0, produto.quantidade_atual - item.quantidade);
           
-          console.log(`Baixa calculada:`, {
-            produtoNome: produto.nome,
-            skuInterno: produto.sku_interno,
-            estoqueAtual: produto.quantidade_atual,
-            totalItensADebitar: totalItens,
-            novaQuantidade
-          });
-
           // Atualizar quantidade do produto
-          const { error: updateError } = await supabaseService
+          const { error: updateError } = await supabase
             .from('produtos')
             .update({ 
               quantidade_atual: novaQuantidade,
@@ -186,43 +108,50 @@ serve(async (req) => {
             errors.push(`Produto ${produto.nome}: ${updateError.message}`);
             errorCount++;
           } else {
-            totalDebitadoGeral += totalItens;
-            console.log(`✅ Baixa realizada: ${produto.nome} (${skuPedido} → ${skuKit} → ${skuEstoque}) - ${produto.quantidade_atual} → ${novaQuantidade} (-${totalItens})`);
+            console.log(`Baixa realizada: ${produto.nome} - ${produto.quantidade_atual} → ${novaQuantidade}`);
           }
         }
 
         processedCount++;
-        console.log(`✅ Pedido ${orderId} processado com sucesso`);
+        console.log(`Pedido ${orderId} processado com sucesso`);
 
-        // Registrar histórico (usando dados calculados)
+        // Registrar histórico (mínimo necessário para aparecer na página /historico)
         try {
-          const skusProcessados = skusUnicos.join(', ');
-          const totalGeralItens = totalDebitadoGeral;
+          // Buscar dados essenciais do pedido
+          const { data: pedidoRow } = await supabase
+            .from('pedidos')
+            .select('numero, data_pedido, integration_account_id')
+            .eq('id', orderId)
+            .maybeSingle();
+
+          // Coletar SKUs e quantidade total vendida a partir dos itens já carregados
+          const skus = (orderItems || []).map((i: any) => i.sku).filter(Boolean);
+          const quantidadeVendida = (orderItems || []).reduce((sum: number, i: any) => sum + (Number(i.quantidade) || 0), 0);
 
           const { error: histError } = await supabaseService
             .rpc('hv_insert', {
               p: {
                 id_unico: String(orderId),
-                numero_pedido: pedidoRow.numero || String(orderId),
-                sku_produto: skusProcessados,
-                descricao: `Baixa automática: ${skusProcessados}`,
-                quantidade: totalGeralItens,
+                numero_pedido: pedidoRow?.numero || String(orderId),
+                sku_produto: skus.length ? skus.join(', ') : 'BAIXA_ESTOQUE',
+                descricao: 'Baixa automática de estoque via função',
+                quantidade: quantidadeVendida || 0,
                 valor_unitario: 0,
                 valor_total: 0,
                 status: 'baixado',
-                data_pedido: pedidoRow.data_pedido || new Date().toISOString().slice(0,10),
-                observacoes: `Processado automaticamente - Total de itens: ${totalGeralItens}`,
-                integration_account_id: pedidoRow.integration_account_id,
+                data_pedido: pedidoRow?.data_pedido || new Date().toISOString().slice(0,10),
+                observacoes: 'Processado automaticamente',
+                integration_account_id: pedidoRow?.integration_account_id || null,
               }
             });
 
           if (histError) {
-            console.error(`Erro ao registrar histórico:`, histError.message);
+            console.error(`[Processar Baixa Estoque] Erro ao registrar histórico:`, histError.message);
           } else {
-            console.log(`✅ Histórico registrado para pedido ${orderId}`);
+            console.log(`[Processar Baixa Estoque] Histórico registrado para pedido ${orderId}`);
           }
         } catch (e) {
-          console.error(`Falha ao registrar histórico:`, e);
+          console.error(`[Processar Baixa Estoque] Falha ao registrar histórico:`, e);
         }
 
       } catch (error) {

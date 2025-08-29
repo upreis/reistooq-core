@@ -96,10 +96,7 @@ class StockMovementService {
       });
 
       // 5. Atualizar produto
-      const updated = await this.updateProductStock(request.produto_id, newQuantity);
-      if (!updated) {
-        throw new Error('Falha ao atualizar o estoque do produto');
-      }
+      await this.updateProductStock(request.produto_id, newQuantity);
 
       // 6. Verificar alertas
       await this.checkStockAlerts(product, newQuantity);
@@ -150,10 +147,7 @@ class StockMovementService {
         observacoes: request.observacoes
       });
 
-      const updated = await this.updateProductStock(request.produto_id, newQuantity);
-      if (!updated) {
-        throw new Error('Falha ao atualizar o estoque do produto');
-      }
+      await this.updateProductStock(request.produto_id, newQuantity);
       await this.checkStockAlerts(product, newQuantity);
 
       this.provideFeedback('success', 'Saída registrada com sucesso!');
@@ -191,10 +185,7 @@ class StockMovementService {
         observacoes: request.observacoes
       });
 
-      const updated = await this.updateProductStock(request.produto_id, newQuantity);
-      if (!updated) {
-        throw new Error('Falha ao atualizar o estoque do produto');
-      }
+      await this.updateProductStock(request.produto_id, newQuantity);
       await this.checkStockAlerts(product, newQuantity);
 
       this.provideFeedback('success', 'Ajuste realizado com sucesso!');
@@ -237,37 +228,13 @@ class StockMovementService {
    */
   async updateProductStock(productId: string, newQuantity: number): Promise<boolean> {
     try {
-      // Obter organização atual para respeitar RLS
-      const { data: orgId, error: orgErr } = await supabase.rpc('get_current_org_id');
-      if (orgErr || !orgId) {
-        throw orgErr || new Error('Organização atual não encontrada');
-      }
-
-      // Tentar atualizar com organization_id da org atual
-      let { error, data } = await supabase
+      const { error } = await supabase
         .from('produtos')
-        .update({
+        .update({ 
           quantidade_atual: newQuantity,
           ultima_movimentacao: new Date().toISOString()
         })
-        .eq('id', productId)
-        .eq('organization_id', orgId)
-        .select('id')
-        .single();
-
-      // Se não encontrou (produto possivelmente órfão), aplicar fallback corrigindo organization_id
-      if (error && error.code === 'PGRST116') {
-        console.warn('🔄 [StockService] Produto possivelmente órfão. Aplicando fallback com organization_id...');
-        const { error: fallbackErr } = await supabase
-          .from('produtos')
-          .update({ quantidade_atual: newQuantity, ultima_movimentacao: new Date().toISOString(), organization_id: orgId })
-          .eq('id', productId)
-          .is('organization_id', null)
-          .select('id')
-          .single();
-        if (fallbackErr) throw fallbackErr;
-        return true;
-      }
+        .eq('id', productId);
 
       if (error) throw error;
       return true;

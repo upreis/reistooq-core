@@ -32,11 +32,11 @@ const CollapsedReopenTab: React.FC = () => {
 
 const InnerLayout = () => {
   const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed } = useSidebarUI();
-  const { isHidden, isCollapsed, hasAnnouncements } = useAnnouncements();
+  const { isHidden, isCollapsed } = useAnnouncements();
   const location = useLocation();
   const isMobile = useIsMobile();
 
-  const offset = hasAnnouncements && !isHidden && !isCollapsed ? "pt-12" : "";
+  const offset = !isHidden && !isCollapsed ? "pt-12" : "";
 
   // Fechar drawer mobile ao trocar de rota
   useEffect(() => { setIsMobileSidebarOpen(false); }, [location.pathname, setIsMobileSidebarOpen]);

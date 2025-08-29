@@ -1,76 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { CalendarHeader } from '@/components/calendar/CalendarHeader';
-import { CalendarGrid } from '@/components/calendar/CalendarGrid';
-import { CalendarFilters } from '@/components/calendar/CalendarFilters';
-import { EventModal } from '@/components/calendar/EventModal';
-import { MobileCalendarView } from '@/components/calendar/MobileCalendarView';
-import { useLogisticCalendar } from '@/hooks/useLogisticCalendar';
-import { useCalendarNotifications } from '@/hooks/useCalendarNotifications';
-import { useSmartNotifications } from '@/hooks/useSmartNotifications';
-import { integrationService } from '@/services/integrationService';
-import { LogisticEvent, CalendarViewMode } from '@/types/logistics';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const Calendar: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<CalendarViewMode['type']>('month');
-  const [showFilters, setShowFilters] = useState(false);
-  const [showEventModal, setShowEventModal] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<LogisticEvent | undefined>();
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+const Calendar = () => {
+  const [currentDate, setCurrentDate] = useState(new Date(2025, 7)); // August 2025
+  const [viewMode, setViewMode] = useState<"Month" | "Week" | "Day" | "Agenda">("Month");
 
-  const {
-    events,
-    loading,
-    filters,
-    setFilters,
-    metrics,
-    upcomingNotifications,
-    createEvent,
-    updateEvent,
-    deleteEvent,
-    refreshEvents
-  } = useLogisticCalendar();
+  const events = [
+    { id: 1, title: "Thrice event For two Days", date: 4, duration: 2, color: "bg-purple-500" },
+    { id: 2, title: "Lunch with Mr.Raw", date: 12, color: "bg-blue-500" },
+    { id: 3, title: "Going For Party of ...", date: 15, color: "bg-blue-500" },
+    { id: 4, title: "Learn ReactJs", date: 17, color: "bg-green-500" },
+    { id: 5, title: "Research of makin...", date: 19, color: "bg-purple-500" },
+    { id: 6, title: "Launching meetku...", date: 20, color: "bg-pink-500" },
+    { id: 7, title: "Learn lonic", date: 23, color: "bg-yellow-500" },
+    { id: 8, title: "Learn lonic", date: 24, color: "bg-yellow-500" },
+  ];
 
-  const { toast } = useToast();
+  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  // Integração com sistema de avisos
-  useCalendarNotifications({
-    events: upcomingNotifications,
-    onCreateSystemAlert: async (alert) => {
-      // Integrar com sistema de avisos do AnnouncementTicker
-      const success = await integrationService.sendSystemAlert(alert);
-      if (!success) {
-        console.error('Falha ao enviar alerta para o sistema');
-      }
+  const renderCalendarDays = () => {
+    const days = [];
+    const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 0).getDate();
+    
+    // Previous month days
+    for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+      days.push(
+        <div key={`prev-${prevMonth - i}`} className="h-24 p-2 border border-muted text-muted-foreground bg-muted/20">
+          <div className="text-sm">{prevMonth - i}</div>
+        </div>
+      );
     }
-  });
 
-  // Notificações inteligentes e automação
-  useSmartNotifications({
-    events,
-    onCreateSystemAlert: async (alert) => {
-      await integrationService.sendSystemAlert(alert);
-    },
-    onConflictDetected: (conflicts) => {
-      toast({
-        title: '⚠️ Conflito de Horários Detectado',
-        description: `${conflicts.length} eventos com horários conflitantes`,
-        variant: 'destructive',
-        duration: 8000
-      });
-    },
-    onSuggestOptimization: (suggestion) => {
-      toast({
-        title: '💡 Sugestão de Otimização',
-        description: suggestion.message,
-        duration: 10000
-      });
+    // Current month days
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayEvents = events.filter(event => event.date === day);
+      
+      days.push(
+        <div key={day} className="h-24 p-2 border border-muted hover:bg-muted/50 transition-colors">
+          <div className="text-sm font-medium mb-1">{day}</div>
+          <div className="space-y-1">
+            {dayEvents.map((event) => (
+              <div
+                key={event.id}
+                className={`text-xs px-2 py-1 rounded text-white truncate ${event.color}`}
+              >
+                {event.title}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
     }
-  });
 
-  const handleNavigate = (direction: 'prev' | 'next') => {
+    // Next month days to fill the grid
+    const totalDays = days.length;
+    const remainingDays = 42 - totalDays; // 6 rows × 7 days
+    for (let day = 1; day <= remainingDays; day++) {
+      days.push(
+        <div key={`next-${day}`} className="h-24 p-2 border border-muted text-muted-foreground bg-muted/20">
+          <div className="text-sm">{day}</div>
+        </div>
+      );
+    }
+
+    return days;
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
     if (direction === 'prev') {
       newDate.setMonth(newDate.getMonth() - 1);
@@ -80,108 +82,64 @@ const Calendar: React.FC = () => {
     setCurrentDate(newDate);
   };
 
-  const handleToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  const handleEventClick = (event: LogisticEvent) => {
-    setSelectedEvent(event);
-    setShowEventModal(true);
-  };
-
-  const handleDayClick = (date: Date) => {
-    setSelectedDate(date);
-    setSelectedEvent(undefined);
-    setShowEventModal(true);
-  };
-
-  const handleAddEvent = () => {
-    setSelectedDate(undefined);
-    setSelectedEvent(undefined);
-    setShowEventModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowEventModal(false);
-    setSelectedEvent(undefined);
-    setSelectedDate(undefined);
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      types: [],
-      statuses: [],
-      priorities: [],
-      dateRange: {}
-    });
-  };
-
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>🏠</span>
         <span>/</span>
-        <span className="text-primary">Calendário Logístico</span>
+        <span className="text-primary">Calendar</span>
       </div>
 
-      {/* Vista Mobile */}
-      <MobileCalendarView
-        currentDate={currentDate}
-        events={events}
-        metrics={metrics}
-        onDateChange={setCurrentDate}
-        onEventClick={handleEventClick}
-        onAddEvent={handleAddEvent}
-        onDayClick={handleDayClick}
-      />
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="outline" size="sm">Today</Button>
+              <Button variant="ghost" size="sm" onClick={() => navigateMonth('prev')}>
+                <ChevronLeft className="w-4 h-4" />
+                Back
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigateMonth('next')}>
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
 
-      {/* Vista Desktop */}
-      <Card className="hidden lg:block">
-        <CardContent className="p-6">
-          <CalendarHeader
-            currentDate={currentDate}
-            viewMode={viewMode}
-            metrics={metrics}
-            onNavigate={handleNavigate}
-            onViewModeChange={setViewMode}
-            onToday={handleToday}
-            onAddEvent={handleAddEvent}
-            onToggleFilters={() => setShowFilters(true)}
-            onRefresh={refreshEvents}
-            loading={loading}
-          />
+            <h2 className="text-xl font-bold text-primary">
+              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </h2>
 
-          <div className="mt-6">
-            <CalendarGrid
-              currentDate={currentDate}
-              events={events}
-              onEventClick={handleEventClick}
-              onDayClick={handleDayClick}
-            />
+            <div className="flex items-center space-x-2">
+              {["Month", "Week", "Day", "Agenda"].map((mode) => (
+                <Button
+                  key={mode}
+                  variant={viewMode === mode ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setViewMode(mode as typeof viewMode)}
+                >
+                  {mode}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Calendar Header */}
+          <div className="grid grid-cols-7 mb-2">
+            {dayNames.map((day) => (
+              <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-0 border border-muted rounded-lg overflow-hidden">
+            {renderCalendarDays()}
           </div>
         </CardContent>
       </Card>
-
-      {/* Filtros */}
-      <CalendarFilters
-        isOpen={showFilters}
-        onOpenChange={setShowFilters}
-        filters={filters}
-        onFiltersChange={setFilters}
-        onClearFilters={clearFilters}
-      />
-
-      {/* Modal de Evento */}
-      <EventModal
-        isOpen={showEventModal}
-        onClose={handleCloseModal}
-        onSave={createEvent}
-        onUpdate={updateEvent}
-        onDelete={deleteEvent}
-        event={selectedEvent}
-        initialDate={selectedDate}
-      />
     </div>
   );
 };

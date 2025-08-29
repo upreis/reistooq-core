@@ -225,28 +225,3 @@
     outline-offset: 2px;
   }
 }
-
-/* Announcement Banner Theme Overrides */
-@layer components {
-  /* Default (fallback) to light if no theme attribute/class is present */
-  .announcement-banner {
-    background: #F3F4F6; /* light gray */
-    color: #0F172A;      /* slate-900 */
-    border-color: #E5E7EB; /* border gray */
-  }
-  /* Light theme (MaterialM) */
-  :root[data-theme="materialm-light"] .announcement-banner,
-  [data-theme="materialm-light"] .announcement-banner {
-    background: #F3F4F6;
-    color: #0F172A;
-    border-color: #E5E7EB;
-  }
-  /* Dark theme (MaterialM) + Tailwind dark fallback */
-  :root[data-theme="materialm-dark"] .announcement-banner,
-  [data-theme="materialm-dark"] .announcement-banner,
-  .dark .announcement-banner {
-    background: hsl(43 96% 56% / 0.1); /* amber-500/10 */
-    color: hsl(43 96% 76%);            /* amber-200 */
-    border-color: hsl(43 96% 56% / 0.3); /* amber-500/30 */
-  }
-}

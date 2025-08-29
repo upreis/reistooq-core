@@ -171,7 +171,7 @@ export const AdminDashboard: React.FC = () => {
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Visão Geral
@@ -187,10 +187,6 @@ export const AdminDashboard: React.FC = () => {
           <TabsTrigger value="invitations" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Convites
-          </TabsTrigger>
-          <TabsTrigger value="alerts" className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            Alertas
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
@@ -248,11 +244,6 @@ export const AdminDashboard: React.FC = () => {
         {/* Invitations Tab */}
         <TabsContent value="invitations">
           <InvitationManager />
-        </TabsContent>
-
-        {/* Alerts Tab */}
-        <TabsContent value="alerts">
-          <SystemAlertsManager />
         </TabsContent>
 
         {/* Security Tab */}
