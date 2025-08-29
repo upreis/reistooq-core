@@ -25,10 +25,10 @@ export function useProcessarBaixaEstoque() {
         // 1) Tentar processar via Edge Function (debita estoque e registra histórico)
         const orderIds = pedidos.map(p => p.id);
         const { data, error } = await supabase.functions.invoke('processar-baixa-estoque', {
-          body: {
+          body: JSON.stringify({
             orderIds,
             action: 'baixar_estoque'
-          },
+          }),
           headers: { 'Content-Type': 'application/json' }
         });
         if (error) throw error;

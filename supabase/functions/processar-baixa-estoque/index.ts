@@ -31,7 +31,34 @@ serve(async (req) => {
   try {
     const supabaseUser = makeClient(req.headers.get("Authorization"));
     const supabaseService = makeClient(null);
-    const body = await req.json();
+    
+    // Validar se há conteúdo no corpo da requisição
+    const text = await req.text();
+    if (!text || text.trim() === '') {
+      console.error('[Processar Baixa Estoque] Corpo da requisição vazio');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Corpo da requisição vazio" 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    let body;
+    try {
+      body = JSON.parse(text);
+    } catch (parseError) {
+      console.error('[Processar Baixa Estoque] Erro ao fazer parse do JSON:', parseError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "JSON inválido no corpo da requisição" 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+    
     console.log('[Processar Baixa Estoque] Request body:', body);
     
     const { orderIds, action = 'baixar_estoque' } = body;
