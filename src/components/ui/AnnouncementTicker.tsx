@@ -8,6 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useSystemAlerts } from '@/features/admin/hooks/useAdmin';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Announcement {
   id: string;
@@ -33,6 +34,20 @@ export function AnnouncementTicker() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Carregar alertas dispensados pelo usuário para não exibi-los novamente
+  useEffect(() => {
+    const loadDismissed = async () => {
+      const { data, error } = await supabase
+        .from('user_dismissed_notifications')
+        .select('notification_id')
+        .eq('notification_type', 'system_alert');
+      if (!error && data) {
+        setDismissedAlerts(new Set((data as any[]).map((d) => d.notification_id)));
+      }
+    };
+    loadDismissed();
+  }, []);
 
   const announcements = useMemo<Announcement[]>(() => {
     const currentRoute = location.pathname;

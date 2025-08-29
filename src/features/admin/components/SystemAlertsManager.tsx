@@ -37,42 +37,53 @@ const PRIORITY_OPTIONS = [
   { value: 3, label: 'Crítica' }
 ];
 
-// Estrutura das rotas do sistema baseada no menu lateral
+// Estrutura das rotas do sistema baseada nas rotas reais (src/App.tsx e src/pages/OMS.tsx)
 const SYSTEM_ROUTES = [
   {
     section: 'DASHBOARDS',
     routes: [
-      { path: '/dashboard', label: 'Dashboard' },
+      { path: '/', label: 'Dashboard' },
       { path: '/analytics', label: 'Analytics' },
     ]
   },
   {
-    section: 'VENDAS',
+    section: 'OMS (Vendas)',
     routes: [
-      { path: '/vendas', label: 'Vendas' },
-      { path: '/vendas/dashboard-oms', label: 'Dashboard OMS' },
-      { path: '/vendas/direta-atacado', label: 'Vendas Direta/Atacado' },
-      { path: '/clientes', label: 'Clientes' },
-      { path: '/fornecedores', label: 'Fornecedores' },
-      { path: '/relatorios', label: 'Relatórios' },
-      { path: '/vendas/configuracoes', label: 'Configurações OMS' },
-      { path: '/vendas/marketplace', label: 'Vendas Marketplace' },
+      { path: '/oms', label: 'Dashboard OMS' },
+      { path: '/oms/pedidos', label: 'Pedidos (OMS)' },
+      { path: '/oms/clientes', label: 'Clientes (OMS)' },
+      { path: '/oms/fornecedores', label: 'Fornecedores (OMS)' },
+      { path: '/oms/relatorios', label: 'Relatórios (OMS)' },
+      { path: '/oms/configuracoes', label: 'Configurações OMS' },
+    ]
+  },
+  {
+    section: 'eCommerce',
+    routes: [
+      { path: '/apps/ecommerce/shop', label: 'Loja' },
+      { path: '/apps/ecommerce/detail', label: 'Detalhes do Produto' },
+      { path: '/apps/ecommerce/list', label: 'Lista de Produtos' },
+      { path: '/apps/ecommerce/checkout', label: 'Checkout' },
+      { path: '/apps/ecommerce/addproduct', label: 'Adicionar Produto' },
+      { path: '/apps/ecommerce/editproduct', label: 'Editar Produto' },
+    ]
+  },
+  {
+    section: 'Perfil do Usuário',
+    routes: [
+      { path: '/apps/user-profile/profile', label: 'Perfil' },
+      { path: '/apps/user-profile/followers', label: 'Seguidores' },
+      { path: '/apps/user-profile/friends', label: 'Amigos' },
+      { path: '/apps/user-profile/gallery', label: 'Galeria' },
     ]
   },
   {
     section: 'APLICAÇÕES',
     routes: [
-      { path: '/ecommerce', label: 'eCommerce' },
-      { path: '/ecommerce/loja', label: 'Loja' },
-      { path: '/ecommerce/detalhes', label: 'Detalhes' },
-      { path: '/produtos', label: 'Lista de Produtos' },
-      { path: '/ecommerce/checkout', label: 'Checkout' },
-      { path: '/produtos/adicionar', label: 'Adicionar Produto' },
-      { path: '/produtos/editar', label: 'Editar Produto' },
-      { path: '/perfil', label: 'Perfil do Usuário' },
-      { path: '/calendario', label: 'Calendário' },
-      { path: '/notas', label: 'Notas' },
+      { path: '/apps/calendar', label: 'Calendário' },
+      { path: '/apps/notes', label: 'Notas' },
       { path: '/estoque', label: 'Gestão de Estoque' },
+      { path: '/pedidos', label: 'Pedidos' },
       { path: '/scanner', label: 'Scanner' },
       { path: '/de-para', label: 'De-Para' },
       { path: '/alertas', label: 'Alertas' },
@@ -82,7 +93,7 @@ const SYSTEM_ROUTES = [
     section: 'CONFIGURAÇÕES',
     routes: [
       { path: '/configuracoes', label: 'Configurações' },
-      { path: '/integracoes', label: 'Integrações' },
+      { path: '/configuracoes/integracoes', label: 'Integrações' },
       { path: '/historico', label: 'Histórico' },
     ]
   },
