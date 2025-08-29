@@ -286,9 +286,6 @@ export function HistoricoSimplePage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">Histórico de Vendas</h1>
-              <p className="text-sm text-muted-foreground">
-                Sistema completo com todas as colunas dos pedidos
-              </p>
             </div>
           </div>
           
