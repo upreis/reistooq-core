@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Megaphone, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { useAnnouncements } from "@/contexts/AnnouncementContext";
 import { useSidebarUI } from "@/context/SidebarUIContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useSystemAlerts } from '@/features/admin/hooks/useAdmin';
 
 interface Announcement {
   id: string;
@@ -15,34 +16,20 @@ interface Announcement {
   endDate?: string;
 }
 
-// Mock data - in real app this would come from your state management/API
-const mockAnnouncements: Announcement[] = [
-  {
-    id: "1",
-    message: "🎉 Nova funcionalidade: Scanner de código de barras disponível!",
-    type: "success",
-    active: true
-  },
-  {
-    id: "2", 
-    message: "⚠️ Manutenção programada hoje às 02:00 - Sistema ficará indisponível por 30 minutos",
-    type: "warning",
-    active: true
-  },
-  {
-    id: "3",
-    message: "📢 Integração com Tiny ERP configurada com sucesso - Sincronização automática ativa",
-    type: "info", 
-    active: true
-  }
-];
+// Avisos carregados do banco (system_alerts)
+
 
 export function AnnouncementTicker() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { isHidden, setIsHidden, setHasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { isSidebarCollapsed } = useSidebarUI();
   const isMobile = useIsMobile();
-  const [announcements] = useState(mockAnnouncements.filter(a => a.active));
+  const { alerts } = useSystemAlerts();
+  const announcements = useMemo<Announcement[]>(() =>
+    alerts
+      .filter((a: any) => a.active && (!a.expires_at || new Date(a.expires_at) > new Date()))
+      .map((a: any) => ({ id: a.id, message: a.message, type: (a.kind as any), active: true })),
+  [alerts]);
   
   useEffect(() => {
     setHasAnnouncements(announcements.length > 0);
