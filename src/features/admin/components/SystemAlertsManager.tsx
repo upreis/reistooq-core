@@ -13,9 +13,11 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Bell, Plus, Edit, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
+import { Bell, Plus, Edit, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Info, CheckCircle, XCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import type { SystemAlert } from '../types/admin.types';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const ALERT_KINDS = [
   { value: 'info', label: 'Informativo', icon: Info, color: 'text-blue-500' },
@@ -35,6 +37,63 @@ const PRIORITY_OPTIONS = [
   { value: 3, label: 'Crítica' }
 ];
 
+// Estrutura das rotas do sistema baseada no menu lateral
+const SYSTEM_ROUTES = [
+  {
+    section: 'DASHBOARDS',
+    routes: [
+      { path: '/dashboard', label: 'Dashboard' },
+      { path: '/analytics', label: 'Analytics' },
+    ]
+  },
+  {
+    section: 'VENDAS',
+    routes: [
+      { path: '/vendas', label: 'Vendas' },
+      { path: '/vendas/dashboard-oms', label: 'Dashboard OMS' },
+      { path: '/vendas/direta-atacado', label: 'Vendas Direta/Atacado' },
+      { path: '/clientes', label: 'Clientes' },
+      { path: '/fornecedores', label: 'Fornecedores' },
+      { path: '/relatorios', label: 'Relatórios' },
+      { path: '/vendas/configuracoes', label: 'Configurações OMS' },
+      { path: '/vendas/marketplace', label: 'Vendas Marketplace' },
+    ]
+  },
+  {
+    section: 'APLICAÇÕES',
+    routes: [
+      { path: '/ecommerce', label: 'eCommerce' },
+      { path: '/ecommerce/loja', label: 'Loja' },
+      { path: '/ecommerce/detalhes', label: 'Detalhes' },
+      { path: '/produtos', label: 'Lista de Produtos' },
+      { path: '/ecommerce/checkout', label: 'Checkout' },
+      { path: '/produtos/adicionar', label: 'Adicionar Produto' },
+      { path: '/produtos/editar', label: 'Editar Produto' },
+      { path: '/perfil', label: 'Perfil do Usuário' },
+      { path: '/calendario', label: 'Calendário' },
+      { path: '/notas', label: 'Notas' },
+      { path: '/estoque', label: 'Gestão de Estoque' },
+      { path: '/scanner', label: 'Scanner' },
+      { path: '/de-para', label: 'De-Para' },
+      { path: '/alertas', label: 'Alertas' },
+    ]
+  },
+  {
+    section: 'CONFIGURAÇÕES',
+    routes: [
+      { path: '/configuracoes', label: 'Configurações' },
+      { path: '/integracoes', label: 'Integrações' },
+      { path: '/historico', label: 'Histórico' },
+    ]
+  },
+  {
+    section: 'ADMINISTRAÇÃO',
+    routes: [
+      { path: '/admin', label: 'Administração' },
+    ]
+  }
+];
+
 interface AlertFormProps {
   alert?: SystemAlert;
   onSave: (data: any) => Promise<void>;
@@ -50,10 +109,40 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
     href: alert?.href || '',
     link_label: alert?.link_label || '',
     expires_at: alert?.expires_at ? new Date(alert.expires_at).toISOString().slice(0, 16) : '',
-    target_routes: alert?.target_routes ? alert.target_routes.join(', ') : ''
   });
+  const [selectedRoutes, setSelectedRoutes] = useState<string[]>(alert?.target_routes || []);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['DASHBOARDS']));
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const toggleSection = (section: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
+    } else {
+      newExpanded.add(section);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  const toggleRoute = (routePath: string) => {
+    setSelectedRoutes(prev => 
+      prev.includes(routePath) 
+        ? prev.filter(r => r !== routePath)
+        : [...prev, routePath]
+    );
+  };
+
+  const selectAllInSection = (sectionRoutes: any[]) => {
+    const sectionPaths = sectionRoutes.map(r => r.path);
+    const allSelected = sectionPaths.every(path => selectedRoutes.includes(path));
+    
+    if (allSelected) {
+      setSelectedRoutes(prev => prev.filter(r => !sectionPaths.includes(r)));
+    } else {
+      setSelectedRoutes(prev => [...new Set([...prev, ...sectionPaths])]);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,10 +154,6 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
         ? formData.kind
         : 'warning';
 
-      const targetRoutes = formData.target_routes
-        ? formData.target_routes.split(',').map(r => r.trim()).filter(Boolean)
-        : undefined;
-
       const submitData = {
         message: formData.message,
         kind: normalizedKind as any,
@@ -77,7 +162,7 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
         href: formData.href || undefined,
         link_label: formData.link_label || undefined,
         expires_at: formData.expires_at || undefined,
-        target_routes: targetRoutes
+        target_routes: selectedRoutes.length > 0 ? selectedRoutes : undefined
       };
 
       await onSave(submitData);
@@ -202,23 +287,78 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label>Segmentação (opcional)</Label>
+          <Label>Páginas onde o alerta será exibido</Label>
           <p className="text-sm text-muted-foreground">
-            Deixe vazio para mostrar a todos os usuários da organização
+            Deixe vazio para mostrar em todas as páginas, ou selecione páginas específicas
           </p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="target_routes">Rotas específicas</Label>
-          <Input
-            id="target_routes"
-            value={formData.target_routes}
-            onChange={(e) => setFormData(prev => ({ ...prev, target_routes: e.target.value }))}
-            placeholder="/admin, /produtos, /dashboard"
-          />
-          <p className="text-sm text-muted-foreground">
-            Separar por vírgula. Ex: /admin, /produtos. Deixe vazio para mostrar em todas as páginas.
-          </p>
+        <div className="border rounded-lg p-4 max-h-80 overflow-y-auto">
+          <div className="space-y-3">
+            {SYSTEM_ROUTES.map((section) => {
+              const sectionRoutes = section.routes;
+              const allSelected = sectionRoutes.every(route => selectedRoutes.includes(route.path));
+              const someSelected = sectionRoutes.some(route => selectedRoutes.includes(route.path));
+              const isExpanded = expandedSections.has(section.section);
+
+              return (
+                <div key={section.section}>
+                  <Collapsible open={isExpanded} onOpenChange={() => toggleSection(section.section)}>
+                    <div className="flex items-center justify-between py-1">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={allSelected}
+                          ref={(ref: any) => {
+                            if (ref) ref.indeterminate = someSelected && !allSelected;
+                          }}
+                          onCheckedChange={() => selectAllInSection(sectionRoutes)}
+                        />
+                        <CollapsibleTrigger className="flex items-center space-x-1 text-sm font-medium hover:text-primary">
+                          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          <span>{section.section}</span>
+                        </CollapsibleTrigger>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {sectionRoutes.filter(r => selectedRoutes.includes(r.path)).length}/{sectionRoutes.length}
+                      </span>
+                    </div>
+                    
+                    <CollapsibleContent className="ml-6 space-y-2">
+                      {sectionRoutes.map((route) => (
+                        <div key={route.path} className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={selectedRoutes.includes(route.path)}
+                            onCheckedChange={() => toggleRoute(route.path)}
+                          />
+                          <Label className="text-sm font-normal cursor-pointer">
+                            {route.label}
+                          </Label>
+                          <span className="text-xs text-muted-foreground">({route.path})</span>
+                        </div>
+                      ))}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+              );
+            })}
+          </div>
+          
+          {selectedRoutes.length > 0 && (
+            <div className="mt-4 pt-3 border-t">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedRoutes.length} página(s) selecionada(s)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedRoutes([])}
+                >
+                  Limpar seleção
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
