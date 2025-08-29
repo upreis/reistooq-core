@@ -93,12 +93,25 @@ serve(async (req) => {
       try {
         console.log(`Processando pedido: ${orderId}`);
         
-        // Buscar dados básicos do pedido para obter os SKUs
-        const { data: pedidoRow } = await supabaseService
-          .from('pedidos')
-          .select('numero, data_pedido, integration_account_id')
-          .eq('id', orderId)
-          .maybeSingle();
+        // Buscar dados básicos do pedido para obter os SKUs (tenta por id e por numero)
+        let pedidoRow: any = null;
+        {
+          const byId = await supabaseService
+            .from('pedidos')
+            .select('id, numero, data_pedido, integration_account_id')
+            .eq('id', orderId)
+            .maybeSingle();
+          if (!byId.error && byId.data) pedidoRow = byId.data;
+        }
+        if (!pedidoRow) {
+          console.warn(`Pedido ${orderId} não encontrado por id. Tentando por numero...`);
+          const byNumero = await supabaseService
+            .from('pedidos')
+            .select('id, numero, data_pedido, integration_account_id')
+            .eq('numero', String(orderId))
+            .maybeSingle();
+          if (!byNumero.error && byNumero.data) pedidoRow = byNumero.data;
+        }
 
         if (!pedidoRow) {
           console.error(`Pedido ${orderId} não encontrado`);
@@ -111,7 +124,7 @@ serve(async (req) => {
         const { data: orderItems, error: itemsError } = await supabaseService
           .from('itens_pedidos')
           .select('sku, quantidade')
-          .eq('pedido_id', orderId);
+          .eq('pedido_id', pedidoRow.id);
 
         if (itemsError || !orderItems) {
           console.error(`Erro ao buscar itens do pedido ${orderId}:`, itemsError);
