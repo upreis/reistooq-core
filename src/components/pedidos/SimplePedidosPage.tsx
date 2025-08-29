@@ -990,7 +990,21 @@ export default function SimplePedidosPage({ className }: Props) {
           
           {selectedOrders.size > 0 && (
             <BaixaEstoqueModal 
-              pedidos={Array.from(selectedOrders).map(id => orders.find(o => o.id === id)).filter(Boolean) as Pedido[]}
+              pedidos={Array.from(selectedOrders).map(id => {
+                const order = orders.find(o => o.id === id);
+                if (!order) return null;
+                
+                // Enriquecer pedido com dados calculados da UI
+                const mapping = mappingData.get(order.id);
+                const quantidadeItens = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+                const qtdKit = mapping?.quantidade || 1;
+                
+                return {
+                  ...order,
+                  sku_kit: mapping?.skuKit || null,
+                  total_itens: quantidadeItens * qtdKit
+                };
+              }).filter(Boolean) as Pedido[]}
               contextoDaUI={{
                 mappingData,
                 accounts,
@@ -2090,7 +2104,21 @@ export default function SimplePedidosPage({ className }: Props) {
 
       {/* 🛡️ MODAL DE BAIXA DE ESTOQUE - Ativo */}
       <BaixaEstoqueModal 
-        pedidos={Array.from(selectedOrders).map(id => orders.find(o => o.id === id)).filter(Boolean) as Pedido[]}
+        pedidos={Array.from(selectedOrders).map(id => {
+          const order = orders.find(o => o.id === id);
+          if (!order) return null;
+          
+          // Enriquecer pedido com dados calculados da UI
+          const mapping = mappingData.get(order.id);
+          const quantidadeItens = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+          const qtdKit = mapping?.quantidade || 1;
+          
+          return {
+            ...order,
+            sku_kit: mapping?.skuKit || null,
+            total_itens: quantidadeItens * qtdKit
+          };
+        }).filter(Boolean) as Pedido[]}
         contextoDaUI={{
           mappingData,
           accounts,

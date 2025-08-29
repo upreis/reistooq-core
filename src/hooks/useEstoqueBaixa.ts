@@ -22,10 +22,19 @@ export function useProcessarBaixaEstoque() {
     mutationFn: async ({ pedidos, contextoDaUI }: ProcessarBaixaParams): Promise<boolean> => {
       try {
         // Extrair SKU KIT + Total de Itens dos pedidos
+        console.log('🔍 DEBUG - Pedidos recebidos:', pedidos.map(p => ({
+          id: p.id,
+          numero: p.numero,
+          sku_kit: p.sku_kit,
+          total_itens: p.total_itens
+        })));
+
         const baixas = pedidos.map(pedido => {
           // Pegar sku_kit e total_itens do pedido
           const sku = pedido.sku_kit || '';
           const quantidade = Number(pedido.total_itens || 0);
+          
+          console.log(`🔍 DEBUG - Pedido ${pedido.numero}: SKU="${sku}", Quantidade=${quantidade}`);
           
           return {
             sku: sku.trim(),
@@ -33,16 +42,26 @@ export function useProcessarBaixaEstoque() {
           };
         }).filter(baixa => baixa.sku && baixa.quantidade > 0);
 
+        console.log('🔍 DEBUG - Baixas filtradas:', baixas);
+
         if (baixas.length === 0) {
+          console.error('❌ Nenhuma baixa válida encontrada');
           throw new Error('Nenhum pedido válido para baixa (SKU KIT e Total de Itens são obrigatórios)');
         }
 
         // Chamar função SQL direta para baixa de estoque
+        console.log('🔍 DEBUG - Chamando baixar_estoque_direto com:', baixas);
+        
         const { data, error } = await supabase.rpc('baixar_estoque_direto', {
           p_baixas: baixas
         });
 
-        if (error) throw error;
+        console.log('🔍 DEBUG - Resposta da função:', { data, error });
+
+        if (error) {
+          console.error('❌ Erro na função SQL:', error);
+          throw error;
+        }
 
         const result = data as any;
         

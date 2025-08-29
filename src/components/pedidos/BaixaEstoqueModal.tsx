@@ -41,6 +41,9 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
   const processarBaixa = useProcessarBaixaEstoque();
 
   const handleProcessar = async () => {
+    console.log('🚀 Iniciando processamento de baixa de estoque');
+    console.log('📦 Pedidos selecionados:', pedidos);
+    
     setIsProcessing(true);
     
     try {
@@ -49,9 +52,12 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
         pedidos,
         contextoDaUI
       });
+      
+      console.log('✅ Baixa processada com sucesso:', ok);
       setProcessed(Boolean(ok));
     } catch (error) {
-      console.error('Erro ao processar baixa:', error);
+      console.error('❌ Erro ao processar baixa:', error);
+      alert(`Erro: ${error.message}`);
     } finally {
       setIsProcessing(false);
     }
