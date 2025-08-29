@@ -289,10 +289,6 @@ export function HistoricoSimplePage() {
               <p className="text-sm text-muted-foreground">
                 Sistema completo com todas as colunas dos pedidos
               </p>
-              {/* Indicador de versão para debug */}
-              <div className="text-xs text-green-600 font-mono bg-green-50 px-2 py-1 rounded">
-                ✅ HistoricoSimplePage v2.0 - Seleção Múltipla Ativa
-              </div>
             </div>
           </div>
           
@@ -307,18 +303,6 @@ export function HistoricoSimplePage() {
               Importar
             </Button>
 
-            {/* Botão DEV-ONLY para teste */}
-            {process.env.NODE_ENV === 'development' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDevTestSnapshot}
-                disabled={isFetching}
-                className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
-              >
-                ➕ Inserir snapshot de teste
-              </Button>
-            )}
             
             <Button
               variant="outline"
@@ -360,9 +344,6 @@ export function HistoricoSimplePage() {
               </div>
               <div className="text-muted-foreground flex items-center gap-2">
                 {hasFilters && <Badge variant="secondary">Filtrado</Badge>}
-                <Badge variant="outline" className="text-xs">
-                  Auto-refresh ativo
-                </Badge>
               </div>
             </div>
           </div>
