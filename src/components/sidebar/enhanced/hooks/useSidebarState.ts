@@ -64,23 +64,54 @@ export function useSidebarState(config: Partial<SidebarConfig> = {}) {
     },
     
     toggleGroup: (groupId: string) => {
-      setState(prev => ({
-        ...prev,
-        openGroups: {
-          ...prev.openGroups,
-          [groupId]: !prev.openGroups[groupId]
+      setState(prev => {
+        const isCurrentlyOpen = prev.expandedGroups.has(groupId) || prev.openGroups[groupId];
+        
+        if (isCurrentlyOpen) {
+          // Close this group
+          const newExpandedGroups = new Set(prev.expandedGroups);
+          newExpandedGroups.delete(groupId);
+          return {
+            ...prev,
+            expandedGroups: newExpandedGroups,
+            openGroups: { ...prev.openGroups, [groupId]: false }
+          };
+        } else {
+          // Close all other groups and open this one (accordion behavior)
+          const newExpandedGroups = new Set([groupId]);
+          const newOpenGroups: Record<string, boolean> = {};
+          
+          // Close all other groups
+          Object.keys(prev.openGroups).forEach(key => {
+            newOpenGroups[key] = key === groupId;
+          });
+          newOpenGroups[groupId] = true;
+          
+          return {
+            ...prev,
+            expandedGroups: newExpandedGroups,
+            openGroups: newOpenGroups
+          };
         }
-      }));
+      });
     },
 
     openGroup: (groupId: string) => {
       setState(prev => {
-        const newExpandedGroups = new Set(prev.expandedGroups);
-        newExpandedGroups.add(groupId);
+        // Close all other groups and open this one (accordion behavior)
+        const newExpandedGroups = new Set([groupId]);
+        const newOpenGroups: Record<string, boolean> = {};
+        
+        // Close all other groups
+        Object.keys(prev.openGroups).forEach(key => {
+          newOpenGroups[key] = key === groupId;
+        });
+        newOpenGroups[groupId] = true;
+        
         return {
           ...prev,
           expandedGroups: newExpandedGroups,
-          openGroups: { ...prev.openGroups, [groupId]: true }
+          openGroups: newOpenGroups
         };
       });
     },
