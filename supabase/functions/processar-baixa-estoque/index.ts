@@ -103,11 +103,12 @@ serve(async (req) => {
             .eq('ativo', true)
             .maybeSingle();
 
-          if (!mapeamento) {
-            console.warn(`Mapeamento não encontrado para SKU ${skuPedido}`);
-            errors.push(`SKU ${skuPedido}: mapeamento não encontrado`);
-            continue;
-          }
+           if (!mapeamento) {
+             console.warn(`Mapeamento não encontrado para SKU ${skuPedido}`);
+             errors.push(`SKU ${skuPedido}: mapeamento não encontrado`);
+             errorCount++;
+             continue;
+           }
 
           // O SKU KIT que aparece na UI é o sku_simples (SKU Unitário) 
           const skuKit = mapeamento.sku_simples;
@@ -134,12 +135,15 @@ serve(async (req) => {
           if (produtoError || !produto) {
             console.warn(`Produto não encontrado para SKU Estoque ${skuEstoque}`);
             errors.push(`SKU Estoque ${skuEstoque}: produto não encontrado`);
+            errorCount++;
             continue;
           }
 
           // Total de Itens = quantidade vendida (deste SKU) × quantidade do kit
-          const totalItens = quantidadeVendidaSku * qtdKit;
-          const novaQuantidade = Math.max(0, produto.quantidade_atual - totalItens);
+          const quantidadeVendidaSkuNum = Number(quantidadeVendidaSku) || 0;
+          const qtdKitNum = Number(qtdKit) || 1;
+          const totalItens = quantidadeVendidaSkuNum * qtdKitNum;
+          const novaQuantidade = Math.max(0, Number(produto.quantidade_atual ?? 0) - totalItens);
           
           console.log(`Baixa calculada:`, {
             produtoNome: produto.nome,

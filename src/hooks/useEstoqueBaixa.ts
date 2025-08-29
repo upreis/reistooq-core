@@ -24,7 +24,7 @@ export function useProcessarBaixaEstoque() {
       try {
         // 1) Tentar processar via Edge Function (debita estoque e registra histórico)
         const orderIds = pedidos.map(p => p.id);
-        const { error } = await supabase.functions.invoke('processar-baixa-estoque', {
+        const { data, error } = await supabase.functions.invoke('processar-baixa-estoque', {
           body: {
             orderIds,
             action: 'baixar_estoque'
@@ -32,7 +32,8 @@ export function useProcessarBaixaEstoque() {
           headers: { 'Content-Type': 'application/json' }
         });
         if (error) throw error;
-        return true;
+        // Sucesso somente se a Edge Function reportar success=true
+        return Boolean((data as any)?.success);
       } catch (err) {
         console.warn('Falha na Edge Function, usando fallback de snapshot:', err);
         // 2) Fallback: salvar snapshots (não debita estoque)
