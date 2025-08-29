@@ -29,10 +29,9 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = makeClient(req.headers.get("Authorization"));
+    const supabaseUser = makeClient(req.headers.get("Authorization"));
     const supabaseService = makeClient(null);
     const body = await req.json();
-    
     console.log('[Processar Baixa Estoque] Request body:', body);
     
     const { orderIds, action = 'baixar_estoque' } = body;
@@ -57,7 +56,7 @@ serve(async (req) => {
         console.log(`Processando pedido: ${orderId}`);
         
         // Buscar dados básicos do pedido para obter os SKUs
-        const { data: pedidoRow } = await supabase
+        const { data: pedidoRow } = await supabaseService
           .from('pedidos')
           .select('numero, data_pedido, integration_account_id')
           .eq('id', orderId)
@@ -71,7 +70,7 @@ serve(async (req) => {
         }
 
         // Buscar itens do pedido para obter os SKUs originais  
-        const { data: orderItems, error: itemsError } = await supabase
+        const { data: orderItems, error: itemsError } = await supabaseService
           .from('itens_pedidos')
           .select('sku, quantidade')
           .eq('pedido_id', orderId);
@@ -85,17 +84,19 @@ serve(async (req) => {
 
         console.log(`Encontrados ${orderItems.length} itens para pedido ${orderId}`);
 
-        // Calcular quantidade total vendida (soma das quantidades dos itens)
-        const quantidadeVendida = orderItems.reduce((sum, item) => sum + (item.quantidade || 0), 0);
-
-        // Processar cada SKU único do pedido através dos mapeamentos
+        // Processar por SKU único do pedido através dos mapeamentos
         const skusUnicos = [...new Set(orderItems.map(item => item.sku))];
+        let totalDebitadoGeral = 0;
         
         for (const skuPedido of skusUnicos) {
           console.log(`Processando SKU do pedido: ${skuPedido}`);
+          // Quantidade vendida SOMENTE deste SKU no pedido
+          const quantidadeVendidaSku = orderItems
+            .filter(item => item.sku === skuPedido)
+            .reduce((sum, item) => sum + (item.quantidade || 0), 0);
           
           // Buscar mapeamento ativo para este SKU  
-          const { data: mapeamento } = await supabase
+          const { data: mapeamento } = await supabaseService
             .from('mapeamentos_depara')
             .select('sku_correspondente, sku_simples, quantidade')
             .eq('sku_pedido', skuPedido)
@@ -120,11 +121,11 @@ serve(async (req) => {
             skuKit,
             skuEstoque, 
             qtdKit,
-            quantidadeVendida
+            quantidadeVendida: quantidadeVendidaSku
           });
 
           // Buscar produto no estoque usando o SKU Estoque (sku_correspondente)
-          const { data: produto, error: produtoError } = await supabase
+          const { data: produto, error: produtoError } = await supabaseService
             .from('produtos')
             .select('id, sku_interno, quantidade_atual, nome')
             .eq('sku_interno', skuEstoque)
@@ -136,8 +137,8 @@ serve(async (req) => {
             continue;
           }
 
-          // Total de Itens = quantidade vendida × quantidade do kit
-          const totalItens = quantidadeVendida * qtdKit;
+          // Total de Itens = quantidade vendida (deste SKU) × quantidade do kit
+          const totalItens = quantidadeVendidaSku * qtdKit;
           const novaQuantidade = Math.max(0, produto.quantidade_atual - totalItens);
           
           console.log(`Baixa calculada:`, {
@@ -149,7 +150,7 @@ serve(async (req) => {
           });
 
           // Atualizar quantidade do produto
-          const { error: updateError } = await supabase
+          const { error: updateError } = await supabaseService
             .from('produtos')
             .update({ 
               quantidade_atual: novaQuantidade,
@@ -162,6 +163,7 @@ serve(async (req) => {
             errors.push(`Produto ${produto.nome}: ${updateError.message}`);
             errorCount++;
           } else {
+            totalDebitadoGeral += totalItens;
             console.log(`✅ Baixa realizada: ${produto.nome} (${skuPedido} → ${skuKit} → ${skuEstoque}) - ${produto.quantidade_atual} → ${novaQuantidade} (-${totalItens})`);
           }
         }
@@ -172,7 +174,7 @@ serve(async (req) => {
         // Registrar histórico (usando dados calculados)
         try {
           const skusProcessados = skusUnicos.join(', ');
-          const totalGeralItens = quantidadeVendida; // Soma total
+          const totalGeralItens = totalDebitadoGeral;
 
           const { error: histError } = await supabaseService
             .rpc('hv_insert', {
