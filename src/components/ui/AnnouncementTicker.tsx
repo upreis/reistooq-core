@@ -164,7 +164,7 @@ export function AnnouncementTicker() {
 
   // Announcement banner styling
   const getAnnouncementStyle = () => {
-    return 'bg-gray-100 border border-gray-300 text-gray-900 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-200';
+    return 'announcement-banner border';
   };
 
   const nextAnnouncement = () => {

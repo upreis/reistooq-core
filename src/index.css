@@ -225,3 +225,17 @@
     outline-offset: 2px;
   }
 }
+
+/* Announcement Banner Theme Overrides */
+@layer components {
+  :root[data-theme="light"] .announcement-banner {
+    background: #F3F4F6; /* light gray */
+    color: var(--text);
+    border-color: var(--border);
+  }
+  :root[data-theme="dark"] .announcement-banner {
+    background: var(--status-warning-bg);
+    color: var(--status-warning);
+    border-color: var(--status-warning);
+  }
+}
