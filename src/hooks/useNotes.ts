@@ -53,7 +53,16 @@ export function useNotes() {
   const [notes, setNotes] = useState<Note[]>(() => {
     // P2.1: Carregar do localStorage se disponível
     const saved = localStorage.getItem('notes');
-    return saved ? JSON.parse(saved) : initialNotes;
+    if (saved) {
+      const parsedNotes = JSON.parse(saved);
+      // Converter strings de data de volta para Date objects
+      return parsedNotes.map((note: any) => ({
+        ...note,
+        createdAt: new Date(note.createdAt),
+        updatedAt: new Date(note.updatedAt),
+      }));
+    }
+    return initialNotes;
   });
   
   const [filter, setFilter] = useState<NotesFilter>(defaultFilter);
