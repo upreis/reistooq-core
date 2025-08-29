@@ -126,6 +126,12 @@ export function AnnouncementTicker() {
   }, [announcements.length, setHasAnnouncements]);
 
   useEffect(() => {
+    // Garantir que o índice atual seja válido após mudanças na lista
+    setCurrentIndex((prev) => {
+      if (announcements.length === 0) return 0;
+      return Math.min(prev, announcements.length - 1);
+    });
+
     if (announcements.length <= 1) return;
     
     const interval = setInterval(() => {
@@ -139,7 +145,8 @@ export function AnnouncementTicker() {
     return null;
   }
 
-  const currentAnnouncement = announcements[currentIndex];
+  const safeIndex = Math.min(currentIndex, Math.max(0, announcements.length - 1));
+  const currentAnnouncement = announcements[safeIndex];
 
   // Announcement banner styling
   const getAnnouncementStyle = () => {
