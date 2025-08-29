@@ -31,21 +31,7 @@ serve(async (req) => {
   try {
     const supabaseUser = makeClient(req.headers.get("Authorization"));
     const supabaseService = makeClient(null);
-    
-    let body;
-    try {
-      body = await req.json();
-    } catch (parseError) {
-      console.error('[Processar Baixa Estoque] Erro ao parsear JSON:', parseError);
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: "Formato JSON inválido" 
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-    
+    const body = await req.json();
     console.log('[Processar Baixa Estoque] Request body:', body);
     
     const { orderIds, action = 'baixar_estoque' } = body;
@@ -213,8 +199,8 @@ serve(async (req) => {
           const skusProcessados = skusUnicos.join(', ');
           const totalGeralItens = totalDebitadoGeral;
 
-           const { error: histError } = await supabaseUser
-             .rpc('hv_insert', {
+          const { error: histError } = await supabaseService
+            .rpc('hv_insert', {
               p: {
                 id_unico: String(orderId),
                 numero_pedido: pedidoRow.numero || String(orderId),

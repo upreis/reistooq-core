@@ -28,7 +28,8 @@ export function useProcessarBaixaEstoque() {
           body: {
             orderIds,
             action: 'baixar_estoque'
-          }
+          },
+          headers: { 'Content-Type': 'application/json' }
         });
         if (error) throw error;
         // Sucesso somente se a Edge Function reportar success=true
