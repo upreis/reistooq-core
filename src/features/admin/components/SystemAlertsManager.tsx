@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Bell, Plus, Edit, Trash2, ExternalLink, Eye, EyeOff, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
 import type { SystemAlert } from '../types/admin.types';
+import { useToast } from '@/hooks/use-toast';
 
 const ALERT_KINDS = [
   { value: 'info', label: 'Informativo', icon: Info, color: 'text-blue-500' },
@@ -22,6 +23,10 @@ const ALERT_KINDS = [
   { value: 'error', label: 'Erro', icon: XCircle, color: 'text-red-500' },
   { value: 'success', label: 'Sucesso', icon: CheckCircle, color: 'text-green-500' }
 ];
+
+// DB atualmente valida apenas alguns tipos; evitamos erros de constraint
+const ALLOWED_KINDS_DB = ['info', 'warning'];
+const AVAILABLE_KINDS = ALERT_KINDS.filter(k => ALLOWED_KINDS_DB.includes(k.value));
 
 const PRIORITY_OPTIONS = [
   { value: 0, label: 'Baixa' },
@@ -47,6 +52,7 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
     expires_at: alert?.expires_at ? new Date(alert.expires_at).toISOString().slice(0, 16) : ''
   });
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,9 +60,13 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
     
     setLoading(true);
     try {
+      const normalizedKind = (ALLOWED_KINDS_DB as string[]).includes(formData.kind)
+        ? formData.kind
+        : 'warning';
+
       const submitData = {
         message: formData.message,
-        kind: formData.kind as any,
+        kind: normalizedKind as any,
         priority: formData.priority,
         active: formData.active,
         href: formData.href || undefined,
@@ -66,8 +76,13 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
 
       await onSave(submitData);
       onCancel();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save alert:', err);
+      toast({
+        title: 'Erro ao salvar alerta',
+        description: err?.message || 'Não foi possível salvar o alerta.',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -97,7 +112,7 @@ const AlertForm: React.FC<AlertFormProps> = ({ alert, onSave, onCancel }) => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {ALERT_KINDS.map(kind => {
+              {AVAILABLE_KINDS.map(kind => {
                 const Icon = kind.icon;
                 return (
                   <SelectItem key={kind.value} value={kind.value}>
