@@ -203,30 +203,43 @@ const Estoque = () => {
     }
 
     try {
-      const newQuantity = type === 'entrada' 
-        ? product.quantidade_atual + quantity
-        : product.quantidade_atual - quantity;
-
-      if (newQuantity < 0) {
-        toast({
-          title: "Erro",
-          description: "Quantidade em estoque não pode ser negativa.",
-          variant: "destructive",
+      // Usar StockMovementService para registrar movimento completo
+      const { stockMovementService } = await import('@/features/scanner/services/StockMovementService');
+      
+      let result;
+      if (type === 'entrada') {
+        result = await stockMovementService.processStockIn({
+          produto_id: productId,
+          tipo: 'entrada',
+          quantidade: quantity,
+          motivo: reason || 'Movimentação manual via estoque',
+          observacoes: 'Movimentação feita pela página de estoque'
         });
-        return;
+      } else {
+        result = await stockMovementService.processStockOut({
+          produto_id: productId,
+          tipo: 'saida',
+          quantidade: quantity,
+          motivo: reason || 'Movimentação manual via estoque',
+          observacoes: 'Movimentação feita pela página de estoque'
+        });
       }
 
-      await updateProduct(product.id, {
-        quantidade_atual: newQuantity
-      });
-
-      toast({
-        title: "Movimentação realizada",
-        description: `${type === 'entrada' ? 'Entrada' : 'Saída'} de ${quantity} unidades realizada com sucesso.`,
-      });
-
-      loadProducts();
+      if (result.success) {
+        toast({
+          title: "Movimentação realizada",
+          description: `${type === 'entrada' ? 'Entrada' : 'Saída'} de ${quantity} unidades realizada com sucesso.`,
+        });
+        loadProducts();
+      } else {
+        toast({
+          title: "Erro na movimentação",
+          description: result.error || "Não foi possível realizar a movimentação.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
+      console.error('❌ Erro na movimentação:', error);
       toast({
         title: "Erro na movimentação",
         description: "Não foi possível realizar a movimentação de estoque.",

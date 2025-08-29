@@ -121,13 +121,36 @@ export const useProducts = () => {
   const updateProduct = async (id: string, updates: Partial<Product>) => {
     const orgId = await getCurrentOrgId();
 
-    const { data, error } = await supabase
+    // Primeiro, tentar atualizar com organization_id válido
+    let { data, error } = await supabase
       .from('produtos')
       .update(updates)
       .eq('id', id)
       .eq('organization_id', orgId)
       .select()
       .single();
+
+    // Se falhou (provavelmente produto órfão), tentar fallback
+    if (error && error.code === 'PGRST116') {
+      console.warn('🔄 Produto órfão detectado, aplicando fallback...');
+      
+      // Fallback: atualizar produto órfão e setar organization_id
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('produtos')
+        .update({ ...updates, organization_id: orgId })
+        .eq('id', id)
+        .is('organization_id', null)
+        .select()
+        .single();
+
+      if (fallbackError) {
+        console.error('Error updating orphan product:', fallbackError);
+        throw fallbackError;
+      }
+
+      console.log('✅ Produto órfão corrigido e atualizado');
+      return fallbackData as Product;
+    }
 
     if (error) {
       console.error('Error updating product:', error);
