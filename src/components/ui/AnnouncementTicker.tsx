@@ -231,7 +231,7 @@ export function AnnouncementTicker() {
                   variant="ghost"
                   size="sm"
                   onClick={() => handleAlertClick(currentAnnouncement)}
-                  className="h-6 px-2 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-xs text-amber-800 dark:text-amber-200"
+                  className="h-6 px-2 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-xs text-amber-800 dark:text-current"
                 >
                   {currentAnnouncement.link_label || 'Ver mais'}
                   <ExternalLink className="h-3 w-3 ml-1" />
@@ -248,7 +248,7 @@ export function AnnouncementTicker() {
                 variant="ghost"
                 size="sm"
                 onClick={prevAnnouncement}
-                className="h-6 w-6 p-0 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-amber-800 dark:text-amber-200"
+                className="h-6 w-6 p-0 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-amber-800 dark:text-current"
               >
                 <ChevronLeft className="h-3 w-3" strokeWidth={2.5} />
               </Button>
@@ -261,7 +261,7 @@ export function AnnouncementTicker() {
                 variant="ghost"
                 size="sm"
                 onClick={nextAnnouncement}
-                className="h-6 w-6 p-0 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-amber-800 dark:text-amber-200"
+                className="h-6 w-6 p-0 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-amber-800 dark:text-current"
               >
                 <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
               </Button>
@@ -272,7 +272,7 @@ export function AnnouncementTicker() {
              variant="ghost"
              size="sm"
              onClick={() => handleDismissAlert(currentAnnouncement.id)}
-              className="h-6 w-6 p-0 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-amber-800 dark:text-amber-200"
+              className="h-6 w-6 p-0 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-amber-800 dark:text-current"
              title="Dispensar este alerta"
            >
              <X className="h-3 w-3" strokeWidth={2.5} />
@@ -282,7 +282,7 @@ export function AnnouncementTicker() {
              variant="ghost"
              size="sm"
              onClick={() => setIsCollapsed(true)}
-              className="h-6 w-6 p-0 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-amber-800 dark:text-amber-200"
+              className="h-6 w-6 p-0 hover:bg-amber-200 dark:hover:bg-amber-500/20 text-amber-800 dark:text-current"
              title="Recolher anúncios"
            >
              <ChevronUp className="h-3 w-3" strokeWidth={2.5} />
