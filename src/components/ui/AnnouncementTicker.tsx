@@ -23,7 +23,44 @@ interface Announcement {
 
 // Avisos carregados do banco (system_alerts)
 
+// Normalização de rotas e aliases para compatibilidade com rotas antigas
+const routeAliases: Record<string, string[]> = {
+  '/vendas': ['/oms'],
+  '/oms': ['/vendas'],
+  '/ecommerce/loja': ['/apps/ecommerce/shop'],
+  '/apps/ecommerce/shop': ['/ecommerce/loja'],
+  '/ecommerce/detalhes': ['/apps/ecommerce/detail'],
+  '/apps/ecommerce/detail': ['/ecommerce/detalhes'],
+  '/produtos': ['/apps/ecommerce/list'],
+  '/apps/ecommerce/list': ['/produtos'],
+  '/ecommerce/checkout': ['/apps/ecommerce/checkout'],
+  '/produtos/adicionar': ['/apps/ecommerce/addproduct'],
+  '/apps/ecommerce/addproduct': ['/produtos/adicionar'],
+  '/produtos/editar': ['/apps/ecommerce/editproduct'],
+  '/apps/ecommerce/editproduct': ['/produtos/editar'],
+  '/calendario': ['/apps/calendar'],
+  '/apps/calendar': ['/calendario'],
+  '/notas': ['/apps/notes'],
+  '/apps/notes': ['/notas'],
+  '/integracoes': ['/configuracoes/integracoes'],
+  '/configuracoes/integracoes': ['/integracoes'],
+  '/dashboard': ['/']
+};
 
+const normalizePath = (p: string) => (p || '').replace(/\/+$/, '');
+
+const routeMatches = (current: string, target: string) => {
+  const c = normalizePath(current);
+  const t = normalizePath(target);
+  if (!t) return true;
+  if (c.startsWith(t)) return true;
+  const aliasForTarget = routeAliases[t] || [];
+  if (aliasForTarget.some(a => c.startsWith(normalizePath(a)))) return true;
+  // Também checa se a rota atual possui um alias que começa com o alvo
+  const aliasForCurrent = routeAliases[c] || [];
+  if (aliasForCurrent.some(a => normalizePath(a).startsWith(t))) return true;
+  return false;
+};
 export function AnnouncementTicker() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(new Set());
@@ -66,7 +103,7 @@ export function AnnouncementTicker() {
         
         // Filtrar por rota se especificado
         if (a.target_routes && a.target_routes.length > 0) {
-          return a.target_routes.some((route: string) => currentRoute.startsWith(route));
+          return a.target_routes.some((route: string) => routeMatches(currentRoute, route));
         }
         
         return true;
