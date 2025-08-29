@@ -47,18 +47,32 @@ const routeAliases: Record<string, string[]> = {
   '/dashboard': ['/']
 };
 
-const normalizePath = (p: string) => (p || '').replace(/\/+$/, '');
+const normalizePath = (p: string) => {
+  if (!p) return '';
+  if (p === '/') return '/';
+  return p.replace(/\/+$/, '');
+};
 
 const routeMatches = (current: string, target: string) => {
   const c = normalizePath(current);
   const t = normalizePath(target);
   if (!t) return true;
+  if (t === '/') return c === '/';
   if (c.startsWith(t)) return true;
   const aliasForTarget = routeAliases[t] || [];
-  if (aliasForTarget.some(a => c.startsWith(normalizePath(a)))) return true;
+  if (aliasForTarget.some(a => {
+    const an = normalizePath(a);
+    if (an === '/') return c === '/';
+    return c.startsWith(an);
+  })) return true;
   // Também checa se a rota atual possui um alias que começa com o alvo
   const aliasForCurrent = routeAliases[c] || [];
-  if (aliasForCurrent.some(a => normalizePath(a).startsWith(t))) return true;
+  if (aliasForCurrent.some(a => {
+    const an = normalizePath(a);
+    if (an === '/') return t === '/';
+    if (t === '/') return an === '/';
+    return an.startsWith(t);
+  })) return true;
   return false;
 };
 export function AnnouncementTicker() {
