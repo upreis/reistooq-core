@@ -234,14 +234,16 @@
     color: #0F172A;      /* slate-900 */
     border-color: #E5E7EB; /* border gray */
   }
-  /* Light via data-theme attribute */
-  :root[data-theme="light"] .announcement-banner {
+  /* Light theme (MaterialM) */
+  :root[data-theme="materialm-light"] .announcement-banner,
+  [data-theme="materialm-light"] .announcement-banner {
     background: #F3F4F6;
     color: #0F172A;
     border-color: #E5E7EB;
   }
-  /* Dark via data-theme attribute and Tailwind 'dark' class */
-  :root[data-theme="dark"] .announcement-banner,
+  /* Dark theme (MaterialM) + Tailwind dark fallback */
+  :root[data-theme="materialm-dark"] .announcement-banner,
+  [data-theme="materialm-dark"] .announcement-banner,
   .dark .announcement-banner {
     background: hsl(43 96% 56% / 0.1); /* amber-500/10 */
     color: hsl(43 96% 76%);            /* amber-200 */
