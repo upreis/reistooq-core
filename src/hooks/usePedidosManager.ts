@@ -369,7 +369,7 @@ export function usePedidosManager(initialAccountId?: string) {
 
     // 🚀 FASE 2: Verificar cache
     if (!forceRefresh && isCacheValid(cacheKey)) {
-      // P1.2: Cache usado - log removido por segurança
+      console.log('📦 Usando dados do cache');
       return;
     }
 

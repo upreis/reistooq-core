@@ -22,7 +22,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
 import { mapApiStatusToLabel, getStatusBadgeVariant, mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
-import { usePedidosManager } from '@/hooks/usePedidosManager';
+import { usePedidosManager } from '@/hooks/usePedidosManager.fixed';
 import { ExportModal } from './ExportModal';
 import { SavedFiltersManager } from './SavedFiltersManager';
 import { cn } from '@/lib/utils';
@@ -100,7 +100,8 @@ export default function SimplePedidosPage({ className }: Props) {
   const error = state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
-  const totalPages = Math.ceil(total / (state.pageSize || 25));
+  // 🔧 CORREÇÃO CRÍTICA: Cálculo correto de totalPages
+  const totalPages = state.pageSize ? Math.ceil(total / state.pageSize) : 1;
 
   // Funções de tradução e mapeamento de status
   const getShippingStatusColor = (status: string): string => {
@@ -1032,17 +1033,19 @@ export default function SimplePedidosPage({ className }: Props) {
             isLoading={loading}
           />
           
-          {/* 🔄 BOTÃO APLICAR FILTROS */}
-          {hasPendingChanges && (
-            <Button
-              onClick={handleApplyFilters}
-              disabled={loading || state.isRefreshing}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Aplicar Filtros
-            </Button>
-          )}
+          {/* 🔧 BOTÃO APLICAR FILTROS - CORRIGIDO */}
+          <Button
+            onClick={handleApplyFilters}
+            disabled={loading || state.isRefreshing || !hasPendingChanges}
+            variant={hasPendingChanges ? "default" : "outline"}
+            className={cn(
+              "min-w-[140px]",
+              hasPendingChanges && "bg-primary text-primary-foreground hover:bg-primary/90 animate-pulse"
+            )}
+          >
+            <Search className="h-4 w-4 mr-2" />
+            {loading ? 'Aplicando...' : hasPendingChanges ? 'Aplicar Filtros' : 'Filtros Aplicados'}
+          </Button>
           
           <Button
             variant="outline"
@@ -1148,15 +1151,30 @@ export default function SimplePedidosPage({ className }: Props) {
         </div>
       </Card>
 
-      {/* 🛡️ FILTROS SIMPLES E FUNCIONAIS */}
+      {/* 🔧 FILTROS SIMPLIFICADOS - PRIORIDADE 1 */}
       <Card className="p-4">
         <div className="space-y-4">
+          {/* 🔧 Aviso de mudanças pendentes */}
+          {hasPendingChanges && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800">
+              <Filter className="h-4 w-4" />
+              <span className="text-sm font-medium">Filtros alterados. Clique em "Aplicar Filtros" para atualizar os resultados.</span>
+            </div>
+          )}
+          
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Filtros</h3>
-            <Button size="sm" variant="outline" onClick={actions.clearFilters}>
-              <Filter className="h-4 w-4 mr-2" />
-              Limpar Filtros
-            </Button>
+            <h3 className="text-lg font-medium">Filtros de Pesquisa</h3>
+            <div className="flex items-center gap-2">
+              {Object.keys(appliedFilters).length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {Object.keys(appliedFilters).length} filtro(s) ativo(s)
+                </Badge>
+              )}
+              <Button size="sm" variant="outline" onClick={actions.clearFilters} disabled={loading}>
+                <Filter className="h-4 w-4 mr-2" />
+                Limpar Filtros
+              </Button>
+            </div>
           </div>
           
           
@@ -2142,42 +2160,117 @@ export default function SimplePedidosPage({ className }: Props) {
         )}
       </Card>
 
-      {/* 🛡️ PAGINAÇÃO */}
-      {orders && orders.length > 0 && (
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Itens por página:</span>
-            <Select value={String(state.pageSize || 25)} onValueChange={(v) => actions.setPageSize(Number(v))}>
-              <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* 🔧 PAGINAÇÃO CORRIGIDA - PRIORIDADE 1 */}
+      {(orders && orders.length > 0) || total > 0 && (
+        <div className="flex items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg border">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Itens por página:</span>
+              <Select value={String(state.pageSize || 25)} onValueChange={(v) => actions.setPageSize(Number(v))} disabled={loading}>
+                <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              {total > 0 && (
+                <>
+                  Mostrando {Math.min((currentPage - 1) * state.pageSize + 1, total)} - {Math.min(currentPage * state.pageSize, total)} de {total.toLocaleString()} pedidos
+                </>
+              )}
+              {loading && (
+                <div className="flex items-center gap-2 ml-4">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  Carregando...
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex items-center justify-center gap-4">
+          
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => actions.setPage(Math.max(1, currentPage - 1))}
-              disabled={!(state.hasPrevPage ?? (currentPage > 1))}
+              disabled={currentPage <= 1 || loading}
             >
               <ChevronLeft className="h-4 w-4" />
+              Anterior
             </Button>
-            <span className="text-sm">
-              Página {currentPage}{total > 0 ? ` de ${Math.ceil(total / (state.pageSize || 25))} (${total} total)` : ''}
-            </span>
+            
+            <div className="flex items-center space-x-1">
+              {totalPages <= 7 ? (
+                // Mostrar todas as páginas se forem 7 ou menos
+                Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => actions.setPage(page)}
+                    disabled={loading}
+                    className="w-10 h-8 p-0 text-sm"
+                  >
+                    {page}
+                  </Button>
+                ))
+              ) : (
+                // Mostrar páginas com reticências se forem mais de 7
+                <>
+                  <Button
+                    variant={1 === currentPage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => actions.setPage(1)}
+                    disabled={loading}
+                    className="w-10 h-8 p-0 text-sm"
+                  >
+                    1
+                  </Button>
+                  
+                  {currentPage > 4 && <span className="px-2 text-sm text-muted-foreground">...</span>}
+                  
+                  {[currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2]
+                    .filter(page => page > 1 && page < totalPages)
+                    .map((page) => (
+                      <Button
+                        key={page}
+                        variant={page === currentPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => actions.setPage(page)}
+                        disabled={loading}
+                        className="w-10 h-8 p-0 text-sm"
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  
+                  {currentPage < totalPages - 3 && <span className="px-2 text-sm text-muted-foreground">...</span>}
+                  
+                  {totalPages > 1 && (
+                    <Button
+                      variant={totalPages === currentPage ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => actions.setPage(totalPages)}
+                      disabled={loading}
+                      className="w-10 h-8 p-0 text-sm"
+                    >
+                      {totalPages}
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+            
             <Button
               variant="outline"
               size="sm"
-              onClick={() => actions.setPage(total > 0 ? Math.min(currentPage + 1, Math.ceil(total / (state.pageSize || 25))) : currentPage + 1)}
-              disabled={(() => {
-                if (typeof state.hasNextPage === 'boolean') return !state.hasNextPage;
-                if (total > 0) return currentPage >= Math.ceil(total / (state.pageSize || 25));
-                return orders.length < (state.pageSize || 25);
-              })()}
+              onClick={() => actions.setPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage >= totalPages || loading}
             >
+              Próxima
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
