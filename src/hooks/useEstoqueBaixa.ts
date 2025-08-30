@@ -16,14 +16,36 @@ interface ProcessarBaixaParams {
   };
 }
 
-// ✅ VALIDAÇÃO COMPLETA DOS PEDIDOS - NOVA IMPLEMENTAÇÃO
-function validarFluxoCompletoLocal(pedidos: Pedido[]): boolean {
+// ✅ VALIDAÇÃO COMPLETA DOS PEDIDOS - NOVA IMPLEMENTAÇÃO COM PROTEÇÃO ANTI-DUPLICAÇÃO
+async function validarFluxoCompletoLocal(pedidos: Pedido[]): Promise<boolean> {
   console.log('🔍 [LOCAL] Validando fluxo completo de', pedidos.length, 'pedidos');
   
   for (const pedido of pedidos) {
     // Validar dados essenciais
     if (!pedido.id && !pedido.numero) {
       console.error('❌ Pedido sem ID ou número:', pedido);
+      return false;
+    }
+    
+    // 🛡️ CRÍTICO: Verificar se pedido já foi processado no histórico_vendas
+    const { data: jaProcessado, error } = await supabase
+      .from('historico_vendas')
+      .select('id, status')
+      .eq('id_unico', pedido.id || pedido.numero)
+      .eq('status', 'baixado')
+      .maybeSingle();
+      
+    if (error) {
+      console.error('❌ Erro ao verificar histórico:', error);
+      return false;
+    }
+    
+    if (jaProcessado) {
+      console.error('❌ Pedido já foi processado anteriormente:', {
+        id: pedido.id || pedido.numero,
+        historico_id: jaProcessado.id,
+        status: jaProcessado.status
+      });
       return false;
     }
     
@@ -48,19 +70,19 @@ function validarFluxoCompletoLocal(pedidos: Pedido[]): boolean {
       return false;
     }
     
-    // Validar se não está duplicado
+    // Validar se não está duplicado na requisição atual
     const duplicados = pedidos.filter(p => 
       (p.id && p.id === pedido.id) || 
       (p.numero && p.numero === pedido.numero)
     );
     
     if (duplicados.length > 1) {
-      console.error('❌ Pedidos duplicados encontrados:', pedido.id || pedido.numero);
+      console.error('❌ Pedidos duplicados na requisição atual:', pedido.id || pedido.numero);
       return false;
     }
   }
   
-  console.log('✅ [LOCAL] Validação completa bem-sucedida');
+  console.log('✅ [LOCAL] Validação completa bem-sucedida - nenhum pedido já processado');
   return true;
 }
 
@@ -74,9 +96,9 @@ export function useProcessarBaixaEstoque() {
       console.log('🛡️ Iniciando fluxo blindado de baixa de estoque');
       console.log('📸 Contexto da UI recebido:', !!contextoDaUI);
       
-      // 🔍 VALIDAÇÃO COMPLETA DOS PEDIDOS - LOCAL
-      if (!validarFluxoCompletoLocal(pedidos)) {
-        const erroMsg = 'Validação dos pedidos falhou - verifique se todos os pedidos têm sku_kit e total_itens válidos';
+      // 🔍 VALIDAÇÃO COMPLETA DOS PEDIDOS - LOCAL COM VERIFICAÇÃO DE DUPLICAÇÃO
+      if (!(await validarFluxoCompletoLocal(pedidos))) {
+        const erroMsg = 'Validação dos pedidos falhou - alguns pedidos já foram processados ou têm dados inválidos';
         monitor.registrarOperacao(
           'baixa_estoque_validacao',
           'useEstoqueBaixa',
