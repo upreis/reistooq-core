@@ -145,6 +145,8 @@ export default function SimplePedidosPage({ className }: Props) {
         selectedAccount={selectedAccount}
         actions={actions}
         onAccountChange={handleAccountChange}
+        hasPendingChanges={hasPendingChanges}
+        hasActiveFilters={hasActiveFilters}
       />
 
       {/* Tabela */}
