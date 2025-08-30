@@ -2188,8 +2188,6 @@ function SimplePedidosPage({ className }: Props) {
             <span className="text-sm text-muted-foreground">Itens por página:</span>
             <Select value={String(state.pageSize || 25)} onValueChange={(v) => {
               actions.setPageSize(Number(v));
-              // 🚨 AUTO-APLICAR: Aplicar filtros automaticamente quando mudar pageSize
-              setTimeout(() => handleApplyFilters(), 100);
             }}>
               <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50">
@@ -2209,8 +2207,6 @@ function SimplePedidosPage({ className }: Props) {
                     e.preventDefault();
                     if (currentPage > 1) {
                       actions.setPage(currentPage - 1);
-                      // 🚨 AUTO-APLICAR: Aplicar filtros automaticamente quando mudar página
-                      setTimeout(() => handleApplyFilters(), 100);
                     }
                   }}
                   className={!(state.hasPrevPage ?? (currentPage > 1)) ? 'pointer-events-none opacity-50' : ''}
@@ -2230,8 +2226,6 @@ function SimplePedidosPage({ className }: Props) {
                     e.preventDefault();
                     if (currentPage < totalPages) {
                       actions.setPage(currentPage + 1);
-                      // 🚨 AUTO-APLICAR: Aplicar filtros automaticamente quando mudar página
-                      setTimeout(() => handleApplyFilters(), 100);
                     }
                   }}
                   className={(() => {

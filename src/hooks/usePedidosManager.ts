@@ -478,7 +478,7 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [integrationAccountId, appliedFilters, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]); // 🔄 REMOVIDO: currentPage das dependências
+  }, [integrationAccountId, appliedFilters, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
 
   // 🚀 FASE 3: Exportação de dados
   const exportData = useCallback(async (format: 'csv' | 'xlsx') => {
@@ -584,9 +584,7 @@ export function usePedidosManager(initialAccountId?: string) {
     setLastQuery(undefined);
     
     // 🚀 Executar busca imediatamente
-    setTimeout(() => {
-      loadOrders(true);
-    }, 100);
+    loadOrders(true);
   }, [pendingFilters, integrationAccountId, pageSize, loadOrders]);
 
   // Actions melhoradas
@@ -703,9 +701,8 @@ export function usePedidosManager(initialAccountId?: string) {
           normalized: restoredFilters
         });
         
-        // 🚨 CORRIGIDO: Carregar nos filtros pendentes E aplicados para manter consistência
+        // 🚨 PADRÃO: Restaurar apenas nos filtros pendentes; usuário decide quando aplicar
         setPendingFilters(restoredFilters);
-        setAppliedFilters(restoredFilters); // Aplicar também para que não fique "pendente"
         
         // Restaurar configurações
         if (lastSearch.integrationAccountId && !integrationAccountId) {
@@ -724,13 +721,19 @@ export function usePedidosManager(initialAccountId?: string) {
     }
   }, []); // Executar apenas no mount inicial
 
-  // 🔄 Effect para carregar dados APENAS quando integrationAccountId mudar (não página)
+  // 🔄 Effect para carregar dados APENAS quando integrationAccountId mudar (não filtros)
   useEffect(() => {
     if (integrationAccountId) {
       console.log('🔄 Carregando dados iniciais - conta:', integrationAccountId);
       loadOrders();
     }
-  }, [integrationAccountId]); // 🚨 REMOVIDO: currentPage para evitar atualizações automáticas
+  }, [integrationAccountId]);
+
+  // ✅ Paginação: carregar automaticamente ao mudar currentPage ou pageSize
+  useEffect(() => {
+    if (!integrationAccountId) return;
+    loadOrders(true);
+  }, [currentPage, pageSize, integrationAccountId]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
