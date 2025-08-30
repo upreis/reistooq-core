@@ -34,9 +34,10 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
         
         <div className="flex items-center justify-between pt-4 border-t">
           <SavedFiltersManager
-            onSave={actions.saveCurrentFilters}
-            onLoad={actions.loadSavedFilters}
+            onSaveFilters={actions.saveCurrentFilters}
+            onLoadFilters={actions.loadSavedFilters}
             savedFilters={actions.getSavedFilters()}
+            hasActiveFilters={Boolean(filters)}
           />
         </div>
       </div>
