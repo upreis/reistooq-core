@@ -6,13 +6,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export interface PedidosFiltersState {
   search?: string;
-  situacao?: string[];
+  situacao?: string;
   dataInicio?: Date;
   dataFim?: Date;
   cidade?: string;
@@ -54,7 +53,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.search) count++;
-    if (filters.situacao && filters.situacao.length > 0) count++;
+    if (filters.situacao) count++;
     if (filters.dataInicio || filters.dataFim) count++;
     if (filters.cidade) count++;
     if (filters.uf) count++;
@@ -90,41 +89,21 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
           </div>
         </div>
 
-        {/* Situações - Multi-select */}
-        <div className="min-w-60">
-          <label className="text-sm font-medium mb-1 block">Situações</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-start">
-                {filters.situacao && filters.situacao.length > 0 
-                  ? `${filters.situacao.length} selecionada(s)`
-                  : "Todas as situações"
-                }
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4">
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {SITUACOES.map((situacao) => (
-                  <div key={situacao} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={situacao}
-                      checked={filters.situacao?.includes(situacao) || false}
-                      onCheckedChange={(checked) => {
-                        const current = filters.situacao || [];
-                        const updated = checked 
-                          ? [...current, situacao]
-                          : current.filter(s => s !== situacao);
-                        handleFilterChange('situacao', updated);
-                      }}
-                    />
-                    <label htmlFor={situacao} className="text-sm cursor-pointer">
-                      {situacao}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+        {/* Situação */}
+        <div className="min-w-40">
+          <label className="text-sm font-medium mb-1 block">Situação</label>
+          <Select value={filters.situacao || ''} onValueChange={(value) => handleFilterChange('situacao', value || undefined)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todas" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border border-border z-50">
+              {SITUACOES.map((situacao) => (
+                <SelectItem key={situacao} value={situacao}>
+                  {situacao}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Data Período */}
@@ -259,10 +238,10 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('search', undefined)} />
             </Badge>
           )}
-          {filters.situacao && filters.situacao.length > 0 && (
+          {filters.situacao && (
             <Badge variant="secondary" className="gap-1">
-              Situação: {filters.situacao.length === 1 ? filters.situacao[0] : `${filters.situacao.length} selecionadas`}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', [])} />
+              Situação: {filters.situacao}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', undefined)} />
             </Badge>
           )}
           {(filters.dataInicio || filters.dataFim) && (

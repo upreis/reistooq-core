@@ -70,32 +70,19 @@ const savePreferences = (state: ColumnState) => {
 };
 
 export const useColumnManager = (): UseColumnManagerReturn => {
-  // 🔧 CORREÇÃO CRÍTICA: Inicialização mais simples para evitar erro React
+  // Inicializar estado combinando padrões com preferências salvas
   const [state, setState] = useState<ColumnState>(() => {
-    try {
-      const initial = getInitialState();
-      const stored = loadStoredPreferences();
-      
-      // Validação mais robusta
-      if (!stored || Object.keys(stored).length === 0) {
-        return initial;
-      }
-      
-      // Merge seguro dos dados
-      const mergedState: ColumnState = {
-        visibleColumns: stored.visibleColumns 
-          ? new Set(Array.isArray(stored.visibleColumns) ? stored.visibleColumns : Array.from(initial.visibleColumns))
-          : initial.visibleColumns,
-        columnOrder: Array.isArray(stored.columnOrder) ? stored.columnOrder : initial.columnOrder,
-        activeProfile: typeof stored.activeProfile === 'string' ? stored.activeProfile : initial.activeProfile,
-        customProfiles: Array.isArray(stored.customProfiles) ? stored.customProfiles : initial.customProfiles
-      };
-      
-      return mergedState;
-    } catch (error) {
-      console.warn('❌ Erro na inicialização do columnManager, usando padrão:', error);
-      return getInitialState();
-    }
+    const initial = getInitialState();
+    const stored = loadStoredPreferences();
+    
+    return {
+      ...initial,
+      ...stored,
+      // Garantir que visibleColumns seja sempre um Set
+      visibleColumns: stored.visibleColumns instanceof Set 
+        ? stored.visibleColumns 
+        : new Set(stored.visibleColumns || Array.from(initial.visibleColumns))
+    };
   });
  
   // Reconciliar novas colunas adicionadas após preferências salvas

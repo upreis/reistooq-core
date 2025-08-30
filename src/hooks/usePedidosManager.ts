@@ -64,10 +64,7 @@ export interface SavedFilter {
   createdAt: Date;
 }
 
-// Constantes otimizadas
-const PAGINATION = { DEFAULT_PAGE_SIZE: 25, EXPORT_LIMIT: 10000 };
-const CACHE = { VALIDITY_MS: 5 * 60 * 1000 }; // 5 minutos
-const DEBOUNCE = { FILTER_DELAY_MS: 500 };
+import { PAGINATION, CACHE, DEBOUNCE } from '@/lib/constants';
 
 // 🔧 Helper para normalizar datas (corrige serialização)
 function normalizeDate(value: any): Date | undefined {
@@ -372,7 +369,7 @@ export function usePedidosManager(initialAccountId?: string) {
 
     // 🚀 FASE 2: Verificar cache
     if (!forceRefresh && isCacheValid(cacheKey)) {
-      console.log('📦 Usando dados do cache');
+      // P1.2: Cache usado - log removido por segurança
       return;
     }
 
@@ -703,6 +700,14 @@ export function usePedidosManager(initialAccountId?: string) {
       console.warn('⚠️ Erro ao restaurar última consulta:', error);
     }
   }, []); // Executar apenas no mount inicial
+
+  // 🔄 Effect para carregar dados quando página ou integrationAccountId mudar
+  useEffect(() => {
+    if (integrationAccountId) {
+      console.log('🔄 Carregando dados - página:', currentPage, 'conta:', integrationAccountId);
+      loadOrders();
+    }
+  }, [currentPage, integrationAccountId, loadOrders]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
