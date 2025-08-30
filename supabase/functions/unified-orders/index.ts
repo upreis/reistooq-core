@@ -114,7 +114,14 @@ serve(async (req) => {
     if (!authHeader) return fail("Missing Authorization header", 401, null, cid);
 
     const body = await req.json();
-    const { integration_account_id, status, shipping_status, date_from, date_to, seller_id, q, limit = 50, offset = 0 } = body || {};
+    const { integration_account_id, status, shipping_status, date_from, date_to, seller_id, q, limit: rawLimit = 50, offset = 0 } = body || {};
+    
+    // 🚨 VALIDAÇÃO: Mercado Livre API aceita máximo 51, limitamos a 50 para segurança
+    const limit = Math.min(rawLimit, 50);
+    if (rawLimit > 50) {
+      console.warn(`[unified-orders:${cid}] Limit reduzido de ${rawLimit} para ${limit} (máximo permitido: 50)`);
+    }
+    
     console.log(`[unified-orders:${cid}] filters`, { integration_account_id, status, shipping_status, date_from, date_to, seller_id, q, limit, offset });
     if (!integration_account_id) return fail("integration_account_id é obrigatório", 400, null, cid);
 

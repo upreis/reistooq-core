@@ -35,7 +35,7 @@ export const SkuMappingFiltersSchema = z.object({
     end: z.string().optional(),
   }).optional(),
   page: z.number().min(1).default(1),
-  pageSize: z.number().min(10).max(100).default(20),
+  pageSize: z.number().min(10).max(50).default(20), // 🚨 Limite ajustado para API do Mercado Livre
   sortBy: z.string().default("created_at"),
   sortDir: z.enum(["asc", "desc"]).default("desc"),
 });

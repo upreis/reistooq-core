@@ -611,7 +611,12 @@ export function usePedidosManager(initialAccountId?: string) {
     },
     
     setPageSize: (size: number) => {
-      setPageSizeState(size);
+      // 🚨 VALIDAÇÃO: Mercado Livre API aceita máximo 51, limitamos a 50 para segurança
+      const validatedSize = Math.min(size, PAGINATION.MAX_PAGE_SIZE);
+      if (size > PAGINATION.MAX_PAGE_SIZE) {
+        console.warn(`⚠️ pageSize reduzido de ${size} para ${validatedSize} (limite da API: ${PAGINATION.MAX_PAGE_SIZE})`);
+      }
+      setPageSizeState(validatedSize);
       setCurrentPage(1);
     },
     
@@ -691,7 +696,9 @@ export function usePedidosManager(initialAccountId?: string) {
           setIntegrationAccountId(lastSearch.integrationAccountId);
         }
         if (lastSearch.pageSize && lastSearch.pageSize !== pageSize) {
-          setPageSizeState(lastSearch.pageSize);
+          // 🚨 VALIDAÇÃO: Aplicar mesmo limite na restauração
+          const validatedSize = Math.min(lastSearch.pageSize, PAGINATION.MAX_PAGE_SIZE);
+          setPageSizeState(validatedSize);
         }
         
         console.log('✅ Última consulta restaurada (pendente aplicação)');
