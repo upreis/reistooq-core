@@ -10,9 +10,9 @@ interface PedidosFiltersSectionProps {
   filters: FiltersType;
   appliedFilters: FiltersType;
   accounts: any[];
-  selectedAccount: string;
+  selectedAccounts: string[];
   actions: PedidosManagerActions;
-  onAccountChange: (accountId: string) => void;
+  onAccountChange: (accountIds: string[]) => void;
   hasPendingChanges?: boolean;
   hasActiveFilters?: boolean;
 }
@@ -21,7 +21,7 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
   filters,
   appliedFilters,
   accounts,
-  selectedAccount,
+  selectedAccounts,
   actions,
   onAccountChange,
   hasPendingChanges,
@@ -30,7 +30,7 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
   // Converter filters para o tipo correto do componente PedidosFilters
   const filtersAsState: PedidosFiltersState = {
     search: filters.search,
-    situacao: typeof filters.situacao === 'string' ? filters.situacao : filters.situacao?.[0],
+    situacao: Array.isArray(filters.situacao) ? filters.situacao : (filters.situacao ? [filters.situacao] : []),
     dataInicio: filters.dataInicio,
     dataFim: filters.dataFim,
     cidade: filters.cidade,
@@ -54,16 +54,19 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
   return (
     <Card className="p-6 mb-6">
       <div className="space-y-4">
-        {/* Conta de integração */}
+        {/* Contas de integração - Multi-select */}
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <label className="text-sm font-medium">Conta</label>
+            <label className="text-sm font-medium">Contas</label>
             <select
-              value={selectedAccount || ''}
-              onChange={(e) => onAccountChange(e.target.value)}
-              className="h-9 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 z-10"
+              multiple
+              value={selectedAccounts}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, option => option.value);
+                onAccountChange(selected);
+              }}
+              className="h-20 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 z-10"
             >
-              <option value="">Selecione uma conta</option>
               {accounts.map((acc) => (
                 <option key={acc.id} value={acc.id}>{acc.name || acc.id}</option>
               ))}
@@ -71,22 +74,19 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
           </div>
 
           <div className="flex items-center gap-2">
-            {hasPendingChanges && (
-              <Button
-                onClick={handleApplyFilters}
-                size="sm"
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                Aplicar Filtros
-              </Button>
-            )}
-            {hasActiveFilters && (
-              <Button variant="outline" size="sm" onClick={handleClearFilters}>
-                <FilterIcon className="w-4 h-4 mr-2" />
-                Limpar Filtros
-              </Button>
-            )}
+            <Button
+              onClick={handleApplyFilters}
+              size="sm"
+              variant={hasPendingChanges ? "default" : "outline"}
+              className={hasPendingChanges ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              {hasPendingChanges ? "Aplicar Filtros" : "Aplicar"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleClearFilters}>
+              <FilterIcon className="w-4 h-4 mr-2" />
+              Limpar Filtros
+            </Button>
           </div>
         </div>
 
@@ -106,27 +106,24 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
           />
           
           <div className="flex items-center gap-2">
-            {hasPendingChanges && (
-              <Button
-                onClick={handleApplyFilters}
-                size="sm"
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                Aplicar Filtros
-              </Button>
-            )}
+            <Button
+              onClick={handleApplyFilters}
+              size="sm"
+              variant={hasPendingChanges ? "default" : "outline"}
+              className={hasPendingChanges ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}
+            >
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              {hasPendingChanges ? "Aplicar Filtros" : "Aplicar"}
+            </Button>
             
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearFilters}
-              >
-                <FilterIcon className="w-4 h-4 mr-2" />
-                Limpar Filtros
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearFilters}
+            >
+              <FilterIcon className="w-4 h-4 mr-2" />
+              Limpar Filtros
+            </Button>
           </div>
         </div>
       </div>

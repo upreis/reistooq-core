@@ -81,8 +81,8 @@ export default function SimplePedidosPage({ className }: Props) {
   }, [orders, pedidosData.loadMappingData]);
 
   // 🚀 Callbacks otimizados com useCallback
-  const handleAccountChange = useCallback((accountId: string) => {
-    setSelectedAccounts(accountId ? [accountId] : []);
+  const handleAccountChange = useCallback((accountIds: string[]) => {
+    setSelectedAccounts(accountIds);
   }, []);
 
   const handleSelectionChange = useCallback((selectedRows: Row[]) => {
@@ -141,11 +141,11 @@ export default function SimplePedidosPage({ className }: Props) {
       />
 
       {/* Filtros */}
-  <PedidosFiltersSection
+      <PedidosFiltersSection
         filters={filters}
         appliedFilters={appliedFilters}
         accounts={pedidosData.accounts}
-        selectedAccount={selectedAccounts[0] || ''}
+        selectedAccounts={selectedAccounts}
         actions={actions}
         onAccountChange={handleAccountChange}
         hasPendingChanges={hasPendingChanges}
