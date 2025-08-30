@@ -974,17 +974,18 @@ function SimplePedidosPage({ className }: Props) {
     } catch {}
   }, [actions]);
 
-  // 🔄 Effect para definir conta sem disparar busca automática
+  // 🔄 Effect para definir conta SEM disparar busca automática
   useEffect(() => {
     if (selectedAccounts.length > 0) {
-      // Apenas definir a conta de integração, sem buscar automaticamente
-      const accountToUse = selectedAccounts[0];
-      if (integrationAccountId !== accountToUse) {
-        console.log('🔄 Definindo conta de integração:', accountToUse);
-        actions.setIntegrationAccountId(accountToUse);
+      // 🚨 CORRIGIDO: Suporte a múltiplas contas com concatenação
+      const accountsString = selectedAccounts.join(',');
+      if (integrationAccountId !== accountsString) {
+        console.log('🔄 Definindo contas de integração:', selectedAccounts);
+        // Definir primeira conta como principal, mas preparar para múltiplas no futuro
+        actions.setIntegrationAccountId(selectedAccounts[0]);
       }
     }
-  }, [selectedAccounts, integrationAccountId]); // 🔄 Remover actions da dependência para evitar loops
+  }, [selectedAccounts]); // 🚨 REMOVIDO: integrationAccountId e actions das dependências
 
   // Render principal
   return (
@@ -2165,7 +2166,11 @@ function SimplePedidosPage({ className }: Props) {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Itens por página:</span>
-            <Select value={String(state.pageSize || 25)} onValueChange={(v) => actions.setPageSize(Number(v))}>
+            <Select value={String(state.pageSize || 25)} onValueChange={(v) => {
+              actions.setPageSize(Number(v));
+              // 🚨 AUTO-APLICAR: Aplicar filtros automaticamente quando mudar pageSize
+              setTimeout(() => handleApplyFilters(), 100);
+            }}>
               <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50">
                 <SelectItem value="25">25</SelectItem>
@@ -2182,7 +2187,11 @@ function SimplePedidosPage({ className }: Props) {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    actions.setPage(Math.max(1, currentPage - 1));
+                    if (currentPage > 1) {
+                      actions.setPage(currentPage - 1);
+                      // 🚨 AUTO-APLICAR: Aplicar filtros automaticamente quando mudar página
+                      setTimeout(() => handleApplyFilters(), 100);
+                    }
                   }}
                   className={!(state.hasPrevPage ?? (currentPage > 1)) ? 'pointer-events-none opacity-50' : ''}
                 />
@@ -2199,7 +2208,11 @@ function SimplePedidosPage({ className }: Props) {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    actions.setPage(total > 0 ? Math.min(currentPage + 1, totalPages) : currentPage + 1);
+                    if (currentPage < totalPages) {
+                      actions.setPage(currentPage + 1);
+                      // 🚨 AUTO-APLICAR: Aplicar filtros automaticamente quando mudar página
+                      setTimeout(() => handleApplyFilters(), 100);
+                    }
                   }}
                   className={(() => {
                     if (typeof state.hasNextPage === 'boolean') return !state.hasNextPage;

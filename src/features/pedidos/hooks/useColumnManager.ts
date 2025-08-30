@@ -21,9 +21,30 @@ const getInitialState = (): ColumnState => {
   };
 };
 
-// Carregar preferências do localStorage
+// 💾 Carregar preferências com prioridade para última consulta
 const loadStoredPreferences = (): Partial<ColumnState> => {
   try {
+    // 🚨 INTEGRADO: Tentar carregar da última consulta primeiro
+    const lastSearch = localStorage.getItem('pedidos:lastSearch');
+    if (lastSearch) {
+      const parsed = JSON.parse(lastSearch);
+      if (parsed.visibleColumns && Object.keys(parsed.visibleColumns).length > 0) {
+        console.log('💾 Restaurando colunas da última consulta:', parsed.visibleColumns);
+        // Converter objeto para Set se necessário
+        const visibleSet = typeof parsed.visibleColumns === 'object' && parsed.visibleColumns.constructor === Object
+          ? new Set(Object.keys(parsed.visibleColumns).filter(key => parsed.visibleColumns[key]) as string[])
+          : new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns.map(String) : []);
+          
+        return {
+          visibleColumns: visibleSet as Set<string>,
+          columnOrder: COLUMN_DEFINITIONS.map(col => col.key),
+          activeProfile: null,
+          customProfiles: []
+        };
+      }
+    }
+    
+    // Fallback para configuração separada
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return {};
     
@@ -33,7 +54,7 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
     if (!parsed || typeof parsed !== 'object') return {};
     
     return {
-      visibleColumns: new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns : []),
+      visibleColumns: new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns.map(String) : []),
       columnOrder: Array.isArray(parsed.columnOrder) 
         ? parsed.columnOrder 
         : COLUMN_DEFINITIONS.map(col => col.key),
@@ -51,7 +72,7 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
   }
 };
 
-// Salvar preferências no localStorage
+// 💾 Salvar preferências com integração da última consulta
 const savePreferences = (state: ColumnState) => {
   try {
     const toSave = {
@@ -62,7 +83,24 @@ const savePreferences = (state: ColumnState) => {
       timestamp: Date.now() // Para debug e versionamento
     };
     
+    // Salvar configuração separada
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    
+    // 🚨 INTEGRADO: Atualizar também na última consulta se existir
+    const lastSearch = localStorage.getItem('pedidos:lastSearch');
+    if (lastSearch) {
+      const parsed = JSON.parse(lastSearch);
+      // Converter Set para objeto para manter compatibilidade
+      const visibleObject = Array.from(state.visibleColumns).reduce((acc, key) => {
+        acc[key] = true;
+        return acc;
+      }, {} as Record<string, boolean>);
+      
+      parsed.visibleColumns = visibleObject;
+      localStorage.setItem('pedidos:lastSearch', JSON.stringify(parsed));
+      console.log('💾 Colunas atualizadas na última consulta também');
+    }
+    
     console.log('✅ Preferências de colunas salvas:', toSave);
   } catch (error) {
     console.warn('❌ Erro ao salvar preferências de colunas:', error);
@@ -81,7 +119,7 @@ export const useColumnManager = (): UseColumnManagerReturn => {
       // Garantir que visibleColumns seja sempre um Set
       visibleColumns: stored.visibleColumns instanceof Set 
         ? stored.visibleColumns 
-        : new Set(stored.visibleColumns || Array.from(initial.visibleColumns))
+        : new Set(stored.visibleColumns ? Array.from(stored.visibleColumns) : Array.from(initial.visibleColumns))
     };
   });
  
