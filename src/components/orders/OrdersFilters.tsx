@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useState } from 'react';
+import React, { memo, useCallback, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +74,18 @@ export const OrdersFilters = memo<OrdersFiltersProps>(({
     }
   }, [onDateRangeChange]);
   
-  // Search handling with debounce through parent
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchValue !== filters.search) {
+        onSearchChange(searchValue);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchValue, onSearchChange, filters.search]);
+
+  // Search handling with debounce
   const handleSearchSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     onSearchChange(searchValue);
@@ -83,11 +94,7 @@ export const OrdersFilters = memo<OrdersFiltersProps>(({
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchValue(value);
-    // Immediate search on clear
-    if (value === '') {
-      onSearchChange('');
-    }
-  }, [onSearchChange]);
+  }, []);
   
   // Situacoes handling
   const handleSituacaoToggle = useCallback((situacao: string) => {
