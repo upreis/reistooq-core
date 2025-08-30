@@ -47,6 +47,7 @@ import { PedidosTableSection } from './components/PedidosTableSection';
 import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 
+
 type Order = {
   id: string;
   numero: string;
@@ -988,10 +989,13 @@ function SimplePedidosPage({ className }: Props) {
       {/* 🛡️ FILTROS SIMPLES E FUNCIONAIS - TESTE MIGRAÇÃO GRADUAL */}
       <PedidosFiltersSection
         filters={filters}
-        onFiltersChange={handleFilterChange}
+        appliedFilters={appliedFilters}
+        actions={actions}
+        onFiltersChange={actions.setFilters}
         onClearFilters={actions.clearFilters}
         hasPendingChanges={hasPendingChanges}
-        loading={loading}
+        columnManager={columnManager}
+        loading={state.loading}
       />
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
