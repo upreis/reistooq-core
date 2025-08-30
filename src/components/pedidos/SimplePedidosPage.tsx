@@ -3,7 +3,7 @@
  * Sistema blindado com arquitetura unificada + Performance + UX
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
@@ -32,7 +33,8 @@ import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
 import { buildIdUnico } from '@/utils/idUnico';
 
 import { PedidosAlerts } from './dashboard/PedidosAlerts';
-import { IntelligentPedidosDashboard } from './dashboard/IntelligentPedidosDashboard';
+import { SimpleDashboard } from './dashboard/SimpleDashboard';
+import { PedidosFiltersMemo } from './PedidosFiltersMemo';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 
@@ -69,15 +71,10 @@ type Props = {
   className?: string;
 };
 
-export default function SimplePedidosPage({ className }: Props) {
+const SimplePedidosPage = memo(function SimplePedidosPage({ className }: Props) {
   // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
   const { filters, appliedFilters, state, actions, hasPendingChanges, totalPages } = pedidosManager;
-  
-  // 🔄 Debug para verificar estado dos filtros
-  console.log('🔄 [RENDER] hasPendingChanges:', hasPendingChanges);
-  console.log('🔄 [RENDER] filters:', filters);
-  console.log('🔄 [RENDER] appliedFilters:', appliedFilters);
   
   // 🔧 Sistema de colunas unificado com persistência automatica
   const columnManager = useColumnManager();
@@ -898,10 +895,10 @@ export default function SimplePedidosPage({ className }: Props) {
     processarMapeamentos();
   }, [orders]);
 
-  // Handlers
-  const handleFilterChange = (newFilters: any) => {
+  // Handlers memoizados para performance
+  const handleFilterChange = useCallback((newFilters: any) => {
     actions.setFilters(newFilters);
-  };
+  }, [actions.setFilters]);
 
   // 💾 Função para salvar contas selecionadas junto com filtros
   const handleApplyFilters = () => {
@@ -979,14 +976,15 @@ export default function SimplePedidosPage({ className }: Props) {
   // Render principal
   return (
     <div className={`space-y-6 p-6 ${className}`}>
-      {/* 📊 DASHBOARD INTELIGENTE AVANÇADO */}
-      <IntelligentPedidosDashboard 
-        orders={orders}
-        allOrders={orders} // TODO: Implementar busca completa para análise cross-page
-        loading={loading}
-        totalCount={total}
-        onRefresh={actions.refetch}
-        className="animate-fade-in"
+      {/* 📊 DASHBOARD SIMPLIFICADO E OTIMIZADO */}
+      <SimpleDashboard 
+        data={{
+          total: total || 0,
+          valorTotal: orders?.reduce((acc, order) => acc + (order.valor_total || 0), 0) || 0,
+          pedidosPendentes: orders?.filter(o => ['Aberto', 'Pago'].includes(o.situacao)).length || 0,
+          pedidosEntregues: orders?.filter(o => o.situacao === 'Entregue').length || 0
+        }}
+        isLoading={loading}
       />
       
       {/* Debug info */}
@@ -1032,17 +1030,15 @@ export default function SimplePedidosPage({ className }: Props) {
             isLoading={loading}
           />
           
-          {/* 🔄 BOTÃO APLICAR FILTROS */}
-          {hasPendingChanges && (
-            <Button
-              onClick={handleApplyFilters}
-              disabled={loading || state.isRefreshing}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Aplicar Filtros
-            </Button>
-          )}
+          {/* 🔄 BOTÃO APLICAR FILTROS - Sempre visível mas desabilitado se não há mudanças */}
+          <Button
+            onClick={handleApplyFilters}
+            disabled={!hasPendingChanges || loading || state.isRefreshing}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            {hasPendingChanges ? 'Aplicar Filtros' : 'Filtros Aplicados'}
+          </Button>
           
           <Button
             variant="outline"
@@ -1159,6 +1155,17 @@ export default function SimplePedidosPage({ className }: Props) {
             </Button>
           </div>
           
+          
+          {/* Campo de Busca com Debounce */}
+          <div className="mb-4">
+            <label className="text-sm font-medium mb-2 block">Buscar Pedidos</label>
+            <Input
+              placeholder="Buscar por número, cliente, CPF/CNPJ..."
+              value={filters.search || ''}
+              onChange={(e) => actions.setFilters({ search: e.target.value })}
+              className="w-full"
+            />
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Filtro por Status do Envio - Multi seleção no Popover (igual Colunas) */}
@@ -2142,11 +2149,11 @@ export default function SimplePedidosPage({ className }: Props) {
         )}
       </Card>
 
-      {/* 🛡️ PAGINAÇÃO */}
+      {/* 🛡️ PAGINAÇÃO OTIMIZADA */}
       {orders && orders.length > 0 && (
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm">Itens por página:</span>
+            <span className="text-sm text-muted-foreground">Itens por página:</span>
             <Select value={String(state.pageSize || 25)} onValueChange={(v) => actions.setPageSize(Number(v))}>
               <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
               <SelectContent className="bg-background border shadow-lg z-50">
@@ -2156,31 +2163,42 @@ export default function SimplePedidosPage({ className }: Props) {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center justify-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => actions.setPage(Math.max(1, currentPage - 1))}
-              disabled={!(state.hasPrevPage ?? (currentPage > 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm">
-              Página {currentPage}{total > 0 ? ` de ${totalPages} (${total} total)` : ` (${orders?.length || 0} itens)`}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => actions.setPage(total > 0 ? Math.min(currentPage + 1, totalPages) : currentPage + 1)}
-              disabled={(() => {
-                if (typeof state.hasNextPage === 'boolean') return !state.hasNextPage;
-                if (total > 0) return currentPage >= totalPages;
-                return orders.length < (state.pageSize || 25);
-              })()}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+          
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    actions.setPage(Math.max(1, currentPage - 1));
+                  }}
+                  className={!(state.hasPrevPage ?? (currentPage > 1)) ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+              
+              <PaginationItem>
+                <span className="text-sm text-muted-foreground px-4">
+                  Página {currentPage}{total > 0 ? ` de ${totalPages} (${total} total)` : ` (${orders?.length || 0} itens)`}
+                </span>
+              </PaginationItem>
+              
+              <PaginationItem>
+                <PaginationNext 
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    actions.setPage(total > 0 ? Math.min(currentPage + 1, totalPages) : currentPage + 1);
+                  }}
+                  className={(() => {
+                    if (typeof state.hasNextPage === 'boolean') return !state.hasNextPage;
+                    if (total > 0) return currentPage >= totalPages;
+                    return orders.length < (state.pageSize || 25);
+                  })() ? 'pointer-events-none opacity-50' : ''}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
 
@@ -2211,4 +2229,6 @@ export default function SimplePedidosPage({ className }: Props) {
       />
     </div>
   );
-}
+});
+
+export default SimplePedidosPage;
