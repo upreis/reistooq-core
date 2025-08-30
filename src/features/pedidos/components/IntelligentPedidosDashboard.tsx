@@ -22,11 +22,14 @@ import {
   ShoppingCart,
   Target,
   MapPin,
-  Archive
+  Archive,
+  Zap,
+  Eye
 } from 'lucide-react';
 import { formatMoney } from '@/lib/format';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { cn } from '@/lib/utils';
+import { useDynamicPedidosAnalytics } from '../hooks/useDynamicPedidosAnalytics';
 
 interface DashboardProps {
   orders: any[];
@@ -35,6 +38,7 @@ interface DashboardProps {
   onRefresh?: () => void;
   totalCount?: number;
   className?: string;
+  appliedFilters?: any;
 }
 
 interface KPI {
@@ -70,53 +74,42 @@ export function IntelligentPedidosDashboard({
   loading, 
   onRefresh, 
   totalCount,
-  className 
+  className,
+  appliedFilters
 }: DashboardProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   
-  // Análise inteligente dos dados
+  // 🎯 ANALYTICS DINÂMICOS baseados nos pedidos filtrados
+  const analytics = useDynamicPedidosAnalytics(orders, allOrders);
+  
+  // Análise inteligente dos dados (MANTIDA PARA COMPATIBILIDADE)
   const dashboardData = useMemo(() => {
     if (!orders || orders.length === 0) {
       return {
         kpis: [],
-        alerts: [],
-        companyAnalysis: [],
-        deliveryForecast: [],
-        statusDistribution: [],
-        revenueByDay: []
+        alerts: analytics.alerts,
+        companyAnalysis: analytics.trends.companyAnalysis,
+        deliveryForecast: analytics.forecasts.deliveryForecast,
+        statusDistribution: analytics.trends.statusDistribution,
+        revenueByDay: analytics.trends.revenueByDay
       };
     }
 
-    // Calcular KPIs principais
-    const totalRevenue = orders.reduce((sum, order) => {
-      const valor = Number(order.valor_total) || 0;
-      return sum + valor;
-    }, 0);
+    // 🎯 KPIs DINÂMICOS baseados nos dados reais filtrados
+    const { metrics } = analytics;
+    const totalRevenue = metrics.totalRevenue;
+    const averageTicket = metrics.averageTicket;
+    const totalOrders = metrics.totalOrders;
+    const completionRate = metrics.completionRate;
+    
+    const completedOrders = Math.round((completionRate / 100) * totalOrders);
+    const pendingOrders = totalOrders - completedOrders;
 
-    const averageTicket = totalRevenue / orders.length;
-
-    const totalOrders = orders.length;
-    const completedOrders = orders.filter(order => 
-      ['delivered', 'entregue', 'concluido'].includes(order.situacao?.toLowerCase())
-    ).length;
-
-    const pendingOrders = orders.filter(order => 
-      ['pending', 'pendente', 'processando'].includes(order.situacao?.toLowerCase())
-    ).length;
-
-    // Análise de mapeamento
-    const unmappedOrders = orders.filter(order => {
-      const skus = order.skus || [];
-      return skus.length === 0 || skus.some((sku: string) => !sku || sku.trim() === '');
-    }).length;
-
-    // Análise de estoque
-    const lowStockOrders = orders.filter(order => {
-      // Simular verificação de estoque baixo baseado em padrões
-      return order.situacao?.toLowerCase().includes('estoque') || 
-             order.obs?.toLowerCase().includes('estoque');
-    }).length;
+    // 🚨 Usar alertas dos analytics dinâmicos
+    const unmappedOrders = analytics.alerts.find(a => a.title === 'SKUs Não Mapeados')?.count || 0;
+    const overdueOrders = analytics.forecasts.overdueOrders;
+    const upcomingDeliveries = analytics.forecasts.upcomingDeliveries;
 
     // KPIs
     const kpis: KPI[] = [
@@ -147,52 +140,38 @@ export function IntelligentPedidosDashboard({
         color: 'text-warning',
         description: 'Valor médio por pedido'
       },
-      {
-        title: 'Taxa de Entrega',
-        value: `${((completedOrders / totalOrders) * 100).toFixed(1)}%`,
-        change: 8.3,
-        trend: 'up',
-        icon: Truck,
-        color: 'text-success',
-        description: 'Percentual de pedidos entregues'
-      }
+        {
+          title: 'Taxa de Conclusão',
+          value: `${completionRate.toFixed(1)}%`,
+          change: completionRate > 75 ? 8.3 : -3.2,
+          trend: completionRate > 75 ? 'up' : 'down',
+          icon: CheckCircle,
+          color: completionRate > 75 ? 'text-success' : 'text-warning',
+          description: 'Percentual de pedidos concluídos'
+        },
+        {
+          title: 'Frete Total',
+          value: formatMoney(metrics.totalShipping),
+          change: 2.1,
+          trend: 'up',
+          icon: Truck,
+          color: 'text-info',
+          description: 'Valor total de frete dos pedidos'
+        }
     ];
 
-    // Alertas inteligentes
-    const alerts: AlertItem[] = [];
-
-    if (unmappedOrders > 0) {
-      alerts.push({
-        type: 'critical',
-        title: 'SKUs Não Mapeados',
-        message: `${unmappedOrders} pedidos com produtos sem mapeamento`,
-        count: unmappedOrders,
-        icon: AlertTriangle,
-        actionLabel: 'Mapear SKUs'
-      });
-    }
-
-    if (lowStockOrders > 0) {
-      alerts.push({
-        type: 'warning',
-        title: 'Estoque Baixo',
-        message: `${lowStockOrders} pedidos com possível problema de estoque`,
-        count: lowStockOrders,
-        icon: Package,
-        actionLabel: 'Verificar Estoque'
-      });
-    }
-
-    if (pendingOrders > totalOrders * 0.3) {
-      alerts.push({
-        type: 'warning',
-        title: 'Muitos Pedidos Pendentes',
-        message: `${pendingOrders} pedidos aguardando processamento`,
-        count: pendingOrders,
-        icon: Clock,
-        actionLabel: 'Processar Pedidos'
-      });
-    }
+    // 🚨 ALERTAS DINÂMICOS baseados nos dados reais
+    const alerts: AlertItem[] = analytics.alerts.map(alert => ({
+      type: alert.type,
+      title: alert.title,
+      message: alert.message,
+      count: alert.count,
+      icon: alert.title.includes('SKUs') ? AlertTriangle :
+            alert.title.includes('Atrasados') ? Clock :
+            alert.title.includes('Pendentes') ? Clock :
+            alert.title.includes('Ticket') ? Target : Package,
+      actionLabel: alert.actionRequired ? 'Resolver' : undefined
+    }));
 
     // Análise por empresa
     const companyMap = new Map<string, { orders: number; revenue: number }>();
@@ -259,10 +238,10 @@ export function IntelligentPedidosDashboard({
     return {
       kpis,
       alerts,
-      companyAnalysis,
-      deliveryForecast,
-      statusDistribution,
-      revenueByDay
+      companyAnalysis: analytics.trends.companyAnalysis,
+      deliveryForecast: analytics.forecasts.deliveryForecast,
+      statusDistribution: analytics.trends.statusDistribution,
+      revenueByDay: analytics.trends.revenueByDay
     };
   }, [orders]);
 
@@ -290,10 +269,20 @@ export function IntelligentPedidosDashboard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Dashboard Inteligente</h2>
+          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Zap className="h-6 w-6 text-primary" />
+            Dashboard Inteligente
+          </h2>
           <p className="text-muted-foreground">
-            Análise dinâmica de {orders.length} pedidos filtrados
+            📊 Análise dinâmica de <strong>{orders.length}</strong> pedidos filtrados
             {totalCount && totalCount > orders.length && ` de ${totalCount} total`}
+            {appliedFilters && Object.keys(appliedFilters).length > 0 && (
+              <span className="ml-2">
+                <Badge variant="secondary" className="text-xs">
+                  {Object.keys(appliedFilters).length} filtros ativos
+                </Badge>
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
