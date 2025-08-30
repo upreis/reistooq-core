@@ -39,13 +39,12 @@ import {
   translateShippingMethod 
 } from '@/utils/pedidos-translations';
 
-import { PedidosAlerts } from './dashboard/PedidosAlerts';
-import { IntelligentPedidosDashboard } from '@/features/pedidos/components/IntelligentPedidosDashboard';
 import PedidosFiltersMemo from './PedidosFiltersMemo';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 import { PedidosFiltersSection } from './components/PedidosFiltersSection';
 import { PedidosTableSection } from './components/PedidosTableSection';
+import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 
 type Order = {
   id: string;
@@ -847,26 +846,10 @@ function SimplePedidosPage({ className }: Props) {
   return (
     <div className={`space-y-6 p-6 ${className}`}>
       {/* 📊 DASHBOARD INTELIGENTE */}
-      <IntelligentPedidosDashboard 
+      <PedidosDashboardSection 
         orders={orders || []}
-        allOrders={orders || []}
         loading={loading}
-        onRefresh={actions.refetch}
-        totalCount={total}
       />
-      
-      {/* Debug info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-muted-foreground mt-2">
-          Debug: {orders?.length || 0} orders loaded, total: {total}, totalPages: {totalPages}, currentPage: {currentPage}
-        </div>
-      )}
-      
-
-      {/* 🚨 ALERTAS INTELIGENTES - Novo componente independente */}
-      {orders && orders.length > 0 && (
-        <PedidosAlerts orders={orders} className="animate-fade-in" />
-      )}
 
       {/* 🛡️ HEADER BLINDADO */}
       <div className="flex items-center justify-between">

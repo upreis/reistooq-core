@@ -56,8 +56,8 @@ export function usePedidosFilters() {
       params.search = filters.search;
     }
 
-    if (filters.situacao) {
-      params.situacao = filters.situacao;
+    if (filters.situacao && filters.situacao.length > 0) {
+      params.situacao = filters.situacao; // ✅ Array de situações
     }
 
     if (filters.dataInicio) {

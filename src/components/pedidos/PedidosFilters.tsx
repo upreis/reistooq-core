@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { Search, Filter, Calendar, X } from 'lucide-react';
+import { Search, Filter, Calendar, X, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export interface PedidosFiltersState {
   search?: string;
-  situacao?: string;
+  situacao?: string[];  // ✅ MUDANÇA: Array para múltiplas situações
   dataInicio?: Date;
   dataFim?: Date;
   cidade?: string;
@@ -24,7 +26,7 @@ interface PedidosFiltersProps {
   filters: PedidosFiltersState;
   onFiltersChange: (filters: PedidosFiltersState) => void;
   onClearFilters: () => void;
-  hasPendingChanges?: boolean; // 🔄 Indicador de mudanças pendentes
+  hasPendingChanges?: boolean;
 }
 
 const SITUACOES = [
@@ -44,16 +46,31 @@ const UFS = [
 
 export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPendingChanges }: PedidosFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [situacaoOpen, setSituacaoOpen] = useState(false);
 
   const handleFilterChange = (key: keyof PedidosFiltersState, value: any) => {
-    // 🔄 Apenas atualizar filtros pendentes, sem aplicar automaticamente
     onFiltersChange({ ...filters, [key]: value });
+  };
+
+  // ✅ NOVA FUNÇÃO: Gerenciar seleção múltipla de situações
+  const handleSituacaoChange = (situacao: string, checked: boolean) => {
+    const currentSituacoes = filters.situacao || [];
+    
+    if (checked) {
+      // Adicionar situação
+      const newSituacoes = [...currentSituacoes, situacao];
+      handleFilterChange('situacao', newSituacoes);
+    } else {
+      // Remover situação
+      const newSituacoes = currentSituacoes.filter(s => s !== situacao);
+      handleFilterChange('situacao', newSituacoes.length > 0 ? newSituacoes : undefined);
+    }
   };
 
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.search) count++;
-    if (filters.situacao) count++;
+    if (filters.situacao && filters.situacao.length > 0) count++;
     if (filters.dataInicio || filters.dataFim) count++;
     if (filters.cidade) count++;
     if (filters.uf) count++;
@@ -62,10 +79,11 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
   };
 
   const activeFiltersCount = getActiveFiltersCount();
+  const selectedSituacoes = filters.situacao || [];
 
   return (
     <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-gray-600">
-      {/* 🔄 Aviso de mudanças pendentes */}
+      {/* Aviso de mudanças pendentes */}
       {hasPendingChanges && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800">
           <Filter className="h-4 w-4" />
@@ -89,21 +107,59 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
           </div>
         </div>
 
-        {/* Situação */}
-        <div className="min-w-40">
+        {/* ✅ SITUAÇÃO MÚLTIPLA */}
+        <div className="min-w-48">
           <label className="text-sm font-medium mb-1 block">Situação</label>
-          <Select value={filters.situacao || ''} onValueChange={(value) => handleFilterChange('situacao', value || undefined)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Todas" />
-            </SelectTrigger>
-            <SelectContent className="bg-background border border-border z-50">
-              {SITUACOES.map((situacao) => (
-                <SelectItem key={situacao} value={situacao}>
-                  {situacao}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={situacaoOpen} onOpenChange={setSituacaoOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={situacaoOpen}
+                className="w-full justify-between"
+              >
+                {selectedSituacoes.length === 0 
+                  ? "Todas as situações"
+                  : selectedSituacoes.length === 1
+                  ? selectedSituacoes[0]
+                  : `${selectedSituacoes.length} selecionadas`
+                }
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0 bg-background border border-border z-50">
+              <div className="p-2 space-y-2">
+                <div className="text-sm font-medium px-2 py-1">Selecione as situações:</div>
+                {SITUACOES.map((situacao) => (
+                  <div key={situacao} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
+                    <Checkbox
+                      id={`situacao-${situacao}`}
+                      checked={selectedSituacoes.includes(situacao)}
+                      onCheckedChange={(checked) => handleSituacaoChange(situacao, checked as boolean)}
+                    />
+                    <label
+                      htmlFor={`situacao-${situacao}`}
+                      className="text-sm cursor-pointer flex-1"
+                    >
+                      {situacao}
+                    </label>
+                  </div>
+                ))}
+                {selectedSituacoes.length > 0 && (
+                  <div className="border-t pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleFilterChange('situacao', undefined)}
+                      className="w-full"
+                    >
+                      Limpar seleção
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Data Período */}
@@ -117,12 +173,13 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
                   {filters.dataInicio ? format(filters.dataInicio, 'dd/MM/yyyy', { locale: ptBR }) : 'Início'}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
                   selected={filters.dataInicio}
                   onSelect={(date) => handleFilterChange('dataInicio', date)}
                   locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
@@ -137,12 +194,13 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
                   {filters.dataFim ? format(filters.dataFim, 'dd/MM/yyyy', { locale: ptBR }) : 'Fim'}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
                   selected={filters.dataFim}
                   onSelect={(date) => handleFilterChange('dataFim', date)}
                   locale={ptBR}
+                  className={cn("p-3 pointer-events-auto")}
                 />
               </PopoverContent>
             </Popover>
@@ -229,7 +287,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
         </div>
       )}
 
-      {/* Tags dos Filtros Ativos */}
+      {/* ✅ TAGS ATUALIZADAS para múltiplas situações */}
       {activeFiltersCount > 0 && (
         <div className="flex flex-wrap gap-2 pt-2 border-t">
           {filters.search && (
@@ -238,9 +296,9 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('search', undefined)} />
             </Badge>
           )}
-          {filters.situacao && (
+          {selectedSituacoes.length > 0 && (
             <Badge variant="secondary" className="gap-1">
-              Situação: {filters.situacao}
+              Situação: {selectedSituacoes.length === 1 ? selectedSituacoes[0] : `${selectedSituacoes.length} selecionadas`}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', undefined)} />
             </Badge>
           )}
