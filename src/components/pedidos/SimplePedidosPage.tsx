@@ -69,10 +69,10 @@ type Props = {
 };
 
 export default function SimplePedidosPage({ className }: Props) {
-  // 🛡️ SISTEMA UNIFICADO (P2.1: Corrigido - hook não pode ser memoizado diretamente)
+  // 🛡️ SISTEMA UNIFICADO - Hook direto sem memoização problemática
   const pedidosManager = usePedidosManager();
-  // P2.1: Memoização correta dos valores derivados
-  const { filters, appliedFilters, state, actions, hasPendingChanges } = useMemo(() => pedidosManager, [pedidosManager]);
+  // Destructuring direto sem useMemo que quebra o hook queue
+  const { filters, appliedFilters, state, actions, hasPendingChanges } = pedidosManager;
   
   // 🔄 Debug para verificar estado dos filtros
   console.log('🔄 [RENDER] hasPendingChanges:', hasPendingChanges);
