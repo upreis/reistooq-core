@@ -12,9 +12,8 @@ export function usePedidosData() {
     try {
       const { data, error } = await (supabase as any)
         .from('integration_accounts')
-        .select('id, name, platform, status' as any)
-        .eq('platform', 'mercadolivre')
-        .eq('status', 'active');
+        .select('id, name, provider, is_active' as any)
+        .eq('is_active', true);
 
       if (error) throw error as any;
       setAccounts(Array.isArray(data) ? data : []);
