@@ -108,8 +108,15 @@ export function IntelligentPedidosDashboard({
         alerts: [],
         companiesAnalysis: [],
         deliveryForecast: [],
-        charts: null,
-        trends: null
+        statusDistribution: [],
+        revenueByDay: [],
+        totals: {
+          receitaTotal: 0,
+          receitaFlex: 0,
+          margemLiquida: 0,
+          ticketMedio: 0,
+          totalPedidos: 0,
+        },
       };
     }
 
@@ -475,7 +482,7 @@ export function IntelligentPedidosDashboard({
                       <div className="w-32 bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-primary h-2 rounded-full" 
-                          style={{ width: `${(count / orders.length) * 100}%` }}
+                          style={{ width: `${(count / (dashboardData.totals?.totalPedidos || 1)) * 100}%` }}
                         />
                       </div>
                       <span className="text-sm text-muted-foreground min-w-[30px] text-right">{count}</span>
@@ -574,12 +581,12 @@ export function IntelligentPedidosDashboard({
                 <div className="space-y-4">
                   <div className="text-center">
                     <div className="text-3xl font-bold text-green-600">
-                      {((dashboardData.statusDistribution.find(([status]) => status === 'delivered')?.[1] || 0) / orders.length * 100).toFixed(1)}%
+                      {((dashboardData.statusDistribution.find(([status]) => status === 'delivered')?.[1] || 0) / (dashboardData.totals?.totalPedidos || 1) * 100).toFixed(1)}%
                     </div>
                     <p className="text-sm text-muted-foreground">Taxa de Entrega</p>
                   </div>
                   <Progress 
-                    value={(dashboardData.statusDistribution.find(([status]) => status === 'delivered')?.[1] || 0) / orders.length * 100} 
+                    value={(dashboardData.statusDistribution.find(([status]) => status === 'delivered')?.[1] || 0) / (dashboardData.totals?.totalPedidos || 1) * 100} 
                     className="w-full"
                   />
                 </div>
