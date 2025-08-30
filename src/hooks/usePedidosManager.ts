@@ -186,6 +186,8 @@ export function usePedidosManager(initialAccountId?: string) {
       enrich_skus: true,
       include_skus: true
     } as any;
+    
+    console.log('📤 Enviando requisição para unified-orders:', requestBody);
 
     // P1.2: Remover logs sensíveis que expõem dados do sistema
 
@@ -314,6 +316,7 @@ export function usePedidosManager(initialAccountId?: string) {
     abortControllerRef.current = new AbortController();
 
     const apiParams = buildApiParams(appliedFilters); // 🔄 Usar appliedFilters
+    console.log('🔍 Parâmetros da API construídos:', apiParams);
     const cacheKey = getCacheKey(apiParams);
 
     // 🚀 FASE 2: Verificar cache
@@ -472,12 +475,21 @@ export function usePedidosManager(initialAccountId?: string) {
     
     // Normalizar datas para objetos Date
     const normalizedFilters = { ...pendingFilters };
-    if (normalizedFilters.dataInicio && typeof normalizedFilters.dataInicio === 'string') {
-      normalizedFilters.dataInicio = new Date(normalizedFilters.dataInicio);
+    if (normalizedFilters.dataInicio) {
+      normalizedFilters.dataInicio = normalizedFilters.dataInicio instanceof Date 
+        ? normalizedFilters.dataInicio 
+        : new Date(normalizedFilters.dataInicio);
     }
-    if (normalizedFilters.dataFim && typeof normalizedFilters.dataFim === 'string') {
-      normalizedFilters.dataFim = new Date(normalizedFilters.dataFim);
+    if (normalizedFilters.dataFim) {
+      normalizedFilters.dataFim = normalizedFilters.dataFim instanceof Date 
+        ? normalizedFilters.dataFim 
+        : new Date(normalizedFilters.dataFim);
     }
+    
+    console.log('🔄 Filtros normalizados:', {
+      original: pendingFilters,
+      normalized: normalizedFilters
+    });
     
     setAppliedFilters({ ...normalizedFilters });
     setCurrentPage(1);
@@ -637,10 +649,11 @@ export function usePedidosManager(initialAccountId?: string) {
     actions,
     // Computed values
     totalPages: Math.ceil(total / pageSize),
-    hasActiveFilters: Object.keys(appliedFilters).some(key => 
-      appliedFilters[key as keyof PedidosFilters] !== undefined && 
-      appliedFilters[key as keyof PedidosFilters] !== ''
-    ),
+    hasActiveFilters: Object.keys(appliedFilters).some(key => {
+      const value = appliedFilters[key as keyof PedidosFilters];
+      return value !== undefined && value !== '' && value !== null && 
+             (Array.isArray(value) ? value.length > 0 : true);
+    }),
     hasPendingChanges: JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters) // 🔄 Indicador de mudanças pendentes
   };
 }

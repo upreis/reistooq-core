@@ -72,6 +72,11 @@ export default function SimplePedidosPage({ className }: Props) {
   // P2.1: Memoização correta dos valores derivados
   const { filters, appliedFilters, state, actions, hasPendingChanges } = useMemo(() => pedidosManager, [pedidosManager]);
   
+  // 🔄 Debug para verificar estado dos filtros
+  console.log('🔄 [RENDER] hasPendingChanges:', hasPendingChanges);
+  console.log('🔄 [RENDER] filters:', filters);
+  console.log('🔄 [RENDER] appliedFilters:', appliedFilters);
+  
   // Estados locais para funcionalidades específicas
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -900,17 +905,26 @@ export default function SimplePedidosPage({ className }: Props) {
 
   // 💾 Função para salvar contas selecionadas junto com filtros
   const handleApplyFilters = () => {
+    console.log('🔄 [DEBUG] handleApplyFilters chamado');
+    console.log('🔄 [DEBUG] hasPendingChanges:', hasPendingChanges);
+    console.log('🔄 [DEBUG] selectedAccounts:', selectedAccounts);
+    console.log('🔄 [DEBUG] integrationAccountId:', integrationAccountId);
+    console.log('🔄 [DEBUG] filters (pending):', filters);
+    console.log('🔄 [DEBUG] appliedFilters:', appliedFilters);
+    
     // Salvar contas selecionadas no localStorage antes de aplicar filtros
     try {
       const saved = localStorage.getItem('pedidos:lastSearch');
       const lastSearch = saved ? JSON.parse(saved) : {};
       lastSearch.selectedAccounts = selectedAccounts;
       localStorage.setItem('pedidos:lastSearch', JSON.stringify(lastSearch));
+      console.log('💾 [DEBUG] Contas salvas no localStorage');
     } catch (error) {
       console.warn('⚠️ Erro ao salvar contas selecionadas:', error);
     }
     
     // Aplicar filtros normalmente
+    console.log('🔄 [DEBUG] Chamando actions.applyFilters...');
     actions.applyFilters();
   };
 
@@ -1135,11 +1149,28 @@ export default function SimplePedidosPage({ className }: Props) {
             </Button>
           </div>
           
-          {/* 🔄 Aviso de mudanças pendentes */}
+          {/* 🔄 Aviso de mudanças pendentes - MAIS VISÍVEL */}
           {hasPendingChanges && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800">
-              <Filter className="h-4 w-4" />
-              <span className="text-sm">Filtros alterados. Clique em "Aplicar Filtros" para atualizar os resultados.</span>
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-amber-400 text-amber-900 rounded-full p-1">
+                  <Filter className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="font-medium text-amber-900">Filtros alterados</div>
+                  <div className="text-sm text-amber-700">
+                    Clique em "Aplicar Filtros" para atualizar os resultados com suas alterações.
+                  </div>
+                </div>
+              </div>
+              <Button
+                onClick={handleApplyFilters}
+                className="bg-amber-600 text-white hover:bg-amber-700 shadow-lg"
+                size="sm"
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Aplicar Filtros
+              </Button>
             </div>
           )}
           
