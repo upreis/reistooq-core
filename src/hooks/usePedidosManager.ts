@@ -436,10 +436,17 @@ export function usePedidosManager(initialAccountId?: string) {
           const totalServer = (p.total ?? p.count ?? (Number.isFinite(unifiedResult.total) ? unifiedResult.total : undefined)) as number | undefined;
           setPaging({ total: totalServer, limit: p.limit, offset: p.offset });
           setHasPrevPage(p.offset > 0);
+
+          // Heurística: quando o servidor não retorna total confiável, permitir avançar
           if (typeof totalServer === 'number') {
-            setHasNextPage(p.offset + p.limit < totalServer);
+            let next = (p.offset + p.limit) < totalServer;
+            if (!next && p.offset === 0 && totalServer === p.limit && filteredClientResults.length === p.limit) {
+              // total == limit na primeira página e página cheia -> pode haver próxima
+              next = true;
+            }
+            setHasNextPage(next);
           } else {
-            // Sem total do servidor: inferir próxima página pela quantidade retornada
+            // Sem total: se veio página cheia, habilita próxima
             setHasNextPage(filteredClientResults.length >= p.limit);
           }
         } else {
