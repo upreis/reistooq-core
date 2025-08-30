@@ -433,10 +433,15 @@ export function usePedidosManager(initialAccountId?: string) {
         // Atualizar paginação com dados do servidor (fallback se ausente)
         const p: any = (unifiedResult as any).paging;
         if (p && typeof p.limit === 'number' && typeof p.offset === 'number') {
-          const totalVal = (p.total ?? p.count ?? unifiedResult.total ?? 0) as number;
-          setPaging({ total: totalVal, limit: p.limit, offset: p.offset });
+          const totalServer = (p.total ?? p.count ?? (Number.isFinite(unifiedResult.total) ? unifiedResult.total : undefined)) as number | undefined;
+          setPaging({ total: totalServer, limit: p.limit, offset: p.offset });
           setHasPrevPage(p.offset > 0);
-          setHasNextPage(p.offset + p.limit < totalVal);
+          if (typeof totalServer === 'number') {
+            setHasNextPage(p.offset + p.limit < totalServer);
+          } else {
+            // Sem total do servidor: inferir próxima página pela quantidade retornada
+            setHasNextPage(filteredClientResults.length >= p.limit);
+          }
         } else {
           setPaging(undefined);
           setHasPrevPage(currentPage > 1);
