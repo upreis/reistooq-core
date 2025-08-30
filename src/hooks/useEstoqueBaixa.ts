@@ -97,11 +97,14 @@ export function useProcessarBaixaEstoque() {
         })));
 
         const baixas = pedidos.map(pedido => {
-          // Pegar sku_kit e total_itens do pedido
-          const sku = pedido.sku_kit || '';
+          // ⭐ CORREÇÃO: Fallback para SKU quando não há mapeamento
+          const sku = pedido.sku_kit || 
+                     pedido.order_items?.[0]?.item?.seller_sku || 
+                     pedido.itens?.[0]?.sku || 
+                     '';
           const quantidade = Number(pedido.total_itens || 0);
           
-          console.log(`🔍 DEBUG - Pedido ${pedido.numero}: SKU="${sku}", Quantidade=${quantidade}`);
+          console.log(`🔍 DEBUG - Pedido ${pedido.numero}: SKU="${sku}" (fallback aplicado), Quantidade=${quantidade}`);
           
           return {
             sku: sku.trim(),

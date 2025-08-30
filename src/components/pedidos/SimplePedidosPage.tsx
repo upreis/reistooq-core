@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search } from 'lucide-react';
+import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, AlertCircle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
@@ -615,6 +615,13 @@ function SimplePedidosPage({ className }: Props) {
             <span className="text-xs font-medium">Sem estoque</span>
           </div>
         );
+      case 'sem_mapear':
+        return (
+          <div className="flex items-center gap-1 text-yellow-600">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-xs font-medium">Sem mapear</span>
+          </div>
+        );
       case 'pedido_baixado':
         return (
           <div className="flex items-center gap-1 text-green-600">
@@ -848,9 +855,12 @@ function SimplePedidosPage({ className }: Props) {
             let skuKit = null;
             let qtdKit = 0;
             let totalItens = pedido.quantidade_itens || 0;
-            let statusBaixa = 'sem_estoque';
+            let statusBaixa;
 
-            if (skuComMapeamento) {
+            if (!skuComMapeamento) {
+              // ⭐ NOVO: Se não tem mapeamento, status é "sem_mapear"
+              statusBaixa = 'sem_mapear';
+            } else {
               const verificacao = verificacoesMap.get(skuComMapeamento);
               skuEstoque = verificacao.skuEstoque;     // sku_correspondente (SKU Correto)
               skuKit = verificacao.skuKit;             // sku_simples (SKU Unitário)  
@@ -872,6 +882,9 @@ function SimplePedidosPage({ className }: Props) {
                 } else {
                   statusBaixa = 'sem_estoque';
                 }
+              } else {
+                // Se tem mapeamento mas sem SKU estoque definido
+                statusBaixa = 'sem_mapear';
               }
             }
 
