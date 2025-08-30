@@ -16,6 +16,54 @@ interface ProcessarBaixaParams {
   };
 }
 
+// ✅ VALIDAÇÃO COMPLETA DOS PEDIDOS - NOVA IMPLEMENTAÇÃO
+function validarFluxoCompletoLocal(pedidos: Pedido[]): boolean {
+  console.log('🔍 [LOCAL] Validando fluxo completo de', pedidos.length, 'pedidos');
+  
+  for (const pedido of pedidos) {
+    // Validar dados essenciais
+    if (!pedido.id && !pedido.numero) {
+      console.error('❌ Pedido sem ID ou número:', pedido);
+      return false;
+    }
+    
+    // Validar se tem sku_kit e total_itens (necessários para baixa)
+    if (!pedido.sku_kit || !pedido.total_itens) {
+      console.error('❌ Pedido sem sku_kit ou total_itens:', {
+        id: pedido.id || pedido.numero,
+        sku_kit: pedido.sku_kit,
+        total_itens: pedido.total_itens
+      });
+      return false;
+    }
+    
+    // Validar se total_itens é número válido
+    const totalItens = Number(pedido.total_itens);
+    if (isNaN(totalItens) || totalItens <= 0) {
+      console.error('❌ total_itens inválido:', {
+        id: pedido.id || pedido.numero,
+        total_itens: pedido.total_itens,
+        convertido: totalItens
+      });
+      return false;
+    }
+    
+    // Validar se não está duplicado
+    const duplicados = pedidos.filter(p => 
+      (p.id && p.id === pedido.id) || 
+      (p.numero && p.numero === pedido.numero)
+    );
+    
+    if (duplicados.length > 1) {
+      console.error('❌ Pedidos duplicados encontrados:', pedido.id || pedido.numero);
+      return false;
+    }
+  }
+  
+  console.log('✅ [LOCAL] Validação completa bem-sucedida');
+  return true;
+}
+
 export function useProcessarBaixaEstoque() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -24,11 +72,11 @@ export function useProcessarBaixaEstoque() {
   return useMutation({
     mutationFn: async ({ pedidos, contextoDaUI }: ProcessarBaixaParams): Promise<boolean> => {
       console.log('🛡️ Iniciando fluxo blindado de baixa de estoque');
+      console.log('📸 Contexto da UI recebido:', !!contextoDaUI);
       
-      // 🛡️ VALIDAÇÃO OBRIGATÓRIA DO FLUXO
-      const validacao = validarFluxoCompleto(pedidos as PedidoEnriquecido[], contextoDaUI);
-      if (!validacao.valido) {
-        const erroMsg = `Validação falhou: ${validacao.erros.join(', ')}`;
+      // 🔍 VALIDAÇÃO COMPLETA DOS PEDIDOS - LOCAL
+      if (!validarFluxoCompletoLocal(pedidos)) {
+        const erroMsg = 'Validação dos pedidos falhou - verifique se todos os pedidos têm sku_kit e total_itens válidos';
         monitor.registrarOperacao(
           'baixa_estoque_validacao',
           'useEstoqueBaixa',
@@ -38,10 +86,6 @@ export function useProcessarBaixaEstoque() {
           erroMsg
         );
         throw new Error(erroMsg);
-      }
-
-      if (validacao.avisos.length > 0) {
-        console.warn('⚠️ Avisos na validação:', validacao.avisos);
       }
       try {
         // Extrair SKU KIT + Total de Itens dos pedidos
@@ -97,24 +141,35 @@ export function useProcessarBaixaEstoque() {
 
         const result = resultadoBaixa as any;
         
-        // 🛡️ HISTÓRICO COM MONITORAMENTO (mantém fluxo original)
-        if (result.success && contextoDaUI) {
-          await medirTempoExecucao(
-            'salvar_historico',
-            'useEstoqueBaixa',
-            'historico_vendas',
-            async () => {
-              // Salvar snapshots apenas para histórico (não afeta estoque)
-              for (const pedido of pedidos) {
-                try {
-                  await salvarSnapshotBaixa(pedido, contextoDaUI);
-                } catch (e) {
-                  console.warn('Erro ao salvar histórico:', e);
-                }
-              }
-            }
-          );
+        // ✅ VALIDAR RESULTADO DA BAIXA ANTES DE CONTINUAR
+        if (!result.success) {
+          console.error('❌ Baixa de estoque falhou no RPC:', result);
+          throw new Error('Falha na baixa de estoque: ' + (result.erros?.[0]?.erro || 'Erro desconhecido'));
         }
+        
+        console.log('✅ Baixa de estoque bem-sucedida, iniciando snapshots...');
+        
+        // 🛡️ HISTÓRICO COM MONITORAMENTO - SEMPRE TENTAR SALVAR
+        await medirTempoExecucao(
+          'salvar_historico',
+          'useEstoqueBaixa',
+          'historico_vendas',
+          async () => {
+            // Salvar snapshots para TODOS os pedidos (com ou sem contextoDaUI)
+            const snapshot_promises = pedidos.map(async (pedido) => {
+              try {
+                await salvarSnapshotBaixa(pedido, contextoDaUI);
+                console.log('📸 Snapshot salvo para pedido:', pedido.id || pedido.numero);
+              } catch (error) {
+                console.error('❌ Erro ao salvar snapshot:', error);
+                // Não falha a operação principal se snapshot falhar
+              }
+            });
+            
+            await Promise.allSettled(snapshot_promises);
+            console.log('📸 Processo de snapshots concluído');
+          }
+        );
 
         monitor.registrarOperacao(
           'baixa_estoque_completa',
