@@ -32,7 +32,7 @@ import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
 import { buildIdUnico } from '@/utils/idUnico';
 import { PedidosDashboard } from './dashboard/PedidosDashboard';
 import { PedidosAlerts } from './dashboard/PedidosAlerts';
-
+import { IntelligentPedidosDashboard } from './dashboard/IntelligentPedidosDashboard';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 
@@ -979,6 +979,22 @@ export default function SimplePedidosPage({ className }: Props) {
   // Render principal
   return (
     <div className={`space-y-6 p-6 ${className}`}>
+      {/* 📊 DASHBOARD INTELIGENTE AVANÇADO */}
+      <IntelligentPedidosDashboard 
+        orders={orders}
+        allOrders={orders} // TODO: Implementar busca completa para análise cross-page
+        loading={loading}
+        totalCount={total}
+        onRefresh={actions.refetch}
+        className="animate-fade-in"
+      />
+      
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-muted-foreground mt-2">
+          Debug: {orders?.length || 0} orders loaded, total: {total}
+        </div>
+      )}
       
       {/* 🚀 DASHBOARD INTELIGENTE LEGADO - Componente de compatibilidade */}
       <PedidosDashboard 
