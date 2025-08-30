@@ -1,12 +1,12 @@
 import { memo, useCallback } from 'react';
 import { PedidosTableMemo } from '../PedidosTableMemo';
+import { PedidosTablePagination } from '../PedidosTablePagination';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Row } from '@/services/orders';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
-import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
+import { ColumnConfig } from '../ColumnSelector';
+import { ColumnManagerState, ColumnManagerActions } from '@/features/pedidos/hooks/useColumnManager';
 
 interface PedidosTableSectionProps {
   orders: Row[];
@@ -20,7 +20,10 @@ interface PedidosTableSectionProps {
   hasPrevPage: boolean;
   selectedOrders: Set<string>;
   mapeamentosVerificacao: Map<string, MapeamentoVerificacao>;
-  columnManager: ReturnType<typeof useColumnManager>;
+  columnManager: {
+    state: ColumnManagerState;
+    actions: ColumnManagerActions;
+  };
   onRefresh: () => void;
   onSelectionChange: (selectedRows: Row[]) => void;
   onPageChange: (page: number) => void;
@@ -57,31 +60,14 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
     }
   }, [currentPage, hasNextPage, onPageChange]);
 
-  // Converter Set para array de ColumnConfig para compatibilidade
-  const visibleColumnsArray = Array.from(columnManager.state.visibleColumns).map(key => ({
-    key,
-    label: key,
-    visible: true,
-    category: 'basic' as const
-  }));
-
   return (
     <div className="space-y-4">
       {/* Column Manager */}
       <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">Gerenciar Colunas</h3>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => {
-              // Resetar para colunas padrão se disponível
-              console.log('Reset columns clicked');
-            }}
-          >
-            Resetar
-          </Button>
-        </div>
+        <ColumnManager
+          state={columnManager.state}
+          actions={columnManager.actions}
+        />
       </Card>
 
       {/* Table */}
@@ -96,7 +82,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
           currentPage={currentPage}
           onPageChange={onPageChange}
           mapeamentosVerificacao={mapeamentosVerificacao}
-          visibleColumns={visibleColumnsArray}
+          visibleColumns={columnManager.state.visibleColumns}
           debugInfo={{
             selectedOrders: selectedOrders.size,
             totalPages,
@@ -106,32 +92,19 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
         />
       </Card>
 
-      {/* Simplified Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Página {currentPage} de {totalPages} • {total} itens
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePreviousPage}
-            disabled={!hasPrevPage || loading}
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleNextPage}
-            disabled={!hasNextPage || loading}
-          >
-            Próxima
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      {/* Pagination */}
+      <PedidosTablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        total={total}
+        hasNextPage={hasNextPage}
+        hasPrevPage={hasPrevPage}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        onPreviousPage={handlePreviousPage}
+        onNextPage={handleNextPage}
+      />
     </div>
   );
 });
