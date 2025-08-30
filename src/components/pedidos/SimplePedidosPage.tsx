@@ -45,6 +45,7 @@ import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 import { PedidosFiltersSection } from './components/PedidosFiltersSection';
 import { PedidosTableSection } from './components/PedidosTableSection';
 import { PedidosDashboardSection } from './components/PedidosDashboardSection';
+import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 
 type Order = {
   id: string;
@@ -852,87 +853,66 @@ function SimplePedidosPage({ className }: Props) {
       />
 
       {/* 🛡️ HEADER BLINDADO */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Pedidos</h1>
-          <p className="text-muted-foreground">
-            Gerencie seus pedidos do Mercado Livre
-            {state.fonte && (
-              <Badge variant="outline" className="ml-2">
-                Fonte: {state.fonte}
-              </Badge>
-            )}
-          </p>
-        </div>
+      <PedidosHeaderSection
+        fonte={state.fonte}
+        totalCount={total}
+        loading={loading}
+        isRefreshing={state.isRefreshing}
+        onRefresh={actions.refetch}
+        onApplyFilters={handleApplyFilters}
+        selectedOrdersCount={selectedOrders.size}
+        hasPendingChanges={hasPendingChanges}
+      >
+        {/* 🚀 FASE 3: Filtros salvos */}
+        <SavedFiltersManager
+          savedFilters={actions.getSavedFilters()}
+          onSaveFilters={actions.saveCurrentFilters}
+          onLoadFilters={actions.loadSavedFilters}
+          hasActiveFilters={pedidosManager.hasActiveFilters}
+        />
         
-        <div className="flex gap-2">
-          {/* 🚀 FASE 3: Filtros salvos */}
-          <SavedFiltersManager
-            savedFilters={actions.getSavedFilters()}
-            onSaveFilters={actions.saveCurrentFilters}
-            onLoadFilters={actions.loadSavedFilters}
-            hasActiveFilters={pedidosManager.hasActiveFilters}
+        {/* 🚀 FASE 3: Exportação */}
+        <ExportModal
+          onExport={actions.exportData}
+          totalRecords={total}
+          isLoading={loading}
+        />
+
+        {/* 🔧 Sistema de colunas unificado */}
+        <ColumnManager />
+
+        {selectedOrders.size > 0 && (
+          <BaixaEstoqueModal 
+            pedidos={Array.from(selectedOrders).map(id => {
+              const order = orders.find(o => o.id === id);
+              if (!order) return null;
+              
+              // Enriquecer pedido com dados calculados da UI
+              const mapping = mappingData.get(order.id);
+              const quantidadeItens = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+              const qtdKit = mapping?.quantidade || 1;
+              
+              return {
+                ...order,
+                sku_kit: mapping?.skuKit || null,
+                total_itens: quantidadeItens * qtdKit
+              };
+            }).filter(Boolean) as Pedido[]}
+            contextoDaUI={{
+              mappingData,
+              accounts,
+              selectedAccounts,
+              integrationAccountId
+            }}
+            trigger={
+              <Button>
+                <Package className="h-4 w-4 mr-2" />
+                Baixar Estoque ({selectedOrders.size})
+              </Button>
+            }
           />
-          
-          {/* 🚀 FASE 3: Exportação */}
-          <ExportModal
-            onExport={actions.exportData}
-            totalRecords={total}
-            isLoading={loading}
-          />
-          
-          {/* 🔄 BOTÃO APLICAR FILTROS - Sempre visível mas desabilitado se não há mudanças */}
-          <Button
-            onClick={handleApplyFilters}
-            disabled={!hasPendingChanges || loading || state.isRefreshing}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            <Search className="h-4 w-4 mr-2" />
-            {hasPendingChanges ? 'Aplicar Filtros' : 'Filtros Aplicados'}
-          </Button>
-          
-          <Button
-            variant="outline"
-            onClick={actions.refetch}
-            disabled={loading || state.isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${(loading || state.isRefreshing) ? 'animate-spin' : ''}`} />
-            {state.isRefreshing ? 'Atualizando...' : 'Atualizar'}
-          </Button>
-          
-          {selectedOrders.size > 0 && (
-            <BaixaEstoqueModal 
-              pedidos={Array.from(selectedOrders).map(id => {
-                const order = orders.find(o => o.id === id);
-                if (!order) return null;
-                
-                // Enriquecer pedido com dados calculados da UI
-                const mapping = mappingData.get(order.id);
-                const quantidadeItens = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-                const qtdKit = mapping?.quantidade || 1;
-                
-                return {
-                  ...order,
-                  sku_kit: mapping?.skuKit || null,
-                  total_itens: quantidadeItens * qtdKit
-                };
-              }).filter(Boolean) as Pedido[]}
-              contextoDaUI={{
-                mappingData,
-                accounts,
-                selectedAccounts,
-                integrationAccountId
-              }}
-              trigger={
-                <Button>
-                  <Package className="h-4 w-4 mr-2" />
-                  Baixar Estoque ({selectedOrders.size})
-                </Button>
-              }
-            />
-          )}
-        </div>
-      </div>
+        )}
+      </PedidosHeaderSection>
 
       {/* 🛡️ SELEÇÃO MÚLTIPLA DE CONTAS */}
       <Card className="p-4">
