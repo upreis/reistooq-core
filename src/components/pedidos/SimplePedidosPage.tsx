@@ -69,10 +69,9 @@ type Props = {
 };
 
 export default function SimplePedidosPage({ className }: Props) {
-  // 🛡️ SISTEMA UNIFICADO (P2.1: Corrigido - hook não pode ser memoizado diretamente)
+  // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
-  // P2.1: Memoização correta dos valores derivados
-  const { filters, appliedFilters, state, actions, hasPendingChanges } = useMemo(() => pedidosManager, [pedidosManager]);
+  const { filters, appliedFilters, state, actions, hasPendingChanges } = pedidosManager;
   
   // 🔄 Debug para verificar estado dos filtros
   console.log('🔄 [RENDER] hasPendingChanges:', hasPendingChanges);
