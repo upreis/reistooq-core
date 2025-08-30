@@ -2235,7 +2235,8 @@ function SimplePedidosPage({ className }: Props) {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    if (currentPage > 1) {
+                    const canGoPrev = typeof state.hasPrevPage === 'boolean' ? state.hasPrevPage : (currentPage > 1);
+                    if (canGoPrev) {
                       actions.setPage(currentPage - 1);
                     }
                   }}
@@ -2254,7 +2255,10 @@ function SimplePedidosPage({ className }: Props) {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    if (currentPage < totalPages) {
+                    const canGoNext = typeof state.hasNextPage === 'boolean'
+                      ? state.hasNextPage
+                      : (total > 0 ? currentPage < totalPages : orders.length >= (state.pageSize || 25));
+                    if (canGoNext) {
                       actions.setPage(currentPage + 1);
                     }
                   }}
