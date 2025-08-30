@@ -45,6 +45,7 @@ import PedidosFiltersMemo from './PedidosFiltersMemo';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 import { PedidosFiltersSection } from './components/PedidosFiltersSection';
+import { PedidosTableSection } from './components/PedidosTableSection';
 
 type Order = {
   id: string;
