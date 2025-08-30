@@ -114,15 +114,11 @@ export const OrdersFilters = memo<OrdersFiltersProps>(({
           {/* Search and main actions row */}
           <div className="flex flex-col sm:flex-row gap-3">
             <form onSubmit={handleSearchSubmit} className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por número, cliente, CPF/CNPJ..."
-                  value={searchValue}
-                  onChange={handleSearchChange}
-                  className="pl-10"
-                />
-              </div>
+              <Input
+                placeholder="Buscar por número, cliente, CPF/CNPJ..."
+                value={searchValue}
+                onChange={handleSearchChange}
+              />
             </form>
             
             <div className="flex gap-2">
