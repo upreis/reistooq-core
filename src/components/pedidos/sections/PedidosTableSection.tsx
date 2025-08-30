@@ -1,7 +1,8 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { PedidosTableMemo } from '../PedidosTableMemo';
 import { PedidosTablePagination } from './PedidosTablePagination';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
+import { COLUMN_DEFINITIONS } from '@/features/pedidos/config/columns.config';
 import { Card } from '@/components/ui/card';
 import { Row } from '@/services/orders';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
@@ -62,6 +63,21 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
     }
   }, [currentPage, hasNextPage, onPageChange]);
 
+  const visibleColumnsList = useMemo<ColumnConfig[]>(() => {
+    const keys = Array.isArray(columnManager.state?.visibleColumns)
+      ? columnManager.state.visibleColumns
+      : Array.from(columnManager.state?.visibleColumns || []);
+    return keys.map((key: string) => {
+      const def = (COLUMN_DEFINITIONS as any[]).find(d => d.key === key);
+      return {
+        key,
+        label: def?.label || key,
+        visible: true,
+        category: (def?.category || 'basic') as any,
+      } as ColumnConfig;
+    });
+  }, [columnManager.state?.visibleColumns]);
+
   return (
     <div className="space-y-4">
       {/* Column Manager */}
@@ -83,7 +99,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
           currentPage={currentPage}
           onPageChange={onPageChange}
           mapeamentosVerificacao={mapeamentosVerificacao}
-          visibleColumns={columnManager.state.visibleColumns}
+          visibleColumns={visibleColumnsList}
           debugInfo={{
             selectedOrders: selectedOrders.size,
             totalPages,
