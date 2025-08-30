@@ -120,7 +120,10 @@ export class MapeamentoService {
 
       const { error: errorInsert } = await supabase
         .from('mapeamentos_depara')
-        .insert(novosMapeamentos);
+        .upsert(novosMapeamentos, { 
+          onConflict: 'sku_pedido',
+          ignoreDuplicates: true 
+        });
 
       if (errorInsert) {
         console.error('Erro ao criar mapeamentos automáticos:', errorInsert);

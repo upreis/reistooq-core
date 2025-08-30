@@ -798,29 +798,40 @@ function SimplePedidosPage({ className }: Props) {
     }
   };
 
-  // Processar mapeamentos
+  // Processar mapeamentos com controle de execução única
+  const [isProcessingMappings, setIsProcessingMappings] = useState(false);
+  
   useEffect(() => {
     const processarMapeamentos = async () => {
       if (orders.length === 0) return;
       
-      // 🤖 Extrair TODOS os SKUs dos pedidos
-      const todosSKUs = orders.flatMap(pedido => 
-        pedido.skus?.filter(Boolean) || 
-        pedido.order_items?.map((item: any) => item.item?.seller_sku).filter(Boolean) || 
-        []
-      );
-
-      // ✨ USAR MapeamentoService com lógica automática de criação
-      let verificacoesMapeamento: any[] = [];
-      if (todosSKUs.length > 0) {
-        try {
-          verificacoesMapeamento = await MapeamentoService.verificarMapeamentos(todosSKUs);
-          console.log(`🔍 Verificados ${todosSKUs.length} SKUs, ${verificacoesMapeamento.filter(v => v.temMapeamento).length} com mapeamento`);
-        } catch (error) {
-          console.error('Erro ao verificar mapeamentos:', error);
-          verificacoesMapeamento = [];
-        }
+      // 🛡️ CONTROLE DE EXECUÇÃO ÚNICA - Evita duplicação
+      if (isProcessingMappings) {
+        console.log('⏳ Processamento de mapeamentos já em andamento, ignorando...');
+        return;
       }
+
+      setIsProcessingMappings(true);
+      
+      try {
+        // 🤖 Extrair TODOS os SKUs dos pedidos
+        const todosSKUs = orders.flatMap(pedido => 
+          pedido.skus?.filter(Boolean) || 
+          pedido.order_items?.map((item: any) => item.item?.seller_sku).filter(Boolean) || 
+          []
+        );
+
+        // ✨ USAR MapeamentoService com lógica automática de criação
+        let verificacoesMapeamento: any[] = [];
+        if (todosSKUs.length > 0) {
+          try {
+            verificacoesMapeamento = await MapeamentoService.verificarMapeamentos(todosSKUs);
+            console.log(`🔍 Verificados ${todosSKUs.length} SKUs, ${verificacoesMapeamento.filter(v => v.temMapeamento).length} com mapeamento`);
+          } catch (error) {
+            console.error('Erro ao verificar mapeamentos:', error);
+            verificacoesMapeamento = [];
+          }
+        }
 
       // Criar mapa de verificações por SKU
       const verificacoesMap = new Map(
@@ -900,12 +911,21 @@ function SimplePedidosPage({ className }: Props) {
         } catch (error) {
           console.error('Erro ao processar mapeamento para pedido:', pedido.id, error);
         }
+        }
+        
+        setMappingData(novosMapping);
+      } finally {
+        setIsProcessingMappings(false);
       }
-      
-      setMappingData(novosMapping);
     };
 
-    processarMapeamentos();
+    // 🔄 DEBOUNCE - Aguarda 300ms antes de executar
+    const timeoutId = setTimeout(processarMapeamentos, 300);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      setIsProcessingMappings(false);
+    };
   }, [orders]);
 
   // Handlers memoizados para performance
