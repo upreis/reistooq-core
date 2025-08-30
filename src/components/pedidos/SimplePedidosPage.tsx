@@ -30,8 +30,9 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
 import { buildIdUnico } from '@/utils/idUnico';
-import { PedidosDashboard } from './dashboard/PedidosDashboard';
+
 import { PedidosAlerts } from './dashboard/PedidosAlerts';
+import { IntelligentPedidosDashboard } from './dashboard/IntelligentPedidosDashboard';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 
@@ -69,10 +70,9 @@ type Props = {
 };
 
 export default function SimplePedidosPage({ className }: Props) {
-  // 🛡️ SISTEMA UNIFICADO - Hook direto sem memoização problemática
+  // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
-  // Destructuring direto sem useMemo que quebra o hook queue
-  const { filters, appliedFilters, state, actions, hasPendingChanges } = pedidosManager;
+  const { filters, appliedFilters, state, actions, hasPendingChanges, totalPages } = pedidosManager;
   
   // 🔄 Debug para verificar estado dos filtros
   console.log('🔄 [RENDER] hasPendingChanges:', hasPendingChanges);
@@ -100,7 +100,7 @@ export default function SimplePedidosPage({ className }: Props) {
   const error = state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
-  const totalPages = Math.ceil(total / (state.pageSize || 25));
+  
 
   // Funções de tradução e mapeamento de status
   const getShippingStatusColor = (status: string): string => {
@@ -979,13 +979,23 @@ export default function SimplePedidosPage({ className }: Props) {
   // Render principal
   return (
     <div className={`space-y-6 p-6 ${className}`}>
-      {/* 🚀 DASHBOARD INTELIGENTE - Novo componente independente */}
-      <PedidosDashboard 
+      {/* 📊 DASHBOARD INTELIGENTE AVANÇADO */}
+      <IntelligentPedidosDashboard 
         orders={orders}
+        allOrders={orders} // TODO: Implementar busca completa para análise cross-page
         loading={loading}
+        totalCount={total}
         onRefresh={actions.refetch}
         className="animate-fade-in"
       />
+      
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-muted-foreground mt-2">
+          Debug: {orders?.length || 0} orders loaded, total: {total}, totalPages: {totalPages}, currentPage: {currentPage}
+        </div>
+      )}
+      
 
       {/* 🚨 ALERTAS INTELIGENTES - Novo componente independente */}
       {orders && orders.length > 0 && (
@@ -2156,15 +2166,15 @@ export default function SimplePedidosPage({ className }: Props) {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm">
-              Página {currentPage}{total > 0 ? ` de ${Math.ceil(total / (state.pageSize || 25))} (${total} total)` : ''}
+              Página {currentPage}{total > 0 ? ` de ${totalPages} (${total} total)` : ` (${orders?.length || 0} itens)`}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => actions.setPage(total > 0 ? Math.min(currentPage + 1, Math.ceil(total / (state.pageSize || 25))) : currentPage + 1)}
+              onClick={() => actions.setPage(total > 0 ? Math.min(currentPage + 1, totalPages) : currentPage + 1)}
               disabled={(() => {
                 if (typeof state.hasNextPage === 'boolean') return !state.hasNextPage;
-                if (total > 0) return currentPage >= Math.ceil(total / (state.pageSize || 25));
+                if (total > 0) return currentPage >= totalPages;
                 return orders.length < (state.pageSize || 25);
               })()}
             >

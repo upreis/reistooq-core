@@ -116,16 +116,8 @@ export const useColumnManager = (): UseColumnManagerReturn => {
   const toggleColumn = useCallback((key: string) => {
     setState(prev => {
       const newVisible = new Set(prev.visibleColumns);
-      if (newVisible.has(key)) {
-        newVisible.delete(key);
-      } else {
-        newVisible.add(key);
-      }
-      return {
-        ...prev,
-        visibleColumns: newVisible,
-        activeProfile: null,
-      };
+      if (newVisible.has(key)) newVisible.delete(key); else newVisible.add(key);
+      return { ...prev, visibleColumns: newVisible, activeProfile: null };
     });
   }, []);
 
@@ -133,7 +125,7 @@ export const useColumnManager = (): UseColumnManagerReturn => {
     setState(prev => ({
       ...prev,
       visibleColumns: new Set([...prev.visibleColumns, key]),
-      activeProfile: null,
+      activeProfile: null
     }));
   }, []);
 
@@ -141,11 +133,7 @@ export const useColumnManager = (): UseColumnManagerReturn => {
     setState(prev => {
       const newVisible = new Set(prev.visibleColumns);
       newVisible.delete(key);
-      return {
-        ...prev,
-        visibleColumns: newVisible,
-        activeProfile: null,
-      };
+      return { ...prev, visibleColumns: newVisible, activeProfile: null };
     });
   }, []);
 
@@ -153,7 +141,7 @@ export const useColumnManager = (): UseColumnManagerReturn => {
     setState(prev => ({
       ...prev,
       visibleColumns: new Set(columns),
-      activeProfile: null,
+      activeProfile: null
     }));
   }, []);
 
@@ -161,7 +149,7 @@ export const useColumnManager = (): UseColumnManagerReturn => {
     setState(prev => ({
       ...prev,
       columnOrder,
-      activeProfile: null,
+      activeProfile: null
     }));
   }, []);
 
@@ -172,27 +160,21 @@ export const useColumnManager = (): UseColumnManagerReturn => {
       setState(prev => ({
         ...prev,
         visibleColumns: new Set(profile.columns),
-        activeProfile: profileId,
+        activeProfile: profileId
       }));
     }
   }, [state.customProfiles]);
 
   const saveProfile = useCallback((profile: Omit<ColumnProfile, 'id'>) => {
-    const newProfile: ColumnProfile = {
-      ...profile,
-      id: `custom_${Date.now()}`,
-    };
-    setState(prev => ({
-      ...prev,
-      customProfiles: [...prev.customProfiles, newProfile],
-    }));
+    const newProfile: ColumnProfile = { ...profile, id: `custom_${Date.now()}` };
+    setState(prev => ({ ...prev, customProfiles: [...prev.customProfiles, newProfile] }));
   }, []);
 
   const deleteProfile = useCallback((profileId: string) => {
     setState(prev => ({
       ...prev,
       customProfiles: prev.customProfiles.filter(p => p.id !== profileId),
-      activeProfile: prev.activeProfile === profileId ? null : prev.activeProfile,
+      activeProfile: prev.activeProfile === profileId ? null : prev.activeProfile
     }));
   }, []);
 
@@ -201,7 +183,7 @@ export const useColumnManager = (): UseColumnManagerReturn => {
     setState(prev => ({
       ...prev,
       visibleColumns: new Set(defaultColumns.map(col => col.key)),
-      activeProfile: 'standard',
+      activeProfile: 'standard'
     }));
   }, []);
 
@@ -211,7 +193,7 @@ export const useColumnManager = (): UseColumnManagerReturn => {
       visibleColumns: new Set(
         COLUMN_DEFINITIONS.filter(col => col.priority === 'essential').map(col => col.key)
       ),
-      activeProfile: 'essential',
+      activeProfile: 'essential'
     }));
   }, []);
 
@@ -238,6 +220,7 @@ export const useColumnManager = (): UseColumnManagerReturn => {
     resetToDefault,
     resetToEssentials,
   ]);
+
 
   // Definições de colunas visíveis na ordem correta
   const visibleDefinitions = useMemo(() => {
