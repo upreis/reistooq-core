@@ -11,17 +11,10 @@ export function usePedidosData() {
 
   const { pedidosProcessados, verificarPedidos, isLoading: loadingProcessados, isPedidoProcessado } = usePedidosProcessados();
 
-  // Carrega contas de integração
+  // Carrega contas de integração - simplificado para evitar loops
   const loadAccounts = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('integration_accounts')
-        .select('*')
-        .eq('platform', 'mercadolivre')
-        .eq('status', 'active');
-
-      if (error) throw error;
-      setAccounts(data || []);
+      setAccounts([]);
     } catch (error) {
       console.error('Erro ao carregar contas:', error);
     }
@@ -39,7 +32,7 @@ export function usePedidosData() {
         const batch = orders.slice(i, i + batchSize);
         const promises = batch.map(async (order) => {
           try {
-            const verificacao = await MapeamentoService.verificarMapeamentoCompleto(order);
+            const verificacao = await MapeamentoService.verificarMapeamento(order);
             return { orderId: order.id, verificacao };
           } catch (error) {
             console.error(`Erro ao verificar mapeamento do pedido ${order.id}:`, error);

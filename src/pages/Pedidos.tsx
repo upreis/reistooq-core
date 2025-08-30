@@ -1,11 +1,11 @@
 // 🛡️ PÁGINA PROTEGIDA - Sistema Blindado Ativo
 import { PedidosGuard } from '@/core/pedidos/guards/PedidosGuard';
-import SimplePedidosPageRefactored from '@/components/pedidos/SimplePedidosPageRefactored';
+import SimplePedidosPage from '@/components/pedidos/SimplePedidosPage';
 
 export default function Pedidos() {
   return (
     <PedidosGuard>
-      <SimplePedidosPageRefactored />
+      <SimplePedidosPage />
     </PedidosGuard>
   );
 }
