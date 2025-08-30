@@ -105,7 +105,7 @@ export const useColumnManager = (): UseColumnManagerReturn => {
         visibleColumns: newVisible,
       };
     });
-  }, [COLUMN_DEFINITIONS]); // Fixed: Added COLUMN_DEFINITIONS dependency
+  }, []);
 
   // Salvar automaticamente quando o estado mudar
   useEffect(() => {
