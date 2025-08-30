@@ -45,7 +45,7 @@ export default function SimplePedidosPage({ className }: Props) {
 
   // Estados locais memoizados
   const [showExportModal, setShowExportModal] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<string>(state.integrationAccountId);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>(state.integrationAccountIds || []);
 
   // 🚀 Carregar dados iniciais de forma otimizada
   useEffect(() => {
@@ -54,21 +54,24 @@ export default function SimplePedidosPage({ className }: Props) {
 
   // Selecionar conta automaticamente se nenhuma estiver selecionada
   useEffect(() => {
-    if (!selectedAccount && pedidosData.accounts.length > 0) {
+    if ((!selectedAccounts || selectedAccounts.length === 0) && pedidosData.accounts.length > 0) {
       const first = pedidosData.accounts[0];
       if (first?.id) {
-        setSelectedAccount(first.id);
-        actions.setIntegrationAccountId(first.id);
+        setSelectedAccounts([first.id]);
+        actions.setIntegrationAccountIds([first.id]);
+        actions.clearFilters();
       }
     }
-  }, [selectedAccount, pedidosData.accounts, actions]);
+  }, [selectedAccounts, pedidosData.accounts, actions]);
 
-  // 🚀 Sincronizar conta selecionada
+  // 🚀 Sincronizar contas selecionadas
   useEffect(() => {
-    if (selectedAccount && selectedAccount !== state.integrationAccountId) {
-      actions.setIntegrationAccountId(selectedAccount);
+    const idsFromState = state.integrationAccountIds || [];
+    const changed = JSON.stringify(idsFromState) !== JSON.stringify(selectedAccounts);
+    if (selectedAccounts && selectedAccounts.length > 0 && changed) {
+      actions.setIntegrationAccountIds(selectedAccounts);
     }
-  }, [selectedAccount, state.integrationAccountId, actions]);
+  }, [selectedAccounts, state.integrationAccountIds, actions])
 
   // 🚀 Carregar mapeamentos quando os pedidos mudarem
   useEffect(() => {
@@ -79,7 +82,7 @@ export default function SimplePedidosPage({ className }: Props) {
 
   // 🚀 Callbacks otimizados com useCallback
   const handleAccountChange = useCallback((accountId: string) => {
-    setSelectedAccount(accountId);
+    setSelectedAccounts(accountId ? [accountId] : []);
   }, []);
 
   const handleSelectionChange = useCallback((selectedRows: Row[]) => {
@@ -138,11 +141,11 @@ export default function SimplePedidosPage({ className }: Props) {
       />
 
       {/* Filtros */}
-      <PedidosFiltersSection
+  <PedidosFiltersSection
         filters={filters}
         appliedFilters={appliedFilters}
         accounts={pedidosData.accounts}
-        selectedAccount={selectedAccount}
+        selectedAccount={selectedAccounts[0] || ''}
         actions={actions}
         onAccountChange={handleAccountChange}
         hasPendingChanges={hasPendingChanges}
@@ -170,14 +173,14 @@ export default function SimplePedidosPage({ className }: Props) {
       />
 
       {/* Modais */}
-      {pedidosData.showBaixaModal && (
+  {pedidosData.showBaixaModal && (
         <BaixaEstoqueModal
           pedidos={orders.filter(order => pedidosData.selectedOrders.has(order.unified?.id || order.raw?.id || ''))}
           contextoDaUI={{
             mappingData: memoizedMappingData,
             accounts: pedidosData.accounts,
-            selectedAccounts: [selectedAccount],
-            integrationAccountId: selectedAccount
+            selectedAccounts: selectedAccounts,
+            integrationAccountId: selectedAccounts[0]
           }}
         />
       )}

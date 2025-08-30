@@ -27,7 +27,7 @@ export interface PedidosManagerState {
   error: string | null;
   currentPage: number;
   pageSize: number;
-  integrationAccountId: string;
+  integrationAccountIds: string[];
   fonte: 'banco' | 'tempo-real' | 'hibrido';
   cachedAt?: Date;
   lastQuery?: string;
@@ -44,6 +44,7 @@ export interface PedidosManagerActions {
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   setIntegrationAccountId: (id: string) => void;
+  setIntegrationAccountIds: (ids: string[]) => void;
   refetch: () => void;
   applyClientSideFilters: (orders: any[]) => any[];
   exportData: (format: 'csv' | 'xlsx') => Promise<void>;
@@ -111,7 +112,7 @@ export function usePedidosManager(initialAccountId?: string) {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSizeState] = useState<number>(PAGINATION.DEFAULT_PAGE_SIZE);
-  const [integrationAccountId, setIntegrationAccountId] = useState(initialAccountId || '');
+  const [integrationAccountIds, setIntegrationAccountIds] = useState<string[]>(initialAccountId ? [initialAccountId] : []);
   const [fonte, setFonte] = useState<'banco' | 'tempo-real' | 'hibrido'>('hibrido');
   
   // Performance states
@@ -179,16 +180,16 @@ export function usePedidosManager(initialAccountId?: string) {
   /**
    * Carrega pedidos da API unified-orders
    */
-  const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
+  const fetchForAccount = useCallback(async (accountId: string, apiParams: any) => {
     const { shipping_status, ...rest } = apiParams || {};
     const requestBody = {
-      integration_account_id: integrationAccountId,
+      integration_account_id: accountId,
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
       enrich: true,
       include_shipping: true,
       ...rest,
-      shipping_status: shipping_status,
+      shipping_status,
       enrich_skus: true,
       include_skus: true
     } as any;
@@ -205,11 +206,11 @@ export function usePedidosManager(initialAccountId?: string) {
     return {
       results: data.results || [],
       unified: data.unified || [],
-      total: data.paging?.total || data.paging?.count || data.results?.length || 0,
+      total: data.paging?.total ?? data.paging?.count ?? (data.results?.length || 0),
       paging: data.paging || undefined,
-      serverStatusApplied: Boolean(requestBody.status)
+      server_filtering_applied: Boolean(data.server_filtering_applied)
     };
-  }, [integrationAccountId, currentPage, pageSize]);
+  }, [currentPage, pageSize]);
 
   /**
    * Aplica filtros do lado cliente
@@ -285,8 +286,8 @@ export function usePedidosManager(initialAccountId?: string) {
    * Cache inteligente
    */
   const getCacheKey = useCallback((apiParams: any) => {
-    return JSON.stringify({ integrationAccountId, currentPage, pageSize, ...apiParams });
-  }, [integrationAccountId, currentPage, pageSize]);
+    return JSON.stringify({ integrationAccountIds, currentPage, pageSize, ...apiParams });
+  }, [integrationAccountIds, currentPage, pageSize]);
 
   const isCacheValid = useCallback((cacheKey: string) => {
     if (!cachedAt || lastQuery !== cacheKey) return false;
@@ -298,8 +299,8 @@ export function usePedidosManager(initialAccountId?: string) {
    * 🔧 CORREÇÃO CRÍTICA: Carrega pedidos com melhor controle
    */
   const loadOrders = useCallback(async (forceRefresh = false) => {
-    if (!integrationAccountId) {
-      console.log('⚠️ Sem integrationAccountId, não carregando pedidos');
+    if (!integrationAccountIds || integrationAccountIds.length === 0) {
+      console.log('⚠️ Sem integrationAccountIds, não carregando pedidos');
       return;
     }
 
@@ -322,28 +323,40 @@ export function usePedidosManager(initialAccountId?: string) {
     if (forceRefresh) setIsRefreshing(true);
 
     try {
-      const unifiedResult = await loadFromUnifiedOrders(apiParams);
-      
-      const shouldApplyClientFilter = Boolean(apiParams.shipping_status) && !(unifiedResult as any).server_filtering_applied;
-      const filteredResults = shouldApplyClientFilter
-        ? applyClientSideFilters(unifiedResult.results)
-        : unifiedResult.results;
+      const responses = await Promise.all(
+        integrationAccountIds.map((id) => fetchForAccount(id, apiParams))
+      );
 
-      setOrders(filteredResults);
-      setTotal(unifiedResult.total);
+      const serverApplied = responses.some(r => (r as any).server_filtering_applied);
+      const mergedResults = responses.flatMap(r => r.results);
+      const totalSum = responses.reduce((sum, r) => sum + (r.total || 0), 0);
+
+      const shouldApplyClientFilter = Boolean(apiParams.shipping_status) && !serverApplied;
+      const finalResults = shouldApplyClientFilter ? applyClientSideFilters(mergedResults) : mergedResults;
+
+      setOrders(finalResults);
+      setTotal(totalSum);
       setFonte('tempo-real');
       
-      // 🔧 CORREÇÃO CRÍTICA: Melhor gestão de paginação
-      const p: any = (unifiedResult as any).paging;
-      if (p && typeof p.limit === 'number' && typeof p.offset === 'number') {
-        const totalVal = (p.total ?? p.count ?? unifiedResult.total ?? 0) as number;
-        setPaging({ total: totalVal, limit: p.limit, offset: p.offset });
-        setHasPrevPage(p.offset > 0);
-        setHasNextPage(p.offset + p.limit < totalVal);
+      if (responses.length === 1) {
+        const p: any = (responses[0] as any).paging;
+        if (p && typeof p.limit === 'number' && typeof p.offset === 'number') {
+          const totalVal = (p.total ?? p.count ?? totalSum ?? 0) as number;
+          setPaging({ total: totalVal, limit: p.limit, offset: p.offset });
+          setHasPrevPage(p.offset > 0);
+          setHasNextPage(p.offset + p.limit < totalVal);
+        } else {
+          setPaging(undefined);
+          setHasPrevPage(currentPage > 1);
+          setHasNextPage(finalResults.length >= pageSize);
+        }
       } else {
-        setPaging(undefined);
+        const limit = pageSize;
+        const offset = (currentPage - 1) * pageSize;
+        const totalVal = totalSum;
+        setPaging({ total: totalVal, limit, offset });
         setHasPrevPage(currentPage > 1);
-        setHasNextPage(filteredResults.length >= pageSize);
+        setHasNextPage(offset + limit < totalVal);
       }
       
       setCachedAt(new Date());
@@ -363,29 +376,29 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [integrationAccountId, appliedFilters, currentPage, pageSize, buildApiParams, loadFromUnifiedOrders, applyClientSideFilters, getCacheKey, isCacheValid]);
+  }, [integrationAccountIds, appliedFilters, currentPage, pageSize, buildApiParams, fetchForAccount, applyClientSideFilters, getCacheKey, isCacheValid]);
 
   // 🔧 CORREÇÃO CRÍTICA: Efeitos para recarregar dados
   useEffect(() => {
-    console.log('🔄 useEffect: debouncedFilters ou integrationAccountId mudou');
-    if (integrationAccountId) {
+    console.log('🔄 useEffect: debouncedFilters ou integrationAccountIds mudou');
+    if (integrationAccountIds && integrationAccountIds.length > 0) {
       loadOrders();
     }
-  }, [debouncedFilters, integrationAccountId, loadOrders]);
+  }, [debouncedFilters, integrationAccountIds, loadOrders]);
 
   useEffect(() => {
     console.log('🔄 useEffect: currentPage mudou para', currentPage);
-    if (integrationAccountId && currentPage > 1) {
+    if (integrationAccountIds && integrationAccountIds.length > 0 && currentPage > 1) {
       loadOrders();
     }
-  }, [currentPage, integrationAccountId, loadOrders]);
+  }, [currentPage, integrationAccountIds, loadOrders]);
 
   useEffect(() => {
     console.log('🔄 useEffect: pageSize mudou para', pageSize);
-    if (integrationAccountId) {
+    if (integrationAccountIds && integrationAccountIds.length > 0) {
       loadOrders();
     }
-  }, [pageSize, integrationAccountId, loadOrders]);
+  }, [pageSize, integrationAccountIds, loadOrders]);
 
   // 🔧 CORREÇÃO CRÍTICA: Aplicar filtros manualmente
   const applyFilters = useCallback(() => {
@@ -454,8 +467,13 @@ export function usePedidosManager(initialAccountId?: string) {
     setPage,
     setPageSize: setPageSizeCallback,
     setIntegrationAccountId: (id: string) => {
-      console.log('🏢 Mudando conta para:', id);
-      setIntegrationAccountId(id);
+      console.log('🏢 Mudando conta (single) para:', id);
+      setIntegrationAccountIds(id ? [id] : []);
+      setCurrentPage(1);
+    },
+    setIntegrationAccountIds: (ids: string[]) => {
+      console.log('🏢 Mudando contas (multi) para:', ids);
+      setIntegrationAccountIds(Array.isArray(ids) ? ids : []);
       setCurrentPage(1);
     },
     refetch: () => loadOrders(true),
@@ -485,8 +503,8 @@ export function usePedidosManager(initialAccountId?: string) {
     loading,
     error,
     currentPage,
-    pageSize,
-    integrationAccountId,
+  	pageSize,
+    integrationAccountIds,
     fonte,
     cachedAt,
     lastQuery,
