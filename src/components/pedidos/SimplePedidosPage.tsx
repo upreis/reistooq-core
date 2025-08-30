@@ -32,6 +32,8 @@ import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
 import { buildIdUnico } from '@/utils/idUnico';
 import { PedidosDashboard } from './dashboard/PedidosDashboard';
 import { PedidosAlerts } from './dashboard/PedidosAlerts';
+import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
+import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 
 type Order = {
   id: string;
@@ -76,6 +78,10 @@ export default function SimplePedidosPage({ className }: Props) {
   console.log('🔄 [RENDER] hasPendingChanges:', hasPendingChanges);
   console.log('🔄 [RENDER] filters:', filters);
   console.log('🔄 [RENDER] appliedFilters:', appliedFilters);
+  
+  // 🔧 Sistema de colunas unificado com persistência automatica
+  const columnManager = useColumnManager();
+  const visibleColumns = columnManager.state.visibleColumns;
   
   // Estados locais para funcionalidades específicas
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -580,20 +586,14 @@ export default function SimplePedidosPage({ className }: Props) {
     { key: 'endereco_uf', label: 'UF', default: false, category: 'shipping' },
   ];
 
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    new Set(allColumns.filter(col => col.default).map(col => col.key))
-  );
-
+  // ✅ Sistema de colunas removido - agora usa useColumnManager com persistência automática
+  
   const toggleColumn = (key: string) => {
-    setVisibleColumns(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
+    columnManager.actions.toggleColumn(key);
   };
 
   const resetToDefault = () => {
-    setVisibleColumns(new Set(allColumns.filter(col => col.default).map(col => col.key)));
+    columnManager.actions.resetToDefault();
   };
 
   // Status da baixa usando sistema centralizado
