@@ -11,7 +11,7 @@ import { ptBR } from 'date-fns/locale';
 
 export interface PedidosFiltersState {
   search?: string;
-  situacao?: string;
+  situacao?: string | string[]; // Fixed: Support array for multi-select
   dataInicio?: Date;
   dataFim?: Date;
   cidade?: string;
@@ -53,7 +53,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.search) count++;
-    if (filters.situacao) count++;
+    if (filters.situacao && (Array.isArray(filters.situacao) ? filters.situacao.length > 0 : true)) count++;
     if (filters.dataInicio || filters.dataFim) count++;
     if (filters.cidade) count++;
     if (filters.uf) count++;
@@ -92,7 +92,10 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
         {/* Situação */}
         <div className="min-w-40">
           <label className="text-sm font-medium mb-1 block">Situação</label>
-          <Select value={filters.situacao || ''} onValueChange={(value) => handleFilterChange('situacao', value || undefined)}>
+          <Select 
+            value={Array.isArray(filters.situacao) ? filters.situacao[0] || '' : filters.situacao || ''} 
+            onValueChange={(value) => handleFilterChange('situacao', value || undefined)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Todas" />
             </SelectTrigger>
@@ -240,7 +243,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
           )}
           {filters.situacao && (
             <Badge variant="secondary" className="gap-1">
-              Situação: {filters.situacao}
+              Situação: {Array.isArray(filters.situacao) ? filters.situacao.join(', ') : filters.situacao}
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', undefined)} />
             </Badge>
           )}
