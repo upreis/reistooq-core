@@ -1,23 +1,31 @@
-// 🔥 Widget de Métricas em Tempo Real
+// 📊 Widget de Métricas em Tempo Real
 // Exibe KPIs principais com atualizações automáticas
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  TrendingUp, TrendingDown, Package, DollarSign, 
-  ShoppingCart, Users, Activity, Zap 
+  TrendingUp, TrendingDown, DollarSign, Package, 
+  ShoppingCart, Users, Zap, Activity, Minus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LiveMetricsProps {
-  metrics: any;
+  metrics: {
+    totalSales: number;
+    salesGrowth: number;
+    totalOrders: number;
+    ordersGrowth: number;
+    activeProducts: number;
+    lowStockProducts: number;
+    activeUsers: number;
+    newUsers: number;
+  } | null;
 }
 
 interface MetricCard {
-  id: string;
   title: string;
-  value: string;
+  value: string | number;
   change: number;
   trend: 'up' | 'down' | 'stable';
   icon: React.ElementType;
@@ -32,154 +40,166 @@ export function LiveMetricsWidget({ metrics }: LiveMetricsProps) {
   // Simulação de dados em tempo real
   useEffect(() => {
     const updateMetrics = () => {
-      const baseMetrics: MetricCard[] = [
+      if (!metrics) return;
+
+      const cards: MetricCard[] = [
         {
-          id: 'sales',
-          title: 'Vendas Hoje',
-          value: 'R$ 12.450',
-          change: 8.2,
-          trend: 'up',
+          title: 'Vendas Totais',
+          value: `R$ ${(metrics.totalSales || 0).toLocaleString('pt-BR')}`,
+          change: metrics.salesGrowth || 0,
+          trend: (metrics.salesGrowth || 0) > 0 ? 'up' : (metrics.salesGrowth || 0) < 0 ? 'down' : 'stable',
           icon: DollarSign,
           color: 'success',
           isLive: true
         },
         {
-          id: 'orders',
-          title: 'Pedidos',
-          value: '34',
-          change: -2.1,
-          trend: 'down',
+          title: 'Pedidos Totais',
+          value: metrics.totalOrders || 0,
+          change: metrics.ordersGrowth || 0,
+          trend: (metrics.ordersGrowth || 0) > 0 ? 'up' : (metrics.ordersGrowth || 0) < 0 ? 'down' : 'stable',
           icon: ShoppingCart,
-          color: 'warning'
+          color: 'primary',
+          isLive: true
         },
         {
-          id: 'products',
           title: 'Produtos Ativos',
-          value: metrics?.activeProducts?.toString() || '0',
-          change: 5.3,
-          trend: 'up',
+          value: metrics.activeProducts || 0,
+          change: 0,
+          trend: 'stable',
           icon: Package,
           color: 'primary'
         },
         {
-          id: 'users',
-          title: 'Usuários Online',
-          value: '8',
-          change: 12.5,
-          trend: 'up',
+          title: 'Estoque Baixo',
+          value: metrics.lowStockProducts || 0,
+          change: 0,
+          trend: metrics.lowStockProducts > 0 ? 'down' : 'stable',
+          icon: Package,
+          color: metrics.lowStockProducts > 0 ? 'warning' : 'success'
+        },
+        {
+          title: 'Usuários Ativos',
+          value: metrics.activeUsers || 0,
+          change: metrics.newUsers || 0,
+          trend: (metrics.newUsers || 0) > 0 ? 'up' : 'stable',
           icon: Users,
-          color: 'primary',
-          isLive: true
+          color: 'primary'
         }
       ];
 
-      // Simulação de mudanças em tempo real
-      const updatedMetrics = baseMetrics.map(metric => {
-        if (metric.isLive) {
-          const variation = (Math.random() - 0.5) * 2; // -1 a 1
-          const newChange = metric.change + variation;
-          return {
-            ...metric,
-            change: Math.round(newChange * 10) / 10,
-            trend: newChange > 0 ? 'up' as const : newChange < 0 ? 'down' as const : 'stable' as const
-          };
-        }
-        return metric;
-      });
-
-      setLiveData(updatedMetrics);
+      setLiveData(cards);
     };
 
     updateMetrics();
-    const interval = setInterval(updateMetrics, 5000); // Atualiza a cada 5 segundos
+
+    // Atualização automática a cada 30 segundos
+    const interval = setInterval(() => {
+      if (isLive) {
+        updateMetrics();
+      }
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, [metrics]);
+  }, [metrics, isLive]);
 
-  const getTrendIcon = (trend: string, isLiveMetric: boolean = false) => {
-    const iconClass = cn("h-4 w-4", isLiveMetric && "animate-pulse");
-    
+  const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'up':
-        return <TrendingUp className={cn(iconClass, "text-success")} />;
-      case 'down':
-        return <TrendingDown className={cn(iconClass, "text-destructive")} />;
-      default:
-        return <Activity className={cn(iconClass, "text-muted-foreground")} />;
+      case 'up': return <TrendingUp className="h-3 w-3" />;
+      case 'down': return <TrendingDown className="h-3 w-3" />;
+      default: return <Minus className="h-3 w-3" />;
     }
   };
 
-  const getColorClasses = (color: string) => {
-    switch (color) {
-      case 'success':
-        return 'bg-gradient-success';
-      case 'warning':
-        return 'bg-gradient-warning';
-      case 'destructive':
-        return 'bg-gradient-danger';
-      default:
-        return 'bg-gradient-primary';
-    }
+  const getTrendColor = (trend: string, color: string) => {
+    if (trend === 'stable') return 'text-muted-foreground';
+    if (trend === 'up') return 'text-green-600';
+    if (trend === 'down' && color === 'warning') return 'text-red-600';
+    return trend === 'up' ? 'text-green-600' : 'text-red-600';
   };
+
+  if (!metrics) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Métricas em Tempo Real
+            <Badge variant="outline" className="ml-auto">Carregando...</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {liveData.map((metric) => {
-        const IconComponent = metric.icon;
-        
-        return (
-          <Card key={metric.id} className="relative overflow-hidden hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {metric.title}
-                    </p>
-                    {metric.isLive && (
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                        <Badge variant="outline" className="text-xs px-1 py-0">
-                          LIVE
-                        </Badge>
-                      </div>
-                    )}
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="h-5 w-5" />
+          Métricas em Tempo Real
+          <div className="ml-auto flex items-center gap-2">
+            {isLive && (
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xs text-muted-foreground">AO VIVO</span>
+              </div>
+            )}
+            <Badge variant="outline">Atualizado agora</Badge>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {liveData.map((metric, index) => {
+            const IconComponent = metric.icon;
+            
+            return (
+              <div key={index} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className={cn(
+                    "flex items-center justify-center w-8 h-8 rounded-lg",
+                    metric.color === 'success' && "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+                    metric.color === 'warning' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300",
+                    metric.color === 'destructive' && "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
+                    metric.color === 'primary' && "bg-primary/10 text-primary"
+                  )}>
+                    <IconComponent className="h-4 w-4" />
                   </div>
                   
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold text-foreground">
-                      {metric.value}
-                    </div>
-                    
-                    <div className="flex items-center gap-1">
-                      {getTrendIcon(metric.trend, metric.isLive)}
-                      <span className={cn(
-                        "text-sm font-medium",
-                        metric.trend === 'up' && "text-success",
-                        metric.trend === 'down' && "text-destructive",
-                        metric.trend === 'stable' && "text-muted-foreground"
-                      )}>
-                        {metric.change > 0 ? '+' : ''}{metric.change}%
-                      </span>
-                    </div>
-                  </div>
+                  {metric.isLive && (
+                    <Zap className="h-3 w-3 text-yellow-500" />
+                  )}
                 </div>
                 
-                <div className={cn(
-                  "w-12 h-12 rounded-lg flex items-center justify-center",
-                  getColorClasses(metric.color)
-                )}>
-                  <IconComponent className="h-6 w-6 text-white" />
+                <div>
+                  <p className="text-xs text-muted-foreground">{metric.title}</p>
+                  <p className="text-lg font-bold">{metric.value}</p>
+                  
+                  {metric.change !== 0 && (
+                    <div className={cn(
+                      "flex items-center gap-1 text-xs",
+                      getTrendColor(metric.trend, metric.color)
+                    )}>
+                      {getTrendIcon(metric.trend)}
+                      <span>
+                        {metric.trend === 'up' ? '+' : metric.trend === 'down' ? '-' : ''}
+                        {Math.abs(metric.change)}
+                        {metric.title.includes('Vendas') ? '%' : ''}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {metric.isLive && (
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-hover animate-pulse"></div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
