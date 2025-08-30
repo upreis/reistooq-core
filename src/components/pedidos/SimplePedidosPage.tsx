@@ -731,13 +731,23 @@ function SimplePedidosPage({ className }: Props) {
                 console.log(`✅ Pedido ${pedido.numero || pedido.id} - Status: ${statusBaixa} (SKU: ${skuComMapeamento} → ${skuEstoque})`);
               }
 
+              // 🐛 CORRIGIDO: Usar campos consistentes com o MapeamentoService
               novosMapping.set(pedido.id, {
                 skuEstoque,
                 skuKit,
-                quantidade: qtdKit,
+                quantidade: qtdKit,        // Para compatibilidade com renderização
+                quantidadeKit: qtdKit,     // Para compatibilidade com MapeamentoService
                 totalItens,
                 statusBaixa,
                 jaProcessado
+              });
+              
+              // 🔍 DEBUG: Log para verificar dados do mapeamento
+              console.log(`📋 [DEBUG] Mapeamento salvo para pedido ${pedido.numero}:`, {
+                skuEstoque,
+                skuKit, 
+                quantidade: qtdKit,
+                statusBaixa
               });
             } else {
               console.log(`⚠️ Pedido ${pedido.numero || pedido.id} sem SKUs identificados`);
