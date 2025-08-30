@@ -34,7 +34,7 @@ import { buildIdUnico } from '@/utils/idUnico';
 
 import { PedidosAlerts } from './dashboard/PedidosAlerts';
 import { IntelligentPedidosDashboard } from '@/features/pedidos/components/IntelligentPedidosDashboard';
-import { SimplePedidosFilters, SimplePedidosFiltersState } from './SimplePedidosFilters';
+import PedidosFiltersMemo from './PedidosFiltersMemo';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 
@@ -1206,13 +1206,271 @@ function SimplePedidosPage({ className }: Props) {
         </div>
       </Card>
 
-      {/* Filtros Simplificados */}
-      <SimplePedidosFilters
-        filters={{ search: filters.search }}
-        onFiltersChange={(newFilters: SimplePedidosFiltersState) => {
-          actions.setFilters(newFilters);
-        }}
-      />
+      {/* 🛡️ FILTROS SIMPLES E FUNCIONAIS */}
+      <Card className="p-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Filtros</h3>
+            <Button size="sm" variant="outline" onClick={actions.clearFilters}>
+              <Filter className="h-4 w-4 mr-2" />
+              Limpar Filtros
+            </Button>
+          </div>
+          
+          
+          {/* Campo de Busca com Debounce */}
+          <div className="mb-4">
+            <label className="text-sm font-medium mb-2 block">Buscar Pedidos</label>
+            <Input
+              placeholder="Buscar por número, cliente, CPF/CNPJ..."
+              value={filters.search || ''}
+              onChange={(e) => actions.setFilters({ search: e.target.value })}
+              className="w-full"
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Filtro por Status do Envio - Multi seleção no Popover (igual Colunas) */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Status do Envio</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    <span>
+                      {Array.isArray(filters.situacao) && filters.situacao.length > 0
+                        ? `${filters.situacao.length} selecionado(s)`
+                        : 'Selecionar status'}
+                    </span>
+                    <Settings className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Status do Envio</h4>
+                      {Array.isArray(filters.situacao) && filters.situacao.length > 0 && (
+                        <Button size="sm" variant="ghost" onClick={() => actions.setFilters({ situacao: undefined })}>
+                          Limpar
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-2">
+                      {[
+                        { value: 'pending', label: 'Pendente', color: 'bg-yellow-400' },
+                        { value: 'ready_to_ship', label: 'Pronto para Envio', color: 'bg-blue-400' },
+                        { value: 'shipped', label: 'Enviado', color: 'bg-purple-400' },
+                        { value: 'delivered', label: 'Entregue', color: 'bg-green-400' },
+                        { value: 'not_delivered', label: 'Não Entregue', color: 'bg-red-400' },
+                        { value: 'cancelled', label: 'Cancelado', color: 'bg-gray-400' },
+                        { value: 'handling', label: 'Processando', color: 'bg-cyan-400' },
+                        { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
+                      ].map((status) => {
+                        const current = Array.isArray(filters.situacao)
+                          ? filters.situacao
+                          : (filters.situacao ? [filters.situacao] : []);
+                        const isSelected = current.includes(status.value);
+                        return (
+                          <label key={status.value} className="flex items-center space-x-2 text-sm cursor-pointer">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  actions.setFilters({ situacao: [...current, status.value] });
+                                } else {
+                                  const next = current.filter((s) => s !== status.value);
+                                  actions.setFilters({ situacao: next.length > 0 ? next : undefined });
+                                }
+                              }}
+                            />
+                            <div className={`w-3 h-3 rounded-full ${status.color}`}></div>
+                            <span>{status.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Data Início */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data Início</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !filters.dataInicio && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.dataInicio ? (
+                      format(filters.dataInicio, "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecionar data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filters.dataInicio}
+                    onSelect={(date) => actions.setFilters({ dataInicio: date })}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Data Fim */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Data Fim</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !filters.dataFim && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filters.dataFim ? (
+                      format(filters.dataFim, "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecionar data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filters.dataFim}
+                    onSelect={(date) => actions.setFilters({ dataFim: date })}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Controle de Colunas */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Colunas</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configurar
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-medium">Selecionar Colunas</h4>
+                      <Button size="sm" variant="ghost" onClick={resetToDefault}>
+                        Padrão
+                      </Button>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                       {['basic', 'products', 'financial', 'status', 'mapping', 'ml', 'shipping', 'address', 'buyer', 'ids'].map((category) => {
+                         const categoryColumns = allColumns.filter(col => col.category === category);
+                         const categoryLabels = {
+                           basic: 'Básicas',
+                           products: 'Produtos',
+                           financial: 'Financeiras', 
+                           status: 'Status',
+                           mapping: 'Mapeamento',
+                           ml: 'Mercado Livre',
+                            shipping: 'Envio',
+                            address: 'Endereço',
+                            buyer: 'Comprador',
+                            ids: 'Identificação'
+                         } as const;
+                         
+                         if (categoryColumns.length === 0) return null;
+                        
+                        return (
+                          <div key={category} className="space-y-2">
+                            <h5 className="text-sm font-medium text-muted-foreground border-b pb-1">
+                              {categoryLabels[category as keyof typeof categoryLabels]}
+                            </h5>
+                            <div className="grid grid-cols-1 gap-1 ml-2">
+                              {categoryColumns.map((col) => (
+                                <label key={col.key} className="flex items-center space-x-2 text-sm">
+                                  <Checkbox
+                                    checked={visibleColumns.has(col.key)}
+                                    onCheckedChange={() => toggleColumn(col.key)}
+                                  />
+                                  <span>{col.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+      {/* Indicadores */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center gap-4">
+          <span>Fonte: {state.fonte} | Total: {total} pedidos</span>
+          {state.isRefreshing && <span className="ml-2 animate-pulse">• Atualizando...</span>}
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={() => {
+              console.log('[DEBUG] === FORÇANDO ATUALIZAÇÃO COMPLETA ===');
+              console.log('[DEBUG] Total de pedidos:', orders.length);
+              
+              // Debug: Sample das primeiras orders
+              if (orders.length > 0) {
+                console.log('[DEBUG] Sample order data:', {
+                  id: orders[0].id,
+                  shipping_mode: orders[0].shipping_mode,
+                  forma_entrega: orders[0].forma_entrega,
+                  is_fulfillment: orders[0].is_fulfillment,
+                  status_detail: orders[0].status_detail,
+                  available_fields: Object.keys(orders[0])
+                });
+              }
+              
+              // Limpar todos os caches
+              localStorage.clear();
+              sessionStorage.clear();
+              
+              // Recarregar dados
+              actions.clearFilters();
+              actions.refetch();
+              
+              setTimeout(() => {
+                console.log('[DEBUG] Página recarregando para garantir dados frescos...');
+                window.location.reload();
+              }, 1000);
+            }}
+            className="text-xs h-6 px-2"
+          >
+            🔄 Debug & Recarregar
+          </Button>
+        </div>
+        {(filters.situacao || filters.dataInicio || filters.dataFim) && (
+          <div className="flex items-center gap-1">
+            <Badge variant="secondary" className="text-xs">
+              Filtros ativos
+            </Badge>
+          </div>
+        )}
+      </div>
+        </div>
+      </Card>
 
       {/* 🛡️ MENSAGEM DE ERRO SEGURA */}
       {error && (
