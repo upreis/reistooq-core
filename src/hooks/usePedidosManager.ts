@@ -701,6 +701,14 @@ export function usePedidosManager(initialAccountId?: string) {
     }
   }, []); // Executar apenas no mount inicial
 
+  // 🔄 Effect para carregar dados quando página ou integrationAccountId mudar
+  useEffect(() => {
+    if (integrationAccountId) {
+      console.log('🔄 Carregando dados - página:', currentPage, 'conta:', integrationAccountId);
+      loadOrders();
+    }
+  }, [currentPage, integrationAccountId, loadOrders]);
+
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
     return () => {

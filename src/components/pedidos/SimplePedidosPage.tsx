@@ -72,7 +72,7 @@ type Props = {
 export default function SimplePedidosPage({ className }: Props) {
   // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
-  const { filters, appliedFilters, state, actions, hasPendingChanges } = pedidosManager;
+  const { filters, appliedFilters, state, actions, hasPendingChanges, totalPages } = pedidosManager;
   
   // 🔄 Debug para verificar estado dos filtros
   console.log('🔄 [RENDER] hasPendingChanges:', hasPendingChanges);
@@ -100,7 +100,7 @@ export default function SimplePedidosPage({ className }: Props) {
   const error = state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
-  const totalPages = Math.ceil(total / (state.pageSize || 25));
+  
 
   // Funções de tradução e mapeamento de status
   const getShippingStatusColor = (status: string): string => {
@@ -992,7 +992,7 @@ export default function SimplePedidosPage({ className }: Props) {
       {/* Debug info */}
       {process.env.NODE_ENV === 'development' && (
         <div className="text-xs text-muted-foreground mt-2">
-          Debug: {orders?.length || 0} orders loaded, total: {total}
+          Debug: {orders?.length || 0} orders loaded, total: {total}, totalPages: {totalPages}, currentPage: {currentPage}
         </div>
       )}
       
@@ -2166,15 +2166,15 @@ export default function SimplePedidosPage({ className }: Props) {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <span className="text-sm">
-              Página {currentPage}{total > 0 ? ` de ${Math.ceil(total / (state.pageSize || 25))} (${total} total)` : ''}
+              Página {currentPage}{total > 0 ? ` de ${totalPages} (${total} total)` : ` (${orders?.length || 0} itens)`}
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => actions.setPage(total > 0 ? Math.min(currentPage + 1, Math.ceil(total / (state.pageSize || 25))) : currentPage + 1)}
+              onClick={() => actions.setPage(total > 0 ? Math.min(currentPage + 1, totalPages) : currentPage + 1)}
               disabled={(() => {
                 if (typeof state.hasNextPage === 'boolean') return !state.hasNextPage;
-                if (total > 0) return currentPage >= Math.ceil(total / (state.pageSize || 25));
+                if (total > 0) return currentPage >= totalPages;
                 return orders.length < (state.pageSize || 25);
               })()}
             >
