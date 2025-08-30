@@ -46,6 +46,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleFilterChange = (key: keyof PedidosFiltersState, value: any) => {
+    // 🔄 Apenas atualizar filtros pendentes, sem aplicar automaticamente
     onFiltersChange({ ...filters, [key]: value });
   };
 

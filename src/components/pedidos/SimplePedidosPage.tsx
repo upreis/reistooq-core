@@ -777,12 +777,11 @@ export default function SimplePedidosPage({ className }: Props) {
         
         if (validAccounts.length > 0) {
           setSelectedAccounts(validAccounts);
-          // Para compatibilidade, manter a primeira conta no sistema antigo
-          actions.setIntegrationAccountId(validAccounts[0]);
+          // 🔄 Conta será definida pelo useEffect automaticamente sem buscar
         } else if (list.length > 0) {
           // Se nenhuma válida, selecionar a mais recente
           setSelectedAccounts([list[0].id]);
-          actions.setIntegrationAccountId(list[0].id);
+          // 🔄 Conta será definida pelo useEffect automaticamente sem buscar
         }
       }
     } catch (err: any) {
@@ -899,11 +898,43 @@ export default function SimplePedidosPage({ className }: Props) {
     actions.setFilters(newFilters);
   };
 
+  // 💾 Função para salvar contas selecionadas junto com filtros
+  const handleApplyFilters = () => {
+    // Salvar contas selecionadas no localStorage antes de aplicar filtros
+    try {
+      const saved = localStorage.getItem('pedidos:lastSearch');
+      const lastSearch = saved ? JSON.parse(saved) : {};
+      lastSearch.selectedAccounts = selectedAccounts;
+      localStorage.setItem('pedidos:lastSearch', JSON.stringify(lastSearch));
+    } catch (error) {
+      console.warn('⚠️ Erro ao salvar contas selecionadas:', error);
+    }
+    
+    // Aplicar filtros normalmente
+    actions.applyFilters();
+  };
+
   const handleBaixaEstoque = async (pedidos: string[]) => {
     console.log('Iniciando baixa de estoque para:', pedidos);
     setShowBaixaModal(false);
     // Lógica de baixa de estoque aqui
   };
+
+  // 💾 Effect para restaurar contas selecionadas da última consulta
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('pedidos:lastSearch');
+      if (saved) {
+        const lastSearch = JSON.parse(saved);
+        if (lastSearch.selectedAccounts && Array.isArray(lastSearch.selectedAccounts)) {
+          console.log('💾 Restaurando contas selecionadas:', lastSearch.selectedAccounts);
+          setSelectedAccounts(lastSearch.selectedAccounts);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Erro ao restaurar contas selecionadas:', error);
+    }
+  }, []);
 
   // Effects
   useEffect(() => {
@@ -919,19 +950,17 @@ export default function SimplePedidosPage({ className }: Props) {
     } catch {}
   }, [actions]);
 
-  // Effect para buscar pedidos de múltiplas contas
+  // 🔄 Effect para definir conta sem disparar busca automática
   useEffect(() => {
     if (selectedAccounts.length > 0) {
-      // Se múltiplas contas selecionadas, buscar pedidos de todas
-      if (selectedAccounts.length > 1) {
-        // Implementar busca de múltiplas contas aqui
-        // Por enquanto mantém a primeira conta para compatibilidade
-        actions.setIntegrationAccountId(selectedAccounts[0]);
-      } else {
-        actions.setIntegrationAccountId(selectedAccounts[0]);
+      // Apenas definir a conta de integração, sem buscar automaticamente
+      const accountToUse = selectedAccounts[0];
+      if (integrationAccountId !== accountToUse) {
+        console.log('🔄 Definindo conta de integração:', accountToUse);
+        actions.setIntegrationAccountId(accountToUse);
       }
     }
-  }, [selectedAccounts, actions]);
+  }, [selectedAccounts, integrationAccountId]); // 🔄 Remover actions da dependência para evitar loops
 
   // Render principal
   return (
@@ -982,7 +1011,7 @@ export default function SimplePedidosPage({ className }: Props) {
           {/* 🔄 BOTÃO APLICAR FILTROS */}
           {hasPendingChanges && (
             <Button
-              onClick={actions.applyFilters}
+              onClick={handleApplyFilters}
               disabled={loading || state.isRefreshing}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
@@ -1045,13 +1074,11 @@ export default function SimplePedidosPage({ className }: Props) {
               onClick={() => {
                 if (selectedAccounts.length === accounts.length) {
                   setSelectedAccounts([]);
-                  actions.setIntegrationAccountId('');
+                  // 🔄 Não resetar conta automaticamente - deixar para o useEffect
                 } else {
                   const allAccountIds = accounts.map(acc => acc.id);
                   setSelectedAccounts(allAccountIds);
-                  if (allAccountIds.length > 0) {
-                    actions.setIntegrationAccountId(allAccountIds[0]);
-                  }
+                  // 🔄 Conta será definida pelo useEffect automaticamente
                 }
               }}
             >
@@ -1071,17 +1098,11 @@ export default function SimplePedidosPage({ className }: Props) {
                     if (checked) {
                       const newSelected = [...selectedAccounts, acc.id];
                       setSelectedAccounts(newSelected);
-                      if (!integrationAccountId) {
-                        actions.setIntegrationAccountId(acc.id);
-                      }
+                      // 🔄 Conta será definida pelo useEffect automaticamente
                     } else {
                       const newSelected = selectedAccounts.filter(id => id !== acc.id);
                       setSelectedAccounts(newSelected);
-                      if (integrationAccountId === acc.id && newSelected.length > 0) {
-                        actions.setIntegrationAccountId(newSelected[0]);
-                      } else if (newSelected.length === 0) {
-                        actions.setIntegrationAccountId('');
-                      }
+                      // 🔄 Conta será definida pelo useEffect automaticamente
                     }
                   }}
                 />
@@ -1386,21 +1407,45 @@ export default function SimplePedidosPage({ className }: Props) {
           </div>
         ) : orders.length === 0 ? (
           <div className="p-8 text-center">
-            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">
-              {pedidosManager.hasActiveFilters 
-                ? 'Nenhum pedido encontrado com os filtros aplicados' 
-                : 'Nenhum pedido encontrado'
-              }
-            </p>
-            {pedidosManager.hasActiveFilters && (
-              <Button
-                variant="link"
-                onClick={actions.clearFilters}
-                className="mt-2"
-              >
-                Limpar filtros
-              </Button>
+            {pedidosManager.hasActiveFilters ? (
+              // Quando há filtros aplicados mas nenhum resultado
+              <>
+                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">
+                  Nenhum pedido encontrado com os filtros aplicados
+                </p>
+                <Button
+                  variant="link"
+                  onClick={actions.clearFilters}
+                  className="mt-2"
+                >
+                  Limpar filtros
+                </Button>
+              </>
+            ) : (
+              // Quando não há filtros - mensagem de boas-vindas
+              <div className="space-y-4">
+                <div className="text-lg font-medium">👋 Bem-vindo aos Pedidos!</div>
+                <div className="text-muted-foreground">
+                  Configure os filtros acima e clique em <strong>"Aplicar Filtros"</strong> para buscar seus pedidos.
+                </div>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <div>💡 <strong>Dica:</strong> Selecione uma ou mais contas do Mercado Livre</div>
+                  <div>📅 Defina um período de datas para começar</div>
+                  <div>🔍 Use a busca para encontrar pedidos específicos</div>
+                </div>
+                {hasPendingChanges && (
+                  <div className="mt-4">
+                    <Button
+                      onClick={handleApplyFilters}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Search className="h-4 w-4 mr-2" />
+                      Aplicar Filtros
+                    </Button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         ) : (

@@ -466,15 +466,50 @@ export function usePedidosManager(initialAccountId?: string) {
 
   const getSavedFilters = useCallback(() => savedFilters, [savedFilters]);
 
-  // 🔄 Nova função para aplicar filtros manualmente
+  // 🔄 Nova função para aplicar filtros manualmente + salvar consulta
   const applyFilters = useCallback(() => {
     console.log('🔄 Aplicando filtros manualmente:', pendingFilters);
-    setAppliedFilters({ ...pendingFilters });
+    
+    // Normalizar datas para objetos Date
+    const normalizedFilters = { ...pendingFilters };
+    if (normalizedFilters.dataInicio && typeof normalizedFilters.dataInicio === 'string') {
+      normalizedFilters.dataInicio = new Date(normalizedFilters.dataInicio);
+    }
+    if (normalizedFilters.dataFim && typeof normalizedFilters.dataFim === 'string') {
+      normalizedFilters.dataFim = new Date(normalizedFilters.dataFim);
+    }
+    
+    setAppliedFilters({ ...normalizedFilters });
     setCurrentPage(1);
+    
+    // 💾 Salvar última consulta no localStorage
+    try {
+      const lastSearch = {
+        filters: {
+          ...normalizedFilters,
+          // Converter datas para ISO para serialização
+          dataInicio: normalizedFilters.dataInicio?.toISOString(),
+          dataFim: normalizedFilters.dataFim?.toISOString()
+        },
+        integrationAccountId,
+        pageSize,
+        timestamp: new Date().toISOString()
+      };
+      localStorage.setItem('pedidos:lastSearch', JSON.stringify(lastSearch));
+      console.log('💾 Última consulta salva:', lastSearch);
+    } catch (error) {
+      console.warn('⚠️ Erro ao salvar última consulta:', error);
+    }
+    
     // Limpar cache para forçar nova busca
     setCachedAt(undefined);
     setLastQuery(undefined);
-  }, [pendingFilters]);
+    
+    // 🚀 Executar busca imediatamente
+    setTimeout(() => {
+      loadOrders(true);
+    }, 100);
+  }, [pendingFilters, integrationAccountId, pageSize, loadOrders]);
 
   // Actions melhoradas
   const actions: PedidosManagerActions = useMemo(() => ({
@@ -551,17 +586,40 @@ export function usePedidosManager(initialAccountId?: string) {
     paging
   };
 
-  // Effects otimizados - 🔄 Carregar apenas na primeira vez ou quando integrationAccountId mudar
+  // 💾 Effect para restaurar última consulta (sem executar automaticamente)
   useEffect(() => {
-    // Carregar dados apenas na primeira vez (quando integrationAccountId está definido)
-    if (integrationAccountId && Object.keys(appliedFilters).every(key => 
-      appliedFilters[key as keyof PedidosFilters] === undefined || 
-      appliedFilters[key as keyof PedidosFilters] === ''
-    )) {
-      console.log('🔄 Carregamento inicial automático');
-      loadOrders();
+    try {
+      const saved = localStorage.getItem('pedidos:lastSearch');
+      if (saved) {
+        const lastSearch = JSON.parse(saved);
+        console.log('💾 Restaurando última consulta:', lastSearch);
+        
+        // Restaurar filtros (convertendo datas de volta)
+        const restoredFilters = { ...lastSearch.filters };
+        if (restoredFilters.dataInicio) {
+          restoredFilters.dataInicio = new Date(restoredFilters.dataInicio);
+        }
+        if (restoredFilters.dataFim) {
+          restoredFilters.dataFim = new Date(restoredFilters.dataFim);
+        }
+        
+        // Carregar nos filtros pendentes (não aplicados)
+        setPendingFilters(restoredFilters);
+        
+        // Restaurar configurações
+        if (lastSearch.integrationAccountId && !integrationAccountId) {
+          setIntegrationAccountId(lastSearch.integrationAccountId);
+        }
+        if (lastSearch.pageSize && lastSearch.pageSize !== pageSize) {
+          setPageSizeState(lastSearch.pageSize);
+        }
+        
+        console.log('✅ Última consulta restaurada (pendente aplicação)');
+      }
+    } catch (error) {
+      console.warn('⚠️ Erro ao restaurar última consulta:', error);
     }
-  }, [integrationAccountId]); // 🔄 Apenas quando a conta mudar
+  }, []); // Executar apenas no mount inicial
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
