@@ -101,9 +101,6 @@ export function IntelligentPedidosDashboard({
   // 📊 ANÁLISE COMPLETA E INTELIGENTE DOS DADOS
   const dashboardData = useMemo(() => {
     const workingOrders = allOrders?.length ? allOrders : orders;
-    console.log('🔍 [DASHBOARD] Debug - orders:', orders?.length || 0, 'allOrders:', allOrders?.length || 0);
-    console.log('🔍 [DASHBOARD] workingOrders:', workingOrders?.length || 0);
-    console.log('🔍 [DASHBOARD] Sample order:', workingOrders?.[0] || 'none');
     
     if (!workingOrders?.length) {
       return {
@@ -154,19 +151,9 @@ export function IntelligentPedidosDashboard({
     let pedidosMes = 0;
     const receitaPorDia = new Map<string, number>();
 
-    workingOrders.forEach((order, index) => {
+    workingOrders.forEach(order => {
       const valorProduto = Number(order.valor_total || 0);
       const valorFrete = Number(order.valor_frete || 0);
-      
-      if (index === 0) {
-        console.log('🔍 [DASHBOARD] Processing first order:', {
-          valorProduto,
-          valorFrete,
-          empresa: order.empresa,
-          situacao: order.situacao,
-          order: order
-        });
-      }
       const valorDesconto = Number(order.valor_desconto || 0);
       const receitaFlexOrder = Number(order.receita_flex || order.receita_envio || 0);
       const taxaML = Number(order.taxa_marketplace || order.tarifas_venda || 0);
@@ -327,7 +314,7 @@ export function IntelligentPedidosDashboard({
       .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
       .slice(0, 7);
 
-    const result = {
+    return {
       kpis,
       alerts,
       companiesAnalysis,
@@ -342,19 +329,6 @@ export function IntelligentPedidosDashboard({
         totalPedidos: workingOrders.length
       }
     };
-    
-    console.log('🔍 [DASHBOARD] Final results:', {
-      totalPedidos: workingOrders.length,
-      receitaTotal,
-      receitaFlex,
-      margemLiquida,
-      ticketMedio,
-      kpisCount: kpis.length,
-      alertsCount: alerts.length,
-      companiesCount: companiesAnalysis.length
-    });
-    
-    return result;
   }, [allOrders, orders]);
 
   if (!isVisible) {

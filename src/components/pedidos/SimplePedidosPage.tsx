@@ -30,7 +30,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
 import { buildIdUnico } from '@/utils/idUnico';
-
+import { PedidosDashboard } from './dashboard/PedidosDashboard';
 import { PedidosAlerts } from './dashboard/PedidosAlerts';
 import { IntelligentPedidosDashboard } from './dashboard/IntelligentPedidosDashboard';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
@@ -989,13 +989,13 @@ export default function SimplePedidosPage({ className }: Props) {
         className="animate-fade-in"
       />
       
-      {/* Debug info */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-muted-foreground mt-2">
-          Debug: {orders?.length || 0} orders loaded, total: {total}
-        </div>
-      )}
-      
+      {/* 🚀 DASHBOARD INTELIGENTE LEGADO - Componente de compatibilidade */}
+      <PedidosDashboard 
+        orders={orders}
+        loading={loading}
+        onRefresh={actions.refetch}
+        className="animate-fade-in"
+      />
 
       {/* 🚨 ALERTAS INTELIGENTES - Novo componente independente */}
       {orders && orders.length > 0 && (
