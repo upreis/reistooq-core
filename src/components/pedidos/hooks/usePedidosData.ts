@@ -10,11 +10,17 @@ export function usePedidosData() {
   // Carrega contas de integração
   const loadAccounts = useCallback(async () => {
     try {
-      // TODO: Implement account loading
-      console.log('Loading accounts...');
-      setAccounts([]);
+      const { data, error } = await (supabase as any)
+        .from('integration_accounts')
+        .select('id, name, platform, status' as any)
+        .eq('platform', 'mercadolivre')
+        .eq('status', 'active');
+
+      if (error) throw error as any;
+      setAccounts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erro ao carregar contas:', error);
+      setAccounts([]);
     }
   }, []);
 

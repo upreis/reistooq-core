@@ -52,6 +52,17 @@ export default function SimplePedidosPage({ className }: Props) {
     pedidosData.loadAccounts();
   }, []);
 
+  // Selecionar conta automaticamente se nenhuma estiver selecionada
+  useEffect(() => {
+    if (!selectedAccount && pedidosData.accounts.length > 0) {
+      const first = pedidosData.accounts[0];
+      if (first?.id) {
+        setSelectedAccount(first.id);
+        actions.setIntegrationAccountId(first.id);
+      }
+    }
+  }, [selectedAccount, pedidosData.accounts, actions]);
+
   // 🚀 Sincronizar conta selecionada
   useEffect(() => {
     if (selectedAccount && selectedAccount !== state.integrationAccountId) {
