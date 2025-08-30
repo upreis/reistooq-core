@@ -989,6 +989,13 @@ export default function SimplePedidosPage({ className }: Props) {
         className="animate-fade-in"
       />
       
+      {/* Debug info */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="text-xs text-muted-foreground mt-2">
+          Debug: {orders?.length || 0} orders loaded, total: {total}
+        </div>
+      )}
+      
       {/* 🚀 DASHBOARD INTELIGENTE LEGADO - Componente de compatibilidade */}
       <PedidosDashboard 
         orders={orders}
