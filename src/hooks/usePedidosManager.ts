@@ -66,6 +66,48 @@ export interface SavedFilter {
 
 import { PAGINATION, CACHE, DEBOUNCE } from '@/lib/constants';
 
+// 🔧 Helper para normalizar datas (corrige serialização)
+function normalizeDate(value: any): Date | undefined {
+  if (!value) return undefined;
+  
+  // Se já é Date, retornar
+  if (value instanceof Date) return value;
+  
+  // Se é string ISO, converter
+  if (typeof value === 'string') {
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? undefined : date;
+  }
+  
+  // Se é número (timestamp), converter
+  if (typeof value === 'number') {
+    const date = new Date(value);
+    return isNaN(date.getTime()) ? undefined : date;
+  }
+  
+  // Se é objeto serializado do tipo {_type: 'Date', value: {iso: ...}}
+  if (value && typeof value === 'object') {
+    if (value._type === 'Date' && value.value?.iso) {
+      const date = new Date(value.value.iso);
+      return isNaN(date.getTime()) ? undefined : date;
+    }
+    
+    // Se é objeto com value.iso diretamente
+    if (value.value?.iso) {
+      const date = new Date(value.value.iso);
+      return isNaN(date.getTime()) ? undefined : date;
+    }
+    
+    // Se é objeto com iso diretamente
+    if (value.iso) {
+      const date = new Date(value.iso);
+      return isNaN(date.getTime()) ? undefined : date;
+    }
+  }
+  
+  return undefined;
+}
+
 const DEFAULT_FILTERS: PedidosFilters = {};
 
 export function usePedidosManager(initialAccountId?: string) {
@@ -126,16 +168,16 @@ export function usePedidosManager(initialAccountId?: string) {
       }
     }
 
-    // Datas - validação segura antes de usar getFullYear
+    // Datas - usar normalização segura
     if (filters.dataInicio) {
-      const d = filters.dataInicio instanceof Date ? filters.dataInicio : new Date(filters.dataInicio);
-      if (!isNaN(d.getTime())) {
+      const d = normalizeDate(filters.dataInicio);
+      if (d && !isNaN(d.getTime())) {
         params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       }
     }
     if (filters.dataFim) {
-      const d = filters.dataFim instanceof Date ? filters.dataFim : new Date(filters.dataFim);
-      if (!isNaN(d.getTime())) {
+      const d = normalizeDate(filters.dataFim);
+      if (d && !isNaN(d.getTime())) {
         params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       }
     }
@@ -260,15 +302,21 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de data - usar appliedFilters
+      // Filtro de data - usar appliedFilters com normalização
       if (appliedFilters.dataInicio || appliedFilters.dataFim) {
         const orderDate = new Date(order.data_pedido || order.date_created);
         
-        if (appliedFilters.dataInicio && orderDate < appliedFilters.dataInicio) {
-          return false;
+        if (appliedFilters.dataInicio) {
+          const startDate = normalizeDate(appliedFilters.dataInicio);
+          if (startDate && orderDate < startDate) {
+            return false;
+          }
         }
-        if (appliedFilters.dataFim && orderDate > appliedFilters.dataFim) {
-          return false;
+        if (appliedFilters.dataFim) {
+          const endDate = normalizeDate(appliedFilters.dataFim);
+          if (endDate && orderDate > endDate) {
+            return false;
+          }
         }
       }
 
@@ -461,8 +509,17 @@ export function usePedidosManager(initialAccountId?: string) {
   const loadSavedFilters = useCallback((name: string) => {
     const saved = savedFilters.find(f => f.name === name);
     if (saved) {
-      setPendingFilters(saved.filters); // 🔄 Carregar nos filtros pendentes
-      setAppliedFilters(saved.filters); // 🔄 E aplicar imediatamente
+      // Normalizar datas ao carregar filtros salvos
+      const normalizedFilters = { ...saved.filters };
+      if (normalizedFilters.dataInicio) {
+        normalizedFilters.dataInicio = normalizeDate(normalizedFilters.dataInicio);
+      }
+      if (normalizedFilters.dataFim) {
+        normalizedFilters.dataFim = normalizeDate(normalizedFilters.dataFim);
+      }
+      
+      setPendingFilters(normalizedFilters); // 🔄 Carregar nos filtros pendentes
+      setAppliedFilters(normalizedFilters); // 🔄 E aplicar imediatamente
       setCurrentPage(1);
     }
   }, [savedFilters]);
@@ -473,17 +530,13 @@ export function usePedidosManager(initialAccountId?: string) {
   const applyFilters = useCallback(() => {
     console.log('🔄 Aplicando filtros manualmente:', pendingFilters);
     
-    // Normalizar datas para objetos Date
+    // Normalizar datas para objetos Date reais
     const normalizedFilters = { ...pendingFilters };
     if (normalizedFilters.dataInicio) {
-      normalizedFilters.dataInicio = normalizedFilters.dataInicio instanceof Date 
-        ? normalizedFilters.dataInicio 
-        : new Date(normalizedFilters.dataInicio);
+      normalizedFilters.dataInicio = normalizeDate(normalizedFilters.dataInicio);
     }
     if (normalizedFilters.dataFim) {
-      normalizedFilters.dataFim = normalizedFilters.dataFim instanceof Date 
-        ? normalizedFilters.dataFim 
-        : new Date(normalizedFilters.dataFim);
+      normalizedFilters.dataFim = normalizeDate(normalizedFilters.dataFim);
     }
     
     console.log('🔄 Filtros normalizados:', {
@@ -527,7 +580,17 @@ export function usePedidosManager(initialAccountId?: string) {
   const actions: PedidosManagerActions = useMemo(() => ({
     setFilters: (newFilters: Partial<PedidosFilters>) => {
       console.log('🔄 Atualizando filtros pendentes:', newFilters);
-      setPendingFilters(prev => ({ ...prev, ...newFilters }));
+      
+      // Normalizar datas ao definir filtros
+      const normalizedNewFilters = { ...newFilters };
+      if (normalizedNewFilters.dataInicio) {
+        normalizedNewFilters.dataInicio = normalizeDate(normalizedNewFilters.dataInicio);
+      }
+      if (normalizedNewFilters.dataFim) {
+        normalizedNewFilters.dataFim = normalizeDate(normalizedNewFilters.dataFim);
+      }
+      
+      setPendingFilters(prev => ({ ...prev, ...normalizedNewFilters }));
       // NÃO resetar página nem aplicar automaticamente
     },
     
@@ -606,14 +669,19 @@ export function usePedidosManager(initialAccountId?: string) {
         const lastSearch = JSON.parse(saved);
         console.log('💾 Restaurando última consulta:', lastSearch);
         
-        // Restaurar filtros (convertendo datas de volta)
+        // Restaurar filtros (convertendo datas de volta para Date real)
         const restoredFilters = { ...lastSearch.filters };
         if (restoredFilters.dataInicio) {
-          restoredFilters.dataInicio = new Date(restoredFilters.dataInicio);
+          restoredFilters.dataInicio = normalizeDate(restoredFilters.dataInicio);
         }
         if (restoredFilters.dataFim) {
-          restoredFilters.dataFim = new Date(restoredFilters.dataFim);
+          restoredFilters.dataFim = normalizeDate(restoredFilters.dataFim);
         }
+        
+        console.log('🔧 Datas normalizadas:', {
+          original: lastSearch.filters,
+          normalized: restoredFilters
+        });
         
         // Carregar nos filtros pendentes (não aplicados)
         setPendingFilters(restoredFilters);
