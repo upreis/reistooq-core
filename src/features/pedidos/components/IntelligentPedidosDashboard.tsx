@@ -72,6 +72,7 @@ export function IntelligentPedidosDashboard({
   totalCount,
   className 
 }: DashboardProps) {
+  const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   
   // Análise inteligente dos dados
@@ -267,6 +268,23 @@ export function IntelligentPedidosDashboard({
 
   const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))', 'hsl(var(--success))'];
 
+  // Se não estiver visível, mostrar apenas o botão para expandir
+  if (!isVisible) {
+    return (
+      <div className={cn("mb-4", className)}>
+        <Button 
+          onClick={() => setIsVisible(true)}
+          variant="outline"
+          size="sm"
+          className="w-full"
+        >
+          <BarChart3 className="h-4 w-4 mr-2" />
+          Mostrar Dashboard Inteligente
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("space-y-6", className)}>
       {/* Header */}
@@ -278,15 +296,25 @@ export function IntelligentPedidosDashboard({
             {totalCount && totalCount > orders.length && ` de ${totalCount} total`}
           </p>
         </div>
-        <Button 
-          onClick={onRefresh} 
-          disabled={loading}
-          variant="outline"
-          size="sm"
-        >
-          <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            onClick={onRefresh} 
+            disabled={loading}
+            variant="outline"
+            size="sm"
+          >
+            <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
+            Atualizar
+          </Button>
+          <Button 
+            onClick={() => setIsVisible(false)}
+            variant="outline"
+            size="sm"
+          >
+            <Archive className="h-4 w-4 mr-2" />
+            Ocultar Dashboard
+          </Button>
+        </div>
       </div>
 
       {/* Alertas Críticos */}
