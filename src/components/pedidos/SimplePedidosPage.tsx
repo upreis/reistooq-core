@@ -33,7 +33,7 @@ import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
 import { buildIdUnico } from '@/utils/idUnico';
 
 import { PedidosAlerts } from './dashboard/PedidosAlerts';
-import SimpleDashboard from './dashboard/SimpleDashboard';
+import { IntelligentPedidosDashboard } from '@/features/pedidos/components/IntelligentPedidosDashboard';
 import PedidosFiltersMemo from './PedidosFiltersMemo';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
@@ -989,15 +989,13 @@ function SimplePedidosPage({ className }: Props) {
   // Render principal
   return (
     <div className={`space-y-6 p-6 ${className}`}>
-      {/* 📊 DASHBOARD SIMPLIFICADO E OTIMIZADO */}
-      <SimpleDashboard 
-        data={{
-          total: total || 0,
-          valorTotal: orders?.reduce((acc, order) => acc + (order.valor_total || 0), 0) || 0,
-          pedidosPendentes: orders?.filter(o => ['Aberto', 'Pago'].includes(o.situacao)).length || 0,
-          pedidosEntregues: orders?.filter(o => o.situacao === 'Entregue').length || 0
-        }}
-        isLoading={loading}
+      {/* 📊 DASHBOARD INTELIGENTE */}
+      <IntelligentPedidosDashboard 
+        orders={orders || []}
+        allOrders={orders || []}
+        loading={loading}
+        onRefresh={actions.refetch}
+        totalCount={total}
       />
       
       {/* Debug info */}
