@@ -101,11 +101,20 @@ export function IntelligentPedidosDashboard({
   // 📊 ANÁLISE COMPLETA E INTELIGENTE DOS DADOS
   const dashboardData = useMemo(() => {
     const workingOrders = allOrders?.length ? allOrders : orders;
-    console.log('🔍 [DASHBOARD] Debug - orders:', orders?.length || 0, 'allOrders:', allOrders?.length || 0);
-    console.log('🔍 [DASHBOARD] workingOrders:', workingOrders?.length || 0);
-    console.log('🔍 [DASHBOARD] Sample order:', workingOrders?.[0] || 'none');
+    console.log('🔍 [DASHBOARD] Analyzing orders:', {
+      ordersCount: orders?.length || 0,
+      allOrdersCount: allOrders?.length || 0,
+      workingOrdersCount: workingOrders?.length || 0,
+      sampleOrder: workingOrders?.[0] ? {
+        id: workingOrders[0].id,
+        valor_total: workingOrders[0].valor_total,
+        empresa: workingOrders[0].empresa,
+        situacao: workingOrders[0].situacao
+      } : 'none'
+    });
     
     if (!workingOrders?.length) {
+      console.log('🔍 [DASHBOARD] No orders to analyze, returning empty data');
       return {
         kpis: [],
         alerts: [],
@@ -155,19 +164,40 @@ export function IntelligentPedidosDashboard({
     const receitaPorDia = new Map<string, number>();
 
     workingOrders.forEach((order, index) => {
-      const valorProduto = Number(order.valor_total || 0);
-      const valorFrete = Number(order.valor_frete || 0);
+      // 🔧 Extração segura de valores financeiros de diferentes fontes
+      const valorProduto = Number(
+        order.valor_total || 
+        order.unified?.valor_total || 
+        order.raw?.total_amount || 
+        order.total_amount || 
+        0
+      );
+      
+      const valorFrete = Number(
+        order.valor_frete || 
+        order.shipping_cost || 
+        order.unified?.shipping_cost || 
+        order.raw?.shipping?.cost || 
+        0
+      );
       
       if (index === 0) {
-        console.log('🔍 [DASHBOARD] Processing first order:', {
+        console.log('🔍 [DASHBOARD] Processing first order financial data:', {
+          orderId: order.id,
           valorProduto,
           valorFrete,
           empresa: order.empresa,
           situacao: order.situacao,
-          order: order
+          rawData: {
+            valor_total: order.valor_total,
+            unified_valor_total: order.unified?.valor_total,
+            raw_total_amount: order.raw?.total_amount,
+            total_amount: order.total_amount
+          }
         });
       }
-      const valorDesconto = Number(order.valor_desconto || 0);
+      
+      const valorDesconto = Number(order.valor_desconto || order.discount || 0);
       const receitaFlexOrder = Number(order.receita_flex || order.receita_envio || 0);
       const taxaML = Number(order.taxa_marketplace || order.tarifas_venda || 0);
 

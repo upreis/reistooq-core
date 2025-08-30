@@ -1,40 +1,23 @@
 /**
- * 🛡️ PÁGINA PEDIDOS REFATORADA - FASES 1, 2 E 3 COMPLETAS
- * Sistema blindado com arquitetura unificada + Performance + UX
+ * 🛡️ PÁGINA PEDIDOS REFATORADA - PRIORIDADE 2 CONCLUÍDA
+ * Arquitetura modular com componentes menores e performance otimizada
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search } from 'lucide-react';
-import { BaixaEstoqueModal } from './BaixaEstoqueModal';
-import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
-import { Pedido } from '@/types/pedido';
-import { Checkbox } from '@/components/ui/checkbox';
-
-import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
-import { listPedidos } from '@/services/pedidos';
-import { mapApiStatusToLabel, getStatusBadgeVariant, mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { usePedidosManager } from '@/hooks/usePedidosManager.fixed';
-import { ExportModal } from './ExportModal';
-import { SavedFiltersManager } from './SavedFiltersManager';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
-import { buildIdUnico } from '@/utils/idUnico';
-
-import { PedidosAlerts } from './dashboard/PedidosAlerts';
-import { IntelligentPedidosDashboard } from './dashboard/IntelligentPedidosDashboard';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
-import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
+import { usePedidosData } from './hooks/usePedidosData';
+
+// Componentes refatorados
+import { PedidosHeader } from './sections/PedidosHeader';
+import { PedidosFiltersSection } from './sections/PedidosFiltersSection';
+import { PedidosTableSection } from './sections/PedidosTableSection';
+import { IntelligentPedidosDashboard } from './dashboard/IntelligentPedidosDashboard';
+import { BaixaEstoqueModal } from './BaixaEstoqueModal';
+import { ExportModal } from './ExportModal';
+
+// Types
+import { Row } from '@/services/orders';
 
 type Order = {
   id: string;
@@ -70,34 +53,24 @@ type Props = {
 };
 
 export default function SimplePedidosPage({ className }: Props) {
-  // Estado unificado dos pedidos
+  // 🎯 Hooks principais otimizados
   const pedidosManager = usePedidosManager();
-  const { filters, appliedFilters, state, actions, hasPendingChanges } = pedidosManager;
+  const { filters, appliedFilters, state, actions, hasPendingChanges, hasActiveFilters, totalPages } = pedidosManager;
   
-  // 🔄 Debug para verificar estado dos filtros
-  console.log('🔄 [RENDER] hasPendingChanges:', hasPendingChanges);
-  console.log('🔄 [RENDER] filters:', filters);
-  console.log('🔄 [RENDER] appliedFilters:', appliedFilters);
-  
-  // 🔧 Sistema de colunas unificado com persistência automatica
   const columnManager = useColumnManager();
-  const visibleColumns = columnManager.state.visibleColumns;
+  const pedidosData = usePedidosData();
   
-  // Estados locais para funcionalidades específicas
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
-  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
-  const [mappingData, setMappingData] = useState<Map<string, any>>(new Map());
-  const [showBaixaModal, setShowBaixaModal] = useState(false);
-  
-  // Hook para verificar pedidos já processados
-  const { pedidosProcessados, verificarPedidos, isLoading: loadingProcessados, isPedidoProcessado } = usePedidosProcessados();
+  // 🔄 Debug otimizado
+  console.log('🔄 [RENDER] Pedidos Page State:', {
+    hasPendingChanges,
+    hasActiveFilters,
+    ordersCount: state.orders.length,
+    currentPage: state.currentPage,
+    totalPages
+  });
   
   // Aliases para compatibilidade
-  const orders = state.orders;
-  const total = state.total;
-  const loading = state.loading;
-  const error = state.error;
+  const { orders, total, loading, error, currentPage, pageSize, hasNextPage, hasPrevPage, isRefreshing } = state;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
   // 🔧 CORREÇÃO CRÍTICA: Cálculo correto de totalPages

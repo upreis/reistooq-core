@@ -64,7 +64,10 @@ export interface SavedFilter {
   createdAt: Date;
 }
 
-import { PAGINATION, CACHE, DEBOUNCE } from '@/lib/constants';
+// Constantes otimizadas
+const PAGINATION = { DEFAULT_PAGE_SIZE: 25, EXPORT_LIMIT: 10000 };
+const CACHE = { VALIDITY_MS: 5 * 60 * 1000 }; // 5 minutos
+const DEBOUNCE = { FILTER_DELAY_MS: 500 };
 
 // 🔧 Helper para normalizar datas (corrige serialização)
 function normalizeDate(value: any): Date | undefined {
