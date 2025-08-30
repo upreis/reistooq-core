@@ -29,14 +29,24 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
     
     const parsed = JSON.parse(stored);
     
+    // Validar se os dados são válidos
+    if (!parsed || typeof parsed !== 'object') return {};
+    
     return {
-      visibleColumns: new Set(parsed.visibleColumns || []),
-      columnOrder: parsed.columnOrder || COLUMN_DEFINITIONS.map(col => col.key),
-      activeProfile: parsed.activeProfile || 'standard',
-      customProfiles: parsed.customProfiles || []
+      visibleColumns: new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns : []),
+      columnOrder: Array.isArray(parsed.columnOrder) 
+        ? parsed.columnOrder 
+        : COLUMN_DEFINITIONS.map(col => col.key),
+      activeProfile: typeof parsed.activeProfile === 'string' 
+        ? parsed.activeProfile 
+        : null,
+      customProfiles: Array.isArray(parsed.customProfiles) 
+        ? parsed.customProfiles 
+        : []
     };
   } catch (error) {
     console.warn('Erro ao carregar preferências de colunas:', error);
+    localStorage.removeItem(STORAGE_KEY); // Limpar dados corrompidos
     return {};
   }
 };
@@ -48,12 +58,14 @@ const savePreferences = (state: ColumnState) => {
       visibleColumns: Array.from(state.visibleColumns),
       columnOrder: state.columnOrder,
       activeProfile: state.activeProfile,
-      customProfiles: state.customProfiles
+      customProfiles: state.customProfiles,
+      timestamp: Date.now() // Para debug e versionamento
     };
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    console.log('✅ Preferências de colunas salvas:', toSave);
   } catch (error) {
-    console.warn('Erro ao salvar preferências de colunas:', error);
+    console.warn('❌ Erro ao salvar preferências de colunas:', error);
   }
 };
 
