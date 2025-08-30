@@ -33,8 +33,8 @@ import { usePedidosProcessados } from '@/hooks/usePedidosProcessados';
 import { buildIdUnico } from '@/utils/idUnico';
 
 import { PedidosAlerts } from './dashboard/PedidosAlerts';
-import { SimpleDashboard } from './dashboard/SimpleDashboard';
-import { PedidosFiltersMemo } from './PedidosFiltersMemo';
+import SimpleDashboard from './dashboard/SimpleDashboard';
+import PedidosFiltersMemo from './PedidosFiltersMemo';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 
@@ -71,7 +71,7 @@ type Props = {
   className?: string;
 };
 
-const SimplePedidosPage = memo(function SimplePedidosPage({ className }: Props) {
+function SimplePedidosPage({ className }: Props) {
   // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
   const { filters, appliedFilters, state, actions, hasPendingChanges, totalPages } = pedidosManager;
@@ -2229,6 +2229,6 @@ const SimplePedidosPage = memo(function SimplePedidosPage({ className }: Props) 
       />
     </div>
   );
-});
+}
 
-export default SimplePedidosPage;
+export default memo(SimplePedidosPage);

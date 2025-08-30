@@ -14,7 +14,7 @@ interface SimpleDashboardProps {
   isLoading?: boolean;
 }
 
-export const SimpleDashboard = memo(function SimpleDashboard({ 
+function SimpleDashboard({ 
   data, 
   isLoading = false 
 }: SimpleDashboardProps) {
@@ -82,5 +82,7 @@ export const SimpleDashboard = memo(function SimpleDashboard({
       })}
     </div>
   );
-});
+}
+
+export default memo(SimpleDashboard);
 

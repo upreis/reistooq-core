@@ -11,7 +11,7 @@ interface PedidosFiltersMemoProps {
   isLoading?: boolean;
 }
 
-export const PedidosFiltersMemo = memo(function PedidosFiltersMemo({
+function PedidosFiltersMemo({
   filters,
   onFiltersChange,
   onClearFilters,
@@ -35,5 +35,7 @@ export const PedidosFiltersMemo = memo(function PedidosFiltersMemo({
       hasPendingChanges={hasPendingChanges}
     />
   );
-});
+}
+
+export default memo(PedidosFiltersMemo);
 
