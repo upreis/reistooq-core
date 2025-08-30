@@ -114,16 +114,16 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'pronto_baixar': return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'sem_estoque': return <AlertTriangle className="h-4 w-4 text-red-600" />;
-      case 'sem_mapear': return <Clock className="h-4 w-4 text-orange-600" />;
-      default: return <AlertTriangle className="h-4 w-4 text-gray-600" />;
+      case 'pronto_baixar': return <CheckCircle className="h-4 w-4 text-success" />;
+      case 'sem_estoque': return <AlertTriangle className="h-4 w-4 text-destructive" />;
+      case 'sem_mapear': return <Clock className="h-4 w-4 text-warning" />;
+      default: return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pronto_baixar': return <Badge className="bg-green-100 text-green-800">Pronto</Badge>;
+      case 'pronto_baixar': return <Badge variant="default" className="bg-success/10 text-success border-success/20">Pronto</Badge>;
       case 'sem_estoque': return <Badge variant="destructive">Sem Estoque</Badge>;
       case 'sem_mapear': return <Badge variant="secondary">Sem Mapeamento</Badge>;
       default: return <Badge variant="outline">Indefinido</Badge>;
@@ -151,7 +151,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
             <div className="space-y-2">
               <div>Valor total selecionado: <span className="font-semibold">R$ {resumo.valorTotal.toFixed(2)}</span></div>
               {resumo.problemas > 0 && (
-                <div className="text-orange-600">
+                <div className="text-warning">
                   ⚠️ {resumo.problemas} pedido(s) com problemas (serão ignorados)
                 </div>
               )}
@@ -162,11 +162,11 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
         <div className="flex-1 space-y-4 overflow-hidden">
           {/* Status do Processamento */}
           {isProcessing && (
-            <Alert className="border-blue-200 bg-blue-50">
-              <Zap className="h-4 w-4 text-blue-600 animate-pulse" />
+            <Alert className="border-info/20 bg-info/10">
+              <Zap className="h-4 w-4 text-info animate-pulse" />
               <AlertDescription className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                <span className="text-blue-800 font-medium">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-info"></div>
+                <span className="text-info font-medium">
                   Processando {resumo.prontos} pedido(s)...
                 </span>
               </AlertDescription>
@@ -175,11 +175,11 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
 
           {/* Sucesso */}
           {processed && !isProcessing && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+            <Alert className="border-success/20 bg-success/10">
+              <CheckCircle className="h-4 w-4 text-success" />
               <AlertDescription>
-                <div className="font-medium text-green-800">✅ Baixa processada com sucesso!</div>
-                <div className="text-sm text-green-700 mt-1">
+                <div className="font-medium text-success">✅ Baixa processada com sucesso!</div>
+                <div className="text-sm text-success/80 mt-1">
                   {resumo.prontos} pedido(s) processados. Dados salvos no histórico.
                 </div>
               </AlertDescription>
@@ -191,7 +191,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
             <h4 className="font-medium mb-2 flex items-center gap-2">
               Pedidos a Processar
               {resumo.problemas > 0 && (
-                <Badge variant="outline" className="text-orange-600">
+                <Badge variant="outline" className="text-warning border-warning/20">
                   {resumo.problemas} com problemas
                 </Badge>
               )}
@@ -213,7 +213,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
                   {pedidosAnalise.map((pedido) => (
                     <TableRow 
                       key={pedido.id}
-                      className={pedido.temEstoque && pedido.temMapeamento ? 'bg-green-50' : 'bg-orange-50'}
+                      className={pedido.temEstoque && pedido.temMapeamento ? 'bg-success/5' : 'bg-warning/5'}
                     >
                       <TableCell>
                         <div className="flex items-center gap-1">
@@ -233,11 +233,11 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
                       <TableCell>R$ {(pedido.valor_total || 0).toFixed(2)}</TableCell>
                       <TableCell>
                         {pedido.problema ? (
-                          <Badge variant="outline" className="text-orange-600 text-xs">
+                          <Badge variant="outline" className="text-warning border-warning/20 text-xs">
                             {pedido.problema}
                           </Badge>
                         ) : (
-                          <Badge className="bg-green-100 text-green-800 text-xs">OK</Badge>
+                          <Badge variant="default" className="bg-success/10 text-success border-success/20 text-xs">OK</Badge>
                         )}
                       </TableCell>
                     </TableRow>
@@ -251,11 +251,11 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
           <div className="flex justify-between items-center pt-2 border-t">
             <div className="text-sm text-muted-foreground">
               {resumo.prontos > 0 ? (
-                <span className="text-green-600 font-medium">
+                <span className="text-success font-medium">
                   ✅ {resumo.prontos} pedido(s) serão processados
                 </span>
               ) : (
-                <span className="text-red-600 font-medium">
+                <span className="text-destructive font-medium">
                   ❌ Nenhum pedido pronto para baixa
                 </span>
               )}
@@ -273,11 +273,11 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
                 <Button
                   onClick={handleProcessar}
                   disabled={isProcessing || resumo.prontos === 0}
-                  className={resumo.prontos > 0 ? 'bg-green-600 hover:bg-green-700' : ''}
+                  className={resumo.prontos > 0 ? 'bg-success hover:bg-success/90' : ''}
                 >
                   {isProcessing ? (
                     <div className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
                       Processando...
                     </div>
                   ) : (
@@ -290,7 +290,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
                   onClick={() => {
                     window.location.href = '/historico';
                   }}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-info hover:bg-info/90"
                 >
                   Ver Histórico
                 </Button>
