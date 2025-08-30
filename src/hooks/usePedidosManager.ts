@@ -307,26 +307,50 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de data - FORTALECIDO com validação robusta
+      // Filtro de data - CORRIGIDO com validação robusta e normalização
       if (appliedFilters.dataInicio || appliedFilters.dataFim) {
-        const orderDate = new Date(order.data_pedido || order.date_created);
+        // Normalizar a data do pedido
+        let orderDate: Date;
+        const rawOrderDate = order.data_pedido || order.date_created;
         
-        // Validar se a data do pedido é válida
-        if (isNaN(orderDate.getTime())) {
-          console.warn('⚠️ Data inválida no pedido:', order.data_pedido, order.date_created);
+        if (rawOrderDate instanceof Date) {
+          orderDate = rawOrderDate;
+        } else if (typeof rawOrderDate === 'string') {
+          orderDate = new Date(rawOrderDate);
+        } else {
+          console.warn('⚠️ Data do pedido inválida:', rawOrderDate);
           return false; // Excluir pedidos com data inválida
         }
         
+        // Validar se a data do pedido é válida após normalização
+        if (isNaN(orderDate.getTime())) {
+          console.warn('⚠️ Data do pedido não pôde ser convertida:', rawOrderDate);
+          return false;
+        }
+        
+        // Normalizar data de início e comparar
         if (appliedFilters.dataInicio) {
           const startDate = normalizeDate(appliedFilters.dataInicio);
-          if (startDate && !isNaN(startDate.getTime()) && orderDate < startDate) {
-            return false;
+          if (startDate && !isNaN(startDate.getTime())) {
+            // Zerar horário para comparação apenas de datas
+            const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+            const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            if (orderDateOnly < startDateOnly) {
+              return false;
+            }
           }
         }
+        
+        // Normalizar data fim e comparar
         if (appliedFilters.dataFim) {
           const endDate = normalizeDate(appliedFilters.dataFim);
-          if (endDate && !isNaN(endDate.getTime()) && orderDate > endDate) {
-            return false;
+          if (endDate && !isNaN(endDate.getTime())) {
+            // Zerar horário para comparação apenas de datas
+            const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+            const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            if (orderDateOnly > endDateOnly) {
+              return false;
+            }
           }
         }
       }
