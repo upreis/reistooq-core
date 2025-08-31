@@ -47,10 +47,19 @@ export function usePedidosMappings(options: UsePedidosMappingsOptions = {}): Use
   };
 
   /**
-   * Processa mapeamentos automáticos para uma lista de pedidos
+   * 🔧 CORRIGIDO: Processa mapeamentos sem reprocessar e sem logs desnecessários
    */
   const processOrdersMappings = useCallback(async (orders: any[]) => {
     if (!enabled || !orders.length) return;
+
+    // ✅ ANTI-SPAM: Verificar se a lista é a mesma da última execução
+    const orderIds = orders.map(o => o.id).sort().join(',');
+    const lastProcessedKey = `lastProcessed_${orderIds}`;
+    
+    // Se já processamos esta exata lista recentemente, não reprocessar
+    if (processedOrdersRef.current.has(lastProcessedKey)) {
+      return;
+    }
 
     console.log('🧠 [usePedidosMappings] Iniciando processamento de mapeamentos para', orders.length, 'pedidos');
     setIsProcessingMappings(true);
@@ -60,75 +69,84 @@ export function usePedidosMappings(options: UsePedidosMappingsOptions = {}): Use
       let processedCount = 0;
 
       for (const order of orders) {
-        // Evitar reprocessar pedidos já processados nesta sessão
+        // Evitar reprocessar pedidos individuais já processados
         if (processedOrdersRef.current.has(order.id)) {
           continue;
         }
 
         try {
-          // Extrair SKUs do pedido
+          // Extrair SKUs do pedido com fallbacks múltiplos
           const skus = order.order_items?.map((item: any) => 
-            item.sku || item.item?.sku || item.item?.seller_sku
+            item.sku || item.item?.sku || item.item?.seller_sku || item.seller_sku
           ).filter(Boolean) || [];
 
           if (!skus.length) {
-            console.warn(`⚠️ Pedido ${order.id} sem SKUs válidos`);
-            continue;
+            // Tentar extrair dos unified ou raw
+            const unifiedSkus = order.unified?.order_items?.map((item: any) => 
+              item.sku || item.item?.sku || item.seller_sku
+            ).filter(Boolean) || [];
+            
+            const rawSkus = order.raw?.order_items?.map((item: any) => 
+              item.sku || item.item?.sku || item.seller_sku
+            ).filter(Boolean) || [];
+
+            if (!unifiedSkus.length && !rawSkus.length) {
+              // Marcar como processado para evitar retentar
+              processedOrdersRef.current.add(order.id);
+              continue;
+            }
+            skus.push(...unifiedSkus, ...rawSkus);
           }
 
-          // Processar mapeamento automático via MapeamentoService
-          const skusPedido = skus;
-          const quantidadeVendida = order.order_items?.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0) || 1;
+          // Processar apenas uma vez por pedido
+          try {
+            const verificacaoResult = await MapeamentoService.verificarMapeamentos(skus);
+            const verificacao = verificacaoResult.find((v: any) => v.skuPedido === skus[0]);
 
-          // Simular processamento de mapeamento (adaptar conforme MapeamentoService real)
-          const verificacaoResult = await MapeamentoService.verificarMapeamentos(skusPedido);
-          const verificacao = verificacaoResult.find((v: any) => v.skuPedido === skusPedido[0]);
+            const resultado = {
+              sucesso: true,
+              mapeamento: {
+                skuEstoque: verificacao?.skuEstoque || null,
+                skuKit: verificacao?.skuKit || skus[0],
+                quantidade: verificacao?.quantidadeKit || 1,
+                statusBaixa: verificacao?.temMapeamento ? 'pronto_baixar' : 'sem_mapear'
+              }
+            };
 
-          const resultado = {
-            sucesso: true,
-            mapeamento: {
-              skuEstoque: verificacao?.skuEstoque || null,
-              skuKit: verificacao?.skuKit || skusPedido[0],
-              quantidade: verificacao?.quantidadeKit || 1,
-              statusBaixa: verificacao?.temMapeamento ? 'pronto_baixar' : 'sem_mapear'
+            if (resultado.sucesso && resultado.mapeamento) {
+              const mapping = resultado.mapeamento;
+              
+              // Salvar mapeamento processado (sem log excessivo)
+              newMappings.set(order.id, {
+                skuEstoque: mapping.skuEstoque || null,
+                skuKit: mapping.skuKit || null,
+                quantidade: mapping.quantidade || 0,
+                statusBaixa: mapping.statusBaixa || 'sem_mapear',
+                processadoEm: new Date().toISOString(),
+                skusOriginais: skus
+              });
+
+              processedCount++;
+              processedOrdersRef.current.add(order.id);
             }
-          };
-
-          if (resultado.sucesso && resultado.mapeamento) {
-            const mapping = resultado.mapeamento;
-            
-            // Log do resultado
-            if (mapping.skuEstoque) {
-              console.log(`✅ Pedido ${order.id} - Status: ${mapping.statusBaixa} (SKU: ${skus[0]} → ${mapping.skuEstoque})`);
-            } else {
-              console.warn(`⚠️ Pedido ${order.id} sem mapeamento completo - SKUs: ${skus.join(', ')}`);
-            }
-
-            // Salvar mapeamento processado
-            newMappings.set(order.id, {
-              skuEstoque: mapping.skuEstoque || null,
-              skuKit: mapping.skuKit || null,
-              quantidade: mapping.quantidade || 0,
-              statusBaixa: mapping.statusBaixa || 'sem_mapear',
-              processadoEm: new Date().toISOString(),
-              skusOriginais: skus
-            });
-
-            // Mapeamento salvo - log removido para reduzir spam
-
-             processedCount++;
-             processedOrdersRef.current.add(order.id);
-           } else {
-             console.warn(`❌ Erro ao processar mapeamento para pedido ${order.id}: sem mapeamento válido`);
-           }
+          } catch (mappingError) {
+            // Erro silencioso no mapeamento individual
+            processedOrdersRef.current.add(order.id);
+          }
         } catch (error) {
-          console.error(`💥 Erro crítico ao processar pedido ${order.id}:`, error);
+          // Marcar como processado mesmo com erro para evitar loop
+          processedOrdersRef.current.add(order.id);
         }
       }
 
-      // Atualizar estado
-      setMappingData(newMappings);
-      onMappingUpdate?.(newMappings);
+      // Marcar lista como processada
+      processedOrdersRef.current.add(lastProcessedKey);
+
+      // Atualizar estado apenas se houve mudanças
+      if (processedCount > 0) {
+        setMappingData(newMappings);
+        onMappingUpdate?.(newMappings);
+      }
 
       console.log(`🧠 INTELIGÊNCIA CONCLUÍDA: ${processedCount} pedidos processados`);
       

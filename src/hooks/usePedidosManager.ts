@@ -148,7 +148,10 @@ export function usePedidosManager(initialAccountId?: string) {
         
         if (mappedStatuses.length > 0) {
           params.shipping_status = mappedStatuses.length === 1 ? mappedStatuses[0] : mappedStatuses;
-          console.log('🎯 Status enviados para API:', mappedStatuses, 'originais:', situacoes);
+          // ✅ Log apenas quando necessário para debug
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🎯 Status enviados para API:', mappedStatuses, 'originais:', situacoes);
+          }
         }
       }
     }
@@ -158,14 +161,18 @@ export function usePedidosManager(initialAccountId?: string) {
       const d = normalizeDate(filters.dataInicio);
       if (d && !isNaN(d.getTime())) {
         params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        console.log('📅 Data início enviada para API:', params.date_from);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📅 Data início enviada para API:', params.date_from);
+        }
       }
     }
     if (filters.dataFim) {
       const d = normalizeDate(filters.dataFim);
       if (d && !isNaN(d.getTime())) {
         params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        console.log('📅 Data fim enviada para API:', params.date_to);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📅 Data fim enviada para API:', params.date_to);
+        }
       }
     }
 
@@ -309,7 +316,9 @@ export function usePedidosManager(initialAccountId?: string) {
         );
         
         if (!statusMatches) {
-          console.log('🚫 Pedido filtrado por status:', order.id, 'status encontrados:', orderStatuses, 'filtros:', selectedStatuses);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🚫 Pedido filtrado por status:', order.id, 'status encontrados:', orderStatuses, 'filtros:', selectedStatuses);
+          }
           return false;
         }
       }
@@ -325,7 +334,9 @@ export function usePedidosManager(initialAccountId?: string) {
         ].filter(Boolean);
         
         if (!possibleDates.length) {
-          console.log('⚠️ Pedido sem data válida para filtro:', order.id);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('⚠️ Pedido sem data válida para filtro:', order.id);
+          }
           return false; // Excluir pedidos sem data válida
         }
         
@@ -341,7 +352,9 @@ export function usePedidosManager(initialAccountId?: string) {
           if (startDate) {
             const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
             if (orderDateOnly < startDateOnly) {
-              console.log('📅 Pedido filtrado por data início:', order.id, 'data pedido:', orderDateOnly, 'filtro:', startDateOnly);
+              if (process.env.NODE_ENV === 'development') {
+                console.log('📅 Pedido filtrado por data início:', order.id, 'data pedido:', orderDateOnly, 'filtro:', startDateOnly);
+              }
               return false;
             }
           }
@@ -353,7 +366,9 @@ export function usePedidosManager(initialAccountId?: string) {
           if (endDate) {
             const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
             if (orderDateOnly > endDateOnly) {
-              console.log('📅 Pedido filtrado por data fim:', order.id, 'data pedido:', orderDateOnly, 'filtro:', endDateOnly);
+              if (process.env.NODE_ENV === 'development') {
+                console.log('📅 Pedido filtrado por data fim:', order.id, 'data pedido:', orderDateOnly, 'filtro:', endDateOnly);
+              }
               return false;
             }
           }
@@ -744,11 +759,27 @@ export function usePedidosManager(initialAccountId?: string) {
     }
   }, [integrationAccountId]);
 
-  // ✅ Paginação: carregar automaticamente ao mudar currentPage ou pageSize
+  // ✅ CORRIGIDO: Paginação independente dos filtros debouncados
   useEffect(() => {
     if (!integrationAccountId) return;
-    loadOrders(true);
-  }, [currentPage, pageSize, integrationAccountId]);
+    // ⚠️ CRÍTICO: Não incluir debouncedFilters aqui senão vai executar múltiplas vezes
+    if (currentPage > 1 || pageSize !== PAGINATION.DEFAULT_PAGE_SIZE) {
+      loadOrders(true);
+    }
+  }, [currentPage, pageSize, integrationAccountId, loadOrders]);
+
+  // 🚀 NOVO: Effect específico para debouncedFilters (evita múltiplas execuções)
+  useEffect(() => {
+    if (!integrationAccountId) return;
+    
+    // Quando filtros mudarem, voltar para página 1 e carregar
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      // Se já está na página 1, carregar diretamente
+      loadOrders(true);
+    }
+  }, [debouncedFilters, integrationAccountId]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
