@@ -34,9 +34,21 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
         const visibleSet = typeof parsed.visibleColumns === 'object' && parsed.visibleColumns.constructor === Object
           ? new Set(Object.keys(parsed.visibleColumns).filter(key => parsed.visibleColumns[key]) as string[])
           : new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns.map(String) : []);
-          
+        
+        // 🔁 Remapear chaves legadas para as atuais
+        const aliasMap: Record<string, string> = {
+          cidade: 'endereco_cidade',
+          uf: 'endereco_uf',
+          rua: 'endereco_rua',
+          bairro: 'endereco_bairro',
+          cep: 'endereco_cep',
+          numero: 'endereco_numero'
+        };
+        const remapped = new Set<string>();
+        (visibleSet as Set<string>).forEach((k) => remapped.add(aliasMap[k as string] ?? (k as string)));
+        
         return {
-          visibleColumns: visibleSet as Set<string>,
+          visibleColumns: remapped,
           columnOrder: COLUMN_DEFINITIONS.map(col => col.key),
           activeProfile: null,
           customProfiles: []
@@ -53,8 +65,21 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
     // Validar se os dados são válidos
     if (!parsed || typeof parsed !== 'object') return {};
     
+    const rawSet = new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns.map(String) : []);
+    // 🔁 Remapear chaves legadas
+    const aliasMap: Record<string, string> = {
+      cidade: 'endereco_cidade',
+      uf: 'endereco_uf',
+      rua: 'endereco_rua',
+      bairro: 'endereco_bairro',
+      cep: 'endereco_cep',
+      numero: 'endereco_numero'
+    };
+    const remapped = new Set<string>();
+    (rawSet as Set<string>).forEach((k) => remapped.add(aliasMap[k as string] ?? (k as string)));
+    
     return {
-      visibleColumns: new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns.map(String) : []),
+      visibleColumns: remapped,
       columnOrder: Array.isArray(parsed.columnOrder) 
         ? parsed.columnOrder 
         : COLUMN_DEFINITIONS.map(col => col.key),

@@ -259,7 +259,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'frete_pago_cliente':
                       return <span>{formatMoney(order.frete_pago_cliente || order.payments?.[0]?.shipping_cost || order.shipping?.costs?.receiver?.cost || order.valor_frete || 0)}</span>;
                     case 'receita_flex':
-                      return <span>{formatMoney(order.receita_flex || 0)}</span>;
+                      return <span>{formatMoney(order.receita_flex || getReceitaPorEnvio(order))}</span>;
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
                     case 'coupon_amount':
@@ -293,10 +293,20 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span className="text-xs">{translateShippingMode(order.shipping_mode || order.forma_entrega) || '-'}</span>;
                     case 'shipping_method':
                       return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.shipping?.shipping_method?.name) || '-'}</span>;
+                    case 'cidade':
                     case 'endereco_cidade':
-                      return <span>{order.endereco_cidade || order.cidade || order.shipping?.receiver_address?.city || '-'}</span>;
+                      return <span>{order.endereco_cidade || order.cidade || order.shipping?.receiver_address?.city?.name || order.shipping?.receiver_address?.city || '-'}</span>;
+                    case 'uf':
                     case 'endereco_uf':
-                      return <span>{order.endereco_uf || order.uf || order.shipping?.receiver_address?.state || '-'}</span>;
+                      return <span>{order.endereco_uf || order.uf || order.shipping?.receiver_address?.state?.id || order.shipping?.receiver_address?.state?.name || order.shipping?.receiver_address?.state || '-'}</span>;
+                    case 'endereco_rua':
+                      return <span>{order.endereco_rua || order.shipping?.receiver_address?.street_name || order.shipping?.receiver_address?.address_line || '-'}</span>;
+                    case 'endereco_numero':
+                      return <span>{order.endereco_numero || order.shipping?.receiver_address?.street_number || '-'}</span>;
+                    case 'endereco_bairro':
+                      return <span>{order.endereco_bairro || order.shipping?.receiver_address?.neighborhood?.name || order.shipping?.receiver_address?.neighborhood || '-'}</span>;
+                    case 'endereco_cep':
+                      return <span>{order.endereco_cep || order.shipping?.receiver_address?.zip_code || order.shipping?.receiver_address?.zip || '-'}</span>;
                     case 'mapeamento':
                       return (
                         mapping ? (
