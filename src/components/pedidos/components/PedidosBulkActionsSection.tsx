@@ -34,7 +34,7 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
   onBaixaConcluida,
   className
 }) => {
-  console.log('🔧 [PedidosBulkActionsSection] Renderizando ações em massa');
+  // PedidosBulkActionsSection rendering
 
   // Contadores de seleção
   const selectionStats = useMemo(() => {

@@ -36,7 +36,7 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
   loading = false,
   className
 }) => {
-  console.log('🎯 [PedidosFiltersSection] Renderizando seção de filtros');
+  // PedidosFiltersSection rendering
 
   // Contagem de filtros ativos memoizada
   const activeFiltersCount = useMemo(() => {

@@ -62,7 +62,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   isPedidoProcessado,
   className
 }) => {
-  console.log('🎯 [PedidosTableSection] Renderizando tabela de pedidos');
+  // PedidosTableSection rendering
 
   // Função para lidar com seleção de pedidos
   const handleSelectOrder = useCallback((orderId: string) => {

@@ -114,13 +114,7 @@ export function usePedidosMappings(options: UsePedidosMappingsOptions = {}): Use
               skusOriginais: skus
             });
 
-            // Debug log
-            console.log('📋 [DEBUG] Mapeamento salvo para pedido', order.id, ':', {
-              skuEstoque: mapping.skuEstoque,
-              skuKit: mapping.skuKit,
-              quantidade: mapping.quantidade,
-              statusBaixa: mapping.statusBaixa
-            });
+            // Mapeamento salvo - log removido para reduzir spam
 
              processedCount++;
              processedOrdersRef.current.add(order.id);

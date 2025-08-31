@@ -706,12 +706,7 @@ function SimplePedidosPage({ className }: Props) {
 
   // 💾 Função para salvar contas selecionadas junto com filtros
   const handleApplyFilters = () => {
-    console.log('🔄 [DEBUG] handleApplyFilters chamado');
-    console.log('🔄 [DEBUG] hasPendingChanges:', hasPendingChanges);
-    console.log('🔄 [DEBUG] selectedAccounts:', selectedAccounts);
-    console.log('🔄 [DEBUG] integrationAccountId:', integrationAccountId);
-    console.log('🔄 [DEBUG] filters (pending):', filters);
-    console.log('🔄 [DEBUG] filters (current):', filters);
+    // Aplicando filtros
     
     // Salvar contas selecionadas no localStorage antes de aplicar filtros
     try {
@@ -719,13 +714,13 @@ function SimplePedidosPage({ className }: Props) {
       const lastSearch = saved ? JSON.parse(saved) : {};
       lastSearch.selectedAccounts = selectedAccounts;
       localStorage.setItem('pedidos:lastSearch', JSON.stringify(lastSearch));
-      console.log('💾 [DEBUG] Contas salvas no localStorage');
+      // Contas salvas no localStorage
     } catch (error) {
       console.warn('⚠️ Erro ao salvar contas selecionadas:', error);
     }
     
     // Aplicar filtros normalmente
-    console.log('🔄 [DEBUG] Chamando actions.applyFilters...');
+    // Chamando aplicação de filtros
     actions.applyFilters();
   };
 
