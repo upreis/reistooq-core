@@ -19,6 +19,7 @@ export interface PedidosFilters {
   uf?: string;
   valorMin?: number;
   valorMax?: number;
+  contasML?: string[];  // ✅ NOVO: Filtro de contas ML
 }
 
 export interface PedidosManagerState {
@@ -185,6 +186,11 @@ export function usePedidosManager(initialAccountId?: string) {
     // 🏢 CRÍTICO: Garantir integration_account_id sempre presente
     if (integrationAccountId) {
       params.integration_account_id = integrationAccountId;
+    }
+
+    // ✅ NOVO: Filtro de contas ML
+    if (filters.contasML && filters.contasML.length > 0) {
+      params.integration_account_ids = filters.contasML; // Array de IDs de contas
     }
 
     console.log('🔧 [AUDITORIA] Parâmetros construídos:', params);

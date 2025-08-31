@@ -23,6 +23,7 @@ interface PedidosFiltersSectionProps {
   columnManager?: any;
   loading?: boolean;
   className?: string;
+  contasML?: Array<{ id: string; name: string; nickname?: string; active?: boolean; }>; // ✅ NOVO: Lista de contas ML
 }
 
 export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
@@ -34,7 +35,8 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
   hasPendingChanges,
   columnManager,
   loading = false,
-  className
+  className,
+  contasML = [] // ✅ NOVO: Contas ML
 }) => {
   // PedidosFiltersSection rendering
 
@@ -49,6 +51,7 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
     if (filters.uf) count++;
     if (filters.valorMin) count++;
     if (filters.valorMax) count++;
+    if (filters.contasML?.length > 0) count++; // ✅ NOVO: Contas ML
     return count;
   }, [filters]);
 
@@ -100,6 +103,7 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
           onClearFilters={onClearFilters || actions?.clearFilters}
           hasPendingChanges={hasPendingChanges}
           isLoading={loading}
+          contasML={contasML} // ✅ NOVO: Passar contas ML
         />
         
         {/* Gerenciador de Filtros Salvos */}
@@ -143,6 +147,14 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
             )}
             {filters.valorMax && (
               <Badge variant="outline">Valor máx: R$ {filters.valorMax}</Badge>
+            )}
+            {filters.contasML?.length > 0 && (
+              <Badge variant="outline">
+                Contas ML: {filters.contasML.length === 1 
+                  ? (contasML.find(c => c.id === filters.contasML[0])?.nickname || contasML.find(c => c.id === filters.contasML[0])?.name || filters.contasML[0])
+                  : `${filters.contasML.length} selecionadas`
+                }
+              </Badge>
             )}
           </div>
         </div>

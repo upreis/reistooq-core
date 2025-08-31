@@ -12,6 +12,7 @@ export const CACHE = {
 export const DEBOUNCE = {
   FILTER_DELAY_MS: 300, // ✅ REDUZIDO: 300ms para melhor UX
   SEARCH_DELAY_MS: 150, // ✅ REDUZIDO: 150ms para busca mais rápida
+  MAPPINGS_DELAY_MS: 800, // ✅ NOVO: Debounce para mapeamentos
 } as const;
 
 export const STATUS_COLORS = {

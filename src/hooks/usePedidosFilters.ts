@@ -11,14 +11,26 @@ const loadFiltersFromStorage = (): PedidosFiltersState => {
     
     const parsed = JSON.parse(stored);
     
-    // ✅ SIMPLIFICADO: Converter strings de data de volta para objetos Date
+  // ✅ CORRIGIDO: Converter strings de data de volta para objetos Date com timezone correto
     if (parsed.dataInicio) {
-      const date = new Date(parsed.dataInicio);
-      parsed.dataInicio = isNaN(date.getTime()) ? undefined : date;
+      if (typeof parsed.dataInicio === 'string' && parsed.dataInicio.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Data no formato YYYY-MM-DD, criar sem timezone
+        const [year, month, day] = parsed.dataInicio.split('-').map(Number);
+        parsed.dataInicio = new Date(year, month - 1, day);
+      } else {
+        const date = new Date(parsed.dataInicio);
+        parsed.dataInicio = isNaN(date.getTime()) ? undefined : date;
+      }
     }
     if (parsed.dataFim) {
-      const date = new Date(parsed.dataFim);
-      parsed.dataFim = isNaN(date.getTime()) ? undefined : date;
+      if (typeof parsed.dataFim === 'string' && parsed.dataFim.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Data no formato YYYY-MM-DD, criar sem timezone
+        const [year, month, day] = parsed.dataFim.split('-').map(Number);
+        parsed.dataFim = new Date(year, month - 1, day);
+      } else {
+        const date = new Date(parsed.dataFim);
+        parsed.dataFim = isNaN(date.getTime()) ? undefined : date;
+      }
     }
     
     return parsed;
@@ -63,11 +75,15 @@ export function usePedidosFilters() {
     }
 
     if (filters.dataInicio) {
-      params.dataInicio = filters.dataInicio.toISOString().split('T')[0];
+      // ✅ CORRIGIDO: Formatar data sem problemas de timezone
+      const d = filters.dataInicio;
+      params.dataInicio = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
     if (filters.dataFim) {
-      params.dataFim = filters.dataFim.toISOString().split('T')[0];
+      // ✅ CORRIGIDO: Formatar data sem problemas de timezone
+      const d = filters.dataFim;
+      params.dataFim = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
     if (filters.cidade) {
@@ -84,6 +100,10 @@ export function usePedidosFilters() {
 
     if (filters.valorMax) {
       params.valorMax = filters.valorMax;
+    }
+
+    if (filters.contasML && filters.contasML.length > 0) {
+      params.contasML = filters.contasML; // ✅ Array de contas ML
     }
 
     return params;

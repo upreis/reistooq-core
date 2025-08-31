@@ -9,6 +9,7 @@ interface PedidosFiltersMemoProps {
   onClearFilters: () => void;
   hasPendingChanges: boolean;
   isLoading?: boolean;
+  contasML?: Array<{ id: string; name: string; nickname?: string; active?: boolean; }>; // ✅ NOVO: Lista de contas ML
 }
 
 function PedidosFiltersMemo({
@@ -16,7 +17,8 @@ function PedidosFiltersMemo({
   onFiltersChange,
   onClearFilters,
   hasPendingChanges,
-  isLoading = false
+  isLoading = false,
+  contasML = [] // ✅ NOVO: Contas ML
 }: PedidosFiltersMemoProps) {
   // ✅ APLICAÇÃO AUTOMÁTICA: Debounce apenas search, outros filtros aplicam imediatamente
   const debouncedSearch = useDebounce(filters.search || '', DEBOUNCE.SEARCH_DELAY_MS);
@@ -33,6 +35,7 @@ function PedidosFiltersMemo({
       onFiltersChange={onFiltersChange}
       onClearFilters={onClearFilters}
       hasPendingChanges={hasPendingChanges}
+      contasML={contasML} // ✅ NOVO: Passar contas ML
     />
   );
 }
