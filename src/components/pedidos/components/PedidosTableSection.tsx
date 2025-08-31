@@ -220,8 +220,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                 {visibleColumns.has('valor_liquido_vendedor') && <th className="p-3">Valor Líquido</th>}
                 {visibleColumns.has('payment_method') && <th className="p-3">Pagamento</th>}
                 {visibleColumns.has('shipping_mode') && <th className="p-3">Modo Envio</th>}
-                {visibleColumns.has('cidade') && <th className="p-3">Cidade</th>}
-                {visibleColumns.has('uf') && <th className="p-3">UF</th>}
+                {(visibleColumns.has('cidade') || visibleColumns.has('endereco_cidade')) && <th className="p-3">Cidade</th>}
+                {(visibleColumns.has('uf') || visibleColumns.has('endereco_uf')) && <th className="p-3">UF</th>}
                 {visibleColumns.has('mapeamento') && <th className="p-3">Mapeamento</th>}
                 {visibleColumns.has('sku_estoque') && <th className="p-3">SKU Estoque</th>}
                 {visibleColumns.has('sku_kit') && <th className="p-3">SKU KIT</th>}
@@ -423,12 +423,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     )}
 
                     {/* Cidade */}
-                    {visibleColumns.has('cidade') && (
+                    {(visibleColumns.has('cidade') || visibleColumns.has('endereco_cidade')) && (
                       <td className="p-3">{order.cidade || order.shipping?.receiver_address?.city || '-'}</td>
                     )}
 
                     {/* UF */}
-                    {visibleColumns.has('uf') && (
+                    {(visibleColumns.has('uf') || visibleColumns.has('endereco_uf')) && (
                       <td className="p-3">{order.uf || order.shipping?.receiver_address?.state || '-'}</td>
                     )}
 

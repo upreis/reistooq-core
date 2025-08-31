@@ -890,7 +890,7 @@ function SimplePedidosPage({ className }: Props) {
         />
 
         {/* 🔧 Sistema de colunas unificado */}
-        <ColumnManager />
+        <ColumnManager manager={columnManager} />
 
         {selectedOrders.size > 0 && (
           <BaixaEstoqueModal 

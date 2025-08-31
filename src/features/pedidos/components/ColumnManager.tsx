@@ -36,11 +36,24 @@ import { CATEGORY_LABELS } from '../config/columns.config';
 import { ColumnDefinition } from '../types/columns.types';
 
 interface ColumnManagerProps {
+  manager?: import('../types/columns.types').UseColumnManagerReturn;
+  state?: any;
+  actions?: any;
+  definitions?: any;
+  visibleDefinitions?: any;
+  profiles?: any;
   onColumnsChange?: (visibleColumnKeys: string[]) => void;
+  trigger?: React.ReactNode;
 }
 
-export function ColumnManager({ onColumnsChange }: ColumnManagerProps) {
-  const { state, actions, definitions, visibleDefinitions, profiles } = useColumnManager();
+export function ColumnManager(props: ColumnManagerProps) {
+  const { manager, state: extState, actions: extActions, definitions: extDefs, visibleDefinitions: extVisible, profiles: extProfiles, onColumnsChange, trigger } = props;
+  const internal = useColumnManager();
+  const used = manager ?? (extState && extActions 
+    ? { state: extState, actions: extActions, definitions: extDefs || internal.definitions, visibleDefinitions: extVisible || internal.visibleDefinitions, profiles: extProfiles || internal.profiles }
+    : internal
+  );
+  const { state, actions, definitions, visibleDefinitions, profiles } = used;
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -48,7 +61,7 @@ export function ColumnManager({ onColumnsChange }: ColumnManagerProps) {
   // Notificar mudanças para componente pai (compatibilidade)
   useEffect(() => {
     if (onColumnsChange) {
-      onColumnsChange(Array.from(state.visibleColumns));
+      onColumnsChange(Array.from(state.visibleColumns) as string[]);
     }
   }, [state.visibleColumns, onColumnsChange]);
 
@@ -98,7 +111,7 @@ export function ColumnManager({ onColumnsChange }: ColumnManagerProps) {
       } else {
         newVisible.add(key);
       }
-      onColumnsChange(Array.from(newVisible));
+      onColumnsChange(Array.from(newVisible) as string[]);
     }
   };
 
@@ -125,13 +138,15 @@ export function ColumnManager({ onColumnsChange }: ColumnManagerProps) {
     <TooltipProvider>
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Settings className="h-4 w-4" />
-            Colunas ({visibleCount})
-          </Button>
+          {trigger ?? (
+            <Button variant="outline" size="sm" className="gap-2">
+              <Settings className="h-4 w-4" />
+              Colunas ({visibleCount})
+            </Button>
+          )}
         </SheetTrigger>
         
-        <SheetContent className="w-[600px] sm:w-[700px] flex flex-col">
+        <SheetContent className="w-[600px] sm:w-[700px] flex flex-col max-h-[90vh] h-screen sm:h-auto z-[60]">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -143,7 +158,7 @@ export function ColumnManager({ onColumnsChange }: ColumnManagerProps) {
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 flex flex-col gap-4 mt-4">
+          <div className="flex-1 flex flex-col gap-4 mt-4 min-h-0">
             {/* Perfis Pré-definidos */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Perfis</label>
@@ -154,7 +169,7 @@ export function ColumnManager({ onColumnsChange }: ColumnManagerProps) {
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um perfil" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[70] bg-background shadow-lg">
                   {profiles.map(profile => (
                     <SelectItem key={profile.id} value={profile.id}>
                       <div className="flex items-center gap-2">
@@ -239,7 +254,7 @@ export function ColumnManager({ onColumnsChange }: ColumnManagerProps) {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[70] bg-background shadow-lg">
                     <SelectItem value="all">Todas</SelectItem>
                     {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
                       <SelectItem key={key} value={key}>
