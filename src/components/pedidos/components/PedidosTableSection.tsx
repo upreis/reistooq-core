@@ -223,6 +223,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                 {visibleColumns.has('cidade') && <th className="p-3">Cidade</th>}
                 {visibleColumns.has('uf') && <th className="p-3">UF</th>}
                 {visibleColumns.has('mapeamento') && <th className="p-3">Mapeamento</th>}
+                {visibleColumns.has('sku_estoque') && <th className="p-3">SKU Estoque</th>}
+                {visibleColumns.has('sku_kit') && <th className="p-3">SKU KIT</th>}
+                {visibleColumns.has('qtd_kit') && <th className="p-3">Qtd KIT</th>}
+                {visibleColumns.has('total_itens') && <th className="p-3">Total Itens</th>}
+                {visibleColumns.has('status_baixa') && <th className="p-3">Status Baixa</th>}
               </tr>
             </thead>
             
@@ -425,6 +430,39 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     {/* UF */}
                     {visibleColumns.has('uf') && (
                       <td className="p-3">{order.uf || order.shipping?.receiver_address?.state || '-'}</td>
+                    )}
+
+                    {/* Colunas de mapeamento detalhadas */}
+                    {visibleColumns.has('sku_estoque') && (
+                      <td className="p-3">
+                        {mapping?.skuEstoque || '-'}
+                      </td>
+                    )}
+                    {visibleColumns.has('sku_kit') && (
+                      <td className="p-3">
+                        {mapping?.skuKit || '-'}
+                      </td>
+                    )}
+                    {visibleColumns.has('qtd_kit') && (
+                      <td className="p-3">
+                        {mapping?.quantidade ?? '-'}
+                      </td>
+                    )}
+                    {visibleColumns.has('total_itens') && (
+                      <td className="p-3">
+                        {quantidadeItens * (mapping?.quantidade || 1)}
+                      </td>
+                    )}
+                    {visibleColumns.has('status_baixa') && (
+                      <td className="p-3">
+                        <Badge 
+                          variant={mapping?.statusBaixa === 'sucesso' ? 'default' : 
+                                  mapping?.statusBaixa === 'erro' ? 'destructive' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {mapping?.statusBaixa || 'pendente'}
+                        </Badge>
+                      </td>
                     )}
 
                     {/* Status do mapeamento */}

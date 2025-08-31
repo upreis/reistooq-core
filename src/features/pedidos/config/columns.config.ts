@@ -224,6 +224,17 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Tipo de pagamento',
     width: 120
   },
+  {
+    key: 'custo_envio_seller',
+    label: 'Custo Envio Seller',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Custo de envio pago pelo vendedor',
+    width: 130,
+    sortable: true
+  },
 
   // ====== MAPEAMENTO (das imagens 2 e 3) ======
   {
