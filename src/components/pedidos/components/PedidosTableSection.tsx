@@ -300,13 +300,43 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'endereco_uf':
                       return <span>{order.endereco_uf || order.uf || order.shipping?.receiver_address?.state?.id || order.shipping?.receiver_address?.state?.name || order.shipping?.receiver_address?.state || '-'}</span>;
                     case 'endereco_rua':
-                      return <span>{order.endereco_rua || order.shipping?.receiver_address?.street_name || order.shipping?.receiver_address?.address_line || order.raw?.shipping?.receiver_address?.street_name || '-'}</span>;
+                      return <span>{
+                        order.endereco_rua ||
+                        order.shipping?.receiver_address?.street_name ||
+                        order.shipping?.receiver_address?.address_line ||
+                        order.unified?.shipping?.receiver_address?.street_name ||
+                        order.unified?.shipping?.receiver_address?.address_line ||
+                        order.raw?.shipping?.receiver_address?.street_name ||
+                        '-'
+                      }</span>;
                     case 'endereco_numero':
-                      return <span>{order.endereco_numero || order.shipping?.receiver_address?.street_number || order.raw?.shipping?.receiver_address?.street_number || '-'}</span>;
+                      return <span>{
+                        order.endereco_numero ||
+                        order.shipping?.receiver_address?.street_number ||
+                        order.unified?.shipping?.receiver_address?.street_number ||
+                        order.raw?.shipping?.receiver_address?.street_number ||
+                        '-'
+                      }</span>;
                     case 'endereco_bairro':
-                      return <span>{order.endereco_bairro || order.shipping?.receiver_address?.neighborhood?.name || order.shipping?.receiver_address?.neighborhood || order.raw?.shipping?.receiver_address?.neighborhood?.name || '-'}</span>;
+                      return <span>{
+                        order.endereco_bairro ||
+                        order.shipping?.receiver_address?.neighborhood?.name ||
+                        order.shipping?.receiver_address?.neighborhood ||
+                        order.unified?.shipping?.receiver_address?.neighborhood?.name ||
+                        order.unified?.shipping?.receiver_address?.neighborhood ||
+                        order.raw?.shipping?.receiver_address?.neighborhood?.name ||
+                        '-'
+                      }</span>;
                     case 'endereco_cep':
-                      return <span>{order.endereco_cep || order.shipping?.receiver_address?.zip_code || order.shipping?.receiver_address?.zip || order.raw?.shipping?.receiver_address?.zip_code || '-'}</span>;
+                      return <span>{
+                        order.endereco_cep ||
+                        order.shipping?.receiver_address?.zip_code ||
+                        order.shipping?.receiver_address?.zip ||
+                        order.unified?.shipping?.receiver_address?.zip_code ||
+                        order.unified?.shipping?.receiver_address?.zip ||
+                        order.raw?.shipping?.receiver_address?.zip_code ||
+                        '-'
+                      }</span>;
                     case 'mapeamento':
                       return (
                         mapping ? (
