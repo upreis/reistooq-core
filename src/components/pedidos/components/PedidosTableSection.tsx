@@ -235,11 +235,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'numero':
                       return <span className="font-mono text-sm">{order.numero || order.id?.toString().slice(-8)}</span>;
                     case 'empresa':
-                      return <span>{order.empresa || '-'}</span>;
+                      return <span>{order.empresa || order.integration_account_id || order.account_name || order.seller?.nickname || order.seller?.name || '-'}</span>;
                     case 'nome_cliente':
                       return <div className="max-w-xs truncate" title={order.nome_cliente || order.buyer?.nickname}>{order.nome_cliente || order.buyer?.nickname || '-'}</div>;
                     case 'nome_completo':
-                      return <div className="max-w-xs truncate" title={order.nome_completo}>{order.nome_completo || '-'}</div>;
+                      return <div className="max-w-xs truncate" title={order.nome_completo || order.shipping?.receiver_address?.receiver_name}>{order.nome_completo || order.shipping?.receiver_address?.receiver_name || order.buyer?.first_name + ' ' + order.buyer?.last_name || '-'}</div>;
                     case 'cpf_cnpj':
                       return <span className="font-mono text-sm">{order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '-'}</span>;
                     case 'data_pedido':
@@ -280,19 +280,19 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'shipping_status':
                       return <span className="text-xs">{translateShippingStatus(order.shipping_status || order.shipping?.status) || '-'}</span>;
                     case 'logistic_mode':
-                      return <span className="text-xs">{order.logistic_mode || order.unified?.logistic?.mode || '-'}</span>;
+                      return <span className="text-xs">{order.logistic_mode || order.unified?.logistic?.mode || order.shipping?.logistic?.mode || order.raw?.shipping?.logistic?.mode || '-'}</span>;
                     case 'logistic_type':
-                      return <span className="text-xs">{order.logistic_type || order.shipping_details?.logistic_type || '-'}</span>;
+                      return <span className="text-xs">{order.logistic_type || order.shipping_details?.logistic_type || order.shipping?.logistic?.type || order.raw?.shipping?.logistic?.type || order.unified?.logistic?.type || '-'}</span>;
                     case 'shipping_method_type':
-                      return <span className="text-xs">{order.shipping_method_type || '-'}</span>;
+                      return <span className="text-xs">{order.shipping_method_type || order.shipping?.shipping_method?.type || order.raw?.shipping?.shipping_method?.type || '-'}</span>;
                     case 'delivery_type':
-                      return <span className="text-xs">{order.delivery_type || '-'}</span>;
+                      return <span className="text-xs">{order.delivery_type || order.shipping?.delivery_type || order.raw?.shipping?.delivery_type || '-'}</span>;
                     case 'substatus_detail':
-                      return <span className="text-xs">{translateShippingSubstatus(order.substatus_detail || order.shipping?.substatus || '') || '-'}</span>;
+                      return <span className="text-xs">{translateShippingSubstatus(order.substatus_detail || order.shipping?.substatus || order.raw?.shipping?.substatus || order.shipping?.status_detail || order.status_detail) || '-'}</span>;
                     case 'shipping_mode':
-                      return <span className="text-xs">{translateShippingMode(order.shipping_mode || order.forma_entrega) || '-'}</span>;
+                      return <span className="text-xs">{translateShippingMode(order.shipping_mode || order.forma_entrega || order.shipping?.mode || order.raw?.shipping?.mode) || '-'}</span>;
                     case 'shipping_method':
-                      return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.shipping?.shipping_method?.name) || '-'}</span>;
+                      return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.shipping?.shipping_method?.name || order.raw?.shipping?.shipping_method?.name || order.shipping?.method?.name) || '-'}</span>;
                     case 'cidade':
                     case 'endereco_cidade':
                       return <span>{order.endereco_cidade || order.cidade || order.shipping?.receiver_address?.city?.name || order.shipping?.receiver_address?.city || '-'}</span>;
@@ -300,13 +300,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'endereco_uf':
                       return <span>{order.endereco_uf || order.uf || order.shipping?.receiver_address?.state?.id || order.shipping?.receiver_address?.state?.name || order.shipping?.receiver_address?.state || '-'}</span>;
                     case 'endereco_rua':
-                      return <span>{order.endereco_rua || order.shipping?.receiver_address?.street_name || order.shipping?.receiver_address?.address_line || '-'}</span>;
+                      return <span>{order.endereco_rua || order.shipping?.receiver_address?.street_name || order.shipping?.receiver_address?.address_line || order.raw?.shipping?.receiver_address?.street_name || '-'}</span>;
                     case 'endereco_numero':
-                      return <span>{order.endereco_numero || order.shipping?.receiver_address?.street_number || '-'}</span>;
+                      return <span>{order.endereco_numero || order.shipping?.receiver_address?.street_number || order.raw?.shipping?.receiver_address?.street_number || '-'}</span>;
                     case 'endereco_bairro':
-                      return <span>{order.endereco_bairro || order.shipping?.receiver_address?.neighborhood?.name || order.shipping?.receiver_address?.neighborhood || '-'}</span>;
+                      return <span>{order.endereco_bairro || order.shipping?.receiver_address?.neighborhood?.name || order.shipping?.receiver_address?.neighborhood || order.raw?.shipping?.receiver_address?.neighborhood?.name || '-'}</span>;
                     case 'endereco_cep':
-                      return <span>{order.endereco_cep || order.shipping?.receiver_address?.zip_code || order.shipping?.receiver_address?.zip || '-'}</span>;
+                      return <span>{order.endereco_cep || order.shipping?.receiver_address?.zip_code || order.shipping?.receiver_address?.zip || order.raw?.shipping?.receiver_address?.zip_code || '-'}</span>;
                     case 'mapeamento':
                       return (
                         mapping ? (
@@ -353,11 +353,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'pack_id':
                       return <span className="font-mono text-xs">{order.pack_id || '-'}</span>;
                     case 'pickup_id':
-                      return <span className="font-mono text-xs">{order.pickup_id || '-'}</span>;
+                      return <span className="font-mono text-xs">{order.pickup_id || order.shipping?.pickup_id || order.raw?.shipping?.pickup_id || '-'}</span>;
                     case 'manufacturing_ending_date':
-                      return <span>{order.manufacturing_ending_date ? formatDate(order.manufacturing_ending_date) : '-'}</span>;
+                      return <span>{order.manufacturing_ending_date ? formatDate(order.manufacturing_ending_date) : order.raw?.manufacturing_ending_date ? formatDate(order.raw.manufacturing_ending_date) : '-'}</span>;
                     case 'comment':
-                      return <div className="max-w-xs truncate" title={order.comment}>{order.comment || '-'}</div>;
+                      return <div className="max-w-xs truncate" title={order.comment || order.raw?.comment}>{order.comment || order.raw?.comment || '-'}</div>;
                     case 'tags':
                       return <div className="max-w-xs truncate" title={(order.tags || []).join(', ')}>{Array.isArray(order.tags) && order.tags.length ? order.tags.join(', ') : '-'}</div>;
                     default:
