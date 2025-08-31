@@ -66,60 +66,25 @@ export interface SavedFilter {
 
 import { PAGINATION, CACHE, DEBOUNCE } from '@/lib/constants';
 
-// 🔧 Helper para normalizar datas (corrige serialização) - FORTALECIDO
+// ✅ SIMPLIFICADO: Helper para normalizar datas
 function normalizeDate(value: any): Date | undefined {
   if (!value) return undefined;
   
   // Se já é Date válida, retornar
-  if (value instanceof Date && !isNaN(value.getTime())) return value;
-  
-  // Se é string ISO, converter com validação
-  if (typeof value === 'string') {
-    // Remover possíveis caracteres extras e normalizar
-    const cleanValue = value.trim();
-    if (cleanValue === '') return undefined;
-    
-    const date = new Date(cleanValue);
-    return (!isNaN(date.getTime())) ? date : undefined;
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? undefined : value;
   }
   
-  // Se é número (timestamp), converter com validação
-  if (typeof value === 'number' && value > 0) {
-    const date = new Date(value);
-    return (!isNaN(date.getTime())) ? date : undefined;
-  }
-  
-  // Se é objeto serializado do tipo {_type: 'Date', value: {iso: ...}}
-  if (value && typeof value === 'object') {
-    if (value._type === 'Date' && value.value?.iso) {
-      const date = new Date(value.value.iso);
-      return (!isNaN(date.getTime())) ? date : undefined;
-    }
-    
-    // Se é objeto com value.iso diretamente
-    if (value.value?.iso) {
-      const date = new Date(value.value.iso);
-      return (!isNaN(date.getTime())) ? date : undefined;
-    }
-    
-    // Se é objeto com iso diretamente
-    if (value.iso) {
-      const date = new Date(value.iso);
-      return (!isNaN(date.getTime())) ? date : undefined;
-    }
-  }
-  
-  console.warn('⚠️ Não foi possível normalizar data:', value);
-  return undefined;
+  // Converter para Date e validar
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? undefined : date;
 }
 
 const DEFAULT_FILTERS: PedidosFilters = {};
 
 export function usePedidosManager(initialAccountId?: string) {
-  // Estados principais
+  // Estados principais - SIMPLIFICADO: apenas um estado de filtros
   const [filters, setFiltersState] = useState<PedidosFilters>(DEFAULT_FILTERS);
-  const [pendingFilters, setPendingFilters] = useState<PedidosFilters>(DEFAULT_FILTERS); // 🔄 Filtros pendentes
-  const [appliedFilters, setAppliedFilters] = useState<PedidosFilters>(DEFAULT_FILTERS); // 🔄 Filtros aplicados
   const [orders, setOrders] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -140,8 +105,8 @@ export function usePedidosManager(initialAccountId?: string) {
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
   const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
   
-  // 🔄 Usar appliedFilters no lugar de filters para debounce
-  const debouncedFilters = useDebounce(appliedFilters, DEBOUNCE.FILTER_DELAY_MS);
+  // ✅ CORRIGIDO: Usar filters diretamente com debounce
+  const debouncedFilters = useDebounce(filters, DEBOUNCE.FILTER_DELAY_MS);
   
   // 🚀 FASE 3: Filtros salvos (localStorage)
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => {
@@ -272,9 +237,9 @@ export function usePedidosManager(initialAccountId?: string) {
     if (!orders.length) return orders;
 
     return orders.filter(order => {
-      // Filtro de busca - usar appliedFilters no lugar de debouncedFilters
-      if (appliedFilters.search) {
-        const searchTerm = appliedFilters.search.toLowerCase();
+      // ✅ CORRIGIDO: Filtro de busca usando debouncedFilters
+      if (debouncedFilters.search) {
+        const searchTerm = debouncedFilters.search.toLowerCase();
         const searchableFields = [
           order.id,
           order.numero,
@@ -288,9 +253,9 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de status - MODIFICADO para usar shipping_status e appliedFilters
-      if (appliedFilters.situacao) {
-        const selectedStatuses = Array.isArray(appliedFilters.situacao) ? appliedFilters.situacao : [appliedFilters.situacao];
+      // ✅ CORRIGIDO: Filtro de status usando debouncedFilters
+      if (debouncedFilters.situacao) {
+        const selectedStatuses = Array.isArray(debouncedFilters.situacao) ? debouncedFilters.situacao : [debouncedFilters.situacao];
         
         // Usar shipping_status como referência principal
         const orderShippingStatus = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || '';
@@ -307,125 +272,59 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de data - CORRIGIDO com logs de debug para identificar problema
-      if (appliedFilters.dataInicio || appliedFilters.dataFim) {
-        // Debug: Verificar tipos das datas de filtro
-        console.log('🔍 [DEBUG FILTRO DATA] appliedFilters.dataInicio:', {
-          value: appliedFilters.dataInicio,
-          type: typeof appliedFilters.dataInicio,
-          isDate: appliedFilters.dataInicio instanceof Date,
-          toString: appliedFilters.dataInicio?.toString()
-        });
-        console.log('🔍 [DEBUG FILTRO DATA] appliedFilters.dataFim:', {
-          value: appliedFilters.dataFim,
-          type: typeof appliedFilters.dataFim,
-          isDate: appliedFilters.dataFim instanceof Date,
-          toString: appliedFilters.dataFim?.toString()
-        });
+      // ✅ CORRIGIDO: Filtro de data usando debouncedFilters e logs removidos (ETAPA 3)
+      if (debouncedFilters.dataInicio || debouncedFilters.dataFim) {
         
-        // Normalizar a data do pedido
-        let orderDate: Date;
-        const rawOrderDate = order.data_pedido || order.date_created;
+        // ✅ SIMPLIFICADO: Normalizar e comparar datas diretamente
+        const orderDate = normalizeDate(order.data_pedido || order.date_created);
+        if (!orderDate) return false; // Excluir pedidos sem data válida
         
-        console.log('🔍 [DEBUG FILTRO DATA] Data do pedido:', {
-          rawOrderDate,
-          type: typeof rawOrderDate,
-          pedidoId: order.id
-        });
-        
-        if (rawOrderDate instanceof Date) {
-          orderDate = rawOrderDate;
-        } else if (typeof rawOrderDate === 'string') {
-          orderDate = new Date(rawOrderDate);
-        } else {
-          console.warn('⚠️ Data do pedido inválida:', rawOrderDate);
-          return false; // Excluir pedidos com data inválida
-        }
-        
-        // Validar se a data do pedido é válida após normalização
-        if (isNaN(orderDate.getTime())) {
-          console.warn('⚠️ Data do pedido não pôde ser convertida:', rawOrderDate);
-          return false;
-        }
-        
-        // Normalizar data de início e comparar
-        if (appliedFilters.dataInicio) {
-          const startDate = normalizeDate(appliedFilters.dataInicio);
-          console.log('🔍 [DEBUG FILTRO DATA] Data início normalizada:', {
-            original: appliedFilters.dataInicio,
-            normalized: startDate,
-            isValid: startDate && !isNaN(startDate.getTime())
-          });
-          
-          if (startDate && !isNaN(startDate.getTime())) {
-            // Zerar horário para comparação apenas de datas
+        // Comparar data de início
+        if (debouncedFilters.dataInicio) {
+          const startDate = normalizeDate(debouncedFilters.dataInicio);
+          if (startDate) {
+            // Comparação apenas de datas (sem horário)
             const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
             const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
             
-            console.log('🔍 [DEBUG FILTRO DATA] Comparação início:', {
-              orderDateOnly: orderDateOnly.toISOString().split('T')[0],
-              startDateOnly: startDateOnly.toISOString().split('T')[0],
-              orderDateOnly_time: orderDateOnly.getTime(),
-              startDateOnly_time: startDateOnly.getTime(),
-              result: orderDateOnly >= startDateOnly
-            });
-            
             if (orderDateOnly < startDateOnly) {
-              console.log('🚫 [DEBUG FILTRO DATA] Pedido excluído por data início');
               return false;
             }
           }
         }
         
-        // Normalizar data fim e comparar
-        if (appliedFilters.dataFim) {
-          const endDate = normalizeDate(appliedFilters.dataFim);
-          console.log('🔍 [DEBUG FILTRO DATA] Data fim normalizada:', {
-            original: appliedFilters.dataFim,
-            normalized: endDate,
-            isValid: endDate && !isNaN(endDate.getTime())
-          });
-          
-          if (endDate && !isNaN(endDate.getTime())) {
-            // Zerar horário para comparação apenas de datas
+        // Comparar data fim
+        if (debouncedFilters.dataFim) {
+          const endDate = normalizeDate(debouncedFilters.dataFim);
+          if (endDate) {
+            // Comparação apenas de datas (sem horário)
             const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
             const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
             
-            console.log('🔍 [DEBUG FILTRO DATA] Comparação fim:', {
-              orderDateOnly: orderDateOnly.toISOString().split('T')[0],
-              endDateOnly: endDateOnly.toISOString().split('T')[0],
-              orderDateOnly_time: orderDateOnly.getTime(),
-              endDateOnly_time: endDateOnly.getTime(),
-              result: orderDateOnly <= endDateOnly
-            });
-            
             if (orderDateOnly > endDateOnly) {
-              console.log('🚫 [DEBUG FILTRO DATA] Pedido excluído por data fim');
               return false;
             }
           }
         }
-        
-        console.log('✅ [DEBUG FILTRO DATA] Pedido aprovado no filtro de data');
       }
 
-      // Outros filtros - usar appliedFilters
-      if (appliedFilters.cidade && !order.cidade?.toLowerCase().includes(appliedFilters.cidade.toLowerCase())) {
+      // ✅ CORRIGIDO: Outros filtros usando debouncedFilters
+      if (debouncedFilters.cidade && !order.cidade?.toLowerCase().includes(debouncedFilters.cidade.toLowerCase())) {
         return false;
       }
-      if (appliedFilters.uf && order.uf !== appliedFilters.uf) {
+      if (debouncedFilters.uf && order.uf !== debouncedFilters.uf) {
         return false;
       }
-      if (appliedFilters.valorMin !== undefined && (order.valor_total || 0) < appliedFilters.valorMin) {
+      if (debouncedFilters.valorMin !== undefined && (order.valor_total || 0) < debouncedFilters.valorMin) {
         return false;
       }
-      if (appliedFilters.valorMax !== undefined && (order.valor_total || 0) > appliedFilters.valorMax) {
+      if (debouncedFilters.valorMax !== undefined && (order.valor_total || 0) > debouncedFilters.valorMax) {
         return false;
       }
 
       return true;
     });
-  }, [appliedFilters]); // 🔄 Dependência alterada para appliedFilters
+  }, [debouncedFilters]); // ✅ CORRIGIDO: Dependência usando debouncedFilters
 
   /**
    * 🚀 FASE 2: Cache inteligente
@@ -452,7 +351,7 @@ export function usePedidosManager(initialAccountId?: string) {
     }
     abortControllerRef.current = new AbortController();
 
-    const apiParams = buildApiParams(appliedFilters); // 🔄 Usar appliedFilters
+    const apiParams = buildApiParams(debouncedFilters); // ✅ CORRIGIDO: Usar debouncedFilters
     console.log('🔍 Parâmetros da API construídos:', apiParams);
     const cacheKey = getCacheKey(apiParams);
 
@@ -568,15 +467,15 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [integrationAccountId, appliedFilters, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
+  }, [integrationAccountId, debouncedFilters, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
 
   // 🚀 FASE 3: Exportação de dados
   const exportData = useCallback(async (format: 'csv' | 'xlsx') => {
     try {
       setLoading(true);
       
-      // Carregar todos os dados sem paginação - usar appliedFilters
-      const apiParams = buildApiParams(appliedFilters);
+      // ✅ CORRIGIDO: Carregar todos os dados sem paginação usando filters atuais
+      const apiParams = buildApiParams(filters);
       const allData = await loadFromUnifiedOrders({ ...apiParams, limit: PAGINATION.EXPORT_LIMIT });
       
       if (format === 'csv') {
@@ -591,21 +490,21 @@ export function usePedidosManager(initialAccountId?: string) {
     } finally {
       setLoading(false);
     }
-  }, [buildApiParams, appliedFilters, loadFromUnifiedOrders]); // 🔄 Dependência alterada
+  }, [buildApiParams, filters, loadFromUnifiedOrders]); // ✅ CORRIGIDO
 
   // 🚀 FASE 3: Gerenciamento de filtros salvos
   const saveCurrentFilters = useCallback((name: string) => {
     const newFilter: SavedFilter = {
       id: Date.now().toString(),
       name,
-      filters: { ...appliedFilters }, // 🔄 Salvar filtros aplicados
+      filters: { ...filters }, // ✅ CORRIGIDO: Salvar filtros atuais
       createdAt: new Date()
     };
     
     const updated = [...savedFilters, newFilter];
     setSavedFilters(updated);
     localStorage.setItem('pedidos-saved-filters', JSON.stringify(updated));
-  }, [appliedFilters, savedFilters]); // 🔄 Dependência corrigida
+  }, [filters, savedFilters]); // ✅ CORRIGIDO
 
   const loadSavedFilters = useCallback((name: string) => {
     const saved = savedFilters.find(f => f.name === name);
@@ -619,52 +518,34 @@ export function usePedidosManager(initialAccountId?: string) {
         normalizedFilters.dataFim = normalizeDate(normalizedFilters.dataFim);
       }
       
-      setPendingFilters(normalizedFilters); // 🔄 Carregar nos filtros pendentes
-      setAppliedFilters(normalizedFilters); // 🔄 E aplicar imediatamente
+      // ✅ CORRIGIDO: Aplicar filtros salvos diretamente
+      setFiltersState(normalizedFilters);
       setCurrentPage(1);
     }
   }, [savedFilters]);
 
   const getSavedFilters = useCallback(() => savedFilters, [savedFilters]);
 
-  // 🔄 Nova função para aplicar filtros manualmente + salvar consulta
+  // ✅ SIMPLIFICADO: Aplicar filtros é automático via debounce, apenas força refresh
   const applyFilters = useCallback(() => {
-    console.log('🔄 Aplicando filtros manualmente:', pendingFilters);
+    console.log('🔄 Forçando aplicação de filtros:', filters);
     
-    // Normalizar datas para objetos Date reais
-    const normalizedFilters = { ...pendingFilters };
-    if (normalizedFilters.dataInicio) {
-      normalizedFilters.dataInicio = normalizeDate(normalizedFilters.dataInicio);
-    }
-    if (normalizedFilters.dataFim) {
-      normalizedFilters.dataFim = normalizeDate(normalizedFilters.dataFim);
-    }
-    
-    console.log('🔄 Filtros normalizados:', {
-      original: pendingFilters,
-      normalized: normalizedFilters
-    });
-    
-    setAppliedFilters({ ...normalizedFilters });
     setCurrentPage(1);
     
-    // 💾 Salvar última consulta E configuração de colunas no localStorage
+    // 💾 Salvar última consulta no localStorage
     try {
       const lastSearch = {
         filters: {
-          ...normalizedFilters,
+          ...filters,
           // Converter datas para ISO para serialização
-          dataInicio: normalizedFilters.dataInicio?.toISOString(),
-          dataFim: normalizedFilters.dataFim?.toISOString()
+          dataInicio: filters.dataInicio?.toISOString(),
+          dataFim: filters.dataFim?.toISOString()
         },
         integrationAccountId,
         pageSize,
-        // 🚨 NOVO: Salvar configuração de colunas também
-        visibleColumns: JSON.parse(localStorage.getItem('pedidos-visible-columns') || '{}'),
         timestamp: new Date().toISOString()
       };
       localStorage.setItem('pedidos:lastSearch', JSON.stringify(lastSearch));
-      console.log('💾 Última consulta salva com colunas:', lastSearch);
     } catch (error) {
       console.warn('⚠️ Erro ao salvar última consulta:', error);
     }
@@ -675,12 +556,12 @@ export function usePedidosManager(initialAccountId?: string) {
     
     // 🚀 Executar busca imediatamente
     loadOrders(true);
-  }, [pendingFilters, integrationAccountId, pageSize, loadOrders]);
+  }, [filters, integrationAccountId, pageSize, loadOrders]);
 
-  // Actions melhoradas
+  // ✅ SIMPLIFICADO: Actions usando apenas filters
   const actions: PedidosManagerActions = useMemo(() => ({
     setFilters: (newFilters: Partial<PedidosFilters>) => {
-      console.log('🔄 Atualizando filtros pendentes:', newFilters);
+      console.log('🔄 Atualizando filtros:', newFilters);
       
       // Normalizar datas ao definir filtros
       const normalizedNewFilters = { ...newFilters };
@@ -691,14 +572,12 @@ export function usePedidosManager(initialAccountId?: string) {
         normalizedNewFilters.dataFim = normalizeDate(normalizedNewFilters.dataFim);
       }
       
-      setPendingFilters(prev => ({ ...prev, ...normalizedNewFilters }));
-      // NÃO resetar página nem aplicar automaticamente
+      setFiltersState(prev => ({ ...prev, ...normalizedNewFilters }));
     },
     
     clearFilters: () => {
       console.log('🔄 Limpando todos os filtros');
-      setPendingFilters(DEFAULT_FILTERS);
-      setAppliedFilters(DEFAULT_FILTERS);
+      setFiltersState(DEFAULT_FILTERS);
       setCurrentPage(1);
       // Limpar cache
       setCachedAt(undefined);
@@ -769,7 +648,7 @@ export function usePedidosManager(initialAccountId?: string) {
     paging
   };
 
-  // 💾 Effect para restaurar última consulta E configuração de colunas (sem executar automaticamente)
+  // 💾 Effect para restaurar última consulta
   useEffect(() => {
     try {
       const saved = localStorage.getItem('pedidos:lastSearch');
@@ -786,25 +665,19 @@ export function usePedidosManager(initialAccountId?: string) {
           restoredFilters.dataFim = normalizeDate(restoredFilters.dataFim);
         }
         
-        console.log('🔧 Datas normalizadas:', {
-          original: lastSearch.filters,
-          normalized: restoredFilters
-        });
-        
-        // 🚨 PADRÃO: Restaurar apenas nos filtros pendentes; usuário decide quando aplicar
-        setPendingFilters(restoredFilters);
+        // ✅ CORRIGIDO: Restaurar filtros diretamente
+        setFiltersState(restoredFilters);
         
         // Restaurar configurações
         if (lastSearch.integrationAccountId && !integrationAccountId) {
           setIntegrationAccountId(lastSearch.integrationAccountId);
         }
         if (lastSearch.pageSize && lastSearch.pageSize !== pageSize) {
-          // 🚨 VALIDAÇÃO: Aplicar mesmo limite na restauração
           const validatedSize = Math.min(lastSearch.pageSize, PAGINATION.MAX_PAGE_SIZE);
           setPageSizeState(validatedSize);
         }
         
-        console.log('✅ Última consulta restaurada e aplicada automaticamente');
+        console.log('✅ Última consulta restaurada');
       }
     } catch (error) {
       console.warn('⚠️ Erro ao restaurar última consulta:', error);
@@ -835,18 +708,17 @@ export function usePedidosManager(initialAccountId?: string) {
   }, []);
 
   return {
-    filters: pendingFilters, // 🔄 Retornar filtros pendentes para a UI
-    appliedFilters, // 🔄 Filtros que estão realmente aplicados
+    filters, // ✅ CORRIGIDO: Retornar filters direto
     state,
     actions,
     // Computed values
     totalPages: Math.ceil(total / pageSize),
-    hasActiveFilters: Object.keys(appliedFilters).some(key => {
-      const value = appliedFilters[key as keyof PedidosFilters];
+    hasActiveFilters: Object.keys(filters).some(key => {
+      const value = filters[key as keyof PedidosFilters];
       return value !== undefined && value !== '' && value !== null && 
              (Array.isArray(value) ? value.length > 0 : true);
     }),
-    hasPendingChanges: JSON.stringify(pendingFilters) !== JSON.stringify(appliedFilters) // 🔄 Indicador de mudanças pendentes
+    hasPendingChanges: false // ✅ SIMPLIFICADO: Sem múltiplos estados, sem pendências
   };
 }
 

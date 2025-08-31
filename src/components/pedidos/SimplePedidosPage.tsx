@@ -87,7 +87,7 @@ type Props = {
 function SimplePedidosPage({ className }: Props) {
   // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
-  const { filters, appliedFilters, state, actions, hasPendingChanges, totalPages } = pedidosManager;
+  const { filters, state, actions, hasPendingChanges, totalPages } = pedidosManager;
   
   // 🔧 Sistema de colunas unificado com persistência automatica
   const columnManager = useColumnManager();
@@ -711,7 +711,7 @@ function SimplePedidosPage({ className }: Props) {
     console.log('🔄 [DEBUG] selectedAccounts:', selectedAccounts);
     console.log('🔄 [DEBUG] integrationAccountId:', integrationAccountId);
     console.log('🔄 [DEBUG] filters (pending):', filters);
-    console.log('🔄 [DEBUG] appliedFilters:', appliedFilters);
+    console.log('🔄 [DEBUG] filters (current):', filters);
     
     // Salvar contas selecionadas no localStorage antes de aplicar filtros
     try {
@@ -865,7 +865,7 @@ function SimplePedidosPage({ className }: Props) {
       {/* 🛡️ FILTROS SIMPLES E FUNCIONAIS - TESTE MIGRAÇÃO GRADUAL */}
       <PedidosFiltersSection
         filters={filters}
-        appliedFilters={appliedFilters}
+        
         actions={actions}
         onFiltersChange={actions.setFilters}
         onClearFilters={actions.clearFilters}

@@ -3,7 +3,7 @@ import { PedidosFiltersState } from '@/components/pedidos/PedidosFilters';
 
 const STORAGE_KEY = 'pedidos_last_filters';
 
-// Função para carregar filtros do localStorage
+// ✅ SIMPLIFICADO: Função para carregar filtros do localStorage
 const loadFiltersFromStorage = (): PedidosFiltersState => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -11,12 +11,14 @@ const loadFiltersFromStorage = (): PedidosFiltersState => {
     
     const parsed = JSON.parse(stored);
     
-    // Converter strings de data de volta para objetos Date
+    // ✅ SIMPLIFICADO: Converter strings de data de volta para objetos Date
     if (parsed.dataInicio) {
-      parsed.dataInicio = new Date(parsed.dataInicio);
+      const date = new Date(parsed.dataInicio);
+      parsed.dataInicio = isNaN(date.getTime()) ? undefined : date;
     }
     if (parsed.dataFim) {
-      parsed.dataFim = new Date(parsed.dataFim);
+      const date = new Date(parsed.dataFim);
+      parsed.dataFim = isNaN(date.getTime()) ? undefined : date;
     }
     
     return parsed;
