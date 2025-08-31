@@ -1290,7 +1290,10 @@ function SimplePedidosPage({ className }: Props) {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={(page) => actions.setPage(page)}
-        isPedidoProcessado={isPedidoProcessado}
+        isPedidoProcessado={(id: string) => {
+          const order = orders.find(o => o.id === id);
+          return order ? isPedidoProcessado(order) : false;
+        }}
       />
 
 
@@ -1318,11 +1321,8 @@ function SimplePedidosPage({ className }: Props) {
         }}
         trigger={null}
       />
-    </div>
-  );
-}
 
-export default memo(SimplePedidosPage);
+      {/* 🛡️ MODAL DE BAIXA DE ESTOQUE - Ativo */}
       <BaixaEstoqueModal 
         pedidos={Array.from(selectedOrders).map(id => {
           const order = orders.find(o => o.id === id);
