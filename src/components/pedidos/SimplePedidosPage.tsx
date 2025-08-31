@@ -46,6 +46,7 @@ import { PedidosFiltersSection } from './components/PedidosFiltersSection';
 import { PedidosTableSection } from './components/PedidosTableSection';
 import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
+import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';
 
 
 type Order = {
@@ -1295,30 +1296,23 @@ function SimplePedidosPage({ className }: Props) {
       />
 
 
-      {/* 🛡️ MODAL DE BAIXA DE ESTOQUE - Ativo */}
-      <BaixaEstoqueModal 
-        pedidos={Array.from(selectedOrders).map(id => {
-          const order = orders.find(o => o.id === id);
-          if (!order) return null;
-          
-          const mapping = mappingData.get(order.id);
-          const quantidadeItens = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-          const qtdKit = mapping?.quantidade || 1;
-          
-          return {
-            ...order,
-            sku_kit: mapping?.skuKit || null,
-            total_itens: quantidadeItens * qtdKit
-          };
-        }).filter(Boolean) as Pedido[]}
-        contextoDaUI={{
-          mappingData,
-          accounts,
-          selectedAccounts,
-          integrationAccountId
+      {/* 🔧 SEÇÃO DE AÇÕES EM MASSA - NOVA EXTRAÇÃO */}
+      <PedidosBulkActionsSection
+        orders={orders}
+        selectedOrders={selectedOrders}
+        setSelectedOrders={setSelectedOrders}
+        mappingData={mappingData}
+        isPedidoProcessado={isPedidoProcessado}
+        showBaixaModal={showBaixaModal}
+        setShowBaixaModal={setShowBaixaModal}
+        onBaixaConcluida={() => {
+          // Recarregar dados após baixa concluída
+          actions.refetch();
+          verificarPedidos(orders);
         }}
-        trigger={null}
       />
+
+      {/* 🛡️ MODAL DE BAIXA DE ESTOQUE REMOVIDO - Agora está no PedidosBulkActionsSection */}
     </div>
   );
 }
