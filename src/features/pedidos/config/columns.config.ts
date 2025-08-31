@@ -392,6 +392,69 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 180
   },
 
+  // ====== ENDEREÇO (novo) ======
+  {
+    key: 'endereco_rua',
+    label: 'Rua',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Rua do destinatário',
+    width: 160
+  },
+  {
+    key: 'endereco_numero',
+    label: 'Número',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Número do endereço',
+    width: 90
+  },
+  {
+    key: 'endereco_bairro',
+    label: 'Bairro',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Bairro do destinatário',
+    width: 140
+  },
+  {
+    key: 'endereco_cep',
+    label: 'CEP',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'CEP do destinatário',
+    width: 110,
+    sortable: true
+  },
+  {
+    key: 'endereco_cidade',
+    label: 'Cidade',
+    category: 'shipping',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Cidade do destinatário',
+    width: 140
+  },
+  {
+    key: 'endereco_uf',
+    label: 'UF',
+    category: 'shipping',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Estado (UF) do destinatário',
+    width: 70
+  },
+
   // ====== METADADOS ML ======
   {
     key: 'date_created',
