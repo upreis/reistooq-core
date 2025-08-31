@@ -66,13 +66,19 @@ export interface SavedFilter {
 
 import { PAGINATION, CACHE, DEBOUNCE } from '@/lib/constants';
 
-// ✅ SIMPLIFICADO: Helper para normalizar datas
+// ✅ CORRIGIDO: Helper para normalizar datas sem problemas de timezone
 function normalizeDate(value: any): Date | undefined {
   if (!value) return undefined;
   
   // Se já é Date válida, retornar
   if (value instanceof Date) {
     return isNaN(value.getTime()) ? undefined : value;
+  }
+  
+  // Se é string ISO (YYYY-MM-DD), criar data sem timezone
+  if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = value.split('-').map(Number);
+    return new Date(year, month - 1, day); // month é 0-indexed
   }
   
   // Converter para Date e validar
@@ -138,17 +144,19 @@ export function usePedidosManager(initialAccountId?: string) {
       }
     }
 
-    // Datas - usar normalização segura
+    // ✅ CORRIGIDO: Datas com formato consistente
     if (filters.dataInicio) {
       const d = normalizeDate(filters.dataInicio);
       if (d && !isNaN(d.getTime())) {
         params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        console.log('📅 Data início enviada para API:', params.date_from, 'original:', filters.dataInicio);
       }
     }
     if (filters.dataFim) {
       const d = normalizeDate(filters.dataFim);
       if (d && !isNaN(d.getTime())) {
         params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        console.log('📅 Data fim enviada para API:', params.date_to, 'original:', filters.dataFim);
       }
     }
 
@@ -272,32 +280,31 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // 🚀 OTIMIZADO: Filtro de data simplificado sem logs
-      if (debouncedFilters.dataInicio || debouncedFilters.dataFim) {
-        const orderDate = normalizeDate(order.data_pedido || order.date_created);
-        if (!orderDate) return false; // Excluir pedidos sem data válida
-        
-        // Comparar data de início
-        if (debouncedFilters.dataInicio) {
-          const startDate = normalizeDate(debouncedFilters.dataInicio);
-          if (startDate) {
-            const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
-            const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-            
-            if (orderDateOnly < startDateOnly) {
-              return false;
-            }
-          }
+  // 🚀 CORRIGIDO: Filtro de data melhorado
+  if (debouncedFilters.dataInicio || debouncedFilters.dataFim) {
+    const orderDate = normalizeDate(order.data_pedido || order.date_created);
+    if (!orderDate) return false; // Excluir pedidos sem data válida
+    
+    // Normalizar para comparação apenas com data (sem hora)
+    const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+    
+    // Comparar data de início  
+    if (debouncedFilters.dataInicio) {
+      const startDate = normalizeDate(debouncedFilters.dataInicio);
+      if (startDate) {
+        const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+        if (orderDateOnly < startDateOnly) {
+          return false;
         }
-        
-        // Comparar data fim
-        if (debouncedFilters.dataFim) {
-          const endDate = normalizeDate(debouncedFilters.dataFim);
-          if (endDate) {
-            const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
-            const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-            
-            if (orderDateOnly > endDateOnly) {
+      }
+    }
+    
+    // Comparar data fim
+    if (debouncedFilters.dataFim) {
+      const endDate = normalizeDate(debouncedFilters.dataFim);
+      if (endDate) {
+        const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+        if (orderDateOnly > endDateOnly) {
               return false;
             }
           }
