@@ -47,6 +47,7 @@ import { PedidosTableSection } from './components/PedidosTableSection';
 import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';
+import { PedidosModalsSection } from './components/PedidosModalsSection';
 import { usePedidosMappings } from './hooks/usePedidosMappings';
 
 
@@ -683,196 +684,7 @@ function SimplePedidosPage({ className }: Props) {
     actions.setPage(page);
   };
 
-  const totalPages = Math.ceil(total / state.pageSize);
-
-  const handleApplyFilters = () => {
-    console.log('🔄 [DEBUG] handleApplyFilters chamado');
-    
-    // Debug de filtros
-    console.log('🔄 [DEBUG] Filtros atuais:', filters);
-    console.log('🔄 [DEBUG] appliedFilters antes:', appliedFilters);
-    console.log('🔄 [DEBUG] hasPendingChanges:', hasPendingChanges);
-    
-    // Log detalhado das datas se existirem
-    if (filters.dataInicio) {
-      console.log('🔄 [DEBUG] dataInicio:', {
-        type: typeof filters.dataInicio,
-        value: filters.dataInicio,
-        toString: filters.dataInicio.toString(),
-        toISOString: filters.dataInicio instanceof Date ? filters.dataInicio.toISOString() : 'Not a Date'
-      });
-    }
-    
-    if (filters.dataFim) {
-      console.log('🔄 [DEBUG] dataFim:', {
-        type: typeof filters.dataFim,
-        value: filters.dataFim,
-        toString: filters.dataFim.toString(),
-        toISOString: filters.dataFim instanceof Date ? filters.dataFim.toISOString() : 'Not a Date'
-      });
-    }
-    
-    console.log('🔄 [DEBUG] Chamando actions.applyFilters...');
-    actions.applyFilters();
-  };
-      
-      // 🛡️ CONTROLE DE EXECUÇÃO ÚNICA - Evita duplicação
-      if (isProcessingMappings) {
-        console.log('⏳ Processamento de mapeamentos já em andamento, ignorando...');
-        return;
-      }
-
-      console.log(`🧠 INICIANDO INTELIGÊNCIA DE MAPEAMENTO para ${orders.length} pedidos`);
-      setIsProcessingMappings(true);
-      
-      try {
-        // 🤖 FASE 1: Extrair TODOS os SKUs dos pedidos com inteligência
-        const todosSKUs = orders.flatMap(pedido => {
-          const skus = pedido.skus?.filter(Boolean) || 
-                      pedido.order_items?.map((item: any) => item.item?.seller_sku).filter(Boolean) || 
-                      [];
-          return skus;
-        });
-
-        console.log(`🔍 SKUs extraídos: ${todosSKUs.length} únicos`);
-
-        // 🧠 FASE 2: INTELIGÊNCIA - Verificar e criar mapeamentos automaticamente
-        let verificacoesMapeamento: any[] = [];
-        if (todosSKUs.length > 0) {
-          try {
-            console.log('🤖 Executando verificação inteligente de mapeamentos...');
-            verificacoesMapeamento = await MapeamentoService.verificarMapeamentos(todosSKUs);
-            
-            const comMapeamento = verificacoesMapeamento.filter(v => v.temMapeamento).length;
-            const semMapeamento = verificacoesMapeamento.length - comMapeamento;
-            
-            console.log(`✅ RESULTADO DA INTELIGÊNCIA:`);
-            console.log(`   📊 Total verificados: ${verificacoesMapeamento.length}`);
-            console.log(`   ✅ Com mapeamento: ${comMapeamento}`);
-            console.log(`   ⚠️ Sem mapeamento: ${semMapeamento}`);
-            console.log(`   🆕 Criados automaticamente: ${semMapeamento} (aguardando preenchimento manual)`);
-            
-          } catch (error) {
-            console.error('❌ Erro na inteligência de mapeamento:', error);
-            verificacoesMapeamento = [];
-          }
-        }
-
-        // 🧠 FASE 3: Criar mapa inteligente de verificações por SKU
-        const verificacoesMap = new Map(
-          verificacoesMapeamento.map(v => [v.skuPedido, v])
-        );
-        
-        const novosMapping = new Map();
-        
-        // 🧠 FASE 4: ANÁLISE INTELIGENTE - Processar cada pedido
-        for (const pedido of orders) {
-          try {
-            // Extrair SKUs deste pedido específico
-            const skusPedido = pedido.skus?.filter(Boolean) || 
-                              pedido.order_items?.map((item: any) => item.item?.seller_sku).filter(Boolean) || 
-                              [];
-            
-            if (skusPedido.length > 0) {
-              // 🔍 Verificar se já foi baixado no histórico usando hv_exists
-              const idUnicoPedido = (pedido as any).id_unico || buildIdUnico(pedido);
-
-              const { data: jaProcessado } = await supabase
-                .rpc('hv_exists', {
-                  p_id_unico: idUnicoPedido
-                });
-              
-              // 🧠 INTELIGÊNCIA: Buscar primeiro SKU que tem mapeamento válido
-              const skuComMapeamento = skusPedido.find(sku => {
-                const verificacao = verificacoesMap.get(sku);
-                return verificacao?.temMapeamento && verificacao?.skuEstoque;
-              });
-
-              let skuEstoque = null;
-              let skuKit = null;
-              let qtdKit = 0;
-              let totalItens = pedido.quantidade_itens || 0;
-              let statusBaixa;
-
-              if (!skuComMapeamento) {
-                // 🧠 INTELIGÊNCIA: Se não tem mapeamento completo, marcar como "sem_mapear"
-                // Neste caso, o sistema já criou automaticamente o registro no De-Para
-                // aguardando preenchimento manual do usuário
-                statusBaixa = 'sem_mapear';
-                console.log(`⚠️ Pedido ${pedido.numero || pedido.id} sem mapeamento completo - SKUs: ${skusPedido.join(', ')}`);
-              } else {
-                // 🧠 INTELIGÊNCIA: Tem mapeamento válido, verificar status de estoque
-                const verificacao = verificacoesMap.get(skuComMapeamento);
-                skuEstoque = verificacao.skuEstoque;     // sku_correspondente (SKU Correto)
-                skuKit = verificacao.skuKit;             // sku_simples (SKU Unitário)  
-                qtdKit = verificacao.quantidadeKit || 1;
-                
-                if (jaProcessado) {
-                  statusBaixa = 'pedido_baixado';
-                } else if (skuEstoque) {
-                  // 🧠 VERIFICAÇÃO INTELIGENTE DE ESTOQUE
-                  const { data: produto } = await supabase
-                    .from('produtos')
-                    .select('quantidade_atual')
-                    .eq('sku_interno', skuEstoque)
-                    .eq('ativo', true)
-                    .maybeSingle();
-                  
-                  if (produto && produto.quantidade_atual >= qtdKit) {
-                    statusBaixa = 'pronto_baixar';
-                  } else {
-                    statusBaixa = 'sem_estoque';
-                  }
-                } else {
-                  // Se tem mapeamento mas sem SKU estoque definido
-                  statusBaixa = 'sem_mapear';
-                }
-                
-                console.log(`✅ Pedido ${pedido.numero || pedido.id} - Status: ${statusBaixa} (SKU: ${skuComMapeamento} → ${skuEstoque})`);
-              }
-
-              // 🐛 CORRIGIDO: Usar campos consistentes com o MapeamentoService
-              novosMapping.set(pedido.id, {
-                skuEstoque,
-                skuKit,
-                quantidade: qtdKit,        // Para compatibilidade com renderização
-                quantidadeKit: qtdKit,     // Para compatibilidade com MapeamentoService
-                totalItens,
-                statusBaixa,
-                jaProcessado
-              });
-              
-              // 🔍 DEBUG: Log para verificar dados do mapeamento
-              console.log(`📋 [DEBUG] Mapeamento salvo para pedido ${pedido.numero}:`, {
-                skuEstoque,
-                skuKit, 
-                quantidade: qtdKit,
-                statusBaixa
-              });
-            } else {
-              console.log(`⚠️ Pedido ${pedido.numero || pedido.id} sem SKUs identificados`);
-            }
-          } catch (error) {
-            console.error('❌ Erro ao processar mapeamento inteligente para pedido:', pedido.id, error);
-          }
-        }
-        
-        console.log(`🧠 INTELIGÊNCIA CONCLUÍDA: ${novosMapping.size} pedidos processados`);
-        setMappingData(novosMapping);
-        
-      } finally {
-        setIsProcessingMappings(false);
-      }
-    };
-
-    // 🧠 TRIGGER INTELIGENTE: Executar processamento com debounce para evitar chamadas excessivas
-    const timeoutId = setTimeout(processarMapeamentos, 300);
-    
-    return () => {
-      clearTimeout(timeoutId);
-      setIsProcessingMappings(false);
-    };
-  }, [orders]);
+  // totalPages - moved to usePedidosManager
 
   // Carregamento inicial das contas
   useEffect(() => {
@@ -986,55 +798,7 @@ function SimplePedidosPage({ className }: Props) {
         selectedOrdersCount={selectedOrders.size}
         hasPendingChanges={hasPendingChanges}
       >
-        {/* 🚀 FASE 3: Filtros salvos */}
-        <SavedFiltersManager
-          savedFilters={actions.getSavedFilters()}
-          onSaveFilters={actions.saveCurrentFilters}
-          onLoadFilters={actions.loadSavedFilters}
-          hasActiveFilters={pedidosManager.hasActiveFilters}
-        />
-        
-        {/* 🚀 FASE 3: Exportação */}
-        <ExportModal
-          onExport={actions.exportData}
-          totalRecords={total}
-          isLoading={loading}
-        />
-
-        {/* 🔧 Sistema de colunas unificado */}
-        <ColumnManager manager={columnManager} />
-
-        {selectedOrders.size > 0 && (
-          <BaixaEstoqueModal 
-            pedidos={Array.from(selectedOrders).map(id => {
-              const order = orders.find(o => o.id === id);
-              if (!order) return null;
-              
-              // Enriquecer pedido com dados calculados da UI
-              const mapping = mappingData.get(order.id);
-              const quantidadeItens = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-              const qtdKit = mapping?.quantidade || 1;
-              
-              return {
-                ...order,
-                sku_kit: mapping?.skuKit || null,
-                total_itens: quantidadeItens * qtdKit
-              };
-            }).filter(Boolean) as Pedido[]}
-            contextoDaUI={{
-              mappingData,
-              accounts,
-              selectedAccounts,
-              integrationAccountId
-            }}
-            trigger={
-              <Button>
-                <Package className="h-4 w-4 mr-2" />
-                Baixar Estoque ({selectedOrders.size})
-              </Button>
-            }
-          />
-        )}
+      {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
       </PedidosHeaderSection>
 
       {/* 🛡️ SELEÇÃO MÚLTIPLA DE CONTAS */}
@@ -1425,7 +1189,19 @@ function SimplePedidosPage({ className }: Props) {
         }}
       />
 
-      {/* 🛡️ MODAL DE BAIXA DE ESTOQUE REMOVIDO - Agora está no PedidosBulkActionsSection */}
+      {/* 🚀 SEÇÃO DE MODAIS - PASSO 7 COMPLETO */}
+      <PedidosModalsSection
+        onExport={actions.exportData}
+        totalRecords={total}
+        isLoading={loading}
+        savedFilters={actions.getSavedFilters()}
+        onSaveFilters={actions.saveCurrentFilters}
+        onLoadFilters={actions.loadSavedFilters}
+        hasActiveFilters={hasPendingChanges}
+        columnManager={columnManager}
+      />
+
+      {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
     </div>
   );
 }
