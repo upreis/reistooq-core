@@ -125,49 +125,64 @@ export function usePedidosManager(initialAccountId?: string) {
   });
 
   /**
-   * 🚀 OTIMIZADO: Converte filtros para parâmetros da API com memoização
+   * 🔧 AUDITORIA: Converte filtros para parâmetros da API 
+   * CORRIGIDO: Mapear situação para shipping_status corretamente
    */
   const buildApiParams = useCallback((filters: PedidosFilters) => {
     const params: any = {};
 
-    // Busca
+    // 🔍 Busca - OK
     if (filters.search) {
       params.q = filters.search;
     }
 
-    // Status do Envio - enviar múltiplos valores se necessário
+    // 🚨 CORRIGIDO: Status do Envio - mapear corretamente
     if (filters.situacao) {
       const situacoes = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
       if (situacoes.length > 0) {
-        // Para suporte a múltiplas seleções, enviar array
-        params.shipping_status = situacoes.length === 1 ? situacoes[0] : situacoes;
+        // Mapear situações PT para status API do ML
+        const mappedStatuses = situacoes.map(sit => {
+          const apiStatus = mapSituacaoToApiStatus(sit);
+          return apiStatus || sit; // Fallback para valor original se não mapeou
+        }).filter(Boolean);
+        
+        if (mappedStatuses.length > 0) {
+          params.shipping_status = mappedStatuses.length === 1 ? mappedStatuses[0] : mappedStatuses;
+          console.log('🎯 Status enviados para API:', mappedStatuses, 'originais:', situacoes);
+        }
       }
     }
 
-    // ✅ CORRIGIDO: Datas com formato consistente
+    // 📅 CORRIGIDO: Datas com formato consistente 
     if (filters.dataInicio) {
       const d = normalizeDate(filters.dataInicio);
       if (d && !isNaN(d.getTime())) {
         params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        console.log('📅 Data início enviada para API:', params.date_from, 'original:', filters.dataInicio);
+        console.log('📅 Data início enviada para API:', params.date_from);
       }
     }
     if (filters.dataFim) {
       const d = normalizeDate(filters.dataFim);
       if (d && !isNaN(d.getTime())) {
         params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        console.log('📅 Data fim enviada para API:', params.date_to, 'original:', filters.dataFim);
+        console.log('📅 Data fim enviada para API:', params.date_to);
       }
     }
 
-    // Outros filtros
+    // 🌍 Outros filtros geográficos e valores - OK
     if (filters.cidade) params.cidade = filters.cidade;
     if (filters.uf) params.uf = filters.uf;
     if (filters.valorMin !== undefined) params.valorMin = filters.valorMin;
     if (filters.valorMax !== undefined) params.valorMax = filters.valorMax;
 
+    // 🏢 CRÍTICO: Garantir integration_account_id sempre presente
+    if (integrationAccountId) {
+      params.integration_account_id = integrationAccountId;
+    }
+
+    console.log('🔧 [AUDITORIA] Parâmetros construídos:', params);
     return params;
-  }, []); // Empty deps - função pura
+  }, [integrationAccountId]);
 
   /**
    * Prioriza parâmetros da URL quando disponíveis
@@ -192,17 +207,31 @@ export function usePedidosManager(initialAccountId?: string) {
    */
   const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
     const { shipping_status, ...rest } = apiParams || {};
+    // 🔧 AUDITORIA: Construir body da requisição com validação
+    if (!integrationAccountId) {
+      throw new Error('integration_account_id é obrigatório mas não foi fornecido');
+    }
+
     const requestBody = {
+      // 🏢 CRÍTICO: integration_account_id obrigatório
       integration_account_id: integrationAccountId,
+      
+      // 📊 Paginação
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
+      
+      // 🔍 Filtros principais
+      ...rest,
+      
+      // 🎯 Status do envio - tratar arrays corretamente
+      ...(shipping_status ? { shipping_status } : {}),
+      
+      // 🌐 URL params têm prioridade sobre filtros
+      ...getUrlParams(),
+      
+      // 📦 Enriquecimento de dados
       enrich: true,
       include_shipping: true,
-      ...rest,
-      // Enviar shipping_status diretamente para o edge function
-      shipping_status: shipping_status,
-      ...getUrlParams(), // URL tem prioridade
-      // Sempre enriquecer para ter os dados de SKUs e mapeamentos
       enrich_skus: true,
       include_skus: true
     } as any;
@@ -261,50 +290,70 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de status usando debouncedFilters
+      // 🚨 CORRIGIDO: Filtro de status usando função utilitária avançada
       if (debouncedFilters.situacao) {
         const selectedStatuses = Array.isArray(debouncedFilters.situacao) ? debouncedFilters.situacao : [debouncedFilters.situacao];
         
-        // Usar shipping_status como referência principal
-        const orderShippingStatus = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || '';
+        // Extrair todos os status possíveis do pedido
+        const orderStatuses = [
+          order.shipping_status,
+          order.shipping?.status,
+          order.raw?.shipping?.status,
+          order.situacao,
+          order.status
+        ].filter(Boolean);
         
-        // Verificar se o shipping_status corresponde ao filtro selecionado
-        const statusMatches = selectedStatuses.some(selectedStatus => {
-          // Comparação direta ou normalizada
-          return orderShippingStatus.toLowerCase() === selectedStatus.toLowerCase() ||
-                 orderShippingStatus === selectedStatus;
-        });
+        // Usar função utilitária para verificação avançada
+        const statusMatches = orderStatuses.some(orderStatus => 
+          statusMatchesFilter(orderStatus, selectedStatuses)
+        );
         
         if (!statusMatches) {
+          console.log('🚫 Pedido filtrado por status:', order.id, 'status encontrados:', orderStatuses, 'filtros:', selectedStatuses);
           return false;
         }
       }
 
-  // 🚀 CORRIGIDO: Filtro de data melhorado
-  if (debouncedFilters.dataInicio || debouncedFilters.dataFim) {
-    const orderDate = normalizeDate(order.data_pedido || order.date_created);
-    if (!orderDate) return false; // Excluir pedidos sem data válida
-    
-    // Normalizar para comparação apenas com data (sem hora)
-    const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
-    
-    // Comparar data de início  
-    if (debouncedFilters.dataInicio) {
-      const startDate = normalizeDate(debouncedFilters.dataInicio);
-      if (startDate) {
-        const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-        if (orderDateOnly < startDateOnly) {
-          return false;
+      // 📅 CORRIGIDO: Filtro de data com verificação robusta
+      if (debouncedFilters.dataInicio || debouncedFilters.dataFim) {
+        // Tentar múltiplas fontes de data
+        const possibleDates = [
+          order.data_pedido,
+          order.date_created,
+          order.created_at,
+          order.raw?.date_created
+        ].filter(Boolean);
+        
+        if (!possibleDates.length) {
+          console.log('⚠️ Pedido sem data válida para filtro:', order.id);
+          return false; // Excluir pedidos sem data válida
         }
-      }
-    }
-    
-    // Comparar data fim
-    if (debouncedFilters.dataFim) {
-      const endDate = normalizeDate(debouncedFilters.dataFim);
-      if (endDate) {
-        const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-        if (orderDateOnly > endDateOnly) {
+        
+        const orderDate = normalizeDate(possibleDates[0]);
+        if (!orderDate) return false;
+        
+        // Normalizar para comparação apenas com data (sem hora)
+        const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+        
+        // Comparar data de início  
+        if (debouncedFilters.dataInicio) {
+          const startDate = normalizeDate(debouncedFilters.dataInicio);
+          if (startDate) {
+            const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            if (orderDateOnly < startDateOnly) {
+              console.log('📅 Pedido filtrado por data início:', order.id, 'data pedido:', orderDateOnly, 'filtro:', startDateOnly);
+              return false;
+            }
+          }
+        }
+        
+        // Comparar data fim
+        if (debouncedFilters.dataFim) {
+          const endDate = normalizeDate(debouncedFilters.dataFim);
+          if (endDate) {
+            const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            if (orderDateOnly > endDateOnly) {
+              console.log('📅 Pedido filtrado por data fim:', order.id, 'data pedido:', orderDateOnly, 'filtro:', endDateOnly);
               return false;
             }
           }
