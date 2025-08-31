@@ -10,8 +10,8 @@ export const CACHE = {
 } as const;
 
 export const DEBOUNCE = {
-  FILTER_DELAY_MS: 800, // P2.2: Aumentado para 800ms para APIs externas
-  SEARCH_DELAY_MS: 300,
+  FILTER_DELAY_MS: 300, // ✅ REDUZIDO: 300ms para melhor UX
+  SEARCH_DELAY_MS: 150, // ✅ REDUZIDO: 150ms para busca mais rápida
 } as const;
 
 export const STATUS_COLORS = {

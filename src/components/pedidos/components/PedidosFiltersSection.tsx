@@ -76,21 +76,7 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
             </Badge>
           )}
           
-          {/* Botão aplicar filtros */}
-          {actions?.applyFilters && (
-            <Button
-              onClick={actions.applyFilters}
-              variant={hasPendingChanges ? "default" : "ghost"}
-              size="sm"
-              disabled={!hasPendingChanges}
-              className={cn(
-                "transition-all duration-200",
-                hasPendingChanges && "bg-primary text-primary-foreground hover:bg-primary/90"
-              )}
-            >
-              {hasPendingChanges ? "Aplicar Filtros" : "Filtros Aplicados"}
-            </Button>
-          )}
+          {/* ✅ REMOVIDO: Botão "Aplicar Filtros" - agora é automático */}
           
           {/* Gerenciador de colunas */}
           {columnManager && (

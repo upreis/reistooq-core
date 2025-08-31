@@ -18,14 +18,14 @@ function PedidosFiltersMemo({
   hasPendingChanges,
   isLoading = false
 }: PedidosFiltersMemoProps) {
-  // Debounce search para melhor performance
+  // ✅ APLICAÇÃO AUTOMÁTICA: Debounce apenas search, outros filtros aplicam imediatamente
   const debouncedSearch = useDebounce(filters.search || '', DEBOUNCE.SEARCH_DELAY_MS);
   
   React.useEffect(() => {
     if (debouncedSearch !== (filters.search || '')) {
       onFiltersChange({ ...filters, search: debouncedSearch });
     }
-  }, [debouncedSearch]);
+  }, [debouncedSearch, filters, onFiltersChange]);
 
   return (
     <PedidosFilters

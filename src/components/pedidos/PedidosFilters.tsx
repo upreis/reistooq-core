@@ -48,8 +48,10 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [situacaoOpen, setSituacaoOpen] = useState(false);
 
+  // ✅ APLICAÇÃO AUTOMÁTICA: Filtros são aplicados imediatamente
   const handleFilterChange = (key: keyof PedidosFiltersState, value: any) => {
-    onFiltersChange({ ...filters, [key]: value });
+    const newFilters = { ...filters, [key]: value };
+    onFiltersChange(newFilters);
   };
 
   // ✅ NOVA FUNÇÃO: Gerenciar seleção múltipla de situações
@@ -82,19 +84,13 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
   const selectedSituacoes = filters.situacao || [];
 
   return (
-    <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-gray-600">
-      {/* Aviso de mudanças pendentes */}
-      {hasPendingChanges && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-amber-800">
-          <Filter className="h-4 w-4" />
-          <span className="text-sm">Filtros alterados. Clique em "Aplicar Filtros" para atualizar os resultados.</span>
-        </div>
-      )}
+    <div className="space-y-4 p-4 bg-card rounded-lg border border-border">
+      {/* ✅ REMOVIDO: Aviso de mudanças pendentes (aplicação automática) */}
       
-      {/* Filtros Básicos */}
-      <div className="flex flex-wrap gap-4 items-end">
-        {/* Busca */}
-        <div className="flex-1 min-w-80">
+      {/* ✅ LAYOUT RESPONSIVO MELHORADO */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 items-end">
+        {/* ✅ BUSCA RESPONSIVA */}
+        <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block">Buscar</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -107,8 +103,8 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
           </div>
         </div>
 
-        {/* ✅ SITUAÇÃO MÚLTIPLA */}
-        <div className="min-w-48">
+        {/* ✅ SITUAÇÃO MÚLTIPLA RESPONSIVA */}
+        <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block">Situação</label>
           <Popover open={situacaoOpen} onOpenChange={setSituacaoOpen}>
             <PopoverTrigger asChild>
@@ -162,53 +158,51 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
           </Popover>
         </div>
 
-        {/* Data Período */}
-        <div className="flex gap-2">
-          <div>
-            <label className="text-sm font-medium mb-1 block">Data Início</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="justify-start text-left">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dataInicio ? format(filters.dataInicio, 'dd/MM/yyyy', { locale: ptBR }) : 'Início'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.dataInicio}
-                  onSelect={(date) => handleFilterChange('dataInicio', date)}
-                  locale={ptBR}
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          
-          <div>
-            <label className="text-sm font-medium mb-1 block">Data Fim</label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="justify-start text-left">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dataFim ? format(filters.dataFim, 'dd/MM/yyyy', { locale: ptBR }) : 'Fim'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.dataFim}
-                  onSelect={(date) => handleFilterChange('dataFim', date)}
-                  locale={ptBR}
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+        {/* ✅ DATAS RESPONSIVAS - CADA UMA EM COLUNA SEPARADA */}
+        <div className="lg:col-span-1 xl:col-span-1">
+          <label className="text-sm font-medium mb-1 block">Data Início</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full justify-start text-left">
+                <Calendar className="mr-2 h-4 w-4" />
+                {filters.dataInicio ? format(filters.dataInicio, 'dd/MM/yy', { locale: ptBR }) : 'Início'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={filters.dataInicio}
+                onSelect={(date) => handleFilterChange('dataInicio', date)}
+                locale={ptBR}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div className="lg:col-span-1 xl:col-span-1">
+          <label className="text-sm font-medium mb-1 block">Data Fim</label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="w-full justify-start text-left">
+                <Calendar className="mr-2 h-4 w-4" />
+                {filters.dataFim ? format(filters.dataFim, 'dd/MM/yy', { locale: ptBR }) : 'Fim'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={filters.dataFim}
+                onSelect={(date) => handleFilterChange('dataFim', date)}
+                locale={ptBR}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
-        {/* Botões */}
-        <div className="flex gap-2">
+        {/* ✅ BOTÕES RESPONSIVOS */}
+        <div className="sm:col-span-2 lg:col-span-2 xl:col-span-1 flex gap-2 justify-end lg:justify-start">
           <Button
             variant="outline"
             size="sm"
@@ -216,7 +210,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
             className="relative"
           >
             <Filter className="h-4 w-4 mr-1" />
-            Avançado
+            <span className="hidden sm:inline">Avançado</span>
             {activeFiltersCount > 0 && (
               <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
                 {activeFiltersCount}
@@ -227,7 +221,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
           {activeFiltersCount > 0 && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>
               <X className="h-4 w-4 mr-1" />
-              Limpar
+              <span className="hidden sm:inline">Limpar</span>
             </Button>
           )}
         </div>
