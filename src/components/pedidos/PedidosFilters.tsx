@@ -32,12 +32,14 @@ interface PedidosFiltersProps {
 }
 
 const SITUACOES = [
-  'Aberto',
-  'Pago', 
-  'Confirmado',
+  'Pendente',
+  'Pronto para Envio',
   'Enviado',
   'Entregue',
-  'Cancelado'
+  'Não Entregue',
+  'Cancelado',
+  'Processando',
+  'A Combinar',
 ];
 
 const UFS = [
