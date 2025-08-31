@@ -1323,32 +1323,3 @@ function SimplePedidosPage({ className }: Props) {
 }
 
 export default memo(SimplePedidosPage);
-      <BaixaEstoqueModal 
-        pedidos={Array.from(selectedOrders).map(id => {
-          const order = orders.find(o => o.id === id);
-          if (!order) return null;
-          
-          // Enriquecer pedido com dados calculados da UI
-          const mapping = mappingData.get(order.id);
-          const quantidadeItens = order.order_items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
-          const qtdKit = mapping?.quantidade || 1;
-          
-          return {
-            ...order,
-            sku_kit: mapping?.skuKit || null,
-            total_itens: quantidadeItens * qtdKit
-          };
-        }).filter(Boolean) as Pedido[]}
-        contextoDaUI={{
-          mappingData,
-          accounts,
-          selectedAccounts,
-          integrationAccountId
-        }}
-        trigger={null}
-      />
-    </div>
-  );
-}
-
-export default memo(SimplePedidosPage);

@@ -37,7 +37,7 @@ interface PedidosTableSectionProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  isPedidoProcessado: (id: string) => boolean;
+  isPedidoProcessado: (order: any) => boolean;
   className?: string;
 }
 
@@ -201,7 +201,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                 </th>
                 
                 {/* Cabeçalhos dinâmicos baseados nas colunas visíveis */}
-                {visibleColumns.has('status') && <th className="p-3">Status</th>}
+                {visibleColumns.has('situacao') && <th className="p-3">Status</th>}
                 {visibleColumns.has('numero') && <th className="p-3">Número</th>}
                 {visibleColumns.has('nome_cliente') && <th className="p-3">Cliente</th>}
                 {visibleColumns.has('cpf_cnpj') && <th className="p-3">CPF/CNPJ</th>}
@@ -229,7 +229,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
             <tbody>
               {orders.map((order, index) => {
                 const isSelected = selectedOrders.has(order.id);
-                const isProcessed = isPedidoProcessado(order.id);
+                const isProcessed = isPedidoProcessado(order);
                 const mapping = mappingData.get(order.id);
                 
                 // Extrair SKUs do pedido
@@ -260,7 +260,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     </td>
 
                     {/* Status */}
-                    {visibleColumns.has('status') && (
+                    {visibleColumns.has('situacao') && (
                       <td className="p-3">
                         <Badge variant={getStatusBadgeVariant(order.situacao || order.status)}>
                           {mapApiStatusToLabel(order.situacao || order.status)}
