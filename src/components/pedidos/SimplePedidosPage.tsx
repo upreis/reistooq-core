@@ -42,8 +42,8 @@ import {
 import PedidosFiltersMemo from './PedidosFiltersMemo';
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
-import PedidosFiltersSectionMemo from './components/PedidosFiltersSectionMemo';
-import PedidosTableSectionMemo from './components/PedidosTableSectionMemo';
+import { PedidosFiltersSection } from './components/PedidosFiltersSection';
+import { PedidosTableSection } from './components/PedidosTableSection';
 import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';
@@ -858,7 +858,7 @@ function SimplePedidosPage({ className }: Props) {
       </Card>
 
       {/* 🛡️ FILTROS SIMPLES E FUNCIONAIS - TESTE MIGRAÇÃO GRADUAL */}
-      <PedidosFiltersSectionMemo
+      <PedidosFiltersSection
         filters={filters}
         
         actions={actions}
@@ -1146,7 +1146,7 @@ function SimplePedidosPage({ className }: Props) {
 
       {/* 🚀 FASE 2: Loading otimizado */}
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}
-      <PedidosTableSectionMemo
+      <PedidosTableSection
         orders={orders}
         total={total}
         loading={loading}
