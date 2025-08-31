@@ -94,8 +94,6 @@ function SimplePedidosPage({ className }: Props) {
   const visibleColumns = columnManager.state.visibleColumns;
   
   // Estados locais para funcionalidades específicas
-  const [accounts, setAccounts] = useState<any[]>([]);
-  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showBaixaModal, setShowBaixaModal] = useState(false);
   
@@ -559,47 +557,25 @@ function SimplePedidosPage({ className }: Props) {
     }
   };
 
-  // Carregar contas
-  const loadAccounts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('integration_accounts')
-        .select('*')
-        .eq('provider', 'mercadolivre')
-        .eq('is_active', true)
-        .order('updated_at', { ascending: false });
+  // Handlers memoizados para performance
+  const handleFilterChange = useCallback((newFilters: any) => {
+    actions.setFilters(newFilters);
+  }, [actions.setFilters]);
 
-      if (error) throw error;
-
-      const list = data || [];
-      setAccounts(list);
-
-      if (list.length > 0) {
-        // Selecionar automaticamente todas as contas válidas
-        const validAccounts = [];
-        for (const acc of list) {
-          const ok = await testAccount(acc.id);
-          if (ok) {
-            validAccounts.push(acc.id);
-          }
-        }
-        
-        if (validAccounts.length > 0) {
-          setSelectedAccounts(validAccounts);
-          // 🔄 Conta será definida pelo useEffect automaticamente sem buscar
-        } else if (list.length > 0) {
-          // Se nenhuma válida, selecionar a mais recente
-          setSelectedAccounts([list[0].id]);
-          // 🔄 Conta será definida pelo useEffect automaticamente sem buscar
-        }
-      }
-    } catch (err: any) {
-      console.error('Erro ao carregar contas:', err.message);
-    }
+  const handleBaixaEstoque = async (pedidos: string[]) => {
+    console.log('Iniciando baixa de estoque para:', pedidos);
+    setShowBaixaModal(false);
+    // Lógica de baixa de estoque aqui
   };
 
-  // ✅ PROCESSAMENTO AUTOMÁTICO DE MAPEAMENTOS REMOVIDO - agora está no usePedidosMappings
-  // A lógica de processamento foi migrada para o hook dedicado
+  // Definir conta via URL (?acc= ou ?integration_account_id=)
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const acc = sp.get('acc') || sp.get('integration_account_id');
+      if (acc) actions.setIntegrationAccountId(acc);
+    } catch {}
+  }, [actions]);
   
   // ✅ Sistema de validação mantido
   const validateSystem = () => {
@@ -628,126 +604,6 @@ function SimplePedidosPage({ className }: Props) {
     return () => clearInterval(interval);
   }, [orders, mappingData]);
 
-  // ✅ Gestão de contas selecionadas com persistência
-  useEffect(() => {
-    // Salvar contas selecionadas
-    if (selectedAccounts.length > 0) {
-      const saved = localStorage.getItem('pedidos:lastSearch');
-      const lastSearch = saved ? JSON.parse(saved) : {};
-      lastSearch.selectedAccounts = selectedAccounts;
-      localStorage.setItem('pedidos:lastSearch', JSON.stringify(lastSearch));
-    }
-  }, [selectedAccounts]);
-
-  // Restaurar contas selecionadas
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('pedidos:lastSearch');
-      if (saved) {
-        const lastSearch = JSON.parse(saved);
-        if (lastSearch.selectedAccounts && Array.isArray(lastSearch.selectedAccounts)) {
-          console.log('💾 Restaurando contas selecionadas:', lastSearch.selectedAccounts);
-          setSelectedAccounts(lastSearch.selectedAccounts);
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Erro ao restaurar contas selecionadas:', error);
-    }
-  }, []);
-
-  // ✅ Handlers mantidos
-  const handlePageChange = (page: number) => {
-    actions.setPage(page);
-  };
-
-  // totalPages - moved to usePedidosManager
-
-  // Carregamento inicial das contas
-  useEffect(() => {
-    loadAccounts();
-  }, []);
-
-  // Efeito para definir conta automaticamente quando selecionada
-  useEffect(() => {
-    if (selectedAccounts.length === 1 && selectedAccounts[0] !== integrationAccountId) {
-      console.log('🔄 Definindo conta selecionada:', selectedAccounts[0]);
-      actions.setIntegrationAccountId(selectedAccounts[0]);
-    }
-  }, [selectedAccounts, integrationAccountId, actions]);
-
-  // Handlers memoizados para performance
-  const handleFilterChange = useCallback((newFilters: any) => {
-    actions.setFilters(newFilters);
-  }, [actions.setFilters]);
-
-  // 💾 Função para salvar contas selecionadas junto com filtros
-  const handleApplyFilters = () => {
-    // Aplicando filtros
-    
-    // Salvar contas selecionadas no localStorage antes de aplicar filtros
-    try {
-      const saved = localStorage.getItem('pedidos:lastSearch');
-      const lastSearch = saved ? JSON.parse(saved) : {};
-      lastSearch.selectedAccounts = selectedAccounts;
-      localStorage.setItem('pedidos:lastSearch', JSON.stringify(lastSearch));
-      // Contas salvas no localStorage
-    } catch (error) {
-      console.warn('⚠️ Erro ao salvar contas selecionadas:', error);
-    }
-    
-    // Aplicar filtros normalmente
-    // Chamando aplicação de filtros
-    actions.applyFilters();
-  };
-
-  const handleBaixaEstoque = async (pedidos: string[]) => {
-    console.log('Iniciando baixa de estoque para:', pedidos);
-    setShowBaixaModal(false);
-    // Lógica de baixa de estoque aqui
-  };
-
-  // 💾 Effect para restaurar contas selecionadas da última consulta
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('pedidos:lastSearch');
-      if (saved) {
-        const lastSearch = JSON.parse(saved);
-        if (lastSearch.selectedAccounts && Array.isArray(lastSearch.selectedAccounts)) {
-          console.log('💾 Restaurando contas selecionadas:', lastSearch.selectedAccounts);
-          setSelectedAccounts(lastSearch.selectedAccounts);
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Erro ao restaurar contas selecionadas:', error);
-    }
-  }, []);
-
-  // Effects
-  useEffect(() => {
-    loadAccounts();
-  }, []);
-
-  // Definir conta via URL (?acc= ou ?integration_account_id=)
-  useEffect(() => {
-    try {
-      const sp = new URLSearchParams(window.location.search);
-      const acc = sp.get('acc') || sp.get('integration_account_id');
-      if (acc) actions.setIntegrationAccountId(acc);
-    } catch {}
-  }, [actions]);
-
-  // 🔄 Effect para definir conta SEM disparar busca automática
-  useEffect(() => {
-    if (selectedAccounts.length > 0) {
-      // 🚨 CORRIGIDO: Suporte a múltiplas contas com concatenação
-      const accountsString = selectedAccounts.join(',');
-      if (integrationAccountId !== accountsString) {
-        console.log('🔄 Definindo contas de integração:', selectedAccounts);
-        // Definir primeira conta como principal, mas preparar para múltiplas no futuro
-        actions.setIntegrationAccountId(selectedAccounts[0]);
-      }
-    }
-  }, [selectedAccounts]); // 🚨 REMOVIDO: integrationAccountId e actions das dependências
 
   // Render principal
   return (
@@ -765,73 +621,12 @@ function SimplePedidosPage({ className }: Props) {
         loading={loading}
         isRefreshing={state.isRefreshing}
         onRefresh={actions.refetch}
-        onApplyFilters={handleApplyFilters}
+        onApplyFilters={() => actions.applyFilters()}
         selectedOrdersCount={selectedOrders.size}
         hasPendingChanges={hasPendingChanges}
       >
       {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
       </PedidosHeaderSection>
-
-      {/* 🛡️ SELEÇÃO MÚLTIPLA DE CONTAS */}
-      <Card className="p-4">
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <span className="font-medium">Contas do Mercado Livre:</span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                if (selectedAccounts.length === accounts.length) {
-                  setSelectedAccounts([]);
-                  // 🔄 Não resetar conta automaticamente - deixar para o useEffect
-                } else {
-                  const allAccountIds = accounts.map(acc => acc.id);
-                  setSelectedAccounts(allAccountIds);
-                  // 🔄 Conta será definida pelo useEffect automaticamente
-                }
-              }}
-            >
-              {selectedAccounts.length === accounts.length ? 'Desselecionar Todas' : 'Selecionar Todas'}
-            </Button>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-2">
-            {accounts.map((acc) => (
-              <label
-                key={acc.id}
-                className="flex items-center space-x-1 px-2 py-1 border rounded-md cursor-pointer hover:bg-muted/50 text-sm"
-              >
-                <Checkbox
-                  checked={selectedAccounts.includes(acc.id)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      const newSelected = [...selectedAccounts, acc.id];
-                      setSelectedAccounts(newSelected);
-                      // 🔄 Conta será definida pelo useEffect automaticamente
-                    } else {
-                      const newSelected = selectedAccounts.filter(id => id !== acc.id);
-                      setSelectedAccounts(newSelected);
-                      // 🔄 Conta será definida pelo useEffect automaticamente
-                    }
-                  }}
-                />
-                <div className="flex-1">
-                  <div className="font-medium">{acc.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {acc.account_identifier || 'ID não disponível'}
-                  </div>
-                </div>
-              </label>
-            ))}
-          </div>
-          
-          {selectedAccounts.length > 0 && (
-            <div className="text-sm text-muted-foreground">
-              {selectedAccounts.length} conta(s) selecionada(s)
-            </div>
-          )}
-        </div>
-      </Card>
 
       {/* 🛡️ FILTROS SIMPLES E FUNCIONAIS - TESTE MIGRAÇÃO GRADUAL */}
       <PedidosFiltersSection
@@ -842,7 +637,6 @@ function SimplePedidosPage({ className }: Props) {
         hasPendingChanges={hasPendingChanges}
         columnManager={columnManager}
         loading={state.loading}
-        contasML={accounts} // ✅ NOVO: Passar contas ML para os filtros
       />
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
