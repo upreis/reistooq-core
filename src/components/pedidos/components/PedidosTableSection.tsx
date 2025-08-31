@@ -21,6 +21,7 @@ import {
 } from '@/utils/pedidos-translations';
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
+import { buildIdUnico } from '@/utils/idUnico';
 
 interface PedidosTableSectionProps {
   orders: any[];
@@ -34,6 +35,7 @@ interface PedidosTableSectionProps {
   setSelectedOrders: (orders: Set<string>) => void;
   mappingData: Map<string, any>;
   visibleColumns: any;
+  visibleDefinitions?: Array<{ key: string; label: string }>;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -53,6 +55,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   setSelectedOrders,
   mappingData,
   visibleColumns,
+  visibleDefinitions,
   currentPage,
   totalPages,
   onPageChange,
@@ -199,35 +202,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     onCheckedChange={handleSelectAll}
                   />
                 </th>
-                
-                {/* Cabeçalhos dinâmicos baseados nas colunas visíveis */}
-                {visibleColumns.has('situacao') && <th className="p-3">Status</th>}
-                {visibleColumns.has('numero') && <th className="p-3">Número</th>}
-                {visibleColumns.has('nome_cliente') && <th className="p-3">Cliente</th>}
-                {visibleColumns.has('cpf_cnpj') && <th className="p-3">CPF/CNPJ</th>}
-                {visibleColumns.has('data_pedido') && <th className="p-3">Data Pedido</th>}
-                {visibleColumns.has('last_updated') && <th className="p-3">Última Atualização</th>}
-                {visibleColumns.has('skus_produtos') && <th className="p-3">SKUs</th>}
-                {visibleColumns.has('quantidade_itens') && <th className="p-3">Qtd Itens</th>}
-                {visibleColumns.has('titulo_anuncio') && <th className="p-3">Título Anúncio</th>}
-                {visibleColumns.has('valor_total') && <th className="p-3">Valor Total</th>}
-                {visibleColumns.has('paid_amount') && <th className="p-3">Valor Pago</th>}
-                {visibleColumns.has('frete_pago_cliente') && <th className="p-3">Frete Cliente</th>}
-                {visibleColumns.has('receita_flex') && <th className="p-3">Receita Flex</th>}
-                {visibleColumns.has('custo_envio_seller') && <th className="p-3">Custo Envio</th>}
-                {visibleColumns.has('coupon_amount') && <th className="p-3">Desconto</th>}
-                {visibleColumns.has('marketplace_fee') && <th className="p-3">Taxa Marketplace</th>}
-                {visibleColumns.has('valor_liquido_vendedor') && <th className="p-3">Valor Líquido</th>}
-                {visibleColumns.has('payment_method') && <th className="p-3">Pagamento</th>}
-                {visibleColumns.has('shipping_mode') && <th className="p-3">Modo Envio</th>}
-                {(visibleColumns.has('cidade') || visibleColumns.has('endereco_cidade')) && <th className="p-3">Cidade</th>}
-                {(visibleColumns.has('uf') || visibleColumns.has('endereco_uf')) && <th className="p-3">UF</th>}
-                {visibleColumns.has('mapeamento') && <th className="p-3">Mapeamento</th>}
-                {visibleColumns.has('sku_estoque') && <th className="p-3">SKU Estoque</th>}
-                {visibleColumns.has('sku_kit') && <th className="p-3">SKU KIT</th>}
-                {visibleColumns.has('qtd_kit') && <th className="p-3">Qtd KIT</th>}
-                {visibleColumns.has('total_itens') && <th className="p-3">Total Itens</th>}
-                {visibleColumns.has('status_baixa') && <th className="p-3">Status Baixa</th>}
+                {/* Coluna fixa: ID-Único sempre primeiro */}
+                <th className="p-3">ID-Único</th>
+                {/* Demais cabeçalhos conforme ordem/seleção */}
+                {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
+                  <th key={def.key} className="p-3">{def.label}</th>
+                ))}
               </tr>
             </thead>
             
@@ -236,15 +216,146 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                 const isSelected = selectedOrders.has(order.id);
                 const isProcessed = isPedidoProcessado(order);
                 const mapping = mappingData.get(order.id);
-                
-                // Extrair SKUs do pedido
-                const skus = order.order_items?.map((item: any) => 
-                  item.sku || item.item?.sku || item.item?.seller_sku || 'N/A'
-                ).filter(Boolean) || [];
-                
-                const quantidadeItens = order.order_items?.reduce((acc: number, item: any) => 
-                  acc + (item.quantity || 1), 0
-                ) || 1;
+
+                // Extrair SKUs e quantidade total
+                const skus = (order.order_items?.map((item: any) => item.sku || item.item?.sku || item.item?.seller_sku).filter(Boolean)) || [];
+                const quantidadeItens = order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0) || 1;
+
+                const renderCell = (key: string) => {
+                  switch (key) {
+                    case 'situacao':
+                      return (
+                        <>
+                          <Badge variant={getStatusBadgeVariant(order.situacao || order.status)}>
+                            {mapApiStatusToLabel(order.situacao || order.status)}
+                          </Badge>
+                          {isProcessed && (<CheckCircle className="h-4 w-4 text-green-600 mt-1" />)}
+                        </>
+                      );
+                    case 'numero':
+                      return <span className="font-mono text-sm">{order.numero || order.id?.toString().slice(-8)}</span>;
+                    case 'empresa':
+                      return <span>{order.empresa || '-'}</span>;
+                    case 'nome_cliente':
+                      return <div className="max-w-xs truncate" title={order.nome_cliente || order.buyer?.nickname}>{order.nome_cliente || order.buyer?.nickname || '-'}</div>;
+                    case 'nome_completo':
+                      return <div className="max-w-xs truncate" title={order.nome_completo}>{order.nome_completo || '-'}</div>;
+                    case 'cpf_cnpj':
+                      return <span className="font-mono text-sm">{order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '-'}</span>;
+                    case 'data_pedido':
+                      return <span>{formatDate(order.data_pedido || order.date_created)}</span>;
+                    case 'last_updated':
+                      return <span>{order.last_updated ? formatDate(order.last_updated) : '-'}</span>;
+                    case 'skus_produtos':
+                      return <div className="max-w-xs truncate" title={skus.join(', ')}>{skus.length ? skus.join(', ') : '-'}</div>;
+                    case 'quantidade_itens':
+                      return <span>{quantidadeItens}</span>;
+                    case 'titulo_anuncio':
+                      return <div className="max-w-xs truncate" title={order.order_items?.[0]?.item?.title || order.titulo_anuncio}>{order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-'}</div>;
+                    case 'valor_total':
+                      return <span>{formatMoney(order.valor_total || order.total_amount || 0)}</span>;
+                    case 'paid_amount':
+                      return <span>{formatMoney(order.paid_amount || 0)}</span>;
+                    case 'frete_pago_cliente':
+                      return <span>{formatMoney(order.frete_pago_cliente || order.payments?.[0]?.shipping_cost || order.shipping?.costs?.receiver?.cost || order.valor_frete || 0)}</span>;
+                    case 'receita_flex':
+                      return <span>{formatMoney(order.receita_flex || 0)}</span>;
+                    case 'custo_envio_seller':
+                      return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
+                    case 'coupon_amount':
+                      return <span>{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</span>;
+                    case 'marketplace_fee':
+                      {
+                        const fee = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
+                        return <span>{fee > 0 ? formatMoney(fee) : '-'}</span>;
+                      }
+                    case 'valor_liquido_vendedor':
+                      return <span>{formatMoney((order as any).valor_liquido_vendedor || 0)}</span>;
+                    case 'payment_method':
+                      return <span className="text-xs">{order.payments?.[0]?.payment_method_id || order.payment_method || order.raw?.payments?.[0]?.payment_method_id || '-'}</span>;
+                    case 'payment_status':
+                      return <span className="text-xs">{order.payment_status || order.payments?.[0]?.status || '-'}</span>;
+                    case 'payment_type':
+                      return <span className="text-xs">{order.payment_type || order.payments?.[0]?.payment_type || '-'}</span>;
+                    case 'shipping_status':
+                      return <span className="text-xs">{translateShippingStatus(order.shipping_status || order.shipping?.status) || '-'}</span>;
+                    case 'logistic_mode':
+                      return <span className="text-xs">{order.logistic_mode || order.unified?.logistic?.mode || '-'}</span>;
+                    case 'logistic_type':
+                      return <span className="text-xs">{order.logistic_type || order.shipping_details?.logistic_type || '-'}</span>;
+                    case 'shipping_method_type':
+                      return <span className="text-xs">{order.shipping_method_type || '-'}</span>;
+                    case 'delivery_type':
+                      return <span className="text-xs">{order.delivery_type || '-'}</span>;
+                    case 'substatus_detail':
+                      return <span className="text-xs">{translateShippingSubstatus(order.substatus_detail || order.shipping?.substatus || '') || '-'}</span>;
+                    case 'shipping_mode':
+                      return <span className="text-xs">{translateShippingMode(order.shipping_mode || order.forma_entrega) || '-'}</span>;
+                    case 'shipping_method':
+                      return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.shipping?.shipping_method?.name) || '-'}</span>;
+                    case 'endereco_cidade':
+                      return <span>{order.endereco_cidade || order.cidade || order.shipping?.receiver_address?.city || '-'}</span>;
+                    case 'endereco_uf':
+                      return <span>{order.endereco_uf || order.uf || order.shipping?.receiver_address?.state || '-'}</span>;
+                    case 'mapeamento':
+                      return (
+                        mapping ? (
+                          <div className="space-y-1">
+                            {mapping.skuEstoque && (
+                              <div className="text-xs"><span className="font-medium">Estoque:</span> {mapping.skuEstoque}</div>
+                            )}
+                            {mapping.skuKit && (
+                              <div className="text-xs"><span className="font-medium">Kit:</span> {mapping.skuKit}</div>
+                            )}
+                            {typeof mapping.quantidade !== 'undefined' && (
+                              <div className="text-xs"><span className="font-medium">Qtd:</span> {mapping.quantidade}</div>
+                            )}
+                            <Badge 
+                              variant={mapping.statusBaixa === 'sucesso' ? 'default' : mapping.statusBaixa === 'erro' ? 'destructive' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {mapping.statusBaixa || 'pendente'}
+                            </Badge>
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-xs">Sem mapeamento</Badge>
+                        )
+                      );
+                    case 'sku_estoque':
+                      return <span>{mapping?.skuEstoque || '-'}</span>;
+                    case 'sku_kit':
+                      return <span>{mapping?.skuKit || '-'}</span>;
+                    case 'qtd_kit':
+                      return <span>{typeof mapping?.quantidade !== 'undefined' ? mapping?.quantidade : '-'}</span>;
+                    case 'total_itens':
+                      return <span>{quantidadeItens * (mapping?.quantidade || 1)}</span>;
+                    case 'status_baixa':
+                      return (
+                        <Badge 
+                          variant={mapping?.statusBaixa === 'sucesso' ? 'default' : mapping?.statusBaixa === 'erro' ? 'destructive' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {mapping?.statusBaixa || 'pendente'}
+                        </Badge>
+                      );
+                    case 'date_created':
+                      return <span>{order.date_created ? formatDate(order.date_created) : '-'}</span>;
+                    case 'pack_id':
+                      return <span className="font-mono text-xs">{order.pack_id || '-'}</span>;
+                    case 'pickup_id':
+                      return <span className="font-mono text-xs">{order.pickup_id || '-'}</span>;
+                    case 'manufacturing_ending_date':
+                      return <span>{order.manufacturing_ending_date ? formatDate(order.manufacturing_ending_date) : '-'}</span>;
+                    case 'comment':
+                      return <div className="max-w-xs truncate" title={order.comment}>{order.comment || '-'}</div>;
+                    case 'tags':
+                      return <div className="max-w-xs truncate" title={(order.tags || []).join(', ')}>{Array.isArray(order.tags) && order.tags.length ? order.tags.join(', ') : '-'}</div>;
+                    default:
+                      return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
+                  }
+                };
+
+                const idUnico = (order as any).id_unico || buildIdUnico?.(order) || order.id;
 
                 return (
                   <tr
@@ -264,242 +375,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       />
                     </td>
 
-                    {/* Status */}
-                    {visibleColumns.has('situacao') && (
-                      <td className="p-3">
-                        <Badge variant={getStatusBadgeVariant(order.situacao || order.status)}>
-                          {mapApiStatusToLabel(order.situacao || order.status)}
-                        </Badge>
-                        {isProcessed && (
-                          <CheckCircle className="h-4 w-4 text-green-600 mt-1" />
-                        )}
-                      </td>
-                    )}
+                    {/* Coluna fixa ID-Único */}
+                    <td className="p-3 font-mono text-sm">{idUnico}</td>
 
-                    {/* Número do pedido */}
-                    {visibleColumns.has('numero') && (
-                      <td className="p-3 font-mono text-sm">
-                        {order.numero || order.id?.toString().slice(-8)}
-                      </td>
-                    )}
-
-                    {/* Nome do cliente */}
-                    {visibleColumns.has('nome_cliente') && (
-                      <td className="p-3">
-                        <div className="max-w-xs truncate" title={order.nome_cliente || order.buyer?.nickname}>
-                          {order.nome_cliente || order.buyer?.nickname || '-'}
-                        </div>
-                      </td>
-                    )}
-
-                    {/* CPF/CNPJ */}
-                    {visibleColumns.has('cpf_cnpj') && (
-                      <td className="p-3 font-mono text-sm">
-                        {order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '-'}
-                      </td>
-                    )}
-
-                    {/* Data do pedido */}
-                    {visibleColumns.has('data_pedido') && (
-                      <td className="p-3">{formatDate(order.data_pedido || order.date_created)}</td>
-                    )}
-
-                    {/* Última atualização */}
-                    {visibleColumns.has('last_updated') && (
-                      <td className="p-3">{order.last_updated ? formatDate(order.last_updated) : '-'}</td>
-                    )}
-
-                    {/* SKUs dos produtos */}
-                    {visibleColumns.has('skus_produtos') && (
-                      <td className="p-3">
-                        <div className="max-w-xs truncate" title={skus.join(', ')}>
-                          {skus.length > 0 ? skus.join(', ') : '-'}
-                        </div>
-                      </td>
-                    )}
-
-                    {/* Quantidade de itens */}
-                    {visibleColumns.has('quantidade_itens') && (
-                      <td className="p-3">{quantidadeItens}</td>
-                    )}
-
-                    {/* Título do anúncio */}
-                    {visibleColumns.has('titulo_anuncio') && (
-                      <td className="p-3">
-                        <div className="max-w-xs truncate" title={order.order_items?.[0]?.item?.title || order.titulo_anuncio}>
-                          {order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-'}
-                        </div>
-                      </td>
-                    )}
-
-                    {/* Valor total */}
-                    {visibleColumns.has('valor_total') && (
-                      <td className="p-3">{formatMoney(order.valor_total || order.total_amount || 0)}</td>
-                    )}
-
-                    {/* Valor pago */}
-                    {visibleColumns.has('paid_amount') && (
-                      <td className="p-3">{formatMoney(order.paid_amount || 0)}</td>
-                    )}
-
-                    {/* Frete pago pelo cliente */}
-                    {visibleColumns.has('frete_pago_cliente') && (
-                      <td className="p-3">
-                        {formatMoney(
-                          order.frete_pago_cliente || 
-                          order.payments?.[0]?.shipping_cost ||
-                          order.shipping?.costs?.receiver?.cost ||
-                          order.valor_frete ||
-                          0
-                        )}
-                      </td>
-                    )}
-
-                    {/* Receita Flex */}
-                    {visibleColumns.has('receita_flex') && (
-                      <td className="p-3">
-                        {formatMoney(
-                          order.receita_flex || 
-                          getReceitaPorEnvio(order)
-                        )}
-                      </td>
-                    )}
-
-                    {/* Custo de envio do seller */}
-                    {visibleColumns.has('custo_envio_seller') && (
-                      <td className="p-3">
-                        {formatMoney(
-                          order.custo_envio_seller ||
-                          order.shipping?.costs?.senders?.[0]?.cost ||
-                          0
-                        )}
-                      </td>
-                    )}
-
-                    {/* Valor do cupom */}
-                    {visibleColumns.has('coupon_amount') && (
-                      <td className="p-3">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</td>
-                    )}
-
-                    {/* Taxa do marketplace */}
-                    {visibleColumns.has('marketplace_fee') && (
-                      <td className="p-3">
-                        {(() => {
-                          const fee = 
-                            order.order_items?.[0]?.sale_fee ||
-                            order.raw?.order_items?.[0]?.sale_fee ||
-                            order.marketplace_fee || 
-                            order.fees?.[0]?.value || 
-                            order.raw?.fees?.[0]?.value ||
-                            0;
-                          return fee > 0 ? formatMoney(fee) : '-';
-                        })()}
-                      </td>
-                    )}
-
-                    {/* Valor líquido do vendedor */}
-                    {visibleColumns.has('valor_liquido_vendedor') && (
-                      <td className="p-3">{formatMoney(getValorLiquidoVendedor(order))}</td>
-                    )}
-
-                    {/* Método de pagamento */}
-                    {visibleColumns.has('payment_method') && (
-                      <td className="p-3">
-                        <span className="text-xs">
-                          {order.payments?.[0]?.payment_method_id || 
-                           order.payment_method || 
-                           order.raw?.payments?.[0]?.payment_method_id || '-'}
-                        </span>
-                      </td>
-                    )}
-
-                    {/* Modo de envio */}
-                    {visibleColumns.has('shipping_mode') && (
-                      <td className="p-3">
-                        <span className="text-xs">
-                          {translateShippingMode(order.shipping_mode || order.forma_entrega) || '-'}
-                        </span>
-                      </td>
-                    )}
-
-                    {/* Cidade */}
-                    {(visibleColumns.has('cidade') || visibleColumns.has('endereco_cidade')) && (
-                      <td className="p-3">{order.cidade || order.shipping?.receiver_address?.city || '-'}</td>
-                    )}
-
-                    {/* UF */}
-                    {(visibleColumns.has('uf') || visibleColumns.has('endereco_uf')) && (
-                      <td className="p-3">{order.uf || order.shipping?.receiver_address?.state || '-'}</td>
-                    )}
-
-                    {/* Colunas de mapeamento detalhadas */}
-                    {visibleColumns.has('sku_estoque') && (
-                      <td className="p-3">
-                        {mapping?.skuEstoque || '-'}
-                      </td>
-                    )}
-                    {visibleColumns.has('sku_kit') && (
-                      <td className="p-3">
-                        {mapping?.skuKit || '-'}
-                      </td>
-                    )}
-                    {visibleColumns.has('qtd_kit') && (
-                      <td className="p-3">
-                        {mapping?.quantidade ?? '-'}
-                      </td>
-                    )}
-                    {visibleColumns.has('total_itens') && (
-                      <td className="p-3">
-                        {quantidadeItens * (mapping?.quantidade || 1)}
-                      </td>
-                    )}
-                    {visibleColumns.has('status_baixa') && (
-                      <td className="p-3">
-                        <Badge 
-                          variant={mapping?.statusBaixa === 'sucesso' ? 'default' : 
-                                  mapping?.statusBaixa === 'erro' ? 'destructive' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {mapping?.statusBaixa || 'pendente'}
-                        </Badge>
-                      </td>
-                    )}
-
-                    {/* Status do mapeamento */}
-                    {visibleColumns.has('mapeamento') && (
-                      <td className="p-3">
-                        {mapping ? (
-                          <div className="space-y-1">
-                            {mapping.skuEstoque && (
-                              <div className="text-xs">
-                                <span className="font-medium">Estoque:</span> {mapping.skuEstoque}
-                              </div>
-                            )}
-                            {mapping.skuKit && (
-                              <div className="text-xs">
-                                <span className="font-medium">Kit:</span> {mapping.skuKit}
-                              </div>
-                            )}
-                            {mapping.quantidade && (
-                              <div className="text-xs">
-                                <span className="font-medium">Qtd:</span> {mapping.quantidade}
-                              </div>
-                            )}
-                            <Badge 
-                              variant={mapping.statusBaixa === 'sucesso' ? 'default' : 
-                                      mapping.statusBaixa === 'erro' ? 'destructive' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {mapping.statusBaixa || 'pendente'}
-                            </Badge>
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="text-xs">
-                            Sem mapeamento
-                          </Badge>
-                        )}
-                      </td>
-                    )}
+                    {/* Demais colunas dinâmicas */}
+                    {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
+                      <td key={def.key} className="p-3">{renderCell(def.key)}</td>
+                    ))}
                   </tr>
                 );
               })}

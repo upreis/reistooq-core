@@ -1287,6 +1287,7 @@ function SimplePedidosPage({ className }: Props) {
         setSelectedOrders={setSelectedOrders}
         mappingData={mappingData}
         visibleColumns={visibleColumns}
+        visibleDefinitions={columnManager.visibleDefinitions}
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={(page) => actions.setPage(page)}
