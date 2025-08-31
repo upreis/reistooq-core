@@ -307,11 +307,31 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de data - CORRIGIDO com validação robusta e normalização
+      // Filtro de data - CORRIGIDO com logs de debug para identificar problema
       if (appliedFilters.dataInicio || appliedFilters.dataFim) {
+        // Debug: Verificar tipos das datas de filtro
+        console.log('🔍 [DEBUG FILTRO DATA] appliedFilters.dataInicio:', {
+          value: appliedFilters.dataInicio,
+          type: typeof appliedFilters.dataInicio,
+          isDate: appliedFilters.dataInicio instanceof Date,
+          toString: appliedFilters.dataInicio?.toString()
+        });
+        console.log('🔍 [DEBUG FILTRO DATA] appliedFilters.dataFim:', {
+          value: appliedFilters.dataFim,
+          type: typeof appliedFilters.dataFim,
+          isDate: appliedFilters.dataFim instanceof Date,
+          toString: appliedFilters.dataFim?.toString()
+        });
+        
         // Normalizar a data do pedido
         let orderDate: Date;
         const rawOrderDate = order.data_pedido || order.date_created;
+        
+        console.log('🔍 [DEBUG FILTRO DATA] Data do pedido:', {
+          rawOrderDate,
+          type: typeof rawOrderDate,
+          pedidoId: order.id
+        });
         
         if (rawOrderDate instanceof Date) {
           orderDate = rawOrderDate;
@@ -331,11 +351,27 @@ export function usePedidosManager(initialAccountId?: string) {
         // Normalizar data de início e comparar
         if (appliedFilters.dataInicio) {
           const startDate = normalizeDate(appliedFilters.dataInicio);
+          console.log('🔍 [DEBUG FILTRO DATA] Data início normalizada:', {
+            original: appliedFilters.dataInicio,
+            normalized: startDate,
+            isValid: startDate && !isNaN(startDate.getTime())
+          });
+          
           if (startDate && !isNaN(startDate.getTime())) {
             // Zerar horário para comparação apenas de datas
             const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
             const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+            
+            console.log('🔍 [DEBUG FILTRO DATA] Comparação início:', {
+              orderDateOnly: orderDateOnly.toISOString().split('T')[0],
+              startDateOnly: startDateOnly.toISOString().split('T')[0],
+              orderDateOnly_time: orderDateOnly.getTime(),
+              startDateOnly_time: startDateOnly.getTime(),
+              result: orderDateOnly >= startDateOnly
+            });
+            
             if (orderDateOnly < startDateOnly) {
+              console.log('🚫 [DEBUG FILTRO DATA] Pedido excluído por data início');
               return false;
             }
           }
@@ -344,15 +380,33 @@ export function usePedidosManager(initialAccountId?: string) {
         // Normalizar data fim e comparar
         if (appliedFilters.dataFim) {
           const endDate = normalizeDate(appliedFilters.dataFim);
+          console.log('🔍 [DEBUG FILTRO DATA] Data fim normalizada:', {
+            original: appliedFilters.dataFim,
+            normalized: endDate,
+            isValid: endDate && !isNaN(endDate.getTime())
+          });
+          
           if (endDate && !isNaN(endDate.getTime())) {
             // Zerar horário para comparação apenas de datas
             const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
             const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+            
+            console.log('🔍 [DEBUG FILTRO DATA] Comparação fim:', {
+              orderDateOnly: orderDateOnly.toISOString().split('T')[0],
+              endDateOnly: endDateOnly.toISOString().split('T')[0],
+              orderDateOnly_time: orderDateOnly.getTime(),
+              endDateOnly_time: endDateOnly.getTime(),
+              result: orderDateOnly <= endDateOnly
+            });
+            
             if (orderDateOnly > endDateOnly) {
+              console.log('🚫 [DEBUG FILTRO DATA] Pedido excluído por data fim');
               return false;
             }
           }
         }
+        
+        console.log('✅ [DEBUG FILTRO DATA] Pedido aprovado no filtro de data');
       }
 
       // Outros filtros - usar appliedFilters
