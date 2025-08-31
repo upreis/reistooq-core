@@ -94,6 +94,7 @@ function SimplePedidosPage({ className }: Props) {
   const visibleColumns = columnManager.state.visibleColumns;
   
   // Estados locais para funcionalidades específicas
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showBaixaModal, setShowBaixaModal] = useState(false);
   
@@ -557,6 +558,26 @@ function SimplePedidosPage({ className }: Props) {
     }
   };
 
+  // Carregar contas ML
+  const loadAccounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('integration_accounts')
+        .select('*')
+        .eq('provider', 'mercadolivre')
+        .eq('is_active', true)
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+
+      const list = data || [];
+      setAccounts(list);
+      console.log('📊 Contas ML carregadas:', list.length, list);
+    } catch (err: any) {
+      console.error('Erro ao carregar contas:', err.message);
+    }
+  };
+
   // Handlers memoizados para performance
   const handleFilterChange = useCallback((newFilters: any) => {
     actions.setFilters(newFilters);
@@ -576,6 +597,11 @@ function SimplePedidosPage({ className }: Props) {
       if (acc) actions.setIntegrationAccountId(acc);
     } catch {}
   }, [actions]);
+
+  // Carregar contas na inicialização
+  useEffect(() => {
+    loadAccounts();
+  }, []);
   
   // ✅ Sistema de validação mantido
   const validateSystem = () => {
@@ -637,6 +663,7 @@ function SimplePedidosPage({ className }: Props) {
         hasPendingChanges={hasPendingChanges}
         columnManager={columnManager}
         loading={state.loading}
+        contasML={accounts} // ✅ Passar contas ML para os filtros
       />
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
