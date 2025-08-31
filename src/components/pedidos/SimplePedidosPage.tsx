@@ -87,13 +87,14 @@ type Props = {
 };
 
 function SimplePedidosPage({ className }: Props) {
-  // ✅ SISTEMA UNIFICADO DE FILTROS - Melhoria de UX
+  // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: (filters) => {
       console.log('🔍 Aplicando filtros unificados:', filters);
       actions.setFilters(filters);
     },
-    autoLoad: true
+    autoLoad: false,          // ✅ Não carregar automaticamente
+    loadSavedFilters: false   // ✅ Não aplicar filtros salvos automaticamente
   });
   
   // Estado unificado dos pedidos
@@ -665,18 +666,20 @@ function SimplePedidosPage({ className }: Props) {
       {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
       </PedidosHeaderSection>
 
-      {/* ✅ COMENTADO: Sistema antigo de filtros 
-      <PedidosFiltersSection
-        filters={filtersManager.appliedFilters}
-        actions={actions}
-        onFiltersChange={actions.setFilters}
-        onClearFilters={actions.clearFilters}
+      {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
+      <PedidosFiltersUnified
+        filters={filtersManager.filters}
+        appliedFilters={filtersManager.appliedFilters}
+        onFilterChange={filtersManager.updateFilter}
+        onApplyFilters={filtersManager.applyFilters}
+        onCancelChanges={filtersManager.cancelChanges}
+        onClearFilters={filtersManager.clearFilters}
         hasPendingChanges={filtersManager.hasPendingChanges}
-        columnManager={columnManager}
-        loading={state.loading}
+        needsManualApplication={filtersManager.needsManualApplication}
+        isApplying={filtersManager.isApplying}
+        activeFiltersCount={filtersManager.activeFiltersCount}
         contasML={accounts}
       />
-      */}
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
       <Card className="p-4" style={{ display: 'none' }}>

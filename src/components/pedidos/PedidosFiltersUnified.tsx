@@ -132,16 +132,11 @@ export function PedidosFiltersUnified({
 
       {/* Layout principal dos filtros */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-7 gap-4 items-end">
-        {/* Busca com indicador de debounce */}
+        {/* Busca - Aplicação manual */}
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Buscar
-            {appliedFilters.search !== filters.search && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span>Aplicando...</span>
-              </div>
-            )}
+            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -149,21 +144,19 @@ export function PedidosFiltersUnified({
               placeholder="Número, cliente, CPF/CNPJ..."
               value={filters.search || ''}
               onChange={(e) => onFilterChange('search', e.target.value)}
-              className="pl-10"
+              className={cn(
+                "pl-10",
+                hasPendingChanges && filters.search !== appliedFilters.search && "border-warning"
+              )}
             />
-            {appliedFilters.search && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Situação - Aplicação imediata */}
+        {/* Situação - Aplicação manual */}
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Situação
-            <Badge variant="outline" className="text-xs px-1 py-0">Auto</Badge>
+            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <Popover open={situacaoOpen} onOpenChange={setSituacaoOpen}>
             <PopoverTrigger asChild>
@@ -171,7 +164,10 @@ export function PedidosFiltersUnified({
                 variant="outline"
                 role="combobox"
                 aria-expanded={situacaoOpen}
-                className="w-full justify-between"
+                className={cn(
+                  "w-full justify-between",
+                  hasPendingChanges && JSON.stringify(filters.situacao || []) !== JSON.stringify(appliedFilters.situacao || []) && "border-warning"
+                )}
               >
                 {selectedSituacoes.length === 0 
                   ? "Todas as situações"
@@ -214,11 +210,11 @@ export function PedidosFiltersUnified({
           </Popover>
         </div>
 
-        {/* Contas ML - Aplicação imediata */}
+        {/* Contas ML - Aplicação manual */}
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Contas ML
-            <Badge variant="outline" className="text-xs px-1 py-0">Auto</Badge>
+            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
             <PopoverTrigger asChild>
@@ -226,7 +222,10 @@ export function PedidosFiltersUnified({
                 variant="outline"
                 role="combobox"
                 aria-expanded={contasMLOpen}
-                className="w-full justify-between"
+                className={cn(
+                  "w-full justify-between",
+                  hasPendingChanges && JSON.stringify(filters.contasML || []) !== JSON.stringify(appliedFilters.contasML || []) && "border-warning"
+                )}
               >
                 {selectedContasML.length === 0 
                   ? "Todas as contas"

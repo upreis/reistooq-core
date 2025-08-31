@@ -19,18 +19,17 @@ export interface PedidosFiltersState {
   contasML?: string[];
 }
 
-// Estratégias de aplicação de filtros
+// ✅ ESTRATÉGIA UNIFICADA: APLICAÇÃO SEMPRE MANUAL
+// Usuário controla quando aplicar filtros para melhor UX
 export enum FilterStrategy {
-  IMMEDIATE = 'immediate',  // Aplicação imediata (situação, contas)
-  DEBOUNCED = 'debounced',  // Com debounce (busca)
-  MANUAL = 'manual'         // Aplicação manual (datas, valores)
+  MANUAL = 'manual'         // Aplicação manual para todos os filtros
 }
 
-// Configuração de cada filtro
+// ✅ CONFIGURAÇÃO CONSISTENTE: Todos os filtros são manuais
 const FILTER_CONFIG = {
-  search: { strategy: FilterStrategy.DEBOUNCED, delay: DEBOUNCE.SEARCH_DELAY_MS },
-  situacao: { strategy: FilterStrategy.IMMEDIATE },
-  contasML: { strategy: FilterStrategy.IMMEDIATE },
+  search: { strategy: FilterStrategy.MANUAL },
+  situacao: { strategy: FilterStrategy.MANUAL },
+  contasML: { strategy: FilterStrategy.MANUAL },
   dataInicio: { strategy: FilterStrategy.MANUAL },
   dataFim: { strategy: FilterStrategy.MANUAL },
   cidade: { strategy: FilterStrategy.MANUAL },
@@ -44,22 +43,22 @@ const STORAGE_KEY = 'pedidos_unified_filters';
 interface UseUnifiedFiltersOptions {
   onFiltersApply?: (filters: PedidosFiltersState) => void;
   autoLoad?: boolean;
+  loadSavedFilters?: boolean; // ✅ NOVO: Controle se deve carregar filtros salvos
 }
 
 export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {}) {
-  const { onFiltersApply, autoLoad = true } = options;
+  const { onFiltersApply, autoLoad = false, loadSavedFilters = false } = options; // ✅ PADRÃO: não carregar automaticamente
 
   // Estados principais
   const [draftFilters, setDraftFilters] = useState<PedidosFiltersState>({});
   const [appliedFilters, setAppliedFilters] = useState<PedidosFiltersState>({});
   const [isApplying, setIsApplying] = useState(false);
+  
+  // ✅ REMOVIDO: Debounce automático - agora tudo é manual
 
-  // Debounce apenas para busca
-  const debouncedSearch = useDebounce(draftFilters.search || '', DEBOUNCE.SEARCH_DELAY_MS);
-
-  // Carregar filtros salvos
+  // ✅ NOVO: Carregar filtros salvos APENAS quando solicitado explicitamente
   useEffect(() => {
-    if (autoLoad) {
+    if (loadSavedFilters) {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -73,14 +72,15 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
             parsed.dataFim = new Date(parsed.dataFim);
           }
           
+          // ✅ IMPORTANTE: Apenas carregar no draft, NÃO aplicar automaticamente
           setDraftFilters(parsed);
-          setAppliedFilters(parsed);
+          console.log('📥 Filtros salvos carregados (não aplicados):', parsed);
         }
       } catch (error) {
         console.warn('Erro ao carregar filtros salvos:', error);
       }
     }
-  }, [autoLoad]);
+  }, [loadSavedFilters]);
 
   // Salvar filtros aplicados
   useEffect(() => {
@@ -93,14 +93,7 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     }
   }, [appliedFilters]);
 
-  // Auto-aplicar busca com debounce
-  useEffect(() => {
-    if (debouncedSearch !== (appliedFilters.search || '')) {
-      const newAppliedFilters = { ...appliedFilters, search: debouncedSearch || undefined };
-      setAppliedFilters(newAppliedFilters);
-      onFiltersApply?.(newAppliedFilters);
-    }
-  }, [debouncedSearch, appliedFilters, onFiltersApply]);
+  // ✅ REMOVIDO: Auto-aplicação de busca - agora tudo é manual
 
   // Atualizar filtro draft
   const updateDraftFilter = useCallback(<K extends keyof PedidosFiltersState>(
@@ -116,13 +109,7 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
         newFilters[key] = value;
       }
       
-      // Se é filtro imediato, aplicar automaticamente
-      const config = FILTER_CONFIG[key];
-      if (config?.strategy === FilterStrategy.IMMEDIATE) {
-        const newAppliedFilters = { ...appliedFilters, ...newFilters };
-        setAppliedFilters(newAppliedFilters);
-        onFiltersApply?.(newAppliedFilters);
-      }
+      // ✅ REMOVIDO: Auto-aplicação - agora tudo é manual
       
       return newFilters;
     });
@@ -167,8 +154,7 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
       const draftValue = draftFilters[key as keyof PedidosFiltersState];
       const appliedValue = appliedFilters[key as keyof PedidosFiltersState];
       
-      // Ignorar busca (tem debounce automático)
-      if (key === 'search') return false;
+      // ✅ REMOVIDO: Não há mais filtros automáticos
       
       if (Array.isArray(draftValue) && Array.isArray(appliedValue)) {
         return JSON.stringify(draftValue.sort()) !== JSON.stringify(appliedValue.sort());
@@ -193,13 +179,8 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
 
   const hasActiveFilters = activeFiltersCount > 0;
 
-  // Verificar se filtro específico necessita aplicação manual
-  const needsManualApplication = useMemo(() => {
-    return Object.keys(draftFilters).some(key => {
-      const config = FILTER_CONFIG[key as keyof typeof FILTER_CONFIG];
-      return config?.strategy === FilterStrategy.MANUAL;
-    }) && hasPendingChanges;
-  }, [draftFilters, hasPendingChanges]);
+  // ✅ SIMPLIFICADO: Agora todos filtros são manuais
+  const needsManualApplication = hasPendingChanges;
 
   // Converter para parâmetros da API (mantém compatibilidade)
   const apiParams = useMemo(() => {
