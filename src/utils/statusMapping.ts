@@ -52,32 +52,33 @@ export const STATUS_MAPPING: Record<string, string> = {
   'inválido': 'invalid',
 };
 
-// Mapeamento reverso: API Status -> Label PT
+// Mapeamento reverso: API Status -> Label PT (Status do Envio)
 export const STATUS_LABELS: Record<string, string> = {
-  'confirmed': 'Confirmado',
-  'payment_required': 'Aguardando Pagamento',
-  'payment_in_process': 'Processando Pagamento',
-  'paid': 'Pago',
+  'confirmed': 'Pendente',
+  'payment_required': 'Pendente',
+  'payment_in_process': 'Processando',
+  'paid': 'Pronto para Envio',
   'shipped': 'Enviado',
   'delivered': 'Entregue',
   'cancelled': 'Cancelado',
-  'invalid': 'Inválido',
-  'expired': 'Expirado',
+  'invalid': 'Cancelado',
+  'expired': 'Cancelado',
   'pending': 'Pendente',
-  'ready_to_ship': 'Pronto p/ Enviar',
-  'handling': 'Preparando',
+  'ready_to_ship': 'Pronto para Envio',
+  'handling': 'Processando',
   'not_delivered': 'Não Entregue',
-  'returned': 'Devolvido',
-  'refunded': 'Reembolsado',
-  'active': 'Aberto',
+  'returned': 'Não Entregue',
+  'refunded': 'Cancelado',
+  'active': 'Pendente',
+  'to_combine': 'A Combinar',
   
   // Fallbacks para status não mapeados
-  'completed': 'Concluído',
+  'completed': 'Entregue',
   'processing': 'Processando',
-  'on_hold': 'Em Espera',
-  'failed': 'Falha',
-  'draft': 'Rascunho',
-  'inactive': 'Inativo',
+  'on_hold': 'Pendente',
+  'failed': 'Não Entregue',
+  'draft': 'Pendente',
+  'inactive': 'Cancelado',
 };
 
 /**

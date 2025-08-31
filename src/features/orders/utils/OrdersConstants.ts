@@ -2,68 +2,97 @@ import { OrderSortOption, OrderStatus, OrderSource } from '../types/Orders.types
 
 // Status configurations
 export const ORDER_STATUS_CONFIG = {
-  'Pago': {
-    variant: 'default' as const,
-    className: 'bg-success/10 text-success border-success',
-    color: '#10b981',
-    icon: '💰',
+  'Pendente': {
+    variant: 'outline' as const,
+    className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500',
+    color: '#eab308',
+    icon: '⏳',
     priority: 1
   },
-  'Aprovado': {
-    variant: 'default' as const,
-    className: 'bg-success/10 text-success border-success',
-    color: '#10b981',
-    icon: '✅',
+  'Pronto para Envio': {
+    variant: 'secondary' as const,
+    className: 'bg-blue-500/10 text-blue-600 border-blue-500',
+    color: '#3b82f6',
+    icon: '📋',
     priority: 2
   },
   'Enviado': {
     variant: 'secondary' as const,
-    className: 'bg-info/10 text-info border-info',
-    color: '#3b82f6',
+    className: 'bg-purple-500/10 text-purple-600 border-purple-500',
+    color: '#8b5cf6',
     icon: '🚛',
     priority: 3
   },
   'Entregue': {
     variant: 'default' as const,
-    className: 'bg-success/10 text-success border-success',
+    className: 'bg-green-500/10 text-green-600 border-green-500',
     color: '#10b981',
     icon: '📦',
     priority: 4
   },
-  'Pendente': {
-    variant: 'outline' as const,
-    className: 'border-warning text-warning',
-    color: '#f59e0b',
-    icon: '⏳',
+  'Não Entregue': {
+    variant: 'destructive' as const,
+    className: 'bg-red-500/10 text-red-600 border-red-500',
+    color: '#ef4444',
+    icon: '❌',
     priority: 5
+  },
+  'Cancelado': {
+    variant: 'secondary' as const,
+    className: 'bg-gray-500/10 text-gray-600 border-gray-500',
+    color: '#6b7280',
+    icon: '🚫',
+    priority: 6
+  },
+  'Processando': {
+    variant: 'secondary' as const,
+    className: 'bg-cyan-500/10 text-cyan-600 border-cyan-500',
+    color: '#06b6d4',
+    icon: '⚙️',
+    priority: 7
+  },
+  'A Combinar': {
+    variant: 'outline' as const,
+    className: 'bg-orange-500/10 text-orange-600 border-orange-500',
+    color: '#f97316',
+    icon: '🤝',
+    priority: 8
+  },
+  // Status de pagamento (manter compatibilidade)
+  'Pago': {
+    variant: 'default' as const,
+    className: 'bg-green-500/10 text-green-600 border-green-500',
+    color: '#10b981',
+    icon: '💰',
+    priority: 9
+  },
+  'Aprovado': {
+    variant: 'default' as const,
+    className: 'bg-green-500/10 text-green-600 border-green-500',
+    color: '#10b981',
+    icon: '✅',
+    priority: 10
   },
   'Aguardando': {
     variant: 'outline' as const,
-    className: 'border-warning text-warning',
-    color: '#f59e0b',
+    className: 'bg-yellow-500/10 text-yellow-600 border-yellow-500',
+    color: '#eab308',
     icon: '⏰',
-    priority: 6
-  },
-  'Cancelado': {
-    variant: 'destructive' as const,
-    className: 'bg-destructive/10 text-destructive border-destructive',
-    color: '#ef4444',
-    icon: '❌',
-    priority: 7
+    priority: 11
   },
   'Devolvido': {
     variant: 'destructive' as const,
-    className: 'bg-destructive/10 text-destructive border-destructive',
+    className: 'bg-red-500/10 text-red-600 border-red-500',
     color: '#ef4444',
     icon: '↩️',
-    priority: 8
+    priority: 12
   },
   'Reembolsado': {
     variant: 'secondary' as const,
-    className: 'bg-muted/50 text-muted-foreground border-muted',
+    className: 'bg-gray-500/10 text-gray-600 border-gray-500',
     color: '#6b7280',
     icon: '💸',
-    priority: 9
+    priority: 13
   }
 } as const;
 
