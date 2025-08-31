@@ -94,7 +94,7 @@ export function usePedidosManager(initialAccountId?: string) {
   const [integrationAccountId, setIntegrationAccountId] = useState(initialAccountId || '');
   const [fonte, setFonte] = useState<'banco' | 'tempo-real' | 'hibrido'>('hibrido');
   
-  // 🚀 FASE 2: Estados de cache e performance
+  // 🚀 PERFORMANCE: Estados de cache otimizado
   const [cachedAt, setCachedAt] = useState<Date>();
   const [lastQuery, setLastQuery] = useState<string>();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -119,7 +119,7 @@ export function usePedidosManager(initialAccountId?: string) {
   });
 
   /**
-   * Converte filtros para parâmetros da API
+   * 🚀 OTIMIZADO: Converte filtros para parâmetros da API com memoização
    */
   const buildApiParams = useCallback((filters: PedidosFilters) => {
     const params: any = {};
@@ -159,7 +159,7 @@ export function usePedidosManager(initialAccountId?: string) {
     if (filters.valorMax !== undefined) params.valorMax = filters.valorMax;
 
     return params;
-  }, []);
+  }, []); // Empty deps - função pura
 
   /**
    * Prioriza parâmetros da URL quando disponíveis
@@ -231,13 +231,13 @@ export function usePedidosManager(initialAccountId?: string) {
   }, []);
 
   /**
-   * Aplica filtros do lado cliente (fallback)
+   * 🚀 OTIMIZADO: Aplica filtros do lado cliente com memoização
    */
   const applyClientSideFilters = useCallback((orders: any[]) => {
     if (!orders.length) return orders;
 
     return orders.filter(order => {
-      // ✅ CORRIGIDO: Filtro de busca usando debouncedFilters
+      // Filtro de busca usando debouncedFilters
       if (debouncedFilters.search) {
         const searchTerm = debouncedFilters.search.toLowerCase();
         const searchableFields = [
@@ -253,7 +253,7 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // ✅ CORRIGIDO: Filtro de status usando debouncedFilters
+      // Filtro de status usando debouncedFilters
       if (debouncedFilters.situacao) {
         const selectedStatuses = Array.isArray(debouncedFilters.situacao) ? debouncedFilters.situacao : [debouncedFilters.situacao];
         
@@ -272,10 +272,8 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // ✅ CORRIGIDO: Filtro de data usando debouncedFilters e logs removidos (ETAPA 3)
+      // 🚀 OTIMIZADO: Filtro de data simplificado sem logs
       if (debouncedFilters.dataInicio || debouncedFilters.dataFim) {
-        
-        // ✅ SIMPLIFICADO: Normalizar e comparar datas diretamente
         const orderDate = normalizeDate(order.data_pedido || order.date_created);
         if (!orderDate) return false; // Excluir pedidos sem data válida
         
@@ -283,7 +281,6 @@ export function usePedidosManager(initialAccountId?: string) {
         if (debouncedFilters.dataInicio) {
           const startDate = normalizeDate(debouncedFilters.dataInicio);
           if (startDate) {
-            // Comparação apenas de datas (sem horário)
             const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
             const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
             
@@ -297,7 +294,6 @@ export function usePedidosManager(initialAccountId?: string) {
         if (debouncedFilters.dataFim) {
           const endDate = normalizeDate(debouncedFilters.dataFim);
           if (endDate) {
-            // Comparação apenas de datas (sem horário)
             const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
             const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
             
@@ -308,7 +304,7 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // ✅ CORRIGIDO: Outros filtros usando debouncedFilters
+      // Outros filtros usando debouncedFilters
       if (debouncedFilters.cidade && !order.cidade?.toLowerCase().includes(debouncedFilters.cidade.toLowerCase())) {
         return false;
       }
@@ -324,7 +320,7 @@ export function usePedidosManager(initialAccountId?: string) {
 
       return true;
     });
-  }, [debouncedFilters]); // ✅ CORRIGIDO: Dependência usando debouncedFilters
+  }, [debouncedFilters]); // Dependência otimizada
 
   /**
    * 🚀 FASE 2: Cache inteligente
