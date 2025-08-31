@@ -47,6 +47,7 @@ import { PedidosTableSection } from './components/PedidosTableSection';
 import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';
+import { usePedidosMappings } from './hooks/usePedidosMappings';
 
 
 type Order = {
@@ -95,8 +96,21 @@ function SimplePedidosPage({ className }: Props) {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
-  const [mappingData, setMappingData] = useState<Map<string, any>>(new Map());
   const [showBaixaModal, setShowBaixaModal] = useState(false);
+  
+  // 🧠 Hook de mapeamentos unificado
+  const {
+    mappingData,
+    isProcessingMappings,
+    processingStats,
+    actions: mappingActions
+  } = usePedidosMappings({
+    enabled: true,
+    autoProcess: true,
+    onMappingUpdate: (mappings) => {
+      console.log('📊 [SimplePedidosPage] Mapeamentos atualizados:', mappings.size, 'pedidos');
+    }
+  });
   
   // Hook para verificar pedidos já processados
   const { pedidosProcessados, verificarPedidos, isLoading: loadingProcessados, isPedidoProcessado } = usePedidosProcessados();
@@ -168,12 +182,13 @@ function SimplePedidosPage({ className }: Props) {
     }).filter(Boolean).join(', ') || '-';
   };
 
-  // Verificar pedidos processados sempre que a lista de pedidos mudar
+  // Processar mapeamentos quando a lista de pedidos mudar
   useEffect(() => {
     if (orders && orders.length > 0) {
       verificarPedidos(orders);
+      mappingActions.processOrdersMappings(orders);
     }
-  }, [orders, verificarPedidos]);
+  }, [orders, verificarPedidos, mappingActions]);
   
   // Helpers financeiros: receita_por_envio (Flex) e valor_liquido_vendedor
   const getReceitaPorEnvio = (order: any): number => {
@@ -606,17 +621,100 @@ function SimplePedidosPage({ className }: Props) {
     }
   };
 
-  // 🧠 INTELIGÊNCIA DE MAPEAMENTO AUTOMÁTICA - Sistema de análise inteligente
-  const [isProcessingMappings, setIsProcessingMappings] = useState(false);
+  // ✅ PROCESSAMENTO AUTOMÁTICO DE MAPEAMENTOS REMOVIDO - agora está no usePedidosMappings
+  // A lógica de processamento foi migrada para o hook dedicado
   
-  useEffect(() => {
-    const processarMapeamentos = async () => {
-      // ✅ Só processar se tiver pedidos válidos
-      if (!orders || orders.length === 0) {
-        console.log('📋 Nenhum pedido para processar mapeamentos');
-        setMappingData(new Map());
-        return;
+  // ✅ Sistema de validação mantido
+  const validateSystem = () => {
+    try {
+      // Validações básicas do sistema
+      const hasOrders = orders && orders.length > 0;
+      const hasValidData = hasOrders && orders.every((o: any) => o.id);
+      const hasMappings = mappingData.size > 0;
+
+      if (!hasValidData) {
+        console.warn('⚠️ Sistema: Dados de pedidos inválidos');
+        return false;
       }
+
+      console.log('✅ Sistema validado com sucesso - Nenhum problema detectado');
+      return true;
+    } catch (error) {
+      console.error('💥 Erro na validação do sistema:', error);
+      return false;
+    }
+  };
+
+  // Executar validação periodicamente
+  useEffect(() => {
+    const interval = setInterval(validateSystem, 5000);
+    return () => clearInterval(interval);
+  }, [orders, mappingData]);
+
+  // ✅ Gestão de contas selecionadas com persistência
+  useEffect(() => {
+    // Salvar contas selecionadas
+    if (selectedAccounts.length > 0) {
+      const saved = localStorage.getItem('pedidos:lastSearch');
+      const lastSearch = saved ? JSON.parse(saved) : {};
+      lastSearch.selectedAccounts = selectedAccounts;
+      localStorage.setItem('pedidos:lastSearch', JSON.stringify(lastSearch));
+    }
+  }, [selectedAccounts]);
+
+  // Restaurar contas selecionadas
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('pedidos:lastSearch');
+      if (saved) {
+        const lastSearch = JSON.parse(saved);
+        if (lastSearch.selectedAccounts && Array.isArray(lastSearch.selectedAccounts)) {
+          console.log('💾 Restaurando contas selecionadas:', lastSearch.selectedAccounts);
+          setSelectedAccounts(lastSearch.selectedAccounts);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Erro ao restaurar contas selecionadas:', error);
+    }
+  }, []);
+
+  // ✅ Handlers mantidos
+  const handlePageChange = (page: number) => {
+    actions.setPage(page);
+  };
+
+  const totalPages = Math.ceil(total / state.pageSize);
+
+  const handleApplyFilters = () => {
+    console.log('🔄 [DEBUG] handleApplyFilters chamado');
+    
+    // Debug de filtros
+    console.log('🔄 [DEBUG] Filtros atuais:', filters);
+    console.log('🔄 [DEBUG] appliedFilters antes:', appliedFilters);
+    console.log('🔄 [DEBUG] hasPendingChanges:', hasPendingChanges);
+    
+    // Log detalhado das datas se existirem
+    if (filters.dataInicio) {
+      console.log('🔄 [DEBUG] dataInicio:', {
+        type: typeof filters.dataInicio,
+        value: filters.dataInicio,
+        toString: filters.dataInicio.toString(),
+        toISOString: filters.dataInicio instanceof Date ? filters.dataInicio.toISOString() : 'Not a Date'
+      });
+    }
+    
+    if (filters.dataFim) {
+      console.log('🔄 [DEBUG] dataFim:', {
+        type: typeof filters.dataFim,
+        value: filters.dataFim,
+        toString: filters.dataFim.toString(),
+        toISOString: filters.dataFim instanceof Date ? filters.dataFim.toISOString() : 'Not a Date'
+      });
+    }
+    
+    console.log('🔄 [DEBUG] Chamando actions.applyFilters...');
+    actions.applyFilters();
+  };
       
       // 🛡️ CONTROLE DE EXECUÇÃO ÚNICA - Evita duplicação
       if (isProcessingMappings) {
@@ -774,7 +872,20 @@ function SimplePedidosPage({ className }: Props) {
       clearTimeout(timeoutId);
       setIsProcessingMappings(false);
     };
-  }, [orders]); // 🧠 DEPENDÊNCIA: Reprocessar quando os pedidos mudarem
+  }, [orders]);
+
+  // Carregamento inicial das contas
+  useEffect(() => {
+    loadAccounts();
+  }, []);
+
+  // Efeito para definir conta automaticamente quando selecionada
+  useEffect(() => {
+    if (selectedAccounts.length === 1 && selectedAccounts[0] !== integrationAccountId) {
+      console.log('🔄 Definindo conta selecionada:', selectedAccounts[0]);
+      actions.setIntegrationAccountId(selectedAccounts[0]);
+    }
+  }, [selectedAccounts, integrationAccountId, actions]);
 
   // Handlers memoizados para performance
   const handleFilterChange = useCallback((newFilters: any) => {
@@ -1309,6 +1420,8 @@ function SimplePedidosPage({ className }: Props) {
           // Recarregar dados após baixa concluída
           actions.refetch();
           verificarPedidos(orders);
+          // Reprocessar mapeamentos se necessário
+          mappingActions.reprocessMappings(orders);
         }}
       />
 
