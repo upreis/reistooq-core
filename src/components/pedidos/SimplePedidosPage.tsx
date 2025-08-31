@@ -39,10 +39,12 @@ import {
   translateShippingMethod 
 } from '@/utils/pedidos-translations';
 
-import PedidosFiltersMemo from './PedidosFiltersMemo';
+// ✅ SISTEMA UNIFICADO DE FILTROS
+import { usePedidosFiltersUnified } from '@/hooks/usePedidosFiltersUnified';
+import { PedidosFiltersUnified } from './PedidosFiltersUnified';
+
 import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
-import { PedidosFiltersSection } from './components/PedidosFiltersSection';
 import { PedidosTableSection } from './components/PedidosTableSection';
 import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
@@ -85,9 +87,18 @@ type Props = {
 };
 
 function SimplePedidosPage({ className }: Props) {
+  // ✅ SISTEMA UNIFICADO DE FILTROS - Melhoria de UX
+  const filtersManager = usePedidosFiltersUnified({
+    onFiltersApply: (filters) => {
+      console.log('🔍 Aplicando filtros unificados:', filters);
+      actions.setFilters(filters);
+    },
+    autoLoad: true
+  });
+  
   // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
-  const { filters, state, actions, hasPendingChanges, totalPages } = pedidosManager;
+  const { state, actions, totalPages } = pedidosManager;
   
   // 🔧 Sistema de colunas unificado com persistência automatica
   const columnManager = useColumnManager();
@@ -649,22 +660,23 @@ function SimplePedidosPage({ className }: Props) {
         onRefresh={actions.refetch}
         onApplyFilters={() => actions.applyFilters()}
         selectedOrdersCount={selectedOrders.size}
-        hasPendingChanges={hasPendingChanges}
+        hasPendingChanges={filtersManager.hasPendingChanges}
       >
       {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
       </PedidosHeaderSection>
 
-      {/* 🛡️ FILTROS SIMPLES E FUNCIONAIS - TESTE MIGRAÇÃO GRADUAL */}
+      {/* ✅ COMENTADO: Sistema antigo de filtros 
       <PedidosFiltersSection
-        filters={filters}
+        filters={filtersManager.appliedFilters}
         actions={actions}
         onFiltersChange={actions.setFilters}
         onClearFilters={actions.clearFilters}
-        hasPendingChanges={hasPendingChanges}
+        hasPendingChanges={filtersManager.hasPendingChanges}
         columnManager={columnManager}
         loading={state.loading}
-        contasML={accounts} // ✅ Passar contas ML para os filtros
+        contasML={accounts}
       />
+      */}
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
       <Card className="p-4" style={{ display: 'none' }}>
@@ -683,8 +695,8 @@ function SimplePedidosPage({ className }: Props) {
             <label className="text-sm font-medium mb-2 block">Buscar Pedidos</label>
             <Input
               placeholder="Buscar por número, cliente, CPF/CNPJ..."
-              value={filters.search || ''}
-              onChange={(e) => actions.setFilters({ search: e.target.value })}
+              value={filtersManager.filters.search || ''}
+              onChange={(e) => filtersManager.updateFilter('search', e.target.value)}
               className="w-full"
             />
           </div>
@@ -697,8 +709,8 @@ function SimplePedidosPage({ className }: Props) {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
                     <span>
-                      {Array.isArray(filters.situacao) && filters.situacao.length > 0
-                        ? `${filters.situacao.length} selecionado(s)`
+                      {Array.isArray(filtersManager.filters.situacao) && filtersManager.filters.situacao.length > 0
+                        ? `${filtersManager.filters.situacao.length} selecionado(s)`
                         : 'Selecionar status'}
                     </span>
                     <Settings className="h-4 w-4" />
@@ -708,8 +720,8 @@ function SimplePedidosPage({ className }: Props) {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium">Status do Envio</h4>
-                      {Array.isArray(filters.situacao) && filters.situacao.length > 0 && (
-                        <Button size="sm" variant="ghost" onClick={() => actions.setFilters({ situacao: undefined })}>
+                      {Array.isArray(filtersManager.filters.situacao) && filtersManager.filters.situacao.length > 0 && (
+                        <Button size="sm" variant="ghost" onClick={() => filtersManager.updateFilter('situacao', undefined)}>
                           Limpar
                         </Button>
                       )}
@@ -725,9 +737,9 @@ function SimplePedidosPage({ className }: Props) {
                         { value: 'handling', label: 'Processando', color: 'bg-cyan-400' },
                         { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
                       ].map((status) => {
-                        const current = Array.isArray(filters.situacao)
-                          ? filters.situacao
-                          : (filters.situacao ? [filters.situacao] : []);
+                        const current = Array.isArray(filtersManager.filters.situacao)
+                          ? filtersManager.filters.situacao
+                          : (filtersManager.filters.situacao ? [filtersManager.filters.situacao] : []);
                         const isSelected = current.includes(status.value);
                         return (
                           <label key={status.value} className="flex items-center space-x-2 text-sm cursor-pointer">
@@ -735,10 +747,10 @@ function SimplePedidosPage({ className }: Props) {
                               checked={isSelected}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  actions.setFilters({ situacao: [...current, status.value] });
+                                  filtersManager.updateFilter('situacao', [...current, status.value]);
                                 } else {
                                   const next = current.filter((s) => s !== status.value);
-                                  actions.setFilters({ situacao: next.length > 0 ? next : undefined });
+                                  filtersManager.updateFilter('situacao', next.length > 0 ? next : undefined);
                                 }
                               }}
                             />
@@ -762,12 +774,12 @@ function SimplePedidosPage({ className }: Props) {
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !filters.dataInicio && "text-muted-foreground"
+                      !filtersManager.filters.dataInicio && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dataInicio ? (
-                      format(filters.dataInicio, "dd/MM/yyyy", { locale: ptBR })
+                    {filtersManager.filters.dataInicio ? (
+                      format(filtersManager.filters.dataInicio, "dd/MM/yyyy", { locale: ptBR })
                     ) : (
                       <span>Selecionar data</span>
                     )}
@@ -776,8 +788,8 @@ function SimplePedidosPage({ className }: Props) {
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={filters.dataInicio}
-                    onSelect={(date) => actions.setFilters({ dataInicio: date })}
+                    selected={filtersManager.filters.dataInicio}
+                    onSelect={(date) => filtersManager.updateFilter('dataInicio', date)}
                     initialFocus
                     className="pointer-events-auto"
                   />
@@ -794,12 +806,12 @@ function SimplePedidosPage({ className }: Props) {
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !filters.dataFim && "text-muted-foreground"
+                      !filtersManager.filters.dataFim && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dataFim ? (
-                      format(filters.dataFim, "dd/MM/yyyy", { locale: ptBR })
+                    {filtersManager.filters.dataFim ? (
+                      format(filtersManager.filters.dataFim, "dd/MM/yyyy", { locale: ptBR })
                     ) : (
                       <span>Selecionar data</span>
                     )}
@@ -808,8 +820,8 @@ function SimplePedidosPage({ className }: Props) {
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={filters.dataFim}
-                    onSelect={(date) => actions.setFilters({ dataFim: date })}
+                    selected={filtersManager.filters.dataFim}
+                    onSelect={(date) => filtersManager.updateFilter('dataFim', date)}
                     initialFocus
                     className="pointer-events-auto"
                   />
@@ -921,7 +933,7 @@ function SimplePedidosPage({ className }: Props) {
             🔄 Debug & Recarregar
           </Button>
         </div>
-        {(filters.situacao || filters.dataInicio || filters.dataFim) && (
+        {(filtersManager.appliedFilters.situacao || filtersManager.appliedFilters.dataInicio || filtersManager.appliedFilters.dataFim) && (
           <div className="flex items-center gap-1">
             <Badge variant="secondary" className="text-xs">
               Filtros ativos
@@ -949,7 +961,7 @@ function SimplePedidosPage({ className }: Props) {
         loading={loading}
         error={error}
         state={state}
-        filters={filters}
+        filters={filtersManager.appliedFilters}
         actions={actions}
         selectedOrders={selectedOrders}
         setSelectedOrders={setSelectedOrders}
@@ -989,7 +1001,7 @@ function SimplePedidosPage({ className }: Props) {
         savedFilters={actions.getSavedFilters()}
         onSaveFilters={actions.saveCurrentFilters}
         onLoadFilters={actions.loadSavedFilters}
-        hasActiveFilters={hasPendingChanges}
+        hasActiveFilters={filtersManager.hasActiveFilters}
         columnManager={columnManager}
       />
 
