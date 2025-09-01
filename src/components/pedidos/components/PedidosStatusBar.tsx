@@ -1,19 +1,16 @@
 /**
  * 🎯 BARRA DE RESUMO COM CONTADORES POR STATUS
- * Cada chip aplica filtro rápido e mostra contagem em tempo real
+ * Apenas exibição de contadores, sem filtros clicáveis
  */
 
 import { memo, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { CheckCircle, AlertTriangle, Package, Truck, CheckSquare, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PedidosStatusBarProps {
   orders: any[];
-  quickFilter: string;
-  onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered') => void;
   mappingData: Map<string, any>;
   isPedidoProcessado: (order: any) => boolean;
   className?: string;
@@ -21,8 +18,6 @@ interface PedidosStatusBarProps {
 
 export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   orders,
-  quickFilter,
-  onQuickFilterChange,
   mappingData,
   isPedidoProcessado,
   className
@@ -100,54 +95,42 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       key: 'all',
       label: 'Todos os pedidos',
       count: counters.total,
-      icon: Filter,
-      variant: 'secondary' as const,
-      color: 'default'
+      icon: Filter
     },
     {
       key: 'pronto_baixar',
       label: 'Prontos p/ baixar',
       count: counters.prontosBaixa,
-      icon: Package,
-      variant: 'default' as const,
-      color: 'success'
+      icon: Package
     },
     {
       key: 'mapear_incompleto',
       label: 'Mapeamento pendente',
       count: counters.mapeamentoPendente,
-      icon: AlertTriangle,
-      variant: 'outline' as const,
-      color: 'warning'
+      icon: AlertTriangle
     },
     {
       key: 'baixado',
       label: 'Baixados',
       count: counters.baixados,
-      icon: CheckCircle,
-      variant: 'outline' as const,
-      color: 'success'
+      icon: CheckCircle
     },
     {
       key: 'shipped',
       label: 'Enviados',
       count: counters.shipped,
-      icon: Truck,
-      variant: 'outline' as const,
-      color: 'info'
+      icon: Truck
     },
     {
       key: 'delivered',
       label: 'Entregues',
       count: counters.delivered,
-      icon: CheckSquare,
-      variant: 'outline' as const,
-      color: 'success'
+      icon: CheckSquare
     }
   ];
 
   return (
-    <Card className={cn("sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", className)}>
+    <Card className={cn("bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", className)}>
       <div className="flex items-center justify-between p-4">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-medium text-muted-foreground mr-2">
@@ -155,38 +138,24 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
           </span>
           {statusChips.map((chip) => {
             const Icon = chip.icon;
-            const isActive = quickFilter === chip.key;
             
             return (
-              <Button
+              <div
                 key={chip.key}
-                variant={isActive ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => onQuickFilterChange(chip.key as any)}
-                className={cn(
-                  "gap-2 h-8 text-xs",
-                  isActive && "ring-2 ring-primary ring-offset-2"
-                )}
+                className="flex items-center gap-2 px-3 py-1 rounded-md bg-muted/50 border"
               >
-                <Icon className="h-3 w-3" />
-                {chip.label}
+                <Icon className="h-3 w-3 text-muted-foreground" />
+                <span className="text-sm font-medium">{chip.label}</span>
                 <Badge 
-                  variant={isActive ? 'secondary' : 'default'}
+                  variant="secondary"
                   className="ml-1 h-5 min-w-[20px] text-xs"
                 >
                   {chip.count}
                 </Badge>
-              </Button>
+              </div>
             );
           })}
         </div>
-        
-        {/* Indicador do filtro ativo */}
-        {quickFilter !== 'all' && (
-          <div className="text-xs text-muted-foreground">
-            Mostrando apenas: {statusChips.find(c => c.key === quickFilter)?.label}
-          </div>
-        )}
       </div>
     </Card>
   );

@@ -146,44 +146,8 @@ function SimplePedidosPage({ className }: Props) {
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
   
-  // Filtro rápido (apenas client-side)
-  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered'>('all');
-
-  // Lista exibida considerando o filtro rápido (não altera filtros da busca)
-  const displayedOrders = useMemo(() => {
-    if (!orders || quickFilter === 'all') return orders;
-    return orders.filter((order: any) => {
-      const id = order?.id || order?.numero || order?.unified?.id;
-      const mapping = (mappingData as any)?.get?.(id);
-      const statuses = [
-        order?.shipping_status,
-        order?.shipping?.status,
-        order?.unified?.shipping?.status,
-        order?.situacao,
-        order?.status
-      ].filter(Boolean).map((s: any) => String(s).toLowerCase());
-      switch (quickFilter) {
-        case 'pronto_baixar': {
-          const temMapeamentoCompleto = !!(mapping && (mapping.skuEstoque || mapping.skuKit));
-          const baixado = isPedidoProcessado(order);
-          return temMapeamentoCompleto && !baixado;
-        }
-        case 'mapear_incompleto': {
-          const temIncompleto = !!(mapping && mapping.temMapeamento && !(mapping.skuEstoque || mapping.skuKit));
-          const baixado = isPedidoProcessado(order);
-          return temIncompleto && !baixado;
-        }
-        case 'baixado':
-          return !!isPedidoProcessado(order) || String(order?.status_baixa || '').toLowerCase().includes('baixado');
-        case 'shipped':
-          return statuses.some((s: string) => s.includes('shipped') || s.includes('ready_to_ship'));
-        case 'delivered':
-          return statuses.some((s: string) => s.includes('delivered'));
-        default:
-          return true;
-      }
-    });
-  }, [orders, quickFilter, mappingData, isPedidoProcessado]);
+  // Mostrar todos os pedidos (filtro rápido removido)
+  const displayedOrders = orders;
 
   // ✅ MIGRAÇÃO FASE 1: Funções de tradução movidas para @/utils/pedidos-translations
 
@@ -739,16 +703,14 @@ function SimplePedidosPage({ className }: Props) {
       {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
       </PedidosHeaderSection>
 
-      {/* ✅ Barra de resumo com contadores */}
+      {/* ✅ Barra de resumo com contadores (sem filtros clicáveis) */}
       <PedidosStatusBar 
         orders={orders}
-        quickFilter={quickFilter}
-        onQuickFilterChange={(filter) => setQuickFilter(filter)}
         mappingData={mappingData}
         isPedidoProcessado={isPedidoProcessado}
       />
 
-      {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
+      {/* ✅ Ações sticky unificadas */}
       <PedidosStickyActions
         orders={orders}
         displayedOrders={displayedOrders}
@@ -756,7 +718,6 @@ function SimplePedidosPage({ className }: Props) {
         setSelectedOrders={setSelectedOrders}
         mappingData={mappingData}
         isPedidoProcessado={isPedidoProcessado}
-        quickFilter={quickFilter}
         onBaixaConcluida={() => {
           setSelectedOrders(new Set());
           actions.refetch();
