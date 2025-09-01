@@ -113,7 +113,8 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
     if (!authHeader) return fail("Missing Authorization header", 401, null, cid);
 
-    const body = await req.json();
+    let body: any = {};
+    try { body = await req.json(); } catch { body = {}; }
     const { 
       integration_account_id, 
       status, 
@@ -317,11 +318,14 @@ serve(async (req) => {
         JSON.stringify(filteredOrders[0]?.shipping, null, 2));
     }
     
+    const serverTotal = Number(json?.paging?.total ?? json?.paging?.count ?? filteredOrders.length);
     return ok({
       results: filteredOrders,
       unified: transformMLOrders(filteredOrders, integration_account_id),
-      paging: { ...json.paging, total: filteredOrders.length },
+      paging: { ...json.paging, total: serverTotal, limit, offset },
+      total: serverTotal,
       count: filteredOrders.length,
+      has_more: (offset + limit) < serverTotal,
       correlation_id: cid,
       server_filtering_applied: Boolean(shipping_status)
     });
