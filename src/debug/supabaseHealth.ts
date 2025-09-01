@@ -55,7 +55,7 @@ export async function runSupabaseHealthCheck(context: string) {
     probe('produtos', true),
     probe('movimentacoes_estoque', true),
     probe('itens_pedidos', true),
-    probe('te_estoque_minimo', true),
+    // probe('te_estoque_minimo', true), // ✅ REMOVIDO: tabela não existe
     probe('profiles', true),
     probe('estoque', true)
   ]);
