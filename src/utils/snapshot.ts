@@ -50,6 +50,11 @@ export async function salvarSnapshotBaixa(
     // Adicionar usuário que fez a baixa
     dadosBaixa.created_by = user.id;
 
+    // Sanitizar integration_account_id: evitar string vazia que quebra UUID
+    if (!dadosBaixa.integration_account_id || (typeof dadosBaixa.integration_account_id === 'string' && dadosBaixa.integration_account_id.trim() === '')) {
+      delete (dadosBaixa as any).integration_account_id;
+    }
+
     console.log('📊 Dados finais para banco:', {
       id_unico: dadosBaixa.id_unico,
       sku_produto: dadosBaixa.sku_produto,
