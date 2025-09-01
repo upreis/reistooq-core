@@ -509,10 +509,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                            <Badge variant="warning" className="text-xs">Sem Mapear</Badge>
                          )
                        );
-                    case 'sku_estoque':
-                      return <span>{mapping?.skuEstoque || '-'}</span>;
-                    case 'sku_kit':
-                      return <span>{mapping?.skuKit || '-'}</span>;
+                     case 'sku_estoque':
+                       return <span className="text-xs">{mapping?.skuEstoque || '-'}</span>;
+                     case 'sku_kit':
+                       return <span className="text-xs">{mapping?.skuKit || '-'}</span>;
                      case 'qtd_kit':
                        {
                          const qtd = (typeof mapping?.quantidadeKit !== 'undefined' ? mapping?.quantidadeKit : (typeof mapping?.quantidade !== 'undefined' ? mapping?.quantidade : (order.qtd_kit ?? order.quantidade_kit)));
