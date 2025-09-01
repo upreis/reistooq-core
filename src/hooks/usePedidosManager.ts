@@ -776,28 +776,26 @@ export function usePedidosManager(initialAccountId?: string) {
     }
   }, []); // Executar apenas no mount inicial
 
-  // ✅ NOVO: Hook reativo para carregar dados quando filtros ou conta mudarem
+  // 🚀 OTIMIZADO: Hook unificado para carregar dados
   useEffect(() => {
-    // Só carregar se há uma conta de integração
-    if (integrationAccountId) {
-      console.log('🔄 [usePedidosManager] Disparando carregamento: filtros ou account mudaram');
-      
-      // Usar filtros diretos com debounce para evitar múltiplas requisições
-      const timeoutId = setTimeout(() => {
-        loadOrders();
-      }, 300); // Pequeno delay para evitar múltiplas chamadas
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [filters, integrationAccountId, currentPage, pageSize]);
-
-  // ✅ NOVO: Carregamento inicial automático
-  useEffect(() => {
-    if (integrationAccountId && orders.length === 0 && !loading) {
-      console.log('🚀 [usePedidosManager] Carregamento inicial automático');
+    if (!integrationAccountId) return;
+    
+    console.log('🔄 [usePedidosManager] Carregamento otimizado:', { 
+      integrationAccountId: integrationAccountId.slice(0, 8), 
+      currentPage, 
+      hasFilters: Object.keys(filters).length > 0 
+    });
+    
+    // ✅ CORREÇÃO: Sem debounce para mudança de conta ML - carregamento imediato
+    const isContaMLChange = filters.contasML && filters.contasML.length > 0;
+    const delay = isContaMLChange ? 0 : 150; // Sem delay para conta ML, mínimo para outros
+    
+    const timeoutId = setTimeout(() => {
       loadOrders();
-    }
-  }, [integrationAccountId]);
+    }, delay);
+    
+    return () => clearTimeout(timeoutId);
+  }, [filters, integrationAccountId, currentPage, pageSize, loadOrders]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
