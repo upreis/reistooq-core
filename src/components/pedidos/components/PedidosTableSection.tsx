@@ -393,12 +393,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                              {mapping.skuKit && (
                                <div className="text-xs"><span className="font-medium">Kit:</span> {mapping.skuKit}</div>
                              )}
-                             {typeof mapping.quantidade !== 'undefined' && (
-                               <div className="text-xs"><span className="font-medium">Qtd:</span> {mapping.quantidade}</div>
+                             {(typeof mapping.quantidadeKit !== 'undefined' || typeof mapping.quantidade !== 'undefined') && (
+                               <div className="text-xs"><span className="font-medium">Qtd:</span> {typeof mapping.quantidadeKit !== 'undefined' ? mapping.quantidadeKit : mapping.quantidade}</div>
                              )}
                              {(() => {
-                               const statusBaixa = mapping.statusBaixa || 'indefinido';
-                               let variant: "success" | "destructive" | "warning" | "outline" = "outline";
+                                const statusBaixa = (mapping?.statusBaixa ?? (mapping?.temMapeamento === true ? 'pronto_baixar' : 'sem_mapear'));
+                                let variant: "success" | "destructive" | "warning" | "outline" = "outline";
                                let texto = "Indefinido";
 
                                if (statusBaixa === 'pronto_baixar') {
@@ -428,12 +428,18 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'sku_kit':
                       return <span>{mapping?.skuKit || '-'}</span>;
                      case 'qtd_kit':
-                       return <span>{mapping?.quantidade ? mapping.quantidade : "Sem Mapear"}</span>;
-                    case 'total_itens':
-                      return <span>{quantidadeItens * (mapping?.quantidade || 1)}</span>;
+                       {
+                         const qtd = (typeof mapping?.quantidadeKit !== 'undefined' ? mapping?.quantidadeKit : (typeof mapping?.quantidade !== 'undefined' ? mapping?.quantidade : (order.qtd_kit ?? order.quantidade_kit)));
+                         return <span>{typeof qtd === 'number' ? qtd : "Sem Mapear"}</span>;
+                       }
+                      case 'total_itens':
+                       {
+                         const qtdCalc = Number(mapping?.quantidadeKit ?? mapping?.quantidade ?? order.qtd_kit ?? order.quantidade_kit ?? 1);
+                         return <span>{quantidadeItens * (Number.isFinite(qtdCalc) ? qtdCalc : 1)}</span>;
+                       }
                      case 'status_baixa':
                        return (() => {
-                         const statusBaixa = mapping?.statusBaixa || 'indefinido';
+                         const statusBaixa = (mapping?.statusBaixa ?? (mapping?.temMapeamento === true ? 'pronto_baixar' : 'sem_mapear'));
                          let variant: "success" | "destructive" | "warning" | "outline" = "outline";
                          let texto = "Indefinido";
 
