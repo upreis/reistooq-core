@@ -241,18 +241,18 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
           <table className="w-full">
             <thead className="border-b">
               <tr className="text-left">
-                 <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                   <Checkbox
-                     checked={selectedOrders.size === orders.length && orders.length > 0}
-                     onCheckedChange={handleSelectAll}
-                   />
-                 </th>
-                 {/* Coluna fixa: ID-Único sempre primeiro */}
-                 <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">ID-Único</th>
-                 {/* Demais cabeçalhos conforme ordem/seleção */}
-                 {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
-                   <th key={def.key} className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{def.label}</th>
-                 ))}
+                <th className="p-3">
+                  <Checkbox
+                    checked={selectedOrders.size === orders.length && orders.length > 0}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </th>
+                {/* Coluna fixa: ID-Único sempre primeiro */}
+                <th className="p-3">ID-Único</th>
+                {/* Demais cabeçalhos conforme ordem/seleção */}
+                {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
+                  <th key={def.key} className="p-3">{def.label}</th>
+                ))}
               </tr>
             </thead>
             
@@ -358,61 +358,61 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span className="text-xs">{translateShippingMode(order.shipping_mode || order.forma_entrega || order.shipping?.mode || order.raw?.shipping?.mode) || '-'}</span>;
                     case 'shipping_method':
                       return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.shipping?.shipping_method?.name || order.raw?.shipping?.shipping_method?.name || order.shipping?.method?.name) || '-'}</span>;
-                     case 'cidade':
-                     case 'endereco_cidade':
-                       return <span className="text-xs">{
-                         order.endereco_cidade || 
-                         order.cidade || 
-                         order.shipping?.destination?.shipping_address?.city?.name ||
-                         order.shipping?.destination?.shipping_address?.city ||
-                         order.shipping?.receiver_address?.city?.name || 
-                         order.shipping?.receiver_address?.city || 
-                         order.unified?.shipping?.receiver_address?.city?.name ||
-                         order.unified?.shipping?.receiver_address?.city ||
-                         order.raw?.shipping?.receiver_address?.city?.name ||
-                         order.raw?.shipping?.receiver_address?.city ||
-                         order.raw?.shipping?.destination?.receiver_address?.city?.name ||
-                         order.raw?.shipping?.destination?.receiver_address?.city ||
-                         '-'
-                       }</span>;
-                     case 'uf':
-                     case 'endereco_uf':
-                       return <span className="text-xs">{
-                         order.endereco_uf || 
-                         order.uf || 
-                         order.shipping?.destination?.shipping_address?.state?.name ||
-                         order.shipping?.destination?.shipping_address?.state?.id ||
-                         order.shipping?.destination?.shipping_address?.state ||
-                         order.shipping?.receiver_address?.state?.id || 
-                         order.shipping?.receiver_address?.state?.name || 
-                         order.shipping?.receiver_address?.state || 
-                         order.unified?.shipping?.receiver_address?.state?.id ||
-                         order.unified?.shipping?.receiver_address?.state?.name ||
-                         order.unified?.shipping?.receiver_address?.state ||
-                         order.raw?.shipping?.receiver_address?.state?.id ||
-                         order.raw?.shipping?.receiver_address?.state?.name ||
-                         order.raw?.shipping?.receiver_address?.state ||
-                         order.raw?.shipping?.destination?.receiver_address?.state?.id ||
-                         order.raw?.shipping?.destination?.receiver_address?.state?.name ||
-                         order.raw?.shipping?.destination?.receiver_address?.state ||
-                         '-'
-                       }</span>;
-                     case 'endereco_rua':
-                       return <span className="text-xs">{
-                         order.endereco_rua ||
-                         order.rua ||
-                         order.shipping?.destination?.shipping_address?.street_name ||
-                         order.shipping?.destination?.shipping_address?.address_line ||
-                         order.shipping?.receiver_address?.street_name ||
-                         order.shipping?.receiver_address?.address_line ||
-                         order.unified?.shipping?.receiver_address?.street_name ||
-                         order.unified?.shipping?.receiver_address?.address_line ||
-                         order.raw?.shipping?.receiver_address?.street_name ||
-                         order.raw?.shipping?.receiver_address?.address_line ||
-                         order.raw?.shipping?.destination?.receiver_address?.street_name ||
-                         order.raw?.shipping?.destination?.receiver_address?.address_line ||
-                         '-'
-                       }</span>;
+                    case 'cidade':
+                    case 'endereco_cidade':
+                      return <span>{
+                        order.endereco_cidade || 
+                        order.cidade || 
+                        order.shipping?.destination?.shipping_address?.city?.name ||
+                        order.shipping?.destination?.shipping_address?.city ||
+                        order.shipping?.receiver_address?.city?.name || 
+                        order.shipping?.receiver_address?.city || 
+                        order.unified?.shipping?.receiver_address?.city?.name ||
+                        order.unified?.shipping?.receiver_address?.city ||
+                        order.raw?.shipping?.receiver_address?.city?.name ||
+                        order.raw?.shipping?.receiver_address?.city ||
+                        order.raw?.shipping?.destination?.receiver_address?.city?.name ||
+                        order.raw?.shipping?.destination?.receiver_address?.city ||
+                        '-'
+                      }</span>;
+                    case 'uf':
+                    case 'endereco_uf':
+                      return <span>{
+                        order.endereco_uf || 
+                        order.uf || 
+                        order.shipping?.destination?.shipping_address?.state?.name ||
+                        order.shipping?.destination?.shipping_address?.state?.id ||
+                        order.shipping?.destination?.shipping_address?.state ||
+                        order.shipping?.receiver_address?.state?.id || 
+                        order.shipping?.receiver_address?.state?.name || 
+                        order.shipping?.receiver_address?.state || 
+                        order.unified?.shipping?.receiver_address?.state?.id ||
+                        order.unified?.shipping?.receiver_address?.state?.name ||
+                        order.unified?.shipping?.receiver_address?.state ||
+                        order.raw?.shipping?.receiver_address?.state?.id ||
+                        order.raw?.shipping?.receiver_address?.state?.name ||
+                        order.raw?.shipping?.receiver_address?.state ||
+                        order.raw?.shipping?.destination?.receiver_address?.state?.id ||
+                        order.raw?.shipping?.destination?.receiver_address?.state?.name ||
+                        order.raw?.shipping?.destination?.receiver_address?.state ||
+                        '-'
+                      }</span>;
+                    case 'endereco_rua':
+                      return <span>{
+                        order.endereco_rua ||
+                        order.rua ||
+                        order.shipping?.destination?.shipping_address?.street_name ||
+                        order.shipping?.destination?.shipping_address?.address_line ||
+                        order.shipping?.receiver_address?.street_name ||
+                        order.shipping?.receiver_address?.address_line ||
+                        order.unified?.shipping?.receiver_address?.street_name ||
+                        order.unified?.shipping?.receiver_address?.address_line ||
+                        order.raw?.shipping?.receiver_address?.street_name ||
+                        order.raw?.shipping?.receiver_address?.address_line ||
+                        order.raw?.shipping?.destination?.receiver_address?.street_name ||
+                        order.raw?.shipping?.destination?.receiver_address?.address_line ||
+                        '-'
+                      }</span>;
                     case 'endereco_numero':
                       return <span>{
                         order.endereco_numero ||
@@ -424,22 +424,22 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         order.raw?.shipping?.destination?.receiver_address?.street_number ||
                         '-'
                       }</span>;
-                     case 'endereco_bairro':
-                       return <span className="text-xs">{
-                         order.endereco_bairro ||
-                         order.bairro ||
-                         order.shipping?.destination?.shipping_address?.neighborhood?.name ||
-                         order.shipping?.destination?.shipping_address?.neighborhood ||
-                         order.shipping?.receiver_address?.neighborhood?.name ||
-                         order.shipping?.receiver_address?.neighborhood ||
-                         order.unified?.shipping?.receiver_address?.neighborhood?.name ||
-                         order.unified?.shipping?.receiver_address?.neighborhood ||
-                         order.raw?.shipping?.receiver_address?.neighborhood?.name ||
-                         order.raw?.shipping?.receiver_address?.neighborhood ||
-                         order.raw?.shipping?.destination?.receiver_address?.neighborhood?.name ||
-                         order.raw?.shipping?.destination?.receiver_address?.neighborhood ||
-                         '-'
-                       }</span>;
+                    case 'endereco_bairro':
+                      return <span>{
+                        order.endereco_bairro ||
+                        order.bairro ||
+                        order.shipping?.destination?.shipping_address?.neighborhood?.name ||
+                        order.shipping?.destination?.shipping_address?.neighborhood ||
+                        order.shipping?.receiver_address?.neighborhood?.name ||
+                        order.shipping?.receiver_address?.neighborhood ||
+                        order.unified?.shipping?.receiver_address?.neighborhood?.name ||
+                        order.unified?.shipping?.receiver_address?.neighborhood ||
+                        order.raw?.shipping?.receiver_address?.neighborhood?.name ||
+                        order.raw?.shipping?.receiver_address?.neighborhood ||
+                        order.raw?.shipping?.destination?.receiver_address?.neighborhood?.name ||
+                        order.raw?.shipping?.destination?.receiver_address?.neighborhood ||
+                        '-'
+                      }</span>;
                     case 'endereco_cep':
                       return <span>{
                         order.endereco_cep ||
@@ -509,10 +509,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                            <Badge variant="warning" className="text-xs">Sem Mapear</Badge>
                          )
                        );
-                     case 'sku_estoque':
-                       return <span className="text-xs whitespace-nowrap">{mapping?.skuEstoque || '-'}</span>;
-                     case 'sku_kit':
-                       return <span className="text-xs whitespace-nowrap">{mapping?.skuKit || '-'}</span>;
+                    case 'sku_estoque':
+                      return <span>{mapping?.skuEstoque || '-'}</span>;
+                    case 'sku_kit':
+                      return <span>{mapping?.skuKit || '-'}</span>;
                      case 'qtd_kit':
                        {
                          const qtd = (typeof mapping?.quantidadeKit !== 'undefined' ? mapping?.quantidadeKit : (typeof mapping?.quantidade !== 'undefined' ? mapping?.quantidade : (order.qtd_kit ?? order.quantidade_kit)));
@@ -569,8 +569,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{order.manufacturing_ending_date ? formatDate(order.manufacturing_ending_date) : order.raw?.manufacturing_ending_date ? formatDate(order.raw.manufacturing_ending_date) : '-'}</span>;
                     case 'comment':
                       return <div className="max-w-xs truncate" title={order.comment || order.raw?.comment}>{order.comment || order.raw?.comment || '-'}</div>;
-                     case 'tags':
-                       return <div className="max-w-xs truncate text-xs" title={(order.tags || []).join(', ')}>{Array.isArray(order.tags) && order.tags.length ? order.tags.join(', ') : '-'}</div>;
+                    case 'tags':
+                      return <div className="max-w-xs truncate" title={(order.tags || []).join(', ')}>{Array.isArray(order.tags) && order.tags.length ? order.tags.join(', ') : '-'}</div>;
                     default:
                       return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
                   }
@@ -702,7 +702,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                   <PaginationItem>
                     <PaginationNext
                       onClick={() => onPageChange(currentPage + 1)}
-                      className={(state?.hasNextPage === false && currentPage >= totalPages) ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
+                      className={(orders.length === 0 && !state?.hasNextPage && currentPage >= totalPages) ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
                     />
                   </PaginationItem>
                 </PaginationContent>
