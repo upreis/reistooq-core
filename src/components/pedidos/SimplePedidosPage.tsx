@@ -91,12 +91,12 @@ function SimplePedidosPage({ className }: Props) {
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: (filters) => {
       console.log('🔍 Aplicando filtros unificados:', filters);
-      actions.setFilters(filters);
+      actions.replaceFilters(filters); // ✅ substitui completamente para evitar filtros antigos
       
-      // ✅ FORÇA ATUALIZAÇÃO IMEDIATA DOS DADOS
+      // ✅ Força atualização imediata com os filtros atuais
       setTimeout(() => {
         actions.refetch();
-      }, 100); // Pequeno delay para garantir que os filtros foram aplicados
+      }, 0);
     },
     autoLoad: false,          // ✅ Não carregar automaticamente
     loadSavedFilters: false   // ✅ Não aplicar filtros salvos automaticamente

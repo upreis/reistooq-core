@@ -43,6 +43,7 @@ export interface PedidosManagerState {
 
 export interface PedidosManagerActions {
   setFilters: (filters: Partial<PedidosFilters>) => void;
+  replaceFilters: (filters: PedidosFilters) => void; // 🔄 Substitui completamente (usado ao aplicar)
   clearFilters: () => void;
   applyFilters: () => void; // 🔄 Nova ação para aplicar filtros manualmente
   setPage: (page: number) => void;
@@ -720,100 +721,109 @@ export function usePedidosManager(initialAccountId?: string) {
   }, [filters, integrationAccountId, pageSize, loadOrders]); // ✅ CORRIGIDO: Incluir loadOrders nas dependências
 
   // ✅ SIMPLIFICADO: Actions usando apenas filters
-  const actions: PedidosManagerActions = useMemo(() => ({
-    setFilters: (newFilters: Partial<PedidosFilters>) => {
-      console.log('🔄 [usePedidosManager] setFilters:', newFilters);
-      
-      // Normalizar datas ao definir filtros
-      const normalizedNewFilters = { ...newFilters };
-      if (normalizedNewFilters.dataInicio) {
-        normalizedNewFilters.dataInicio = normalizeDate(normalizedNewFilters.dataInicio);
-      }
-      if (normalizedNewFilters.dataFim) {
-        normalizedNewFilters.dataFim = normalizeDate(normalizedNewFilters.dataFim);
-      }
-      
-      // ✅ CACHE INTELIGENTE: Só limpar cache quando valores realmente mudaram
-      const currentContasML = JSON.stringify(filters.contasML || []);
-      const newContasML = JSON.stringify(newFilters.contasML || []);
-      const currentSituacao = JSON.stringify(filters.situacao || []);
-      const newSituacao = JSON.stringify(newFilters.situacao || []);
-      
-      const needsCacheInvalidation = !!(
-        (newFilters.contasML && currentContasML !== newContasML) ||
-        (newFilters.dataInicio && filters.dataInicio !== newFilters.dataInicio) ||
-        (newFilters.dataFim && filters.dataFim !== newFilters.dataFim) ||
-        (newFilters.situacao && currentSituacao !== newSituacao)
-      );
-      
-      setFiltersState(prev => {
-        const merged = { ...prev, ...normalizedNewFilters };
-        console.log('🔄 [usePedidosManager] Filtros atualizados:', merged);
-        return merged;
+const actions: PedidosManagerActions = useMemo(() => ({
+  setFilters: (newFilters: Partial<PedidosFilters>) => {
+    console.log('🔄 [usePedidosManager] setFilters:', newFilters);
+    // Normalizar datas ao definir filtros
+    const normalizedNewFilters: Partial<PedidosFilters> = { ...newFilters };
+    if (normalizedNewFilters.dataInicio) {
+      normalizedNewFilters.dataInicio = normalizeDate(normalizedNewFilters.dataInicio);
+    }
+    if (normalizedNewFilters.dataFim) {
+      normalizedNewFilters.dataFim = normalizeDate(normalizedNewFilters.dataFim);
+    }
+
+    // Merge (para updates parciais durante edição de filtros)
+    setFiltersState(prev => {
+      const merged = { ...prev, ...normalizedNewFilters } as PedidosFilters;
+
+      // Remover chaves explicitamente definidas como undefined
+      Object.keys(normalizedNewFilters).forEach((k) => {
+        const key = k as keyof PedidosFilters;
+        const val = (normalizedNewFilters as any)[key];
+        if (val === undefined || val === '' || (Array.isArray(val) && val.length === 0)) {
+          delete (merged as any)[key];
+        }
       });
-      
-      // ✅ CORREÇÃO CRÍTICA: Resetar página sempre
-      setCurrentPage(1);
-      
-      // ✅ OTIMIZADO: Limpar cache apenas quando valores realmente mudaram
-      if (needsCacheInvalidation) {
+
+      console.log('🔄 [usePedidosManager] Filtros (merge) =>', merged);
+      return merged;
+    });
+
+    // Resetar paginação e invalidar cache leve
+    setCurrentPage(1);
+    setCachedAt(undefined);
+    setLastQuery(undefined);
+  },
+
+  // Substitui COMPLETAMENTE os filtros (usado ao clicar em "Aplicar Filtros")
+  replaceFilters: (all: PedidosFilters) => {
+    const normalized: PedidosFilters = { ...all };
+    if (normalized.dataInicio) normalized.dataInicio = normalizeDate(normalized.dataInicio);
+    if (normalized.dataFim) normalized.dataFim = normalizeDate(normalized.dataFim);
+
+    // Remover valores vazios para evitar "filtros fantasmas"
+    const cleaned: PedidosFilters = {} as PedidosFilters;
+    (Object.keys(normalized) as (keyof PedidosFilters)[]).forEach((key) => {
+      const val = (normalized as any)[key];
+      if (val !== undefined && val !== '' && !(Array.isArray(val) && val.length === 0)) {
+        (cleaned as any)[key] = val;
+      }
+    });
+
+    setFiltersState(cleaned);
+    setCurrentPage(1);
+    // Invalida completamente o cache para garantir atualização imediata
+    setCachedAt(undefined);
+    setLastQuery(undefined);
+  },
+  
+  clearFilters: () => {
+    console.log('🔄 Limpando todos os filtros');
+    setFiltersState(DEFAULT_FILTERS);
+    setCurrentPage(1);
+    setCachedAt(undefined);
+    setLastQuery(undefined);
+  },
+
+  applyFilters, // 🔄 Nova ação
+  
+  setPage: (page: number) => {
+    console.log('📄 Mudando para página:', page);
+    setCurrentPage(page);
+  },
+  
+  setPageSize: (size: number) => {
+    const validatedSize = Math.min(size, PAGINATION.MAX_PAGE_SIZE);
+    if (size > PAGINATION.MAX_PAGE_SIZE) {
+      console.warn(`⚠️ pageSize reduzido de ${size} para ${validatedSize} (limite da API: ${PAGINATION.MAX_PAGE_SIZE})`);
+    }
+    setPageSizeState(validatedSize);
+    setCurrentPage(1);
+  },
+  
+  setIntegrationAccountId: (id: string) => {
+    setIntegrationAccountId(prev => {
+      if (prev !== id) {
+        setCurrentPage(1);
         setCachedAt(undefined);
         setLastQuery(undefined);
+        return id;
       }
-    },
-    
-    clearFilters: () => {
-      console.log('🔄 Limpando todos os filtros');
-      setFiltersState(DEFAULT_FILTERS);
-      setCurrentPage(1);
-      // Limpar cache
-      setCachedAt(undefined);
-      setLastQuery(undefined);
-    },
-
-    applyFilters, // 🔄 Nova ação
-    
-    setPage: (page: number) => {
-      console.log('📄 Mudando para página:', page);
-      setCurrentPage(page);
-      // 🚨 MANUAL: Usuário deve clicar em "Aplicar" para buscar nova página
-    },
-    
-    setPageSize: (size: number) => {
-      // 🚨 VALIDAÇÃO: Mercado Livre API aceita máximo 51, limitamos a 50 para segurança
-      const validatedSize = Math.min(size, PAGINATION.MAX_PAGE_SIZE);
-      if (size > PAGINATION.MAX_PAGE_SIZE) {
-        console.warn(`⚠️ pageSize reduzido de ${size} para ${validatedSize} (limite da API: ${PAGINATION.MAX_PAGE_SIZE})`);
-      }
-      setPageSizeState(validatedSize);
-      setCurrentPage(1);
-    },
-    
-    setIntegrationAccountId: (id: string) => {
-      setIntegrationAccountId(prev => {
-        if (prev !== id) {
-          setCurrentPage(1);
-          // Limpar cache quando mudar conta
-          setCachedAt(undefined);
-          setLastQuery(undefined);
-          return id;
-        }
-        return prev;
-      });
-    },
-    
-    refetch: () => {
-      loadOrders(true); // 🚀 FASE 2: Force refresh
-    },
-    
-    applyClientSideFilters,
-    
-    // 🚀 FASE 3: Novas ações
-    exportData,
-    saveCurrentFilters,
-    loadSavedFilters,
-    getSavedFilters
-  }), [applyFilters, loadOrders, applyClientSideFilters, exportData, saveCurrentFilters, loadSavedFilters, getSavedFilters]);
+      return prev;
+    });
+  },
+  
+  refetch: () => {
+    loadOrders(true);
+  },
+  
+  applyClientSideFilters,
+  exportData,
+  saveCurrentFilters,
+  loadSavedFilters,
+  getSavedFilters
+}), [applyFilters, loadOrders, applyClientSideFilters, exportData, saveCurrentFilters, loadSavedFilters, getSavedFilters]);
 
   // State object melhorado
   const state: PedidosManagerState = {
