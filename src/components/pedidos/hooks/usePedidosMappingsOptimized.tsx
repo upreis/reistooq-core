@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { useDebounce } from '@/hooks/useDebounce';
+import { extrairSkusDoPedido } from '@/utils/idUnico';
 
 interface UsePedidosMappingsOptimizedOptions {
   enabled?: boolean;
@@ -132,8 +133,26 @@ export function usePedidosMappingsOptimized({
               }
             }
 
-            // Processar mapeamento
-            const mapping = await MapeamentoService.verificarMapeamento(order);
+            // Processar mapeamento - extrair SKU do pedido e consultar serviço
+            let skuParaVerificar: string | undefined;
+            try {
+              const skusExtraidos = extrairSkusDoPedido(order);
+              skuParaVerificar = skusExtraidos[0]?.sku
+                || order?.sku_kit
+                || order?.order_items?.[0]?.item?.seller_sku
+                || order?.itens?.[0]?.sku
+                || order?.sku
+                || order?.seller_sku;
+            } catch (_) {
+              skuParaVerificar = order?.sku_kit || order?.sku || order?.seller_sku;
+            }
+
+            let mapping: MapeamentoVerificacao | undefined;
+            if (skuParaVerificar && typeof skuParaVerificar === 'string') {
+              mapping = await MapeamentoService.verificarMapeamento(String(skuParaVerificar).trim().toUpperCase());
+            } else {
+              mapping = { skuPedido: '', temMapeamento: false };
+            }
             
             if (mapping) {
               newMappings.set(idUnico, mapping);
