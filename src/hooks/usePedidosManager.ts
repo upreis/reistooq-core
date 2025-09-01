@@ -1,4 +1,16 @@
 /**
+ * 🛡️ BLINDAGEM CRÍTICA - SISTEMA FUNCIONANDO PERFEITAMENTE
+ * 
+ * ⚠️ ATENÇÃO: Esta implementação está FUNCIONANDO PERFEITAMENTE
+ * 🚨 NÃO MODIFICAR sem autorização explícita do proprietário
+ * 📋 Consultar BLINDAGEM_FILTROS_PEDIDOS.md antes de qualquer mudança
+ * 
+ * Patterns críticos protegidos:
+ * ✅ Dependency array: [currentFilters] (SEM loadOrders)
+ * ✅ Conta ML prioritária: contasML[0] || defaultAccountId  
+ * ✅ Cache otimizado: shouldClearCache condicionando invalidação
+ * ✅ Mapeamento situação: mapSituacaoToApiStatus funcionando
+ * 
  * 🛡️ HOOK UNIFICADO PARA GESTÃO DE PEDIDOS - FASE 2 & 3
  * Centraliza toda a lógica de filtros, carregamento e mapeamentos
  * + Otimizações de performance + Experiência aprimorada
