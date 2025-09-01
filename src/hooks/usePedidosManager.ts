@@ -488,17 +488,25 @@ export function usePedidosManager(initialAccountId?: string) {
    * Carrega pedidos com estratégia híbrida + cache inteligente
    */
   const loadOrders = useCallback(async (forceRefresh = false) => {
-    if (!integrationAccountId) return;
+    // Construir parâmetros primeiro para suportar múltiplas contas
+    const apiParams = buildApiParams(filters); // ✅ Usar filters diretamente
+
+    // Só bloquear se realmente não houver nenhuma conta definida (única ou múltiplas)
+    const hasAnyAccount = Boolean(
+      apiParams.integration_account_id ||
+      (Array.isArray(apiParams.integration_account_ids) && apiParams.integration_account_ids.length > 0) ||
+      integrationAccountId
+    );
+    if (!hasAnyAccount) return;
+
+    console.log('🔍 Parâmetros da API construídos:', apiParams);
+    const cacheKey = getCacheKey(apiParams);
 
     // 🚀 FASE 2: Cancelar requisições anteriores
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
-
-    const apiParams = buildApiParams(filters); // ✅ CORRIGIDO: Usar filters diretamente
-    console.log('🔍 Parâmetros da API construídos:', apiParams);
-    const cacheKey = getCacheKey(apiParams);
 
     // 🚀 FASE 2: Verificar cache
     if (!forceRefresh && isCacheValid(cacheKey)) {
