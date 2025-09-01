@@ -270,8 +270,10 @@ export function usePedidosManager(initialAccountId?: string) {
             include_skus: true
           };
           
-          console.log(`📤 [CONTA ${accountId}] Enviando requisição:`, singleAccountBody);
-          
+          console.groupCollapsed(`[query/network]`);
+          console.log('function', 'unified-orders');
+          console.log('body', singleAccountBody);
+          console.groupEnd();
           const { data, error } = await supabase.functions.invoke('unified-orders', {
             body: singleAccountBody
           });
@@ -305,6 +307,9 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
       
+      console.groupCollapsed('[query/result]');
+      console.log('total', totalCount);
+      console.groupEnd();
       console.log(`🎯 [AUDITORIA] Total combinado: ${allResults.length} pedidos de ${apiParams.integration_account_ids.length} contas`);
       
       return {
@@ -341,7 +346,10 @@ export function usePedidosManager(initialAccountId?: string) {
       include_skus: true
     } as any;
     
-    console.log('📤 Enviando requisição para unified-orders (conta única):', requestBody);
+    console.groupCollapsed('[query/network]');
+    console.log('function', 'unified-orders');
+    console.log('body', requestBody);
+    console.groupEnd();
 
     const { data, error } = await supabase.functions.invoke('unified-orders', {
       body: requestBody
@@ -513,7 +521,7 @@ export function usePedidosManager(initialAccountId?: string) {
     const filtersKey = stableSerializeFilters(debouncedFilters);
     const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
 
-    console.groupCollapsed('[pedidos/query]');
+    console.groupCollapsed('[query/start]');
     console.log('key', cacheKey);
     console.log('forceRefresh', forceRefresh);
     console.log('lastQuery', lastQuery);
@@ -546,7 +554,9 @@ export function usePedidosManager(initialAccountId?: string) {
 
     // 🚀 FASE 2: Verificar cache
     if (!forceRefresh && isCacheValid(cacheKey)) {
-      console.log('[pedidos/query] cache-hit, skipping network');
+      console.groupCollapsed('[query/skip] cache-hit');
+      console.log('key', cacheKey);
+      console.groupEnd();
       return;
     }
 

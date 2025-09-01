@@ -684,7 +684,7 @@ function SimplePedidosPage({ className }: Props) {
         isRefreshing={state.isRefreshing}
         onRefresh={actions.refetch}
         onApplyFilters={() => {
-          console.groupCollapsed('[filtros/apply] from=header');
+          console.groupCollapsed('[apply/click] from=header');
           console.log('draftFilters', filtersManager.filters);
           console.groupEnd();
           filtersManager.applyFilters();
