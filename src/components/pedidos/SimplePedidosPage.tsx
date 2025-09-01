@@ -1008,6 +1008,133 @@ function SimplePedidosPage({ className }: Props) {
         </Card>
       )}
 
+      {/* 🎯 FILTROS RÁPIDOS POR STATUS */}
+      <Card className="p-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium text-muted-foreground">Filtros rápidos:</span>
+          
+          <Button
+            size="sm"
+            variant={!filtersManager.appliedFilters.situacao ? "default" : "outline"}
+            onClick={() => {
+              filtersManager.updateFilter('situacao', undefined);
+              filtersManager.applyFilters();
+            }}
+            className="h-8"
+          >
+            Todos os pedidos
+          </Button>
+
+          <Button
+            size="sm"
+            variant={
+              Array.isArray(filtersManager.appliedFilters.situacao) &&
+              filtersManager.appliedFilters.situacao.includes('pronto_baixar')
+                ? "default"
+                : "outline"
+            }
+            onClick={() => {
+              filtersManager.updateFilter('situacao', ['pronto_baixar']);
+              filtersManager.applyFilters();
+            }}
+            className="h-8 bg-green-500 hover:bg-green-600 text-white border-green-500"
+          >
+            📦 Pronto p/ Baixar
+          </Button>
+
+          <Button
+            size="sm"
+            variant={
+              Array.isArray(filtersManager.appliedFilters.situacao) &&
+              filtersManager.appliedFilters.situacao.includes('mapear_incompleto')
+                ? "default"
+                : "outline"
+            }
+            onClick={() => {
+              filtersManager.updateFilter('situacao', ['mapear_incompleto']);
+              filtersManager.applyFilters();
+            }}
+            className="h-8 bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+          >
+            ⚠️ Mapear Incompleto
+          </Button>
+
+          <Button
+            size="sm"
+            variant={
+              Array.isArray(filtersManager.appliedFilters.situacao) &&
+              filtersManager.appliedFilters.situacao.includes('baixado')
+                ? "default"
+                : "outline"
+            }
+            onClick={() => {
+              filtersManager.updateFilter('situacao', ['baixado']);
+              filtersManager.applyFilters();
+            }}
+            className="h-8 bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
+          >
+            ✅ Baixado
+          </Button>
+
+          <Button
+            size="sm"
+            variant={
+              Array.isArray(filtersManager.appliedFilters.situacao) &&
+              filtersManager.appliedFilters.situacao.includes('shipped')
+                ? "default"
+                : "outline"
+            }
+            onClick={() => {
+              filtersManager.updateFilter('situacao', ['shipped']);
+              filtersManager.applyFilters();
+            }}
+            className="h-8"
+          >
+            🚚 Enviado
+          </Button>
+
+          <Button
+            size="sm"
+            variant={
+              Array.isArray(filtersManager.appliedFilters.situacao) &&
+              filtersManager.appliedFilters.situacao.includes('delivered')
+                ? "default"
+                : "outline"
+            }
+            onClick={() => {
+              filtersManager.updateFilter('situacao', ['delivered']);
+              filtersManager.applyFilters();
+            }}
+            className="h-8"
+          >
+            📍 Entregue
+          </Button>
+
+          {filtersManager.appliedFilters.situacao && (
+            <div className="flex items-center gap-2 ml-auto">
+              <Badge variant="secondary" className="text-xs">
+                Filtro ativo: {
+                  Array.isArray(filtersManager.appliedFilters.situacao)
+                    ? filtersManager.appliedFilters.situacao.join(', ')
+                    : filtersManager.appliedFilters.situacao
+                }
+              </Badge>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  filtersManager.updateFilter('situacao', undefined);
+                  filtersManager.applyFilters();
+                }}
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+              >
+                ✕
+              </Button>
+            </div>
+          )}
+        </div>
+      </Card>
+
       {/* 🚀 FASE 2: Loading otimizado */}
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}
       <PedidosTableSection
