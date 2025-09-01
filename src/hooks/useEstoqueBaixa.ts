@@ -117,15 +117,19 @@ export function useProcessarBaixaEstoque() {
         })));
 
         const baixas = pedidos.map(pedido => {
-          // ⭐ CORREÇÃO: Fallback para SKU quando não há mapeamento
-          const sku = pedido.sku_kit || 
-                     pedido.order_items?.[0]?.item?.seller_sku || 
-                     pedido.itens?.[0]?.sku || 
-                     '';
+          // Preferir o SKU de estoque mapeado (de-para). Se não houver, cair para SKU kit e outros fallbacks
+          const mapping = contextoDaUI?.mappingData?.get(pedido.id);
+          const sku = (mapping?.skuEstoque || mapping?.skuKit ||
+                      pedido.sku_kit || 
+                      pedido.order_items?.[0]?.item?.seller_sku || 
+                      pedido.itens?.[0]?.sku || 
+                      '').toString();
           const quantidade = Number(pedido.total_itens || 0);
           
           console.log(`🔍 AUDITORIA - Pedido ${pedido.numero}:`, {
             sku_origem: pedido.sku_kit,
+            sku_mapeado_estoque: mapping?.skuEstoque,
+            sku_mapeado_kit: mapping?.skuKit,
             sku_final: sku,
             total_itens_origem: pedido.total_itens,
             quantidade_final: quantidade,
@@ -133,7 +137,7 @@ export function useProcessarBaixaEstoque() {
           });
           
           return {
-            sku: sku.trim(),
+            sku: sku.trim().toUpperCase(),
             quantidade: quantidade
           };
         }).filter(baixa => {
