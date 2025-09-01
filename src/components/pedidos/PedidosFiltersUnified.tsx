@@ -134,12 +134,11 @@ export function PedidosFiltersUnified({
       )}
 
       {/* Layout principal dos filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-7 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-8 gap-4 items-end">
         {/* Busca - Aplicação manual */}
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Buscar
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -159,7 +158,6 @@ export function PedidosFiltersUnified({
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Situação
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <Popover open={situacaoOpen} onOpenChange={setSituacaoOpen}>
             <PopoverTrigger asChild>
@@ -217,7 +215,6 @@ export function PedidosFiltersUnified({
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Contas ML
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
             <PopoverTrigger asChild>
@@ -289,8 +286,7 @@ export function PedidosFiltersUnified({
         {/* Datas - Aplicação manual */}
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Data Início
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
+            Início
           </label>
           <Popover>
             <PopoverTrigger asChild>
@@ -303,7 +299,7 @@ export function PedidosFiltersUnified({
                 )}
               >
                 <Calendar className="mr-2 h-4 w-4" />
-                {filters.dataInicio ? format(filters.dataInicio, 'dd/MM/yy', { locale: ptBR }) : 'Início'}
+                {filters.dataInicio ? format(filters.dataInicio, 'dd/MM', { locale: ptBR }) : 'Início'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -320,8 +316,7 @@ export function PedidosFiltersUnified({
         
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Data Fim
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
+            Fim
           </label>
           <Popover>
             <PopoverTrigger asChild>
@@ -334,7 +329,7 @@ export function PedidosFiltersUnified({
                 )}
               >
                 <Calendar className="mr-2 h-4 w-4" />
-                {filters.dataFim ? format(filters.dataFim, 'dd/MM/yy', { locale: ptBR }) : 'Fim'}
+                {filters.dataFim ? format(filters.dataFim, 'dd/MM', { locale: ptBR }) : 'Fim'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -350,7 +345,7 @@ export function PedidosFiltersUnified({
         </div>
 
         {/* Botões de ação */}
-        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex gap-2 justify-end lg:justify-start">
+        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-2 flex gap-2 justify-end lg:justify-start flex-wrap">
           <Button
             variant="outline"
             size="sm"
@@ -395,7 +390,6 @@ export function PedidosFiltersUnified({
           <div>
             <label className="text-sm font-medium mb-1 block flex items-center gap-2">
               Cidade
-              <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
             </label>
             <Input
               placeholder="Ex: São Paulo"
@@ -410,7 +404,6 @@ export function PedidosFiltersUnified({
           <div>
             <label className="text-sm font-medium mb-1 block flex items-center gap-2">
               UF
-              <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
             </label>
             <Select 
               value={filters.uf || ''} 
@@ -434,7 +427,6 @@ export function PedidosFiltersUnified({
           <div>
             <label className="text-sm font-medium mb-1 block flex items-center gap-2">
               Valor Mínimo
-              <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
             </label>
             <Input
               type="number"
@@ -450,7 +442,6 @@ export function PedidosFiltersUnified({
           <div>
             <label className="text-sm font-medium mb-1 block flex items-center gap-2">
               Valor Máximo
-              <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
             </label>
             <Input
               type="number"
