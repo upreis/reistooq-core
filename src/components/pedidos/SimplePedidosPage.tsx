@@ -24,6 +24,8 @@ import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
 import { mapApiStatusToLabel, getStatusBadgeVariant, mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
 import { usePedidosManager } from '@/hooks/usePedidosManager';
+import { ExportModal } from './ExportModal';
+import { SavedFiltersManager } from './SavedFiltersManager';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -956,29 +958,13 @@ function SimplePedidosPage({ className }: Props) {
             🔄 Debug & Recarregar
           </Button>
         </div>
-        
-        {/* Filtros ativos e seleção de colunas */}
-        <div className="flex items-center gap-2">
-          {(filtersManager.appliedFilters.situacao || filtersManager.appliedFilters.dataInicio || filtersManager.appliedFilters.dataFim) && (
+        {(filtersManager.appliedFilters.situacao || filtersManager.appliedFilters.dataInicio || filtersManager.appliedFilters.dataFim) && (
+          <div className="flex items-center gap-1">
             <Badge variant="secondary" className="text-xs">
               Filtros ativos
             </Badge>
-          )}
-          
-          {/* TESTE: Botão simples e visível de configurar colunas */}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="gap-2 bg-orange-200 border-2 border-orange-500 text-black font-bold"
-            onClick={() => {
-              console.log('[DEBUG] Botão TESTE clicado!');
-              alert('Botão de colunas funcionando! visibleColumns: ' + visibleColumns.size);
-            }}
-          >
-            <Settings className="h-4 w-4" />
-            TESTE Colunas ({visibleColumns.size})
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
         </div>
       </Card>
@@ -1032,7 +1018,17 @@ function SimplePedidosPage({ className }: Props) {
         }}
       />
 
-      {/* Modais agora renderizados inline na área de indicadores */}
+      {/* 🚀 SEÇÃO DE MODAIS - PASSO 7 COMPLETO */}
+      <PedidosModalsSection
+        onExport={actions.exportData}
+        totalRecords={total}
+        isLoading={loading}
+        savedFilters={actions.getSavedFilters()}
+        onSaveFilters={actions.saveCurrentFilters}
+        onLoadFilters={actions.loadSavedFilters}
+        hasActiveFilters={filtersManager.hasActiveFilters}
+        columnManager={columnManager}
+      />
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
     </div>
