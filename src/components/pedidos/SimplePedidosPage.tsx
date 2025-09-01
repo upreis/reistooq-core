@@ -24,8 +24,6 @@ import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
 import { mapApiStatusToLabel, getStatusBadgeVariant, mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
 import { usePedidosManager } from '@/hooks/usePedidosManager';
-import { ExportModal } from './ExportModal';
-import { SavedFiltersManager } from './SavedFiltersManager';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -959,7 +957,7 @@ function SimplePedidosPage({ className }: Props) {
           </Button>
         </div>
         
-        {/* Filtros ativos e ações */}
+        {/* Filtros ativos e seleção de colunas */}
         <div className="flex items-center gap-2">
           {(filtersManager.appliedFilters.situacao || filtersManager.appliedFilters.dataInicio || filtersManager.appliedFilters.dataFim) && (
             <Badge variant="secondary" className="text-xs">
@@ -967,23 +965,8 @@ function SimplePedidosPage({ className }: Props) {
             </Badge>
           )}
           
-          {/* Botões de ação movidos para cá */}
-          <div className="flex items-center gap-1">
-            <ExportModal
-              onExport={actions.exportData}
-              totalRecords={total}
-              isLoading={loading}
-            />
-            
-            <SavedFiltersManager
-              savedFilters={actions.getSavedFilters()}
-              onSaveFilters={actions.saveCurrentFilters}
-              onLoadFilters={actions.loadSavedFilters}
-              hasActiveFilters={filtersManager.hasActiveFilters}
-            />
-            
-            <ColumnManager manager={columnManager} />
-          </div>
+          {/* Botão de Configurar Colunas */}
+          <ColumnManager manager={columnManager} />
         </div>
       </div>
         </div>
