@@ -277,65 +277,65 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           {isProcessed && (<CheckCircle className="h-4 w-4 text-green-600 mt-1" />)}
                         </>
                       );
-                     case 'numero':
-                       return <span className="font-mono text-sm">{order.numero || order.order_number || order.id?.toString() || order.pack_id || '-'}</span>;
-                    case 'empresa':
-                      return <span>{order.empresa || order.integration_account_id || order.account_name || order.seller?.nickname || order.seller?.name || '-'}</span>;
-                    case 'nome_cliente':
-                      return <div className="max-w-xs truncate" title={order.nome_cliente || order.buyer?.nickname}>{order.nome_cliente || order.buyer?.nickname || '-'}</div>;
-                    case 'nome_completo': {
-                      const fullName = (
-                        order.nome_completo ||
-                        order.shipping?.destination?.receiver_name ||
-                        order.unified?.buyer_name ||
-                        order.unified?.receiver_name ||
-                        order.shipping?.receiver_address?.receiver_name ||
-                        order.shipping?.receiver_address?.name ||
-                        order.receiver_name ||
-                        order.raw?.shipping?.destination?.receiver_name ||
-                        order.buyer?.name ||
-                        ((order.buyer?.first_name || order.buyer?.last_name)
-                          ? `${order.buyer?.first_name ?? ''} ${order.buyer?.last_name ?? ''}`.trim()
-                          : undefined) ||
-                        order.buyer?.nickname
-                      );
-                      return (
-                        <div className="max-w-xs truncate" title={fullName || ''}>
-                          {fullName || '-'}
-                        </div>
-                      );
-                    }
-                    case 'cpf_cnpj':
-                      return <span className="font-mono text-sm">{order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '-'}</span>;
-                    case 'data_pedido':
-                      return <span>{formatDate(order.data_pedido || order.date_created)}</span>;
-                    case 'last_updated':
-                      return <span>{order.last_updated ? formatDate(order.last_updated) : '-'}</span>;
-                    case 'skus_produtos':
-                      return <div className="max-w-xs truncate" title={skus.join(', ')}>{skus.length ? skus.join(', ') : '-'}</div>;
-                    case 'quantidade_itens':
-                      return <span>{quantidadeItens}</span>;
-                    case 'titulo_anuncio':
-                      return <div className="max-w-xs truncate" title={order.order_items?.[0]?.item?.title || order.titulo_anuncio}>{order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-'}</div>;
-                    case 'valor_total':
-                      return <span>{formatMoney(order.valor_total || order.total_amount || 0)}</span>;
-                    case 'paid_amount':
-                      return <span>{formatMoney(order.paid_amount || 0)}</span>;
-                    case 'frete_pago_cliente':
-                      return <span>{formatMoney(order.frete_pago_cliente || order.payments?.[0]?.shipping_cost || order.shipping?.costs?.receiver?.cost || order.valor_frete || 0)}</span>;
-                    case 'receita_flex':
-                      return <span>{formatMoney(order.receita_flex || getReceitaPorEnvio(order))}</span>;
-                    case 'custo_envio_seller':
-                      return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
-                    case 'coupon_amount':
-                      return <span>{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</span>;
-                    case 'marketplace_fee':
-                      {
-                        const fee = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
-                        return <span>{fee > 0 ? formatMoney(fee) : '-'}</span>;
-                      }
-                    case 'valor_liquido_vendedor':
-                      return <span>{formatMoney((order as any).valor_liquido_vendedor || 0)}</span>;
+                      case 'numero':
+                        return <span className="font-mono text-xs">{order.numero || order.order_number || order.id?.toString() || order.pack_id || '-'}</span>;
+                     case 'empresa':
+                       return <span className="text-xs">{order.empresa || order.integration_account_id || order.account_name || order.seller?.nickname || order.seller?.name || '-'}</span>;
+                     case 'nome_cliente':
+                       return <div className="max-w-xs truncate text-xs" title={order.nome_cliente || order.buyer?.nickname}>{order.nome_cliente || order.buyer?.nickname || '-'}</div>;
+                     case 'nome_completo': {
+                       const fullName = (
+                         order.nome_completo ||
+                         order.shipping?.destination?.receiver_name ||
+                         order.unified?.buyer_name ||
+                         order.unified?.receiver_name ||
+                         order.shipping?.receiver_address?.receiver_name ||
+                         order.shipping?.receiver_address?.name ||
+                         order.receiver_name ||
+                         order.raw?.shipping?.destination?.receiver_name ||
+                         order.buyer?.name ||
+                         ((order.buyer?.first_name || order.buyer?.last_name)
+                           ? `${order.buyer?.first_name ?? ''} ${order.buyer?.last_name ?? ''}`.trim()
+                           : undefined) ||
+                         order.buyer?.nickname
+                       );
+                       return (
+                         <div className="max-w-xs truncate text-xs" title={fullName || ''}>
+                           {fullName || '-'}
+                         </div>
+                       );
+                     }
+                     case 'cpf_cnpj':
+                       return <span className="font-mono text-xs">{order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '-'}</span>;
+                     case 'data_pedido':
+                       return <span className="text-xs">{formatDate(order.data_pedido || order.date_created)}</span>;
+                     case 'last_updated':
+                       return <span className="text-xs">{order.last_updated ? formatDate(order.last_updated) : '-'}</span>;
+                     case 'skus_produtos':
+                       return <div className="max-w-xs truncate text-xs" title={skus.join(', ')}>{skus.length ? skus.join(', ') : '-'}</div>;
+                     case 'quantidade_itens':
+                       return <span className="text-xs">{quantidadeItens}</span>;
+                     case 'titulo_anuncio':
+                       return <div className="max-w-xs truncate text-xs" title={order.order_items?.[0]?.item?.title || order.titulo_anuncio}>{order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-'}</div>;
+                     case 'valor_total':
+                       return <span className="text-xs">{formatMoney(order.valor_total || order.total_amount || 0)}</span>;
+                     case 'paid_amount':
+                       return <span className="text-xs">{formatMoney(order.paid_amount || 0)}</span>;
+                     case 'frete_pago_cliente':
+                       return <span className="text-xs">{formatMoney(order.frete_pago_cliente || order.payments?.[0]?.shipping_cost || order.shipping?.costs?.receiver?.cost || order.valor_frete || 0)}</span>;
+                     case 'receita_flex':
+                       return <span className="text-xs">{formatMoney(order.receita_flex || getReceitaPorEnvio(order))}</span>;
+                     case 'custo_envio_seller':
+                       return <span className="text-xs">{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
+                     case 'coupon_amount':
+                       return <span className="text-xs">{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</span>;
+                     case 'marketplace_fee':
+                       {
+                         const fee = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
+                         return <span className="text-xs">{fee > 0 ? formatMoney(fee) : '-'}</span>;
+                       }
+                     case 'valor_liquido_vendedor':
+                       return <span className="text-xs">{formatMoney((order as any).valor_liquido_vendedor || 0)}</span>;
                     case 'payment_method':
                       return <span className="text-xs">{order.payments?.[0]?.payment_method_id || order.payment_method || order.raw?.payments?.[0]?.payment_method_id || '-'}</span>;
                     case 'payment_status':
@@ -413,17 +413,17 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          order.raw?.shipping?.destination?.receiver_address?.address_line ||
                          '-'
                        }</span>;
-                    case 'endereco_numero':
-                      return <span>{
-                        order.endereco_numero ||
-                        order.numero ||
-                        order.shipping?.destination?.shipping_address?.street_number ||
-                        order.shipping?.receiver_address?.street_number ||
-                        order.unified?.shipping?.receiver_address?.street_number ||
-                        order.raw?.shipping?.receiver_address?.street_number ||
-                        order.raw?.shipping?.destination?.receiver_address?.street_number ||
-                        '-'
-                      }</span>;
+                     case 'endereco_numero':
+                       return <span className="text-xs">{
+                         order.endereco_numero ||
+                         order.numero ||
+                         order.shipping?.destination?.shipping_address?.street_number ||
+                         order.shipping?.receiver_address?.street_number ||
+                         order.unified?.shipping?.receiver_address?.street_number ||
+                         order.raw?.shipping?.receiver_address?.street_number ||
+                         order.raw?.shipping?.destination?.receiver_address?.street_number ||
+                         '-'
+                       }</span>;
                      case 'endereco_bairro':
                        return <span className="text-xs">{
                          order.endereco_bairro ||
@@ -440,22 +440,22 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          order.raw?.shipping?.destination?.receiver_address?.neighborhood ||
                          '-'
                        }</span>;
-                    case 'endereco_cep':
-                      return <span>{
-                        order.endereco_cep ||
-                        order.cep ||
-                        order.shipping?.destination?.shipping_address?.zip_code ||
-                        order.shipping?.destination?.shipping_address?.zip ||
-                        order.shipping?.receiver_address?.zip_code ||
-                        order.shipping?.receiver_address?.zip ||
-                        order.unified?.shipping?.receiver_address?.zip_code ||
-                        order.unified?.shipping?.receiver_address?.zip ||
-                        order.raw?.shipping?.receiver_address?.zip_code ||
-                        order.raw?.shipping?.receiver_address?.zip ||
-                        order.raw?.shipping?.destination?.receiver_address?.zip_code ||
-                        order.raw?.shipping?.destination?.receiver_address?.zip ||
-                        '-'
-                      }</span>;
+                     case 'endereco_cep':
+                       return <span className="text-xs">{
+                         order.endereco_cep ||
+                         order.cep ||
+                         order.shipping?.destination?.shipping_address?.zip_code ||
+                         order.shipping?.destination?.shipping_address?.zip ||
+                         order.shipping?.receiver_address?.zip_code ||
+                         order.shipping?.receiver_address?.zip ||
+                         order.unified?.shipping?.receiver_address?.zip_code ||
+                         order.unified?.shipping?.receiver_address?.zip ||
+                         order.raw?.shipping?.receiver_address?.zip_code ||
+                         order.raw?.shipping?.receiver_address?.zip ||
+                         order.raw?.shipping?.destination?.receiver_address?.zip_code ||
+                         order.raw?.shipping?.destination?.receiver_address?.zip ||
+                         '-'
+                       }</span>;
                      case 'mapeamento':
                        return (
                          mapping ? (
@@ -513,16 +513,16 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span className="text-xs whitespace-nowrap">{mapping?.skuEstoque || '-'}</span>;
                      case 'sku_kit':
                        return <span className="text-xs whitespace-nowrap">{mapping?.skuKit || '-'}</span>;
-                     case 'qtd_kit':
-                       {
-                         const qtd = (typeof mapping?.quantidadeKit !== 'undefined' ? mapping?.quantidadeKit : (typeof mapping?.quantidade !== 'undefined' ? mapping?.quantidade : (order.qtd_kit ?? order.quantidade_kit)));
-                         return <span>{typeof qtd === 'number' ? qtd : "Sem Mapear"}</span>;
-                       }
-                      case 'total_itens':
-                       {
-                         const qtdCalc = Number(mapping?.quantidadeKit ?? mapping?.quantidade ?? order.qtd_kit ?? order.quantidade_kit ?? 1);
-                         return <span>{quantidadeItens * (Number.isFinite(qtdCalc) ? qtdCalc : 1)}</span>;
-                       }
+                      case 'qtd_kit':
+                        {
+                          const qtd = (typeof mapping?.quantidadeKit !== 'undefined' ? mapping?.quantidadeKit : (typeof mapping?.quantidade !== 'undefined' ? mapping?.quantidade : (order.qtd_kit ?? order.quantidade_kit)));
+                          return <span className="text-xs">{typeof qtd === 'number' ? qtd : "Sem Mapear"}</span>;
+                        }
+                       case 'total_itens':
+                        {
+                          const qtdCalc = Number(mapping?.quantidadeKit ?? mapping?.quantidade ?? order.qtd_kit ?? order.quantidade_kit ?? 1);
+                          return <span className="text-xs">{quantidadeItens * (Number.isFinite(qtdCalc) ? qtdCalc : 1)}</span>;
+                        }
                       case 'status_baixa':
                         return (() => {
                           // 🔍 PRIMEIRO: Verificar se já foi baixado (histórico)
@@ -559,16 +559,16 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                              </Badge>
                            );
                         })();
-                    case 'date_created':
-                      return <span>{order.date_created ? formatDate(order.date_created) : '-'}</span>;
-                    case 'pack_id':
-                      return <span className="font-mono text-xs">{order.pack_id || '-'}</span>;
-                    case 'pickup_id':
-                      return <span className="font-mono text-xs">{order.pickup_id || order.shipping?.pickup_id || order.raw?.shipping?.pickup_id || '-'}</span>;
-                    case 'manufacturing_ending_date':
-                      return <span>{order.manufacturing_ending_date ? formatDate(order.manufacturing_ending_date) : order.raw?.manufacturing_ending_date ? formatDate(order.raw.manufacturing_ending_date) : '-'}</span>;
-                    case 'comment':
-                      return <div className="max-w-xs truncate" title={order.comment || order.raw?.comment}>{order.comment || order.raw?.comment || '-'}</div>;
+                     case 'date_created':
+                       return <span className="text-xs">{order.date_created ? formatDate(order.date_created) : '-'}</span>;
+                     case 'pack_id':
+                       return <span className="font-mono text-xs">{order.pack_id || '-'}</span>;
+                     case 'pickup_id':
+                       return <span className="font-mono text-xs">{order.pickup_id || order.shipping?.pickup_id || order.raw?.shipping?.pickup_id || '-'}</span>;
+                     case 'manufacturing_ending_date':
+                       return <span className="text-xs">{order.manufacturing_ending_date ? formatDate(order.manufacturing_ending_date) : order.raw?.manufacturing_ending_date ? formatDate(order.raw.manufacturing_ending_date) : '-'}</span>;
+                     case 'comment':
+                       return <div className="max-w-xs truncate text-xs" title={order.comment || order.raw?.comment}>{order.comment || order.raw?.comment || '-'}</div>;
                      case 'tags':
                        return <div className="max-w-xs truncate text-xs" title={(order.tags || []).join(', ')}>{Array.isArray(order.tags) && order.tags.length ? order.tags.join(', ') : '-'}</div>;
                     default:
