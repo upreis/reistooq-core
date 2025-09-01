@@ -329,7 +329,7 @@ export function usePedidosManager(initialAccountId?: string) {
       body: requestBody
     });
 
-    if (error) throw error;
+    if (error) throw new Error(error.message || 'unified-orders: erro na função');
     if (!data?.ok) throw new Error('Erro na resposta da API');
 
     return {
