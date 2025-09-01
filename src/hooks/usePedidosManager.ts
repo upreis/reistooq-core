@@ -398,10 +398,12 @@ export function usePedidosManager(initialAccountId?: string) {
   }, [filters]); // Dependência otimizada - usar filters diretamente
 
   /**
-   * 🚀 FASE 2: Cache inteligente
+   * 🚀 FASE 2: Cache inteligente - CORRIGIDO para invalidar na troca de conta
    */
   const getCacheKey = useCallback((apiParams: any) => {
-    return JSON.stringify({ integrationAccountId, currentPage, pageSize, ...apiParams });
+    // ✅ CRÍTICO: Incluir targetAccountId no cache para evitar dados obsoletos
+    const targetAccountId = apiParams.integration_account_id || integrationAccountId;
+    return JSON.stringify({ targetAccountId, currentPage, pageSize, ...apiParams });
   }, [integrationAccountId, currentPage, pageSize]);
 
   const isCacheValid = useCallback((cacheKey: string) => {
@@ -786,15 +788,9 @@ export function usePedidosManager(initialAccountId?: string) {
       hasFilters: Object.keys(filters).length > 0 
     });
     
-    // ✅ CORREÇÃO: Sem debounce para mudança de conta ML - carregamento imediato
-    const isContaMLChange = filters.contasML && filters.contasML.length > 0;
-    const delay = isContaMLChange ? 0 : 150; // Sem delay para conta ML, mínimo para outros
+    // ✅ CRÍTICO: Troca de conta ML = carregamento IMEDIATO, sem delays
+    loadOrders(); // Execução imediata sempre
     
-    const timeoutId = setTimeout(() => {
-      loadOrders(); // Chama função estável
-    }, delay);
-    
-    return () => clearTimeout(timeoutId);
     // ✅ CORREÇÃO CRÍTICA: Remover loadOrders das dependências para evitar loop infinito
   }, [filters, integrationAccountId, currentPage, pageSize]);
 
