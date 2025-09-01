@@ -87,16 +87,12 @@ type Props = {
 };
 
 function SimplePedidosPage({ className }: Props) {
-  // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE
+  // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: (filters) => {
       console.log('🔍 Aplicando filtros unificados:', filters);
-      actions.replaceFilters(filters); // ✅ substitui completamente para evitar filtros antigos
-      
-      // ✅ Força atualização imediata com os filtros atuais
-      setTimeout(() => {
-        actions.refetch();
-      }, 0);
+      // ✅ SOLUÇÃO: Substituir filtros dispara refetch automático via useEffect
+      actions.replaceFilters(filters);
     },
     autoLoad: false,          // ✅ Não carregar automaticamente
     loadSavedFilters: false   // ✅ Não aplicar filtros salvos automaticamente
@@ -685,9 +681,9 @@ function SimplePedidosPage({ className }: Props) {
         loading={loading}
         isRefreshing={state.isRefreshing}
         onRefresh={actions.refetch}
-        onApplyFilters={() => filtersManager.applyFilters()}
         selectedOrdersCount={selectedOrders.size}
-        hasPendingChanges={filtersManager.hasPendingChanges}
+        hasPendingChanges={false}
+        // ✅ REMOVIDO: onApplyFilters (botão duplicado removido)
       >
       {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
       </PedidosHeaderSection>

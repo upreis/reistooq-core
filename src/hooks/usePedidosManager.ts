@@ -113,8 +113,8 @@ export function usePedidosManager(initialAccountId?: string) {
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
   const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
   
-  // ✅ CRÍTICO: Remover debounce - usar filters diretamente
-  // const debouncedFilters = useDebounce(filters, DEBOUNCE.FILTER_DELAY_MS);
+  // ✅ CRÍTICO: Usar filters diretamente para refetch automático
+  const debouncedFilters = filters; // Remover debounce para reatividade imediata
   
   // 🚀 FASE 3: Filtros salvos (localStorage)
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => {
@@ -488,11 +488,22 @@ export function usePedidosManager(initialAccountId?: string) {
   }, [cachedAt, lastQuery]);
 
   /**
-   * Carrega pedidos com estratégia híbrida + cache inteligente
+   * 🔧 Carrega pedidos com query chaveada por filtros (refetch automático)
    */
   const loadOrders = useCallback(async (forceRefresh = false) => {
+    // ✅ SOLUÇÃO: Query chaveada por filtros serializado para refetch automático
+    const filtersKey = JSON.stringify(debouncedFilters);
+    
+    // Se os filtros mudaram, sempre fazer nova requisição
+    if (lastQuery !== filtersKey || forceRefresh) {
+      console.log('🔄 Filtros mudaram, fazendo nova consulta:', filtersKey);
+      setLastQuery(filtersKey);
+    } else if (loading && !forceRefresh) {
+      return; // Evitar múltiplas requisições simultâneas
+    }
+
     // Construir parâmetros primeiro para suportar múltiplas contas
-    const apiParams = buildApiParams(filters); // ✅ Usar filters diretamente
+    const apiParams = buildApiParams(debouncedFilters); // ✅ Usar debouncedFilters
 
     // Só bloquear se realmente não houver nenhuma conta definida (única ou múltiplas)
     const hasAnyAccount = Boolean(
@@ -629,7 +640,7 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [integrationAccountId, filters, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
+  }, [integrationAccountId, debouncedFilters, lastQuery, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
 
   // 🚀 FASE 3: Exportação de dados
   const exportData = useCallback(async (format: 'csv' | 'xlsx') => {
@@ -881,21 +892,20 @@ const actions: PedidosManagerActions = useMemo(() => ({
     }
   }, []); // Executar apenas no mount inicial
 
-  // 🚀 OTIMIZADO: Hook unificado para carregar dados
+  // ✅ SINCRONIZAÇÃO AUTOMÁTICA: Disparar carregamento quando filtros ou params mudam
   useEffect(() => {
     if (!integrationAccountId) return;
     
-    console.log('🔄 [usePedidosManager] Carregamento otimizado:', { 
+    console.log('🔄 [usePedidosManager] Carregamento com query chaveada:', { 
       integrationAccountId: integrationAccountId.slice(0, 8), 
       currentPage, 
-      hasFilters: Object.keys(filters).length > 0 
+      hasFilters: Object.keys(debouncedFilters).length > 0 
     });
     
-    // ✅ CRÍTICO: Troca de conta ML = carregamento IMEDIATO, sem delays
-    loadOrders(); // Execução imediata sempre
+    // ✅ SOLUÇÃO: Carregamento automático quando filtros mudam (query chaveada)
+    loadOrders();
     
-    // ✅ CORREÇÃO CRÍTICA: loadOrders é estável, não precisa estar nas dependências
-  }, [filters, integrationAccountId, currentPage, pageSize]);
+  }, [debouncedFilters, integrationAccountId, currentPage, pageSize, loadOrders]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
