@@ -412,7 +412,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'sku_kit':
                       return <span>{mapping?.skuKit || '-'}</span>;
                     case 'qtd_kit':
-                      return <span>{mapping?.quantidade ?? '-'}</span>;
+                      return <span>{mapping?.quantidadeKit || order.qtd_kit || order.quantidade_kit || 1}</span>;
                     case 'total_itens':
                       return <span>{quantidadeItens * (mapping?.quantidade || 1)}</span>;
                     case 'status_baixa':
