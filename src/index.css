@@ -66,6 +66,14 @@
     --brand-yellow: hsl(43 96% 56%); /* #F2C94C */
     --brand-yellow-foreground: hsl(0 0% 7%); /* #0B1220 - dark text for yellow bg */
 
+    /* Success colors */
+    --success: hsl(142 71% 45%);
+    --success-foreground: hsl(0 0% 100%);
+
+    /* Warning colors */  
+    --warning: hsl(43 96% 56%);
+    --warning-foreground: hsl(0 0% 7%);
+
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);

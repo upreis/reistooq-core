@@ -383,47 +383,77 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         order.raw?.shipping?.receiver_address?.zip_code ||
                         '-'
                       }</span>;
-                    case 'mapeamento':
-                      return (
-                        mapping ? (
-                          <div className="space-y-1">
-                            {mapping.skuEstoque && (
-                              <div className="text-xs"><span className="font-medium">Estoque:</span> {mapping.skuEstoque}</div>
-                            )}
-                            {mapping.skuKit && (
-                              <div className="text-xs"><span className="font-medium">Kit:</span> {mapping.skuKit}</div>
-                            )}
-                            {typeof mapping.quantidade !== 'undefined' && (
-                              <div className="text-xs"><span className="font-medium">Qtd:</span> {mapping.quantidade}</div>
-                            )}
-                            <Badge 
-                              variant={mapping.statusBaixa === 'sucesso' ? 'default' : mapping.statusBaixa === 'erro' ? 'destructive' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {mapping.statusBaixa || 'pendente'}
-                            </Badge>
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="text-xs">Sem mapeamento</Badge>
-                        )
-                      );
+                     case 'mapeamento':
+                       return (
+                         mapping ? (
+                           <div className="space-y-1">
+                             {mapping.skuEstoque && (
+                               <div className="text-xs"><span className="font-medium">Estoque:</span> {mapping.skuEstoque}</div>
+                             )}
+                             {mapping.skuKit && (
+                               <div className="text-xs"><span className="font-medium">Kit:</span> {mapping.skuKit}</div>
+                             )}
+                             {typeof mapping.quantidade !== 'undefined' && (
+                               <div className="text-xs"><span className="font-medium">Qtd:</span> {mapping.quantidade}</div>
+                             )}
+                             {(() => {
+                               const statusBaixa = mapping.statusBaixa || 'indefinido';
+                               let variant: "success" | "destructive" | "warning" | "outline" = "outline";
+                               let texto = "Indefinido";
+
+                               if (statusBaixa === 'pronto_baixar') {
+                                 variant = "success";
+                                 texto = "Pronto p/ Baixar";
+                               } else if (statusBaixa === 'sem_estoque') {
+                                 variant = "destructive";
+                                 texto = "Sem Estoque";
+                               } else if (statusBaixa === 'sem_mapear') {
+                                 variant = "warning";
+                                 texto = "Sem Mapear";
+                               }
+
+                               return (
+                                 <Badge variant={variant} className="text-xs">
+                                   {texto}
+                                 </Badge>
+                               );
+                             })()}
+                           </div>
+                         ) : (
+                           <Badge variant="warning" className="text-xs">Sem Mapear</Badge>
+                         )
+                       );
                     case 'sku_estoque':
                       return <span>{mapping?.skuEstoque || '-'}</span>;
                     case 'sku_kit':
                       return <span>{mapping?.skuKit || '-'}</span>;
-                    case 'qtd_kit':
-                      return <span>{mapping?.quantidadeKit || order.qtd_kit || order.quantidade_kit || 1}</span>;
+                     case 'qtd_kit':
+                       return <span>{mapping?.quantidade ? mapping.quantidade : "Sem Mapear"}</span>;
                     case 'total_itens':
                       return <span>{quantidadeItens * (mapping?.quantidade || 1)}</span>;
-                    case 'status_baixa':
-                      return (
-                        <Badge 
-                          variant={mapping?.statusBaixa === 'sucesso' ? 'default' : mapping?.statusBaixa === 'erro' ? 'destructive' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {mapping?.statusBaixa || 'pendente'}
-                        </Badge>
-                      );
+                     case 'status_baixa':
+                       return (() => {
+                         const statusBaixa = mapping?.statusBaixa || 'indefinido';
+                         let variant: "success" | "destructive" | "warning" | "outline" = "outline";
+                         let texto = "Indefinido";
+
+                         if (statusBaixa === 'pronto_baixar') {
+                           variant = "success";
+                           texto = "Pronto p/ Baixar";
+                         } else if (statusBaixa === 'sem_estoque') {
+                           variant = "destructive";
+                           texto = "Sem Estoque";
+                         } else if (statusBaixa === 'sem_mapear') {
+                           variant = "warning";
+                           texto = "Sem Mapear";
+                         }
+
+                         return (
+                           <Badge variant={variant} className="text-xs">
+                             {texto}
+                           </Badge>
+                         );
+                       })();
                     case 'date_created':
                       return <span>{order.date_created ? formatDate(order.date_created) : '-'}</span>;
                     case 'pack_id':
@@ -447,9 +477,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                   <tr
                     key={order.id}
                     className={cn(
-                      "border-b hover:bg-muted/50 transition-colors",
-                      isSelected && "bg-muted",
-                      isProcessed && "opacity-60 bg-green-50"
+                      "border-b border-border hover:bg-accent/20 transition-colors",
+                      isSelected && "bg-accent/30",
+                      isProcessed && "opacity-75 bg-success/10"
                     )}
                   >
                     {/* Checkbox de seleção */}
