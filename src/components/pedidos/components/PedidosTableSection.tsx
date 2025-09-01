@@ -241,17 +241,21 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
           <table className="w-full">
             <thead className="border-b">
               <tr className="text-left">
-                <th className="p-3">
+                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left">
                   <Checkbox
                     checked={selectedOrders.size === orders.length && orders.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
                 </th>
                 {/* Coluna fixa: ID-Único sempre primeiro */}
-                <th className="p-3">ID-Único</th>
+                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left">ID-Único</th>
                 {/* Demais cabeçalhos conforme ordem/seleção */}
                 {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
-                  <th key={def.key} className="p-3">{def.label}</th>
+                  <th key={def.key} className={cn(
+                    "px-4 h-12 text-sm text-muted-foreground font-medium text-left",
+                    // Colunas SKU com largura ajustada ao conteúdo
+                    (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
+                  )}>{def.label}</th>
                 ))}
               </tr>
             </thead>
@@ -588,7 +592,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     )}
                   >
                     {/* Checkbox de seleção */}
-                    <td className="p-3">
+                    <td className="px-4 text-center">
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => handleSelectOrder(order.id)}
@@ -597,11 +601,19 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     </td>
 
                     {/* Coluna fixa ID-Único */}
-                    <td className="p-3 font-mono text-sm">{idUnico}</td>
+                    <td className="px-4 text-center">
+                      <span className="text-xs font-mono">{idUnico}</span>
+                    </td>
 
                     {/* Demais colunas dinâmicas */}
                     {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
-                      <td key={def.key} className="p-3">{renderCell(def.key)}</td>
+                      <td key={def.key} className={cn(
+                        "px-4 text-center",
+                        // Colunas SKU com largura ajustada ao conteúdo
+                        (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
+                      )}>
+                        <span className="text-xs">{renderCell(def.key)}</span>
+                      </td>
                     ))}
                   </tr>
                 );
