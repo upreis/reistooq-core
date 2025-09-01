@@ -717,7 +717,7 @@ export function usePedidosManager(initialAccountId?: string) {
     
     // 🚀 Executar busca imediatamente
     loadOrders(true);
-  }, [filters, integrationAccountId, pageSize]); // ✅ CORRIGIDO: Remover loadOrders das dependências
+  }, [filters, integrationAccountId, pageSize, loadOrders]); // ✅ CORRIGIDO: Incluir loadOrders nas dependências
 
   // ✅ SIMPLIFICADO: Actions usando apenas filters
   const actions: PedidosManagerActions = useMemo(() => ({
