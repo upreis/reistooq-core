@@ -23,8 +23,19 @@ export const useCalendarNotifications = ({
   const { toast } = useToast();
 
   useEffect(() => {
+    if (events.length === 0) return;
+
+    let hasChecked = false;
+    
     const checkNotifications = () => {
+      if (hasChecked) return;
+      hasChecked = true;
+      
       const today = new Date();
+      const checkedToday = localStorage.getItem(`notifications-checked-${format(today, 'yyyy-MM-dd')}`);
+      
+      // Evitar múltiplas execuções no mesmo dia
+      if (checkedToday) return;
       
       events.forEach(event => {
         if (!event.notification_days_before || event.reminder_sent) return;
@@ -161,16 +172,25 @@ export const useCalendarNotifications = ({
           }
         }
       });
+
+      // Marcar que as notificações foram verificadas hoje
+      localStorage.setItem(`notifications-checked-${format(today, 'yyyy-MM-dd')}`, 'true');
     };
 
-    // Verificar notificações imediatamente
-    checkNotifications();
+    // Execução inicial com debounce
+    const initialTimeout = setTimeout(checkNotifications, 2000);
     
-    // Configurar verificação periódica (a cada hora)
-    const interval = setInterval(checkNotifications, 60 * 60 * 1000);
+    // Configurar verificação periódica (a cada 2 horas)
+    const interval = setInterval(() => {
+      hasChecked = false;
+      checkNotifications();
+    }, 2 * 60 * 60 * 1000);
     
-    return () => clearInterval(interval);
-  }, [events, toast, onCreateSystemAlert]);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [events.length]); // Apenas quando o número de eventos mudar
 
   // Função para marcar evento como notificado
   const markEventAsNotified = (eventId: string) => {

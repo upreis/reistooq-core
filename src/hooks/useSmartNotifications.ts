@@ -175,18 +175,33 @@ export const useSmartNotifications = ({
 
   // Executar análises
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (events.length === 0) return;
+
+    let hasExecuted = false;
+    
+    const executeAnalysis = () => {
+      if (hasExecuted) return;
+      hasExecuted = true;
+      
       analyzePatterns();
       sendSmartNotifications();
       analyzePerformance();
-    }, 30 * 60 * 1000); // A cada 30 minutos
+    };
 
-    // Execução inicial
-    analyzePatterns();
-    sendSmartNotifications();
+    // Execução inicial com debounce
+    const initialTimeout = setTimeout(executeAnalysis, 1000);
+    
+    // Intervalo para execuções futuras (30 minutos)
+    const interval = setInterval(() => {
+      hasExecuted = false;
+      executeAnalysis();
+    }, 30 * 60 * 1000);
 
-    return () => clearInterval(interval);
-  }, [analyzePatterns, sendSmartNotifications, analyzePerformance]);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [events.length]); // Apenas quando o número de eventos mudar
 
   return {
     analyzePatterns,
