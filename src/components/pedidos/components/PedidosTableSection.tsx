@@ -384,46 +384,84 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         '-'
                       }</span>;
                     case 'mapeamento':
-                      return (
-                        mapping ? (
-                          <div className="space-y-1">
-                            {mapping.skuEstoque && (
-                              <div className="text-xs"><span className="font-medium">Estoque:</span> {mapping.skuEstoque}</div>
-                            )}
-                            {mapping.skuKit && (
-                              <div className="text-xs"><span className="font-medium">Kit:</span> {mapping.skuKit}</div>
-                            )}
-                            {typeof mapping.quantidade !== 'undefined' && (
-                              <div className="text-xs"><span className="font-medium">Qtd:</span> {mapping.quantidade}</div>
-                            )}
-                            <Badge 
-                              variant={mapping.statusBaixa === 'sucesso' ? 'default' : mapping.statusBaixa === 'erro' ? 'destructive' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {mapping.statusBaixa || 'pendente'}
-                            </Badge>
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="text-xs">Sem mapeamento</Badge>
-                        )
-                      );
+                       return (
+                         <div className="space-y-1">
+                           {mapping ? (
+                             <>
+                               {mapping.skuEstoque && (
+                                 <div className="text-xs text-foreground"><span className="font-medium">Estoque:</span> {mapping.skuEstoque}</div>
+                               )}
+                               {mapping.skuKit && (
+                                 <div className="text-xs text-foreground"><span className="font-medium">Kit:</span> {mapping.skuKit}</div>
+                               )}
+                               {typeof mapping.quantidade !== 'undefined' && (
+                                 <div className="text-xs text-foreground"><span className="font-medium">Qtd:</span> {mapping.quantidade}</div>
+                               )}
+                               <Badge 
+                                 variant={
+                                   mapping.statusBaixa === 'pronto_baixar' ? 'success' : 
+                                   mapping.statusBaixa === 'sem_estoque' ? 'destructive' : 
+                                   mapping.statusBaixa === 'sem_mapear' ? 'warning' : 
+                                   'outline'
+                                 }
+                                 className="text-xs"
+                               >
+                                 {mapping.statusBaixa === 'pronto_baixar' ? 'Pronto p/ Baixar' :
+                                  mapping.statusBaixa === 'sem_estoque' ? 'Sem Estoque' :
+                                  mapping.statusBaixa === 'sem_mapear' ? 'Sem Mapear' :
+                                  'Indefinido'}
+                               </Badge>
+                             </>
+                           ) : (
+                             <Badge variant="warning" className="text-xs">
+                               Sem Mapeamento
+                             </Badge>
+                           )}
+                         </div>
+                       );
                     case 'sku_estoque':
                       return <span>{mapping?.skuEstoque || '-'}</span>;
                     case 'sku_kit':
                       return <span>{mapping?.skuKit || '-'}</span>;
                     case 'qtd_kit':
-                      return <span>{mapping?.quantidadeKit || order.qtd_kit || order.quantidade_kit || 1}</span>;
+                      return (
+                        <span>
+                          {mapping?.quantidade ? (
+                            mapping.quantidade
+                          ) : (
+                            <Badge variant="warning" className="text-xs">
+                              Sem Mapear
+                            </Badge>
+                          )}
+                        </span>
+                      );
                     case 'total_itens':
                       return <span>{quantidadeItens * (mapping?.quantidade || 1)}</span>;
-                    case 'status_baixa':
-                      return (
-                        <Badge 
-                          variant={mapping?.statusBaixa === 'sucesso' ? 'default' : mapping?.statusBaixa === 'erro' ? 'destructive' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {mapping?.statusBaixa || 'pendente'}
-                        </Badge>
-                      );
+                     case 'status_baixa':
+                       return (
+                         <div className="flex flex-col gap-1">
+                           {mapping ? (
+                             <Badge 
+                               variant={
+                                 mapping.statusBaixa === 'pronto_baixar' ? 'success' : 
+                                 mapping.statusBaixa === 'sem_estoque' ? 'destructive' : 
+                                 mapping.statusBaixa === 'sem_mapear' ? 'warning' : 
+                                 'outline'
+                               }
+                               className="text-xs"
+                             >
+                               {mapping.statusBaixa === 'pronto_baixar' ? 'Pronto p/ Baixar' :
+                                mapping.statusBaixa === 'sem_estoque' ? 'Sem Estoque' :
+                                mapping.statusBaixa === 'sem_mapear' ? 'Sem Mapear' :
+                                'Indefinido'}
+                             </Badge>
+                           ) : (
+                             <Badge variant="warning" className="text-xs">
+                               Sem Mapeamento
+                             </Badge>
+                           )}
+                         </div>
+                       );
                     case 'date_created':
                       return <span>{order.date_created ? formatDate(order.date_created) : '-'}</span>;
                     case 'pack_id':
@@ -448,8 +486,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     key={order.id}
                     className={cn(
                       "border-b hover:bg-muted/50 transition-colors",
-                      isSelected && "bg-muted",
-                      isProcessed && "opacity-60 bg-green-50"
+                      isSelected && "bg-muted/70",
+                      isProcessed && "opacity-60 bg-success/10"
                     )}
                   >
                     {/* Checkbox de seleção */}
@@ -518,3 +556,5 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
 });
 
 PedidosTableSection.displayName = 'PedidosTableSection';
+
+export default PedidosTableSection;
