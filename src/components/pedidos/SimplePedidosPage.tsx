@@ -965,8 +965,16 @@ function SimplePedidosPage({ className }: Props) {
             </Badge>
           )}
           
-          {/* Botão de Configurar Colunas */}
-          <ColumnManager manager={columnManager} />
+          {/* Botão de Configurar Colunas - Funcional */}
+          <ColumnManager 
+            manager={columnManager}
+            trigger={
+              <Button variant="outline" size="sm" className="gap-2">
+                <Settings className="h-4 w-4" />
+                Colunas ({visibleColumns.size})
+              </Button>
+            }
+          />
         </div>
       </div>
         </div>
