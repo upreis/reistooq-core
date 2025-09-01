@@ -472,37 +472,37 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                               {(() => {
                                   // 🔍 PRIMEIRO: Verificar se já foi baixado (histórico)
                                   const baixado = isPedidoProcessado(order);
-                                  if (baixado) {
-                                    return (
-                                      <Badge variant="success" className="text-xs">
-                                        Baixado
-                                      </Badge>
-                                    );
-                                  }
-                                  
-                                  // 🗂️ SEGUNDO: Verificar mapeamento completo (de-para)
-                                  const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
-                                  const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
-                                  
-                                  let variant: "success" | "destructive" | "warning" | "outline" = "outline";
-                                  let texto = "Indefinido";
+                                   if (baixado) {
+                                     return (
+                                       <Badge variant="default" className="text-xs text-center">
+                                         Baixado
+                                       </Badge>
+                                     );
+                                   }
+                                   
+                                   // 🗂️ SEGUNDO: Verificar mapeamento completo (de-para)
+                                   const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
+                                   const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
+                                   
+                                   let variant: "success" | "destructive" | "warning" | "outline" = "outline";
+                                   let texto = "Indefinido";
 
-                                  if (temMapeamentoCompleto) {
-                                    variant = "success";
-                                    texto = "Pronto p/ Baixar";
-                                  } else if (temMapeamentoIncompleto) {
-                                    variant = "warning";
-                                    texto = "Mapear Incompleto";
-                                  } else {
-                                    variant = "warning";
-                                    texto = "Sem Mapear";
-                                  }
+                                   if (temMapeamentoCompleto) {
+                                     variant = "success";
+                                     texto = "Pronto p/ Baixar";
+                                   } else if (temMapeamentoIncompleto) {
+                                     variant = "warning";
+                                     texto = "Mapear Incompleto";
+                                   } else {
+                                     variant = "warning";
+                                     texto = "Sem Mapear";
+                                   }
 
-                                  return (
-                                    <Badge variant={variant} className="text-xs">
-                                      {texto}
-                                    </Badge>
-                                  );
+                                   return (
+                                     <Badge variant={variant} className="text-xs text-center">
+                                       {texto}
+                                     </Badge>
+                                   );
                                 })()}
                            </div>
                          ) : (
@@ -527,37 +527,37 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         return (() => {
                           // 🔍 PRIMEIRO: Verificar se já foi baixado (histórico)
                           const baixado = isPedidoProcessado(order);
-                          if (baixado) {
-                            return (
-                              <Badge variant="success" className="text-xs">
-                                Baixado
-                              </Badge>
-                            );
-                          }
-                          
-                          // 🗂️ SEGUNDO: Verificar mapeamento completo (de-para)
-                          const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
-                          const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
-                          
-                          let variant: "success" | "destructive" | "warning" | "outline" = "outline";
-                          let texto = "Indefinido";
+                           if (baixado) {
+                             return (
+                               <Badge variant="default" className="text-xs text-center">
+                                 Baixado
+                               </Badge>
+                             );
+                           }
+                           
+                           // 🗂️ SEGUNDO: Verificar mapeamento completo (de-para)
+                           const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
+                           const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
+                           
+                           let variant: "success" | "destructive" | "warning" | "outline" = "outline";
+                           let texto = "Indefinido";
 
-                          if (temMapeamentoCompleto) {
-                            variant = "success";
-                            texto = "Pronto p/ Baixar";
-                          } else if (temMapeamentoIncompleto) {
-                            variant = "warning";
-                            texto = "Mapear Incompleto";
-                          } else {
-                            variant = "warning";
-                            texto = "Sem Mapear";
-                          }
+                           if (temMapeamentoCompleto) {
+                             variant = "success";
+                             texto = "Pronto p/ Baixar";
+                           } else if (temMapeamentoIncompleto) {
+                             variant = "warning";
+                             texto = "Mapear Incompleto";
+                           } else {
+                             variant = "warning";
+                             texto = "Sem Mapear";
+                           }
 
-                          return (
-                            <Badge variant={variant} className="text-xs">
-                              {texto}
-                            </Badge>
-                          );
+                           return (
+                             <Badge variant={variant} className="text-xs text-center">
+                               {texto}
+                             </Badge>
+                           );
                         })();
                     case 'date_created':
                       return <span>{order.date_created ? formatDate(order.date_created) : '-'}</span>;
