@@ -259,8 +259,26 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{order.empresa || order.integration_account_id || order.account_name || order.seller?.nickname || order.seller?.name || '-'}</span>;
                     case 'nome_cliente':
                       return <div className="max-w-xs truncate" title={order.nome_cliente || order.buyer?.nickname}>{order.nome_cliente || order.buyer?.nickname || '-'}</div>;
-                     case 'nome_completo':
-                       return <div className="max-w-xs truncate" title={order.nome_completo || order.shipping?.receiver_address?.receiver_name || order.unified?.receiver_name}>{order.nome_completo || order.shipping?.receiver_address?.receiver_name || order.unified?.receiver_name || (order.buyer?.first_name && order.buyer?.last_name ? `${order.buyer.first_name} ${order.buyer.last_name}` : '') || '-'}</div>;
+                    case 'nome_completo': {
+                      const fullName = (
+                        order.nome_completo ||
+                        order.shipping?.receiver_address?.receiver_name ||
+                        order.shipping?.receiver_address?.name ||
+                        order.receiver_name ||
+                        order.unified?.receiver_name ||
+                        order.unified?.buyer_name ||
+                        order.buyer?.name ||
+                        ((order.buyer?.first_name || order.buyer?.last_name)
+                          ? `${order.buyer?.first_name ?? ''} ${order.buyer?.last_name ?? ''}`.trim()
+                          : undefined) ||
+                        order.buyer?.nickname
+                      );
+                      return (
+                        <div className="max-w-xs truncate" title={fullName || ''}>
+                          {fullName || '-'}
+                        </div>
+                      );
+                    }
                     case 'cpf_cnpj':
                       return <span className="font-mono text-sm">{order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '-'}</span>;
                     case 'data_pedido':
