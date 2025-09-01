@@ -217,12 +217,7 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
           </div>
         )}
 
-        {/* Instrução quando não há seleção */}
-        {!hasSelection && orders.length > 0 && (
-          <div className="mt-2 text-sm text-muted-foreground">
-            💡 Selecione pedidos na tabela abaixo para executar ações em massa.
-          </div>
-        )}
+        {/* Removido: Instrução desnecessária quando não há seleção */}
       </Card>
 
       {/* Modal de Baixa de Estoque - Abre automaticamente ao montar (sem trigger) */}
