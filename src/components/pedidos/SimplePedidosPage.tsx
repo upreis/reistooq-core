@@ -685,7 +685,7 @@ function SimplePedidosPage({ className }: Props) {
         loading={loading}
         isRefreshing={state.isRefreshing}
         onRefresh={actions.refetch}
-        onApplyFilters={() => actions.applyFilters()}
+        onApplyFilters={() => filtersManager.applyFilters()}
         selectedOrdersCount={selectedOrders.size}
         hasPendingChanges={filtersManager.hasPendingChanges}
       >
