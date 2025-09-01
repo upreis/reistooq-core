@@ -43,10 +43,25 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
 
   // 🚀 NOVO: Análise de viabilidade dos pedidos
   const pedidosAnalise = useMemo(() => {
+    console.log('🔍 DIAGNÓSTICO - Analisando pedidos para baixa:', {
+      total_pedidos: pedidos.length,
+      contextoDaUI_disponivel: !!contextoDaUI,
+      mappingData_disponivel: !!contextoDaUI?.mappingData
+    });
+    
     return pedidos.map(pedido => {
       const mapping = contextoDaUI?.mappingData?.get(pedido.id);
       const temMapeamento = !!mapping?.skuKit;
       const temEstoque = mapping?.statusBaixa === 'pronto_baixar';
+      
+      console.log(`🔍 DIAGNÓSTICO - Pedido ${pedido.numero || pedido.id}:`, {
+        mapping_existe: !!mapping,
+        skuKit: mapping?.skuKit,
+        statusBaixa: mapping?.statusBaixa,
+        temMapeamento,
+        temEstoque,
+        total_itens: pedido.total_itens
+      });
       
       return {
         ...pedido,
@@ -66,6 +81,15 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
     const prontos = pedidosAnalise.filter(p => p.temEstoque && p.temMapeamento).length;
     const problemas = total - prontos;
     const valorTotal = pedidosAnalise.reduce((sum, p) => sum + (p.valor_total || 0), 0);
+    
+    console.log('🔍 DIAGNÓSTICO - Resumo da análise:', {
+      total,
+      prontos,
+      problemas,
+      valorTotal,
+      pedidos_com_estoque: pedidosAnalise.filter(p => p.temEstoque).length,
+      pedidos_com_mapeamento: pedidosAnalise.filter(p => p.temMapeamento).length
+    });
     
     return { total, prontos, problemas, valorTotal };
   }, [pedidosAnalise]);
