@@ -41,8 +41,6 @@ interface PedidosTableSectionProps {
   onPageChange: (page: number) => void;
   isPedidoProcessado: (order: any) => boolean;
   className?: string;
-  itemsPerPage?: number;
-  quickSearchActive?: boolean;
 }
 
 export const PedidosTableSection = memo<PedidosTableSectionProps>(({
@@ -62,9 +60,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   totalPages,
   onPageChange,
   isPedidoProcessado,
-  className,
-  itemsPerPage = 25,
-  quickSearchActive = false
+  className
 }) => {
   // Debug dos dados quando orders mudam
   useEffect(() => {
@@ -714,10 +710,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
             </div>
 
             <div className="text-sm text-muted-foreground">
-              {quickSearchActive ? 
-                `${orders.length} itens filtrados` :
-                `${((currentPage - 1) * itemsPerPage) + 1}-${Math.min(currentPage * itemsPerPage, total)} de ${total}`
-              }
+              {((currentPage - 1) * (state?.pageSize || 50)) + 1}-{Math.min(currentPage * (state?.pageSize || 50), total)}
             </div>
           </div>
         </div>

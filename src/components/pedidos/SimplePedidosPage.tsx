@@ -118,8 +118,6 @@ function SimplePedidosPage({ className }: Props) {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showBaixaModal, setShowBaixaModal] = useState(false);
-  const [quickSearch, setQuickSearch] = useState('');
-  const [itemsPerPage, setItemsPerPage] = useState(25);
   
   // 🧠 Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE
   const {
@@ -148,28 +146,8 @@ function SimplePedidosPage({ className }: Props) {
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
   
-  // ✅ Filtro local de busca rápida - aplicado em memória para melhor performance
-  const filteredOrders = useMemo(() => {
-    if (!quickSearch.trim()) return orders;
-    
-    const searchTerm = quickSearch.toLowerCase().trim();
-    return orders.filter((order: any) => {
-      const idUnico = buildIdUnico(order);
-      const numero = order.numero || order.order_number || order.id?.toString() || '';
-      const nomeCliente = order.nome_cliente || order.buyer?.nickname || '';
-      const cpfCnpj = order.cpf_cnpj || '';
-      
-      return (
-        idUnico.toLowerCase().includes(searchTerm) ||
-        numero.toLowerCase().includes(searchTerm) ||
-        nomeCliente.toLowerCase().includes(searchTerm) ||
-        cpfCnpj.toLowerCase().includes(searchTerm)
-      );
-    });
-  }, [orders, quickSearch]);
-  
-  // Mostrar pedidos filtrados
-  const displayedOrders = filteredOrders;
+  // Mostrar todos os pedidos (filtro rápido removido)
+  const displayedOrders = orders;
 
   // ✅ MIGRAÇÃO FASE 1: Funções de tradução movidas para @/utils/pedidos-translations
 
@@ -1037,58 +1015,6 @@ function SimplePedidosPage({ className }: Props) {
         </Card>
       )}
 
-      {/* ✅ BUSCA RÁPIDA E CONTROLES */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1">
-            {/* Busca Rápida */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Busca rápida por ID, número, cliente..."
-                  value={quickSearch}
-                  onChange={(e) => setQuickSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            
-            {/* Indicador de resultados filtrados */}
-            {quickSearch && (
-              <Badge variant="secondary" className="text-xs">
-                {filteredOrders.length} de {orders.length} pedidos
-              </Badge>
-            )}
-          </div>
-          
-          {/* Controle de itens por página */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Itens por página:</span>
-            <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        {/* Performance warning */}
-        {itemsPerPage > 50 && (
-          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-            <p className="text-xs text-yellow-700">
-              ⚠️ Mais de 50 itens por página pode afetar a performance em dispositivos mais lentos
-            </p>
-          </div>
-        )}
-      </Card>
-
       {/* Filtros rápidos removidos - mantendo apenas barra de resumo */}
 
       {/* 🚀 FASE 2: Loading otimizado */}
@@ -1107,11 +1033,9 @@ function SimplePedidosPage({ className }: Props) {
         visibleColumns={visibleColumns}
         visibleDefinitions={columnManager.visibleDefinitions}
         currentPage={currentPage}
-        totalPages={state?.paging?.total ? Math.ceil((state.paging.total || 0) / itemsPerPage) : Math.ceil(filteredOrders.length / itemsPerPage)}
+        totalPages={state?.paging?.total ? Math.ceil((state.paging.total || 0) / (state.pageSize || 25)) : totalPages}
         onPageChange={(page) => actions.setPage(page)}
         isPedidoProcessado={isPedidoProcessado}
-        itemsPerPage={itemsPerPage}
-        quickSearchActive={!!quickSearch}
       />
 
 
