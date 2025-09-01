@@ -695,6 +695,24 @@ function SimplePedidosPage({ className }: Props) {
       {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
       </PedidosHeaderSection>
 
+      {/* 🔧 SEÇÃO DE AÇÕES EM MASSA - MOVIDA PARA O TOPO E SEMPRE VISÍVEL */}
+      <PedidosBulkActionsSection
+        orders={orders}
+        selectedOrders={selectedOrders}
+        setSelectedOrders={setSelectedOrders}
+        mappingData={mappingData}
+        isPedidoProcessado={isPedidoProcessado}
+        showBaixaModal={showBaixaModal}
+        setShowBaixaModal={setShowBaixaModal}
+        onBaixaConcluida={() => {
+          // Recarregar dados após baixa concluída
+          actions.refetch();
+          verificarPedidos(orders);
+          // Reprocessar mapeamentos se necessário
+          mappingActions.reprocessMappings(orders);
+        }}
+      />
+
       {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
       <PedidosFiltersUnified
         filters={filtersManager.filters}
@@ -1008,23 +1026,6 @@ function SimplePedidosPage({ className }: Props) {
       />
 
 
-      {/* 🔧 SEÇÃO DE AÇÕES EM MASSA - NOVA EXTRAÇÃO */}
-      <PedidosBulkActionsSection
-        orders={orders}
-        selectedOrders={selectedOrders}
-        setSelectedOrders={setSelectedOrders}
-        mappingData={mappingData}
-        isPedidoProcessado={isPedidoProcessado}
-        showBaixaModal={showBaixaModal}
-        setShowBaixaModal={setShowBaixaModal}
-        onBaixaConcluida={() => {
-          // Recarregar dados após baixa concluída
-          actions.refetch();
-          verificarPedidos(orders);
-          // Reprocessar mapeamentos se necessário
-          mappingActions.reprocessMappings(orders);
-        }}
-      />
 
       {/* 🚀 SEÇÃO DE MODAIS - PASSO 7 COMPLETO */}
       <PedidosModalsSection

@@ -100,51 +100,63 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
     }).filter(Boolean);
   }, [selectedOrders, orders, mappingData]);
 
-  // Se não há pedidos selecionados, não mostra nada
-  if (selectedOrders.size === 0) {
-    return null;
-  }
+  // Sempre mostrar a barra, mesmo sem seleção
+  const hasSelection = selectedOrders.size > 0;
 
   return (
     <>
-      <Card className={cn("p-4 bg-primary/5 border-primary/20", className)}>
+      <Card className={cn("p-4 border-l-4 border-l-primary", hasSelection ? "bg-primary/5 border-primary/20" : "bg-muted/30", className)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <CheckSquare className="h-5 w-5 text-primary" />
-              <span className="font-medium">
-                {selectionStats.total} pedido{selectionStats.total !== 1 ? 's' : ''} selecionado{selectionStats.total !== 1 ? 's' : ''}
-              </span>
+              {hasSelection ? (
+                <>
+                  <CheckSquare className="h-5 w-5 text-primary" />
+                  <span className="font-medium">
+                    {selectionStats.total} pedido{selectionStats.total !== 1 ? 's' : ''} selecionado{selectionStats.total !== 1 ? 's' : ''}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Square className="h-5 w-5 text-muted-foreground" />
+                  <span className="font-medium text-muted-foreground">
+                    Nenhum pedido selecionado
+                  </span>
+                </>
+              )}
             </div>
             
-            <div className="flex items-center gap-2">
-              {selectionStats.processed > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {selectionStats.processed} processado{selectionStats.processed !== 1 ? 's' : ''}
-                </Badge>
-              )}
-              {selectionStats.readyForBaixa > 0 && (
-                <Badge variant="default" className="text-xs">
-                  {selectionStats.readyForBaixa} pronto{selectionStats.readyForBaixa !== 1 ? 's' : ''} para baixa
-                </Badge>
-              )}
-              {selectionStats.pending > 0 && (
-                <Badge variant="outline" className="text-xs">
-                  {selectionStats.pending} pendente{selectionStats.pending !== 1 ? 's' : ''}
-                </Badge>
-              )}
-            </div>
+            {hasSelection && (
+              <div className="flex items-center gap-2">
+                {selectionStats.processed > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {selectionStats.processed} processado{selectionStats.processed !== 1 ? 's' : ''}
+                  </Badge>
+                )}
+                {selectionStats.readyForBaixa > 0 && (
+                  <Badge variant="default" className="text-xs">
+                    {selectionStats.readyForBaixa} pronto{selectionStats.readyForBaixa !== 1 ? 's' : ''} para baixa
+                  </Badge>
+                )}
+                {selectionStats.pending > 0 && (
+                  <Badge variant="outline" className="text-xs">
+                    {selectionStats.pending} pendente{selectionStats.pending !== 1 ? 's' : ''}
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Botões de seleção */}
+            {/* Botões de seleção - sempre visíveis */}
             <Button
               variant="outline"
               size="sm"
               onClick={handleSelectAll}
               className="gap-2"
+              disabled={orders.length === 0}
             >
-              {selectedOrders.size === orders.length ? (
+              {selectedOrders.size === orders.length && orders.length > 0 ? (
                 <>
                   <Square className="h-4 w-4" />
                   Desmarcar Todos
@@ -162,23 +174,26 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
               size="sm"
               onClick={handleSelectReadyForBaixa}
               className="gap-2"
+              disabled={orders.length === 0}
             >
               <Package className="h-4 w-4" />
               Selecionar Prontos
             </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearSelection}
-              className="gap-2"
-            >
-              <Trash2 className="h-4 w-4" />
-              Limpar Seleção
-            </Button>
+            {hasSelection && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearSelection}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Limpar Seleção
+              </Button>
+            )}
 
-            {/* Ação principal: Baixa de Estoque */}
-            {selectionStats.readyForBaixa > 0 && (
+            {/* Ação principal: Baixa de Estoque - só aparece quando há seleção */}
+            {hasSelection && selectionStats.readyForBaixa > 0 && (
               <Button
                 onClick={() => {
                   // Forçar re-montagem do modal para abrir automaticamente
@@ -196,9 +211,16 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
         </div>
 
         {/* Informação adicional */}
-        {selectionStats.processed > 0 && (
+        {hasSelection && selectionStats.processed > 0 && (
           <div className="mt-2 text-sm text-muted-foreground">
             ℹ️ Pedidos já processados não podem ter baixa de estoque novamente.
+          </div>
+        )}
+
+        {/* Instrução quando não há seleção */}
+        {!hasSelection && orders.length > 0 && (
+          <div className="mt-2 text-sm text-muted-foreground">
+            💡 Selecione pedidos na tabela abaixo para executar ações em massa.
           </div>
         )}
       </Card>
