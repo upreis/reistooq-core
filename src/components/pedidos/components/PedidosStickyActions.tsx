@@ -19,6 +19,7 @@ interface PedidosStickyActionsProps {
   setSelectedOrders: (orders: Set<string>) => void;
   mappingData: Map<string, any>;
   isPedidoProcessado: (order: any) => boolean;
+  quickFilter: string;
   onBaixaConcluida?: () => void;
   className?: string;
 }
@@ -30,6 +31,7 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
   setSelectedOrders,
   mappingData,
   isPedidoProcessado,
+  quickFilter,
   onBaixaConcluida,
   className
 }) => {
@@ -148,7 +150,7 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
                 </div>
                 
                 {/* Mostrar link para selecionar todos do filtro se há mais que N prontos */}
-                {!showFilterConfirm && stats.readyCount > 0 && (
+                {!showFilterConfirm && quickFilter === 'all' && stats.readyCount > 0 && (
                   <Button
                     variant="link"
                     size="sm"
