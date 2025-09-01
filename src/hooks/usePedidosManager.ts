@@ -808,11 +808,21 @@ const actions: PedidosManagerActions = useMemo(() => ({
     console.log('next', cleaned);
     console.groupEnd();
 
+    const prevKey = lastQuery;
+    console.groupCollapsed('[invalidate]');
+    console.log('key', prevKey);
+    console.log('before', { cachedAt, lastQuery });
+    console.groupEnd();
+
     setFiltersState(cleaned);
     setCurrentPage(1);
     // Invalida completamente o cache para garantir atualização imediata
     setCachedAt(undefined);
     setLastQuery(undefined);
+
+    console.groupCollapsed('[invalidate]');
+    console.log('after', { cachedAt: undefined, lastQuery: undefined });
+    console.groupEnd();
   },
   
   clearFilters: () => {

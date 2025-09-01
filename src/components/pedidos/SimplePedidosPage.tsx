@@ -93,7 +93,8 @@ function SimplePedidosPage({ className }: Props) {
       console.groupCollapsed('[filtros/apply] from=unified-callback');
       console.log('filters', filters);
       console.groupEnd();
-      actions.replaceFilters(filters); // efeito cuidará do refetch com a nova key
+      actions.replaceFilters(filters);
+      actions.refetch(); // refetch imediato obrigatório no Apply
     },
     autoLoad: false,
     loadSavedFilters: false
@@ -684,7 +685,7 @@ function SimplePedidosPage({ className }: Props) {
         onRefresh={actions.refetch}
         onApplyFilters={() => {
           console.groupCollapsed('[filtros/apply] from=header');
-          console.log('appliedFilters', filtersManager.appliedFilters);
+          console.log('draftFilters', filtersManager.filters);
           console.groupEnd();
           filtersManager.applyFilters();
         }}
