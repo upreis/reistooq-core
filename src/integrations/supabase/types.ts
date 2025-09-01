@@ -2452,13 +2452,21 @@ export type Database = {
         Returns: string
       }
       get_pedidos_masked: {
-        Args: {
-          _end?: string
-          _limit?: number
-          _offset?: number
-          _search?: string
-          _start?: string
-        }
+        Args:
+          | {
+              _end?: string
+              _limit?: number
+              _offset?: number
+              _search?: string
+              _start?: string
+            }
+          | {
+              _end?: string
+              _limit?: number
+              _offset?: number
+              _search?: string
+              _start?: string
+            }
         Returns: {
           cidade: string | null
           codigo_rastreamento: string | null

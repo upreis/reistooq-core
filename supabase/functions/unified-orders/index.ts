@@ -114,7 +114,22 @@ serve(async (req) => {
     if (!authHeader) return fail("Missing Authorization header", 401, null, cid);
 
     const body = await req.json();
-    const { integration_account_id, status, shipping_status, date_from, date_to, seller_id, q, limit: rawLimit = 50, offset = 0 } = body || {};
+    const { 
+      integration_account_id, 
+      status, 
+      shipping_status, 
+      date_from, 
+      date_to, 
+      seller_id, 
+      q, 
+      cidade,
+      uf,
+      valorMin,
+      valorMax,
+      search,
+      limit: rawLimit = 50, 
+      offset = 0 
+    } = body || {};
     
     // 🚨 VALIDAÇÃO: Mercado Livre API aceita máximo 51, limitamos a 50 para segurança
     const limit = Math.min(rawLimit, 50);
@@ -122,7 +137,10 @@ serve(async (req) => {
       console.warn(`[unified-orders:${cid}] Limit reduzido de ${rawLimit} para ${limit} (máximo permitido: 50)`);
     }
     
-    console.log(`[unified-orders:${cid}] filters`, { integration_account_id, status, shipping_status, date_from, date_to, seller_id, q, limit, offset });
+    console.log(`[unified-orders:${cid}] filters`, { 
+      integration_account_id, status, shipping_status, date_from, date_to, 
+      cidade, uf, valorMin, valorMax, search, q, limit, offset 
+    });
     if (!integration_account_id) return fail("integration_account_id é obrigatório", 400, null, cid);
 
     const sb = serviceClient();
@@ -230,6 +248,35 @@ serve(async (req) => {
         );
       });
       console.log(`[unified-orders:${cid}] Filtered by shipping_status: ${enrichedOrders.length} -> ${filteredOrders.length}`);
+    }
+    
+    // 7) ✅ NOVO: Aplicar filtros de busca por texto
+    if (search || q) {
+      const searchTerm = (search || q || '').toLowerCase();
+      filteredOrders = filteredOrders.filter(order => {
+        const searchableFields = [
+          order.id,
+          order.buyer?.first_name,
+          order.buyer?.last_name,
+          order.buyer?.nickname,
+          order.buyer?.identification?.number,
+          order.order_items?.map((item: any) => item.item?.title).join(' ')
+        ].join(' ').toLowerCase();
+        
+        return searchableFields.includes(searchTerm);
+      });
+      console.log(`[unified-orders:${cid}] Filtered by search "${searchTerm}": ${filteredOrders.length} orders`);
+    }
+    
+    // 8) ✅ NOVO: Aplicar filtros de valor
+    if (valorMin !== undefined || valorMax !== undefined) {
+      filteredOrders = filteredOrders.filter(order => {
+        const orderValue = order.total_amount || 0;
+        if (valorMin !== undefined && orderValue < valorMin) return false;
+        if (valorMax !== undefined && orderValue > valorMax) return false;
+        return true;
+      });
+      console.log(`[unified-orders:${cid}] Filtered by value range [${valorMin}, ${valorMax}]: ${filteredOrders.length} orders`);
     }
     
     // Debug: log a amostra dos dados enriquecidos

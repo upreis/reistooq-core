@@ -233,11 +233,17 @@ export function usePedidosManager(initialAccountId?: string) {
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
       
-      // 🔍 Filtros principais
-      ...rest,
-      
-      // 🎯 Status do envio - tratar arrays corretamente
+      // 🔍 Filtros principais - MAPEAMENTO CORRIGIDO
       ...(shipping_status ? { shipping_status } : {}),
+      ...(rest.q ? { q: rest.q, search: rest.q } : {}), // Busca em ambos os campos
+      ...(rest.cidade ? { cidade: rest.cidade } : {}),
+      ...(rest.uf ? { uf: rest.uf } : {}),
+      ...(rest.valorMin !== undefined ? { valorMin: rest.valorMin } : {}),
+      ...(rest.valorMax !== undefined ? { valorMax: rest.valorMax } : {}),
+      
+      // 📅 Datas - usar os nomes corretos da API
+      ...(rest.date_from ? { date_from: rest.date_from } : {}),
+      ...(rest.date_to ? { date_to: rest.date_to } : {}),
       
       // 🌐 URL params têm prioridade sobre filtros
       ...getUrlParams(),
@@ -634,7 +640,7 @@ export function usePedidosManager(initialAccountId?: string) {
   // ✅ SIMPLIFICADO: Actions usando apenas filters
   const actions: PedidosManagerActions = useMemo(() => ({
     setFilters: (newFilters: Partial<PedidosFilters>) => {
-      console.log('🔄 Atualizando filtros:', newFilters);
+      console.log('🔄 [usePedidosManager] setFilters:', newFilters);
       
       // Normalizar datas ao definir filtros
       const normalizedNewFilters = { ...newFilters };
@@ -645,7 +651,17 @@ export function usePedidosManager(initialAccountId?: string) {
         normalizedNewFilters.dataFim = normalizeDate(normalizedNewFilters.dataFim);
       }
       
-      setFiltersState(prev => ({ ...prev, ...normalizedNewFilters }));
+      setFiltersState(prev => {
+        const merged = { ...prev, ...normalizedNewFilters };
+        console.log('🔄 [usePedidosManager] Filtros atualizados:', merged);
+        return merged;
+      });
+      
+      // ✅ CORREÇÃO CRÍTICA: Resetar página e disparar carregamento imediatamente
+      setCurrentPage(1);
+      // Limpar cache para forçar nova busca
+      setCachedAt(undefined);
+      setLastQuery(undefined);
     },
     
     clearFilters: () => {
@@ -757,14 +773,28 @@ export function usePedidosManager(initialAccountId?: string) {
     }
   }, []); // Executar apenas no mount inicial
 
-  // ✅ REMOVIDO: Não carregar automaticamente ao mudar conta - apenas quando aplicar filtros
-  // A página deve ficar vazia até o usuário aplicar filtros
+  // ✅ NOVO: Hook reativo para carregar dados quando filtros ou conta mudarem
+  useEffect(() => {
+    // Só carregar se há uma conta de integração
+    if (integrationAccountId) {
+      console.log('🔄 [usePedidosManager] Disparando carregamento: filtros ou account mudaram');
+      
+      // Usar filtros com debounce para evitar múltiplas requisições
+      const timeoutId = setTimeout(() => {
+        loadOrders();
+      }, 300); // Pequeno delay para evitar múltiplas chamadas
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [debouncedFilters, integrationAccountId, currentPage, pageSize]);
 
-  // ✅ REMOVIDO: Não carregar automaticamente na paginação - apenas quando aplicar filtros
-  // A paginação deve funcionar apenas após aplicar filtros
-
-  // ✅ REMOVIDO: Não carregar automaticamente quando filtros mudarem
-  // O carregamento agora acontece apenas via applyFilters() no hook unificado
+  // ✅ NOVO: Carregamento inicial automático
+  useEffect(() => {
+    if (integrationAccountId && orders.length === 0 && !loading) {
+      console.log('🚀 [usePedidosManager] Carregamento inicial automático');
+      loadOrders();
+    }
+  }, [integrationAccountId]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
