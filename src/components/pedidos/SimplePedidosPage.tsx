@@ -965,16 +965,19 @@ function SimplePedidosPage({ className }: Props) {
             </Badge>
           )}
           
-          {/* Botão de Configurar Colunas - Funcional */}
-          <ColumnManager 
-            manager={columnManager}
-            trigger={
-              <Button variant="outline" size="sm" className="gap-2">
-                <Settings className="h-4 w-4" />
-                Colunas ({visibleColumns.size})
-              </Button>
-            }
-          />
+          {/* TESTE: Botão simples e visível de configurar colunas */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="gap-2 bg-orange-200 border-2 border-orange-500 text-black font-bold"
+            onClick={() => {
+              console.log('[DEBUG] Botão TESTE clicado!');
+              alert('Botão de colunas funcionando! visibleColumns: ' + visibleColumns.size);
+            }}
+          >
+            <Settings className="h-4 w-4" />
+            TESTE Colunas ({visibleColumns.size})
+          </Button>
         </div>
       </div>
         </div>
