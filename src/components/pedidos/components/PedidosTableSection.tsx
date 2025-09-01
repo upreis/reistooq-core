@@ -73,29 +73,22 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
           id: orders[0]?.id,
           pack_id: orders[0]?.pack_id,
           
-          // ===== DEBUGING NOME COMPLETO CLIENTE =====
+          // ===== DEBUG NOME COMPLETO CLIENTE =====
           nome_completo: orders[0]?.nome_completo,
-          
           // Buyer info completo
           buyer_full: orders[0]?.buyer,
           buyer_first_name: orders[0]?.buyer?.first_name,
           buyer_last_name: orders[0]?.buyer?.last_name,
           buyer_nickname: orders[0]?.buyer?.nickname,
-          buyer_email: orders[0]?.buyer?.email,
           
-          // Shipping receiver info completo
-          shipping_full: orders[0]?.shipping,
-          shipping_receiver_address: orders[0]?.shipping?.receiver_address,
+          // Shipping receiver info
+          shipping_destination_receiver_name: orders[0]?.shipping?.destination?.receiver_name,
           shipping_receiver_name: orders[0]?.shipping?.receiver_address?.receiver_name,
           
           // Unified info
           unified_full: orders[0]?.unified,
           unified_receiver_name: orders[0]?.unified?.receiver_name,
           unified_buyer_name: orders[0]?.unified?.buyer_name,
-          
-          // Outros campos possíveis
-          context: orders[0]?.context,
-          order_request: orders[0]?.order_request,
           
           allFields: Object.keys(orders[0])
         }
@@ -192,9 +185,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
             size="sm" 
             variant="ghost" 
             onClick={() => {
-              console.log('[DEBUG] === FORÇANDO ATUALIZAÇÃO COMPLETA ===');
+              console.log('[DEBUG] === ATUALIZAÇÃO (sem limpar sessão) ===');
               console.log('[DEBUG] Total de pedidos:', orders.length);
-              
               if (orders.length > 0) {
                 console.log('[DEBUG] Sample order data:', {
                   id: orders[0].id,
@@ -202,19 +194,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                   forma_entrega: orders[0].forma_entrega,
                   is_fulfillment: orders[0].is_fulfillment,
                   status_detail: orders[0].status_detail,
+                  shipping_destination_receiver_name: orders[0]?.shipping?.destination?.receiver_name,
                   available_fields: Object.keys(orders[0])
                 });
               }
-              
-              localStorage.clear();
-              sessionStorage.clear();
-              actions.clearFilters();
+              // Apenas refaz a busca sem limpar storage para evitar logout
               actions.refetch();
-              
-              setTimeout(() => {
-                console.log('[DEBUG] Página recarregando para garantir dados frescos...');
-                window.location.reload();
-              }, 1000);
             }}
             className="text-xs h-6 px-2"
           >
@@ -282,11 +267,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'nome_completo': {
                       const fullName = (
                         order.nome_completo ||
+                        order.shipping?.destination?.receiver_name ||
+                        order.unified?.buyer_name ||
+                        order.unified?.receiver_name ||
                         order.shipping?.receiver_address?.receiver_name ||
                         order.shipping?.receiver_address?.name ||
                         order.receiver_name ||
-                        order.unified?.receiver_name ||
-                        order.unified?.buyer_name ||
+                        order.raw?.shipping?.destination?.receiver_name ||
                         order.buyer?.name ||
                         ((order.buyer?.first_name || order.buyer?.last_name)
                           ? `${order.buyer?.first_name ?? ''} ${order.buyer?.last_name ?? ''}`.trim()
