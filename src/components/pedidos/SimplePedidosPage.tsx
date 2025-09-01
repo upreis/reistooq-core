@@ -699,6 +699,7 @@ function SimplePedidosPage({ className }: Props) {
         hasPendingChanges={filtersManager.hasPendingChanges}
         needsManualApplication={filtersManager.needsManualApplication}
         isApplying={filtersManager.isApplying}
+        columnManager={columnManager}
         activeFiltersCount={filtersManager.activeFiltersCount}
         contasML={accounts}
       />

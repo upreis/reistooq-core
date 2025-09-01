@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Search, Filter, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, Filter, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,6 +17,7 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PedidosFiltersState } from '@/hooks/usePedidosFiltersUnified';
+import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 
 interface PedidosFiltersUnifiedProps {
   filters: PedidosFiltersState;
@@ -30,6 +31,7 @@ interface PedidosFiltersUnifiedProps {
   isApplying: boolean;
   activeFiltersCount: number;
   contasML?: Array<{ id: string; name: string; nickname?: string; active?: boolean; }>;
+  columnManager?: any;
 }
 
 const SITUACOES = [
@@ -60,7 +62,8 @@ export function PedidosFiltersUnified({
   needsManualApplication,
   isApplying,
   activeFiltersCount,
-  contasML = []
+  contasML = [],
+  columnManager
 }: PedidosFiltersUnifiedProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [situacaoOpen, setSituacaoOpen] = useState(false);
@@ -362,6 +365,20 @@ export function PedidosFiltersUnified({
               </Badge>
             )}
           </Button>
+
+          {/* Botão de Colunas */}
+          {columnManager && (
+            <ColumnManager 
+              manager={columnManager}
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Settings className="h-4 w-4 mr-1" />
+                  <span className="hidden sm:inline">Colunas ({columnManager.state?.visibleColumns?.size || 0})</span>
+                  <span className="sm:hidden">Cols</span>
+                </Button>
+              }
+            />
+          )}
           
           {activeFiltersCount > 0 && (
             <Button variant="outline" size="sm" onClick={onClearFilters}>

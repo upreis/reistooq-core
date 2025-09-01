@@ -60,8 +60,7 @@ export const PedidosModalsSection = memo(({
         hasActiveFilters={hasActiveFilters}
       />
 
-      {/* 🔧 GERENCIADOR DE COLUNAS */}
-      <ColumnManager manager={columnManager} />
+      {/* 🔧 GERENCIADOR DE COLUNAS - Movido para os filtros */}
 
       {/* 🔮 PLACEHOLDER para outros modais futuros */}
       {/* Outros modais podem ser adicionados aqui conforme necessário */}
