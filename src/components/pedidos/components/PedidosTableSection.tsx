@@ -702,7 +702,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                   <PaginationItem>
                     <PaginationNext
                       onClick={() => onPageChange(currentPage + 1)}
-                      className={(state?.hasNextPage === false && currentPage >= totalPages) ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
+                      className={(orders.length === 0 && !state?.hasNextPage && currentPage >= totalPages) ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
                     />
                   </PaginationItem>
                 </PaginationContent>
