@@ -43,7 +43,7 @@ const getEventColor = (type: LogisticEvent['type'], status: LogisticEvent['statu
   if (status === 'delayed') return 'bg-destructive text-destructive-foreground';
   
   // Depois por prioridade
-  if (priority === 'critical') return 'bg-destructive text-destructive-foreground animate-pulse';
+  if (priority === 'critical') return 'bg-destructive text-destructive-foreground';
   if (priority === 'high') return 'bg-warning text-warning-foreground';
   
   // Por último, por tipo usando tokens semânticos
@@ -66,7 +66,7 @@ const getEventColor = (type: LogisticEvent['type'], status: LogisticEvent['statu
 const getPriorityIndicator = (priority: LogisticEvent['priority']) => {
   switch (priority) {
     case 'critical':
-      return <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse" />;
+      return <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full" />;
     case 'high':
       return <div className="absolute top-0 right-0 w-2 h-2 bg-orange-500 rounded-full" />;
     default:
