@@ -1033,7 +1033,7 @@ function SimplePedidosPage({ className }: Props) {
         visibleColumns={visibleColumns}
         visibleDefinitions={columnManager.visibleDefinitions}
         currentPage={currentPage}
-        totalPages={totalPages}
+        totalPages={state?.paging?.total ? Math.ceil((state.paging.total || 0) / (state.pageSize || 25)) : totalPages}
         onPageChange={(page) => actions.setPage(page)}
         isPedidoProcessado={isPedidoProcessado}
       />
