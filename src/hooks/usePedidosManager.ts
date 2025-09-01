@@ -154,7 +154,17 @@ export function usePedidosManager(initialAccountId?: string) {
             console.log('🎯 Status enviados para API:', mappedStatuses, 'originais:', situacoes);
           }
         }
-      }
+  const buildApiParams = useCallback((filters: PedidosFilters) => {
+    const params: any = {};
+
+    // ✅ SIMPLIFICADO: Usar campos diretos da API
+    if (filters.search) {
+      params.q = filters.search;
+    }
+
+    // Status mapping - converter situacao para shipping_status
+    if (filters.situacao && filters.situacao.length > 0) {
+      params.shipping_status = filters.situacao;
     }
 
     // 📅 CORRIGIDO: Datas com formato consistente 
@@ -162,18 +172,12 @@ export function usePedidosManager(initialAccountId?: string) {
       const d = normalizeDate(filters.dataInicio);
       if (d && !isNaN(d.getTime())) {
         params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        if (process.env.NODE_ENV === 'development') {
-          console.log('📅 Data início enviada para API:', params.date_from);
-        }
       }
     }
     if (filters.dataFim) {
       const d = normalizeDate(filters.dataFim);
       if (d && !isNaN(d.getTime())) {
         params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        if (process.env.NODE_ENV === 'development') {
-          console.log('📅 Data fim enviada para API:', params.date_to);
-        }
       }
     }
 
@@ -183,20 +187,21 @@ export function usePedidosManager(initialAccountId?: string) {
     if (filters.valorMin !== undefined) params.valorMin = filters.valorMin;
     if (filters.valorMax !== undefined) params.valorMax = filters.valorMax;
 
-    // 🏢 CRÍTICO: Garantir integration_account_id sempre presente
-    if (integrationAccountId) {
-      params.integration_account_id = integrationAccountId;
-    }
-
-    // 🚨 CRÍTICO: Contas ML - se múltiplas, usar a primeira (API só aceita uma)
+    // 🚨 CRÍTICO: Conta ML TEM PRIORIDADE ABSOLUTA - se múltiplas, usar a primeira
+    let targetAccountId = integrationAccountId;
     if (filters.contasML && filters.contasML.length > 0) {
-      params.integration_account_id = filters.contasML[0]; // Usar primeira conta selecionada
+      targetAccountId = filters.contasML[0]; // Usar primeira conta selecionada
       if (filters.contasML.length > 1) {
         console.warn('⚠️ Múltiplas contas ML selecionadas, usando apenas a primeira:', filters.contasML[0]);
       }
     }
+    
+    // ✅ GARANTIR: integration_account_id sempre presente
+    if (targetAccountId) {
+      params.integration_account_id = targetAccountId;
+    }
 
-    console.log('🔧 [AUDITORIA] Parâmetros construídos:', params);
+    console.log('🔧 [buildApiParams] Parâmetros finais:', params);
     return params;
   }, [integrationAccountId]);
 
@@ -654,17 +659,28 @@ export function usePedidosManager(initialAccountId?: string) {
         normalizedNewFilters.dataFim = normalizeDate(normalizedNewFilters.dataFim);
       }
       
+      // ✅ CACHE INTELIGENTE: Só limpar cache quando realmente necessário
+      const needsCacheInvalidation = !!(
+        newFilters.contasML || 
+        newFilters.dataInicio || 
+        newFilters.dataFim ||
+        newFilters.situacao
+      );
+      
       setFiltersState(prev => {
         const merged = { ...prev, ...normalizedNewFilters };
         console.log('🔄 [usePedidosManager] Filtros atualizados:', merged);
         return merged;
       });
       
-      // ✅ CORREÇÃO CRÍTICA: Resetar página e disparar carregamento imediatamente
+      // ✅ CORREÇÃO CRÍTICA: Resetar página sempre
       setCurrentPage(1);
-      // Limpar cache para forçar nova busca
-      setCachedAt(undefined);
-      setLastQuery(undefined);
+      
+      // ✅ OTIMIZADO: Limpar cache apenas quando necessário
+      if (needsCacheInvalidation) {
+        setCachedAt(undefined);
+        setLastQuery(undefined);
+      }
     },
     
     clearFilters: () => {
@@ -791,11 +807,12 @@ export function usePedidosManager(initialAccountId?: string) {
     const delay = isContaMLChange ? 0 : 150; // Sem delay para conta ML, mínimo para outros
     
     const timeoutId = setTimeout(() => {
-      loadOrders();
+      loadOrders(); // Chama função estável
     }, delay);
     
     return () => clearTimeout(timeoutId);
-  }, [filters, integrationAccountId, currentPage, pageSize, loadOrders]);
+    // ✅ CORREÇÃO CRÍTICA: Remover loadOrders das dependências para evitar loop infinito
+  }, [filters, integrationAccountId, currentPage, pageSize]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
