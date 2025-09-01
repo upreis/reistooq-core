@@ -89,12 +89,16 @@ type Props = {
 function SimplePedidosPage({ className }: Props) {
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
-    onFiltersApply: (filters) => {
-      console.groupCollapsed('[filtros/apply] from=unified-callback');
-      console.log('filters', filters);
-      console.groupEnd();
+    onFiltersApply: async (filters) => {
       actions.replaceFilters(filters);
-      actions.refetch(); // refetch imediato obrigatório no Apply
+      console.groupCollapsed('[apply/callback]');
+      console.log('filtersArg', filters);
+      console.assert(
+        JSON.stringify(filters) === JSON.stringify(filtersManager.filters),
+        'apply: filtros divergentes entre UI e callback'
+      );
+      console.groupEnd();
+      await actions.refetch(); // refetch imediato obrigatório no Apply
     },
     autoLoad: false,
     loadSavedFilters: false

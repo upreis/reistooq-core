@@ -270,9 +270,10 @@ export function usePedidosManager(initialAccountId?: string) {
             include_skus: true
           };
           
-          console.groupCollapsed(`[query/network]`);
+          console.groupCollapsed('[query/network]');
           console.log('function', 'unified-orders');
           console.log('body', singleAccountBody);
+          console.log('[query/network] unified-orders body', singleAccountBody);
           console.groupEnd();
           const { data, error } = await supabase.functions.invoke('unified-orders', {
             body: singleAccountBody
@@ -309,6 +310,7 @@ export function usePedidosManager(initialAccountId?: string) {
       
       console.groupCollapsed('[query/result]');
       console.log('total', totalCount);
+      console.log('[query/result] total', totalCount);
       console.groupEnd();
       console.log(`🎯 [AUDITORIA] Total combinado: ${allResults.length} pedidos de ${apiParams.integration_account_ids.length} contas`);
       
@@ -349,6 +351,7 @@ export function usePedidosManager(initialAccountId?: string) {
     console.groupCollapsed('[query/network]');
     console.log('function', 'unified-orders');
     console.log('body', requestBody);
+    console.log('[query/network] unified-orders body', requestBody);
     console.groupEnd();
 
     const { data, error } = await supabase.functions.invoke('unified-orders', {
@@ -522,10 +525,7 @@ export function usePedidosManager(initialAccountId?: string) {
     const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
 
     console.groupCollapsed('[query/start]');
-    console.log('key', cacheKey);
-    console.log('forceRefresh', forceRefresh);
-    console.log('lastQuery', lastQuery);
-    console.log('isCacheValid', isCacheValid(cacheKey));
+    console.log({ cacheKey, forceRefresh, lastQuery });
     console.groupEnd();
 
     // Se a mesma query já foi executada recentemente e está carregando, evitar duplicar
@@ -554,9 +554,7 @@ export function usePedidosManager(initialAccountId?: string) {
 
     // 🚀 FASE 2: Verificar cache
     if (!forceRefresh && isCacheValid(cacheKey)) {
-      console.groupCollapsed('[query/skip] cache-hit');
-      console.log('key', cacheKey);
-      console.groupEnd();
+      console.log('[query/skip] cache-hit');
       return;
     }
 
