@@ -701,8 +701,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
 
                   <PaginationItem>
                     <PaginationNext
-                      onClick={() => onPageChange(currentPage + 1)}
-                      className={(orders.length === 0 && !state?.hasNextPage && currentPage >= totalPages) ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
+                      onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
+                      className={(currentPage >= totalPages || state?.hasNextPage === false) ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
                     />
                   </PaginationItem>
                 </PaginationContent>
