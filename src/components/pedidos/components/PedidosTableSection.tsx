@@ -72,11 +72,31 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
           order_number: orders[0]?.order_number,
           id: orders[0]?.id,
           pack_id: orders[0]?.pack_id,
+          
+          // ===== DEBUGING NOME COMPLETO CLIENTE =====
           nome_completo: orders[0]?.nome_completo,
-          shipping_receiver_name: orders[0]?.shipping?.receiver_address?.receiver_name,
-          unified_receiver_name: orders[0]?.unified?.receiver_name,
+          
+          // Buyer info completo
+          buyer_full: orders[0]?.buyer,
           buyer_first_name: orders[0]?.buyer?.first_name,
           buyer_last_name: orders[0]?.buyer?.last_name,
+          buyer_nickname: orders[0]?.buyer?.nickname,
+          buyer_email: orders[0]?.buyer?.email,
+          
+          // Shipping receiver info completo
+          shipping_full: orders[0]?.shipping,
+          shipping_receiver_address: orders[0]?.shipping?.receiver_address,
+          shipping_receiver_name: orders[0]?.shipping?.receiver_address?.receiver_name,
+          
+          // Unified info
+          unified_full: orders[0]?.unified,
+          unified_receiver_name: orders[0]?.unified?.receiver_name,
+          unified_buyer_name: orders[0]?.unified?.buyer_name,
+          
+          // Outros campos possíveis
+          context: orders[0]?.context,
+          order_request: orders[0]?.order_request,
+          
           allFields: Object.keys(orders[0])
         }
       });
