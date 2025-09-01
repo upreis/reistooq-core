@@ -303,8 +303,8 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // ====== ENVIO/SHIPPING (da imagem 3) ======
   {
     key: 'situacao',
-    label: 'Status do Pagamento',
-    category: 'shipping',
+    label: 'Situação do Pedido',
+    category: 'basic',
     priority: 'essential',
     visible: true,
     default: true,
