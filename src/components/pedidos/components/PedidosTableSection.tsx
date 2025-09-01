@@ -3,7 +3,7 @@
  * Mantém todas as funcionalidades críticas de seleção, mapeamentos e baixa de estoque
  */
 
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,27 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   isPedidoProcessado,
   className
 }) => {
+  // Debug dos dados quando orders mudam
+  useEffect(() => {
+    if (orders.length > 0) {
+      console.log('[DEBUG] Orders updated:', {
+        total: orders.length,
+        sampleOrder: {
+          numero: orders[0]?.numero,
+          order_number: orders[0]?.order_number,
+          id: orders[0]?.id,
+          pack_id: orders[0]?.pack_id,
+          nome_completo: orders[0]?.nome_completo,
+          shipping_receiver_name: orders[0]?.shipping?.receiver_address?.receiver_name,
+          unified_receiver_name: orders[0]?.unified?.receiver_name,
+          buyer_first_name: orders[0]?.buyer?.first_name,
+          buyer_last_name: orders[0]?.buyer?.last_name,
+          allFields: Object.keys(orders[0])
+        }
+      });
+    }
+  }, [orders]);
+
   // PedidosTableSection rendering
 
   // Função para lidar com seleção de pedidos
