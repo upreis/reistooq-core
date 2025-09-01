@@ -260,22 +260,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'nome_cliente':
                       return <div className="max-w-xs truncate" title={order.nome_cliente || order.buyer?.nickname}>{order.nome_cliente || order.buyer?.nickname || '-'}</div>;
                      case 'nome_completo':
-                       // Debug temporário para verificar dados
-                       const nomeCompleto = order.nome_completo || order.shipping?.receiver_address?.receiver_name || order.unified?.receiver_name || (order.buyer?.first_name && order.buyer?.last_name ? `${order.buyer.first_name} ${order.buyer.last_name}` : '');
-                       console.log('🔍 Debug nome_completo:', {
-                         orderNumber: order.numero || order.order_number,
-                         nomeCompleto: nomeCompleto,
-                         rawData: {
-                           nome_completo: order.nome_completo,
-                           shipping_receiver_name: order.shipping?.receiver_address?.receiver_name,
-                           unified_receiver_name: order.unified?.receiver_name,
-                           buyer_first_name: order.buyer?.first_name,
-                           buyer_last_name: order.buyer?.last_name,
-                           buyer_name: order.buyer?.name,
-                           buyer_nickname: order.buyer?.nickname
-                         }
-                       });
-                       return <div className="max-w-xs truncate" title={nomeCompleto || '-'}>{nomeCompleto || '-'}</div>;
+                       return <div className="max-w-xs truncate" title={order.nome_completo || order.shipping?.receiver_address?.receiver_name || order.unified?.receiver_name}>{order.nome_completo || order.shipping?.receiver_address?.receiver_name || order.unified?.receiver_name || (order.buyer?.first_name && order.buyer?.last_name ? `${order.buyer.first_name} ${order.buyer.last_name}` : '') || '-'}</div>;
                     case 'cpf_cnpj':
                       return <span className="font-mono text-sm">{order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '-'}</span>;
                     case 'data_pedido':
