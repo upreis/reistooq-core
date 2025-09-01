@@ -469,28 +469,36 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                              {(typeof mapping.quantidadeKit !== 'undefined' || typeof mapping.quantidade !== 'undefined') && (
                                <div className="text-xs"><span className="font-medium">Qtd:</span> {typeof mapping.quantidadeKit !== 'undefined' ? mapping.quantidadeKit : mapping.quantidade}</div>
                              )}
-                             {(() => {
-                                const statusBaixa = (mapping?.statusBaixa ?? (mapping?.temMapeamento === true ? 'pronto_baixar' : 'sem_mapear'));
-                                let variant: "success" | "destructive" | "warning" | "outline" = "outline";
-                               let texto = "Indefinido";
+                              {(() => {
+                                 const baixado = isPedidoProcessado(order);
+                                 if (baixado) {
+                                   return (
+                                     <Badge variant="success" className="text-xs">
+                                       Baixado
+                                     </Badge>
+                                   );
+                                 }
+                                 const statusBaixa = (mapping?.statusBaixa ?? (mapping?.temMapeamento === true ? 'pronto_baixar' : 'sem_mapear'));
+                                 let variant: "success" | "destructive" | "warning" | "outline" = "outline";
+                                let texto = "Indefinido";
 
-                               if (statusBaixa === 'pronto_baixar') {
-                                 variant = "success";
-                                 texto = "Pronto p/ Baixar";
-                               } else if (statusBaixa === 'sem_estoque') {
-                                 variant = "destructive";
-                                 texto = "Sem Estoque";
-                               } else if (statusBaixa === 'sem_mapear') {
-                                 variant = "warning";
-                                 texto = "Sem Mapear";
-                               }
+                                if (statusBaixa === 'pronto_baixar') {
+                                  variant = "success";
+                                  texto = "Pronto p/ Baixar";
+                                } else if (statusBaixa === 'sem_estoque') {
+                                  variant = "destructive";
+                                  texto = "Sem Estoque";
+                                } else if (statusBaixa === 'sem_mapear') {
+                                  variant = "warning";
+                                  texto = "Sem Mapear";
+                                }
 
-                               return (
-                                 <Badge variant={variant} className="text-xs">
-                                   {texto}
-                                 </Badge>
-                               );
-                             })()}
+                                return (
+                                  <Badge variant={variant} className="text-xs">
+                                    {texto}
+                                  </Badge>
+                                );
+                              })()}
                            </div>
                          ) : (
                            <Badge variant="warning" className="text-xs">Sem Mapear</Badge>

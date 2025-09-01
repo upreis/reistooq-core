@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Pedido } from '@/types/pedido';
 import { useProcessarBaixaEstoque } from '@/hooks/useEstoqueBaixa';
 import {
@@ -38,7 +38,13 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
   const [open, setOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processed, setProcessed] = useState(false);
-  
+
+  // Autoabrir modal quando não há trigger (uso programático)
+  useEffect(() => {
+    if (!trigger) {
+      setOpen(true);
+    }
+  }, [trigger]);
   const processarBaixa = useProcessarBaixaEstoque();
 
   // 🚀 NOVO: Análise de viabilidade dos pedidos
@@ -51,28 +57,32 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
     
     return pedidos.map(pedido => {
       const mapping = contextoDaUI?.mappingData?.get(pedido.id);
-      const temMapeamento = !!mapping?.skuKit;
-      const temEstoque = mapping?.statusBaixa === 'pronto_baixar';
+      const temMapeamento = !!(mapping?.skuKit || (pedido as any).sku_kit);
+      const quantidade = Number((pedido as any).total_itens) || 0;
+      let statusBaixaCalc = mapping?.statusBaixa as string | undefined;
+      if (!statusBaixaCalc) statusBaixaCalc = temMapeamento ? 'pronto_baixar' : 'sem_mapear';
+      const temEstoque = (statusBaixaCalc === 'pronto_baixar' && quantidade > 0) || (temMapeamento && quantidade > 0 && !mapping?.statusBaixa);
       
       console.log(`🔍 DIAGNÓSTICO - Pedido ${pedido.numero || pedido.id}:`, {
         mapping_existe: !!mapping,
-        skuKit: mapping?.skuKit,
-        statusBaixa: mapping?.statusBaixa,
+        skuKit_map: mapping?.skuKit,
+        skuKit_pedido: (pedido as any).sku_kit,
+        statusBaixa: statusBaixaCalc,
         temMapeamento,
         temEstoque,
-        total_itens: pedido.total_itens
+        total_itens: (pedido as any).total_itens
       });
       
       return {
         ...pedido,
         temMapeamento,
         temEstoque,
-        statusBaixa: mapping?.statusBaixa || 'sem_mapear',
-        skuKit: mapping?.skuKit,
-        quantidade: Number(pedido.total_itens) || 0,
+        statusBaixa: statusBaixaCalc,
+        skuKit: mapping?.skuKit || (pedido as any).sku_kit,
+        quantidade,
         problema: !temMapeamento ? 'Sem mapeamento' : 
-                 !temEstoque ? 'Sem estoque' : null
-      };
+                 (!temEstoque ? 'Sem estoque' : null)
+      } as any;
     });
   }, [pedidos, contextoDaUI]);
 

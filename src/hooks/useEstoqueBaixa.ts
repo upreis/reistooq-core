@@ -5,7 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { validarFluxoCompleto, type PedidoEnriquecido } from '@/core/integracao';
 import { MonitorIntegracao, medirTempoExecucao } from '@/core/integracao/MonitorIntegracao';
-
+import { buildIdUnico } from '@/utils/idUnico';
 interface ProcessarBaixaParams {
   pedidos: Pedido[];  // Voltar para Pedido[] pois já vem enriquecido do SimplePedidosPage
   contextoDaUI?: {
@@ -27,24 +27,18 @@ async function validarFluxoCompletoLocal(pedidos: Pedido[]): Promise<boolean> {
       return false;
     }
     
-    // 🛡️ CRÍTICO: Verificar se pedido já foi processado no histórico_vendas
-    const { data: jaProcessado, error } = await supabase
-      .from('historico_vendas')
-      .select('id, status')
-      .eq('id_unico', pedido.id || pedido.numero)
-      .eq('status', 'baixado')
-      .maybeSingle();
-      
-    if (error) {
-      console.error('❌ Erro ao verificar histórico:', error);
+    // 🛡️ CRÍTICO: Verificar se pedido já foi processado no histórico (via RPC segura)
+    const idUnico = (pedido as any).id_unico || buildIdUnico(pedido as any);
+    const { data: existeHistorico, error: hvError } = await supabase.rpc('hv_exists', { p_id_unico: idUnico });
+    
+    if (hvError) {
+      console.error('❌ Erro ao verificar histórico (hv_exists):', hvError);
       return false;
     }
     
-    if (jaProcessado) {
-      console.error('❌ Pedido já foi processado anteriormente:', {
-        id: pedido.id || pedido.numero,
-        historico_id: jaProcessado.id,
-        status: jaProcessado.status
+    if (existeHistorico) {
+      console.error('❌ Pedido já foi processado anteriormente (histórico encontrado):', {
+        id_unico: idUnico
       });
       return false;
     }
