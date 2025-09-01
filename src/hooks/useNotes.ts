@@ -1,160 +1,237 @@
-// P2: Hook centralizado para gerenciar estado de notas
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Note, CreateNoteData, UpdateNoteData, NotesFilter, NotesStats, NoteColor } from '@/types/notes';
-import { useLoadingState } from '@/hooks/useLoadingState';
-import { useToastFeedback } from '@/hooks/useToastFeedback';
+import { useToast } from '@/hooks/use-toast';
 
-// Dados mockados iniciais
-const initialNotes: Note[] = [
-  {
-    id: '1',
-    title: 'Minha primeira nota',
-    content: 'Esta é uma nota de exemplo para demonstrar o sistema de notas melhorado.',
-    color: 'azul',
-    tags: ['exemplo', 'teste'],
-    createdAt: new Date('2024-01-15'),
-    updatedAt: new Date('2024-01-15'),
-    isPinned: false,
-    isArchived: false,
-  },
-  {
-    id: '2',
-    title: 'Lista de tarefas',
-    content: 'Implementar:\n- Sistema de busca\n- Filtros avançados\n- Sincronização em tempo real',
-    color: 'verde',
-    tags: ['trabalho', 'tarefas'],
-    createdAt: new Date('2024-01-14'),
-    updatedAt: new Date('2024-01-16'),
-    isPinned: true,
-    isArchived: false,
-  },
-  {
-    id: '3',
-    title: 'Ideias para o projeto',
-    content: 'Brainstorming de funcionalidades novas para melhorar a experiência do usuário.',
-    color: 'amarelo',
-    tags: ['ideias', 'projeto'],
-    createdAt: new Date('2024-01-13'),
-    updatedAt: new Date('2024-01-13'),
-    isPinned: false,
-    isArchived: false,
-  },
-];
+// Mapeamento dos dados do banco para a interface
+const mapDatabaseToNote = (dbNote: any): Note => ({
+  id: dbNote.id,
+  title: dbNote.title,
+  content: dbNote.content,
+  color: dbNote.color as NoteColor,
+  tags: dbNote.tags || [],
+  createdAt: new Date(dbNote.created_at),
+  updatedAt: new Date(dbNote.updated_at),
+  isPinned: dbNote.is_pinned,
+  isArchived: dbNote.is_archived,
+  isShared: dbNote.is_shared,
+  // Campos de conectividade
+  related_pedido_id: dbNote.related_pedido_id,
+  related_produto_id: dbNote.related_produto_id,
+  related_cliente_id: dbNote.related_cliente_id,
+  shared_with: dbNote.shared_with || [],
+  created_by: dbNote.created_by,
+  last_edited_by: dbNote.last_edited_by,
+});
 
 const defaultFilter: NotesFilter = {
   searchQuery: '',
   selectedColor: undefined,
   showArchived: false,
   sortBy: 'updatedAt',
-  sortOrder: 'desc',
+  sortOrder: 'desc'
 };
 
 export function useNotes() {
-  const [notes, setNotes] = useState<Note[]>(() => {
-    // P2.1: Carregar do localStorage se disponível
-    const saved = localStorage.getItem('notes');
-    if (saved) {
-      const parsedNotes = JSON.parse(saved);
-      // Converter strings de data de volta para Date objects
-      return parsedNotes.map((note: any) => ({
-        ...note,
-        createdAt: new Date(note.createdAt),
-        updatedAt: new Date(note.updatedAt),
-      }));
-    }
-    return initialNotes;
-  });
-  
+  const [notes, setNotes] = useState<Note[]>([]);
   const [filter, setFilter] = useState<NotesFilter>(defaultFilter);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
-  
-  const { isLoading, error, withLoading } = useLoadingState();
-  const { showSuccess, showError } = useToastFeedback();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // P2.2: Persistir no localStorage
-  useEffect(() => {
-    localStorage.setItem('notes', JSON.stringify(notes));
-  }, [notes]);
+  // Carregar notas do Supabase
+  const loadNotes = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .select(`
+          id, title, content, color, tags, 
+          is_pinned, is_archived, is_shared,
+          related_pedido_id, related_produto_id, related_cliente_id,
+          shared_with, created_by, last_edited_by,
+          created_at, updated_at
+        `)
+        .order('is_pinned', { ascending: false })
+        .order('updated_at', { ascending: false });
 
-  // P2.3: Criar nova nota
+      if (error) throw error;
+
+      const mappedNotes = (data || []).map(mapDatabaseToNote);
+      setNotes(mappedNotes);
+    } catch (error) {
+      console.error('Erro ao carregar notas:', error);
+      setError('Não foi possível carregar as notas');
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar as notas',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  // Criar nova nota
   const createNote = useCallback(async (data: CreateNoteData) => {
-    return withLoading((async () => {
-      const newNote: Note = {
-        id: Date.now().toString(),
-        title: data.title || 'Nova nota',
-        content: data.content,
-        color: data.color || 'amarelo',
-        tags: data.tags || [],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        isPinned: false,
-        isArchived: false,
-      };
+    try {
+      const { data: newNote, error } = await supabase
+        .from('notes')
+        .insert({
+          title: data.title,
+          content: data.content,
+          color: data.color || 'amarelo',
+          tags: data.tags || [],
+          is_pinned: false,
+          is_archived: false,
+          is_shared: false
+        } as any)
+        .select()
+        .single();
 
-      setNotes(prev => [newNote, ...prev]);
-      setSelectedNoteId(newNote.id);
-      showSuccess('Nota criada com sucesso!');
-      return newNote;
-    })());
-  }, [withLoading, showSuccess, setSelectedNoteId]);
+      if (error) throw error;
 
-  // P2.4: Atualizar nota
+      const mappedNote = mapDatabaseToNote(newNote);
+      setNotes(prev => [mappedNote, ...prev]);
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Nota criada com sucesso',
+        variant: 'default'
+      });
+
+      return mappedNote;
+    } catch (error) {
+      console.error('Erro ao criar nota:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível criar a nota',
+        variant: 'destructive'
+      });
+      throw error;
+    }
+  }, [toast]);
+
+  // Atualizar nota
   const updateNote = useCallback(async (id: string, data: UpdateNoteData) => {
-    return withLoading((async () => {
-      setNotes(prev => prev.map(note => 
-        note.id === id 
-          ? { ...note, ...data, updatedAt: new Date() }
-          : note
-      ));
-      showSuccess('Nota atualizada!');
-    })());
-  }, [withLoading, showSuccess]);
+    try {
+      const updateData: any = {};
+      
+      if (data.title !== undefined) updateData.title = data.title;
+      if (data.content !== undefined) updateData.content = data.content;
+      if (data.color !== undefined) updateData.color = data.color;
+      if (data.tags !== undefined) updateData.tags = data.tags;
+      if (data.isPinned !== undefined) updateData.is_pinned = data.isPinned;
+      if (data.isArchived !== undefined) updateData.is_archived = data.isArchived;
 
-  // P2.5: Deletar nota
+      const { data: updatedNote, error } = await supabase
+        .from('notes')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const mappedNote = mapDatabaseToNote(updatedNote);
+      setNotes(prev => prev.map(note => 
+        note.id === id ? mappedNote : note
+      ));
+
+      toast({
+        title: 'Sucesso',
+        description: 'Nota atualizada com sucesso',
+        variant: 'default'
+      });
+
+      return mappedNote;
+    } catch (error) {
+      console.error('Erro ao atualizar nota:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar a nota',
+        variant: 'destructive'
+      });
+      throw error;
+    }
+  }, [toast]);
+
+  // Deletar nota
   const deleteNote = useCallback(async (id: string) => {
-    return withLoading((async () => {
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       setNotes(prev => prev.filter(note => note.id !== id));
+      
       if (selectedNoteId === id) {
         setSelectedNoteId(null);
       }
-      showSuccess('Nota excluída!');
-    })());
-  }, [withLoading, showSuccess, selectedNoteId]);
 
-  // P2.6: Alternar fixação
+      toast({
+        title: 'Sucesso',
+        description: 'Nota excluída com sucesso',
+        variant: 'default'
+      });
+    } catch (error) {
+      console.error('Erro ao deletar nota:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir a nota',
+        variant: 'destructive'
+      });
+      throw error;
+    }
+  }, [selectedNoteId, toast]);
+
+  // Toggle pin
   const togglePin = useCallback(async (id: string) => {
     const note = notes.find(n => n.id === id);
-    if (note) {
-      await updateNote(id, { isPinned: !note.isPinned });
-    }
+    if (!note) return;
+
+    await updateNote(id, { isPinned: !note.isPinned });
   }, [notes, updateNote]);
 
-  // P2.7: Arquivar/desarquivar
+  // Toggle archive
   const toggleArchive = useCallback(async (id: string) => {
     const note = notes.find(n => n.id === id);
-    if (note) {
-      await updateNote(id, { isArchived: !note.isArchived });
-    }
+    if (!note) return;
+
+    await updateNote(id, { isArchived: !note.isArchived });
   }, [notes, updateNote]);
 
-  // P2.8: Notas filtradas e ordenadas
+  // Filtrar notas
   const filteredNotes = useMemo(() => {
     let filtered = notes.filter(note => {
       // Filtro de arquivadas
-      if (!filter.showArchived && note.isArchived) return false;
-      if (filter.showArchived && !note.isArchived) return false;
+      if (filter.showArchived !== note.isArchived) {
+        return false;
+      }
+
+      // Filtro de cor
+      if (filter.selectedColor && note.color !== filter.selectedColor) {
+        return false;
+      }
 
       // Filtro de busca
       if (filter.searchQuery) {
         const query = filter.searchQuery.toLowerCase();
         const matchesTitle = note.title.toLowerCase().includes(query);
         const matchesContent = note.content.toLowerCase().includes(query);
-        const matchesTags = note.tags.some(tag => tag.toLowerCase().includes(query));
-        if (!matchesTitle && !matchesContent && !matchesTags) return false;
+        const matchesTags = note.tags.some(tag => 
+          tag.toLowerCase().includes(query)
+        );
+        
+        if (!matchesTitle && !matchesContent && !matchesTags) {
+          return false;
+        }
       }
-
-      // Filtro de cor
-      if (filter.selectedColor && note.color !== filter.selectedColor) return false;
 
       return true;
     });
@@ -162,14 +239,15 @@ export function useNotes() {
     // Ordenação
     filtered.sort((a, b) => {
       // Notas fixadas sempre no topo
-      if (a.isPinned !== b.isPinned) {
-        return a.isPinned ? -1 : 1;
-      }
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
 
+      // Depois ordenar pelo critério selecionado
       let comparison = 0;
+      
       switch (filter.sortBy) {
         case 'title':
-          comparison = a.title.localeCompare(b.title, 'pt-BR');
+          comparison = a.title.localeCompare(b.title);
           break;
         case 'createdAt':
           comparison = a.createdAt.getTime() - b.createdAt.getTime();
@@ -186,12 +264,12 @@ export function useNotes() {
     return filtered;
   }, [notes, filter]);
 
-  // P2.9: Estatísticas
+  // Estatísticas
   const stats: NotesStats = useMemo(() => {
     const total = notes.filter(n => !n.isArchived).length;
     const pinned = notes.filter(n => n.isPinned && !n.isArchived).length;
     const archived = notes.filter(n => n.isArchived).length;
-    
+
     const byColor = notes.reduce((acc, note) => {
       if (!note.isArchived) {
         acc[note.color] = (acc[note.color] || 0) + 1;
@@ -202,14 +280,23 @@ export function useNotes() {
     return { total, pinned, archived, byColor };
   }, [notes]);
 
-  // P2.10: Nota selecionada
+  // Nota selecionada
   const selectedNote = useMemo(() => 
     notes.find(note => note.id === selectedNoteId) || null,
     [notes, selectedNoteId]
   );
 
+  // Reset filter
+  const resetFilter = useCallback(() => {
+    setFilter(defaultFilter);
+  }, []);
+
+  // Carregar notas iniciais
+  useEffect(() => {
+    loadNotes();
+  }, [loadNotes]);
+
   return {
-    // Estado
     notes: filteredNotes,
     allNotes: notes,
     selectedNote,
@@ -217,8 +304,6 @@ export function useNotes() {
     stats,
     isLoading,
     error,
-
-    // Ações
     createNote,
     updateNote,
     deleteNote,
@@ -226,8 +311,7 @@ export function useNotes() {
     toggleArchive,
     setFilter,
     setSelectedNoteId,
-
-    // Utilities
-    resetFilter: () => setFilter(defaultFilter),
+    resetFilter,
+    refreshNotes: loadNotes
   };
 }

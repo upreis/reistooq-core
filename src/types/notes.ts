@@ -9,6 +9,14 @@ export interface Note {
   updatedAt: Date;
   isPinned: boolean;
   isArchived: boolean;
+  isShared?: boolean;
+  // Campos de conectividade com o sistema principal
+  related_pedido_id?: string;
+  related_produto_id?: string;
+  related_cliente_id?: string;
+  shared_with?: string[];
+  created_by?: string;
+  last_edited_by?: string;
 }
 
 export type NoteColor = 'amarelo' | 'azul' | 'rosa' | 'verde' | 'roxo' | 'laranja';

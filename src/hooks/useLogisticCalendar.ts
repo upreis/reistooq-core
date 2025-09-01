@@ -4,59 +4,30 @@ import { LogisticEvent, CalendarFilters, CalendarMetrics } from '@/types/logisti
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-// Mock data para desenvolvimento - substituir por dados reais do Supabase
-const mockEvents: LogisticEvent[] = [
-  {
-    id: '1',
-    title: 'Entrega Cliente VIP - São Paulo',
-    description: 'Entrega de produtos eletrônicos para cliente premium',
-    type: 'delivery',
-    status: 'scheduled',
-    priority: 'high',
-    date: '2025-08-30',
-    time: '14:00',
-    duration: 60,
-    location: 'São Paulo, SP',
-    customer: 'TechCorp LTDA',
-    tracking_code: 'BR123456789',
-    transport_company: 'Transportadora Express',
-    created_at: '2025-08-28T10:00:00Z',
-    updated_at: '2025-08-28T10:00:00Z',
-    notification_days_before: 2
-  },
-  {
-    id: '2',
-    title: 'Coleta no Fornecedor - Campinas',
-    description: 'Buscar novo lote de produtos',
-    type: 'pickup',
-    status: 'confirmed',
-    priority: 'medium',
-    date: '2025-08-31',
-    time: '09:00',
-    duration: 120,
-    location: 'Campinas, SP',
-    customer: 'Fornecedor ABC',
-    created_at: '2025-08-27T15:00:00Z',
-    updated_at: '2025-08-29T08:00:00Z',
-    notification_days_before: 1
-  },
-  {
-    id: '3',
-    title: 'Prazo Final - Relatório Mensal',
-    description: 'Entrega do relatório de vendas de agosto',
-    type: 'deadline',
-    status: 'scheduled',
-    priority: 'critical',
-    date: '2025-08-29',
-    time: '18:00',
-    created_at: '2025-08-25T10:00:00Z',
-    updated_at: '2025-08-25T10:00:00Z',
-    notification_days_before: 3
-  }
-];
+// Mapeamento dos dados do banco para a interface
+const mapDatabaseToEvent = (dbEvent: any): LogisticEvent => ({
+  id: dbEvent.id,
+  title: dbEvent.title,
+  description: dbEvent.description,
+  type: dbEvent.type,
+  status: dbEvent.status,
+  priority: dbEvent.priority,
+  date: dbEvent.event_date,
+  time: dbEvent.event_time,
+  duration: dbEvent.duration_minutes,
+  location: dbEvent.location,
+  customer: dbEvent.customer_name,
+  tracking_code: dbEvent.tracking_code,
+  transport_company: dbEvent.transport_company,
+  notes: dbEvent.notes,
+  created_at: dbEvent.created_at,
+  updated_at: dbEvent.updated_at,
+  reminder_sent: dbEvent.reminder_sent,
+  notification_days_before: dbEvent.notification_days_before,
+});
 
 export const useLogisticCalendar = () => {
-  const [events, setEvents] = useState<LogisticEvent[]>(mockEvents);
+  const [events, setEvents] = useState<LogisticEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<CalendarFilters>({
     types: [],
@@ -143,19 +114,31 @@ export const useLogisticCalendar = () => {
   const loadEvents = async (startDate?: Date, endDate?: Date) => {
     setLoading(true);
     try {
-      // TODO: Implementar consulta real ao Supabase
-      // const { data, error } = await supabase
-      //   .from('logistic_events')
-      //   .select('*')
-      //   .gte('date', startDate?.toISOString().split('T')[0])
-      //   .lte('date', endDate?.toISOString().split('T')[0])
-      //   .order('date', { ascending: true });
+      let query = supabase
+        .from('logistic_events')
+        .select(`
+          id, title, description, type, status, priority,
+          event_date, event_time, duration_minutes,
+          location, customer_name, tracking_code, transport_company,
+          related_pedido_id, related_produto_id, integration_account_id,
+          notification_days_before, reminder_sent, notes,
+          created_at, updated_at
+        `)
+        .order('event_date', { ascending: true });
 
-      // if (error) throw error;
-      // setEvents(data || []);
+      if (startDate) {
+        query = query.gte('event_date', startDate.toISOString().split('T')[0]);
+      }
+      if (endDate) {
+        query = query.lte('event_date', endDate.toISOString().split('T')[0]);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
       
-      // Por enquanto, usar dados mock
-      setEvents(mockEvents);
+      const mappedEvents = (data || []).map(mapDatabaseToEvent);
+      setEvents(mappedEvents);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
       toast({
@@ -171,14 +154,30 @@ export const useLogisticCalendar = () => {
   // Criar novo evento
   const createEvent = async (event: Omit<LogisticEvent, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const newEvent: LogisticEvent = {
-        ...event,
-        id: Date.now().toString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from('logistic_events')
+        .insert({
+          title: event.title,
+          description: event.description,
+          type: event.type,
+          status: event.status || 'scheduled',
+          priority: event.priority || 'medium',
+          event_date: event.date,
+          event_time: event.time,
+          duration_minutes: event.duration,
+          location: event.location,
+          customer_name: event.customer,
+          tracking_code: event.tracking_code,
+          transport_company: event.transport_company,
+          notification_days_before: event.notification_days_before,
+          notes: event.notes
+        } as any)
+        .select()
+        .single();
 
-      // TODO: Implementar inserção real no Supabase
+      if (error) throw error;
+
+      const newEvent = mapDatabaseToEvent(data);
       setEvents(prev => [...prev, newEvent]);
       
       toast({
@@ -202,10 +201,35 @@ export const useLogisticCalendar = () => {
   // Atualizar evento
   const updateEvent = async (id: string, updates: Partial<LogisticEvent>) => {
     try {
+      const updateData: any = {};
+      
+      if (updates.title !== undefined) updateData.title = updates.title;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.type !== undefined) updateData.type = updates.type;
+      if (updates.status !== undefined) updateData.status = updates.status;
+      if (updates.priority !== undefined) updateData.priority = updates.priority;
+      if (updates.date !== undefined) updateData.event_date = updates.date;
+      if (updates.time !== undefined) updateData.event_time = updates.time;
+      if (updates.duration !== undefined) updateData.duration_minutes = updates.duration;
+      if (updates.location !== undefined) updateData.location = updates.location;
+      if (updates.customer !== undefined) updateData.customer_name = updates.customer;
+      if (updates.tracking_code !== undefined) updateData.tracking_code = updates.tracking_code;
+      if (updates.transport_company !== undefined) updateData.transport_company = updates.transport_company;
+      if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if (updates.reminder_sent !== undefined) updateData.reminder_sent = updates.reminder_sent;
+
+      const { data, error } = await supabase
+        .from('logistic_events')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updatedEvent = mapDatabaseToEvent(data);
       setEvents(prev => prev.map(event => 
-        event.id === id 
-          ? { ...event, ...updates, updated_at: new Date().toISOString() }
-          : event
+        event.id === id ? updatedEvent : event
       ));
 
       toast({
@@ -226,6 +250,13 @@ export const useLogisticCalendar = () => {
   // Deletar evento
   const deleteEvent = async (id: string) => {
     try {
+      const { error } = await supabase
+        .from('logistic_events')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
       setEvents(prev => prev.filter(event => event.id !== id));
       
       toast({
