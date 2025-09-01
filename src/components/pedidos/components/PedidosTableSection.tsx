@@ -342,6 +342,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span className="text-xs">{order.payment_status || order.payments?.[0]?.status || '-'}</span>;
                     case 'payment_type':
                       return <span className="text-xs">{order.payment_type || order.payments?.[0]?.payment_type || '-'}</span>;
+                    case 'sku_estoque':
+                      return <span className="text-xs">{order.sku_estoque || order.unified?.sku_estoque || '-'}</span>;
+                    case 'sku_kit':
+                      return <span className="text-xs">{order.sku_kit || order.unified?.sku_kit || '-'}</span>;
                     case 'shipping_status':
                       return <span className="text-xs">{translateShippingStatus(order.shipping_status || order.shipping?.status) || '-'}</span>;
                     case 'logistic_mode':
