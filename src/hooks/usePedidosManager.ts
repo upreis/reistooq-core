@@ -147,7 +147,9 @@ export function usePedidosManager(initialAccountId?: string) {
       if (mapped.length === 1) {
         params.shipping_status = mapped[0];
       } else if (mapped.length > 1) {
-        params.shipping_status = mapped;
+        // Edge function pode não suportar array; aplicaremos filtro client-side
+        // Então não enviamos shipping_status para o servidor
+        // params._multi_shipping_status = mapped; // opcional para debug
       }
     }
 
@@ -335,7 +337,7 @@ export function usePedidosManager(initialAccountId?: string) {
       unified: data.unified || [],
       total: data.paging?.total || data.paging?.count || data.results?.length || 0,
       paging: data.paging || undefined,
-      serverStatusApplied: Boolean(requestBody.status)
+      serverStatusApplied: Boolean(requestBody.shipping_status)
     };
   }, [integrationAccountId, currentPage, pageSize, getUrlParams]);
 
@@ -526,7 +528,7 @@ export function usePedidosManager(initialAccountId?: string) {
         
         // Se o servidor retornou que aplicou filtros, usar direto, senão aplicar client-side
         const serverAppliedFiltering = (unifiedResult as any).server_filtering_applied;
-        const shouldApplyClientFilter = Boolean(apiParams.shipping_status) && !serverAppliedFiltering;
+        const shouldApplyClientFilter = Boolean(filters.situacao) && !serverAppliedFiltering;
         const filteredClientResults = shouldApplyClientFilter
           ? applyClientSideFilters(unifiedResult.results)
           : unifiedResult.results;
@@ -572,7 +574,13 @@ export function usePedidosManager(initialAccountId?: string) {
         
         try {
           // Tentativa 2: unified-orders sem filtros (aplicar client-side)
-          const unifiedNoFilters = await loadFromUnifiedOrders({});
+          const baseParams: any = {};
+          if (Array.isArray(apiParams.integration_account_ids) && apiParams.integration_account_ids.length > 0) {
+            baseParams.integration_account_ids = apiParams.integration_account_ids;
+          } else {
+            baseParams.integration_account_id = apiParams.integration_account_id || integrationAccountId;
+          }
+          const unifiedNoFilters = await loadFromUnifiedOrders(baseParams);
           const filteredResults = applyClientSideFilters(unifiedNoFilters.results);
           
           // Para client-side filtering, precisamos ajustar a paginação
