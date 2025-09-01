@@ -197,14 +197,15 @@ function SimplePedidosPage({ className }: Props) {
     }).filter(Boolean).join(', ') || '-';
   };
 
-  // ✅ CORREÇÃO: Processar mapeamentos apenas quando necessário (não a cada render)
+  // ✅ CORREÇÃO: Processar mapeamentos sempre que houver pedidos carregados
   useEffect(() => {
     if (orders && orders.length > 0) {
-      // ✅ Debounce implícito através do hook otimizado
+      console.log('🔄 [SimplePedidosPage] Processando mapeamentos para', orders.length, 'pedidos');
       verificarPedidos(orders);
+      // ✅ Usar a função correta que processa diretamente
       mappingActions.processOrdersMappings(orders);
     }
-  }, [orders.length, JSON.stringify(orders.map(o => o.id || o.numero))]); // ✅ Dependência otimizada
+  }, [orders, verificarPedidos]); // ✅ Dependência simplificada mas funcional
   
   // Helpers financeiros: receita_por_envio (Flex) e valor_liquido_vendedor
   const getReceitaPorEnvio = (order: any): number => {

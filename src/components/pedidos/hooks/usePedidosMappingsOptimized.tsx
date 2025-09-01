@@ -217,12 +217,13 @@ export function usePedidosMappingsOptimized({
     });
   }, []);
 
-  // ✅ AÇÃO: Disparar processamento manual
+  // ✅ AÇÃO: Disparar processamento manual (processamento direto)
   const triggerProcessing = useCallback((orders: any[]) => {
     if (orders && orders.length > 0) {
-      setPendingOrders(orders);
+      console.log('🚀 [MappingsOptimized] Iniciando processamento para', orders.length, 'pedidos');
+      processOrdersMappings(orders);
     }
-  }, []);
+  }, [processOrdersMappings]);
 
   // ✅ GETTER: Obter mapeamento específico
   const getMappingForOrder = useCallback((orderId: string): MapeamentoVerificacao | undefined => {
