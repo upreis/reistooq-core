@@ -87,24 +87,7 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
         </div>
       </div>
 
-      {/* 🔄 AÇÕES RÁPIDAS */}
-      {selectedOrdersCount > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
-          <span className="text-blue-800 font-medium">
-            {selectedOrdersCount} pedidos selecionados
-          </span>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={onBaixaEstoque}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Baixar Estoque
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Remoção: Aviso de seleção não necessário */}
     </div>
   );
 });
