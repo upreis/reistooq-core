@@ -2481,21 +2481,25 @@ export type Database = {
               _start?: string
             }
         Returns: {
-          cidade: string
-          cpf_cnpj: string
+          cidade: string | null
+          codigo_rastreamento: string | null
+          cpf_cnpj: string | null
           created_at: string
           data_pedido: string
-          empresa: string
+          data_prevista: string | null
+          empresa: string | null
           id: string
-          integration_account_id: string
+          integration_account_id: string | null
           nome_cliente: string
           numero: string
-          numero_ecommerce: string
-          numero_venda: string
-          obs: string
+          numero_ecommerce: string | null
+          numero_venda: string | null
+          obs: string | null
+          obs_interna: string | null
           situacao: string
-          uf: string
+          uf: string | null
           updated_at: string
+          url_rastreamento: string | null
           valor_desconto: number
           valor_frete: number
           valor_total: number

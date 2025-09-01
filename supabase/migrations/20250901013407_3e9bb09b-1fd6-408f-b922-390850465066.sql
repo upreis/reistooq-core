@@ -1,0 +1,98 @@
+-- Drop da função existente e recriar com tipos corretos
+DROP FUNCTION IF EXISTS public.get_pedidos_masked(uuid,text,date,date,text,text,text[],numeric,numeric,integer,integer);
+
+-- Recriar função com todos os campos necessários
+CREATE OR REPLACE FUNCTION public.get_pedidos_masked(
+  _integration_account_id uuid DEFAULT NULL,
+  _search text DEFAULT NULL,
+  _start date DEFAULT NULL,
+  _end date DEFAULT NULL,
+  _cidade text DEFAULT NULL,
+  _uf text DEFAULT NULL,
+  _situacao text[] DEFAULT NULL,
+  _valor_min numeric DEFAULT NULL,
+  _valor_max numeric DEFAULT NULL,
+  _limit integer DEFAULT 50,
+  _offset integer DEFAULT 0
+)
+RETURNS TABLE(
+  id text, 
+  numero text, 
+  nome_cliente text, 
+  cpf_cnpj text, 
+  data_pedido date, 
+  data_prevista date,
+  situacao text, 
+  valor_total numeric, 
+  valor_frete numeric, 
+  valor_desconto numeric, 
+  numero_ecommerce text, 
+  numero_venda text, 
+  empresa text, 
+  cidade text, 
+  uf text, 
+  obs text, 
+  obs_interna text,
+  codigo_rastreamento text,
+  url_rastreamento text,
+  integration_account_id uuid, 
+  created_at timestamp with time zone, 
+  updated_at timestamp with time zone
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    p.id,
+    p.numero,
+    p.nome_cliente,
+    p.cpf_cnpj,
+    p.data_pedido,
+    p.data_prevista,
+    p.situacao,
+    p.valor_total,
+    p.valor_frete,
+    p.valor_desconto,
+    p.numero_ecommerce,
+    p.numero_venda,
+    p.empresa,
+    p.cidade,
+    p.uf,
+    p.obs,
+    p.obs_interna,
+    p.codigo_rastreamento,
+    p.url_rastreamento,
+    p.integration_account_id,
+    p.created_at,
+    p.updated_at
+  FROM public.pedidos p
+  JOIN public.integration_accounts ia ON ia.id = p.integration_account_id
+  WHERE ia.organization_id = public.get_current_org_id()
+    AND public.has_permission('orders:read')
+    -- Filtro por conta de integração específica
+    AND (_integration_account_id IS NULL OR p.integration_account_id = _integration_account_id)
+    -- Filtro de busca combinada
+    AND (_search IS NULL OR (
+      p.numero ILIKE '%' || _search || '%' OR
+      p.nome_cliente ILIKE '%' || _search || '%' OR
+      p.cpf_cnpj ILIKE '%' || _search || '%'
+    ))
+    -- Filtros de data combinados
+    AND (_start IS NULL OR p.data_pedido >= _start)
+    AND (_end IS NULL OR p.data_pedido <= _end)
+    -- Filtros geográficos
+    AND (_cidade IS NULL OR p.cidade ILIKE '%' || _cidade || '%')
+    AND (_uf IS NULL OR p.uf = _uf)
+    -- Filtro de situação (array)
+    AND (_situacao IS NULL OR p.situacao = ANY(_situacao))
+    -- Filtros de valor
+    AND (_valor_min IS NULL OR p.valor_total >= _valor_min)
+    AND (_valor_max IS NULL OR p.valor_total <= _valor_max)
+  ORDER BY p.data_pedido DESC, p.created_at DESC
+  LIMIT COALESCE(_limit, 50)
+  OFFSET COALESCE(_offset, 0);
+END;
+$function$;
