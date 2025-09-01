@@ -206,6 +206,13 @@ export function fotografarPedidoCompleto(
   
   // Empresa (lógica EXATA da UI)
   const getEmpresaName = () => {
+    // 1) Se já vier definido no pedido, usar como fonte de verdade
+    const fromOrder = order.empresa || order.account_name || order.seller?.nickname || order.seller?.name;
+    if (fromOrder && typeof fromOrder === 'string' && fromOrder.trim() !== '') {
+      return fromOrder;
+    }
+    
+    // 2) Derivar pelo contexto de contas selecionadas/integration_account_id
     let accountId = order.integration_account_id;
     
     if (!accountId && selectedAccounts.length === 1) {
@@ -219,7 +226,7 @@ export function fotografarPedidoCompleto(
     if (!accountId) return 'Conta não informada';
     
     const account = accounts.find(acc => acc.id === accountId);
-    if (!account) return `Conta ${accountId.substring(0, 8)}...`;
+    if (!account) return `Conta ${String(accountId).substring(0, 8)}...`;
     
     const companyName = account.name || account.settings?.store_name || `Conta ${account.id.substring(0, 8)}...`;
     const isFulfillment = order.is_fulfillment || 
