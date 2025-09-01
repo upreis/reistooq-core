@@ -127,33 +127,8 @@ export function usePedidosManager(initialAccountId?: string) {
 
   /**
    * 🔧 AUDITORIA: Converte filtros para parâmetros da API 
-   * CORRIGIDO: Mapear situação para shipping_status corretamente
+   * CORRIGIDO: Priorizar conta ML e mapear situação corretamente
    */
-  const buildApiParams = useCallback((filters: PedidosFilters) => {
-    const params: any = {};
-
-    // 🔍 Busca - OK
-    if (filters.search) {
-      params.q = filters.search;
-    }
-
-    // 🚨 CORRIGIDO: Status do Envio - mapear corretamente
-    if (filters.situacao) {
-      const situacoes = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
-      if (situacoes.length > 0) {
-        // Mapear situações PT para status API do ML
-        const mappedStatuses = situacoes.map(sit => {
-          const apiStatus = mapSituacaoToApiStatus(sit);
-          return apiStatus || sit; // Fallback para valor original se não mapeou
-        }).filter(Boolean);
-        
-        if (mappedStatuses.length > 0) {
-          params.shipping_status = mappedStatuses.length === 1 ? mappedStatuses[0] : mappedStatuses;
-          // ✅ Log apenas quando necessário para debug
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🎯 Status enviados para API:', mappedStatuses, 'originais:', situacoes);
-          }
-        }
   const buildApiParams = useCallback((filters: PedidosFilters) => {
     const params: any = {};
 
