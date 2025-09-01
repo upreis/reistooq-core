@@ -958,13 +958,33 @@ function SimplePedidosPage({ className }: Props) {
             🔄 Debug & Recarregar
           </Button>
         </div>
-        {(filtersManager.appliedFilters.situacao || filtersManager.appliedFilters.dataInicio || filtersManager.appliedFilters.dataFim) && (
-          <div className="flex items-center gap-1">
+        
+        {/* Filtros ativos e ações */}
+        <div className="flex items-center gap-2">
+          {(filtersManager.appliedFilters.situacao || filtersManager.appliedFilters.dataInicio || filtersManager.appliedFilters.dataFim) && (
             <Badge variant="secondary" className="text-xs">
               Filtros ativos
             </Badge>
+          )}
+          
+          {/* Botões de ação movidos para cá */}
+          <div className="flex items-center gap-1">
+            <ExportModal
+              onExport={actions.exportData}
+              totalRecords={total}
+              isLoading={loading}
+            />
+            
+            <SavedFiltersManager
+              savedFilters={actions.getSavedFilters()}
+              onSaveFilters={actions.saveCurrentFilters}
+              onLoadFilters={actions.loadSavedFilters}
+              hasActiveFilters={filtersManager.hasActiveFilters}
+            />
+            
+            <ColumnManager manager={columnManager} />
           </div>
-        )}
+        </div>
       </div>
         </div>
       </Card>
@@ -1018,17 +1038,7 @@ function SimplePedidosPage({ className }: Props) {
         }}
       />
 
-      {/* 🚀 SEÇÃO DE MODAIS - PASSO 7 COMPLETO */}
-      <PedidosModalsSection
-        onExport={actions.exportData}
-        totalRecords={total}
-        isLoading={loading}
-        savedFilters={actions.getSavedFilters()}
-        onSaveFilters={actions.saveCurrentFilters}
-        onLoadFilters={actions.loadSavedFilters}
-        hasActiveFilters={filtersManager.hasActiveFilters}
-        columnManager={columnManager}
-      />
+      {/* Modais agora renderizados inline na área de indicadores */}
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
     </div>
