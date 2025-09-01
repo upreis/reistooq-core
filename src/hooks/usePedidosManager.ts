@@ -149,9 +149,18 @@ export function usePedidosManager(initialAccountId?: string) {
       params.q = filters.search;
     }
 
-    // Status mapping - converter situacao para shipping_status
-    if (filters.situacao && filters.situacao.length > 0) {
-      params.shipping_status = filters.situacao;
+    // Status mapping - converter situacao para shipping_status (mapear para valores da API)
+    if (filters.situacao) {
+      const situacoes = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
+      const mapped = situacoes
+        .map((sit) => mapSituacaoToApiStatus(sit) || null)
+        .filter(Boolean) as string[];
+
+      if (mapped.length === 1) {
+        params.shipping_status = mapped[0];
+      } else if (mapped.length > 1) {
+        params.shipping_status = mapped;
+      }
     }
 
     // 📅 CORRIGIDO: Datas com formato consistente 
