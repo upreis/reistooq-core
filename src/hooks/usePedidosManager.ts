@@ -188,9 +188,12 @@ export function usePedidosManager(initialAccountId?: string) {
       params.integration_account_id = integrationAccountId;
     }
 
-    // ✅ NOVO: Filtro de contas ML
+    // 🚨 CRÍTICO: Contas ML - se múltiplas, usar a primeira (API só aceita uma)
     if (filters.contasML && filters.contasML.length > 0) {
-      params.integration_account_ids = filters.contasML; // Array de IDs de contas
+      params.integration_account_id = filters.contasML[0]; // Usar primeira conta selecionada
+      if (filters.contasML.length > 1) {
+        console.warn('⚠️ Múltiplas contas ML selecionadas, usando apenas a primeira:', filters.contasML[0]);
+      }
     }
 
     console.log('🔧 [AUDITORIA] Parâmetros construídos:', params);
@@ -226,8 +229,8 @@ export function usePedidosManager(initialAccountId?: string) {
     }
 
     const requestBody = {
-      // 🏢 CRÍTICO: integration_account_id obrigatório
-      integration_account_id: integrationAccountId,
+      // 🏢 CRÍTICO: integration_account_id - priorizar filtro de contasML
+      integration_account_id: apiParams.integration_account_id || integrationAccountId,
       
       // 📊 Paginação
       limit: pageSize,

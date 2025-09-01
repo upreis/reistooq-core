@@ -131,6 +131,16 @@ serve(async (req) => {
       offset = 0 
     } = body || {};
     
+    // 🔧 AUDITORIA: Log detalhado para debug de filtros
+    console.log(`[unified-orders:${cid}] Filtros detalhados:`, {
+      integration_account_id,
+      filtros_geograficos: { cidade, uf },
+      filtros_valor: { valorMin, valorMax },
+      filtros_busca: { q, search },
+      filtros_data: { date_from, date_to },
+      filtros_status: { status, shipping_status }
+    });
+    
     // 🚨 VALIDAÇÃO: Mercado Livre API aceita máximo 51, limitamos a 50 para segurança
     const limit = Math.min(rawLimit, 50);
     if (rawLimit > 50) {
