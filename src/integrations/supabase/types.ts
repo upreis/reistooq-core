@@ -1119,6 +1119,95 @@ export type Database = {
           },
         ]
       }
+      logistic_events: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          customer_name: string | null
+          description: string | null
+          duration_minutes: number | null
+          event_date: string
+          event_time: string | null
+          id: string
+          integration_account_id: string | null
+          location: string | null
+          metadata: Json | null
+          notes: string | null
+          notification_days_before: number | null
+          organization_id: string
+          priority: string
+          related_pedido_id: string | null
+          related_produto_id: string | null
+          reminder_sent: boolean | null
+          status: string
+          title: string
+          tracking_code: string | null
+          transport_company: string | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_name?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          event_date: string
+          event_time?: string | null
+          id?: string
+          integration_account_id?: string | null
+          location?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          notification_days_before?: number | null
+          organization_id: string
+          priority?: string
+          related_pedido_id?: string | null
+          related_produto_id?: string | null
+          reminder_sent?: boolean | null
+          status?: string
+          title: string
+          tracking_code?: string | null
+          transport_company?: string | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_name?: string | null
+          description?: string | null
+          duration_minutes?: number | null
+          event_date?: string
+          event_time?: string | null
+          id?: string
+          integration_account_id?: string | null
+          location?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          notification_days_before?: number | null
+          organization_id?: string
+          priority?: string
+          related_pedido_id?: string | null
+          related_produto_id?: string | null
+          reminder_sent?: boolean | null
+          status?: string
+          title?: string
+          tracking_code?: string | null
+          transport_company?: string | null
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistic_events_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mapeamentos_depara: {
         Row: {
           ativo: boolean
@@ -1279,6 +1368,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notes: {
+        Row: {
+          color: string
+          content: string
+          created_at: string | null
+          created_by: string
+          id: string
+          is_archived: boolean | null
+          is_pinned: boolean | null
+          is_shared: boolean | null
+          last_edited_by: string | null
+          metadata: Json | null
+          organization_id: string
+          related_cliente_id: string | null
+          related_pedido_id: string | null
+          related_produto_id: string | null
+          shared_with: string[] | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string
+          content?: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
+          is_shared?: boolean | null
+          last_edited_by?: string | null
+          metadata?: Json | null
+          organization_id: string
+          related_cliente_id?: string | null
+          related_pedido_id?: string | null
+          related_produto_id?: string | null
+          shared_with?: string[] | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string
+          content?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_archived?: boolean | null
+          is_pinned?: boolean | null
+          is_shared?: boolean | null
+          last_edited_by?: string | null
+          metadata?: Json | null
+          organization_id?: string
+          related_cliente_id?: string | null
+          related_pedido_id?: string | null
+          related_produto_id?: string | null
+          shared_with?: string[] | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       oauth_states: {
         Row: {
@@ -2224,6 +2376,10 @@ export type Database = {
           status: string
           token: string
         }
+      }
+      create_logistic_events_from_pedido: {
+        Args: { p_pedido_data: Json }
+        Returns: string[]
       }
       debug_historico_visibilidade: {
         Args: Record<PropertyKey, never>
