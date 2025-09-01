@@ -180,7 +180,11 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
             {/* Ação principal: Baixa de Estoque */}
             {selectionStats.readyForBaixa > 0 && (
               <Button
-                onClick={() => setShowBaixaModal(true)}
+                onClick={() => {
+                  // Forçar re-montagem do modal para abrir automaticamente
+                  setShowBaixaModal(false);
+                  setTimeout(() => setShowBaixaModal(true), 0);
+                }}
                 className="gap-2"
                 disabled={selectionStats.readyForBaixa === 0}
               >
@@ -199,23 +203,13 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
         )}
       </Card>
 
-      {/* Modal de Baixa de Estoque - Integrado com callback */}
+      {/* Modal de Baixa de Estoque - Abre automaticamente ao montar (sem trigger) */}
       {showBaixaModal && (
         <BaixaEstoqueModal 
           pedidos={selectedPedidosForBaixa}
           contextoDaUI={{
             mappingData,
           }}
-          trigger={
-            <div 
-              style={{ display: 'none' }} 
-              onClick={() => {
-                setShowBaixaModal(false);
-                handleClearSelection();
-                onBaixaConcluida?.();
-              }}
-            />
-          }
         />
       )}
     </>
