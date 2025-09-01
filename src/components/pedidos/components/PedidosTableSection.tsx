@@ -241,18 +241,18 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
           <table className="w-full">
             <thead className="border-b">
               <tr className="text-left">
-                <th className="p-3">
-                  <Checkbox
-                    checked={selectedOrders.size === orders.length && orders.length > 0}
-                    onCheckedChange={handleSelectAll}
-                  />
-                </th>
-                {/* Coluna fixa: ID-Único sempre primeiro */}
-                <th className="p-3">ID-Único</th>
-                {/* Demais cabeçalhos conforme ordem/seleção */}
-                {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
-                  <th key={def.key} className="p-3">{def.label}</th>
-                ))}
+                 <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
+                   <Checkbox
+                     checked={selectedOrders.size === orders.length && orders.length > 0}
+                     onCheckedChange={handleSelectAll}
+                   />
+                 </th>
+                 {/* Coluna fixa: ID-Único sempre primeiro */}
+                 <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">ID-Único</th>
+                 {/* Demais cabeçalhos conforme ordem/seleção */}
+                 {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
+                   <th key={def.key} className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">{def.label}</th>
+                 ))}
               </tr>
             </thead>
             
