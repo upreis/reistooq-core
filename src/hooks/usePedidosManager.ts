@@ -629,7 +629,7 @@ export function usePedidosManager(initialAccountId?: string) {
     
     // 🚀 Executar busca imediatamente
     loadOrders(true);
-  }, [filters, integrationAccountId, pageSize, loadOrders]);
+  }, [filters, integrationAccountId, pageSize]); // ✅ CORRIGIDO: Remover loadOrders das dependências
 
   // ✅ SIMPLIFICADO: Actions usando apenas filters
   const actions: PedidosManagerActions = useMemo(() => ({
@@ -645,12 +645,17 @@ export function usePedidosManager(initialAccountId?: string) {
         normalizedNewFilters.dataFim = normalizeDate(normalizedNewFilters.dataFim);
       }
       
-      // ✅ CACHE INTELIGENTE: Só limpar cache quando realmente necessário
+      // ✅ CACHE INTELIGENTE: Só limpar cache quando valores realmente mudaram
+      const currentContasML = JSON.stringify(filters.contasML || []);
+      const newContasML = JSON.stringify(newFilters.contasML || []);
+      const currentSituacao = JSON.stringify(filters.situacao || []);
+      const newSituacao = JSON.stringify(newFilters.situacao || []);
+      
       const needsCacheInvalidation = !!(
-        newFilters.contasML || 
-        newFilters.dataInicio || 
-        newFilters.dataFim ||
-        newFilters.situacao
+        (newFilters.contasML && currentContasML !== newContasML) ||
+        (newFilters.dataInicio && filters.dataInicio !== newFilters.dataInicio) ||
+        (newFilters.dataFim && filters.dataFim !== newFilters.dataFim) ||
+        (newFilters.situacao && currentSituacao !== newSituacao)
       );
       
       setFiltersState(prev => {
@@ -662,7 +667,7 @@ export function usePedidosManager(initialAccountId?: string) {
       // ✅ CORREÇÃO CRÍTICA: Resetar página sempre
       setCurrentPage(1);
       
-      // ✅ OTIMIZADO: Limpar cache apenas quando necessário
+      // ✅ OTIMIZADO: Limpar cache apenas quando valores realmente mudaram
       if (needsCacheInvalidation) {
         setCachedAt(undefined);
         setLastQuery(undefined);
@@ -791,7 +796,7 @@ export function usePedidosManager(initialAccountId?: string) {
     // ✅ CRÍTICO: Troca de conta ML = carregamento IMEDIATO, sem delays
     loadOrders(); // Execução imediata sempre
     
-    // ✅ CORREÇÃO CRÍTICA: Remover loadOrders das dependências para evitar loop infinito
+    // ✅ CORREÇÃO CRÍTICA: loadOrders é estável, não precisa estar nas dependências
   }, [filters, integrationAccountId, currentPage, pageSize]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
