@@ -149,41 +149,8 @@ function SimplePedidosPage({ className }: Props) {
   // Filtro rápido (apenas client-side)
   const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered'>('all');
 
-  // Lista exibida considerando o filtro rápido (não altera filtros da busca)
-  const displayedOrders = useMemo(() => {
-    if (!orders || quickFilter === 'all') return orders;
-    return orders.filter((order: any) => {
-      const id = order?.id || order?.numero || order?.unified?.id;
-      const mapping = (mappingData as any)?.get?.(id);
-      const statuses = [
-        order?.shipping_status,
-        order?.shipping?.status,
-        order?.unified?.shipping?.status,
-        order?.situacao,
-        order?.status
-      ].filter(Boolean).map((s: any) => String(s).toLowerCase());
-      switch (quickFilter) {
-        case 'pronto_baixar': {
-          const temMapeamentoCompleto = !!(mapping && (mapping.skuEstoque || mapping.skuKit));
-          const baixado = isPedidoProcessado(order);
-          return temMapeamentoCompleto && !baixado;
-        }
-        case 'mapear_incompleto': {
-          const temIncompleto = !!(mapping && mapping.temMapeamento && !(mapping.skuEstoque || mapping.skuKit));
-          const baixado = isPedidoProcessado(order);
-          return temIncompleto && !baixado;
-        }
-        case 'baixado':
-          return !!isPedidoProcessado(order) || String(order?.status_baixa || '').toLowerCase().includes('baixado');
-        case 'shipped':
-          return statuses.some((s: string) => s.includes('shipped') || s.includes('ready_to_ship'));
-        case 'delivered':
-          return statuses.some((s: string) => s.includes('delivered'));
-        default:
-          return true;
-      }
-    });
-  }, [orders, quickFilter, mappingData, isPedidoProcessado]);
+  // Lista exibida igual aos orders (removido filtro rápido)
+  const displayedOrders = orders;
 
   // ✅ MIGRAÇÃO FASE 1: Funções de tradução movidas para @/utils/pedidos-translations
 
@@ -1054,82 +1021,6 @@ function SimplePedidosPage({ className }: Props) {
         </Card>
       )}
 
-      {/* 🎯 FILTROS RÁPIDOS POR STATUS (cliente) */}
-      <Card className="p-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-muted-foreground">Filtros rápidos:</span>
-          
-          <Button
-            size="sm"
-            variant={quickFilter === 'all' ? 'default' : 'outline'}
-            onClick={() => setQuickFilter('all')}
-            className="h-8"
-          >
-            Todos os pedidos
-          </Button>
-
-          <Button
-            size="sm"
-            variant={quickFilter === 'pronto_baixar' ? 'default' : 'outline'}
-            onClick={() => setQuickFilter('pronto_baixar')}
-            className="h-8 bg-green-500 hover:bg-green-600 text-white border-green-500"
-          >
-            📦 Pronto p/ Baixar
-          </Button>
-
-          <Button
-            size="sm"
-            variant={quickFilter === 'mapear_incompleto' ? 'default' : 'outline'}
-            onClick={() => setQuickFilter('mapear_incompleto')}
-            className="h-8 bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
-          >
-            ⚠️ Mapear Incompleto
-          </Button>
-
-          <Button
-            size="sm"
-            variant={quickFilter === 'baixado' ? 'default' : 'outline'}
-            onClick={() => setQuickFilter('baixado')}
-            className="h-8 bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
-          >
-            ✅ Baixado
-          </Button>
-
-          <Button
-            size="sm"
-            variant={quickFilter === 'shipped' ? 'default' : 'outline'}
-            onClick={() => setQuickFilter('shipped')}
-            className="h-8"
-          >
-            🚚 Enviado
-          </Button>
-
-          <Button
-            size="sm"
-            variant={quickFilter === 'delivered' ? 'default' : 'outline'}
-            onClick={() => setQuickFilter('delivered')}
-            className="h-8"
-          >
-            📍 Entregue
-          </Button>
-
-          {quickFilter !== 'all' && (
-            <div className="flex items-center gap-2 ml-auto">
-              <Badge variant="secondary" className="text-xs">
-                Filtro ativo: {quickFilter}
-              </Badge>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setQuickFilter('all')}
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-              >
-                ✕
-              </Button>
-            </div>
-          )}
-        </div>
-      </Card>
 
       {/* 🚀 FASE 2: Loading otimizado */}
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}
