@@ -92,7 +92,11 @@ function SimplePedidosPage({ className }: Props) {
     onFiltersApply: (filters) => {
       console.log('🔍 Aplicando filtros unificados:', filters);
       actions.setFilters(filters);
-      actions.refetch(); // ✅ Usar refetch que está disponível
+      
+      // ✅ FORÇA ATUALIZAÇÃO IMEDIATA DOS DADOS
+      setTimeout(() => {
+        actions.refetch();
+      }, 100); // Pequeno delay para garantir que os filtros foram aplicados
     },
     autoLoad: false,          // ✅ Não carregar automaticamente
     loadSavedFilters: false   // ✅ Não aplicar filtros salvos automaticamente
