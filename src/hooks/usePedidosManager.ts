@@ -757,35 +757,14 @@ export function usePedidosManager(initialAccountId?: string) {
     }
   }, []); // Executar apenas no mount inicial
 
-  // 🔄 Effect para carregar dados APENAS quando integrationAccountId mudar (não filtros)
-  useEffect(() => {
-    if (integrationAccountId) {
-      console.log('🔄 Carregando dados iniciais - conta:', integrationAccountId);
-      loadOrders();
-    }
-  }, [integrationAccountId]);
+  // ✅ REMOVIDO: Não carregar automaticamente ao mudar conta - apenas quando aplicar filtros
+  // A página deve ficar vazia até o usuário aplicar filtros
 
-  // ✅ CORRIGIDO: Paginação independente dos filtros debouncados
-  useEffect(() => {
-    if (!integrationAccountId) return;
-    // ⚠️ CRÍTICO: Não incluir debouncedFilters aqui senão vai executar múltiplas vezes
-    if (currentPage > 1 || pageSize !== PAGINATION.DEFAULT_PAGE_SIZE) {
-      loadOrders(true);
-    }
-  }, [currentPage, pageSize, integrationAccountId, loadOrders]);
+  // ✅ REMOVIDO: Não carregar automaticamente na paginação - apenas quando aplicar filtros
+  // A paginação deve funcionar apenas após aplicar filtros
 
-  // 🚀 NOVO: Effect específico para debouncedFilters (evita múltiplas execuções)
-  useEffect(() => {
-    if (!integrationAccountId) return;
-    
-    // Quando filtros mudarem, voltar para página 1 e carregar
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    } else {
-      // Se já está na página 1, carregar diretamente
-      loadOrders(true);
-    }
-  }, [debouncedFilters, integrationAccountId]);
+  // ✅ REMOVIDO: Não carregar automaticamente quando filtros mudarem
+  // O carregamento agora acontece apenas via applyFilters() no hook unificado
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
