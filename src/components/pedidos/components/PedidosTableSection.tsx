@@ -90,6 +90,25 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
           unified_receiver_name: orders[0]?.unified?.receiver_name,
           unified_buyer_name: orders[0]?.unified?.buyer_name,
           
+          // ===== DEBUG DADOS DE ENDEREÇO =====
+          shipping_full: orders[0]?.shipping,
+          shipping_receiver_address: orders[0]?.shipping?.receiver_address,
+          shipping_destination: orders[0]?.shipping?.destination,
+          endereco_campos: {
+            endereco_rua: orders[0]?.endereco_rua,
+            endereco_numero: orders[0]?.endereco_numero,
+            endereco_bairro: orders[0]?.endereco_bairro,
+            endereco_cep: orders[0]?.endereco_cep,
+            endereco_cidade: orders[0]?.endereco_cidade,
+            endereco_uf: orders[0]?.endereco_uf,
+            rua: orders[0]?.rua,
+            numero: orders[0]?.numero,
+            bairro: orders[0]?.bairro,
+            cep: orders[0]?.cep,
+            cidade: orders[0]?.cidade,
+            uf: orders[0]?.uf
+          },
+          
           allFields: Object.keys(orders[0])
         }
       });
@@ -341,46 +360,100 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.shipping?.shipping_method?.name || order.raw?.shipping?.shipping_method?.name || order.shipping?.method?.name) || '-'}</span>;
                     case 'cidade':
                     case 'endereco_cidade':
-                      return <span>{order.endereco_cidade || order.cidade || order.shipping?.receiver_address?.city?.name || order.shipping?.receiver_address?.city || '-'}</span>;
+                      return <span>{
+                        order.endereco_cidade || 
+                        order.cidade || 
+                        order.shipping?.receiver_address?.city?.name || 
+                        order.shipping?.receiver_address?.city || 
+                        order.shipping?.destination?.receiver_address?.city?.name ||
+                        order.shipping?.destination?.receiver_address?.city ||
+                        order.unified?.shipping?.receiver_address?.city?.name ||
+                        order.unified?.shipping?.receiver_address?.city ||
+                        order.raw?.shipping?.receiver_address?.city?.name ||
+                        order.raw?.shipping?.receiver_address?.city ||
+                        order.raw?.shipping?.destination?.receiver_address?.city?.name ||
+                        order.raw?.shipping?.destination?.receiver_address?.city ||
+                        '-'
+                      }</span>;
                     case 'uf':
                     case 'endereco_uf':
-                      return <span>{order.endereco_uf || order.uf || order.shipping?.receiver_address?.state?.id || order.shipping?.receiver_address?.state?.name || order.shipping?.receiver_address?.state || '-'}</span>;
+                      return <span>{
+                        order.endereco_uf || 
+                        order.uf || 
+                        order.shipping?.receiver_address?.state?.id || 
+                        order.shipping?.receiver_address?.state?.name || 
+                        order.shipping?.receiver_address?.state || 
+                        order.shipping?.destination?.receiver_address?.state?.id ||
+                        order.shipping?.destination?.receiver_address?.state?.name ||
+                        order.shipping?.destination?.receiver_address?.state ||
+                        order.unified?.shipping?.receiver_address?.state?.id ||
+                        order.unified?.shipping?.receiver_address?.state?.name ||
+                        order.unified?.shipping?.receiver_address?.state ||
+                        order.raw?.shipping?.receiver_address?.state?.id ||
+                        order.raw?.shipping?.receiver_address?.state?.name ||
+                        order.raw?.shipping?.receiver_address?.state ||
+                        order.raw?.shipping?.destination?.receiver_address?.state?.id ||
+                        order.raw?.shipping?.destination?.receiver_address?.state?.name ||
+                        order.raw?.shipping?.destination?.receiver_address?.state ||
+                        '-'
+                      }</span>;
                     case 'endereco_rua':
                       return <span>{
                         order.endereco_rua ||
+                        order.rua ||
                         order.shipping?.receiver_address?.street_name ||
                         order.shipping?.receiver_address?.address_line ||
+                        order.shipping?.destination?.receiver_address?.street_name ||
+                        order.shipping?.destination?.receiver_address?.address_line ||
                         order.unified?.shipping?.receiver_address?.street_name ||
                         order.unified?.shipping?.receiver_address?.address_line ||
                         order.raw?.shipping?.receiver_address?.street_name ||
+                        order.raw?.shipping?.receiver_address?.address_line ||
+                        order.raw?.shipping?.destination?.receiver_address?.street_name ||
+                        order.raw?.shipping?.destination?.receiver_address?.address_line ||
                         '-'
                       }</span>;
                     case 'endereco_numero':
                       return <span>{
                         order.endereco_numero ||
+                        order.numero ||
                         order.shipping?.receiver_address?.street_number ||
+                        order.shipping?.destination?.receiver_address?.street_number ||
                         order.unified?.shipping?.receiver_address?.street_number ||
                         order.raw?.shipping?.receiver_address?.street_number ||
+                        order.raw?.shipping?.destination?.receiver_address?.street_number ||
                         '-'
                       }</span>;
                     case 'endereco_bairro':
                       return <span>{
                         order.endereco_bairro ||
+                        order.bairro ||
                         order.shipping?.receiver_address?.neighborhood?.name ||
                         order.shipping?.receiver_address?.neighborhood ||
+                        order.shipping?.destination?.receiver_address?.neighborhood?.name ||
+                        order.shipping?.destination?.receiver_address?.neighborhood ||
                         order.unified?.shipping?.receiver_address?.neighborhood?.name ||
                         order.unified?.shipping?.receiver_address?.neighborhood ||
                         order.raw?.shipping?.receiver_address?.neighborhood?.name ||
+                        order.raw?.shipping?.receiver_address?.neighborhood ||
+                        order.raw?.shipping?.destination?.receiver_address?.neighborhood?.name ||
+                        order.raw?.shipping?.destination?.receiver_address?.neighborhood ||
                         '-'
                       }</span>;
                     case 'endereco_cep':
                       return <span>{
                         order.endereco_cep ||
+                        order.cep ||
                         order.shipping?.receiver_address?.zip_code ||
                         order.shipping?.receiver_address?.zip ||
+                        order.shipping?.destination?.receiver_address?.zip_code ||
+                        order.shipping?.destination?.receiver_address?.zip ||
                         order.unified?.shipping?.receiver_address?.zip_code ||
                         order.unified?.shipping?.receiver_address?.zip ||
                         order.raw?.shipping?.receiver_address?.zip_code ||
+                        order.raw?.shipping?.receiver_address?.zip ||
+                        order.raw?.shipping?.destination?.receiver_address?.zip_code ||
+                        order.raw?.shipping?.destination?.receiver_address?.zip ||
                         '-'
                       }</span>;
                      case 'mapeamento':
