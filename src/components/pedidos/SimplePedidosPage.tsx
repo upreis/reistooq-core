@@ -91,11 +91,11 @@ function SimplePedidosPage({ className }: Props) {
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: (filters) => {
       console.log('🔍 Aplicando filtros unificados:', filters);
-      // ✅ SOLUÇÃO: Substituir filtros dispara refetch automático via useEffect
       actions.replaceFilters(filters);
+      actions.refetch(); // garante atualização imediata mesmo sem mudança real nos filtros
     },
-    autoLoad: false,          // ✅ Não carregar automaticamente
-    loadSavedFilters: false   // ✅ Não aplicar filtros salvos automaticamente
+    autoLoad: false,
+    loadSavedFilters: false
   });
   
   // Estado unificado dos pedidos
@@ -681,9 +681,9 @@ function SimplePedidosPage({ className }: Props) {
         loading={loading}
         isRefreshing={state.isRefreshing}
         onRefresh={actions.refetch}
+        onApplyFilters={() => filtersManager.applyFilters()}
         selectedOrdersCount={selectedOrders.size}
-        hasPendingChanges={false}
-        // ✅ REMOVIDO: onApplyFilters (botão duplicado removido)
+        hasPendingChanges={filtersManager.hasPendingChanges}
       >
       {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
       </PedidosHeaderSection>

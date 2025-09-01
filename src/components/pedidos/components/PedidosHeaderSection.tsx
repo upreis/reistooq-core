@@ -61,7 +61,15 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* ✅ REMOVIDO: Botão duplicado de aplicar filtros */}
+          {/* 🔄 BOTÃO APLICAR FILTROS - sempre visível */}
+          <Button
+            onClick={onApplyFilters}
+            disabled={loading || isRefreshing}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Aplicar Filtros
+          </Button>
 
           {/* Botão Refresh */}
           <Button

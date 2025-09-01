@@ -491,19 +491,16 @@ export function usePedidosManager(initialAccountId?: string) {
    * 🔧 Carrega pedidos com query chaveada por filtros (refetch automático)
    */
   const loadOrders = useCallback(async (forceRefresh = false) => {
-    // ✅ SOLUÇÃO: Query chaveada por filtros serializado para refetch automático
-    const filtersKey = JSON.stringify(debouncedFilters);
-    
-    // Se os filtros mudaram, sempre fazer nova requisição
-    if (lastQuery !== filtersKey || forceRefresh) {
-      console.log('🔄 Filtros mudaram, fazendo nova consulta:', filtersKey);
-      setLastQuery(filtersKey);
-    } else if (loading && !forceRefresh) {
-      return; // Evitar múltiplas requisições simultâneas
-    }
-
     // Construir parâmetros primeiro para suportar múltiplas contas
-    const apiParams = buildApiParams(debouncedFilters); // ✅ Usar debouncedFilters
+    const apiParams = buildApiParams(debouncedFilters);
+    const cacheKey = getCacheKey(apiParams);
+
+    // Se a mesma query já foi executada recentemente e está carregando, evitar duplicar
+    if (!forceRefresh && lastQuery === cacheKey && loading) {
+      return;
+    }
+    // Atualiza a última query com a chave completa (inclui paginação/conta)
+    setLastQuery(cacheKey);
 
     // Só bloquear se realmente não houver nenhuma conta definida (única ou múltiplas)
     const hasAnyAccount = Boolean(
@@ -514,7 +511,7 @@ export function usePedidosManager(initialAccountId?: string) {
     if (!hasAnyAccount) return;
 
     console.log('🔍 Parâmetros da API construídos:', apiParams);
-    const cacheKey = getCacheKey(apiParams);
+    // cacheKey já calculado acima
 
     // 🚀 FASE 2: Cancelar requisições anteriores
     if (abortControllerRef.current) {
