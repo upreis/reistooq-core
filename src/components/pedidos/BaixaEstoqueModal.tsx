@@ -54,7 +54,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
         temEstoque,
         statusBaixa: mapping?.statusBaixa || 'sem_mapear',
         skuKit: mapping?.skuKit,
-        quantidade: pedido.total_itens || 0,
+        quantidade: Number(pedido.total_itens) || 0,
         problema: !temMapeamento ? 'Sem mapeamento' : 
                  !temEstoque ? 'Sem estoque' : null
       };

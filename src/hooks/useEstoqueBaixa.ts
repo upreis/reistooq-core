@@ -110,12 +110,16 @@ export function useProcessarBaixaEstoque() {
         throw new Error(erroMsg);
       }
       try {
-        // Extrair SKU KIT + Total de Itens dos pedidos
-        console.log('🔍 DEBUG - Pedidos recebidos:', pedidos.map(p => ({
+        // 🔍 AUDITORIA: Verificar dados recebidos dos pedidos
+        console.log('🔍 AUDITORIA - Pedidos completos recebidos:', pedidos.map(p => ({
           id: p.id,
           numero: p.numero,
+          nome_cliente: p.nome_cliente,
           sku_kit: p.sku_kit,
-          total_itens: p.total_itens
+          total_itens: p.total_itens,
+          valor_total: p.valor_total,
+          quantidade_itens: (p as any).quantidade_itens,
+          mapping_data: contextoDaUI?.mappingData?.get(p.id)
         })));
 
         const baixas = pedidos.map(pedido => {
@@ -126,13 +130,25 @@ export function useProcessarBaixaEstoque() {
                      '';
           const quantidade = Number(pedido.total_itens || 0);
           
-          console.log(`🔍 DEBUG - Pedido ${pedido.numero}: SKU="${sku}" (fallback aplicado), Quantidade=${quantidade}`);
+          console.log(`🔍 AUDITORIA - Pedido ${pedido.numero}:`, {
+            sku_origem: pedido.sku_kit,
+            sku_final: sku,
+            total_itens_origem: pedido.total_itens,
+            quantidade_final: quantidade,
+            valor_pedido: pedido.valor_total
+          });
           
           return {
             sku: sku.trim(),
             quantidade: quantidade
           };
-        }).filter(baixa => baixa.sku && baixa.quantidade > 0);
+        }).filter(baixa => {
+          const valido = baixa.sku && baixa.quantidade > 0;
+          if (!valido) {
+            console.warn('❌ AUDITORIA - Baixa inválida filtrada:', baixa);
+          }
+          return valido;
+        });
 
         console.log('🔍 DEBUG - Baixas filtradas:', baixas);
 
