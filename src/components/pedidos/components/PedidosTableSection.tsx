@@ -363,10 +363,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{
                         order.endereco_cidade || 
                         order.cidade || 
+                        order.shipping?.destination?.shipping_address?.city?.name ||
+                        order.shipping?.destination?.shipping_address?.city ||
                         order.shipping?.receiver_address?.city?.name || 
                         order.shipping?.receiver_address?.city || 
-                        order.shipping?.destination?.receiver_address?.city?.name ||
-                        order.shipping?.destination?.receiver_address?.city ||
                         order.unified?.shipping?.receiver_address?.city?.name ||
                         order.unified?.shipping?.receiver_address?.city ||
                         order.raw?.shipping?.receiver_address?.city?.name ||
@@ -380,12 +380,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{
                         order.endereco_uf || 
                         order.uf || 
+                        order.shipping?.destination?.shipping_address?.state?.name ||
+                        order.shipping?.destination?.shipping_address?.state?.id ||
+                        order.shipping?.destination?.shipping_address?.state ||
                         order.shipping?.receiver_address?.state?.id || 
                         order.shipping?.receiver_address?.state?.name || 
                         order.shipping?.receiver_address?.state || 
-                        order.shipping?.destination?.receiver_address?.state?.id ||
-                        order.shipping?.destination?.receiver_address?.state?.name ||
-                        order.shipping?.destination?.receiver_address?.state ||
                         order.unified?.shipping?.receiver_address?.state?.id ||
                         order.unified?.shipping?.receiver_address?.state?.name ||
                         order.unified?.shipping?.receiver_address?.state ||
@@ -401,10 +401,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{
                         order.endereco_rua ||
                         order.rua ||
+                        order.shipping?.destination?.shipping_address?.street_name ||
+                        order.shipping?.destination?.shipping_address?.address_line ||
                         order.shipping?.receiver_address?.street_name ||
                         order.shipping?.receiver_address?.address_line ||
-                        order.shipping?.destination?.receiver_address?.street_name ||
-                        order.shipping?.destination?.receiver_address?.address_line ||
                         order.unified?.shipping?.receiver_address?.street_name ||
                         order.unified?.shipping?.receiver_address?.address_line ||
                         order.raw?.shipping?.receiver_address?.street_name ||
@@ -417,8 +417,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{
                         order.endereco_numero ||
                         order.numero ||
+                        order.shipping?.destination?.shipping_address?.street_number ||
                         order.shipping?.receiver_address?.street_number ||
-                        order.shipping?.destination?.receiver_address?.street_number ||
                         order.unified?.shipping?.receiver_address?.street_number ||
                         order.raw?.shipping?.receiver_address?.street_number ||
                         order.raw?.shipping?.destination?.receiver_address?.street_number ||
@@ -428,10 +428,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{
                         order.endereco_bairro ||
                         order.bairro ||
+                        order.shipping?.destination?.shipping_address?.neighborhood?.name ||
+                        order.shipping?.destination?.shipping_address?.neighborhood ||
                         order.shipping?.receiver_address?.neighborhood?.name ||
                         order.shipping?.receiver_address?.neighborhood ||
-                        order.shipping?.destination?.receiver_address?.neighborhood?.name ||
-                        order.shipping?.destination?.receiver_address?.neighborhood ||
                         order.unified?.shipping?.receiver_address?.neighborhood?.name ||
                         order.unified?.shipping?.receiver_address?.neighborhood ||
                         order.raw?.shipping?.receiver_address?.neighborhood?.name ||
@@ -444,10 +444,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{
                         order.endereco_cep ||
                         order.cep ||
+                        order.shipping?.destination?.shipping_address?.zip_code ||
+                        order.shipping?.destination?.shipping_address?.zip ||
                         order.shipping?.receiver_address?.zip_code ||
                         order.shipping?.receiver_address?.zip ||
-                        order.shipping?.destination?.receiver_address?.zip_code ||
-                        order.shipping?.destination?.receiver_address?.zip ||
                         order.unified?.shipping?.receiver_address?.zip_code ||
                         order.unified?.shipping?.receiver_address?.zip ||
                         order.raw?.shipping?.receiver_address?.zip_code ||
