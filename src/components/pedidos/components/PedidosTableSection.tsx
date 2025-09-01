@@ -613,108 +613,106 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
         {/* Paginação - Debug info */}
         <div className="border-t p-4 bg-muted/5">
           <div className="text-xs text-muted-foreground mb-2 bg-yellow-100 p-2 rounded">
-            DEBUG: currentPage={currentPage}, totalPages={totalPages}, total={total}
+            DEBUG: currentPage={currentPage}, totalPages={totalPages}, total={total}, hasPrev={state?.hasPrevPage ? 'yes' : 'no'}, hasNext={state?.hasNextPage ? 'yes' : 'no'}
           </div>
-          
-          {totalPages > 1 ? (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Página {currentPage} de {totalPages} • Total: {total} pedidos
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
-                      />
-                    </PaginationItem>
-                    
-                    {/* Primeira página */}
-                    {currentPage > 3 && (
-                      <>
-                        <PaginationItem>
-                          <PaginationLink
-                            onClick={() => onPageChange(1)}
-                            className="cursor-pointer hover:bg-accent"
-                          >
-                            1
-                          </PaginationLink>
-                        </PaginationItem>
-                        {currentPage > 4 && (
-                          <PaginationItem>
-                            <span className="px-3 py-2">...</span>
-                          </PaginationItem>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* Páginas vizinhas */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let page;
-                      if (totalPages <= 5) {
-                        page = i + 1;
-                      } else {
-                        // Centralizar páginas ao redor da página atual
-                        const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
-                        page = start + i;
-                      }
-                      
-                      if (page > totalPages) return null;
-                      
-                      return (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            onClick={() => onPageChange(page)}
-                            isActive={page === currentPage}
-                            className="cursor-pointer hover:bg-accent"
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    })}
-                    
-                    {/* Última página */}
-                    {currentPage < totalPages - 2 && (
-                      <>
-                        {currentPage < totalPages - 3 && (
-                          <PaginationItem>
-                            <span className="px-3 py-2">...</span>
-                          </PaginationItem>
-                        )}
-                        <PaginationItem>
-                          <PaginationLink
-                            onClick={() => onPageChange(totalPages)}
-                            className="cursor-pointer hover:bg-accent"
-                          >
-                            {totalPages}
-                          </PaginationLink>
-                        </PaginationItem>
-                      </>
-                    )}
-                    
-                    <PaginationItem>
-                      <PaginationNext 
-                        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-              
-              <div className="text-sm text-muted-foreground">
-                {((currentPage - 1) * 50) + 1}-{Math.min(currentPage * 50, total)}
-              </div>
-            </div>
-          ) : (
+
+          <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              Total: {total} pedidos (paginação desnecessária)
+              Página {currentPage}{totalPages > 1 ? ` de ${totalPages}` : ''} • Total: {total} pedidos
             </div>
-          )}
+
+            <div className="flex items-center space-x-2">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
+                    />
+                  </PaginationItem>
+
+                  {totalPages > 1 && (
+                    <>
+                      {/* Primeira página */}
+                      {currentPage > 3 && (
+                        <>
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => onPageChange(1)}
+                              className="cursor-pointer hover:bg-accent"
+                            >
+                              1
+                            </PaginationLink>
+                          </PaginationItem>
+                          {currentPage > 4 && (
+                            <PaginationItem>
+                              <span className="px-3 py-2">...</span>
+                            </PaginationItem>
+                          )}
+                        </>
+                      )}
+
+                      {/* Páginas vizinhas */}
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let page;
+                        if (totalPages <= 5) {
+                          page = i + 1;
+                        } else {
+                          // Centralizar páginas ao redor da página atual
+                          const start = Math.max(1, Math.min(currentPage - 2, totalPages - 4));
+                          page = start + i;
+                        }
+
+                        if (page > totalPages) return null;
+
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => onPageChange(page)}
+                              isActive={page === currentPage}
+                              className="cursor-pointer hover:bg-accent"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      {/* Última página */}
+                      {currentPage < totalPages - 2 && (
+                        <>
+                          {currentPage < totalPages - 3 && (
+                            <PaginationItem>
+                              <span className="px-3 py-2">...</span>
+                            </PaginationItem>
+                          )}
+                          <PaginationItem>
+                            <PaginationLink
+                              onClick={() => onPageChange(totalPages)}
+                              className="cursor-pointer hover:bg-accent"
+                            >
+                              {totalPages}
+                            </PaginationLink>
+                          </PaginationItem>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => onPageChange(currentPage + 1)}
+                      className={(orders.length === 0 && !state?.hasNextPage && currentPage >= totalPages) ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              {((currentPage - 1) * (state?.pageSize || 50)) + 1}-{Math.min(currentPage * (state?.pageSize || 50), total)}
+            </div>
+          </div>
         </div>
       </Card>
     </div>
