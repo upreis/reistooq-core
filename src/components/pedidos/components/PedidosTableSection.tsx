@@ -426,17 +426,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'qtd_kit':
                       return (
                         <span>
-                          {mapping?.skuEstoque ? (
-                            // Se tem SKU Estoque, verifica se tem quantidade mapeada
-                            mapping?.quantidade ? (
-                              mapping.quantidade
-                            ) : (
-                              <Badge variant="warning" className="text-xs">
-                                Sem Mapear
-                              </Badge>
-                            )
+                          {mapping?.quantidade ? (
+                            mapping.quantidade
                           ) : (
-                            // Se não tem nem SKU Estoque, não pode mapear quantidade
                             <Badge variant="warning" className="text-xs">
                               Sem Mapear
                             </Badge>
