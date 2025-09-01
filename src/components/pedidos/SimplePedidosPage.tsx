@@ -90,9 +90,10 @@ function SimplePedidosPage({ className }: Props) {
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: (filters) => {
-      console.log('🔍 Aplicando filtros unificados:', filters);
-      actions.replaceFilters(filters);
-      actions.refetch(); // garante atualização imediata mesmo sem mudança real nos filtros
+      console.groupCollapsed('[filtros/apply] from=unified-callback');
+      console.log('filters', filters);
+      console.groupEnd();
+      actions.replaceFilters(filters); // efeito cuidará do refetch com a nova key
     },
     autoLoad: false,
     loadSavedFilters: false
@@ -681,7 +682,12 @@ function SimplePedidosPage({ className }: Props) {
         loading={loading}
         isRefreshing={state.isRefreshing}
         onRefresh={actions.refetch}
-        onApplyFilters={() => filtersManager.applyFilters()}
+        onApplyFilters={() => {
+          console.groupCollapsed('[filtros/apply] from=header');
+          console.log('appliedFilters', filtersManager.appliedFilters);
+          console.groupEnd();
+          filtersManager.applyFilters();
+        }}
         selectedOrdersCount={selectedOrders.size}
         hasPendingChanges={filtersManager.hasPendingChanges}
       >

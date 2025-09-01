@@ -90,6 +90,23 @@ function normalizeDate(value: any): Date | undefined {
 
 const DEFAULT_FILTERS: PedidosFilters = {};
 
+// 🔒 Serializador estável e determinístico dos filtros para uso na queryKey/cache
+function stableSerializeFilters(f: PedidosFilters): string {
+  const replacer = (_key: string, value: any) => {
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    return value;
+  };
+  const sorted = Object.keys(f || {})
+    .sort()
+    .reduce((acc, k) => {
+      const v = (f as any)[k];
+      if (v === undefined || v === '' || (Array.isArray(v) && v.length === 0)) return acc;
+      (acc as any)[k] = Array.isArray(v) ? [...v].sort() : v;
+      return acc;
+    }, {} as any);
+  return JSON.stringify(sorted, replacer);
+}
+
 export function usePedidosManager(initialAccountId?: string) {
   // Estados principais - SIMPLIFICADO: apenas um estado de filtros
   const [filters, setFiltersState] = useState<PedidosFilters>(DEFAULT_FILTERS);
@@ -493,7 +510,15 @@ export function usePedidosManager(initialAccountId?: string) {
   const loadOrders = useCallback(async (forceRefresh = false) => {
     // Construir parâmetros primeiro para suportar múltiplas contas
     const apiParams = buildApiParams(debouncedFilters);
-    const cacheKey = getCacheKey(apiParams);
+    const filtersKey = stableSerializeFilters(debouncedFilters);
+    const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
+
+    console.groupCollapsed('[pedidos/query]');
+    console.log('key', cacheKey);
+    console.log('forceRefresh', forceRefresh);
+    console.log('lastQuery', lastQuery);
+    console.log('isCacheValid', isCacheValid(cacheKey));
+    console.groupEnd();
 
     // Se a mesma query já foi executada recentemente e está carregando, evitar duplicar
     if (!forceRefresh && lastQuery === cacheKey && loading) {
@@ -521,7 +546,7 @@ export function usePedidosManager(initialAccountId?: string) {
 
     // 🚀 FASE 2: Verificar cache
     if (!forceRefresh && isCacheValid(cacheKey)) {
-      // P1.2: Cache usado - log removido por segurança
+      console.log('[pedidos/query] cache-hit, skipping network');
       return;
     }
 
@@ -779,6 +804,10 @@ const actions: PedidosManagerActions = useMemo(() => ({
       }
     });
 
+    console.groupCollapsed('[filters/replace]');
+    console.log('next', cleaned);
+    console.groupEnd();
+
     setFiltersState(cleaned);
     setCurrentPage(1);
     // Invalida completamente o cache para garantir atualização imediata
@@ -823,6 +852,9 @@ const actions: PedidosManagerActions = useMemo(() => ({
   },
   
   refetch: () => {
+    console.groupCollapsed('[refetch] dispatch');
+    console.log('lastQuery', lastQuery);
+    console.groupEnd();
     loadOrders(true);
   },
   

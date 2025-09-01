@@ -111,7 +111,12 @@ export function PedidosFiltersUnified({
               </Button>
               <Button 
                 size="sm" 
-                onClick={onApplyFilters}
+                onClick={() => {
+                  console.groupCollapsed('[filtros/apply] from=modal');
+                  console.log('draftFilters', filters);
+                  console.groupEnd();
+                  onApplyFilters();
+                }}
                 disabled={isApplying}
                 className="min-w-[100px]"
               >

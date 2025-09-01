@@ -117,6 +117,9 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
 
   // Aplicar filtros manuais
   const applyFilters = useCallback(async () => {
+    console.groupCollapsed('[filtros/apply] from=hooks/unified');
+    console.log('draftFilters', draftFilters);
+    console.groupEnd();
     setIsApplying(true);
     
     try {
