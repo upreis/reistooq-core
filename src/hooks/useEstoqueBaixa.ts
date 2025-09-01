@@ -119,7 +119,7 @@ export function useProcessarBaixaEstoque() {
         const baixas = pedidos.map(pedido => {
           // Preferir o SKU de estoque mapeado (de-para). Se não houver, cair para SKU kit e outros fallbacks
           const mapping = contextoDaUI?.mappingData?.get(pedido.id);
-          const sku = (mapping?.skuEstoque || mapping?.skuKit ||
+          const sku = (mapping?.skuKit || mapping?.skuEstoque ||
                       pedido.sku_kit || 
                       pedido.order_items?.[0]?.item?.seller_sku || 
                       pedido.itens?.[0]?.sku || 
