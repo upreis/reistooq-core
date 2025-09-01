@@ -50,6 +50,8 @@ import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';
 import { PedidosModalsSection } from './components/PedidosModalsSection';
+import { PedidosStatusBar } from './components/PedidosStatusBar';
+import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
 
 
@@ -737,21 +739,27 @@ function SimplePedidosPage({ className }: Props) {
       {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
       </PedidosHeaderSection>
 
-      {/* 🔧 SEÇÃO DE AÇÕES EM MASSA - MOVIDA PARA O TOPO E SEMPRE VISÍVEL */}
-      <PedidosBulkActionsSection
+      {/* ✅ Barra de resumo com contadores */}
+      <PedidosStatusBar 
         orders={orders}
+        quickFilter={quickFilter}
+        onQuickFilterChange={(filter) => setQuickFilter(filter)}
+        mappingData={mappingData}
+        isPedidoProcessado={isPedidoProcessado}
+      />
+
+      {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
+      <PedidosStickyActions
+        orders={orders}
+        displayedOrders={displayedOrders}
         selectedOrders={selectedOrders}
         setSelectedOrders={setSelectedOrders}
         mappingData={mappingData}
         isPedidoProcessado={isPedidoProcessado}
-        showBaixaModal={showBaixaModal}
-        setShowBaixaModal={setShowBaixaModal}
+        quickFilter={quickFilter}
         onBaixaConcluida={() => {
-          // Recarregar dados após baixa concluída
+          setSelectedOrders(new Set());
           actions.refetch();
-          verificarPedidos(orders);
-          // Reprocessar mapeamentos se necessário
-          mappingActions.reprocessMappings(orders);
         }}
       />
 
