@@ -279,6 +279,28 @@ serve(async (req) => {
       console.log(`[unified-orders:${cid}] Filtered by value range [${valorMin}, ${valorMax}]: ${filteredOrders.length} orders`);
     }
     
+    // 9) ✅ CRÍTICO: Aplicar filtros geográficos (cidade/UF)
+    if (cidade || uf) {
+      filteredOrders = filteredOrders.filter(order => {
+        // Extrair cidade e UF do shipping destination
+        const destCity = order.shipping?.destination?.shipping_address?.city?.name || '';
+        const destState = order.shipping?.destination?.shipping_address?.state?.name || '';
+        
+        // Filtro por cidade (busca parcial case-insensitive)
+        if (cidade && !destCity.toLowerCase().includes(cidade.toLowerCase())) {
+          return false;
+        }
+        
+        // Filtro por UF (busca exata)
+        if (uf && destState !== uf) {
+          return false;
+        }
+        
+        return true;
+      });
+      console.log(`[unified-orders:${cid}] Filtered by location (cidade: ${cidade}, uf: ${uf}): ${filteredOrders.length} orders`);
+    }
+    
     // Debug: log a amostra dos dados enriquecidos
     if (filteredOrders.length > 0) {
       console.log(`[unified-orders:${cid}] Sample enriched order shipping data:`, 

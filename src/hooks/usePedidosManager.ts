@@ -112,8 +112,8 @@ export function usePedidosManager(initialAccountId?: string) {
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
   const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
   
-  // ✅ CORRIGIDO: Usar filters diretamente com debounce
-  const debouncedFilters = useDebounce(filters, DEBOUNCE.FILTER_DELAY_MS);
+  // ✅ CRÍTICO: Remover debounce - usar filters diretamente
+  // const debouncedFilters = useDebounce(filters, DEBOUNCE.FILTER_DELAY_MS);
   
   // 🚀 FASE 3: Filtros salvos (localStorage)
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => {
@@ -293,9 +293,9 @@ export function usePedidosManager(initialAccountId?: string) {
     if (!orders.length) return orders;
 
     return orders.filter(order => {
-      // Filtro de busca usando debouncedFilters
-      if (debouncedFilters.search) {
-        const searchTerm = debouncedFilters.search.toLowerCase();
+      // Filtro de busca usando filters diretamente
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
         const searchableFields = [
           order.id,
           order.numero,
@@ -310,8 +310,8 @@ export function usePedidosManager(initialAccountId?: string) {
       }
 
       // 🚨 CORRIGIDO: Filtro de status usando função utilitária avançada
-      if (debouncedFilters.situacao) {
-        const selectedStatuses = Array.isArray(debouncedFilters.situacao) ? debouncedFilters.situacao : [debouncedFilters.situacao];
+      if (filters.situacao) {
+        const selectedStatuses = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
         
         // Extrair todos os status possíveis do pedido
         const orderStatuses = [
@@ -336,7 +336,7 @@ export function usePedidosManager(initialAccountId?: string) {
       }
 
       // 📅 CORRIGIDO: Filtro de data com verificação robusta
-      if (debouncedFilters.dataInicio || debouncedFilters.dataFim) {
+      if (filters.dataInicio || filters.dataFim) {
         // Tentar múltiplas fontes de data
         const possibleDates = [
           order.data_pedido,
@@ -359,8 +359,8 @@ export function usePedidosManager(initialAccountId?: string) {
         const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
         
         // Comparar data de início  
-        if (debouncedFilters.dataInicio) {
-          const startDate = normalizeDate(debouncedFilters.dataInicio);
+        if (filters.dataInicio) {
+          const startDate = normalizeDate(filters.dataInicio);
           if (startDate) {
             const startDateOnly = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
             if (orderDateOnly < startDateOnly) {
@@ -373,8 +373,8 @@ export function usePedidosManager(initialAccountId?: string) {
         }
         
         // Comparar data fim
-        if (debouncedFilters.dataFim) {
-          const endDate = normalizeDate(debouncedFilters.dataFim);
+        if (filters.dataFim) {
+          const endDate = normalizeDate(filters.dataFim);
           if (endDate) {
             const endDateOnly = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
             if (orderDateOnly > endDateOnly) {
@@ -387,23 +387,23 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Outros filtros usando debouncedFilters
-      if (debouncedFilters.cidade && !order.cidade?.toLowerCase().includes(debouncedFilters.cidade.toLowerCase())) {
+      // Outros filtros usando filters diretamente
+      if (filters.cidade && !order.cidade?.toLowerCase().includes(filters.cidade.toLowerCase())) {
         return false;
       }
-      if (debouncedFilters.uf && order.uf !== debouncedFilters.uf) {
+      if (filters.uf && order.uf !== filters.uf) {
         return false;
       }
-      if (debouncedFilters.valorMin !== undefined && (order.valor_total || 0) < debouncedFilters.valorMin) {
+      if (filters.valorMin !== undefined && (order.valor_total || 0) < filters.valorMin) {
         return false;
       }
-      if (debouncedFilters.valorMax !== undefined && (order.valor_total || 0) > debouncedFilters.valorMax) {
+      if (filters.valorMax !== undefined && (order.valor_total || 0) > filters.valorMax) {
         return false;
       }
 
       return true;
     });
-  }, [debouncedFilters]); // Dependência otimizada
+  }, [filters]); // Dependência otimizada - usar filters diretamente
 
   /**
    * 🚀 FASE 2: Cache inteligente
@@ -430,7 +430,7 @@ export function usePedidosManager(initialAccountId?: string) {
     }
     abortControllerRef.current = new AbortController();
 
-    const apiParams = buildApiParams(debouncedFilters); // ✅ CORRIGIDO: Usar debouncedFilters
+    const apiParams = buildApiParams(filters); // ✅ CORRIGIDO: Usar filters diretamente
     console.log('🔍 Parâmetros da API construídos:', apiParams);
     const cacheKey = getCacheKey(apiParams);
 
@@ -546,7 +546,7 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [integrationAccountId, debouncedFilters, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
+  }, [integrationAccountId, filters, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
 
   // 🚀 FASE 3: Exportação de dados
   const exportData = useCallback(async (format: 'csv' | 'xlsx') => {
@@ -779,14 +779,14 @@ export function usePedidosManager(initialAccountId?: string) {
     if (integrationAccountId) {
       console.log('🔄 [usePedidosManager] Disparando carregamento: filtros ou account mudaram');
       
-      // Usar filtros com debounce para evitar múltiplas requisições
+      // Usar filtros diretos com debounce para evitar múltiplas requisições
       const timeoutId = setTimeout(() => {
         loadOrders();
       }, 300); // Pequeno delay para evitar múltiplas chamadas
       
       return () => clearTimeout(timeoutId);
     }
-  }, [debouncedFilters, integrationAccountId, currentPage, pageSize]);
+  }, [filters, integrationAccountId, currentPage, pageSize]);
 
   // ✅ NOVO: Carregamento inicial automático
   useEffect(() => {
