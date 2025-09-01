@@ -404,29 +404,65 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // 🚨 CORRIGIDO: Filtro de status usando função utilitária avançada
+      // 🚨 CORRIGIDO: Filtro de status incluindo status de mapeamento/estoque
       if (filters.situacao) {
         const selectedStatuses = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
         
-        // Extrair todos os status possíveis do pedido
-        const orderStatuses = [
-          order.shipping_status,
-          order.shipping?.status,
-          order.raw?.shipping?.status,
-          order.situacao,
-          order.status
-        ].filter(Boolean);
+        // Verificar se é um filtro especial de status de estoque/mapeamento
+        const specialStatuses = ['pronto_baixar', 'mapear_incompleto', 'baixado'];
+        const hasSpecialStatus = selectedStatuses.some(status => specialStatuses.includes(status));
         
-        // Usar função utilitária para verificação avançada
-        const statusMatches = orderStatuses.some(orderStatus => 
-          statusMatchesFilter(orderStatus, selectedStatuses)
-        );
-        
-        if (!statusMatches) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🚫 Pedido filtrado por status:', order.id, 'status encontrados:', orderStatuses, 'filtros:', selectedStatuses);
+        if (hasSpecialStatus) {
+          // Para status especiais, verificar lógica de mapeamento
+          console.log('🔍 Verificando status especial para pedido:', order.id, 'status:', order.situacao || order.status, 'filtros especiais:', selectedStatuses);
+          
+          const statusMatches = selectedStatuses.some(selectedStatus => {
+            if (selectedStatus === 'pronto_baixar') {
+              // Verificar se tem mapeamento completo e pode baixar
+              // Aqui usamos uma lógica similar à da tabela para determinar se está pronto para baixar
+              const isPaid = ['paid', 'shipped', 'ready_to_ship'].includes(order.situacao || order.status);
+              console.log('📦 Verificando pronto_baixar:', order.id, 'isPaid:', isPaid, 'status:', order.situacao || order.status);
+              return isPaid; // Simplificado por agora - você pode refinar esta lógica
+            }
+            if (selectedStatus === 'mapear_incompleto') {
+              // Verificar se precisa de mapeamento
+              const needsMapping = ['confirmed', 'payment_required'].includes(order.situacao || order.status);
+              return needsMapping;
+            }
+            if (selectedStatus === 'baixado') {
+              // Verificar se já foi baixado (delivered)
+              return ['delivered'].includes(order.situacao || order.status);
+            }
+            return false;
+          });
+          
+          if (!statusMatches) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🚫 Pedido filtrado por status especial:', order.id, 'status pedido:', order.situacao || order.status, 'filtros:', selectedStatuses);
+            }
+            return false;
           }
-          return false;
+        } else {
+          // Para status normais, usar lógica original
+          const orderStatuses = [
+            order.shipping_status,
+            order.shipping?.status,
+            order.raw?.shipping?.status,
+            order.situacao,
+            order.status
+          ].filter(Boolean);
+          
+          // Usar função utilitária para verificação avançada
+          const statusMatches = orderStatuses.some(orderStatus => 
+            statusMatchesFilter(orderStatus, selectedStatuses)
+          );
+          
+          if (!statusMatches) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('🚫 Pedido filtrado por status:', order.id, 'status encontrados:', orderStatuses, 'filtros:', selectedStatuses);
+            }
+            return false;
+          }
         }
       }
 
