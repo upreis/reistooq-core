@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Search, Filter, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Settings } from 'lucide-react';
+import { Search, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -65,7 +65,6 @@ export function PedidosFiltersUnified({
   contasML = [],
   columnManager
 }: PedidosFiltersUnifiedProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [situacaoOpen, setSituacaoOpen] = useState(false);
   const [contasMLOpen, setContasMLOpen] = useState(false);
 
@@ -351,21 +350,6 @@ export function PedidosFiltersUnified({
 
         {/* Botões de ação */}
         <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex gap-2 justify-end lg:justify-start">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="relative"
-          >
-            <Filter className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Avançado</span>
-            {activeFiltersCount > 0 && (
-              <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                {activeFiltersCount}
-              </Badge>
-            )}
-          </Button>
-
           {/* Botão de Colunas */}
           {columnManager && (
             <ColumnManager 
@@ -389,81 +373,6 @@ export function PedidosFiltersUnified({
         </div>
       </div>
 
-      {/* Filtros Avançados */}
-      {showAdvanced && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
-          <div>
-            <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-              Cidade
-              <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
-            </label>
-            <Input
-              placeholder="Ex: São Paulo"
-              value={filters.cidade || ''}
-              onChange={(e) => onFilterChange('cidade', e.target.value)}
-              className={cn(
-                hasPendingChanges && filters.cidade !== appliedFilters.cidade && "border-warning"
-              )}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-              UF
-              <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
-            </label>
-            <Select 
-              value={filters.uf || ''} 
-              onValueChange={(value) => onFilterChange('uf', value || undefined)}
-            >
-              <SelectTrigger className={cn(
-                hasPendingChanges && filters.uf !== appliedFilters.uf && "border-warning"
-              )}>
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border border-border z-50">
-                {UFS.map((uf) => (
-                  <SelectItem key={uf} value={uf}>
-                    {uf}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-              Valor Mínimo
-              <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
-            </label>
-            <Input
-              type="number"
-              placeholder="0,00"
-              value={filters.valorMin || ''}
-              onChange={(e) => onFilterChange('valorMin', e.target.value ? parseFloat(e.target.value) : undefined)}
-              className={cn(
-                hasPendingChanges && filters.valorMin !== appliedFilters.valorMin && "border-warning"
-              )}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-              Valor Máximo
-              <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
-            </label>
-            <Input
-              type="number"
-              placeholder="9999,99"
-              value={filters.valorMax || ''}
-              onChange={(e) => onFilterChange('valorMax', e.target.value ? parseFloat(e.target.value) : undefined)}
-              className={cn(
-                hasPendingChanges && filters.valorMax !== appliedFilters.valorMax && "border-warning"
-              )}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Tags de filtros ativos */}
       {activeFiltersCount > 0 && (
