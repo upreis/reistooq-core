@@ -171,18 +171,25 @@ export function usePedidosManager(initialAccountId?: string) {
     if (filters.valorMin !== undefined) params.valorMin = filters.valorMin;
     if (filters.valorMax !== undefined) params.valorMax = filters.valorMax;
 
-    // 🚨 CRÍTICO: Conta ML TEM PRIORIDADE ABSOLUTA - se múltiplas, usar a primeira
+    // 🚨 CRÍTICO: CORREÇÃO - Suportar múltiplas contas ML
     let targetAccountId = integrationAccountId;
     if (filters.contasML && filters.contasML.length > 0) {
-      targetAccountId = filters.contasML[0]; // Usar primeira conta selecionada
-      if (filters.contasML.length > 1) {
-        console.warn('⚠️ Múltiplas contas ML selecionadas, usando apenas a primeira:', filters.contasML[0]);
+      // ✅ AUDITORIA FIX: Suportar múltiplas contas ML via array
+      if (filters.contasML.length === 1) {
+        targetAccountId = filters.contasML[0];
+      } else {
+        // Para múltiplas contas, usar array (edge function suporta)
+        params.integration_account_ids = filters.contasML;
+        targetAccountId = null; // Não usar single account quando temos múltiplas
       }
     }
     
-    // ✅ GARANTIR: integration_account_id sempre presente
+    // ✅ GARANTIR: integration_account_id OU integration_account_ids sempre presente
     if (targetAccountId) {
       params.integration_account_id = targetAccountId;
+    } else if (!params.integration_account_ids) {
+      // Fallback para conta padrão se nenhuma específica foi selecionada
+      params.integration_account_id = integrationAccountId;
     }
 
     console.log('🔧 [buildApiParams] Parâmetros finais:', params);
@@ -208,48 +215,113 @@ export function usePedidosManager(initialAccountId?: string) {
   }, []);
 
   /**
-   * Carrega pedidos da API unified-orders
+   * Carrega pedidos da API unified-orders - COM SUPORTE A MÚLTIPLAS CONTAS
    */
   const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
     const { shipping_status, ...rest } = apiParams || {};
-    // 🔧 AUDITORIA: Construir body da requisição com validação
-    if (!integrationAccountId) {
+    
+    // 🚨 AUDITORIA FIX: Suporte a múltiplas contas ML
+    if (apiParams.integration_account_ids && Array.isArray(apiParams.integration_account_ids)) {
+      console.log(`🔄 [AUDITORIA] Processando ${apiParams.integration_account_ids.length} contas ML:`, apiParams.integration_account_ids);
+      
+      // Fazer uma chamada para cada conta e combinar resultados
+      const allResults: any[] = [];
+      const allUnified: any[] = [];
+      let totalCount = 0;
+      
+      for (const accountId of apiParams.integration_account_ids) {
+        try {
+          const singleAccountBody = {
+            integration_account_id: accountId,
+            limit: pageSize,
+            offset: (currentPage - 1) * pageSize,
+            ...(shipping_status ? { shipping_status } : {}),
+            ...(rest.q ? { q: rest.q, search: rest.q } : {}),
+            ...(rest.cidade ? { cidade: rest.cidade } : {}),
+            ...(rest.uf ? { uf: rest.uf } : {}),
+            ...(rest.valorMin !== undefined ? { valorMin: rest.valorMin } : {}),
+            ...(rest.valorMax !== undefined ? { valorMax: rest.valorMax } : {}),
+            ...(rest.date_from ? { date_from: rest.date_from } : {}),
+            ...(rest.date_to ? { date_to: rest.date_to } : {}),
+            ...getUrlParams(),
+            enrich: true,
+            include_shipping: true,
+            enrich_skus: true,
+            include_skus: true
+          };
+          
+          console.log(`📤 [CONTA ${accountId}] Enviando requisição:`, singleAccountBody);
+          
+          const { data, error } = await supabase.functions.invoke('unified-orders', {
+            body: singleAccountBody
+          });
+          
+          if (error) {
+            console.error(`❌ [CONTA ${accountId}] Erro:`, error);
+            continue; // Pular conta com erro, mas não falhar tudo
+          }
+          
+          if (data?.ok) {
+            const accountResults = data.results || [];
+            const accountUnified = data.unified || [];
+            
+            // Marcar resultados com a conta de origem
+            accountResults.forEach((result: any) => {
+              result._source_account = accountId;
+            });
+            accountUnified.forEach((unified: any) => {
+              unified._source_account = accountId;
+            });
+            
+            allResults.push(...accountResults);
+            allUnified.push(...accountUnified);
+            totalCount += data.paging?.total || data.paging?.count || accountResults.length || 0;
+            
+            console.log(`✅ [CONTA ${accountId}] ${accountResults.length} pedidos encontrados`);
+          }
+        } catch (accountError) {
+          console.error(`❌ [CONTA ${accountId}] Falha na requisição:`, accountError);
+          // Continuar com outras contas mesmo se uma falhar
+        }
+      }
+      
+      console.log(`🎯 [AUDITORIA] Total combinado: ${allResults.length} pedidos de ${apiParams.integration_account_ids.length} contas`);
+      
+      return {
+        results: allResults,
+        unified: allUnified,
+        total: totalCount,
+        paging: { total: totalCount, limit: pageSize, offset: (currentPage - 1) * pageSize },
+        serverStatusApplied: Boolean(shipping_status),
+        _multiAccount: true
+      };
+    }
+    
+    // 🔧 AUDITORIA: Lógica original para conta única
+    if (!integrationAccountId && !apiParams.integration_account_id) {
       throw new Error('integration_account_id é obrigatório mas não foi fornecido');
     }
 
     const requestBody = {
-      // 🏢 CRÍTICO: integration_account_id - priorizar filtro de contasML
       integration_account_id: apiParams.integration_account_id || integrationAccountId,
-      
-      // 📊 Paginação
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
-      
-      // 🔍 Filtros principais - MAPEAMENTO CORRIGIDO
       ...(shipping_status ? { shipping_status } : {}),
-      ...(rest.q ? { q: rest.q, search: rest.q } : {}), // Busca em ambos os campos
+      ...(rest.q ? { q: rest.q, search: rest.q } : {}),
       ...(rest.cidade ? { cidade: rest.cidade } : {}),
       ...(rest.uf ? { uf: rest.uf } : {}),
       ...(rest.valorMin !== undefined ? { valorMin: rest.valorMin } : {}),
       ...(rest.valorMax !== undefined ? { valorMax: rest.valorMax } : {}),
-      
-      // 📅 Datas - usar os nomes corretos da API
       ...(rest.date_from ? { date_from: rest.date_from } : {}),
       ...(rest.date_to ? { date_to: rest.date_to } : {}),
-      
-      // 🌐 URL params têm prioridade sobre filtros
       ...getUrlParams(),
-      
-      // 📦 Enriquecimento de dados
       enrich: true,
       include_shipping: true,
       enrich_skus: true,
       include_skus: true
     } as any;
     
-    console.log('📤 Enviando requisição para unified-orders:', requestBody);
-
-    // P1.2: Remover logs sensíveis que expõem dados do sistema
+    console.log('📤 Enviando requisição para unified-orders (conta única):', requestBody);
 
     const { data, error } = await supabase.functions.invoke('unified-orders', {
       body: requestBody
