@@ -88,19 +88,20 @@ export function ComposicoesEstoque() {
           </div>
         </CardHeader>
         <CardContent className="p-4">
+          {/* Nome do Produto Principal */}
           <h3 className="font-semibold mb-2 line-clamp-2">{product.nome}</h3>
-          <p className="text-xs text-muted-foreground mb-2">
-            SKU: {product.sku_interno}
-          </p>
-          {product.categoria && (
-            <p className="text-xs text-muted-foreground mb-3">{product.categoria}</p>
-          )}
           
-          {/* Composições */}
+          {/* SKU Pai */}
+          <div className="mb-3">
+            <p className="text-xs text-muted-foreground mb-1">SKU Pai:</p>
+            <p className="text-sm font-medium text-foreground">{product.sku_interno}</p>
+          </div>
+          
+          {/* SKUs Filhos - Composições */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 mb-2">
               <Boxes className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Composição</span>
+              <span className="text-sm font-medium">SKUs Filhos</span>
             </div>
             
             {composicoes && composicoes.length > 0 ? (
@@ -109,18 +110,24 @@ export function ComposicoesEstoque() {
                 <div className="space-y-1">
                   <div className="font-medium text-muted-foreground mb-1">Item</div>
                   {composicoes.map((comp, index) => (
-                    <div key={index} className="text-foreground">
+                    <div key={index} className="text-foreground font-medium">
                       {comp.nome_componente}
+                      <div className="text-xs text-muted-foreground">
+                        SKU: {comp.sku_componente}
+                      </div>
                     </div>
                   ))}
                 </div>
                 
-                {/* Coluna 2: Quantidades */}
+                {/* Coluna 2: Quantidades e Unidade */}
                 <div className="space-y-1">
                   <div className="font-medium text-muted-foreground mb-1">Qtd/Un</div>
                   {composicoes.map((comp, index) => (
                     <div key={index} className="text-foreground">
-                      {comp.quantidade} {comp.unidade_medida}
+                      <div className="font-medium">{comp.quantidade}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {comp.unidade_medida}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -141,12 +148,10 @@ export function ComposicoesEstoque() {
             )}
           </div>
           
-          <div className="mt-3 pt-3 border-t flex items-center justify-between">
+          {/* Informações do Estoque - sem preço */}
+          <div className="mt-3 pt-3 border-t">
             <span className="text-xs text-muted-foreground">
-              Estoque: {product.quantidade_atual}
-            </span>
-            <span className="text-sm font-medium">
-              R$ {product.preco_venda?.toFixed(2) || "0,00"}
+              Estoque Disponível: <span className="font-medium text-foreground">{product.quantidade_atual}</span>
             </span>
           </div>
         </CardContent>
