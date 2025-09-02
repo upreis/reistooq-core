@@ -209,24 +209,36 @@ export function ComposicoesEstoque() {
                   {/* Lista simplificada dos componentes */}
                   <div className="space-y-2">
                     <div className="text-xs font-medium text-muted-foreground">Componentes necessários:</div>
+                    
+                    {/* Cabeçalho das colunas */}
+                    <div className="grid grid-cols-3 gap-2 text-[10px] font-medium text-muted-foreground border-b pb-1">
+                      <div>SKU</div>
+                      <div className="text-right">Custo Uni</div>
+                      <div className="text-right">Qtd</div>
+                    </div>
+                    
                     <div className="space-y-1">
                       {composicoes.map((comp, index) => {
                         const isLimitante = componenteLimitante?.sku === comp.sku_componente;
+                        const custoUnitario = custosProdutos[comp.sku_componente] || 0;
                         return (
-                          <div key={index} className="flex items-center justify-between text-xs">
+                          <div key={index} className="grid grid-cols-3 gap-2 items-center text-xs">
                             <div className="flex items-center gap-2">
                               <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5">
                                 {comp.sku_componente}
                               </Badge>
                               {isLimitante && (
-                                <span className="text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded font-medium">
+                                <span className="text-[9px] bg-destructive/10 text-destructive px-1 py-0.5 rounded font-medium">
                                   LIMITANTE
                                 </span>
                               )}
                             </div>
-                            <span className="text-muted-foreground">
+                            <div className="text-right text-muted-foreground">
+                              {formatMoney(custoUnitario)}
+                            </div>
+                            <div className="text-right text-muted-foreground">
                               {comp.quantidade}x
-                            </span>
+                            </div>
                           </div>
                         );
                       })}
