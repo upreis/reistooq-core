@@ -199,181 +199,220 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
 
         <div className="space-y-4">
           {/* Lista de Composições */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             {formComposicoes.map((composicao, index) => (
-              <Card key={index} className="border-l-4 border-l-primary">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Componente #{index + 1}</h4>
+              <Card key={index} className="group hover:shadow-md transition-all duration-200 border border-border/60 bg-card/50">
+                <CardContent className="p-6">
+                  {/* Header com informações principais */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Package className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-base">Componente #{index + 1}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {composicao.nome_componente || "Nome não definido"}
+                        </p>
+                      </div>
+                    </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => removerComposicao(index)}
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor={`sku-${index}`}>SKU do Componente</Label>
-                      <Popover open={skuOpenIndex === index} onOpenChange={(open) => { setSkuOpenIndex(open ? index : null); if (open) { setSkuSearch((prev) => { const next = [...prev]; next[index] = formComposicoes[index]?.sku_componente || ""; return next; }); } }}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={skuOpenIndex === index}
-                            className="w-full justify-between"
-                            onClick={() => setSkuOpenIndex(index)}
-                          >
-                            {composicao.sku_componente || "Selecione ou digite um SKU..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent onWheelCapture={(e) => e.stopPropagation()} className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg overscroll-contain">
-                          <Command className="bg-background text-foreground">
-                            <CommandInput 
-                              placeholder="Buscar por SKU..." 
-                              value={skuSearch[index] ?? ""}
-                              onValueChange={(value) => {
-                                setSkuSearch((prev) => {
-                                  const next = [...prev];
-                                  next[index] = value;
-                                  return next;
-                                });
-                              }}
-                            />
-                             <CommandList className="max-h-60 overflow-y-auto overscroll-contain touch-pan-y bg-background">
-                              <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
-                              <CommandGroup>
-                                {availableProducts
-                                  .filter(product => 
-                                    product.sku_interno.toLowerCase().includes((skuSearch[index] ?? "").toLowerCase())
-                                  )
-                                  .map((product) => (
-                                    <CommandItem
-                                      key={product.id}
-                                      value={product.sku_interno}
-                                      onSelect={() => {
-                                        atualizarComposicao(index, 'sku_componente', product.sku_interno);
-                                        atualizarComposicao(index, 'nome_componente', product.nome);
-                                        setSkuSearch((prev) => {
-                                          const next = [...prev];
-                                          next[index] = product.sku_interno;
-                                          return next;
-                                        });
-                                        setSkuOpenIndex(null);
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          composicao.sku_componente === product.sku_interno ? "opacity-100" : "opacity-0"
-                                        )}
-                                      />
-                                      <div>
-                                        <div className="font-medium">{product.sku_interno}</div>
-                                        <div className="text-sm text-muted-foreground">{product.nome}</div>
-                                      </div>
-                                    </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+
+                  {/* Informações do SKU em destaque */}
+                  {composicao.sku_componente && (
+                    <div className="mb-4 p-3 rounded-lg bg-muted/50 border">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">SKU Componente</Label>
+                          <p className="text-lg font-mono font-semibold">{composicao.sku_componente}</p>
+                        </div>
+                        <div className="text-right">
+                          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Quantidade</Label>
+                          <p className="text-lg font-semibold">
+                            {composicao.quantidade} <span className="text-sm text-muted-foreground">{composicao.unidade_medida}</span>
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor={`nome-${index}`}>Nome do Componente</Label>
-                      <Popover open={nomeOpenIndex === index} onOpenChange={(open) => { setNomeOpenIndex(open ? index : null); if (open) { setNomeSearch((prev) => { const next = [...prev]; next[index] = formComposicoes[index]?.nome_componente || ""; return next; }); } }}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={nomeOpenIndex === index}
-                            className="w-full justify-between"
-                            onClick={() => setNomeOpenIndex(index)}
-                          >
-                            {composicao.nome_componente || "Selecione ou digite um nome..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent onWheelCapture={(e) => e.stopPropagation()} className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg overscroll-contain">
-                          <Command className="bg-background text-foreground">
-                            <CommandInput 
-                              placeholder="Buscar por nome..." 
-                              value={nomeSearch[index] ?? ""}
-                              onValueChange={(value) => {
-                                setNomeSearch((prev) => {
-                                  const next = [...prev];
-                                  next[index] = value;
-                                  return next;
-                                });
-                              }}
-                            />
-                            <CommandList className="max-h-60 overflow-y-auto overscroll-contain touch-pan-y bg-background">
-                              <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
-                              <CommandGroup>
-                                {availableProducts
-                                  .filter(product => 
-                                    product.nome.toLowerCase().includes((nomeSearch[index] ?? "").toLowerCase())
-                                  )
-                                  .map((product) => (
-                                    <CommandItem
-                                      key={product.id}
-                                      value={product.nome}
-                                      onSelect={() => {
-                                        atualizarComposicao(index, 'nome_componente', product.nome);
-                                        atualizarComposicao(index, 'sku_componente', product.sku_interno);
-                                        setNomeSearch((prev) => {
-                                          const next = [...prev];
-                                          next[index] = product.nome;
-                                          return next;
-                                        });
-                                        setNomeOpenIndex(null);
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          composicao.nome_componente === product.nome ? "opacity-100" : "opacity-0"
-                                        )}
-                                      />
-                                      <div>
-                                        <div className="font-medium">{product.nome}</div>
-                                        <div className="text-sm text-muted-foreground">{product.sku_interno}</div>
-                                      </div>
-                                    </CommandItem>
-                                  ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                  )}
+
+                  {/* Campos de edição */}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`sku-${index}`} className="text-sm font-medium">SKU do Componente</Label>
+                        <Popover open={skuOpenIndex === index} onOpenChange={(open) => { setSkuOpenIndex(open ? index : null); if (open) { setSkuSearch((prev) => { const next = [...prev]; next[index] = formComposicoes[index]?.sku_componente || ""; return next; }); } }}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={skuOpenIndex === index}
+                              className="w-full justify-between text-left font-normal"
+                              onClick={() => setSkuOpenIndex(index)}
+                            >
+                              <span className="truncate">
+                                {composicao.sku_componente || "Selecione ou digite um SKU..."}
+                              </span>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent onWheelCapture={(e) => e.stopPropagation()} className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg overscroll-contain">
+                            <Command className="bg-background text-foreground">
+                              <CommandInput 
+                                placeholder="Buscar por SKU..." 
+                                value={skuSearch[index] ?? ""}
+                                onValueChange={(value) => {
+                                  setSkuSearch((prev) => {
+                                    const next = [...prev];
+                                    next[index] = value;
+                                    return next;
+                                  });
+                                }}
+                              />
+                               <CommandList className="max-h-60 overflow-y-auto overscroll-contain touch-pan-y bg-background">
+                                <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableProducts
+                                    .filter(product => 
+                                      product.sku_interno.toLowerCase().includes((skuSearch[index] ?? "").toLowerCase())
+                                    )
+                                    .map((product) => (
+                                      <CommandItem
+                                        key={product.id}
+                                        value={product.sku_interno}
+                                        onSelect={() => {
+                                          atualizarComposicao(index, 'sku_componente', product.sku_interno);
+                                          atualizarComposicao(index, 'nome_componente', product.nome);
+                                          setSkuSearch((prev) => {
+                                            const next = [...prev];
+                                            next[index] = product.sku_interno;
+                                            return next;
+                                          });
+                                          setSkuOpenIndex(null);
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            composicao.sku_componente === product.sku_interno ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        <div>
+                                          <div className="font-medium">{product.sku_interno}</div>
+                                          <div className="text-sm text-muted-foreground">{product.nome}</div>
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`nome-${index}`} className="text-sm font-medium">Nome do Componente</Label>
+                        <Popover open={nomeOpenIndex === index} onOpenChange={(open) => { setNomeOpenIndex(open ? index : null); if (open) { setNomeSearch((prev) => { const next = [...prev]; next[index] = formComposicoes[index]?.nome_componente || ""; return next; }); } }}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={nomeOpenIndex === index}
+                              className="w-full justify-between text-left font-normal"
+                              onClick={() => setNomeOpenIndex(index)}
+                            >
+                              <span className="truncate">
+                                {composicao.nome_componente || "Selecione ou digite um nome..."}
+                              </span>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent onWheelCapture={(e) => e.stopPropagation()} className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg overscroll-contain">
+                            <Command className="bg-background text-foreground">
+                              <CommandInput 
+                                placeholder="Buscar por nome..." 
+                                value={nomeSearch[index] ?? ""}
+                                onValueChange={(value) => {
+                                  setNomeSearch((prev) => {
+                                    const next = [...prev];
+                                    next[index] = value;
+                                    return next;
+                                  });
+                                }}
+                              />
+                              <CommandList className="max-h-60 overflow-y-auto overscroll-contain touch-pan-y bg-background">
+                                <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                  {availableProducts
+                                    .filter(product => 
+                                      product.nome.toLowerCase().includes((nomeSearch[index] ?? "").toLowerCase())
+                                    )
+                                    .map((product) => (
+                                      <CommandItem
+                                        key={product.id}
+                                        value={product.nome}
+                                        onSelect={() => {
+                                          atualizarComposicao(index, 'nome_componente', product.nome);
+                                          atualizarComposicao(index, 'sku_componente', product.sku_interno);
+                                          setNomeSearch((prev) => {
+                                            const next = [...prev];
+                                            next[index] = product.nome;
+                                            return next;
+                                          });
+                                          setNomeOpenIndex(null);
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            composicao.nome_componente === product.nome ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        <div>
+                                          <div className="font-medium">{product.nome}</div>
+                                          <div className="text-sm text-muted-foreground">{product.sku_interno}</div>
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor={`quantidade-${index}`}>Quantidade</Label>
-                      <Input
-                        id={`quantidade-${index}`}
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        value={composicao.quantidade}
-                        onChange={(e) => atualizarComposicao(index, 'quantidade', parseFloat(e.target.value) || 0)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor={`unidade-${index}`}>Unidade de Medida</Label>
-                      <Input
-                        id={`unidade-${index}`}
-                        value={composicao.unidade_medida}
-                        onChange={(e) => atualizarComposicao(index, 'unidade_medida', e.target.value)}
-                        placeholder="Ex: UN, KG, M"
-                      />
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor={`quantidade-${index}`} className="text-sm font-medium">Quantidade</Label>
+                        <Input
+                          id={`quantidade-${index}`}
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={composicao.quantidade}
+                          onChange={(e) => atualizarComposicao(index, 'quantidade', parseFloat(e.target.value) || 0)}
+                          className="text-lg font-semibold"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor={`unidade-${index}`} className="text-sm font-medium">Unidade de Medida</Label>
+                        <Input
+                          id={`unidade-${index}`}
+                          value={composicao.unidade_medida}
+                          onChange={(e) => atualizarComposicao(index, 'unidade_medida', e.target.value)}
+                          placeholder="Ex: UN, KG, M"
+                          className="font-medium"
+                        />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
