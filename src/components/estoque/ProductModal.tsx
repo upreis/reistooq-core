@@ -248,11 +248,22 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
 
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao salvar produto:', error);
+      
+      let errorMessage = "Erro ao salvar produto. Tente novamente.";
+      
+      if (error?.code === "23505") {
+        if (error.message?.includes("produtos_codigo_barras_unique_idx")) {
+          errorMessage = "Este código de barras já está sendo usado por outro produto.";
+        } else if (error.message?.includes("produtos_sku_interno_unique")) {
+          errorMessage = "Este SKU interno já está sendo usado por outro produto.";
+        }
+      }
+      
       toast({
         title: "Erro",
-        description: "Erro ao salvar produto. Tente novamente.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
