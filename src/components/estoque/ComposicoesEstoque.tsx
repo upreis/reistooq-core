@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Boxes, Edit } from "lucide-react";
+import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
 import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
 import { ShopProduct } from "@/features/shop/types/shop.types";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
@@ -24,6 +24,7 @@ export function ComposicoesEstoque() {
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState<ShopProduct | null>(null);
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   const {
     products,
@@ -51,6 +52,16 @@ export function ComposicoesEstoque() {
 
   const handleSalvarComposicoes = () => {
     loadComposicoes(); // Recarrega as composições
+  };
+
+  const toggleCardExpansion = (productId: string) => {
+    const newExpanded = new Set(expandedCards);
+    if (newExpanded.has(productId)) {
+      newExpanded.delete(productId);
+    } else {
+      newExpanded.add(productId);
+    }
+    setExpandedCards(newExpanded);
   };
 
   // Sync local state with hook filters
@@ -134,6 +145,8 @@ export function ComposicoesEstoque() {
       estoqueDisponivel = menorEstoquePossivel === Infinity ? 0 : menorEstoquePossivel;
     }
 
+    const isExpanded = expandedCards.has(product.id);
+
     return (
       <Card key={product.id} className="group hover:shadow-lg transition-shadow">
         <CardContent className="p-5">
@@ -146,55 +159,141 @@ export function ComposicoesEstoque() {
           </header>
 
           <section className="space-y-3">
+            {/* Resumo da composição */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Boxes className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">SKUs Filhos</span>
-                <span className="text-xs text-muted-foreground">{(composicoes?.length || 0)} itens</span>
+                <span className="text-sm font-medium">Composição</span>
+                <span className="text-xs text-muted-foreground">{(composicoes?.length || 0)} componentes</span>
               </div>
+              
+              {/* Status do estoque */}
+              {composicoes && composicoes.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {componenteLimitante ? (
+                    <div className="flex items-center gap-1 text-orange-600">
+                      <AlertTriangle className="h-3 w-3" />
+                      <span className="text-xs font-medium">Limitado</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1 text-green-600">
+                      <CheckCircle className="h-3 w-3" />
+                      <span className="text-xs font-medium">Disponível</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
+            {/* Informações principais sempre visíveis */}
             {composicoes && composicoes.length > 0 ? (
-              <ul className="rounded-md border bg-card/50 divide-y">
-                {composicoes.map((comp, index) => {
-                  const custoUnitario = custosProdutos[comp.sku_componente] || 0;
-                  const custoTotalItem = custoUnitario * comp.quantidade;
-                  const estoqueComponente = comp.estoque_componente || 0;
-                  const possiveisUnidades = Math.floor(estoqueComponente / comp.quantidade);
-                  const isLimitante = componenteLimitante?.sku === comp.sku_componente;
+              <div className="space-y-3">
+                {/* Resumo compacto */}
+                <div className="bg-card/50 rounded-md border p-3">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Custo Total:</span>
+                      <div className="font-semibold text-[var(--brand-yellow)] px-2 py-1 rounded bg-[var(--brand-yellow)]/10 inline-block ml-2">
+                        {formatMoney(custoTotal)}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Pode Produzir:</span>
+                      <div className="font-semibold text-[var(--brand-yellow)] px-2 py-1 rounded bg-[var(--brand-yellow)]/10 inline-block ml-2">
+                        {estoqueDisponivel} unid.
+                      </div>
+                    </div>
+                  </div>
                   
-                  return (
-                    <li key={index} className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 p-3 ${isLimitante ? 'bg-yellow-50 border-l-2 border-l-yellow-400' : ''}`}>
-                      <div>
-                        <div className="text-sm font-medium text-foreground flex items-center gap-2">
-                          {comp.nome_componente}
-                          {isLimitante && (
-                            <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-medium">
-                              LIMITANTE
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground">SKU: {comp.sku_componente}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Estoque: {estoqueComponente} | Pode fazer: {possiveisUnidades}
-                        </div>
+                  {/* Aviso do componente limitante */}
+                  {componenteLimitante && (
+                    <div className="mt-2 pt-2 border-t border-orange-200 bg-orange-50 rounded p-2">
+                      <div className="flex items-center gap-2 text-orange-700">
+                        <AlertTriangle className="h-3 w-3" />
+                        <span className="text-xs font-medium">
+                          Limitado por: {componenteLimitante.nome} 
+                          <span className="text-orange-600 ml-1">
+                            ({componenteLimitante.estoque} disponível, precisa {componenteLimitante.necessario})
+                          </span>
+                        </span>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold">{comp.quantidade}</div>
-                        <div className="text-xs text-muted-foreground">un</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold">{formatMoney(custoUnitario)}</div>
-                        <div className="text-xs text-muted-foreground">custo unit.</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold">{formatMoney(custoTotalItem)}</div>
-                        <div className="text-xs text-muted-foreground">total</div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Botão para expandir detalhes */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => toggleCardExpansion(product.id)}
+                  className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {isExpanded ? (
+                    <>
+                      <ChevronUp className="h-3 w-3 mr-1" />
+                      Ocultar detalhes dos componentes
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3 w-3 mr-1" />
+                      Ver detalhes dos componentes
+                    </>
+                  )}
+                </Button>
+
+                {/* Detalhes expandíveis */}
+                {isExpanded && (
+                  <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+                    <div className="text-xs font-medium text-muted-foreground mb-2">Detalhamento por componente:</div>
+                    <ul className="rounded-md border bg-card/30 divide-y">
+                      {composicoes.map((comp, index) => {
+                        const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+                        const custoTotalItem = custoUnitario * comp.quantidade;
+                        const estoqueComponente = comp.estoque_componente || 0;
+                        const possiveisUnidades = Math.floor(estoqueComponente / comp.quantidade);
+                        const isLimitante = componenteLimitante?.sku === comp.sku_componente;
+                        
+                        return (
+                          <li key={index} className={`p-3 space-y-2 ${isLimitante ? 'bg-orange-50 border-l-2 border-l-orange-400' : ''}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-medium text-foreground">{comp.nome_componente}</div>
+                                {isLimitante && (
+                                  <span className="text-xs bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded font-medium">
+                                    LIMITANTE
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                SKU: {comp.sku_componente}
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-4 gap-2 text-xs">
+                              <div className="text-center">
+                                <div className="text-muted-foreground">Necessário</div>
+                                <div className="font-semibold">{comp.quantidade}</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-muted-foreground">Em Estoque</div>
+                                <div className="font-semibold">{estoqueComponente}</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-muted-foreground">Pode Fazer</div>
+                                <div className="font-semibold">{possiveisUnidades}</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-muted-foreground">Custo</div>
+                                <div className="font-semibold">{formatMoney(custoTotalItem)}</div>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="text-xs text-muted-foreground italic border-2 border-dashed border-border rounded-lg p-3 text-center">
                 Nenhuma composição cadastrada
@@ -222,24 +321,6 @@ export function ComposicoesEstoque() {
               </Button>
             </div>
           </section>
-
-          <footer className="mt-3 pt-3 border-t space-y-2">
-            {composicoes && composicoes.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                <span>Custo Total: </span>
-                <span className="font-semibold text-[var(--brand-yellow)] px-2 py-1 rounded">{formatMoney(custoTotal)}</span>
-              </div>
-            )}
-            <div className="text-xs text-muted-foreground">
-              <span>Estoque Disponível: </span>
-              <span className="font-medium text-[var(--brand-yellow)] px-2 py-1 rounded">{estoqueDisponivel}</span>
-              {componenteLimitante && (
-                <div className="mt-1 text-xs text-orange-600">
-                  Limitado por: <span className="font-medium">{componenteLimitante.nome}</span> ({componenteLimitante.estoque} disponível, precisa {componenteLimitante.necessario})
-                </div>
-              )}
-            </div>
-          </footer>
         </CardContent>
       </Card>
     );
