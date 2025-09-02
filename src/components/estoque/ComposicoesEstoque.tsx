@@ -188,12 +188,12 @@ export function ComposicoesEstoque() {
             {composicoes && composicoes.length > 0 && (
               <div className="text-sm text-muted-foreground">
                 <span>Custo Total: </span>
-                <span className="font-semibold text-foreground">{formatMoney(custoTotal)}</span>
+                <span className="font-semibold text-[hsl(var(--brand-yellow))] bg-[hsl(var(--brand-yellow)_/_0.1)] px-2 py-1 rounded">{formatMoney(custoTotal)}</span>
               </div>
             )}
             <div className="text-xs text-muted-foreground">
               <span>Estoque Disponível: </span>
-              <span className="font-medium text-foreground">{product.quantidade_atual}</span>
+              <span className="font-medium text-[hsl(var(--brand-yellow))] bg-[hsl(var(--brand-yellow)_/_0.1)] px-2 py-1 rounded">{product.quantidade_atual}</span>
             </div>
           </footer>
         </CardContent>
