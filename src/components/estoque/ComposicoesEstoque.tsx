@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
 import { ShopProduct } from "@/features/shop/types/shop.types";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
@@ -171,10 +172,21 @@ export function ComposicoesEstoque() {
               {composicoes && composicoes.length > 0 && (
                 <div className="flex items-center gap-2">
                   {componenteLimitante ? (
-                    <div className="flex items-center gap-1 text-orange-600">
-                      <AlertTriangle className="h-3 w-3" />
-                      <span className="text-xs font-medium">Limitado</span>
-                    </div>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-1 text-orange-600 cursor-help">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span className="text-xs font-medium">Limitado</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">
+                            Limitado por {componenteLimitante.nome}: {componenteLimitante.estoque} disponível, precisa {componenteLimitante.necessario}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ) : (
                     <div className="flex items-center gap-1 text-green-600">
                       <CheckCircle className="h-3 w-3" />
@@ -247,17 +259,6 @@ export function ComposicoesEstoque() {
                     </div>
                   </div>
 
-                  {/* Aviso do componente limitante */}
-                  {componenteLimitante && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-3 w-3 text-destructive" />
-                        <span className="text-xs text-destructive font-medium">
-                          Limitado por {componenteLimitante.nome}: {componenteLimitante.estoque} disponível, precisa {componenteLimitante.necessario}
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Botão para expandir detalhes */}
