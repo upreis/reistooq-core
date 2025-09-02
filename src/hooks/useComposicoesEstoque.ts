@@ -12,6 +12,7 @@ export interface ProdutoComponente {
   organization_id: string;
   created_at: string;
   updated_at: string;
+  estoque_componente?: number; // Estoque disponível do componente
 }
 
 export interface ComposicaoEstoque {
@@ -30,11 +31,13 @@ export function useComposicoesEstoque() {
     return composicoes[skuProduto] || [];
   }, [composicoes]);
 
-  // Carregar todas as composições com unidades de medida
+  // Carregar todas as composições com unidades de medida e estoque dos componentes
   const loadComposicoes = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Primeiro buscar as composições
+      const { data: composicoesData, error: composicoesError } = await supabase
         .from('produto_componentes')
         .select(`
           *,
@@ -47,15 +50,45 @@ export function useComposicoesEstoque() {
         `)
         .order('sku_produto', { ascending: true });
 
-      if (error) throw error;
+      if (composicoesError) throw composicoesError;
+
+      // Buscar os SKUs únicos dos componentes
+      const skusComponentes = Array.from(new Set(
+        composicoesData?.map(comp => comp.sku_componente) || []
+      ));
+
+      // Buscar informações dos produtos componentes
+      const { data: produtosData, error: produtosError } = await supabase
+        .from('produtos')
+        .select('sku_interno, nome, quantidade_atual')
+        .in('sku_interno', skusComponentes);
+
+      if (produtosError) throw produtosError;
+
+      // Criar mapa de produtos para lookup rápido
+      const produtosMap = new Map();
+      produtosData?.forEach(produto => {
+        produtosMap.set(produto.sku_interno, produto);
+      });
 
       // Agrupar por SKU do produto
       const groupedComposicoes: Record<string, ProdutoComponente[]> = {};
-      data?.forEach((composicao) => {
+      composicoesData?.forEach((composicao: any) => {
         if (!groupedComposicoes[composicao.sku_produto]) {
           groupedComposicoes[composicao.sku_produto] = [];
         }
-        groupedComposicoes[composicao.sku_produto].push(composicao as ProdutoComponente);
+        
+        // Buscar informações do produto componente
+        const produtoComponente = produtosMap.get(composicao.sku_componente);
+        
+        // Adicionar informações do estoque do componente
+        const componenteComEstoque: ProdutoComponente = {
+          ...composicao,
+          nome_componente: produtoComponente?.nome || composicao.sku_componente,
+          estoque_componente: produtoComponente?.quantidade_atual || 0
+        };
+        
+        groupedComposicoes[composicao.sku_produto].push(componenteComEstoque);
       });
 
       setComposicoes(groupedComposicoes);

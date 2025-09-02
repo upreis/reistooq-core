@@ -108,6 +108,32 @@ export function ComposicoesEstoque() {
       return total + (custoUnitario * comp.quantidade);
     }, 0) || 0;
 
+    // Calcular estoque disponível baseado nos componentes
+    let estoqueDisponivel = product.quantidade_atual;
+    let componenteLimitante = null;
+    
+    if (composicoes && composicoes.length > 0) {
+      let menorEstoquePossivel = Infinity;
+      
+      for (const comp of composicoes) {
+        const estoqueComponente = comp.estoque_componente || 0;
+        const quantidadeNecessaria = comp.quantidade;
+        const possiveisUnidades = Math.floor(estoqueComponente / quantidadeNecessaria);
+        
+        if (possiveisUnidades < menorEstoquePossivel) {
+          menorEstoquePossivel = possiveisUnidades;
+          componenteLimitante = {
+            nome: comp.nome_componente,
+            sku: comp.sku_componente,
+            estoque: estoqueComponente,
+            necessario: quantidadeNecessaria
+          };
+        }
+      }
+      
+      estoqueDisponivel = menorEstoquePossivel === Infinity ? 0 : menorEstoquePossivel;
+    }
+
     return (
       <Card key={product.id} className="group hover:shadow-lg transition-shadow">
         <CardContent className="p-5">
@@ -133,12 +159,25 @@ export function ComposicoesEstoque() {
                 {composicoes.map((comp, index) => {
                   const custoUnitario = custosProdutos[comp.sku_componente] || 0;
                   const custoTotalItem = custoUnitario * comp.quantidade;
+                  const estoqueComponente = comp.estoque_componente || 0;
+                  const possiveisUnidades = Math.floor(estoqueComponente / comp.quantidade);
+                  const isLimitante = componenteLimitante?.sku === comp.sku_componente;
                   
                   return (
-                    <li key={index} className="grid grid-cols-[1fr_auto_auto_auto] gap-3 p-3">
+                    <li key={index} className={`grid grid-cols-[1fr_auto_auto_auto_auto] gap-3 p-3 ${isLimitante ? 'bg-yellow-50 border-l-2 border-l-yellow-400' : ''}`}>
                       <div>
-                        <div className="text-sm font-medium text-foreground">{comp.nome_componente}</div>
+                        <div className="text-sm font-medium text-foreground flex items-center gap-2">
+                          {comp.nome_componente}
+                          {isLimitante && (
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-medium">
+                              LIMITANTE
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-muted-foreground">SKU: {comp.sku_componente}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Estoque: {estoqueComponente} | Pode fazer: {possiveisUnidades}
+                        </div>
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-semibold">{comp.quantidade}</div>
@@ -193,7 +232,12 @@ export function ComposicoesEstoque() {
             )}
             <div className="text-xs text-muted-foreground">
               <span>Estoque Disponível: </span>
-              <span className="font-medium text-[var(--brand-yellow)] px-2 py-1 rounded">{product.quantidade_atual}</span>
+              <span className="font-medium text-[var(--brand-yellow)] px-2 py-1 rounded">{estoqueDisponivel}</span>
+              {componenteLimitante && (
+                <div className="mt-1 text-xs text-orange-600">
+                  Limitado por: <span className="font-medium">{componenteLimitante.nome}</span> ({componenteLimitante.estoque} disponível, precisa {componenteLimitante.necessario})
+                </div>
+              )}
             </div>
           </footer>
         </CardContent>
