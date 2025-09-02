@@ -294,16 +294,14 @@ export function ComposicoesEstoque() {
                           const isLimitante = componenteLimitante?.sku === comp.sku_componente;
                           
                           return (
-                            <div key={index} className={`border rounded-md p-3 space-y-2 ${isLimitante ? 'border-destructive/30 bg-destructive/5' : 'border-border'}`}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="text-sm font-medium">{comp.nome_componente}</div>
-                                  {isLimitante && (
-                                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
-                                      LIMITANTE
-                                    </Badge>
-                                  )}
+                            <div key={index} className={`border rounded-md p-3 space-y-2 ${isLimitante ? 'border-destructive/30 bg-destructive/5' : 'border-border'} relative`}>
+                              {isLimitante && (
+                                <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-md font-medium">
+                                  LIMITE
                                 </div>
+                              )}
+                              <div className="flex items-center justify-between">
+                                <div className="text-sm font-medium">{comp.nome_componente}</div>
                                 <Badge variant="outline" className="font-mono text-[10px]">
                                   {comp.sku_componente}
                                 </Badge>
@@ -311,19 +309,19 @@ export function ComposicoesEstoque() {
                               
                               <div className="grid grid-cols-4 gap-3 text-xs">
                                 <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground">Necessário</div>
+                                  <div className="text-muted-foreground whitespace-nowrap">Necessário</div>
                                   <div className="font-semibold">{comp.quantidade}</div>
                                 </div>
                                 <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground">Disponível</div>
+                                  <div className="text-muted-foreground whitespace-nowrap">Estoque</div>
                                   <div className="font-semibold">{estoqueComponente}</div>
                                 </div>
                                 <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground">Pode Fazer</div>
+                                  <div className="text-muted-foreground whitespace-nowrap">P/ Fazer</div>
                                   <div className="font-semibold">{possiveisUnidades}</div>
                                 </div>
                                 <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground">Custo Total</div>
+                                  <div className="text-muted-foreground whitespace-nowrap">Custo Total</div>
                                   <div className="font-semibold">{formatMoney(custoTotalItem)}</div>
                                 </div>
                               </div>
