@@ -67,51 +67,41 @@ export function ComposicoesEstoque() {
 
     return (
       <Card key={product.id} className="group hover:shadow-lg transition-shadow">
-        <CardContent className="p-4">
-          {/* Nome do Produto Principal */}
-          <h3 className="font-semibold mb-2 line-clamp-2">{product.nome}</h3>
-          
-          {/* SKU Pai */}
-          <div className="mb-3">
-            <p className="text-xs text-muted-foreground mb-1">SKU Pai:</p>
-            <p className="text-sm font-medium text-foreground">{product.sku_interno}</p>
-          </div>
-          
-          {/* SKUs Filhos - Composições */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Boxes className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">SKUs Filhos</span>
-            </div>
-            
-            {composicoes && composicoes.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                {/* Coluna 1: Items */}
-                <div className="space-y-1">
-                  <div className="font-medium text-muted-foreground mb-1">Item</div>
-                  {composicoes.map((comp, index) => (
-                    <div key={index} className="text-foreground font-medium">
-                      {comp.nome_componente}
-                      <div className="text-xs text-muted-foreground">
-                        SKU: {comp.sku_componente}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Coluna 2: Quantidades e Unidade */}
-                <div className="space-y-1">
-                  <div className="font-medium text-muted-foreground mb-1">Qtd/Un</div>
-                  {composicoes.map((comp, index) => (
-                    <div key={index} className="text-foreground">
-                      <div className="font-medium">{comp.quantidade}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {comp.unidade_medida}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        <CardContent className="p-5">
+          <header className="mb-4">
+            <h3 className="font-semibold text-base text-foreground leading-snug line-clamp-2">{product.nome}</h3>
+            <div className="mt-2">
+              <p className="text-xs text-muted-foreground">SKU Pai:</p>
+              <div className="mt-1">
+                <Badge variant="outline" className="font-mono text-[11px]">{product.sku_interno}</Badge>
               </div>
+            </div>
+          </header>
+
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Boxes className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">SKUs Filhos</span>
+                <span className="text-xs text-muted-foreground">{(composicoes?.length || 0)} itens</span>
+              </div>
+            </div>
+
+            {composicoes && composicoes.length > 0 ? (
+              <ul className="rounded-md border bg-card/50 divide-y">
+                {composicoes.map((comp, index) => (
+                  <li key={index} className="grid grid-cols-[1fr_auto] gap-3 p-3">
+                    <div>
+                      <div className="text-sm font-medium text-foreground">{comp.nome_componente}</div>
+                      <div className="text-xs text-muted-foreground">SKU: {comp.sku_componente}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold">{comp.quantidade}</div>
+                      <div className="text-xs text-muted-foreground">{comp.unidade_medida}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             ) : (
               <div className="text-xs text-muted-foreground italic border-2 border-dashed border-border rounded-lg p-3 text-center">
                 Nenhuma composição cadastrada
@@ -126,9 +116,8 @@ export function ComposicoesEstoque() {
                 </Button>
               </div>
             )}
-            
-            {/* Botão de Editar (sempre visível) */}
-            <div className="mt-3 pt-3 border-t">
+
+            <div className="pt-3 border-t">
               <Button
                 variant="outline"
                 size="sm"
@@ -139,15 +128,13 @@ export function ComposicoesEstoque() {
                 {composicoes && composicoes.length > 0 ? "Editar Composições" : "Adicionar Composições"}
               </Button>
             </div>
-          </div>
-          
-           
-          {/* Informações do Estoque */}
-          <div className="mt-3 pt-3 border-t">
+          </section>
+
+          <footer className="mt-3 pt-3 border-t">
             <span className="text-xs text-muted-foreground">
               Estoque Disponível: <span className="font-medium text-foreground">{product.quantidade_atual}</span>
             </span>
-          </div>
+          </footer>
         </CardContent>
       </Card>
     );
