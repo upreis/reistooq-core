@@ -48,45 +48,6 @@ export function ComposicoesEstoque() {
 
     return (
       <Card key={product.id} className="group hover:shadow-lg transition-shadow">
-        <CardHeader className="p-0">
-          <div className="relative overflow-hidden rounded-t-lg">
-            {product.url_imagem ? (
-              <img
-                src={product.url_imagem}
-                alt={product.nome}
-                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=300&fit=crop&q=80`;
-                }}
-              />
-            ) : (
-              <div className="w-full h-48 bg-muted flex items-center justify-center">
-                <Package className="h-12 w-12 text-muted-foreground" />
-              </div>
-            )}
-            <div className="absolute top-2 right-2">
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="bg-white/80 hover:bg-white"
-                onClick={() => {/* Implementar modal de edição de composição */}}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            {product.stock_status === 'low_stock' && (
-              <Badge className="absolute top-2 left-2 bg-yellow-500 hover:bg-yellow-600">
-                Estoque Baixo
-              </Badge>
-            )}
-            {product.stock_status === 'out_of_stock' && (
-              <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-600">
-                Sem Estoque
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
         <CardContent className="p-4">
           {/* Nome do Produto Principal */}
           <h3 className="font-semibold mb-2 line-clamp-2">{product.nome}</h3>
@@ -291,7 +252,6 @@ export function ComposicoesEstoque() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i} className="animate-pulse">
-                  <div className="h-48 bg-muted rounded-t-lg" />
                   <CardContent className="p-4 space-y-2">
                     <div className="h-4 bg-muted rounded w-3/4" />
                     <div className="h-4 bg-muted rounded w-1/2" />
