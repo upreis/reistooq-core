@@ -5,11 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Save, X, Package } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, Trash2, Save, X, Package, Check, ChevronsUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ShopProduct } from "@/features/shop/types/shop.types";
 import { ProdutoComponente } from "@/hooks/useComposicoesEstoque";
+import { useProducts, Product } from "@/hooks/useProducts";
+import { cn } from "@/lib/utils";
 
 interface ComposicoesModalProps {
   isOpen: boolean;
@@ -30,7 +34,11 @@ interface ComposicaoForm {
 export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave }: ComposicoesModalProps) {
   const [formComposicoes, setFormComposicoes] = useState<ComposicaoForm[]>([]);
   const [saving, setSaving] = useState(false);
+  const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+  const [skuOpenIndex, setSkuOpenIndex] = useState<number | null>(null);
+  const [nomeOpenIndex, setNomeOpenIndex] = useState<number | null>(null);
   const { toast } = useToast();
+  const { getProducts } = useProducts();
 
   useEffect(() => {
     if (produto && composicoes) {
@@ -47,6 +55,22 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
       setFormComposicoes([]);
     }
   }, [produto, composicoes]);
+
+  // Carregar produtos disponíveis para autocomplete
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const products = await getProducts();
+        setAvailableProducts(products);
+      } catch (error) {
+        console.error('Erro ao carregar produtos:', error);
+      }
+    };
+    
+    if (isOpen) {
+      loadProducts();
+    }
+  }, [isOpen, getProducts]);
 
   const adicionarComposicao = () => {
     setFormComposicoes([
@@ -180,21 +204,115 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor={`sku-${index}`}>SKU do Componente</Label>
-                      <Input
-                        id={`sku-${index}`}
-                        value={composicao.sku_componente}
-                        onChange={(e) => atualizarComposicao(index, 'sku_componente', e.target.value)}
-                        placeholder="Ex: COMP-001"
-                      />
+                      <Popover open={skuOpenIndex === index} onOpenChange={(open) => setSkuOpenIndex(open ? index : null)}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={skuOpenIndex === index}
+                            className="w-full justify-between"
+                          >
+                            {composicao.sku_componente || "Selecione ou digite um SKU..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Buscar por SKU..." 
+                              value={composicao.sku_componente}
+                              onValueChange={(value) => atualizarComposicao(index, 'sku_componente', value)}
+                            />
+                            <CommandList>
+                              <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                              <CommandGroup>
+                                {availableProducts
+                                  .filter(product => 
+                                    product.sku_interno.toLowerCase().includes(composicao.sku_componente.toLowerCase())
+                                  )
+                                  .map((product) => (
+                                    <CommandItem
+                                      key={product.id}
+                                      value={product.sku_interno}
+                                      onSelect={() => {
+                                        atualizarComposicao(index, 'sku_componente', product.sku_interno);
+                                        atualizarComposicao(index, 'nome_componente', product.nome);
+                                        setSkuOpenIndex(null);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          composicao.sku_componente === product.sku_interno ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div>
+                                        <div className="font-medium">{product.sku_interno}</div>
+                                        <div className="text-sm text-muted-foreground">{product.nome}</div>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div>
                       <Label htmlFor={`nome-${index}`}>Nome do Componente</Label>
-                      <Input
-                        id={`nome-${index}`}
-                        value={composicao.nome_componente}
-                        onChange={(e) => atualizarComposicao(index, 'nome_componente', e.target.value)}
-                        placeholder="Ex: Parafuso M6"
-                      />
+                      <Popover open={nomeOpenIndex === index} onOpenChange={(open) => setNomeOpenIndex(open ? index : null)}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={nomeOpenIndex === index}
+                            className="w-full justify-between"
+                          >
+                            {composicao.nome_componente || "Selecione ou digite um nome..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Buscar por nome..." 
+                              value={composicao.nome_componente}
+                              onValueChange={(value) => atualizarComposicao(index, 'nome_componente', value)}
+                            />
+                            <CommandList>
+                              <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                              <CommandGroup>
+                                {availableProducts
+                                  .filter(product => 
+                                    product.nome.toLowerCase().includes(composicao.nome_componente.toLowerCase())
+                                  )
+                                  .map((product) => (
+                                    <CommandItem
+                                      key={product.id}
+                                      value={product.nome}
+                                      onSelect={() => {
+                                        atualizarComposicao(index, 'nome_componente', product.nome);
+                                        atualizarComposicao(index, 'sku_componente', product.sku_interno);
+                                        setNomeOpenIndex(null);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          composicao.nome_componente === product.nome ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <div>
+                                        <div className="font-medium">{product.nome}</div>
+                                        <div className="text-sm text-muted-foreground">{product.sku_interno}</div>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
