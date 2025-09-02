@@ -425,7 +425,36 @@ const Estoque = () => {
                           <span className="text-xs">({products.length})</span>
                         </button>
                         {categories.map((category) => {
-                          const categoryCount = products.filter(p => p.categoria === category).length;
+                          // Aplicar filtros de busca e status para contagem correta
+                          let filteredProducts = products;
+                          if (searchTerm) {
+                            filteredProducts = filteredProducts.filter(p => 
+                              p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              p.sku_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              (p.codigo_barras && p.codigo_barras.includes(searchTerm))
+                            );
+                          }
+                          if (selectedStatus !== "all") {
+                            filteredProducts = filteredProducts.filter(product => {
+                              switch (selectedStatus) {
+                                case "active":
+                                  return product.ativo && product.quantidade_atual > product.estoque_minimo;
+                                case "low":
+                                  return product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
+                                case "out":
+                                  return product.quantidade_atual === 0;
+                                case "high":
+                                  return product.quantidade_atual >= product.estoque_maximo;
+                                case "critical":
+                                  return product.quantidade_atual <= product.estoque_minimo;
+                                case "inactive":
+                                  return !product.ativo;
+                                default:
+                                  return true;
+                              }
+                            });
+                          }
+                          const categoryCount = filteredProducts.filter(p => p.categoria === category).length;
                           return (
                             <button
                               key={category}
@@ -479,35 +508,56 @@ const Estoque = () => {
                       <CardHeader>
                         <CardTitle className="text-sm font-medium">Status</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-2">
-                        {[
-                          { value: "all", label: "Todos", count: products.length },
-                          { value: "active", label: "Em Estoque", count: products.filter(p => p.ativo && p.quantidade_atual > p.estoque_minimo).length },
-                          { value: "low", label: "Estoque Baixo", count: products.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0).length },
-                          { value: "out", label: "Sem Estoque", count: products.filter(p => p.quantidade_atual === 0).length },
-                          { value: "high", label: "Estoque Alto", count: products.filter(p => p.quantidade_atual >= p.estoque_maximo).length }
-                        ].map((status) => (
-                          <button
-                            key={status.value}
-                            onClick={() => setSelectedStatus(status.value)}
-                            className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                              selectedStatus === status.value 
-                                ? "bg-primary text-primary-foreground" 
-                                : "bg-muted hover:bg-muted/80"
-                            }`}
-                          >
-                            <span>{status.label}</span>
-                            <span className="text-xs">({status.count})</span>
-                          </button>
-                        ))}
+                       <CardContent className="space-y-2">
+                        {(() => {
+                          // Aplicar filtros de busca e categoria para contagem correta
+                          let baseProducts = products;
+                          if (searchTerm) {
+                            baseProducts = baseProducts.filter(p => 
+                              p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              p.sku_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              (p.codigo_barras && p.codigo_barras.includes(searchTerm))
+                            );
+                          }
+                          if (selectedCategory !== "all") {
+                            baseProducts = baseProducts.filter(p => p.categoria === selectedCategory);
+                          }
 
-                        <div className="pt-4 border-t">
-                          <p className="text-sm font-medium mb-2">Total de produtos:</p>
-                          <p className="text-2xl font-bold">{products.length}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {products.filter(p => !p.ativo).length} produtos inativos
-                          </p>
-                        </div>
+                          const statusOptions = [
+                            { value: "all", label: "Todos", count: baseProducts.length },
+                            { value: "active", label: "Em Estoque", count: baseProducts.filter(p => p.ativo && p.quantidade_atual > p.estoque_minimo).length },
+                            { value: "low", label: "Estoque Baixo", count: baseProducts.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0).length },
+                            { value: "out", label: "Sem Estoque", count: baseProducts.filter(p => p.quantidade_atual === 0).length },
+                            { value: "high", label: "Estoque Alto", count: baseProducts.filter(p => p.quantidade_atual >= p.estoque_maximo).length }
+                          ];
+
+                          return (
+                            <>
+                              {statusOptions.map((status) => (
+                                <button
+                                  key={status.value}
+                                  onClick={() => setSelectedStatus(status.value)}
+                                  className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
+                                    selectedStatus === status.value 
+                                      ? "bg-primary text-primary-foreground" 
+                                      : "bg-muted hover:bg-muted/80"
+                                  }`}
+                                >
+                                  <span>{status.label}</span>
+                                  <span className="text-xs">({status.count})</span>
+                                </button>
+                              ))}
+
+                              <div className="pt-4 border-t">
+                                <p className="text-sm font-medium mb-2">Total de produtos:</p>
+                                <p className="text-2xl font-bold">{baseProducts.length}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {products.filter(p => !p.ativo).length} produtos inativos
+                                </p>
+                              </div>
+                            </>
+                          );
+                        })()}
                       </CardContent>
                     </Card>
                   </div>
