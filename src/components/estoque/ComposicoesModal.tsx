@@ -39,6 +39,8 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
   const [nomeOpenIndex, setNomeOpenIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const { getProducts } = useProducts();
+  const [skuSearch, setSkuSearch] = useState<string[]>([]);
+  const [nomeSearch, setNomeSearch] = useState<string[]>([]);
 
   useEffect(() => {
     if (produto && composicoes) {
@@ -51,8 +53,12 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
           unidade_medida: comp.unidade_medida
         }))
       );
+      setSkuSearch(composicoes.map(comp => comp.sku_componente || ""));
+      setNomeSearch(composicoes.map(comp => comp.nome_componente || ""));
     } else if (produto) {
       setFormComposicoes([]);
+      setSkuSearch([]);
+      setNomeSearch([]);
     }
   }, [produto, composicoes]);
 
@@ -82,10 +88,14 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         unidade_medida: "UN"
       }
     ]);
+    setSkuSearch((prev) => [...prev, ""]);
+    setNomeSearch((prev) => [...prev, ""]);
   };
 
   const removerComposicao = (index: number) => {
     setFormComposicoes(formComposicoes.filter((_, i) => i !== index));
+    setSkuSearch((prev) => prev.filter((_, i) => i !== index));
+    setNomeSearch((prev) => prev.filter((_, i) => i !== index));
   };
 
   const atualizarComposicao = (index: number, field: keyof ComposicaoForm, value: any) => {
@@ -226,15 +236,21 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                           <Command className="bg-background text-foreground">
                             <CommandInput 
                               placeholder="Buscar por SKU..." 
-                              value={composicao.sku_componente}
-                              onValueChange={(value) => atualizarComposicao(index, 'sku_componente', value)}
+                              value={skuSearch[index] ?? ""}
+                              onValueChange={(value) => {
+                                setSkuSearch((prev) => {
+                                  const next = [...prev];
+                                  next[index] = value;
+                                  return next;
+                                });
+                              }}
                             />
                             <CommandList className="max-h-64 overflow-y-auto bg-background">
                               <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
                               <CommandGroup>
                                 {availableProducts
                                   .filter(product => 
-                                    product.sku_interno.toLowerCase().includes(composicao.sku_componente.toLowerCase())
+                                    product.sku_interno.toLowerCase().includes((skuSearch[index] ?? "").toLowerCase())
                                   )
                                   .map((product) => (
                                     <CommandItem
@@ -243,6 +259,11 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                       onSelect={() => {
                                         atualizarComposicao(index, 'sku_componente', product.sku_interno);
                                         atualizarComposicao(index, 'nome_componente', product.nome);
+                                        setSkuSearch((prev) => {
+                                          const next = [...prev];
+                                          next[index] = product.sku_interno;
+                                          return next;
+                                        });
                                         setSkuOpenIndex(null);
                                       }}
                                     >
@@ -283,15 +304,21 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                           <Command className="bg-background text-foreground">
                             <CommandInput 
                               placeholder="Buscar por nome..." 
-                              value={composicao.nome_componente}
-                              onValueChange={(value) => atualizarComposicao(index, 'nome_componente', value)}
+                              value={nomeSearch[index] ?? ""}
+                              onValueChange={(value) => {
+                                setNomeSearch((prev) => {
+                                  const next = [...prev];
+                                  next[index] = value;
+                                  return next;
+                                });
+                              }}
                             />
                             <CommandList className="max-h-64 overflow-y-auto bg-background">
                               <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
                               <CommandGroup>
                                 {availableProducts
                                   .filter(product => 
-                                    product.nome.toLowerCase().includes(composicao.nome_componente.toLowerCase())
+                                    product.nome.toLowerCase().includes((nomeSearch[index] ?? "").toLowerCase())
                                   )
                                   .map((product) => (
                                     <CommandItem
@@ -300,6 +327,11 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                       onSelect={() => {
                                         atualizarComposicao(index, 'nome_componente', product.nome);
                                         atualizarComposicao(index, 'sku_componente', product.sku_interno);
+                                        setNomeSearch((prev) => {
+                                          const next = [...prev];
+                                          next[index] = product.nome;
+                                          return next;
+                                        });
                                         setNomeOpenIndex(null);
                                       }}
                                     >
