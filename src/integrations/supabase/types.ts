@@ -1791,6 +1791,7 @@ export type Database = {
           sku_interno: string
           status: string
           ultima_movimentacao: string | null
+          unidade_medida_id: string
           updated_at: string
           url_imagem: string | null
           versao: number | null
@@ -1817,6 +1818,7 @@ export type Database = {
           sku_interno: string
           status?: string
           ultima_movimentacao?: string | null
+          unidade_medida_id: string
           updated_at?: string
           url_imagem?: string | null
           versao?: number | null
@@ -1843,6 +1845,7 @@ export type Database = {
           sku_interno?: string
           status?: string
           ultima_movimentacao?: string | null
+          unidade_medida_id?: string
           updated_at?: string
           url_imagem?: string | null
           versao?: number | null
@@ -1853,6 +1856,13 @@ export type Database = {
             columns: ["integration_account_id"]
             isOneToOne: false
             referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtos_unidade_medida_id_fkey"
+            columns: ["unidade_medida_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_medida"
             referencedColumns: ["id"]
           },
         ]
@@ -2651,6 +2661,7 @@ export type Database = {
           sku_interno: string
           status: string
           ultima_movimentacao: string | null
+          unidade_medida_id: string
           updated_at: string
           url_imagem: string | null
           versao: number | null
