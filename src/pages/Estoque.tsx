@@ -14,6 +14,7 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Package, AlertTriangle, Boxes } from "lucide-react";
+import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 
 interface StockMovement {
   id: string;
@@ -34,6 +35,13 @@ const Estoque = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  
+  // Filtros hierárquicos
+  const [hierarchicalFilters, setHierarchicalFilters] = useState<{
+    categoriaPrincipal?: string;
+    categoria?: string;
+    subcategoria?: string;
+  }>({});
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -43,6 +51,7 @@ const Estoque = () => {
   
   const { getProducts, getCategories, updateProduct, deleteProduct } = useProducts();
   const { toast } = useToast();
+  const { getCategoriasPrincipais, getCategorias, getSubcategorias, categories: hierarchicalCategories, loading: categoriesLoading } = useHierarchicalCategories();
 
   useEffect(() => {
     loadProducts();
@@ -57,7 +66,7 @@ const Estoque = () => {
     }, 300);
 
     return () => clearTimeout(delayedSearch);
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder]);
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, hierarchicalFilters]);
 
   const loadProducts = useCallback(async () => {
     try {
@@ -67,6 +76,30 @@ const Estoque = () => {
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         limit: 1000
       });
+
+      // Aplicar filtros hierárquicos
+      if (hierarchicalFilters.categoriaPrincipal || hierarchicalFilters.categoria || hierarchicalFilters.subcategoria) {
+        allProducts = allProducts.filter(product => {
+          const categoriaCompleta = product.categoria || '';
+          
+          if (hierarchicalFilters.subcategoria) {
+            const subcategoria = getSubcategorias(hierarchicalFilters.categoria || '').find(c => c.id === hierarchicalFilters.subcategoria);
+            return categoriaCompleta.includes(subcategoria?.nome || '');
+          }
+          
+          if (hierarchicalFilters.categoria) {
+            const categoria = getCategorias(hierarchicalFilters.categoriaPrincipal || '').find(c => c.id === hierarchicalFilters.categoria);
+            return categoriaCompleta.includes(categoria?.nome || '');
+          }
+          
+          if (hierarchicalFilters.categoriaPrincipal) {
+            const categoriaPrincipal = getCategoriasPrincipais().find(c => c.id === hierarchicalFilters.categoriaPrincipal);
+            return categoriaCompleta.includes(categoriaPrincipal?.nome || '') || categoriaCompleta === categoriaPrincipal?.nome;
+          }
+          
+          return true;
+        });
+      }
       
       // Atualizar categorias após carregar produtos
       loadCategories();
@@ -195,9 +228,10 @@ const Estoque = () => {
     setSelectedCategory("all");
     setSelectedStatus("all");
     setSelectedProducts([]);
+    setHierarchicalFilters({});
   };
 
-  const hasActiveFilters = searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all";
+  const hasActiveFilters = searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all" || Object.values(hierarchicalFilters).some(Boolean);
 
   const handleStockMovement = async (productId: string, type: 'entrada' | 'saida', quantity: number, reason?: string) => {
     const product = products.find(p => p.id === productId);
@@ -404,19 +438,38 @@ const Estoque = () => {
               </TabsList>
               
               <TabsContent value="estoque" className="mt-6">
+                {/* Filtros Principais */}
+                <div className="mb-6">
+                  <EstoqueFilters
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={setSelectedCategory}
+                    selectedStatus={selectedStatus}
+                    onStatusChange={setSelectedStatus}
+                    categories={categories}
+                    onSearch={handleSearch}
+                    onClearFilters={handleClearFilters}
+                    hasActiveFilters={hasActiveFilters}
+                    useHierarchicalCategories={true}
+                    hierarchicalFilters={hierarchicalFilters}
+                    onHierarchicalFiltersChange={setHierarchicalFilters}
+                  />
+                </div>
+
                 <div className="flex gap-6">
                   {/* Sidebar */}
                   <div className="w-80 space-y-6">
-                    {/* Filtro por Categoria */}
+                    {/* Exibir categorias hierárquicas na sidebar */}
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm font-medium">Filtrar por Categoria</CardTitle>
+                        <CardTitle className="text-sm font-medium">Categorias Hierárquicas</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2">
                         <button
-                          onClick={() => setSelectedCategory("all")}
+                          onClick={() => setHierarchicalFilters({})}
                           className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                            selectedCategory === "all" 
+                            !Object.values(hierarchicalFilters).some(Boolean)
                               ? "bg-primary text-primary-foreground" 
                               : "bg-muted hover:bg-muted/80"
                           }`}
@@ -427,53 +480,66 @@ const Estoque = () => {
                           </div>
                           <span className="text-xs">({products.length})</span>
                         </button>
-                        {categories.map((category) => {
-                          // Aplicar filtros de busca e status para contagem correta
-                          let filteredProducts = products;
-                          if (searchTerm) {
-                            filteredProducts = filteredProducts.filter(p => 
-                              p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              p.sku_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              (p.codigo_barras && p.codigo_barras.includes(searchTerm))
-                            );
-                          }
-                          if (selectedStatus !== "all") {
-                            filteredProducts = filteredProducts.filter(product => {
-                              switch (selectedStatus) {
-                                case "active":
-                                  return product.ativo && product.quantidade_atual > product.estoque_minimo;
-                                case "low":
-                                  return product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
-                                case "out":
-                                  return product.quantidade_atual === 0;
-                                case "high":
-                                  return product.quantidade_atual >= product.estoque_maximo;
-                                case "critical":
-                                  return product.quantidade_atual <= product.estoque_minimo;
-                                case "inactive":
-                                  return !product.ativo;
-                                default:
-                                  return true;
-                              }
-                            });
-                          }
-                          const categoryCount = filteredProducts.filter(p => p.categoria === category).length;
+                        
+                        {/* Mostrar categorias principais */}
+                        {getCategoriasPrincipais().map((catPrincipal) => {
+                          const isSelected = hierarchicalFilters.categoriaPrincipal === catPrincipal.id;
+                          const count = products.filter(p => 
+                            p.categoria?.includes(catPrincipal.nome) || 
+                            p.categoria === catPrincipal.nome
+                          ).length;
+                          
                           return (
-                            <button
-                              key={category}
-                              onClick={() => setSelectedCategory(category)}
-                              className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                                selectedCategory === category 
-                                  ? "bg-primary text-primary-foreground" 
-                                  : "bg-muted hover:bg-muted/80"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Package className="h-4 w-4" />
-                                {category}
-                              </div>
-                              <span className="text-xs">({categoryCount})</span>
-                            </button>
+                            <div key={catPrincipal.id} className="space-y-1">
+                              <button
+                                onClick={() => setHierarchicalFilters({ categoriaPrincipal: catPrincipal.id })}
+                                className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
+                                  isSelected
+                                    ? "bg-primary text-primary-foreground" 
+                                    : "bg-muted hover:bg-muted/80"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full"
+                                    style={{ backgroundColor: catPrincipal.cor }}
+                                  />
+                                  {catPrincipal.nome}
+                                </div>
+                                <span className="text-xs">({count})</span>
+                              </button>
+                              
+                              {/* Mostrar categorias filhas se selecionada */}
+                              {isSelected && getCategorias(catPrincipal.id).map((categoria) => {
+                                const subCount = products.filter(p => 
+                                  p.categoria?.includes(categoria.nome)
+                                ).length;
+                                
+                                return (
+                                  <button
+                                    key={categoria.id}
+                                    onClick={() => setHierarchicalFilters({ 
+                                      categoriaPrincipal: catPrincipal.id,
+                                      categoria: categoria.id 
+                                    })}
+                                    className={`w-full ml-4 flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
+                                      hierarchicalFilters.categoria === categoria.id
+                                        ? "bg-primary text-primary-foreground" 
+                                        : "bg-muted hover:bg-muted/80"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div 
+                                        className="w-2 h-2 rounded-full"
+                                        style={{ backgroundColor: categoria.cor }}
+                                      />
+                                      {categoria.nome}
+                                    </div>
+                                    <span className="text-xs">({subCount})</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
                           );
                         })}
                       </CardContent>
@@ -567,28 +633,6 @@ const Estoque = () => {
 
                   {/* Conteúdo Principal */}
                   <div className="flex-1">
-                    {/* Filtros no topo */}
-            <EstoqueFilters
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              selectedStatus={selectedStatus}
-              onStatusChange={setSelectedStatus}
-              categories={categories}
-              onSearch={handleSearch}
-              onClearFilters={handleClearFilters}
-              hasActiveFilters={hasActiveFilters}
-              useHierarchicalCategories={true}
-              hierarchicalFilters={{
-                categoriaPrincipal: undefined,
-                categoria: undefined,
-                subcategoria: undefined,
-              }}
-              onHierarchicalFiltersChange={(filters) => {
-                console.log('Filtros hierárquicos:', filters);
-              }}
-            />
 
                     {/* Tabela */}
                     <div className="mt-6">
