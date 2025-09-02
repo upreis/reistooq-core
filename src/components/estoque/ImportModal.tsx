@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useProducts } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
+import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import * as XLSX from 'xlsx';
 
 interface ImportModalProps {
@@ -44,6 +45,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { createProduct, getProducts } = useProducts();
+  const { getCategoriasPrincipais, getCategorias, getSubcategorias } = useHierarchicalCategories();
 
   const getCompositionColumns = () => {
     const columns = [
@@ -67,7 +69,9 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
   const templateColumns = tipo === 'produtos' ? [
     { key: 'sku_interno', label: 'SKU Interno', required: true },
     { key: 'nome', label: 'Nome', required: true },
+    { key: 'categoria_principal', label: 'Categoria Principal', required: false },
     { key: 'categoria', label: 'Categoria', required: false },
+    { key: 'subcategoria', label: 'Subcategoria', required: false },
     { key: 'descricao', label: 'Descrição', required: false },
     { key: 'url_imagem', label: 'URL da Imagem', required: false },
     { key: 'quantidade_atual', label: 'Quantidade Atual', required: false },
@@ -86,6 +90,8 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         'EXEMPLO001',
         'Produto Exemplo',
         'Eletrônicos',
+        'Smartphones',
+        'iPhone',
         'Descrição do produto exemplo',
         'https://exemplo.com/imagem.jpg',
         '10',
@@ -98,13 +104,72 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         ''  // unidade_medida_id (opcional)
       ];
 
+      const wb = XLSX.utils.book_new();
+
+      // Aba principal com template
       const ws = XLSX.utils.aoa_to_sheet([
         templateColumns.map(col => col.label),
         exampleRow
       ]);
-
-      const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Template');
+
+      // Aba com categorias disponíveis (para referência)
+      const categoriasPrincipais = getCategoriasPrincipais();
+      if (categoriasPrincipais.length > 0) {
+        const categoriasData = [
+          ['Categorias Principais Disponíveis'],
+          ...categoriasPrincipais.map(cat => [cat.nome])
+        ];
+        const wsCategorias = XLSX.utils.aoa_to_sheet(categoriasData);
+        XLSX.utils.book_append_sheet(wb, wsCategorias, 'Categorias Principais');
+
+        // Buscar todas as categorias de nível 2 e 3 para mostrar exemplos
+        const allCategorias = categoriasPrincipais.flatMap(catPrincipal => {
+          const cats = getCategorias(catPrincipal.id);
+          return cats.map(cat => ({
+            principal: catPrincipal.nome,
+            categoria: cat.nome,
+            subcategorias: getSubcategorias(cat.id).map(sub => sub.nome)
+          }));
+        });
+
+        if (allCategorias.length > 0) {
+          const exemploData = [
+            ['Categoria Principal', 'Categoria', 'Subcategorias Disponíveis'],
+            ...allCategorias.map(item => [
+              item.principal,
+              item.categoria, 
+              item.subcategorias.join(', ')
+            ])
+          ];
+          const wsExemplos = XLSX.utils.aoa_to_sheet(exemploData);
+          XLSX.utils.book_append_sheet(wb, wsExemplos, 'Estrutura Hierárquica');
+        }
+      }
+
+      // Aba com instruções
+      const instrucoes = [
+        ['INSTRUÇÕES PARA PREENCHIMENTO'],
+        [''],
+        ['1. SKU Interno e Nome são obrigatórios'],
+        ['2. Categorias são opcionais mas devem seguir a hierarquia:'],
+        ['   • Categoria Principal (Ex: Eletrônicos)'],
+        ['   • Categoria (Ex: Smartphones)'], 
+        ['   • Subcategoria (Ex: iPhone)'],
+        ['3. Use as categorias das abas "Categorias Principais" e "Estrutura Hierárquica"'],
+        ['4. Se não existir a categoria desejada, crie primeiro em /estoque/categorias'],
+        ['5. Preços são opcionais (deixe em branco se não tiver)'],
+        ['6. URL da imagem deve ser um link válido (opcional)'],
+        [''],
+        ['EXEMPLO DE CATEGORIZAÇÃO:'],
+        ['• Categoria Principal: Eletrônicos'],
+        ['• Categoria: Smartphones'],
+        ['• Subcategoria: iPhone'],
+        ['• Resultado: "Eletrônicos → Smartphones → iPhone"'],
+      ];
+      const wsInstrucoes = XLSX.utils.aoa_to_sheet(instrucoes);
+      XLSX.utils.book_append_sheet(wb, wsInstrucoes, 'Instruções');
+
       XLSX.writeFile(wb, 'template_produtos.xlsx');
     } else {
       // Para composições, criar template mais completo
@@ -352,10 +417,17 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
             `Linha ${index + 1}: SKU=${row.sku_interno}, existente=${!!existing}, ativo=${existing?.ativo}, erros=${rowErrors.length}`
           );
           
+          // Montar categoria completa hierárquica
+          const categoriaParts = [];
+          if (row.categoria_principal?.trim()) categoriaParts.push(row.categoria_principal.trim());
+          if (row.categoria?.trim()) categoriaParts.push(row.categoria.trim());  
+          if (row.subcategoria?.trim()) categoriaParts.push(row.subcategoria.trim());
+          const categoriaCompleta = categoriaParts.length > 0 ? categoriaParts.join(" → ") : null;
+          
           const normalized = {
             sku_interno: row.sku_interno?.trim(),
             nome: row.nome?.trim(),
-            categoria: row.categoria?.trim() || null,
+            categoria: categoriaCompleta,
             descricao: row.descricao?.trim() || null,
             url_imagem: row.url_imagem?.trim() || null,
             quantidade_atual: Number(row.quantidade_atual) || 0,
