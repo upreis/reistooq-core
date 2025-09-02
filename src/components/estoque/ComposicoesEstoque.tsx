@@ -185,36 +185,61 @@ export function ComposicoesEstoque() {
               )}
             </div>
 
-            {/* Informações principais sempre visíveis */}
+            {/* Resumo da composição */}
             {composicoes && composicoes.length > 0 ? (
               <div className="space-y-3">
-                {/* Resumo compacto */}
-                <div className="bg-card/50 rounded-md border p-3">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Custo Total:</span>
-                      <div className="font-semibold text-[var(--brand-yellow)] px-2 py-1 rounded bg-[var(--brand-yellow)]/10 inline-block ml-2">
+                {/* Resumo sempre visível */}
+                <div className="bg-muted/30 rounded-lg border p-4 space-y-3">
+                  {/* Informações principais */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground">Custo Total</span>
+                      <div className="text-sm font-semibold text-[var(--brand-yellow)]">
                         {formatMoney(custoTotal)}
                       </div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Pode Produzir:</span>
-                      <div className="font-semibold text-[var(--brand-yellow)] px-2 py-1 rounded bg-[var(--brand-yellow)]/10 inline-block ml-2">
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground">Pode Produzir</span>
+                      <div className="text-sm font-semibold text-[var(--brand-yellow)]">
                         {estoqueDisponivel} unid.
                       </div>
                     </div>
                   </div>
-                  
+
+                  {/* Lista simplificada dos componentes */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-medium text-muted-foreground">Componentes necessários:</div>
+                    <div className="space-y-1">
+                      {composicoes.map((comp, index) => {
+                        const isLimitante = componenteLimitante?.sku === comp.sku_componente;
+                        return (
+                          <div key={index} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5">
+                                {comp.sku_componente}
+                              </Badge>
+                              {isLimitante && (
+                                <span className="text-xs bg-destructive/10 text-destructive px-1.5 py-0.5 rounded font-medium">
+                                  LIMITANTE
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-muted-foreground">
+                              {comp.quantidade}x
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* Aviso do componente limitante */}
                   {componenteLimitante && (
-                    <div className="mt-2 pt-2 border-t border-orange-200 bg-orange-50 rounded p-2">
-                      <div className="flex items-center gap-2 text-orange-700">
-                        <AlertTriangle className="h-3 w-3" />
-                        <span className="text-xs font-medium">
-                          Limitado por: {componenteLimitante.nome} 
-                          <span className="text-orange-600 ml-1">
-                            ({componenteLimitante.estoque} disponível, precisa {componenteLimitante.necessario})
-                          </span>
+                    <div className="bg-destructive/10 border border-destructive/20 rounded-md p-2">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-3 w-3 text-destructive" />
+                        <span className="text-xs text-destructive font-medium">
+                          Limitado por {componenteLimitante.nome}: {componenteLimitante.estoque} disponível, precisa {componenteLimitante.necessario}
                         </span>
                       </div>
                     </div>
@@ -226,71 +251,73 @@ export function ComposicoesEstoque() {
                   variant="ghost"
                   size="sm"
                   onClick={() => toggleCardExpansion(product.id)}
-                  className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
+                  className="w-full text-xs"
                 >
                   {isExpanded ? (
                     <>
                       <ChevronUp className="h-3 w-3 mr-1" />
-                      Ocultar detalhes dos componentes
+                      Ocultar análise detalhada
                     </>
                   ) : (
                     <>
                       <ChevronDown className="h-3 w-3 mr-1" />
-                      Ver detalhes dos componentes
+                      Ver análise detalhada
                     </>
                   )}
                 </Button>
 
                 {/* Detalhes expandíveis */}
                 {isExpanded && (
-                  <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
-                    <div className="text-xs font-medium text-muted-foreground mb-2">Detalhamento por componente:</div>
-                    <ul className="rounded-md border bg-card/30 divide-y">
-                      {composicoes.map((comp, index) => {
-                        const custoUnitario = custosProdutos[comp.sku_componente] || 0;
-                        const custoTotalItem = custoUnitario * comp.quantidade;
-                        const estoqueComponente = comp.estoque_componente || 0;
-                        const possiveisUnidades = Math.floor(estoqueComponente / comp.quantidade);
-                        const isLimitante = componenteLimitante?.sku === comp.sku_componente;
-                        
-                        return (
-                          <li key={index} className={`p-3 space-y-2 ${isLimitante ? 'bg-orange-50 border-l-2 border-l-orange-400' : ''}`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <div className="text-sm font-medium text-foreground">{comp.nome_componente}</div>
-                                {isLimitante && (
-                                  <span className="text-xs bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded font-medium">
-                                    LIMITANTE
-                                  </span>
-                                )}
+                  <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
+                    <div className="bg-card border rounded-lg p-4">
+                      <div className="text-xs font-medium text-muted-foreground mb-3">Análise detalhada por componente:</div>
+                      <div className="space-y-3">
+                        {composicoes.map((comp, index) => {
+                          const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+                          const custoTotalItem = custoUnitario * comp.quantidade;
+                          const estoqueComponente = comp.estoque_componente || 0;
+                          const possiveisUnidades = Math.floor(estoqueComponente / comp.quantidade);
+                          const isLimitante = componenteLimitante?.sku === comp.sku_componente;
+                          
+                          return (
+                            <div key={index} className={`border rounded-md p-3 space-y-2 ${isLimitante ? 'border-destructive/30 bg-destructive/5' : 'border-border'}`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm font-medium">{comp.nome_componente}</div>
+                                  {isLimitante && (
+                                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
+                                      LIMITANTE
+                                    </Badge>
+                                  )}
+                                </div>
+                                <Badge variant="outline" className="font-mono text-[10px]">
+                                  {comp.sku_componente}
+                                </Badge>
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                SKU: {comp.sku_componente}
+                              
+                              <div className="grid grid-cols-4 gap-3 text-xs">
+                                <div className="text-center space-y-1">
+                                  <div className="text-muted-foreground">Necessário</div>
+                                  <div className="font-semibold">{comp.quantidade}</div>
+                                </div>
+                                <div className="text-center space-y-1">
+                                  <div className="text-muted-foreground">Disponível</div>
+                                  <div className="font-semibold">{estoqueComponente}</div>
+                                </div>
+                                <div className="text-center space-y-1">
+                                  <div className="text-muted-foreground">Pode Fazer</div>
+                                  <div className="font-semibold">{possiveisUnidades}</div>
+                                </div>
+                                <div className="text-center space-y-1">
+                                  <div className="text-muted-foreground">Custo Total</div>
+                                  <div className="font-semibold">{formatMoney(custoTotalItem)}</div>
+                                </div>
                               </div>
                             </div>
-                            
-                            <div className="grid grid-cols-4 gap-2 text-xs">
-                              <div className="text-center">
-                                <div className="text-muted-foreground">Necessário</div>
-                                <div className="font-semibold">{comp.quantidade}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-muted-foreground">Em Estoque</div>
-                                <div className="font-semibold">{estoqueComponente}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-muted-foreground">Pode Fazer</div>
-                                <div className="font-semibold">{possiveisUnidades}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-muted-foreground">Custo</div>
-                                <div className="font-semibold">{formatMoney(custoTotalItem)}</div>
-                              </div>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
