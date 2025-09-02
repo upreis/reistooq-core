@@ -401,69 +401,184 @@ const Estoque = () => {
               </TabsList>
               
               <TabsContent value="estoque" className="mt-6">
-                {/* Filters */}
-                <EstoqueFilters
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  selectedCategory={selectedCategory}
-                  onCategoryChange={setSelectedCategory}
-                  selectedStatus={selectedStatus}
-                  onStatusChange={setSelectedStatus}
-                  categories={categories}
-                  onSearch={handleSearch}
-                  onClearFilters={handleClearFilters}
-                  hasActiveFilters={hasActiveFilters}
-                />
+                <div className="flex gap-6">
+                  {/* Sidebar */}
+                  <div className="w-80 space-y-6">
+                    {/* Filtro por Categoria */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-medium">Filtrar por Categoria</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <button
+                          onClick={() => setSelectedCategory("all")}
+                          className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
+                            selectedCategory === "all" 
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-muted hover:bg-muted/80"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Todas
+                          </div>
+                          <span className="text-xs">({products.length})</span>
+                        </button>
+                        {categories.map((category) => {
+                          const categoryCount = products.filter(p => p.categoria === category).length;
+                          return (
+                            <button
+                              key={category}
+                              onClick={() => setSelectedCategory(category)}
+                              className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
+                                selectedCategory === category 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "bg-muted hover:bg-muted/80"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Package className="h-4 w-4" />
+                                {category}
+                              </div>
+                              <span className="text-xs">({categoryCount})</span>
+                            </button>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
 
-                {/* Table */}
-                <div className="mt-6">
-                  <EstoqueTable
-                    products={paginatedProducts}
-                    selectedProducts={selectedProducts}
-                    onSelectProduct={handleSelectProduct}
-                    onSelectAll={handleSelectAll}
-                    onEditProduct={handleEditProduct}
-                    onDeleteProduct={handleDeleteProduct}
-                    onStockMovement={handleStockMovement}
-                    sortBy={sortBy}
-                    sortOrder={sortOrder}
-                    onSort={handleSort}
-                  />
-                </div>
+                    {/* Ordenar por */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-medium">Ordenar por</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {[
+                          { value: "created_at", label: "Mais Recentes" },
+                          { value: "nome", label: "A-Z" },
+                          { value: "categoria", label: "Por Categoria" },
+                          { value: "quantidade_atual", label: "Por Estoque" }
+                        ].map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => setSortBy(option.value)}
+                            className={`w-full flex items-center p-2 rounded-lg text-sm transition-colors ${
+                              sortBy === option.value 
+                                ? "bg-primary text-primary-foreground" 
+                                : "bg-muted hover:bg-muted/80"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </CardContent>
+                    </Card>
 
-                {/* Pagination */}
-                {products.length > itemsPerPage && (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-                    <p className="text-sm text-muted-foreground">
-                      Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
-                      {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
-                      {products.length} produtos
-                    </p>
-                    <div className="flex flex-col sm:flex-row items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                        className="w-full sm:w-auto"
-                      >
-                        Anterior
-                      </Button>
-                      <span className="text-sm text-center">
-                        Página {currentPage} de {Math.ceil(products.length / itemsPerPage)}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / itemsPerPage), currentPage + 1))}
-                        disabled={currentPage === Math.ceil(products.length / itemsPerPage)}
-                        className="w-full sm:w-auto"
-                      >
-                        Próximo
-                      </Button>
-                    </div>
+                    {/* Status */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm font-medium">Status</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {[
+                          { value: "all", label: "Todos", count: products.length },
+                          { value: "active", label: "Em Estoque", count: products.filter(p => p.ativo && p.quantidade_atual > p.estoque_minimo).length },
+                          { value: "low", label: "Estoque Baixo", count: products.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0).length },
+                          { value: "out", label: "Sem Estoque", count: products.filter(p => p.quantidade_atual === 0).length },
+                          { value: "high", label: "Estoque Alto", count: products.filter(p => p.quantidade_atual >= p.estoque_maximo).length }
+                        ].map((status) => (
+                          <button
+                            key={status.value}
+                            onClick={() => setSelectedStatus(status.value)}
+                            className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
+                              selectedStatus === status.value 
+                                ? "bg-primary text-primary-foreground" 
+                                : "bg-muted hover:bg-muted/80"
+                            }`}
+                          >
+                            <span>{status.label}</span>
+                            <span className="text-xs">({status.count})</span>
+                          </button>
+                        ))}
+
+                        <div className="pt-4 border-t">
+                          <p className="text-sm font-medium mb-2">Total de produtos:</p>
+                          <p className="text-2xl font-bold">{products.length}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {products.filter(p => !p.ativo).length} produtos inativos
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                )}
+
+                  {/* Conteúdo Principal */}
+                  <div className="flex-1">
+                    {/* Filtros no topo */}
+                    <EstoqueFilters
+                      searchTerm={searchTerm}
+                      onSearchChange={setSearchTerm}
+                      selectedCategory={selectedCategory}
+                      onCategoryChange={setSelectedCategory}
+                      selectedStatus={selectedStatus}
+                      onStatusChange={setSelectedStatus}
+                      categories={categories}
+                      onSearch={handleSearch}
+                      onClearFilters={handleClearFilters}
+                      hasActiveFilters={hasActiveFilters}
+                    />
+
+                    {/* Tabela */}
+                    <div className="mt-6">
+                      <EstoqueTable
+                        products={paginatedProducts}
+                        selectedProducts={selectedProducts}
+                        onSelectProduct={handleSelectProduct}
+                        onSelectAll={handleSelectAll}
+                        onEditProduct={handleEditProduct}
+                        onDeleteProduct={handleDeleteProduct}
+                        onStockMovement={handleStockMovement}
+                        sortBy={sortBy}
+                        sortOrder={sortOrder}
+                        onSort={handleSort}
+                      />
+                    </div>
+
+                    {/* Paginação */}
+                    {products.length > itemsPerPage && (
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
+                        <p className="text-sm text-muted-foreground">
+                          Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
+                          {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
+                          {products.length} produtos
+                        </p>
+                        <div className="flex flex-col sm:flex-row items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                            disabled={currentPage === 1}
+                            className="w-full sm:w-auto"
+                          >
+                            Anterior
+                          </Button>
+                          <span className="text-sm text-center">
+                            Página {currentPage} de {Math.ceil(products.length / itemsPerPage)}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / itemsPerPage), currentPage + 1))}
+                            disabled={currentPage === Math.ceil(products.length / itemsPerPage)}
+                            className="w-full sm:w-auto"
+                          >
+                            Próximo
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </TabsContent>
               
               <TabsContent value="composicoes" className="mt-6">
