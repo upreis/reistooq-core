@@ -2209,6 +2209,45 @@ export type Database = {
         }
         Relationships: []
       }
+      unidades_medida: {
+        Row: {
+          abreviacao: string
+          ativo: boolean
+          created_at: string
+          fator_conversao: number
+          id: string
+          nome: string
+          organization_id: string
+          tipo: string
+          unidade_base: boolean
+          updated_at: string
+        }
+        Insert: {
+          abreviacao: string
+          ativo?: boolean
+          created_at?: string
+          fator_conversao?: number
+          id?: string
+          nome: string
+          organization_id: string
+          tipo: string
+          unidade_base?: boolean
+          updated_at?: string
+        }
+        Update: {
+          abreviacao?: string
+          ativo?: boolean
+          created_at?: string
+          fator_conversao?: number
+          id?: string
+          nome?: string
+          organization_id?: string
+          tipo?: string
+          unidade_base?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_dismissed_notifications: {
         Row: {
           dismissed_at: string
