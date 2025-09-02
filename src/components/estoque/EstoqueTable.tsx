@@ -113,7 +113,7 @@ export function EstoqueTable({
   };
 
   const formatPrice = (price: number | null) => {
-    if (!price) return "N/A";
+    if (!price || price === 0) return "R$ 0,00";
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
@@ -237,8 +237,12 @@ export function EstoqueTable({
       label: "Preços",
       render: (_, product: Product) => (
         <div className="text-xs">
-          <div>Custo: {formatPrice(product.preco_custo)}</div>
-          <div>Venda: {formatPrice(product.preco_venda)}</div>
+          <div className={`${product.preco_custo && product.preco_custo > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+            Custo: {formatPrice(product.preco_custo)}
+          </div>
+          <div className={`${product.preco_venda && product.preco_venda > 0 ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>
+            Venda: {formatPrice(product.preco_venda)}
+          </div>
         </div>
       )
     },
