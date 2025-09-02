@@ -45,6 +45,25 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
   const { toast } = useToast();
   const { createProduct, getProducts } = useProducts();
 
+  const getCompositionColumns = () => {
+    const columns = [
+      { key: 'produto', label: 'Produto', required: true },
+      { key: 'sku_pai', label: 'SKU Pai', required: true },
+    ];
+    
+    // Adicionar colunas para até 10 componentes
+    for (let i = 1; i <= 10; i++) {
+      columns.push(
+        { key: `sku_componente_${i}`, label: `SKU do componente ${i}`, required: i === 1 },
+        { key: `nome_componente_${i}`, label: `Nome do Componente ${i}`, required: false },
+        { key: `quantidade_${i}`, label: `quantidade ${i}`, required: i === 1 },
+        { key: `uni_medida_${i}`, label: `Uni medida ${i}`, required: false }
+      );
+    }
+    
+    return columns;
+  };
+
   const templateColumns = tipo === 'produtos' ? [
     { key: 'sku_interno', label: 'SKU Interno', required: true },
     { key: 'nome', label: 'Nome', required: true },
@@ -59,44 +78,116 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     { key: 'codigo_barras', label: 'Código de Barras', required: false },
     { key: 'localizacao', label: 'Localização', required: false },
     { key: 'unidade_medida_id', label: 'Unidade de Medida ID', required: false },
-  ] : [
-    { key: 'sku_produto', label: 'SKU Produto', required: true },
-    { key: 'sku_componente', label: 'SKU Componente', required: true },
-    { key: 'quantidade', label: 'Quantidade', required: true },
-    { key: 'unidade_medida_id', label: 'Unidade de Medida ID', required: false },
-  ];
+  ] : getCompositionColumns();
 
-  const downloadTemplate = () => {
-    const exampleRow = tipo === 'produtos' ? [
-      'EXEMPLO001',
-      'Produto Exemplo',
-      'Eletrônicos',
-      'Descrição do produto exemplo',
-      'https://exemplo.com/imagem.jpg',
-      '10',
-      '5',
-      '100',
-      '50.00',
-      '75.00',
-      '1234567890123',
-      'Estoque A1',
-      ''  // unidade_medida_id (opcional)
-    ] : [
-      'PROD001',
-      'COMP001', 
-      '2',
-      ''  // unidade_medida_id (opcional)
-    ];
+  const downloadTemplate = async () => {
+    if (tipo === 'produtos') {
+      const exampleRow = [
+        'EXEMPLO001',
+        'Produto Exemplo',
+        'Eletrônicos',
+        'Descrição do produto exemplo',
+        'https://exemplo.com/imagem.jpg',
+        '10',
+        '5',
+        '100',
+        '50.00',
+        '75.00',
+        '1234567890123',
+        'Estoque A1',
+        ''  // unidade_medida_id (opcional)
+      ];
 
-    const ws = XLSX.utils.aoa_to_sheet([
-      templateColumns.map(col => col.label),
-      exampleRow
-    ]);
+      const ws = XLSX.utils.aoa_to_sheet([
+        templateColumns.map(col => col.label),
+        exampleRow
+      ]);
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Template');
-    const fileName = tipo === 'produtos' ? 'template_produtos.xlsx' : 'template_composicoes.xlsx';
-    XLSX.writeFile(wb, fileName);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Template');
+      XLSX.writeFile(wb, 'template_produtos.xlsx');
+    } else {
+      // Para composições, criar template mais completo
+      try {
+        // Buscar unidades de medida disponíveis
+        const { data: unidades } = await supabase
+          .from('unidades_medida')
+          .select('nome, abreviacao, tipo')
+          .eq('ativo', true)
+          .order('tipo', { ascending: true })
+          .order('nome', { ascending: true });
+
+        const wb = XLSX.utils.book_new();
+
+        // Aba principal com template
+        const exampleRow = [
+          'KIT BOMBA DE ENCHER BECHIGA', // Produto
+          'FL-003-ROSA-10', // SKU Pai
+          'FL-003-ROSA-1', // SKU do componente 1
+          'BOMBA DE ENCHER MANUAL', // Nome do Componente 1
+          '10', // quantidade 1
+          'Unidade', // Uni medida 1
+          '', '', '', '', // componente 2
+          '', '', '', '', // componente 3
+          '', '', '', '', // componente 4
+          '', '', '', '', // componente 5
+          '', '', '', '', // componente 6
+          '', '', '', '', // componente 7
+          '', '', '', '', // componente 8
+          '', '', '', '', // componente 9
+          '', '', '', '', // componente 10
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet([
+          templateColumns.map(col => col.label),
+          exampleRow
+        ]);
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+
+        // Aba com unidades de medida disponíveis
+        if (unidades && unidades.length > 0) {
+          const unidadesData = [
+            ['Nome', 'Abreviação', 'Tipo'],
+            ...unidades.map(u => [u.nome, u.abreviacao, u.tipo])
+          ];
+          
+          const wsUnidades = XLSX.utils.aoa_to_sheet(unidadesData);
+          XLSX.utils.book_append_sheet(wb, wsUnidades, 'Unidades de Medida');
+        }
+
+        // Aba com instruções
+        const instrucoes = [
+          ['INSTRUÇÕES PARA PREENCHIMENTO'],
+          [''],
+          ['1. Preencha o SKU Pai do produto que será a composição'],
+          ['2. Para cada componente, preencha SKU, Nome, Quantidade e Unidade de Medida'],
+          ['3. Você pode adicionar até 10 componentes por produto'],
+          ['4. Use apenas as unidades de medida da aba "Unidades de Medida"'],
+          ['5. Campos obrigatórios: Produto, SKU Pai, SKU do componente 1, quantidade 1'],
+          ['6. Deixe em branco os componentes que não serão utilizados'],
+          [''],
+          ['EXEMPLO:'],
+          ['- Produto: KIT BOMBA DE ENCHER BECHIGA'],
+          ['- SKU Pai: FL-003-ROSA-10'],
+          ['- Componente 1: FL-003-ROSA-1 (10 Unidades)'],
+          ['- Demais componentes: deixar em branco se não utilizados'],
+        ];
+
+        const wsInstrucoes = XLSX.utils.aoa_to_sheet(instrucoes);
+        XLSX.utils.book_append_sheet(wb, wsInstrucoes, 'Instruções');
+
+        XLSX.writeFile(wb, 'template_composicoes.xlsx');
+      } catch (error) {
+        console.error('Erro ao gerar template:', error);
+        toast({
+          title: "Erro",
+          description: "Erro ao gerar template de composições.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     toast({
       title: "Template baixado",
@@ -150,16 +241,32 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       });
     } else {
       // Validação para composições
-      if (!row.sku_produto || row.sku_produto.trim() === '') {
-        errors.push(`Linha ${index + 2}: SKU Produto é obrigatório`);
+      if (!row.produto || row.produto.trim() === '') {
+        errors.push(`Linha ${index + 2}: Produto é obrigatório`);
       }
       
-      if (!row.sku_componente || row.sku_componente.trim() === '') {
-        errors.push(`Linha ${index + 2}: SKU Componente é obrigatório`);
+      if (!row.sku_pai || row.sku_pai.trim() === '') {
+        errors.push(`Linha ${index + 2}: SKU Pai é obrigatório`);
       }
       
-      if (!row.quantidade || isNaN(Number(row.quantidade)) || Number(row.quantidade) <= 0) {
-        errors.push(`Linha ${index + 2}: Quantidade deve ser um número maior que 0`);
+      if (!row.sku_componente_1 || row.sku_componente_1.trim() === '') {
+        errors.push(`Linha ${index + 2}: SKU do componente 1 é obrigatório`);
+      }
+      
+      if (!row.quantidade_1 || isNaN(Number(row.quantidade_1)) || Number(row.quantidade_1) <= 0) {
+        errors.push(`Linha ${index + 2}: quantidade 1 deve ser um número maior que 0`);
+      }
+      
+      // Validar componentes adicionais se fornecidos
+      for (let i = 2; i <= 10; i++) {
+        const skuComponente = row[`sku_componente_${i}`];
+        const quantidade = row[`quantidade_${i}`];
+        
+        if (skuComponente && skuComponente.trim() !== '') {
+          if (!quantidade || isNaN(Number(quantidade)) || Number(quantidade) <= 0) {
+            errors.push(`Linha ${index + 2}: quantidade ${i} deve ser um número maior que 0 quando SKU do componente ${i} for informado`);
+          }
+        }
       }
     }
 
@@ -282,11 +389,32 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           return;
         }
       } else {
-        // Para composições, apenas validar dados
+        // Para composições, processar múltiplos componentes por linha
+        const expandedData: any[] = [];
+        
         mappedData.forEach((row, index) => {
           const rowErrors = validateRow(row, index);
           if (rowErrors.length > 0) {
             allErrors.push(...rowErrors);
+            return;
+          }
+          
+          // Expandir cada linha em múltiplas composições
+          for (let i = 1; i <= 10; i++) {
+            const skuComponente = row[`sku_componente_${i}`];
+            const nomeComponente = row[`nome_componente_${i}`];
+            const quantidade = row[`quantidade_${i}`];
+            const uniMedida = row[`uni_medida_${i}`];
+            
+            if (skuComponente && skuComponente.trim() !== '' && quantidade && Number(quantidade) > 0) {
+              expandedData.push({
+                sku_produto: row.sku_pai.trim(),
+                sku_componente: skuComponente.trim(),
+                nome_componente: nomeComponente?.trim() || skuComponente.trim(),
+                quantidade: Number(quantidade),
+                unidade_medida_id: uniMedida?.trim() || null,
+              });
+            }
           }
         });
 
@@ -294,6 +422,10 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           setResult({ success: 0, errors: allErrors, warnings: [] });
           return;
         }
+        
+        // Atualizar mappedData com os dados expandidos
+        mappedData.length = 0;
+        mappedData.push(...expandedData);
       }
 
       if (tipo === 'produtos') {
