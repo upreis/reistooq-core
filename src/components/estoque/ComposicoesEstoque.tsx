@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Boxes } from "lucide-react";
+import { Search, Package, Plus, Boxes, Edit } from "lucide-react";
 import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
 import { ShopProduct } from "@/features/shop/types/shop.types";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
+import { ComposicoesModal } from "./ComposicoesModal";
 
 const sortOptions = [
   { id: "newest", name: "Mais Recentes", sortBy: "created_at", sortOrder: "desc" },
@@ -18,6 +19,8 @@ export function ComposicoesEstoque() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedSort, setSelectedSort] = useState<string>("newest");
   const [searchQuery, setSearchQuery] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [produtoSelecionado, setProdutoSelecionado] = useState<ShopProduct | null>(null);
 
   const {
     products,
@@ -31,7 +34,21 @@ export function ComposicoesEstoque() {
     total
   } = useShopProducts();
 
-  const { getComposicoesForSku } = useComposicoesEstoque();
+  const { getComposicoesForSku, loadComposicoes } = useComposicoesEstoque();
+
+  const abrirModalComposicoes = (produto: ShopProduct) => {
+    setProdutoSelecionado(produto);
+    setModalOpen(true);
+  };
+
+  const fecharModal = () => {
+    setModalOpen(false);
+    setProdutoSelecionado(null);
+  };
+
+  const handleSalvarComposicoes = () => {
+    loadComposicoes(); // Recarrega as composições
+  };
 
   // Sync local state with hook filters
   useEffect(() => {
@@ -103,15 +120,29 @@ export function ComposicoesEstoque() {
                   variant="ghost" 
                   size="sm" 
                   className="mt-1 h-auto p-0 text-xs"
-                  onClick={() => {/* Implementar modal de adição */}}
+                  onClick={() => abrirModalComposicoes(product)}
                 >
                   + Adicionar composição
                 </Button>
               </div>
             )}
+            
+            {/* Botão de Editar (sempre visível) */}
+            <div className="mt-3 pt-3 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => abrirModalComposicoes(product)}
+                className="w-full"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                {composicoes && composicoes.length > 0 ? "Editar Composições" : "Adicionar Composições"}
+              </Button>
+            </div>
           </div>
           
-          {/* Informações do Estoque - sem preço */}
+           
+          {/* Informações do Estoque */}
           <div className="mt-3 pt-3 border-t">
             <span className="text-xs text-muted-foreground">
               Estoque Disponível: <span className="font-medium text-foreground">{product.quantidade_atual}</span>
@@ -300,6 +331,15 @@ export function ComposicoesEstoque() {
           )}
         </div>
       </div>
+
+      {/* Modal de Composições */}
+      <ComposicoesModal
+        isOpen={modalOpen}
+        onClose={fecharModal}
+        produto={produtoSelecionado}
+        composicoes={produtoSelecionado ? getComposicoesForSku(produtoSelecionado.sku_interno) : []}
+        onSave={handleSalvarComposicoes}
+      />
     </div>
   );
 }
