@@ -242,11 +242,15 @@ export type Database = {
       categorias_produtos: {
         Row: {
           ativo: boolean | null
+          categoria_completa: string | null
+          categoria_id: string | null
+          categoria_principal_id: string | null
           cor: string | null
           created_at: string
           descricao: string | null
           icone: string | null
           id: string
+          nivel: number
           nome: string
           ordem: number | null
           organization_id: string
@@ -254,11 +258,15 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean | null
+          categoria_completa?: string | null
+          categoria_id?: string | null
+          categoria_principal_id?: string | null
           cor?: string | null
           created_at?: string
           descricao?: string | null
           icone?: string | null
           id?: string
+          nivel?: number
           nome: string
           ordem?: number | null
           organization_id: string
@@ -266,17 +274,36 @@ export type Database = {
         }
         Update: {
           ativo?: boolean | null
+          categoria_completa?: string | null
+          categoria_id?: string | null
+          categoria_principal_id?: string | null
           cor?: string | null
           created_at?: string
           descricao?: string | null
           icone?: string | null
           id?: string
+          nivel?: number
           nome?: string
           ordem?: number | null
           organization_id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categorias_produtos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categorias_produtos_categoria_principal_id_fkey"
+            columns: ["categoria_principal_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_produtos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       configuracoes: {
         Row: {
@@ -2501,6 +2528,24 @@ export type Database = {
       gerar_sku_automatico: {
         Args: { org_id: string; prefixo?: string }
         Returns: string
+      }
+      get_categorias_hierarquicas: {
+        Args: { org_id: string }
+        Returns: {
+          ativo: boolean
+          categoria_completa: string
+          categoria_id: string
+          categoria_principal_id: string
+          cor: string
+          created_at: string
+          descricao: string
+          icone: string
+          id: string
+          nivel: number
+          nome: string
+          ordem: number
+          updated_at: string
+        }[]
       }
       get_current_org_id: {
         Args: Record<PropertyKey, never>
