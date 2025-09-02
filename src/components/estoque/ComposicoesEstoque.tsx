@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload } from "lucide-react";
+import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download } from "lucide-react";
+import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
 import { ShopProduct } from "@/features/shop/types/shop.types";
@@ -65,6 +66,52 @@ export function ComposicoesEstoque() {
       newExpanded.add(productId);
     }
     setExpandedCards(newExpanded);
+  };
+
+  const handleDownloadComposicoes = async () => {
+    try {
+      // Buscar todas as composições da organização
+      const { data: composicoesData, error } = await supabase
+        .from('produto_componentes')
+        .select(`
+          *,
+          unidades_medida:unidade_medida_id (
+            nome,
+            abreviacao
+          )
+        `);
+
+      if (error) {
+        console.error('Erro ao buscar composições:', error);
+        return;
+      }
+
+      // Preparar dados das composições para exportação
+      const dataToExport = composicoesData?.map(comp => ({
+        'SKU Produto': comp.sku_produto,
+        'SKU Componente': comp.sku_componente,
+        'Nome Componente': comp.nome_componente || '',
+        'Quantidade': comp.quantidade,
+        'Unidade de Medida': comp.unidades_medida?.nome || comp.unidades_medida?.abreviacao || '',
+        'Data Criação': comp.created_at ? new Date(comp.created_at).toLocaleDateString('pt-BR') : '',
+        'Data Atualização': comp.updated_at ? new Date(comp.updated_at).toLocaleDateString('pt-BR') : ''
+      })) || [];
+
+      // Criar workbook e worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      
+      // Adicionar worksheet ao workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Composições');
+      
+      // Baixar o arquivo
+      const fileName = `composicoes_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      console.log(`Download concluído: ${fileName}`);
+    } catch (error) {
+      console.error('Erro ao baixar dados das composições:', error);
+    }
   };
 
   // Sync local state with hook filters
@@ -389,6 +436,15 @@ export function ComposicoesEstoque() {
           >
             <Upload className="w-4 h-4" />
             Importar
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleDownloadComposicoes} 
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Baixar Dados
           </Button>
         </div>
       </div>

@@ -33,6 +33,7 @@ import {
   BarChart3,
   Package,
 } from "lucide-react";
+import * as XLSX from 'xlsx';
 import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
 import { ProductModal } from "./ProductModal";
@@ -105,6 +106,51 @@ export function EstoqueActions({
       title: "Análise IA",
       description: "Executando previsão de reposição com IA...",
     });
+  };
+
+  const handleDownloadEstoque = () => {
+    try {
+      // Preparar dados dos produtos para exportação
+      const dataToExport = products.map(product => ({
+        'SKU Interno': product.sku_interno,
+        'Nome': product.nome,
+        'Descrição': product.descricao || '',
+        'Categoria': product.categoria || '',
+        'Unidade de Medida ID': product.unidade_medida_id || '',
+        'Quantidade Atual': product.quantidade_atual,
+        'Estoque Mínimo': product.estoque_minimo,
+        'Localização': product.localizacao || '',
+        'Preço de Custo': product.preco_custo || 0,
+        'Preço de Venda': product.preco_venda || 0,
+        'Código de Barras': product.codigo_barras || '',
+        'Ativo': product.ativo ? 'Sim' : 'Não',
+        'Data Criação': product.created_at ? new Date(product.created_at).toLocaleDateString('pt-BR') : '',
+        'Data Atualização': product.updated_at ? new Date(product.updated_at).toLocaleDateString('pt-BR') : ''
+      }));
+
+      // Criar workbook e worksheet
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      
+      // Adicionar worksheet ao workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Controle de Estoque');
+      
+      // Baixar o arquivo
+      const fileName = `estoque_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      
+      toast({
+        title: "Download concluído",
+        description: `Arquivo ${fileName} baixado com sucesso!`,
+      });
+    } catch (error) {
+      console.error('Erro ao baixar dados:', error);
+      toast({
+        title: "Erro no download",
+        description: "Não foi possível baixar os dados do estoque.",
+        variant: "destructive",
+      });
+    }
   };
 
   const lowStockCount = products.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0).length;
@@ -263,6 +309,12 @@ export function EstoqueActions({
       <Button variant="outline" onClick={() => setImportModalOpen(true)} className="gap-2">
         <Upload className="w-4 h-4" />
         Importar
+      </Button>
+
+      {/* Botão Download Dados */}
+      <Button variant="outline" onClick={handleDownloadEstoque} className="gap-2">
+        <Download className="w-4 h-4" />
+        Baixar Dados
       </Button>
 
       {/* Modais */}
