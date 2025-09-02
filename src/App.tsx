@@ -46,6 +46,7 @@ import SolarIcons from "./pages/SolarIcons";
 import AdminPage from "./pages/AdminPage";
 import AcceptInvite from "./pages/AcceptInvite";
 import ResetPassword from "./pages/ResetPassword";
+import CategoryManager from "./pages/CategoryManager";
 
 const queryClient = new QueryClient();
 
@@ -156,11 +157,16 @@ function App() {
                     
                     
                     {/* Custom Business Routes */}
-                    <Route path="/estoque" element={
-                      <PermissionRoute requiredPermissions={['estoque:view']}>
-                        <Estoque />
-                      </PermissionRoute>
-                    } />
+                     <Route path="/estoque" element={
+                       <PermissionRoute requiredPermissions={['estoque:view']}>
+                         <Estoque />
+                       </PermissionRoute>
+                     } />
+                     <Route path="/category-manager" element={
+                       <PermissionRoute requiredPermissions={['estoque:view']}>
+                         <CategoryManager />
+                       </PermissionRoute>
+                     } />
                     <Route path="/pedidos" element={
                       <PermissionRoute requiredPermissions={['orders:read']}>
                         <Pedidos />

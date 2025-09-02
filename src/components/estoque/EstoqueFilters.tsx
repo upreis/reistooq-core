@@ -23,6 +23,7 @@ import {
   TrendingUp,
   TrendingDown
 } from "lucide-react";
+import { HierarchicalCategoryFilter } from '@/features/products/components/HierarchicalCategoryFilter';
 
 interface EstoqueFiltersProps {
   searchTerm: string;
@@ -35,6 +36,18 @@ interface EstoqueFiltersProps {
   onSearch: () => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
+  // Filtros hierárquicos opcionais
+  useHierarchicalCategories?: boolean;
+  hierarchicalFilters?: {
+    categoriaPrincipal?: string;
+    categoria?: string;
+    subcategoria?: string;
+  };
+  onHierarchicalFiltersChange?: (filters: {
+    categoriaPrincipal?: string;
+    categoria?: string;
+    subcategoria?: string;
+  }) => void;
 }
 
 export function EstoqueFilters({
@@ -48,6 +61,9 @@ export function EstoqueFilters({
   onSearch,
   onClearFilters,
   hasActiveFilters,
+  useHierarchicalCategories = false,
+  hierarchicalFilters,
+  onHierarchicalFiltersChange,
 }: EstoqueFiltersProps) {
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [stockRange, setStockRange] = useState({ min: "", max: "" });
@@ -95,19 +111,29 @@ export function EstoqueFilters({
         </div>
 
         {/* Filtro de categoria */}
-        <Select value={selectedCategory} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas categorias</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {useHierarchicalCategories && onHierarchicalFiltersChange ? (
+          <div className="min-w-[300px]">
+            <HierarchicalCategoryFilter
+              selectedFilters={hierarchicalFilters}
+              onFilterChange={onHierarchicalFiltersChange}
+              className="space-y-2"
+            />
+          </div>
+        ) : (
+          <Select value={selectedCategory} onValueChange={onCategoryChange}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Categoria" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas categorias</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
 
         {/* Filtro de status */}
         <Select value={selectedStatus} onValueChange={onStatusChange}>

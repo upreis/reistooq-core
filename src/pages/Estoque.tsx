@@ -568,18 +568,27 @@ const Estoque = () => {
                   {/* Conteúdo Principal */}
                   <div className="flex-1">
                     {/* Filtros no topo */}
-                    <EstoqueFilters
-                      searchTerm={searchTerm}
-                      onSearchChange={setSearchTerm}
-                      selectedCategory={selectedCategory}
-                      onCategoryChange={setSelectedCategory}
-                      selectedStatus={selectedStatus}
-                      onStatusChange={setSelectedStatus}
-                      categories={categories}
-                      onSearch={handleSearch}
-                      onClearFilters={handleClearFilters}
-                      hasActiveFilters={hasActiveFilters}
-                    />
+            <EstoqueFilters
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              selectedStatus={selectedStatus}
+              onStatusChange={setSelectedStatus}
+              categories={categories}
+              onSearch={handleSearch}
+              onClearFilters={handleClearFilters}
+              hasActiveFilters={hasActiveFilters}
+              useHierarchicalCategories={true}
+              hierarchicalFilters={{
+                categoriaPrincipal: undefined,
+                categoria: undefined,
+                subcategoria: undefined,
+              }}
+              onHierarchicalFiltersChange={(filters) => {
+                console.log('Filtros hierárquicos:', filters);
+              }}
+            />
 
                     {/* Tabela */}
                     <div className="mt-6">

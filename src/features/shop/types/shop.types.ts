@@ -37,6 +37,9 @@ export interface ProductImage {
 export interface ShopFilters {
   search: string;
   categoria?: string;
+  // Campos para categorias hierárquicas
+  categoriaPrincipal?: string;
+  subcategoria?: string;
   priceRange: {
     min?: number;
     max?: number;

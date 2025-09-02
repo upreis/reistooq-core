@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, X, SlidersHorizontal } from "lucide-react";
 import { ShopFilters as ShopFiltersType, ShopCategory } from "../types/shop.types";
+import { HierarchicalCategoryFilter } from '@/features/products/components/HierarchicalCategoryFilter';
 
 interface ShopFiltersProps {
   filters: ShopFiltersType;
@@ -15,6 +16,7 @@ interface ShopFiltersProps {
   onFiltersChange: (filters: Partial<ShopFiltersType>) => void;
   onReset: () => void;
   isLoading?: boolean;
+  useHierarchicalCategories?: boolean;
 }
 
 export function ShopFilters({ 
@@ -22,7 +24,8 @@ export function ShopFilters({
   categories, 
   onFiltersChange, 
   onReset,
-  isLoading 
+  isLoading,
+  useHierarchicalCategories = false
 }: ShopFiltersProps) {
   const hasActiveFilters = !!(
     filters.search ||
@@ -73,34 +76,53 @@ export function ShopFilters({
           <h3 className="font-semibold">Categorias</h3>
         </CardHeader>
         <CardContent className="space-y-2">
-          <Button
-            variant={!filters.categoria ? "default" : "ghost"}
-            className="w-full justify-start"
-            onClick={() => onFiltersChange({ categoria: undefined })}
-            disabled={isLoading}
-          >
-            <span className="mr-2">🛍️</span>
-            Todas as Categorias
-          </Button>
-          {categories.map((category) => (
-            <Button
-              key={category.id}
-              variant={filters.categoria === category.nome ? "default" : "ghost"}
-              className="w-full justify-between"
-              onClick={() => onFiltersChange({ 
-                categoria: filters.categoria === category.nome ? undefined : category.nome 
-              })}
-              disabled={isLoading}
-            >
-              <div className="flex items-center">
-                <span className="mr-2">{category.icone || '📦'}</span>
-                {category.nome}
-              </div>
-              <Badge variant="secondary" className="text-xs">
-                {category.products_count}
-              </Badge>
-            </Button>
-          ))}
+          {useHierarchicalCategories ? (
+            <HierarchicalCategoryFilter
+              selectedFilters={{
+                categoriaPrincipal: filters.categoriaPrincipal,
+                categoria: filters.categoria,
+                subcategoria: filters.subcategoria,
+              }}
+              onFilterChange={(hierarchicalFilters) => {
+                onFiltersChange({
+                  categoriaPrincipal: hierarchicalFilters.categoriaPrincipal,
+                  categoria: hierarchicalFilters.categoria,
+                  subcategoria: hierarchicalFilters.subcategoria,
+                });
+              }}
+            />
+          ) : (
+            <>
+              <Button
+                variant={!filters.categoria ? "default" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => onFiltersChange({ categoria: undefined })}
+                disabled={isLoading}
+              >
+                <span className="mr-2">🛍️</span>
+                Todas as Categorias
+              </Button>
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={filters.categoria === category.nome ? "default" : "ghost"}
+                  className="w-full justify-between"
+                  onClick={() => onFiltersChange({ 
+                    categoria: filters.categoria === category.nome ? undefined : category.nome 
+                  })}
+                  disabled={isLoading}
+                >
+                  <div className="flex items-center">
+                    <span className="mr-2">{category.icone || '📦'}</span>
+                    {category.nome}
+                  </div>
+                  <Badge variant="secondary" className="text-xs">
+                    {category.products_count}
+                  </Badge>
+                </Button>
+              ))}
+            </>
+          )}
         </CardContent>
       </Card>
 
