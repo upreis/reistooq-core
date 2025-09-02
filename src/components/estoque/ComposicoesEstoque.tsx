@@ -70,11 +70,9 @@ export function ComposicoesEstoque() {
         <CardContent className="p-5">
           <header className="mb-4">
             <h3 className="font-semibold text-base text-foreground leading-snug line-clamp-2">{product.nome}</h3>
-            <div className="mt-2">
-              <p className="text-xs text-muted-foreground">SKU Pai:</p>
-              <div className="mt-1">
-                <Badge variant="outline" className="font-mono text-[11px]">{product.sku_interno}</Badge>
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">SKU Pai:</span>
+              <Badge variant="outline" className="font-mono text-[11px]">{product.sku_interno}</Badge>
             </div>
           </header>
 
