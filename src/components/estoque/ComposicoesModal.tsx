@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ShopProduct } from "@/features/shop/types/shop.types";
 import { ProdutoComponente } from "@/hooks/useComposicoesEstoque";
 import { useProducts, Product } from "@/hooks/useProducts";
+import { useUnidadesMedida } from "@/hooks/useUnidadesMedida";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 interface ComposicoesModalProps {
@@ -28,7 +30,7 @@ interface ComposicaoForm {
   sku_componente: string;
   nome_componente: string;
   quantidade: number;
-  unidade_medida: string;
+  unidade_medida_id: string;
 }
 
 export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave }: ComposicoesModalProps) {
@@ -39,6 +41,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
   const [nomeOpenIndex, setNomeOpenIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const { getProducts } = useProducts();
+  const { unidades, getUnidadeById } = useUnidadesMedida();
   const [skuSearch, setSkuSearch] = useState<string[]>([]);
   const [nomeSearch, setNomeSearch] = useState<string[]>([]);
 
@@ -50,7 +53,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
           sku_componente: comp.sku_componente,
           nome_componente: comp.nome_componente,
           quantidade: comp.quantidade,
-          unidade_medida: "un" // Temporário até integrar com unidades
+          unidade_medida_id: comp.unidade_medida_id || ""
         }))
       );
       setSkuSearch(composicoes.map(comp => comp.sku_componente || ""));
@@ -95,7 +98,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         sku_componente: "",
         nome_componente: "",
         quantidade: 1,
-        unidade_medida: "UN"
+        unidade_medida_id: ""
       }
     ]);
     setSkuSearch((prev) => [...prev, ""]);
@@ -159,7 +162,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
           sku_componente: comp.sku_componente.trim(),
           nome_componente: comp.nome_componente.trim(),
           quantidade: comp.quantidade,
-          unidade_medida_id: null, // Usando null já que não estamos gerenciando unidades de medida por enquanto
+          unidade_medida_id: comp.unidade_medida_id || null,
           organization_id: productData.organization_id
         }));
 
@@ -245,10 +248,12 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                           <p className="text-lg font-mono font-semibold">{composicao.sku_componente}</p>
                         </div>
                         <div className="text-right">
-                          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Quantidade</Label>
-                          <p className="text-lg font-semibold">
-                            {composicao.quantidade} <span className="text-sm text-muted-foreground">{composicao.unidade_medida}</span>
-                          </p>
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Quantidade</Label>
+          <p className="text-lg font-semibold">
+            {composicao.quantidade} <span className="text-sm text-muted-foreground">
+              {composicao.unidade_medida_id ? getUnidadeById(composicao.unidade_medida_id)?.abreviacao || 'UN' : 'UN'}
+            </span>
+          </p>
                         </div>
                       </div>
                     </div>
@@ -415,13 +420,23 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor={`unidade-${index}`} className="text-sm font-medium">Unidade de Medida</Label>
-                        <Input
-                          id={`unidade-${index}`}
-                          value={composicao.unidade_medida}
-                          onChange={(e) => atualizarComposicao(index, 'unidade_medida', e.target.value)}
-                          placeholder="Ex: UN, KG, M"
-                          className="font-medium"
-                        />
+                        <Select 
+                          value={composicao.unidade_medida_id} 
+                          onValueChange={(value) => atualizarComposicao(index, 'unidade_medida_id', value)}
+                        >
+                          <SelectTrigger className="font-medium">
+                            <SelectValue placeholder="Selecione a unidade" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {unidades
+                              .filter(u => u.ativo)
+                              .map((unidade) => (
+                                <SelectItem key={unidade.id} value={unidade.id}>
+                                  {unidade.nome} ({unidade.abreviacao})
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </div>

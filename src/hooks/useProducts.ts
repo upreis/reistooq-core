@@ -14,6 +14,7 @@ export interface Product {
   preco_custo: number | null;
   preco_venda: number | null;
   localizacao: string | null;
+  unidade_medida_id: string | null;
   status: string;
   ativo: boolean;
   url_imagem: string | null;
@@ -96,7 +97,7 @@ export const useProducts = () => {
     return data as Product;
   };
 
-  const createProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id' | 'unidade_medida_id'>) => {
+  const createProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'>) => {
     const orgId = await getCurrentOrgId();
 
     // Buscar unidade padrão "un" para a organização atual
@@ -110,7 +111,7 @@ export const useProducts = () => {
     const payload = {
       ...product,
       organization_id: orgId,
-      unidade_medida_id: unidadePadrao?.id || null,
+      unidade_medida_id: product.unidade_medida_id || unidadePadrao?.id || null,
     };
 
     const { data, error } = await supabase

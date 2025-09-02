@@ -29,6 +29,7 @@ import {
 import { Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
+import { useUnidadesMedida } from "@/hooks/useUnidadesMedida";
 import { supabase } from "@/integrations/supabase/client";
 
 const categorias = [
@@ -58,6 +59,7 @@ const productSchema = z.object({
   preco_venda: z.coerce.number().min(0, "Preço de venda deve ser positivo").optional(),
   codigo_barras: z.string().optional(),
   localizacao: z.string().optional(),
+  unidade_medida_id: z.string().min(1, "Unidade de medida é obrigatória"),
   status: z.string().default("ativo"),
 });
 
@@ -77,6 +79,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
+  const { unidades, loading: loadingUnidades, getUnidadeBasePorTipo } = useUnidadesMedida();
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -92,6 +95,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       preco_venda: "" as any,
       codigo_barras: "",
       localizacao: "",
+      unidade_medida_id: "",
       status: "ativo",
     },
   });
@@ -110,10 +114,14 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         preco_venda: product.preco_venda || 0,
         codigo_barras: product.codigo_barras || "",
         localizacao: product.localizacao || "",
+        unidade_medida_id: product.unidade_medida_id || "",
         status: product.status,
       });
       setImagePreview(product.url_imagem || null);
     } else if (!product && open) {
+      // Define unidade padrão automaticamente
+      const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
+      
       form.reset({
         sku_interno: "",
         nome: "",
@@ -126,12 +134,13 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         preco_venda: "" as any,
         codigo_barras: initialBarcode || "",
         localizacao: "",
+        unidade_medida_id: unidadePadrao?.id || "",
         status: "ativo",
       });
       setImageFile(null);
       setImagePreview(null);
     }
-  }, [product, open, form, initialBarcode]);
+  }, [product, open, form, initialBarcode, getUnidadeBasePorTipo, unidades]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -218,6 +227,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
           preco_venda: data.preco_venda || null,
           codigo_barras: data.codigo_barras || null,
           localizacao: data.localizacao || null,
+          unidade_medida_id: data.unidade_medida_id,
           status: data.status,
           ativo: true,
           url_imagem: null,
@@ -450,6 +460,34 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                     <FormControl>
                       <Input placeholder="Setor A, Prateleira 1" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Unidade de Medida */}
+              <FormField
+                control={form.control}
+                name="unidade_medida_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Unidade de Medida *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a unidade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {unidades
+                          .filter(u => u.ativo)
+                          .map((unidade) => (
+                            <SelectItem key={unidade.id} value={unidade.id}>
+                              {unidade.nome} ({unidade.abreviacao}) - {unidade.tipo}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
