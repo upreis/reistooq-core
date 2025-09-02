@@ -182,7 +182,7 @@ export function EstoqueTable({
     },
     {
       key: "codigo_barras",
-      label: "Código",
+      label: "Código de Barras",
       sortable: true,
       render: (value: string) => (
         <span className="text-xs font-mono text-muted-foreground">
