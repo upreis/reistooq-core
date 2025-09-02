@@ -261,25 +261,37 @@ export function ComposicoesEstoque() {
 
                 </div>
 
-                {/* Botão para expandir detalhes */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => toggleCardExpansion(product.id)}
-                  className="w-full text-xs"
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUp className="h-3 w-3 mr-1" />
-                      Ocultar análise detalhada
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-3 w-3 mr-1" />
-                      Ver análise detalhada
-                    </>
-                  )}
-                </Button>
+                {/* Botões em linha */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleCardExpansion(product.id)}
+                    className="flex-1 text-xs"
+                  >
+                    {isExpanded ? (
+                      <>
+                        <ChevronUp className="h-3 w-3 mr-1" />
+                        Ocultar análise
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-3 w-3 mr-1" />
+                        Ver análise
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => abrirModalComposicoes(product)}
+                    className="flex-1 text-xs"
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Editar
+                  </Button>
+                </div>
 
                 {/* Detalhes expandíveis */}
                 {isExpanded && (
@@ -349,17 +361,6 @@ export function ComposicoesEstoque() {
               </div>
             )}
 
-            <div className="pt-3 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => abrirModalComposicoes(product)}
-                className="w-full"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                {composicoes && composicoes.length > 0 ? "Editar Composições" : "Adicionar Composições"}
-              </Button>
-            </div>
           </section>
         </CardContent>
       </Card>
