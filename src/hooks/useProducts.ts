@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -28,15 +29,15 @@ export interface Product {
 export const useProducts = () => {
   const { user } = useAuth();
 
-  const getCurrentOrgId = async (): Promise<string> => {
+  const getCurrentOrgId = useCallback(async (): Promise<string> => {
     const { data, error } = await supabase.rpc('get_current_org_id');
     if (error || !data) {
       throw new Error('Não foi possível obter a organização atual.');
     }
     return data as unknown as string;
-  };
+  }, []);
 
-  const getProducts = async (filters?: {
+  const getProducts = useCallback(async (filters?: {
     search?: string;
     categoria?: string;
     status?: string;
@@ -80,9 +81,9 @@ export const useProducts = () => {
     
     console.log(`✅ Produtos encontrados: ${data?.length || 0}`);
     return data as Product[];
-  };
+  }, []);
 
-  const getProduct = async (id: string) => {
+  const getProduct = useCallback(async (id: string) => {
     const { data, error } = await supabase
       .from('produtos')
       .select('*')
@@ -95,9 +96,9 @@ export const useProducts = () => {
     }
 
     return data as Product;
-  };
+  }, []);
 
-  const createProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'>) => {
+  const createProduct = useCallback(async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'>) => {
     const orgId = await getCurrentOrgId();
 
     // Buscar unidade padrão "un" para a organização atual
@@ -126,9 +127,9 @@ export const useProducts = () => {
     }
 
     return data as Product;
-  };
+  }, [getCurrentOrgId]);
 
-  const updateProduct = async (id: string, updates: Partial<Product>) => {
+  const updateProduct = useCallback(async (id: string, updates: Partial<Product>) => {
     const orgId = await getCurrentOrgId();
 
     // Primeiro, tentar atualizar com organization_id válido
@@ -168,9 +169,9 @@ export const useProducts = () => {
     }
 
     return data as Product;
-  };
+  }, [getCurrentOrgId]);
 
-  const deleteProduct = async (id: string) => {
+  const deleteProduct = useCallback(async (id: string) => {
     const orgId = await getCurrentOrgId();
 
     const { error } = await supabase
@@ -183,9 +184,9 @@ export const useProducts = () => {
       console.error('Error deleting product:', error);
       throw error;
     }
-  };
+  }, [getCurrentOrgId]);
 
-  const getProductStats = async () => {
+  const getProductStats = useCallback(async () => {
     // Total de produtos
     const { count: totalProducts } = await supabase
       .from('produtos')
@@ -226,9 +227,9 @@ export const useProducts = () => {
       outOfStockProducts: outOfStockProducts || 0,
       totalStockValue
     };
-  };
+  }, []);
 
-  const getCategories = async () => {
+  const getCategories = useCallback(async () => {
     const { data, error } = await supabase
       .from('produtos')
       .select('categoria')
@@ -242,7 +243,7 @@ export const useProducts = () => {
 
     const categories = [...new Set(data.map(item => item.categoria))].filter(Boolean);
     return categories as string[];
-  };
+  }, []);
 
   return {
     getProducts,

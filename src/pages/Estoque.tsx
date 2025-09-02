@@ -1,5 +1,5 @@
 // 🛡️ PÁGINA PROTEGIDA - NÃO MODIFICAR SEM AUTORIZAÇÃO EXPLÍCITA
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { EstoqueGuard } from '@/core/estoque/guards/EstoqueGuard';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Package, AlertTriangle, Boxes } from "lucide-react";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
+import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 
 interface StockMovement {
   id: string;
@@ -53,20 +54,11 @@ const Estoque = () => {
   const { toast } = useToast();
   const { getCategoriasPrincipais, getCategorias, getSubcategorias, categories: hierarchicalCategories, loading: categoriesLoading } = useHierarchicalCategories();
 
-  useEffect(() => {
-    loadProducts();
-    loadCategories();
-  }, []);
-
-  useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      if (searchTerm !== undefined) {
-        loadProducts();
-      }
-    }, 300);
-
-    return () => clearTimeout(delayedSearch);
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, hierarchicalFilters]);
+  // Filtros estáveis para evitar loops
+  const stableFilters = useMemo(() => 
+    JSON.stringify(hierarchicalFilters), 
+    [hierarchicalFilters]
+  );
 
   const loadProducts = useCallback(async () => {
     try {
@@ -101,8 +93,7 @@ const Estoque = () => {
         });
       }
       
-      // Atualizar categorias após carregar produtos
-      loadCategories();
+      // Não carregar categorias aqui para evitar loops
 
       // Aplicar filtro de status
       if (selectedStatus !== "all") {
@@ -151,16 +142,29 @@ const Estoque = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, getProducts, toast]);
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, stableFilters, getProducts, getCategoriasPrincipais, getCategorias, getSubcategorias, toast]);
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const data = await getCategories();
       setCategories(data);
     } catch (error) {
       console.error("Error loading categories:", error);
     }
-  };
+  }, [getCategories]);
+
+  useEffect(() => {
+    loadProducts();
+    loadCategories();
+  }, []); // Remover dependência loadProducts do mount
+
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      loadProducts();
+    }, 300);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, stableFilters, loadProducts]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -373,22 +377,10 @@ const Estoque = () => {
     });
   };
 
-  if (loading) {
-    return (
-      <>
-        <div className="flex items-center justify-center min-h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Carregando estoque...</p>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  const paginatedProducts = products.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  // Memoizar dados derivados para melhor performance
+  const paginatedProducts = useMemo(() => 
+    products.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
+    [products, currentPage, itemsPerPage]
   );
 
   return (
@@ -633,55 +625,60 @@ const Estoque = () => {
 
                   {/* Conteúdo Principal */}
                   <div className="flex-1">
-
-                    {/* Tabela */}
-                    <div className="mt-6">
-                      <EstoqueTable
-                        products={paginatedProducts}
-                        selectedProducts={selectedProducts}
-                        onSelectProduct={handleSelectProduct}
-                        onSelectAll={handleSelectAll}
-                        onEditProduct={handleEditProduct}
-                        onDeleteProduct={handleDeleteProduct}
-                        onStockMovement={handleStockMovement}
-                        sortBy={sortBy}
-                        sortOrder={sortOrder}
-                        onSort={handleSort}
-                      />
-                    </div>
-
-                    {/* Paginação */}
-                    {products.length > itemsPerPage && (
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-                        <p className="text-sm text-muted-foreground">
-                          Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
-                          {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
-                          {products.length} produtos
-                        </p>
-                        <div className="flex flex-col sm:flex-row items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                            disabled={currentPage === 1}
-                            className="w-full sm:w-auto"
-                          >
-                            Anterior
-                          </Button>
-                          <span className="text-sm text-center">
-                            Página {currentPage} de {Math.ceil(products.length / itemsPerPage)}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / itemsPerPage), currentPage + 1))}
-                            disabled={currentPage === Math.ceil(products.length / itemsPerPage)}
-                            className="w-full sm:w-auto"
-                          >
-                            Próximo
-                          </Button>
+                    {loading ? (
+                      <EstoqueSkeleton />
+                    ) : (
+                      <>
+                        {/* Tabela */}
+                        <div className="mt-6">
+                          <EstoqueTable
+                            products={paginatedProducts}
+                            selectedProducts={selectedProducts}
+                            onSelectProduct={handleSelectProduct}
+                            onSelectAll={handleSelectAll}
+                            onEditProduct={handleEditProduct}
+                            onDeleteProduct={handleDeleteProduct}
+                            onStockMovement={handleStockMovement}
+                            sortBy={sortBy}
+                            sortOrder={sortOrder}
+                            onSort={handleSort}
+                          />
                         </div>
-                      </div>
+
+                        {/* Paginação */}
+                        {products.length > itemsPerPage && (
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
+                            <p className="text-sm text-muted-foreground">
+                              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
+                              {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
+                              {products.length} produtos
+                            </p>
+                            <div className="flex flex-col sm:flex-row items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                disabled={currentPage === 1}
+                                className="w-full sm:w-auto"
+                              >
+                                Anterior
+                              </Button>
+                              <span className="text-sm text-center">
+                                Página {currentPage} de {Math.ceil(products.length / itemsPerPage)}
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / itemsPerPage), currentPage + 1))}
+                                disabled={currentPage === Math.ceil(products.length / itemsPerPage)}
+                                className="w-full sm:w-auto"
+                              >
+                                Próximo
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
