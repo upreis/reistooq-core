@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle } from "lucide-react";
+import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
 import { ShopProduct } from "@/features/shop/types/shop.types";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
 import { ComposicoesModal } from "./ComposicoesModal";
+import { ImportModal } from "./ImportModal";
 import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,6 +27,7 @@ export function ComposicoesEstoque() {
   const [produtoSelecionado, setProdutoSelecionado] = useState<ShopProduct | null>(null);
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const {
     products,
@@ -377,6 +379,18 @@ export function ComposicoesEstoque() {
             Visualize e gerencie os componentes de cada SKU
           </div>
         </div>
+        
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setImportModalOpen(true)} 
+            className="gap-2"
+          >
+            <Upload className="w-4 h-4" />
+            Importar
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -553,6 +567,17 @@ export function ComposicoesEstoque() {
         produto={produtoSelecionado}
         composicoes={produtoSelecionado ? getComposicoesForSku(produtoSelecionado.sku_interno) : []}
         onSave={handleSalvarComposicoes}
+      />
+
+      {/* Modal de Importação */}
+      <ImportModal
+        open={importModalOpen}
+        onOpenChange={setImportModalOpen}
+        onSuccess={() => {
+          loadComposicoes();
+          setImportModalOpen(false);
+        }}
+        tipo="composicoes"
       />
     </div>
   );
