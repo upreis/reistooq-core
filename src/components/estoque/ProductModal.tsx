@@ -254,10 +254,16 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       let errorMessage = "Erro ao salvar produto. Tente novamente.";
       
       if (error?.code === "23505") {
-        if (error.message?.includes("produtos_codigo_barras_unique_idx")) {
+        if (error.message?.includes("produtos_codigo_barras_unique_idx") || error.message?.includes("codigo_barras")) {
           errorMessage = "Este código de barras já está sendo usado por outro produto.";
-        } else if (error.message?.includes("produtos_sku_interno_unique")) {
+        } else if (error.message?.includes("produtos_sku_interno_unique") || error.message?.includes("sku_interno")) {
           errorMessage = "Este SKU interno já está sendo usado por outro produto.";
+        } else if (error.message?.includes("produtos_localizacao_unique") || error.message?.includes("localizacao")) {
+          errorMessage = "Esta localização já está sendo usada por outro produto.";
+        } else if (error.message?.includes("produtos_nome_unique") || error.message?.includes("nome")) {
+          errorMessage = "Este nome já está sendo usado por outro produto.";
+        } else {
+          errorMessage = "Já existe um produto com essas informações. Verifique os campos duplicados.";
         }
       }
       
