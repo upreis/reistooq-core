@@ -271,47 +271,36 @@ export function ComposicoesEstoque() {
                   <div className="space-y-3 animate-in slide-in-from-top-2 duration-200">
                     <div className="bg-card border rounded-lg p-4">
                       <div className="text-xs font-medium text-muted-foreground mb-3">Análise detalhada por componente:</div>
-                      <div className="space-y-3">
+                      
+                      {/* Cabeçalhos das colunas */}
+                      <div className="grid grid-cols-3 gap-3 pb-2 mb-3 border-b text-xs font-medium text-muted-foreground">
+                        <div className="text-left">SKU</div>
+                        <div className="text-center">Custo Uni</div>
+                        <div className="text-center">Qtd</div>
+                      </div>
+                      
+                      <div className="space-y-2">
                         {composicoes.map((comp, index) => {
                           const custoUnitario = custosProdutos[comp.sku_componente] || 0;
-                          const custoTotalItem = custoUnitario * comp.quantidade;
-                          const estoqueComponente = comp.estoque_componente || 0;
-                          const possiveisUnidades = Math.floor(estoqueComponente / comp.quantidade);
                           const isLimitante = componenteLimitante?.sku === comp.sku_componente;
                           
                           return (
-                            <div key={index} className={`border rounded-md p-3 space-y-2 ${isLimitante ? 'border-destructive/30 bg-destructive/5' : 'border-border'}`}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="text-sm font-medium">{comp.nome_componente}</div>
-                                  {isLimitante && (
-                                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
-                                      LIMITANTE
-                                    </Badge>
-                                  )}
-                                </div>
-                                <Badge variant="outline" className="font-mono text-[10px]">
+                            <div key={index} className={`grid grid-cols-3 gap-3 py-2 px-3 rounded-md border ${isLimitante ? 'border-destructive/30 bg-destructive/5' : 'border-border'}`}>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5">
                                   {comp.sku_componente}
                                 </Badge>
+                                {isLimitante && (
+                                  <Badge variant="destructive" className="text-[9px] px-1 py-0">
+                                    LIMITANTE
+                                  </Badge>
+                                )}
                               </div>
-                              
-                              <div className="grid grid-cols-4 gap-3 text-xs">
-                                <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground">Necessário</div>
-                                  <div className="font-semibold">{comp.quantidade}</div>
-                                </div>
-                                <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground">Disponível</div>
-                                  <div className="font-semibold">{estoqueComponente}</div>
-                                </div>
-                                <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground">Pode Fazer</div>
-                                  <div className="font-semibold">{possiveisUnidades}</div>
-                                </div>
-                                <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground">Custo Total</div>
-                                  <div className="font-semibold">{formatMoney(custoTotalItem)}</div>
-                                </div>
+                              <div className="text-center text-sm font-medium">
+                                {formatMoney(custoUnitario)}
+                              </div>
+                              <div className="text-center text-sm font-medium">
+                                {comp.quantidade}x
                               </div>
                             </div>
                           );
