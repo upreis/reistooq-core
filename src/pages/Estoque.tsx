@@ -31,6 +31,7 @@ interface StockMovement {
 const Estoque = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true); // Para primeira carga
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -62,7 +63,11 @@ const Estoque = () => {
 
   const loadProducts = useCallback(async () => {
     try {
-      setLoading(true);
+      // Só mostrar loading na primeira carga ou se não há produtos
+      if (products.length === 0) {
+        setLoading(true);
+      }
+      
       let allProducts = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
@@ -141,8 +146,9 @@ const Estoque = () => {
       });
     } finally {
       setLoading(false);
+      setInitialLoading(false); // Marca que carregou pela primeira vez
     }
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, stableFilters, getProducts, getCategoriasPrincipais, getCategorias, getSubcategorias, toast]);
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, stableFilters, getProducts, getCategoriasPrincipais, getCategorias, getSubcategorias, toast, products.length]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -625,7 +631,7 @@ const Estoque = () => {
 
                   {/* Conteúdo Principal */}
                   <div className="flex-1">
-                    {loading ? (
+                    {initialLoading ? (
                       <EstoqueSkeleton />
                     ) : (
                       <>
