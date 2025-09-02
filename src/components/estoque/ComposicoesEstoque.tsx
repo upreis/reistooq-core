@@ -301,8 +301,8 @@ export function ComposicoesEstoque() {
                                 </div>
                               )}
                               <div className="flex items-center justify-between">
-                                <div className="text-sm font-medium">{comp.nome_componente}</div>
-                                <Badge variant="outline" className="font-mono text-[10px]">
+                                <div className="text-sm font-medium truncate pr-2">{comp.nome_componente}</div>
+                                <Badge variant="outline" className="font-mono text-[10px] truncate flex-shrink-0">
                                   {comp.sku_componente}
                                 </Badge>
                               </div>
