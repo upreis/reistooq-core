@@ -96,12 +96,21 @@ export const useProducts = () => {
     return data as Product;
   };
 
-  const createProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'>) => {
+  const createProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id' | 'unidade_medida_id'>) => {
     const orgId = await getCurrentOrgId();
+
+    // Buscar unidade padrão "un" para a organização atual
+    const { data: unidadePadrao } = await supabase
+      .from('unidades_medida')
+      .select('id')
+      .eq('abreviacao', 'un')
+      .limit(1)
+      .single();
 
     const payload = {
       ...product,
       organization_id: orgId,
+      unidade_medida_id: unidadePadrao?.id || null,
     };
 
     const { data, error } = await supabase

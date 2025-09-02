@@ -1637,7 +1637,7 @@ export type Database = {
           quantidade: number
           sku_componente: string
           sku_produto: string
-          unidade_medida: string | null
+          unidade_medida_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1648,7 +1648,7 @@ export type Database = {
           quantidade?: number
           sku_componente: string
           sku_produto: string
-          unidade_medida?: string | null
+          unidade_medida_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1659,10 +1659,18 @@ export type Database = {
           quantidade?: number
           sku_componente?: string
           sku_produto?: string
-          unidade_medida?: string | null
+          unidade_medida_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "produto_componentes_unidade_medida_id_fkey"
+            columns: ["unidade_medida_id"]
+            isOneToOne: false
+            referencedRelation: "unidades_medida"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       produto_imagens: {
         Row: {
@@ -2432,6 +2440,14 @@ export type Database = {
           user_nome: string
         }
         Returns: Json
+      }
+      converter_quantidade: {
+        Args: {
+          quantidade_origem: number
+          unidade_destino_id: string
+          unidade_origem_id: string
+        }
+        Returns: number
       }
       create_integration_secret_secure: {
         Args: {

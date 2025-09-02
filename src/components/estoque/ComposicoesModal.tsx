@@ -50,7 +50,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
           sku_componente: comp.sku_componente,
           nome_componente: comp.nome_componente,
           quantidade: comp.quantidade,
-          unidade_medida: comp.unidade_medida
+          unidade_medida: "un" // Temporário até integrar com unidades
         }))
       );
       setSkuSearch(composicoes.map(comp => comp.sku_componente || ""));

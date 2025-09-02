@@ -95,7 +95,7 @@ export function ComposicoesEstoque() {
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-semibold">{comp.quantidade}</div>
-                      <div className="text-xs text-muted-foreground">{comp.unidade_medida}</div>
+                      <div className="text-xs text-muted-foreground">un</div>
                     </div>
                   </li>
                 ))}

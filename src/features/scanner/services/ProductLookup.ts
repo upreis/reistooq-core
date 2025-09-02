@@ -201,12 +201,21 @@ export class ProductLookupService implements IProductLookupService {
     console.log('🆕 [ProductLookup] Creating new product:', data.nome);
 
     try {
+      // Buscar unidade padrão "un" para a organização atual
+      const { data: unidadePadrao } = await supabase
+        .from('unidades_medida')
+        .select('id')
+        .eq('abreviacao', 'un')
+        .limit(1)
+        .single();
+
       const { data: newProduct, error } = await supabase
         .from('produtos')
         .insert({
           ...data,
           quantidade_atual: 0,
           ativo: true,
+          unidade_medida_id: unidadePadrao?.id || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

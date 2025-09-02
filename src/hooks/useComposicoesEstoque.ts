@@ -8,7 +8,7 @@ export interface ProdutoComponente {
   sku_componente: string;
   nome_componente: string;
   quantidade: number;
-  unidade_medida: string;
+  unidade_medida_id: string | null;
   organization_id: string;
   created_at: string;
   updated_at: string;
@@ -30,13 +30,21 @@ export function useComposicoesEstoque() {
     return composicoes[skuProduto] || [];
   }, [composicoes]);
 
-  // Carregar todas as composições
+  // Carregar todas as composições com unidades de medida
   const loadComposicoes = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from('produto_componentes')
-        .select('*')
+        .select(`
+          *,
+          unidades_medida:unidade_medida_id (
+            id,
+            nome,
+            abreviacao,
+            tipo
+          )
+        `)
         .order('sku_produto', { ascending: true });
 
       if (error) throw error;
@@ -47,7 +55,7 @@ export function useComposicoesEstoque() {
         if (!groupedComposicoes[composicao.sku_produto]) {
           groupedComposicoes[composicao.sku_produto] = [];
         }
-        groupedComposicoes[composicao.sku_produto].push(composicao);
+        groupedComposicoes[composicao.sku_produto].push(composicao as ProdutoComponente);
       });
 
       setComposicoes(groupedComposicoes);
