@@ -79,6 +79,16 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
   }, [isOpen]);
 
   const adicionarComposicao = () => {
+    // Limitar a 10 componentes máximo
+    if (formComposicoes.length >= 10) {
+      toast({
+        title: "Limite atingido",
+        description: "Máximo de 10 componentes por produto",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setFormComposicoes([
       ...formComposicoes,
       {
