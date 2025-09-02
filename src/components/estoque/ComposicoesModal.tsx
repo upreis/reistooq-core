@@ -219,7 +219,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label htmlFor={`sku-${index}`}>SKU do Componente</Label>
-                      <Popover open={skuOpenIndex === index} onOpenChange={(open) => setSkuOpenIndex(open ? index : null)}>
+                      <Popover open={skuOpenIndex === index} onOpenChange={(open) => { setSkuOpenIndex(open ? index : null); if (open) { setSkuSearch((prev) => { const next = [...prev]; next[index] = formComposicoes[index]?.sku_componente || ""; return next; }); } }}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -287,7 +287,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                     </div>
                     <div>
                       <Label htmlFor={`nome-${index}`}>Nome do Componente</Label>
-                      <Popover open={nomeOpenIndex === index} onOpenChange={(open) => setNomeOpenIndex(open ? index : null)}>
+                      <Popover open={nomeOpenIndex === index} onOpenChange={(open) => { setNomeOpenIndex(open ? index : null); if (open) { setNomeSearch((prev) => { const next = [...prev]; next[index] = formComposicoes[index]?.nome_componente || ""; return next; }); } }}>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
