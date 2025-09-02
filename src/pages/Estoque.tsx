@@ -67,6 +67,9 @@ const Estoque = () => {
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         limit: 1000
       });
+      
+      // Atualizar categorias após carregar produtos
+      loadCategories();
 
       // Aplicar filtro de status
       if (selectedStatus !== "all") {

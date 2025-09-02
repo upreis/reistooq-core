@@ -333,6 +333,10 @@ export function EstoqueActions({
         onSuccess={() => {
           onRefresh();
           setImportModalOpen(false);
+          // Força refresh da página para atualizar as categorias
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
         }}
       />
     </div>
