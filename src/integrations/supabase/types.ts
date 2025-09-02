@@ -1628,6 +1628,42 @@ export type Database = {
           },
         ]
       }
+      produto_componentes: {
+        Row: {
+          created_at: string
+          id: string
+          nome_componente: string
+          organization_id: string
+          quantidade: number
+          sku_componente: string
+          sku_produto: string
+          unidade_medida: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome_componente: string
+          organization_id: string
+          quantidade?: number
+          sku_componente: string
+          sku_produto: string
+          unidade_medida?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome_componente?: string
+          organization_id?: string
+          quantidade?: number
+          sku_componente?: string
+          sku_produto?: string
+          unidade_medida?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       produto_imagens: {
         Row: {
           created_at: string

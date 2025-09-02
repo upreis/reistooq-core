@@ -3,14 +3,16 @@ import { useState, useEffect, useCallback } from "react";
 import { EstoqueGuard } from '@/core/estoque/guards/EstoqueGuard';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EstoqueActions } from "@/components/estoque/EstoqueActions";
 import { EstoqueTable } from "@/components/estoque/EstoqueTable";
 import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { EstoqueStats } from "@/components/estoque/EstoqueStats";
+import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Package, AlertTriangle } from "lucide-react";
+import { Package, AlertTriangle, Boxes } from "lucide-react";
 
 interface StockMovement {
   id: string;
@@ -369,76 +371,95 @@ const Estoque = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Controle de Estoque
-              <span className="text-sm font-normal text-muted-foreground">
-                ({products.length} produtos)
-              </span>
+              Gestão de Estoque
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Filters */}
-            <EstoqueFilters
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              selectedStatus={selectedStatus}
-              onStatusChange={setSelectedStatus}
-              categories={categories}
-              onSearch={handleSearch}
-              onClearFilters={handleClearFilters}
-              hasActiveFilters={hasActiveFilters}
-            />
-
-            {/* Table */}
-            <div className="mt-6">
-              <EstoqueTable
-                products={paginatedProducts}
-                selectedProducts={selectedProducts}
-                onSelectProduct={handleSelectProduct}
-                onSelectAll={handleSelectAll}
-                onEditProduct={handleEditProduct}
-                onDeleteProduct={handleDeleteProduct}
-                onStockMovement={handleStockMovement}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                onSort={handleSort}
-              />
-            </div>
-
-            {/* Pagination */}
-            {products.length > itemsPerPage && (
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
-                <p className="text-sm text-muted-foreground">
-                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
-                  {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
-                  {products.length} produtos
-                </p>
-                <div className="flex flex-col sm:flex-row items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="w-full sm:w-auto"
-                  >
-                    Anterior
-                  </Button>
-                  <span className="text-sm text-center">
-                    Página {currentPage} de {Math.ceil(products.length / itemsPerPage)}
+            <Tabs defaultValue="estoque" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="estoque" className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Controle de Estoque
+                  <span className="text-xs text-muted-foreground">
+                    ({products.length})
                   </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / itemsPerPage), currentPage + 1))}
-                    disabled={currentPage === Math.ceil(products.length / itemsPerPage)}
-                    className="w-full sm:w-auto"
-                  >
-                    Próximo
-                  </Button>
+                </TabsTrigger>
+                <TabsTrigger value="composicoes" className="flex items-center gap-2">
+                  <Boxes className="h-4 w-4" />
+                  Composições
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="estoque" className="mt-6">
+                {/* Filters */}
+                <EstoqueFilters
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={setSelectedCategory}
+                  selectedStatus={selectedStatus}
+                  onStatusChange={setSelectedStatus}
+                  categories={categories}
+                  onSearch={handleSearch}
+                  onClearFilters={handleClearFilters}
+                  hasActiveFilters={hasActiveFilters}
+                />
+
+                {/* Table */}
+                <div className="mt-6">
+                  <EstoqueTable
+                    products={paginatedProducts}
+                    selectedProducts={selectedProducts}
+                    onSelectProduct={handleSelectProduct}
+                    onSelectAll={handleSelectAll}
+                    onEditProduct={handleEditProduct}
+                    onDeleteProduct={handleDeleteProduct}
+                    onStockMovement={handleStockMovement}
+                    sortBy={sortBy}
+                    sortOrder={sortOrder}
+                    onSort={handleSort}
+                  />
                 </div>
-              </div>
-            )}
+
+                {/* Pagination */}
+                {products.length > itemsPerPage && (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
+                    <p className="text-sm text-muted-foreground">
+                      Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
+                      {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
+                      {products.length} produtos
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className="w-full sm:w-auto"
+                      >
+                        Anterior
+                      </Button>
+                      <span className="text-sm text-center">
+                        Página {currentPage} de {Math.ceil(products.length / itemsPerPage)}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / itemsPerPage), currentPage + 1))}
+                        disabled={currentPage === Math.ceil(products.length / itemsPerPage)}
+                        className="w-full sm:w-auto"
+                      >
+                        Próximo
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="composicoes" className="mt-6">
+                <ComposicoesEstoque />
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>

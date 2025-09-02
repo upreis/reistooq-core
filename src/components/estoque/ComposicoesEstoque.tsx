@@ -1,0 +1,338 @@
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Search, Package, Plus, Boxes } from "lucide-react";
+import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
+import { ShopProduct } from "@/features/shop/types/shop.types";
+import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
+
+const sortOptions = [
+  { id: "newest", name: "Mais Recentes" },
+  { id: "name", name: "A-Z" },
+  { id: "category", name: "Por Categoria" },
+];
+
+export function ComposicoesEstoque() {
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedSort, setSelectedSort] = useState<string>("newest");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const {
+    products,
+    categories,
+    isLoading,
+    filters,
+    updateFilters,
+    totalPages,
+    hasNextPage,
+    hasPrevPage,
+    total
+  } = useShopProducts();
+
+  const { getComposicoesForSku } = useComposicoesEstoque();
+
+  // Sync local state with hook filters
+  useEffect(() => {
+    updateFilters({
+      search: searchQuery,
+      categoria: selectedCategory || undefined,
+      sortBy: selectedSort as any,
+      page: 1
+    });
+  }, [searchQuery, selectedCategory, selectedSort, updateFilters]);
+
+  const renderProductCard = (product: ShopProduct) => {
+    const composicoes = getComposicoesForSku(product.sku_interno);
+
+    return (
+      <Card key={product.id} className="group hover:shadow-lg transition-shadow">
+        <CardHeader className="p-0">
+          <div className="relative overflow-hidden rounded-t-lg">
+            {product.url_imagem ? (
+              <img
+                src={product.url_imagem}
+                alt={product.nome}
+                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=300&fit=crop&q=80`;
+                }}
+              />
+            ) : (
+              <div className="w-full h-48 bg-muted flex items-center justify-center">
+                <Package className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )}
+            <div className="absolute top-2 right-2">
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="bg-white/80 hover:bg-white"
+                onClick={() => {/* Implementar modal de edição de composição */}}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {product.stock_status === 'low_stock' && (
+              <Badge className="absolute top-2 left-2 bg-yellow-500 hover:bg-yellow-600">
+                Estoque Baixo
+              </Badge>
+            )}
+            {product.stock_status === 'out_of_stock' && (
+              <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-600">
+                Sem Estoque
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          <h3 className="font-semibold mb-2 line-clamp-2">{product.nome}</h3>
+          <p className="text-xs text-muted-foreground mb-2">
+            SKU: {product.sku_interno}
+          </p>
+          {product.categoria && (
+            <p className="text-xs text-muted-foreground mb-3">{product.categoria}</p>
+          )}
+          
+          {/* Composições */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Boxes className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Composição</span>
+            </div>
+            
+            {composicoes && composicoes.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                {/* Coluna 1: Items */}
+                <div className="space-y-1">
+                  <div className="font-medium text-muted-foreground mb-1">Item</div>
+                  {composicoes.map((comp, index) => (
+                    <div key={index} className="text-foreground">
+                      {comp.nome_componente}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Coluna 2: Quantidades */}
+                <div className="space-y-1">
+                  <div className="font-medium text-muted-foreground mb-1">Qtd/Un</div>
+                  {composicoes.map((comp, index) => (
+                    <div key={index} className="text-foreground">
+                      {comp.quantidade} {comp.unidade_medida}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground italic border-2 border-dashed border-border rounded-lg p-3 text-center">
+                Nenhuma composição cadastrada
+                <br />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="mt-1 h-auto p-0 text-xs"
+                  onClick={() => {/* Implementar modal de adição */}}
+                >
+                  + Adicionar composição
+                </Button>
+              </div>
+            )}
+          </div>
+          
+          <div className="mt-3 pt-3 border-t flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              Estoque: {product.quantidade_atual}
+            </span>
+            <span className="text-sm font-medium">
+              R$ {product.preco_venda?.toFixed(2) || "0,00"}
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-semibold text-foreground">Composições de Produtos</h2>
+          <div className="text-sm text-muted-foreground">
+            Visualize e gerencie os componentes de cada SKU
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Filters Sidebar */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Filter By Category */}
+          <Card>
+            <CardHeader className="pb-3">
+              <h3 className="font-semibold">Filtrar por Categoria</h3>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                variant={selectedCategory === "" ? "default" : "ghost"}
+                className={`w-full justify-start ${
+                  selectedCategory === ""
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setSelectedCategory("")}
+              >
+                <span className="mr-2">🛍️</span>
+                Todas
+              </Button>
+              {categories?.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? "default" : "ghost"}
+                  className={`w-full justify-start ${
+                    selectedCategory === category.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => setSelectedCategory(category.id)}
+                >
+                  <span className="mr-2">
+                    {category.icone === 'Car' ? '🚗' :
+                     category.icone === 'Coffee' ? '☕' :
+                     category.icone === 'Sparkles' ? '✨' :
+                     category.icone === 'Smartphone' ? '📱' :
+                     category.icone === 'Home' ? '🏠' :
+                     category.icone === 'Book' ? '📚' :
+                     category.icone === 'Heart' ? '❤️' :
+                     category.icone === 'Gamepad2' ? '🎮' :
+                     category.icone === 'Hammer' ? '🔨' :
+                     category.icone === 'Laptop' ? '💻' :
+                     category.icone === 'Shirt' ? '👕' :
+                     category.icone === 'Package' ? '📦' :
+                     category.icone === 'Star' ? '⭐' :
+                     category.icone === 'Circle' ? '⚪' :
+                     '📦'}
+                  </span>
+                  {category.nome} ({category.products_count})
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Sort By */}
+          <Card>
+            <CardHeader className="pb-3">
+              <h3 className="font-semibold">Ordenar por</h3>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {sortOptions.map((option) => (
+                <Button
+                  key={option.id}
+                  variant={selectedSort === option.id ? "default" : "ghost"}
+                  className={`w-full justify-start ${
+                    selectedSort === option.id
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                  onClick={() => setSelectedSort(option.id)}
+                >
+                  {option.name}
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Status */}
+          <Card>
+            <CardHeader className="pb-3">
+              <h3 className="font-semibold">Status</h3>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span>Total de produtos:</span>
+                  <span className="font-medium">{total}</span>
+                </div>
+                {!isLoading && (
+                  <div className="mt-2 text-xs">
+                    {products?.length} produtos exibidos
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Products Grid */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Search Bar */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Produtos com Composições</h3>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar produtos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-80"
+              />
+            </div>
+          </div>
+
+          {/* Products Grid */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <div className="h-48 bg-muted rounded-t-lg" />
+                  <CardContent className="p-4 space-y-2">
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                    <div className="h-20 bg-muted rounded" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : products && products.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {products.map(renderProductCard)}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Boxes className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+              <p className="text-muted-foreground">
+                Tente ajustar os filtros ou a pesquisa para encontrar produtos.
+              </p>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <Button 
+                variant="outline" 
+                disabled={!hasPrevPage}
+                onClick={() => updateFilters({ page: filters.page - 1 })}
+              >
+                Anterior
+              </Button>
+              <span className="px-4 py-2 text-sm text-muted-foreground">
+                Página {filters.page} de {totalPages}
+              </span>
+              <Button 
+                variant="outline"
+                disabled={!hasNextPage}
+                onClick={() => updateFilters({ page: filters.page + 1 })}
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
