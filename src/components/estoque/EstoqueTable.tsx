@@ -260,13 +260,13 @@ export function EstoqueTable({
         setSelectedProductForMovement(product);
         setMovementModalOpen(true);
       },
-      icon: <Edit className="w-4 h-4" />,
+      icon: <Package className="w-4 h-4" />,
       variant: "outline" as const
     },
     {
       label: "Editar",
       onClick: onEditProduct,
-      icon: <Eye className="w-4 h-4" />,
+      icon: <Edit className="w-4 h-4" />,
       variant: "outline" as const
     },
     {
