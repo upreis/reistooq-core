@@ -42,7 +42,8 @@ export interface ShopFilters {
     max?: number;
   };
   stockStatus?: ('in_stock' | 'low_stock' | 'out_of_stock')[];
-  sortBy: 'newest' | 'price_asc' | 'price_desc' | 'name' | 'rating' | 'popularity';
+  sortBy: 'newest' | 'price_asc' | 'price_desc' | 'name' | 'rating' | 'popularity' | 'created_at' | 'nome';
+  sortOrder?: 'asc' | 'desc';
   tags?: string[];
   onSale?: boolean;
   page: number;

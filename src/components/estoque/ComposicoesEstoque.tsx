@@ -9,9 +9,9 @@ import { ShopProduct } from "@/features/shop/types/shop.types";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
 
 const sortOptions = [
-  { id: "newest", name: "Mais Recentes" },
-  { id: "name", name: "A-Z" },
-  { id: "category", name: "Por Categoria" },
+  { id: "newest", name: "Mais Recentes", sortBy: "created_at", sortOrder: "desc" },
+  { id: "name", name: "A-Z", sortBy: "nome", sortOrder: "asc" },
+  { id: "category", name: "Por Categoria", sortBy: "categoria", sortOrder: "asc" },
 ];
 
 export function ComposicoesEstoque() {
@@ -35,10 +35,12 @@ export function ComposicoesEstoque() {
 
   // Sync local state with hook filters
   useEffect(() => {
+    const selectedOption = sortOptions.find(option => option.id === selectedSort);
     updateFilters({
       search: searchQuery,
       categoria: selectedCategory || undefined,
-      sortBy: selectedSort as any,
+      sortBy: selectedOption?.sortBy as any,
+      sortOrder: selectedOption?.sortOrder as any,
       page: 1
     });
   }, [searchQuery, selectedCategory, selectedSort, updateFilters]);
