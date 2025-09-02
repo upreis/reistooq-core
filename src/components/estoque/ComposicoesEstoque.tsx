@@ -222,16 +222,18 @@ export function ComposicoesEstoque() {
                         const isLimitante = componenteLimitante?.sku === comp.sku_componente;
                         const custoUnitario = custosProdutos[comp.sku_componente] || 0;
                         return (
-                          <div key={index} className="grid grid-cols-3 gap-2 items-center text-xs">
-                            <div className="flex items-center gap-2">
+                          <div 
+                            key={index} 
+                            className={`grid grid-cols-3 gap-2 items-center text-xs rounded px-2 py-1 ${
+                              isLimitante 
+                                ? 'bg-destructive/10 border border-destructive/30' 
+                                : ''
+                            }`}
+                          >
+                            <div>
                               <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5">
                                 {comp.sku_componente}
                               </Badge>
-                              {isLimitante && (
-                                <span className="text-[9px] bg-destructive/10 text-destructive px-1 py-0.5 rounded font-medium">
-                                  LIMITANTE
-                                </span>
-                              )}
                             </div>
                             <div className="text-right text-muted-foreground">
                               {formatMoney(custoUnitario)}
