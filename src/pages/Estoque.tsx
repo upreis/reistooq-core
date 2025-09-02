@@ -57,7 +57,7 @@ const Estoque = () => {
     }, 300);
 
     return () => clearTimeout(delayedSearch);
-  }, [searchTerm, selectedCategory, selectedStatus]);
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder]);
 
   const loadProducts = useCallback(async () => {
     try {
@@ -483,14 +483,14 @@ const Estoque = () => {
                       </CardHeader>
                       <CardContent className="space-y-2">
                         {[
-                          { value: "created_at", label: "Mais Recentes" },
-                          { value: "nome", label: "A-Z" },
-                          { value: "categoria", label: "Por Categoria" },
-                          { value: "quantidade_atual", label: "Por Estoque" }
+                          { value: "created_at", label: "Mais Recentes", order: 'desc' as const },
+                          { value: "nome", label: "A-Z", order: 'asc' as const },
+                          { value: "categoria", label: "Por Categoria", order: 'asc' as const },
+                          { value: "quantidade_atual", label: "Por Estoque", order: 'desc' as const }
                         ].map((option) => (
                           <button
                             key={option.value}
-                            onClick={() => setSortBy(option.value)}
+                            onClick={() => { setSortBy(option.value); setSortOrder(option.order); }}
                             className={`w-full flex items-center p-2 rounded-lg text-sm transition-colors ${
                               sortBy === option.value 
                                 ? "bg-primary text-primary-foreground" 
