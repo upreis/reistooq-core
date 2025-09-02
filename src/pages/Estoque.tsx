@@ -9,6 +9,7 @@ import { EstoqueTable } from "@/components/estoque/EstoqueTable";
 import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { EstoqueStats } from "@/components/estoque/EstoqueStats";
 import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
+import { ProductModal } from "@/components/estoque/ProductModal";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,8 @@ const Estoque = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   const { getProducts, getCategories, updateProduct, deleteProduct } = useProducts();
   const { toast } = useToast();
@@ -251,11 +254,8 @@ const Estoque = () => {
   };
 
   const handleEditProduct = (product: Product) => {
-    // Implementar modal de edição
-    toast({
-      title: "Editar produto",
-      description: `Funcionalidade de edição do produto ${product.nome} será implementada.`,
-    });
+    setEditingProduct(product);
+    setEditModalOpen(true);
   };
 
   const handleDeleteProduct = async (productId: string) => {
@@ -273,6 +273,16 @@ const Estoque = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleEditSuccess = () => {
+    setEditModalOpen(false);
+    setEditingProduct(null);
+    loadProducts();
+    toast({
+      title: "Produto atualizado",
+      description: "Produto atualizado com sucesso!",
+    });
   };
 
   const handleNewProduct = () => {
@@ -462,6 +472,14 @@ const Estoque = () => {
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* Modal de Edição de Produto */}
+        <ProductModal
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          product={editingProduct}
+          onSuccess={handleEditSuccess}
+        />
       </div>
     </EstoqueGuard>
   );
