@@ -89,12 +89,14 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
   };
 
   const atualizarComposicao = (index: number, field: keyof ComposicaoForm, value: any) => {
-    const novasComposicoes = [...formComposicoes];
-    novasComposicoes[index] = {
-      ...novasComposicoes[index],
-      [field]: value
-    };
-    setFormComposicoes(novasComposicoes);
+    setFormComposicoes((prev) => {
+      const novasComposicoes = [...prev];
+      novasComposicoes[index] = {
+        ...novasComposicoes[index],
+        [field]: value,
+      };
+      return novasComposicoes;
+    });
   };
 
   const salvarComposicoes = async () => {
@@ -216,14 +218,14 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-64 overflow-y-auto z-50 bg-popover">
                           <Command>
                             <CommandInput 
                               placeholder="Buscar por SKU..." 
                               value={composicao.sku_componente}
                               onValueChange={(value) => atualizarComposicao(index, 'sku_componente', value)}
                             />
-                            <CommandList>
+                            <CommandList className="max-h-64 overflow-y-auto">
                               <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
                               <CommandGroup>
                                 {availableProducts
@@ -272,14 +274,14 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-full p-0">
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-64 overflow-y-auto z-50 bg-popover">
                           <Command>
                             <CommandInput 
                               placeholder="Buscar por nome..." 
                               value={composicao.nome_componente}
                               onValueChange={(value) => atualizarComposicao(index, 'nome_componente', value)}
                             />
-                            <CommandList>
+                            <CommandList className="max-h-64 overflow-y-auto">
                               <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
                               <CommandGroup>
                                 {availableProducts
