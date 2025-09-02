@@ -232,7 +232,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-64 overflow-y-auto z-[9999] bg-background border border-border shadow-lg">
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg">
                           <Command className="bg-background text-foreground">
                             <CommandInput 
                               placeholder="Buscar por SKU..." 
@@ -245,7 +245,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                 });
                               }}
                             />
-                            <CommandList className="max-h-64 overflow-y-auto bg-background">
+                            <CommandList className="max-h-60 overflow-y-scroll bg-background">
                               <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
                               <CommandGroup>
                                 {availableProducts
@@ -300,7 +300,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-64 overflow-y-auto z-[9999] bg-background border border-border shadow-lg">
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg">
                           <Command className="bg-background text-foreground">
                             <CommandInput 
                               placeholder="Buscar por nome..." 
@@ -313,7 +313,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                 });
                               }}
                             />
-                            <CommandList className="max-h-64 overflow-y-auto bg-background">
+                            <CommandList className="max-h-60 overflow-y-scroll bg-background">
                               <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
                               <CommandGroup>
                                 {availableProducts
