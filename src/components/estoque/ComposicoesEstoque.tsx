@@ -8,6 +8,8 @@ import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
 import { ShopProduct } from "@/features/shop/types/shop.types";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
 import { ComposicoesModal } from "./ComposicoesModal";
+import { formatMoney } from "@/lib/format";
+import { supabase } from "@/integrations/supabase/client";
 
 const sortOptions = [
   { id: "newest", name: "Mais Recentes", sortBy: "created_at", sortOrder: "desc" },
@@ -21,6 +23,7 @@ export function ComposicoesEstoque() {
   const [searchQuery, setSearchQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState<ShopProduct | null>(null);
+  const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
 
   const {
     products,
@@ -62,8 +65,48 @@ export function ComposicoesEstoque() {
     });
   }, [searchQuery, selectedCategory, selectedSort, updateFilters]);
 
+  // Carregar custos dos produtos quando as composições mudarem
+  useEffect(() => {
+    const carregarCustos = async () => {
+      if (!products || products.length === 0) return;
+      
+      try {
+        const skusUnicos = Array.from(new Set(
+          products.flatMap(p => {
+            const comps = getComposicoesForSku(p.sku_interno);
+            return comps?.map(c => c.sku_componente) || [];
+          })
+        ));
+
+        if (skusUnicos.length === 0) return;
+
+        const { data: produtosCusto } = await supabase
+          .from('produtos')
+          .select('sku_interno, preco_custo')
+          .in('sku_interno', skusUnicos);
+
+        const custosMap: Record<string, number> = {};
+        produtosCusto?.forEach(p => {
+          custosMap[p.sku_interno] = p.preco_custo || 0;
+        });
+
+        setCustosProdutos(custosMap);
+      } catch (error) {
+        console.error('Erro ao carregar custos:', error);
+      }
+    };
+
+    carregarCustos();
+  }, [products, getComposicoesForSku]);
+
   const renderProductCard = (product: ShopProduct) => {
     const composicoes = getComposicoesForSku(product.sku_interno);
+    
+    // Calcular custo total da composição
+    const custoTotal = composicoes?.reduce((total, comp) => {
+      const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+      return total + (custoUnitario * comp.quantidade);
+    }, 0) || 0;
 
     return (
       <Card key={product.id} className="group hover:shadow-lg transition-shadow">
@@ -87,18 +130,31 @@ export function ComposicoesEstoque() {
 
             {composicoes && composicoes.length > 0 ? (
               <ul className="rounded-md border bg-card/50 divide-y">
-                {composicoes.map((comp, index) => (
-                  <li key={index} className="grid grid-cols-[1fr_auto] gap-3 p-3">
-                    <div>
-                      <div className="text-sm font-medium text-foreground">{comp.nome_componente}</div>
-                      <div className="text-xs text-muted-foreground">SKU: {comp.sku_componente}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold">{comp.quantidade}</div>
-                      <div className="text-xs text-muted-foreground">un</div>
-                    </div>
-                  </li>
-                ))}
+                {composicoes.map((comp, index) => {
+                  const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+                  const custoTotalItem = custoUnitario * comp.quantidade;
+                  
+                  return (
+                    <li key={index} className="grid grid-cols-[1fr_auto_auto_auto] gap-3 p-3">
+                      <div>
+                        <div className="text-sm font-medium text-foreground">{comp.nome_componente}</div>
+                        <div className="text-xs text-muted-foreground">SKU: {comp.sku_componente}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold">{comp.quantidade}</div>
+                        <div className="text-xs text-muted-foreground">un</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold">{formatMoney(custoUnitario)}</div>
+                        <div className="text-xs text-muted-foreground">custo unit.</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-semibold">{formatMoney(custoTotalItem)}</div>
+                        <div className="text-xs text-muted-foreground">total</div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <div className="text-xs text-muted-foreground italic border-2 border-dashed border-border rounded-lg p-3 text-center">
@@ -128,10 +184,17 @@ export function ComposicoesEstoque() {
             </div>
           </section>
 
-          <footer className="mt-3 pt-3 border-t">
-            <span className="text-xs text-muted-foreground">
-              Estoque Disponível: <span className="font-medium text-foreground">{product.quantidade_atual}</span>
-            </span>
+          <footer className="mt-3 pt-3 border-t space-y-2">
+            {composicoes && composicoes.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                <span>Custo Total: </span>
+                <span className="font-semibold text-foreground">{formatMoney(custoTotal)}</span>
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground">
+              <span>Estoque Disponível: </span>
+              <span className="font-medium text-foreground">{product.quantidade_atual}</span>
+            </div>
           </footer>
         </CardContent>
       </Card>
