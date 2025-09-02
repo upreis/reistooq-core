@@ -159,7 +159,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
           sku_componente: comp.sku_componente.trim(),
           nome_componente: comp.nome_componente.trim(),
           quantidade: comp.quantidade,
-          unidade_medida: comp.unidade_medida.trim() || 'UN',
+          unidade_medida_id: null, // Usando null já que não estamos gerenciando unidades de medida por enquanto
           organization_id: productData.organization_id
         }));
 
