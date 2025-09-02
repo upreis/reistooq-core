@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -182,6 +182,9 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
           <div className="text-sm text-muted-foreground">
             SKU Produto: <Badge variant="outline">{produto.sku_interno}</Badge>
           </div>
+          <DialogDescription className="sr-only">
+            Editar composições do produto. Use os campos para buscar e selecionar componentes.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -213,19 +216,20 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                             role="combobox"
                             aria-expanded={skuOpenIndex === index}
                             className="w-full justify-between"
+                            onClick={() => setSkuOpenIndex(index)}
                           >
                             {composicao.sku_componente || "Selecione ou digite um SKU..."}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-64 overflow-y-auto z-50 bg-popover">
-                          <Command>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-64 overflow-y-auto z-[9999] bg-background border border-border shadow-lg">
+                          <Command className="bg-background text-foreground">
                             <CommandInput 
                               placeholder="Buscar por SKU..." 
                               value={composicao.sku_componente}
                               onValueChange={(value) => atualizarComposicao(index, 'sku_componente', value)}
                             />
-                            <CommandList className="max-h-64 overflow-y-auto">
+                            <CommandList className="max-h-64 overflow-y-auto bg-background">
                               <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
                               <CommandGroup>
                                 {availableProducts
@@ -269,19 +273,20 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                             role="combobox"
                             aria-expanded={nomeOpenIndex === index}
                             className="w-full justify-between"
+                            onClick={() => setNomeOpenIndex(index)}
                           >
                             {composicao.nome_componente || "Selecione ou digite um nome..."}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-64 overflow-y-auto z-50 bg-popover">
-                          <Command>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0 max-h-64 overflow-y-auto z-[9999] bg-background border border-border shadow-lg">
+                          <Command className="bg-background text-foreground">
                             <CommandInput 
                               placeholder="Buscar por nome..." 
                               value={composicao.nome_componente}
                               onValueChange={(value) => atualizarComposicao(index, 'nome_componente', value)}
                             />
-                            <CommandList className="max-h-64 overflow-y-auto">
+                            <CommandList className="max-h-64 overflow-y-auto bg-background">
                               <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
                               <CommandGroup>
                                 {availableProducts
