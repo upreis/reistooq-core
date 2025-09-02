@@ -211,7 +211,7 @@ export function ComposicoesEstoque() {
                     <div className="text-xs font-medium text-muted-foreground">Componentes necessários:</div>
                     
                     {/* Cabeçalho das colunas */}
-                    <div className="grid grid-cols-3 gap-2 text-[10px] font-medium text-muted-foreground border-b pb-1">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-[10px] font-medium text-muted-foreground border-b pb-1">
                       <div>SKU</div>
                       <div className="text-right">Custo Uni</div>
                       <div className="text-right">Qtd</div>
@@ -224,7 +224,7 @@ export function ComposicoesEstoque() {
                         return (
                           <div 
                             key={index} 
-                            className={`grid grid-cols-3 gap-2 items-center text-xs rounded px-2 py-1 ${
+                            className={`grid grid-cols-[1fr_auto_auto] gap-3 items-center text-xs rounded px-2 py-1 ${
                               isLimitante 
                                 ? 'bg-destructive/10 border border-destructive/30' 
                                 : ''
