@@ -67,10 +67,10 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
       }
     };
     
-    if (isOpen) {
+    if (isOpen && availableProducts.length === 0) {
       loadProducts();
     }
-  }, [isOpen, getProducts]);
+  }, [isOpen]);
 
   const adicionarComposicao = () => {
     setFormComposicoes([
@@ -236,8 +236,8 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                     <CommandItem
                                       key={product.id}
                                       value={product.sku_interno}
-                                      onSelect={() => {
-                                        atualizarComposicao(index, 'sku_componente', product.sku_interno);
+                                      onSelect={(selectedSku) => {
+                                        atualizarComposicao(index, 'sku_componente', selectedSku);
                                         atualizarComposicao(index, 'nome_componente', product.nome);
                                         setSkuOpenIndex(null);
                                       }}
@@ -292,8 +292,8 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                     <CommandItem
                                       key={product.id}
                                       value={product.nome}
-                                      onSelect={() => {
-                                        atualizarComposicao(index, 'nome_componente', product.nome);
+                                      onSelect={(selectedNome) => {
+                                        atualizarComposicao(index, 'nome_componente', selectedNome);
                                         atualizarComposicao(index, 'sku_componente', product.sku_interno);
                                         setNomeOpenIndex(null);
                                       }}
