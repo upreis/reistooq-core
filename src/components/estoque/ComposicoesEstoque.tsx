@@ -117,39 +117,56 @@ export function ComposicoesEstoque() {
         produtosMap.set(produto.sku_interno, produto);
       });
 
-      // Preparar dados das composições para exportação
-      const dataToExport = composicoesData?.map(comp => {
-        const produto = produtosMap.get(comp.sku_produto);
-        return {
-          'Produto': produto?.nome || '',
-          'SKU Pai': comp.sku_produto,
-          'Categoria Principal': produto?.categoria_principal || '',
-          'SKU do Componente 1': comp.sku_componente,
-          'Nome do Componente 1': comp.nome_componente || '',
-          'Quantidade 1': comp.quantidade,
-          'Un medida 1': comp.unidades_medida?.nome || comp.unidades_medida?.abreviacao || '',
-          'SKU do Componente 2': '',
-          'Nome do Componente 2': '',
-          'Quantidade 2': '',
-          'Un medida 2': '',
-          'SKU do Componente 3': '',
-          'Nome do Componente 3': '',
-          'Quantidade 3': '',
-          'Un medida 3': '',
-          'SKU do Componente 4': '',
-          'Nome do Componente 4': '',
-          'Quantidade 4': '',
-          'Un medida 4': '',
-          'SKU do Componente 5': '',
-          'Nome do Componente 5': '',
-          'Quantidade 5': '',
-          'Un medida 5': ''
-        };
-      }) || [];
+      // Criar template vazio com estrutura para 10 componentes
+      const templateData = [{
+        'Produto': '',
+        'SKU Pai': '',
+        'Categoria Principal': '',
+        'SKU do Componente 1': '',
+        'Nome do Componente 1': '',
+        'Quantidade 1': '',
+        'Un medida 1': '',
+        'SKU do Componente 2': '',
+        'Nome do Componente 2': '',
+        'Quantidade 2': '',
+        'Un medida 2': '',
+        'SKU do Componente 3': '',
+        'Nome do Componente 3': '',
+        'Quantidade 3': '',
+        'Un medida 3': '',
+        'SKU do Componente 4': '',
+        'Nome do Componente 4': '',
+        'Quantidade 4': '',
+        'Un medida 4': '',
+        'SKU do Componente 5': '',
+        'Nome do Componente 5': '',
+        'Quantidade 5': '',
+        'Un medida 5': '',
+        'SKU do Componente 6': '',
+        'Nome do Componente 6': '',
+        'Quantidade 6': '',
+        'Un medida 6': '',
+        'SKU do Componente 7': '',
+        'Nome do Componente 7': '',
+        'Quantidade 7': '',
+        'Un medida 7': '',
+        'SKU do Componente 8': '',
+        'Nome do Componente 8': '',
+        'Quantidade 8': '',
+        'Un medida 8': '',
+        'SKU do Componente 9': '',
+        'Nome do Componente 9': '',
+        'Quantidade 9': '',
+        'Un medida 9': '',
+        'SKU do Componente 10': '',
+        'Nome do Componente 10': '',
+        'Quantidade 10': '',
+        'Un medida 10': ''
+      }];
 
       // Criar workbook e worksheet
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      const ws = XLSX.utils.json_to_sheet(templateData);
       
       // Adicionar worksheet ao workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Composições');
