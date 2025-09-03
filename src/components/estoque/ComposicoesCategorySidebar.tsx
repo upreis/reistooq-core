@@ -249,7 +249,7 @@ export function ComposicoesCategorySidebar({
               else selectCategory('categoria', category.nome, parentName);
             }}
             className={cn(
-              "w-full h-auto py-2.5 transition-all relative group overflow-visible border-l-3",
+              "w-full h-auto py-2.5 transition-all relative group border-l-3",
               "pl-3 pr-4",
               isSelected 
                 ? "border-l-primary bg-primary/10 text-primary font-medium shadow-sm" 
@@ -305,7 +305,7 @@ export function ComposicoesCategorySidebar({
               
               {/* Lado direito: contador */}
               <div className={cn(
-                "inline-flex h-6 min-w-[24px] px-2 rounded-full flex-shrink-0 items-center justify-center text-xs font-medium tabular-nums transition-colors",
+                "flex-shrink-0 h-6 min-w-[24px] px-2 text-center font-medium tabular-nums rounded-full flex items-center justify-center text-xs transition-colors",
                 isSelected 
                   ? "bg-primary text-primary-foreground" 
                   : "bg-muted text-muted-foreground border border-border"
@@ -347,7 +347,7 @@ export function ComposicoesCategorySidebar({
               <p>Expandir categorias</p>
             </TooltipContent>
           </Tooltip>
-          <ScrollArea className="flex-1 overflow-x-visible pr-2">
+          <ScrollArea className="flex-1">
             <div className="space-y-1">
               {filteredCategories.map(category => renderCategoryItem(category))}
             </div>
@@ -427,7 +427,7 @@ export function ComposicoesCategorySidebar({
           </Badge>
         </Button>
         
-        <ScrollArea className="h-[55vh] overflow-x-visible pr-3">
+        <ScrollArea className="h-[55vh] overflow-x-visible">
           <div className="space-y-1 pr-4">
             {filteredCategories.length > 0 ? (
               filteredCategories.map(category => renderCategoryItem(category))
