@@ -102,12 +102,6 @@ export function EstoqueActions({
     }, 2000);
   };
 
-  const handlePredictiveAnalysis = () => {
-    toast({
-      title: "Análise IA",
-      description: "Executando previsão de reposição com IA...",
-    });
-  };
 
   const handleDownloadEstoque = () => {
     try {
@@ -300,11 +294,6 @@ export function EstoqueActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Botão Previsão IA */}
-      <Button variant="outline" onClick={handlePredictiveAnalysis} className="gap-2">
-        <TrendingUp className="w-4 h-4" />
-        Previsão IA
-      </Button>
 
       {/* Botão Upload/Import */}
       <Button variant="outline" onClick={() => setImportModalOpen(true)} className="gap-2">
