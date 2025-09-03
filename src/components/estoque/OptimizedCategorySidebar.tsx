@@ -97,7 +97,7 @@ export function OptimizedCategorySidebar({
             nome: subcategoria.nome,
             productCount: subcategoriaProducts.length
           };
-        }).filter(sub => sub.productCount > 0);
+        });
 
         return {
           id: categoria.id,
@@ -105,7 +105,7 @@ export function OptimizedCategorySidebar({
           productCount: categoriaProducts.length,
           children: subcategoriaChildren.length > 0 ? subcategoriaChildren : undefined
         };
-      }).filter(cat => cat.productCount > 0);
+      });
 
       return {
         id: principal.id,
@@ -232,11 +232,11 @@ export function OptimizedCategorySidebar({
             else selectCategory('subcategoria', parentIds[0], parentIds[1], category.id);
           }}
           className={cn(
-            "w-full justify-start h-auto py-2 transition-all relative group border-l-2 text-foreground hover:text-foreground",
+            "w-full justify-start h-auto py-2 transition-all relative group border-l-2 text-muted-foreground",
             isCollapsed ? "px-2" : "px-3",
             isSelected 
-              ? "border-l-primary bg-primary/5 text-primary font-medium hover:text-primary" 
-              : "border-l-transparent hover:border-l-primary/50 hover:bg-muted/30 hover:text-foreground",
+              ? "border-l-primary bg-transparent text-primary font-medium underline underline-offset-4 decoration-primary/70" 
+              : "border-l-transparent hover:border-l-primary/50 hover:bg-muted/30 hover:underline hover:decoration-primary/60 hover:underline-offset-4",
             level === 0 && "font-medium",
             level === 1 && "text-sm ml-2",
             level === 2 && "text-xs ml-4"
@@ -298,7 +298,7 @@ export function OptimizedCategorySidebar({
               <div className={cn(
                 "ml-auto flex-shrink-0 px-2 py-0.5 rounded-full text-center min-w-[28px] transition-colors",
                 isSelected 
-                  ? "bg-primary text-primary-foreground" 
+                  ? "border border-primary/50 text-primary bg-transparent" 
                   : "bg-muted text-muted-foreground",
                 level === 0 && "text-xs",
                 level === 1 && "text-[10px]",
