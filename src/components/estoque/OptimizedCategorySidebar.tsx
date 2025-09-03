@@ -113,7 +113,7 @@ export function OptimizedCategorySidebar({
         productCount: principalProducts.length,
         children: children.length > 0 ? children : undefined
       };
-    });
+    }).filter(principal => principal.productCount > 0);
   }, [products, getCategoriasPrincipais, getCategorias, getSubcategorias]);
 
   // Filtrar categorias baseado APENAS na busca (não na seleção)
