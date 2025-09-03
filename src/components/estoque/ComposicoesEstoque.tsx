@@ -168,7 +168,7 @@ export function ComposicoesEstoque() {
       produto.subcategoria === hierarchicalFilters.subcategoria;
 
     // Filtro adicional por categoria principal selecionada
-    const matchesCategoriaFiltro = !categoriaPrincipalSelecionada ||
+    const matchesCategoriaFiltro = !categoriaPrincipalSelecionada || categoriaPrincipalSelecionada === "all" ||
       produto.categoria_principal === categoriaPrincipalSelecionada ||
       produto.categoria === categoriaPrincipalSelecionada;
     
@@ -536,8 +536,8 @@ export function ComposicoesEstoque() {
                     <SelectValue placeholder="Filtrar por categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as categorias</SelectItem>
-                    {getCategoriasPrincipais().map((categoria) => (
+                    <SelectItem value="all">Todas as categorias</SelectItem>
+                    {getCategoriasPrincipais().filter(categoria => categoria?.nome && categoria.nome.trim() !== '').map((categoria) => (
                       <SelectItem key={categoria.id} value={categoria.nome}>
                         {categoria.nome}
                       </SelectItem>
