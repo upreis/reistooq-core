@@ -42,6 +42,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [importOnlyValid, setImportOnlyValid] = useState(false); // Nova opção
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { createProduct, getProducts } = useProducts();
@@ -599,15 +600,26 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         const existingSkuSet = new Set((existingComponents || []).map(p => p.sku_interno));
         
         // Validar se todos os SKUs de componentes existem
+        const invalidComponents = [];
         for (const row of mappedData) {
           if (!existingSkuSet.has(row.sku_componente)) {
+            invalidComponents.push(row.sku_componente);
             allErrors.push(`SKU Componente não encontrado: ${row.sku_componente}`);
           }
         }
         
         if (allErrors.length > 0) {
-          setResult({ success: 0, errors: allErrors, warnings: [] });
-          return;
+          if (!importOnlyValid) {
+            // Modo "tudo ou nada" - rejeitar tudo se há erros
+            setResult({ success: 0, errors: allErrors, warnings: [] });
+            return;
+          } else {
+            // Modo "apenas válidos" - filtrar itens válidos
+            const validData = mappedData.filter(row => existingSkuSet.has(row.sku_componente));
+            mappedData.length = 0;
+            mappedData.push(...validData);
+            warnings.push(`${invalidComponents.length} componentes inválidos foram ignorados: ${[...new Set(invalidComponents)].join(', ')}`);
+          }
         }
         
         // Buscar organization_id do usuário atual
@@ -692,6 +704,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     setFile(null);
     setResult(null);
     setProgress(0);
+    setImportOnlyValid(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -807,6 +820,36 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
               </CardContent>
             </Card>
           )}
+
+          {/* Opção de importação */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="w-5 h-5" />
+                Modo de Importação
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="importOnlyValid"
+                  checked={importOnlyValid}
+                  onChange={(e) => setImportOnlyValid(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="importOnlyValid" className="text-sm">
+                  Importar apenas itens válidos (ignorar erros)
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                {importOnlyValid 
+                  ? "Itens com erro serão ignorados e apenas os válidos serão importados"
+                  : "Se houver qualquer erro, nenhum item será importado (modo padrão)"
+                }
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Results */}
           {result && (
