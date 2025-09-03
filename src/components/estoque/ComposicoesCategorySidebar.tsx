@@ -249,8 +249,8 @@ export function ComposicoesCategorySidebar({
               else selectCategory('categoria', category.nome, parentName);
             }}
             className={cn(
-              "w-full justify-start h-auto py-2.5 transition-all relative group border-l-3",
-              "pl-3 pr-7",
+              "w-full h-auto py-2.5 transition-all relative group border-l-3",
+              "pl-3 pr-4",
               isSelected 
                 ? "border-l-primary bg-primary/10 text-primary font-medium shadow-sm" 
                 : "border-l-transparent text-foreground hover:border-l-primary/50 hover:bg-primary/5 hover:text-foreground",
@@ -259,53 +259,56 @@ export function ComposicoesCategorySidebar({
             )}
             style={{ paddingLeft: `${paddingLeft + 12}px` }}
           >
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              {/* Ícone de expansão */}
-              {hasChildren && (
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleCategory(category.nome);
-                  }}
-                  className="flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-primary/20 rounded transition-colors cursor-pointer"
-                >
-                  {isExpanded ? (
-                    <ChevronDown className="h-3 w-3 text-primary" />
+            <div className="flex items-center justify-between gap-2 w-full">
+              {/* Lado esquerdo: ícones e texto */}
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                {/* Ícone de expansão */}
+                {hasChildren && (
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCategory(category.nome);
+                    }}
+                    className="flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-primary/20 rounded transition-colors cursor-pointer"
+                  >
+                    {isExpanded ? (
+                      <ChevronDown className="h-3 w-3 text-primary" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    )}
+                  </div>
+                )}
+                
+                {/* Ícone da categoria */}
+                <div className="flex-shrink-0">
+                  {level === 0 ? (
+                    isSelected ? (
+                      <FolderOpen className="h-4 w-4 text-current" />
+                    ) : (
+                      <Folder className="h-4 w-4 text-current" />
+                    )
                   ) : (
-                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    <Package className="h-3 w-3 text-current" />
                   )}
                 </div>
-              )}
-              
-              {/* Ícone da categoria */}
-              <div className="flex-shrink-0">
-                {level === 0 ? (
-                  isSelected ? (
-                    <FolderOpen className="h-4 w-4 text-current" />
-                  ) : (
-                    <Folder className="h-4 w-4 text-current" />
-                  )
-                ) : (
-                  <Package className="h-3 w-3 text-current" />
-                )}
+                
+                {/* Nome da categoria */}
+                <span className={cn(
+                  "truncate text-left transition-colors",
+                  isSelected && "font-medium",
+                  level === 0 && "font-medium",
+                  level === 1 && "text-sm"
+                )}>
+                  {category.nome}
+                </span>
               </div>
               
-              {/* Nome da categoria */}
-              <span className={cn(
-                "truncate flex-1 text-left transition-colors",
-                isSelected && "font-medium",
-                level === 0 && "font-medium",
-                level === 1 && "text-sm"
-              )}>
-                {category.nome}
-              </span>
-              
-              {/* Contador */}
+              {/* Lado direito: contador */}
               <div className={cn(
-                "ml-2 shrink-0 h-6 min-w-[24px] px-2 text-center font-medium tabular-nums rounded-full flex items-center justify-center text-xs transition-colors",
+                "flex-shrink-0 h-6 min-w-[24px] px-2 text-center font-medium tabular-nums rounded-full flex items-center justify-center text-xs transition-colors",
                 isSelected 
                   ? "bg-primary text-primary-foreground" 
-                  : "bg-muted/80 text-muted-foreground border border-border/50"
+                  : "bg-muted text-muted-foreground border border-border"
               )}>
                 {category.productCount}
               </div>
@@ -424,8 +427,8 @@ export function ComposicoesCategorySidebar({
           </Badge>
         </Button>
         
-        <ScrollArea className="h-[55vh]">
-          <div className="space-y-1 pr-6 md:pr-7">
+        <ScrollArea className="h-[55vh] overflow-x-visible">
+          <div className="space-y-1 pr-4">
             {filteredCategories.length > 0 ? (
               filteredCategories.map(category => renderCategoryItem(category))
             ) : (
