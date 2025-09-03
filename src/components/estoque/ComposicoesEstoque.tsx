@@ -311,15 +311,13 @@ export function ComposicoesEstoque() {
       )}>
         <CardContent className="p-6">
           {/* Checkbox de seleção */}
-          {isSelectMode && (
-            <div className="flex justify-end mb-3">
-              <Checkbox 
-                checked={itemSelected}
-                onCheckedChange={() => selectItem(product.id)}
-                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-              />
-            </div>
-          )}
+          <div className="flex justify-end mb-3">
+            <Checkbox 
+              checked={itemSelected}
+              onCheckedChange={() => selectItem(product.id)}
+              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            />
+          </div>
           <header className="mb-5">
             <h3 className="font-semibold text-lg text-foreground leading-snug line-clamp-2 mb-2">{product.nome}</h3>
             <div className="flex items-center gap-2">
@@ -562,7 +560,7 @@ export function ComposicoesEstoque() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3 lg:flex-shrink-0">
+          <div className="flex items-center gap-3 flex-wrap justify-end">
             <Button
               variant="outline"
               onClick={() => setImportProdutosModalOpen(true)}
@@ -640,44 +638,39 @@ export function ComposicoesEstoque() {
                       {isSelectMode ? "Cancelar" : "Selecionar"}
                     </Button>
                     
-                    {isSelectMode && (
-                      <>
-                     <div className="flex items-center gap-2">
-                       <Checkbox 
-                         checked={produtosFiltrados.length > 0 && selectedCount === produtosFiltrados.length}
-                         onCheckedChange={(checked) => {
-                           if (checked) {
-                             selectAll(produtosFiltrados);
-                           } else {
-                             clearSelection();
-                           }
-                         }}
-                         className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                       />
-                       <span className="text-sm text-muted-foreground">Todos</span>
-                     </div>
-                        
-                        {selectedCount > 0 && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm" className="gap-2">
-                                <MoreHorizontal className="h-4 w-4" />
-                                Ações ({selectedCount})
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem 
-                                onClick={handleDeleteSelected}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Excluir Selecionados
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </>
-                    )}
+                      <div className="flex items-center gap-2">
+                        <Checkbox 
+                          checked={produtosFiltrados.length > 0 && selectedCount === produtosFiltrados.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              selectAll(produtosFiltrados);
+                            } else {
+                              clearSelection();
+                            }
+                          }}
+                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        />
+                        <span className="text-sm text-muted-foreground">Todos</span>
+                      </div>
+                      {selectedCount > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="gap-2">
+                              <MoreHorizontal className="h-4 w-4" />
+                              Ações ({selectedCount})
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={handleDeleteSelected}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Excluir Selecionados
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                   </div>
                 </div>
                 
