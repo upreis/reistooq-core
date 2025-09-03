@@ -17,7 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { Package, AlertTriangle, Boxes } from "lucide-react";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
-import { SmartCategorySidebar } from "@/components/estoque/SmartCategorySidebar";
+import { OptimizedCategorySidebar } from "@/components/estoque/OptimizedCategorySidebar";
+import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
+import { cn } from "@/lib/utils";
 
 interface StockMovement {
   id: string;
@@ -56,6 +58,7 @@ const Estoque = () => {
   const { getProducts, getCategories, updateProduct, deleteProduct } = useProducts();
   const { toast } = useToast();
   const { getCategoriasPrincipais, getCategorias, getSubcategorias, categories: hierarchicalCategories, loading: categoriesLoading } = useHierarchicalCategories();
+  const { isCollapsed: sidebarCollapsed, toggleCollapse: toggleSidebar } = useSidebarCollapse();
 
   // Filtros estáveis para evitar loops
   const stableFilters = useMemo(() => 
@@ -477,13 +480,18 @@ const Estoque = () => {
 
               {/* Layout principal com sidebar e tabela */}
               <div className="flex gap-4">
-                {/* Sidebar de categorias */}
-                <div className="w-64 flex-shrink-0">
-                  <div className="sticky top-6 space-y-6">
-                    <SmartCategorySidebar
+                {/* Sidebar de categorias - responsivo */}
+                <div className={cn(
+                  "transition-all duration-300 flex-shrink-0",
+                  sidebarCollapsed ? "w-12" : "w-64"
+                )}>
+                  <div className="sticky top-6">
+                    <OptimizedCategorySidebar
                       products={products}
                       hierarchicalFilters={hierarchicalFilters}
                       onHierarchicalFiltersChange={setHierarchicalFilters}
+                      isCollapsed={sidebarCollapsed}
+                      onToggleCollapse={toggleSidebar}
                     />
                   </div>
                 </div>
