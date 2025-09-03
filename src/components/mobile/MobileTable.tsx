@@ -91,26 +91,26 @@ export default function MobileTable({
     // Definir larguras específicas para cada tipo de coluna
     const getColumnWidth = (column: MobileTableColumn) => {
       switch (column.key) {
-        case 'nome': return '220px';
-        case 'codigo_barras': return '120px';
-        case 'sku_interno': return '100px';
-        case 'categoria_principal': return '140px';
-        case 'categoria_nivel2': return '120px';
-        case 'subcategoria': return '120px';
-        case 'quantidade_atual': return '100px';
-        case 'estoque_range': return '100px';
-        case 'precos': return '120px';
-        case 'ultima_movimentacao': return '110px';
-        default: return '1fr';
+        case 'nome': return '200px';
+        case 'codigo_barras': return '110px';
+        case 'sku_interno': return '90px';
+        case 'categoria_principal': return '130px';
+        case 'categoria_nivel2': return '110px';
+        case 'subcategoria': return '110px';
+        case 'quantidade_atual': return '90px';
+        case 'estoque_range': return '90px';
+        case 'precos': return '110px';
+        case 'ultima_movimentacao': return '100px';
+        default: return 'minmax(80px, 1fr)';
       }
     };
 
     const gridCols = columns.map(col => getColumnWidth(col)).join(' ');
-    const fullGridTemplate = `${selectableItems ? '40px ' : ''}${gridCols}${actions.length > 0 ? ' 120px' : ''}`;
+    const fullGridTemplate = `${selectableItems ? '40px ' : ''}${gridCols}${actions.length > 0 ? ' 140px' : ''}`;
 
     return (
-      <div className="w-full -mx-1">
-        <div className="min-w-fit px-1">
+      <div className="w-full overflow-x-auto">
+        <div className="min-w-max">
           {/* Table Header */}
           <div className="grid gap-2 py-3 px-4 bg-muted/50 rounded-lg text-xs font-medium mb-4"
                style={{ gridTemplateColumns: fullGridTemplate }}>
@@ -177,14 +177,14 @@ export default function MobileTable({
                     </div>
                   ))}
                   {actions.length > 0 && (
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1 min-w-[140px]">
                       {actions.map((action, index) => (
                         <Button
                           key={index}
                           variant={action.variant || "outline"}
                           size="sm"
                           onClick={() => action.onClick(item)}
-                          className="text-[10px] px-1.5 h-7"
+                          className="text-[10px] px-1.5 h-7 flex-shrink-0"
                           title={action.label}
                         >
                           {action.icon}

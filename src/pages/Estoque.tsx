@@ -20,6 +20,7 @@ import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { OptimizedCategorySidebar } from "@/components/estoque/OptimizedCategorySidebar";
 import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { cn } from "@/lib/utils";
+import { TableWrapper } from "@/components/ui/table-wrapper";
 
 interface StockMovement {
   id: string;
@@ -524,24 +525,26 @@ const Estoque = () => {
                   )}
 
                   {/* Tabela principal */}
-                  <div className="border border-border/50 rounded-lg shadow-sm overflow-hidden">
+                  <div className="border border-border/50 rounded-lg shadow-sm">
                     {initialLoading ? (
                       <div className="p-6">
                         <EstoqueSkeleton />
                       </div>
                     ) : (
-                      <EstoqueTable
-                        products={paginatedProducts}
-                        selectedProducts={selectedProducts}
-                        onSelectProduct={handleSelectProduct}
-                        onSelectAll={handleSelectAll}
-                        onEditProduct={handleEditProduct}
-                        onDeleteProduct={handleDeleteProduct}
-                        onStockMovement={handleStockMovement}
-                        sortBy={sortBy}
-                        sortOrder={sortOrder}
-                        onSort={handleSort}
-                      />
+                      <TableWrapper>
+                        <EstoqueTable
+                          products={paginatedProducts}
+                          selectedProducts={selectedProducts}
+                          onSelectProduct={handleSelectProduct}
+                          onSelectAll={handleSelectAll}
+                          onEditProduct={handleEditProduct}
+                          onDeleteProduct={handleDeleteProduct}
+                          onStockMovement={handleStockMovement}
+                          sortBy={sortBy}
+                          sortOrder={sortOrder}
+                          onSort={handleSort}
+                        />
+                      </TableWrapper>
                     )}
                   </div>
 
