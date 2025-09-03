@@ -236,7 +236,7 @@ export function OptimizedCategorySidebar({
             isCollapsed ? "px-2" : "px-3",
             isSelected 
               ? "border-l-primary bg-transparent text-primary font-medium underline underline-offset-4 decoration-primary/70" 
-              : "border-l-transparent hover:border-l-primary/50 hover:bg-muted/30 hover:underline hover:decoration-primary/60 hover:underline-offset-4",
+              : "border-l-transparent hover:border-l-primary/50 hover:bg-muted/30 hover:underline hover:decoration-primary/60 hover:underline-offset-4 dark:hover:text-yellow-400",
             level === 0 && "font-medium",
             level === 1 && "text-sm ml-2",
             level === 2 && "text-xs ml-4"
@@ -283,7 +283,7 @@ export function OptimizedCategorySidebar({
             {/* Nome da categoria */}
             {!isCollapsed && (
               <span className={cn(
-                "truncate flex-1 text-left transition-colors",
+                "truncate flex-1 text-left transition-colors group-hover:dark:text-yellow-400",
                 isSelected && "text-primary font-medium",
                 level === 0 && "font-medium",
                 level === 1 && "text-sm",
