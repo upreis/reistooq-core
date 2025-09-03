@@ -56,6 +56,19 @@ export function OptimizedCategorySidebar({
   const [viewMode, setViewMode] = useState<'tree' | 'list'>('tree');
   const isMobile = useIsMobile();
   
+  // Auto-expandir categorias que têm seleção ativa
+  useMemo(() => {
+    if (hierarchicalFilters.categoriaPrincipal && !expandedCategories.has(hierarchicalFilters.categoriaPrincipal)) {
+      setExpandedCategories(prev => new Set([...prev, hierarchicalFilters.categoriaPrincipal!]));
+    }
+    if (hierarchicalFilters.categoria && hierarchicalFilters.categoriaPrincipal) {
+      const categoryKey = `${hierarchicalFilters.categoriaPrincipal}-${hierarchicalFilters.categoria}`;
+      if (!expandedCategories.has(categoryKey)) {
+        setExpandedCategories(prev => new Set([...prev, categoryKey]));
+      }
+    }
+  }, [hierarchicalFilters, expandedCategories]);
+  
   const { getCategoriasPrincipais, getCategorias, getSubcategorias } = useHierarchicalCategories();
 
   // Processar categorias com contadores
@@ -139,9 +152,12 @@ export function OptimizedCategorySidebar({
     switch (level) {
       case 'principal':
         if (hierarchicalFilters.categoriaPrincipal === principalId && !hierarchicalFilters.categoria) {
+          // Se clicou na mesma categoria principal que já estava selecionada, limpar filtros
           onHierarchicalFiltersChange({});
         } else {
+          // Selecionar nova categoria principal
           onHierarchicalFiltersChange({ categoriaPrincipal: principalId });
+          // Auto-expandir se não estiver expandida
           if (!expandedCategories.has(principalId)) {
             toggleCategory(principalId);
           }
@@ -149,8 +165,10 @@ export function OptimizedCategorySidebar({
         break;
       case 'categoria':
         if (hierarchicalFilters.categoria === categoryId && !hierarchicalFilters.subcategoria) {
+          // Se clicou na mesma categoria que já estava selecionada, voltar para principal
           onHierarchicalFiltersChange({ categoriaPrincipal: principalId });
         } else {
+          // Selecionar nova categoria
           onHierarchicalFiltersChange({ 
             categoriaPrincipal: principalId, 
             categoria: categoryId 
@@ -159,11 +177,13 @@ export function OptimizedCategorySidebar({
         break;
       case 'subcategoria':
         if (hierarchicalFilters.subcategoria === subcategoryId) {
+          // Se clicou na mesma subcategoria que já estava selecionada, voltar para categoria
           onHierarchicalFiltersChange({ 
             categoriaPrincipal: principalId, 
             categoria: categoryId 
           });
         } else {
+          // Selecionar nova subcategoria
           onHierarchicalFiltersChange({ 
             categoriaPrincipal: principalId, 
             categoria: categoryId,
@@ -204,7 +224,7 @@ export function OptimizedCategorySidebar({
     return (
       <div key={categoryKey} className="space-y-1">
         <Button
-          variant={isSelected ? "default" : "ghost"}
+          variant="ghost"
           size="sm"
           onClick={() => {
             if (level === 0) selectCategory('principal', category.id);
@@ -212,12 +232,14 @@ export function OptimizedCategorySidebar({
             else selectCategory('subcategoria', parentIds[0], parentIds[1], category.id);
           }}
           className={cn(
-            "w-full justify-start h-auto py-2 transition-all relative group",
+            "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
             isCollapsed ? "px-2" : "px-3",
-            isSelected && "shadow-sm",
+            isSelected 
+              ? "border-l-primary bg-primary/5 text-primary font-medium" 
+              : "border-l-transparent hover:border-l-primary/50 hover:bg-muted/50",
             level === 0 && "font-medium",
-            level === 1 && "text-sm",
-            level === 2 && "text-xs"
+            level === 1 && "text-sm ml-2",
+            level === 2 && "text-xs ml-4"
           )}
           style={{ paddingLeft: isCollapsed ? undefined : `${paddingLeft + 12}px` }}
           title={isCollapsed ? category.nome : undefined}
@@ -243,7 +265,7 @@ export function OptimizedCategorySidebar({
             {/* Ícone da categoria */}
             <div className="flex-shrink-0">
               {level === 0 ? (
-                isExpanded ? (
+                isSelected ? (
                   <FolderOpen className="h-4 w-4 text-primary" />
                 ) : (
                   <Folder className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -251,14 +273,18 @@ export function OptimizedCategorySidebar({
               ) : level === 1 ? (
                 <Package className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
               ) : (
-                <div className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                <div className={cn(
+                  "w-2 h-2 rounded-full transition-colors",
+                  isSelected ? "bg-primary" : "bg-muted-foreground/40"
+                )} />
               )}
             </div>
             
             {/* Nome da categoria */}
             {!isCollapsed && (
               <span className={cn(
-                "truncate flex-1 text-left",
+                "truncate flex-1 text-left transition-colors",
+                isSelected && "text-primary font-medium",
                 level === 0 && "font-medium",
                 level === 1 && "text-sm",
                 level === 2 && "text-xs"
@@ -267,24 +293,24 @@ export function OptimizedCategorySidebar({
               </span>
             )}
             
-            {/* Contador */}
+            {/* Contador com melhor contraste */}
             {!isCollapsed && (
-              <Badge 
-                variant={isSelected ? "secondary" : "outline"} 
-                className={cn(
-                  "ml-auto flex-shrink-0",
-                  level === 0 && "text-xs",
-                  level === 1 && "text-[10px]",
-                  level === 2 && "text-[9px] px-1"
-                )}
-              >
+              <div className={cn(
+                "ml-auto flex-shrink-0 px-2 py-0.5 rounded-full text-center min-w-[28px] transition-colors",
+                isSelected 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted text-muted-foreground",
+                level === 0 && "text-xs",
+                level === 1 && "text-[10px]",
+                level === 2 && "text-[9px] px-1.5 min-w-[24px]"
+              )}>
                 {category.productCount}
-              </Badge>
+              </div>
             )}
           </div>
         </Button>
         
-        {/* Filhos */}
+        {/* Filhos - sempre mostrar se expandido */}
         {isExpanded && hasChildren && !isCollapsed && (
           <div className="space-y-1">
             {category.children!.map(child => 
