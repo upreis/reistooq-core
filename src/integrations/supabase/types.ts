@@ -1808,6 +1808,8 @@ export type Database = {
           ativo: boolean
           categoria: string | null
           categoria_id: string | null
+          categoria_nivel2: string | null
+          categoria_principal: string | null
           codigo_barras: string | null
           created_at: string
           descricao: string | null
@@ -1825,6 +1827,7 @@ export type Database = {
           sku_gerado_automaticamente: boolean | null
           sku_interno: string
           status: string
+          subcategoria: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
           updated_at: string
@@ -1835,6 +1838,8 @@ export type Database = {
           ativo?: boolean
           categoria?: string | null
           categoria_id?: string | null
+          categoria_nivel2?: string | null
+          categoria_principal?: string | null
           codigo_barras?: string | null
           created_at?: string
           descricao?: string | null
@@ -1852,6 +1857,7 @@ export type Database = {
           sku_gerado_automaticamente?: boolean | null
           sku_interno: string
           status?: string
+          subcategoria?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id: string
           updated_at?: string
@@ -1862,6 +1868,8 @@ export type Database = {
           ativo?: boolean
           categoria?: string | null
           categoria_id?: string | null
+          categoria_nivel2?: string | null
+          categoria_principal?: string | null
           codigo_barras?: string | null
           created_at?: string
           descricao?: string | null
@@ -1879,6 +1887,7 @@ export type Database = {
           sku_gerado_automaticamente?: boolean | null
           sku_interno?: string
           status?: string
+          subcategoria?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id?: string
           updated_at?: string
@@ -2708,6 +2717,8 @@ export type Database = {
           ativo: boolean
           categoria: string | null
           categoria_id: string | null
+          categoria_nivel2: string | null
+          categoria_principal: string | null
           codigo_barras: string | null
           created_at: string
           descricao: string | null
@@ -2725,6 +2736,7 @@ export type Database = {
           sku_gerado_automaticamente: boolean | null
           sku_interno: string
           status: string
+          subcategoria: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
           updated_at: string
@@ -2967,6 +2979,10 @@ export type Database = {
       }
       set_integration_secret: {
         Args: { _key: string; _provider: string; _value: string }
+        Returns: undefined
+      }
+      split_existing_categories: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       tiny3_get_credentials: {

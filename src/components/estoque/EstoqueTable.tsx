@@ -211,8 +211,20 @@ export function EstoqueTable({
       )
     },
     {
-      key: "categoria",
+      key: "categoria_principal",
+      label: "Categoria Principal", 
+      sortable: true,
+      render: (value: string) => value || "N/A"
+    },
+    {
+      key: "categoria_nivel2",
       label: "Categoria", 
+      sortable: true,
+      render: (value: string) => value || "N/A"
+    },
+    {
+      key: "subcategoria", 
+      label: "SubCategoria",
       sortable: true,
       render: (value: string) => value || "N/A"
     },
