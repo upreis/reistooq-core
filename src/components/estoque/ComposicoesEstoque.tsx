@@ -87,7 +87,7 @@ export function ComposicoesEstoque() {
 
   const handleDownloadComposicoes = async () => {
     try {
-      // Buscar todas as composições da organização
+      // Buscar todas as composições da organização com dados dos produtos
       const { data: composicoesData, error } = await supabase
         .from('produto_componentes')
         .select(`
@@ -103,16 +103,49 @@ export function ComposicoesEstoque() {
         return;
       }
 
+      // Buscar dados dos produtos para obter categoria principal
+      const skusProdutos = Array.from(new Set(composicoesData?.map(comp => comp.sku_produto) || []));
+      
+      const { data: produtosData } = await supabase
+        .from('produtos_composicoes')
+        .select('sku_interno, categoria_principal, nome')
+        .in('sku_interno', skusProdutos);
+
+      // Criar mapa de produtos para facilitar busca
+      const produtosMap = new Map();
+      produtosData?.forEach(produto => {
+        produtosMap.set(produto.sku_interno, produto);
+      });
+
       // Preparar dados das composições para exportação
-      const dataToExport = composicoesData?.map(comp => ({
-        'SKU Produto': comp.sku_produto,
-        'SKU Componente': comp.sku_componente,
-        'Nome Componente': comp.nome_componente || '',
-        'Quantidade': comp.quantidade,
-        'Unidade de Medida': comp.unidades_medida?.nome || comp.unidades_medida?.abreviacao || '',
-        'Data Criação': comp.created_at ? new Date(comp.created_at).toLocaleDateString('pt-BR') : '',
-        'Data Atualização': comp.updated_at ? new Date(comp.updated_at).toLocaleDateString('pt-BR') : ''
-      })) || [];
+      const dataToExport = composicoesData?.map(comp => {
+        const produto = produtosMap.get(comp.sku_produto);
+        return {
+          'Produto': produto?.nome || '',
+          'SKU Pai': comp.sku_produto,
+          'Categoria Principal': produto?.categoria_principal || '',
+          'SKU do Componente 1': comp.sku_componente,
+          'Nome do Componente 1': comp.nome_componente || '',
+          'Quantidade 1': comp.quantidade,
+          'Un medida 1': comp.unidades_medida?.nome || comp.unidades_medida?.abreviacao || '',
+          'SKU do Componente 2': '',
+          'Nome do Componente 2': '',
+          'Quantidade 2': '',
+          'Un medida 2': '',
+          'SKU do Componente 3': '',
+          'Nome do Componente 3': '',
+          'Quantidade 3': '',
+          'Un medida 3': '',
+          'SKU do Componente 4': '',
+          'Nome do Componente 4': '',
+          'Quantidade 4': '',
+          'Un medida 4': '',
+          'SKU do Componente 5': '',
+          'Nome do Componente 5': '',
+          'Quantidade 5': '',
+          'Un medida 5': ''
+        };
+      }) || [];
 
       // Criar workbook e worksheet
       const wb = XLSX.utils.book_new();
@@ -122,12 +155,12 @@ export function ComposicoesEstoque() {
       XLSX.utils.book_append_sheet(wb, ws, 'Composições');
       
       // Baixar o arquivo
-      const fileName = `composicoes_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const fileName = `template_composicoes_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
       
-      console.log(`Download concluído: ${fileName}`);
+      console.log(`Template baixado: ${fileName}`);
     } catch (error) {
-      console.error('Erro ao baixar dados das composições:', error);
+      console.error('Erro ao baixar template das composições:', error);
     }
   };
 
