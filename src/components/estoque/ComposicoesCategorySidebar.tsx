@@ -250,7 +250,7 @@ export function ComposicoesCategorySidebar({
             }}
             className={cn(
               "w-full h-auto py-2.5 transition-all relative group border-l-3",
-              "pl-3 pr-4",
+              "pl-3 pr-5",
               isSelected 
                 ? "border-l-primary bg-primary/10 text-primary font-medium shadow-sm" 
                 : "border-l-transparent text-foreground hover:border-l-primary/50 hover:bg-primary/5 hover:text-foreground",
@@ -305,7 +305,7 @@ export function ComposicoesCategorySidebar({
               
               {/* Lado direito: contador */}
               <div className={cn(
-                "flex-shrink-0 h-6 min-w-[24px] px-2 text-center font-medium tabular-nums rounded-full flex items-center justify-center text-xs transition-colors",
+                "inline-flex h-6 min-w-[24px] px-2 rounded-full flex-shrink-0 items-center justify-center text-xs font-medium tabular-nums transition-colors",
                 isSelected 
                   ? "bg-primary text-primary-foreground" 
                   : "bg-muted text-muted-foreground border border-border"
@@ -347,7 +347,7 @@ export function ComposicoesCategorySidebar({
               <p>Expandir categorias</p>
             </TooltipContent>
           </Tooltip>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 overflow-x-visible pr-2">
             <div className="space-y-1">
               {filteredCategories.map(category => renderCategoryItem(category))}
             </div>
@@ -408,7 +408,7 @@ export function ComposicoesCategorySidebar({
         )}
       </CardHeader>
       
-      <CardContent className="p-3 space-y-1">
+      <CardContent className="p-3 space-y-1 overflow-visible">
         {/* Botão "Todas" */}
         <Button
           variant={!hasActiveFilters ? "default" : "ghost"}
@@ -421,14 +421,14 @@ export function ComposicoesCategorySidebar({
           </div>
           <Badge 
             variant={!hasActiveFilters ? "default" : "secondary"} 
-            className="text-xs font-medium tabular-nums min-w-[28px] h-6 px-2 bg-muted/80 text-muted-foreground border border-border/50"
+            className="inline-flex items-center justify-center flex-shrink-0 text-xs font-medium tabular-nums min-w-[28px] h-6 px-2 rounded-full bg-muted/80 text-muted-foreground border border-border/50"
           >
             {totalProducts}
           </Badge>
         </Button>
         
-        <ScrollArea className="h-[55vh] overflow-x-visible">
-          <div className="space-y-1 pr-4">
+        <ScrollArea className="h-[55vh] overflow-x-visible pr-2">
+          <div className="space-y-1 pr-6 overflow-visible">
             {filteredCategories.length > 0 ? (
               filteredCategories.map(category => renderCategoryItem(category))
             ) : (
