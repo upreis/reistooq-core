@@ -11,8 +11,10 @@ import { ShopProduct } from "@/features/shop/types/shop.types";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
 import { ComposicoesModal } from "./ComposicoesModal";
 import { ImportModal } from "./ImportModal";
+import { OptimizedCategorySidebar } from "./OptimizedCategorySidebar";
 import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
+import { Product } from "@/hooks/useProducts";
 
 const sortOptions = [
   { id: "newest", name: "Mais Recentes", sortBy: "created_at", sortOrder: "desc" },
@@ -21,14 +23,18 @@ const sortOptions = [
 ];
 
 export function ComposicoesEstoque() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedSort, setSelectedSort] = useState<string>("newest");
-  const [searchQuery, setSearchQuery] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState<ShopProduct | null>(null);
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [importModalOpen, setImportModalOpen] = useState(false);
+  
+  // Filtros hierárquicos para o sidebar
+  const [hierarchicalFilters, setHierarchicalFilters] = useState<{
+    categoriaPrincipal?: string;
+    categoria?: string;
+    subcategoria?: string;
+  }>({});
 
   const {
     products,
@@ -114,17 +120,43 @@ export function ComposicoesEstoque() {
     }
   };
 
-  // Sync local state with hook filters
+  // Converter ShopProducts para Products para compatibilidade
+  const productsForSidebar: Product[] = products?.map(product => ({
+    id: product.id,
+    sku_interno: product.sku_interno,
+    nome: product.nome,
+    categoria: product.categoria || null,
+    descricao: product.descricao || null,
+    codigo_barras: product.codigo_barras || null,
+    quantidade_atual: product.quantidade_atual,
+    estoque_minimo: product.estoque_minimo || 0,
+    estoque_maximo: 999999, // Valor padrão já que ShopProduct não tem esta propriedade
+    preco_custo: product.preco_custo || null,
+    preco_venda: product.preco_venda || null,
+    localizacao: null, // ShopProduct não tem esta propriedade
+    unidade_medida_id: null,
+    status: product.stock_status || 'in_stock',
+    ativo: true,
+    url_imagem: product.url_imagem || null,
+    created_at: product.created_at || new Date().toISOString(),
+    updated_at: product.updated_at || new Date().toISOString(),
+    ultima_movimentacao: null,
+    organization_id: null,
+    integration_account_id: null,
+  })) || [];
+
+  // Atualizar filtros com base na seleção hierárquica
   useEffect(() => {
-    const selectedOption = sortOptions.find(option => option.id === selectedSort);
+    const searchFromFilters = filters?.search || '';
     updateFilters({
-      search: searchQuery,
-      categoria: selectedCategory || undefined,
-      sortBy: selectedOption?.sortBy as any,
-      sortOrder: selectedOption?.sortOrder as any,
+      search: searchFromFilters,
+      categoria: hierarchicalFilters.categoriaPrincipal || 
+                 hierarchicalFilters.categoria || 
+                 hierarchicalFilters.subcategoria || 
+                 undefined,
       page: 1
     });
-  }, [searchQuery, selectedCategory, selectedSort, updateFilters]);
+  }, [hierarchicalFilters, updateFilters]);
 
   // Carregar custos dos produtos quando as composições mudarem
   useEffect(() => {
@@ -451,101 +483,12 @@ export function ComposicoesEstoque() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Filters Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Filter By Category */}
-          <Card>
-            <CardHeader className="pb-3">
-              <h3 className="font-semibold">Filtrar por Categoria</h3>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button
-                variant={selectedCategory === "" ? "default" : "ghost"}
-                className={`w-full justify-start transition-colors ${
-                  selectedCategory === ""
-                    ? "bg-brand text-brand-foreground hover:bg-brand/90"
-                    : "text-foreground hover:bg-brand-hover hover:text-foreground"
-                }`}
-                onClick={() => setSelectedCategory("")}
-              >
-                <span className="mr-2">🛍️</span>
-                Todas
-              </Button>
-              {categories?.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "ghost"}
-                  className={`w-full justify-start transition-colors ${
-                    selectedCategory === category.id
-                      ? "bg-brand text-brand-foreground hover:bg-brand/90"
-                      : "text-foreground hover:bg-brand-hover hover:text-foreground"
-                  }`}
-                  onClick={() => setSelectedCategory(category.id)}
-                >
-                  <span className="mr-2">
-                    {category.icone === 'Car' ? '🚗' :
-                     category.icone === 'Coffee' ? '☕' :
-                     category.icone === 'Sparkles' ? '✨' :
-                     category.icone === 'Smartphone' ? '📱' :
-                     category.icone === 'Home' ? '🏠' :
-                     category.icone === 'Book' ? '📚' :
-                     category.icone === 'Heart' ? '❤️' :
-                     category.icone === 'Gamepad2' ? '🎮' :
-                     category.icone === 'Hammer' ? '🔨' :
-                     category.icone === 'Laptop' ? '💻' :
-                     category.icone === 'Shirt' ? '👕' :
-                     category.icone === 'Package' ? '📦' :
-                     category.icone === 'Star' ? '⭐' :
-                     category.icone === 'Circle' ? '⚪' :
-                     '📦'}
-                  </span>
-                  {category.nome} ({category.products_count})
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Sort By */}
-          <Card>
-            <CardHeader className="pb-3">
-              <h3 className="font-semibold">Ordenar por</h3>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {sortOptions.map((option) => (
-                <Button
-                  key={option.id}
-                  variant={selectedSort === option.id ? "default" : "ghost"}
-                  className={`w-full justify-start transition-colors ${
-                    selectedSort === option.id
-                      ? "bg-brand text-brand-foreground hover:bg-brand/90"
-                      : "text-foreground hover:bg-brand-hover hover:text-foreground"
-                  }`}
-                  onClick={() => setSelectedSort(option.id)}
-                >
-                  {option.name}
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Status */}
-          <Card>
-            <CardHeader className="pb-3">
-              <h3 className="font-semibold">Status</h3>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="text-sm text-muted-foreground">
-                <div className="flex items-center justify-between">
-                  <span>Total de produtos:</span>
-                  <span className="font-medium">{total}</span>
-                </div>
-                {!isLoading && (
-                  <div className="mt-2 text-xs">
-                    {products?.length} produtos exibidos
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+        <div className="lg:col-span-1">
+          <OptimizedCategorySidebar 
+            products={productsForSidebar}
+            hierarchicalFilters={hierarchicalFilters}
+            onHierarchicalFiltersChange={setHierarchicalFilters}
+          />
         </div>
 
         {/* Products Grid */}
@@ -557,8 +500,8 @@ export function ComposicoesEstoque() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar produtos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={filters?.search || ''}
+                onChange={(e) => updateFilters({ search: e.target.value })}
                 className="pl-10 w-80"
               />
             </div>
