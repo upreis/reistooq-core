@@ -587,9 +587,14 @@ export function ComposicoesEstoque() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas as categorias</SelectItem>
-                    {getCategoriasPrincipais().filter(categoria => categoria?.nome && categoria.nome.trim() !== '').map((categoria) => (
-                      <SelectItem key={categoria.id} value={categoria.nome}>
-                        {categoria.nome}
+                    {/* Usar categorias principais dos produtos importados */}
+                    {Array.from(new Set(
+                      produtos
+                        ?.map(p => p.categoria_principal)
+                        .filter(cat => cat && cat.trim() !== '')
+                    )).sort().map((categoria) => (
+                      <SelectItem key={categoria} value={categoria}>
+                        {categoria}
                       </SelectItem>
                     ))}
                   </SelectContent>
