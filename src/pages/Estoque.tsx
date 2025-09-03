@@ -435,7 +435,7 @@ const Estoque = () => {
         </div>
 
         {/* Conteúdo principal */}
-        <div className="container mx-auto px-6 py-6">
+        <div className="w-full px-1 py-4 max-w-none">
           <Tabs defaultValue="estoque" className="w-full">
             <div className="flex items-center justify-between mb-6">
               <TabsList className="grid w-auto grid-cols-2 bg-muted/50 backdrop-blur-sm">
@@ -476,9 +476,9 @@ const Estoque = () => {
               </Card>
 
               {/* Layout principal com sidebar e tabela */}
-              <div className="flex gap-6">
+              <div className="flex gap-4">
                 {/* Sidebar de categorias */}
-                <div className="w-72 flex-shrink-0">
+                <div className="w-64 flex-shrink-0">
                   <div className="sticky top-6 space-y-6">
                     <SmartCategorySidebar
                       products={products}
@@ -489,7 +489,7 @@ const Estoque = () => {
                 </div>
 
                 {/* Área principal da tabela */}
-                <div className="flex-1 min-w-0 space-y-6">
+                <div className="flex-1 min-w-0 space-y-4">
                   {/* Indicadores de filtros ativos */}
                   {hasActiveFilters && (
                     <Card className="border-primary/20 bg-primary/5">
@@ -516,28 +516,26 @@ const Estoque = () => {
                   )}
 
                   {/* Tabela principal */}
-                  <Card className="border-border/50 shadow-sm">
-                    <CardContent className="p-0">
-                      {initialLoading ? (
-                        <div className="p-6">
-                          <EstoqueSkeleton />
-                        </div>
-                      ) : (
-                        <EstoqueTable
-                          products={paginatedProducts}
-                          selectedProducts={selectedProducts}
-                          onSelectProduct={handleSelectProduct}
-                          onSelectAll={handleSelectAll}
-                          onEditProduct={handleEditProduct}
-                          onDeleteProduct={handleDeleteProduct}
-                          onStockMovement={handleStockMovement}
-                          sortBy={sortBy}
-                          sortOrder={sortOrder}
-                          onSort={handleSort}
-                        />
-                      )}
-                    </CardContent>
-                  </Card>
+                  <div className="border border-border/50 rounded-lg shadow-sm overflow-hidden">
+                    {initialLoading ? (
+                      <div className="p-6">
+                        <EstoqueSkeleton />
+                      </div>
+                    ) : (
+                      <EstoqueTable
+                        products={paginatedProducts}
+                        selectedProducts={selectedProducts}
+                        onSelectProduct={handleSelectProduct}
+                        onSelectAll={handleSelectAll}
+                        onEditProduct={handleEditProduct}
+                        onDeleteProduct={handleDeleteProduct}
+                        onStockMovement={handleStockMovement}
+                        sortBy={sortBy}
+                        sortOrder={sortOrder}
+                        onSort={handleSort}
+                      />
+                    )}
+                  </div>
 
                   {/* Paginação melhorada */}
                   {products.length > itemsPerPage && (

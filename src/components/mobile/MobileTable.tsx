@@ -109,8 +109,8 @@ export default function MobileTable({
     const fullGridTemplate = `${selectableItems ? '40px ' : ''}${gridCols}${actions.length > 0 ? ' 120px' : ''}`;
 
     return (
-      <div className="w-full overflow-x-auto">
-        <div className="min-w-fit">
+      <div className="w-full -mx-1">
+        <div className="min-w-fit px-1">
           {/* Table Header */}
           <div className="grid gap-2 py-3 px-4 bg-muted/50 rounded-lg text-xs font-medium mb-4"
                style={{ gridTemplateColumns: fullGridTemplate }}>
