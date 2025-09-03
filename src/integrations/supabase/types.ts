@@ -2521,6 +2521,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      generate_category_hierarchy_from_products: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       generate_password_reset_token: {
         Args: { _email: string }
         Returns: Json
