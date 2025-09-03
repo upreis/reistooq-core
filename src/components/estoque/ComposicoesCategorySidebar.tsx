@@ -259,7 +259,7 @@ export function ComposicoesCategorySidebar({
             )}
             style={{ paddingLeft: `${paddingLeft + 12}px` }}
           >
-            <div className="flex items-center justify-between gap-2 w-full">
+            <div className="flex items-center gap-2 w-full min-w-0">
               {/* Lado esquerdo: ícones e texto */}
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 {/* Ícone de expansão */}
@@ -303,9 +303,9 @@ export function ComposicoesCategorySidebar({
                 </span>
               </div>
               
-              {/* Lado direito: contador */}
+              {/* Contador à direita */}
               <div className={cn(
-                "inline-flex h-6 min-w-[28px] px-2 rounded-full flex-shrink-0 items-center justify-center text-xs font-medium tabular-nums transition-colors",
+                "ml-auto inline-flex h-6 min-w-[28px] px-2 rounded-full flex-shrink-0 items-center justify-center text-xs font-medium tabular-nums transition-colors",
                 isSelected 
                   ? "bg-primary text-primary-foreground" 
                   : "bg-muted text-muted-foreground border border-border"

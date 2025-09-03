@@ -537,7 +537,7 @@ export function ComposicoesEstoque() {
         {/* Sidebar de categorias - responsivo */}
         <div className={cn(
           "transition-all duration-300 flex-shrink-0",
-          sidebarCollapsed ? "w-12" : "w-64"
+          sidebarCollapsed ? "w-12" : "w-72"
         )}>
           <div className="sticky top-6">
             <ComposicoesCategorySidebar 
