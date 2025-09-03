@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Heart, ShoppingCart, Star, Package } from "lucide-react";
 import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
 import { ShopProduct } from "@/features/shop/types/shop.types";
+import { OptimizedCategorySidebar } from "@/components/estoque/OptimizedCategorySidebar";
+import { Product } from "@/hooks/useProducts";
 
 const sortOptions = [
   { id: "newest", name: "Mais Recentes" },
@@ -27,6 +29,14 @@ export default function Shop() {
   const [selectedSort, setSelectedSort] = useState<string>("newest");
   const [selectedPriceRange, setSelectedPriceRange] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // Filtros hierárquicos para o sidebar
+  const [hierarchicalFilters, setHierarchicalFilters] = useState<{
+    categoriaPrincipal?: string;
+    categoria?: string;
+    subcategoria?: string;
+  }>({});
 
   const {
     products,
@@ -40,7 +50,32 @@ export default function Shop() {
     total
   } = useShopProducts();
 
-  // Sync local state with hook filters
+  // Converter ShopProducts para Products para compatibilidade
+  const productsForSidebar: Product[] = products?.map(product => ({
+    id: product.id,
+    sku_interno: product.sku_interno,
+    nome: product.nome,
+    categoria: product.categoria || null,
+    descricao: product.descricao || null,
+    codigo_barras: product.codigo_barras || null,
+    quantidade_atual: product.quantidade_atual,
+    estoque_minimo: product.estoque_minimo || 0,
+    estoque_maximo: 999999,
+    preco_custo: product.preco_custo || null,
+    preco_venda: product.preco_venda || null,
+    localizacao: null,
+    unidade_medida_id: null,
+    status: product.stock_status || 'in_stock',
+    ativo: true,
+    url_imagem: product.url_imagem || null,
+    created_at: product.created_at || new Date().toISOString(),
+    updated_at: product.updated_at || new Date().toISOString(),
+    ultima_movimentacao: null,
+    organization_id: null,
+    integration_account_id: null,
+  })) || [];
+
+  // Sync filters including hierarchical ones
   useEffect(() => {
     const priceRange: { min?: number; max?: number } = {};
     
@@ -56,12 +91,15 @@ export default function Shop() {
 
     updateFilters({
       search: searchQuery,
-      categoria: selectedCategory || undefined,
+      categoria: hierarchicalFilters.categoriaPrincipal || 
+                 hierarchicalFilters.categoria || 
+                 hierarchicalFilters.subcategoria || 
+                 selectedCategory || undefined,
       sortBy: selectedSort as any,
       priceRange,
       page: 1
     });
-  }, [searchQuery, selectedCategory, selectedSort, selectedPriceRange, updateFilters]);
+  }, [searchQuery, selectedCategory, selectedSort, selectedPriceRange, hierarchicalFilters, updateFilters]);
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }).map((_, index) => (
@@ -91,134 +129,95 @@ export default function Shop() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${sidebarCollapsed ? 'lg:grid-cols-[auto_1fr]' : 'lg:grid-cols-4'}`}>
         {/* Filters Sidebar */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* Filter By Category */}
-          <Card>
-            <CardHeader className="pb-3">
-              <h3 className="font-semibold">Filtrar por Categoria</h3>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button
-                variant={selectedCategory === "" ? "default" : "ghost"}
-                className={`w-full justify-start transition-colors ${
-                  selectedCategory === ""
-                    ? "bg-brand text-brand-foreground hover:bg-brand/90"
-                    : "text-foreground hover:bg-brand-hover hover:text-foreground"
-                }`}
-                onClick={() => setSelectedCategory("")}
-              >
-                <span className="mr-2">🛍️</span>
-                Todas
-              </Button>
-              {categories?.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "ghost"}
-                  className={`w-full justify-start transition-colors ${
-                    selectedCategory === category.id
-                      ? "bg-brand text-brand-foreground hover:bg-brand/90"
-                      : "text-foreground hover:bg-brand-hover hover:text-foreground"
-                  }`}
-                  onClick={() => setSelectedCategory(category.id)}
-                >
-                  <span className="mr-2">
-                    {category.icone === 'Car' ? '🚗' :
-                     category.icone === 'Coffee' ? '☕' :
-                     category.icone === 'Sparkles' ? '✨' :
-                     category.icone === 'Smartphone' ? '📱' :
-                     category.icone === 'Home' ? '🏠' :
-                     category.icone === 'Book' ? '📚' :
-                     category.icone === 'Heart' ? '❤️' :
-                     category.icone === 'Gamepad2' ? '🎮' :
-                     category.icone === 'Hammer' ? '🔨' :
-                     category.icone === 'Laptop' ? '💻' :
-                     category.icone === 'Shirt' ? '👕' :
-                     category.icone === 'Package' ? '📦' :
-                     category.icone === 'Star' ? '⭐' :
-                     category.icone === 'Circle' ? '⚪' :
-                     '📦'}
-                  </span>
-                  {category.nome} ({category.products_count})
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
+        <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-1'}>
+          <OptimizedCategorySidebar 
+            products={productsForSidebar}
+            hierarchicalFilters={hierarchicalFilters}
+            onHierarchicalFiltersChange={setHierarchicalFilters}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
+          
+          {/* Additional Filters - only show when sidebar is expanded */}
+          {!sidebarCollapsed && (
+            <div className="space-y-6 mt-6">
+              {/* Sort By */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <h3 className="font-semibold">Ordenar por</h3>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {sortOptions.map((option) => (
+                    <Button
+                      key={option.id}
+                      variant={selectedSort === option.id ? "default" : "ghost"}
+                      className={`w-full justify-start transition-colors ${
+                        selectedSort === option.id
+                          ? "bg-brand text-brand-active-foreground hover:bg-brand/90"
+                          : "text-foreground hover:bg-brand-hover hover:text-foreground"
+                      }`}
+                      onClick={() => setSelectedSort(option.id)}
+                    >
+                      {option.name}
+                    </Button>
+                  ))}
+                </CardContent>
+              </Card>
 
-          {/* Sort By */}
-          <Card>
-            <CardHeader className="pb-3">
-              <h3 className="font-semibold">Ordenar por</h3>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {sortOptions.map((option) => (
-                <Button
-                  key={option.id}
-                  variant={selectedSort === option.id ? "default" : "ghost"}
-                  className={`w-full justify-start transition-colors ${
-                    selectedSort === option.id
-                      ? "bg-brand text-brand-foreground hover:bg-brand/90"
-                      : "text-foreground hover:bg-brand-hover hover:text-foreground"
-                  }`}
-                  onClick={() => setSelectedSort(option.id)}
-                >
-                  {option.name}
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-
-          {/* Stock Status */}
-          <Card>
-            <CardHeader className="pb-3">
-              <h3 className="font-semibold">Status do Estoque</h3>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="text-sm text-muted-foreground">
-                <div className="flex items-center justify-between">
-                  <span>Total de produtos:</span>
-                  <span className="font-medium">{total}</span>
-                </div>
-                {!isLoading && (
-                  <div className="mt-2 text-xs">
-                    {products?.length} produtos exibidos
+              {/* Stock Status */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <h3 className="font-semibold">Status do Estoque</h3>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between">
+                      <span>Total de produtos:</span>
+                      <span className="font-medium">{total}</span>
+                    </div>
+                    {!isLoading && (
+                      <div className="mt-2 text-xs">
+                        {products?.length} produtos exibidos
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* By Pricing */}
-          <Card>
-            <CardHeader className="pb-3">
-              <h3 className="font-semibold">Filtrar por Preço</h3>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {priceRanges.map((range) => (
-                <div key={range.id} className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id={`price-${range.id}`}
-                    name="price"
-                    checked={selectedPriceRange === range.id}
-                    onChange={() => setSelectedPriceRange(range.id)}
-                    className="text-orange-500"
-                  />
-                  <label
-                    htmlFor={`price-${range.id}`}
-                    className="text-sm text-muted-foreground cursor-pointer"
-                  >
-                    {range.name}
-                  </label>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+              {/* By Pricing */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <h3 className="font-semibold">Filtrar por Preço</h3>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {priceRanges.map((range) => (
+                    <div key={range.id} className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id={`price-${range.id}`}
+                        name="price"
+                        checked={selectedPriceRange === range.id}
+                        onChange={() => setSelectedPriceRange(range.id)}
+                        className="text-orange-500"
+                      />
+                      <label
+                        htmlFor={`price-${range.id}`}
+                        className="text-sm text-muted-foreground cursor-pointer"
+                      >
+                        {range.name}
+                      </label>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
 
         {/* Products Grid */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'}>
           {/* Search Bar */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Produtos</h2>
