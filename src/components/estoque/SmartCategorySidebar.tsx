@@ -148,6 +148,10 @@ export function SmartCategorySidebar({
     
     if (type === "principal") {
       selectPrincipalCategory(id);
+      // Auto-expand when selecting principal category
+      const newExpanded = new Set(expandedCategories);
+      newExpanded.add(id);
+      setExpandedCategories(newExpanded);
     } else if (type === "categoria") {
       // Find the principal category for this categoria
       const principal = categoriesWithCounts.find(p => 
@@ -155,6 +159,11 @@ export function SmartCategorySidebar({
       );
       if (principal) {
         selectCategory(principal.id, id);
+        // Auto-expand principal and categoria
+        const newExpanded = new Set(expandedCategories);
+        newExpanded.add(principal.id);
+        newExpanded.add(id);
+        setExpandedCategories(newExpanded);
       }
     } else if (type === "subcategoria") {
       // Find the principal and categoria for this subcategoria
@@ -172,6 +181,11 @@ export function SmartCategorySidebar({
       
       if (principalId && categoriaId) {
         selectSubcategory(principalId, categoriaId, id);
+        // Auto-expand principal and categoria
+        const newExpanded = new Set(expandedCategories);
+        newExpanded.add(principalId);
+        newExpanded.add(categoriaId);
+        setExpandedCategories(newExpanded);
       }
     }
   };
