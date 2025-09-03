@@ -168,7 +168,10 @@ export default function MobileTable({
                     <div className="flex items-center">
                       <Checkbox
                         checked={isSelected}
-                        onCheckedChange={() => onSelectItem(item[keyField])}
+                        onCheckedChange={(checked) => {
+                          onSelectItem(item[keyField]);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                   )}
@@ -189,7 +192,10 @@ export default function MobileTable({
                           key={index}
                           variant={action.variant || "outline"}
                           size="sm"
-                          onClick={() => action.onClick(item)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            action.onClick(item);
+                          }}
                           className="text-[10px] px-1.5 h-7 flex-shrink-0"
                           title={action.label}
                         >
@@ -258,6 +264,7 @@ export default function MobileTable({
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => onSelectItem(item[keyField])}
+                      onClick={(e) => e.stopPropagation()}
                       className="mt-0.5"
                     />
                   )}
@@ -301,7 +308,10 @@ export default function MobileTable({
                       key={index}
                       variant={action.variant || "outline"}
                       size="sm"
-                      onClick={() => action.onClick(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        action.onClick(item);
+                      }}
                       className="text-xs h-7"
                     >
                       {action.icon && (
