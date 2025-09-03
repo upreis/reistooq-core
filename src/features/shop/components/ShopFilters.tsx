@@ -95,7 +95,11 @@ export function ShopFilters({
             <>
               <Button
                 variant={!filters.categoria ? "default" : "ghost"}
-                className="w-full justify-start"
+                className={`w-full justify-start transition-colors ${
+                  !filters.categoria 
+                    ? "bg-brand text-brand-foreground hover:bg-brand/90"
+                    : "text-foreground hover:bg-brand-hover hover:text-foreground"
+                }`}
                 onClick={() => onFiltersChange({ categoria: undefined })}
                 disabled={isLoading}
               >
@@ -106,7 +110,11 @@ export function ShopFilters({
                 <Button
                   key={category.id}
                   variant={filters.categoria === category.nome ? "default" : "ghost"}
-                  className="w-full justify-between"
+                  className={`w-full justify-between transition-colors ${
+                    filters.categoria === category.nome
+                      ? "bg-brand text-brand-foreground hover:bg-brand/90"
+                      : "text-foreground hover:bg-brand-hover hover:text-foreground"
+                  }`}
                   onClick={() => onFiltersChange({ 
                     categoria: filters.categoria === category.nome ? undefined : category.nome 
                   })}

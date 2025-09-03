@@ -102,10 +102,10 @@ export default function Shop() {
             <CardContent className="space-y-2">
               <Button
                 variant={selectedCategory === "" ? "default" : "ghost"}
-                className={`w-full justify-start ${
+                className={`w-full justify-start transition-colors ${
                   selectedCategory === ""
-                    ? "bg-blue-500 hover:bg-blue-600 text-white"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-brand text-brand-foreground hover:bg-brand/90"
+                    : "text-foreground hover:bg-brand-hover hover:text-foreground"
                 }`}
                 onClick={() => setSelectedCategory("")}
               >
@@ -116,10 +116,10 @@ export default function Shop() {
                 <Button
                   key={category.id}
                   variant={selectedCategory === category.id ? "default" : "ghost"}
-                  className={`w-full justify-start ${
+                  className={`w-full justify-start transition-colors ${
                     selectedCategory === category.id
-                      ? "bg-blue-500 hover:bg-blue-600 text-white"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-brand text-brand-foreground hover:bg-brand/90"
+                      : "text-foreground hover:bg-brand-hover hover:text-foreground"
                   }`}
                   onClick={() => setSelectedCategory(category.id)}
                 >
@@ -156,10 +156,10 @@ export default function Shop() {
                 <Button
                   key={option.id}
                   variant={selectedSort === option.id ? "default" : "ghost"}
-                  className={`w-full justify-start ${
+                  className={`w-full justify-start transition-colors ${
                     selectedSort === option.id
-                      ? "bg-blue-500 hover:bg-blue-600 text-white"
-                      : "text-muted-foreground hover:text-foreground"
+                      ? "bg-brand text-brand-foreground hover:bg-brand/90"
+                      : "text-foreground hover:bg-brand-hover hover:text-foreground"
                   }`}
                   onClick={() => setSelectedSort(option.id)}
                 >
