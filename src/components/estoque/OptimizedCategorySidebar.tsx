@@ -4,6 +4,12 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   Package, 
   ChevronRight, 
@@ -223,65 +229,129 @@ export function OptimizedCategorySidebar({
 
     return (
       <div key={categoryKey} className="space-y-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            if (level === 0) selectCategory('principal', category.id);
-            else if (level === 1) selectCategory('categoria', parentIds[0], category.id);
-            else selectCategory('subcategoria', parentIds[0], parentIds[1], category.id);
-          }}
-          className={cn(
-            "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
-            isCollapsed ? "px-2" : "px-3",
-            isSelected 
-              ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
-              : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
-            level === 0 && "font-medium",
-            level === 1 && "text-sm ml-2",
-            level === 2 && "text-xs ml-4"
-          )}
-          style={{ paddingLeft: isCollapsed ? undefined : `${paddingLeft + 12}px` }}
-          title={isCollapsed ? category.nome : undefined}
-        >
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {/* Ícone de expansão */}
-            {hasChildren && (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleCategory(categoryKey);
+        {isCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (level === 0) selectCategory('principal', category.id);
+                  else if (level === 1) selectCategory('categoria', parentIds[0], category.id);
+                  else selectCategory('subcategoria', parentIds[0], parentIds[1], category.id);
                 }}
-                className="flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-primary/20 rounded transition-colors cursor-pointer"
+                className={cn(
+                  "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
+                  "px-2",
+                  isSelected 
+                    ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
+                    : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
+                  level === 0 && "font-medium",
+                  level === 1 && "text-sm ml-2",
+                  level === 2 && "text-xs ml-4"
+                )}
               >
-                {isExpanded ? (
-                  <ChevronDown className="h-3 w-3 text-primary" />
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {/* Ícone de expansão */}
+                  {hasChildren && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCategory(categoryKey);
+                      }}
+                      className="flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-primary/20 rounded transition-colors cursor-pointer"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-3 w-3 text-primary" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Ícone da categoria */}
+                  <div className="flex-shrink-0">
+                    {level === 0 ? (
+                      isSelected ? (
+                        <FolderOpen className="h-4 w-4 text-current" />
+                      ) : (
+                        <Folder className="h-4 w-4 text-current" />
+                      )
+                    ) : level === 1 ? (
+                      <Package className="h-3 w-3 text-current" />
+                    ) : (
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        isSelected ? "bg-current" : "bg-current opacity-60"
+                      )} />
+                    )}
+                  </div>
+                </div>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="ml-2">
+              <p className="text-sm font-medium">{category.nome}</p>
+              <p className="text-xs text-muted-foreground">{category.productCount} produtos</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (level === 0) selectCategory('principal', category.id);
+              else if (level === 1) selectCategory('categoria', parentIds[0], category.id);
+              else selectCategory('subcategoria', parentIds[0], parentIds[1], category.id);
+            }}
+            className={cn(
+              "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
+              "px-3",
+              isSelected 
+                ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
+                : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
+              level === 0 && "font-medium",
+              level === 1 && "text-sm ml-2",
+              level === 2 && "text-xs ml-4"
+            )}
+            style={{ paddingLeft: `${paddingLeft + 12}px` }}
+          >
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {/* Ícone de expansão */}
+              {hasChildren && (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCategory(categoryKey);
+                  }}
+                  className="flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-primary/20 rounded transition-colors cursor-pointer"
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-3 w-3 text-primary" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </div>
+              )}
+              
+              {/* Ícone da categoria */}
+              <div className="flex-shrink-0">
+                {level === 0 ? (
+                  isSelected ? (
+                    <FolderOpen className="h-4 w-4 text-current" />
+                  ) : (
+                    <Folder className="h-4 w-4 text-current" />
+                  )
+                ) : level === 1 ? (
+                  <Package className="h-3 w-3 text-current" />
                 ) : (
-                  <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    isSelected ? "bg-current" : "bg-current opacity-60"
+                  )} />
                 )}
               </div>
-            )}
-            
-            {/* Ícone da categoria */}
-            <div className="flex-shrink-0">
-              {level === 0 ? (
-                isSelected ? (
-                  <FolderOpen className="h-4 w-4 text-current" />
-                ) : (
-                  <Folder className="h-4 w-4 text-current" />
-                )
-              ) : level === 1 ? (
-                <Package className="h-3 w-3 text-current" />
-              ) : (
-                <div className={cn(
-                  "w-2 h-2 rounded-full",
-                  isSelected ? "bg-current" : "bg-current opacity-60"
-                )} />
-              )}
-            </div>
-            
-            {/* Nome da categoria */}
-            {!isCollapsed && (
+              
+              {/* Nome da categoria */}
               <span className={cn(
                 "truncate flex-1 text-left transition-colors",
                 isSelected && "font-medium",
@@ -291,10 +361,8 @@ export function OptimizedCategorySidebar({
               )}>
                 {category.nome}
               </span>
-            )}
-            
-            {/* Contador com melhor contraste */}
-            {!isCollapsed && (
+              
+              {/* Contador com melhor contraste */}
               <div className={cn(
                 "ml-auto flex-shrink-0 px-2 py-0.5 rounded-full text-center min-w-[28px] transition-colors",
                 isSelected 
@@ -306,9 +374,9 @@ export function OptimizedCategorySidebar({
               )}>
                 {category.productCount}
               </div>
-            )}
-          </div>
-        </Button>
+            </div>
+          </Button>
+        )}
         
         {/* Filhos - sempre mostrar se expandido */}
         {isExpanded && hasChildren && !isCollapsed && (
@@ -324,22 +392,30 @@ export function OptimizedCategorySidebar({
 
   if (isCollapsed) {
     return (
-      <div className="w-12 flex flex-col gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggleCollapse}
-          className="w-full h-10 p-0"
-          title="Expandir categorias"
-        >
-          <Grid3X3 className="h-4 w-4" />
-        </Button>
-        <ScrollArea className="flex-1">
-          <div className="space-y-1">
-            {filteredCategories.map(category => renderCategoryItem(category))}
-          </div>
-        </ScrollArea>
-      </div>
+      <TooltipProvider>
+        <div className="w-12 flex flex-col gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleCollapse}
+                className="w-full h-10 p-0"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="ml-2">
+              <p>Expandir categorias</p>
+            </TooltipContent>
+          </Tooltip>
+          <ScrollArea className="flex-1">
+            <div className="space-y-1">
+              {filteredCategories.map(category => renderCategoryItem(category))}
+            </div>
+          </ScrollArea>
+        </div>
+      </TooltipProvider>
     );
   }
 
