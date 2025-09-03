@@ -117,7 +117,10 @@ export function SmartCategorySidebar({
       categoria: undefined,
       subcategoria: undefined,
     });
-    setExpandedCategories(new Set([categoryId]));
+    // Always expand the selected category
+    const newExpanded = new Set(expandedCategories);
+    newExpanded.add(categoryId);
+    setExpandedCategories(newExpanded);
   };
 
   const selectCategory = (principalId: string, categoryId: string) => {
@@ -220,7 +223,12 @@ export function SmartCategorySidebar({
                 <Button
                   variant={hierarchicalFilters.categoriaPrincipal === principal.id && !hierarchicalFilters.categoria ? "default" : "ghost"}
                   className="flex-1 justify-between h-auto py-2"
-                  onClick={() => selectPrincipalCategory(principal.id)}
+                  onClick={() => {
+                    selectPrincipalCategory(principal.id);
+                    if (!expandedCategories.has(principal.id)) {
+                      toggleCategory(principal.id);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-2">
                     {expandedCategories.has(principal.id) ? (
