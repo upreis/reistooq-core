@@ -256,21 +256,19 @@ export function SmartCategorySidebar({
                       className="w-full justify-start h-10 px-3 transition-all hover:bg-muted/80 group-hover:shadow-sm"
                     >
                       <div className="flex items-center gap-2 flex-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <div
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleCategory(principal.id);
                           }}
-                          className="h-5 w-5 p-0 hover:bg-primary/20 transition-colors"
+                          className="h-5 w-5 flex items-center justify-center cursor-pointer hover:bg-primary/20 rounded transition-colors"
                         >
                           {isExpanded ? (
                             <ChevronDown className="h-3 w-3 text-primary" />
                           ) : (
                             <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
                           )}
-                        </Button>
+                        </div>
                         
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           {isExpanded ? (
@@ -310,24 +308,22 @@ export function SmartCategorySidebar({
                                 onClick={() => selectCategory(principal.id, categoria.id)}
                                 className="w-full justify-start h-8 px-2 transition-all hover:bg-muted/60"
                               >
-                                <div className="flex items-center gap-2 flex-1">
-                                  {categoria.children && categoria.children.length > 0 && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleCategory(`${principal.id}-${categoria.id}`);
-                                      }}
-                                      className="h-4 w-4 p-0 hover:bg-primary/20"
-                                    >
-                                      {isSubExpanded ? (
-                                        <ChevronDown className="h-3 w-3 text-primary" />
-                                      ) : (
-                                        <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                                      )}
-                                    </Button>
-                                  )}
+                                 <div className="flex items-center gap-2 flex-1">
+                                   {categoria.children && categoria.children.length > 0 && (
+                                     <div
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleCategory(`${principal.id}-${categoria.id}`);
+                                       }}
+                                       className="h-4 w-4 flex items-center justify-center cursor-pointer hover:bg-primary/20 rounded transition-colors"
+                                     >
+                                       {isSubExpanded ? (
+                                         <ChevronDown className="h-3 w-3 text-primary" />
+                                       ) : (
+                                         <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                                       )}
+                                     </div>
+                                   )}
                                   
                                   <div className="flex items-center gap-2 flex-1 min-w-0">
                                     <Package className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
