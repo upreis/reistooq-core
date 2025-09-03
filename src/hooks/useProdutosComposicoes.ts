@@ -50,7 +50,7 @@ export const useProdutosComposicoes = () => {
     mutationFn: async (produto: Omit<ProdutoComposicao, "id" | "organization_id" | "created_at" | "updated_at">) => {
       const { data, error } = await supabase
         .from("produtos_composicoes")
-        .insert([produto])
+        .insert([{ ...produto, organization_id: 'default' }])
         .select()
         .single();
 
@@ -143,7 +143,8 @@ export const useProdutosComposicoes = () => {
         url_imagem: produto.url_imagem,
         codigo_barras: produto.codigo_barras,
         status: "active",
-        ativo: true
+        ativo: true,
+        organization_id: 'default'
       }));
 
       // Inserir na tabela de composições (com upsert para evitar duplicatas)

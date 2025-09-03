@@ -16,6 +16,8 @@ import { OptimizedCategorySidebar } from "./OptimizedCategorySidebar";
 import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/hooks/useProducts";
+import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const sortOptions = [
   { id: "newest", name: "Mais Recentes", sortBy: "created_at", sortOrder: "desc" },
@@ -32,6 +34,7 @@ export function ComposicoesEstoque() {
   const [importProdutosModalOpen, setImportProdutosModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoriaPrincipalSelecionada, setCategoriaPrincipalSelecionada] = useState<string>("");
   
   // Filtros hierárquicos para o sidebar
   const [hierarchicalFilters, setHierarchicalFilters] = useState<{
@@ -39,6 +42,9 @@ export function ComposicoesEstoque() {
     categoria?: string;
     subcategoria?: string;
   }>({});
+
+  // Hook para categorias hierárquicas
+  const { categories, getCategoriasPrincipais } = useHierarchicalCategories();
 
   // Usar produtos de composições independentes
   const {
@@ -160,8 +166,13 @@ export function ComposicoesEstoque() {
       produto.categoria_principal === hierarchicalFilters.categoriaPrincipal ||
       produto.categoria === hierarchicalFilters.categoria ||
       produto.subcategoria === hierarchicalFilters.subcategoria;
+
+    // Filtro adicional por categoria principal selecionada
+    const matchesCategoriaFiltro = !categoriaPrincipalSelecionada ||
+      produto.categoria_principal === categoriaPrincipalSelecionada ||
+      produto.categoria === categoriaPrincipalSelecionada;
     
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesCategoriaFiltro;
   }) || [];
 
   // Carregar custos dos produtos quando as composições mudarem
@@ -512,17 +523,38 @@ export function ComposicoesEstoque() {
         {/* Products Grid */}
         <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'}>
           <div className="space-y-6">
-            {/* Search Bar */}
-            <div className="flex items-center justify-between">
+            {/* Search and Category Filter */}
+            <div className="flex items-center justify-between gap-4">
               <h2 className="text-xl font-semibold">Produtos de Composições</h2>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar produtos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-80"
-                />
+              <div className="flex items-center gap-3">
+                {/* Filtro de Categoria Principal */}
+                <Select
+                  value={categoriaPrincipalSelecionada}
+                  onValueChange={setCategoriaPrincipalSelecionada}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Filtrar por categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todas as categorias</SelectItem>
+                    {getCategoriasPrincipais().map((categoria) => (
+                      <SelectItem key={categoria.id} value={categoria.nome}>
+                        {categoria.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar produtos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 w-80"
+                  />
+                </div>
               </div>
             </div>
 

@@ -5,15 +5,15 @@ export interface ComposicoesModalProduct {
   id: string;
   sku_interno: string;
   nome: string;
-  stock_status?: string;
+  stock_status: "in_stock" | "out_of_stock" | "low_stock";
   quantidade_atual: number;
   estoque_minimo: number;
   preco_venda: number;
   url_imagem?: string;
   categoria?: string;
   descricao?: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
   ativo: boolean;
   organization_id: string;
 }
@@ -30,8 +30,8 @@ export function adaptProdutoComposicaoToModalProduct(produto: ProdutoComposicao)
     url_imagem: produto.url_imagem,
     categoria: produto.categoria,
     descricao: produto.descricao,
-    created_at: produto.created_at,
-    updated_at: produto.updated_at,
+    created_at: produto.created_at || new Date().toISOString(),
+    updated_at: produto.updated_at || new Date().toISOString(),
     ativo: produto.ativo,
     organization_id: produto.organization_id,
   };
