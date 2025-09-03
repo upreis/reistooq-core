@@ -116,7 +116,7 @@ export function OptimizedCategorySidebar({
     }).filter(principal => principal.productCount > 0);
   }, [products, getCategoriasPrincipais, getCategorias, getSubcategorias]);
 
-  // Filtrar categorias baseado na busca
+  // Filtrar categorias baseado APENAS na busca (não na seleção)
   const filteredCategories = useMemo(() => {
     if (!searchTerm) return categoriesWithCounts;
     
@@ -232,11 +232,11 @@ export function OptimizedCategorySidebar({
             else selectCategory('subcategoria', parentIds[0], parentIds[1], category.id);
           }}
           className={cn(
-            "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
+            "w-full justify-start h-auto py-2 transition-all relative group border-l-2 text-foreground hover:text-foreground",
             isCollapsed ? "px-2" : "px-3",
             isSelected 
-              ? "border-l-primary bg-primary/5 text-primary font-medium" 
-              : "border-l-transparent hover:border-l-primary/50 hover:bg-muted/50",
+              ? "border-l-primary bg-primary/5 text-primary font-medium hover:text-primary" 
+              : "border-l-transparent hover:border-l-primary/50 hover:bg-muted/30 hover:text-foreground",
             level === 0 && "font-medium",
             level === 1 && "text-sm ml-2",
             level === 2 && "text-xs ml-4"
