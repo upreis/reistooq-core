@@ -253,7 +253,7 @@ export function SmartCategorySidebar({
                       variant={isSelected ? "default" : "ghost"}
                       size="sm"
                       onClick={() => selectPrincipalCategory(principal.id)}
-                      className="w-full justify-start h-10 px-3 transition-all hover:bg-muted/80 group-hover:shadow-sm"
+                      className="w-full justify-start h-10 px-3 transition-all hover:bg-muted/50 dark:hover:bg-muted/20 group-hover:shadow-sm"
                     >
                       <div className="flex items-center gap-2 flex-1">
                         <div
@@ -276,7 +276,7 @@ export function SmartCategorySidebar({
                           ) : (
                             <Folder className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                           )}
-                          <span className="text-sm font-medium truncate">{principal.nome}</span>
+                          <span className="text-sm font-medium truncate text-foreground">{principal.nome}</span>
                         </div>
                         
                         <Badge 
@@ -306,7 +306,7 @@ export function SmartCategorySidebar({
                                 variant={isCategorySelected ? "default" : "ghost"}
                                 size="sm"
                                 onClick={() => selectCategory(principal.id, categoria.id)}
-                                className="w-full justify-start h-8 px-2 transition-all hover:bg-muted/60"
+                                className="w-full justify-start h-8 px-2 transition-all hover:bg-muted/50 dark:hover:bg-muted/10 dark:hover:text-foreground"
                               >
                                  <div className="flex items-center gap-2 flex-1">
                                    {categoria.children && categoria.children.length > 0 && (
@@ -327,7 +327,7 @@ export function SmartCategorySidebar({
                                   
                                   <div className="flex items-center gap-2 flex-1 min-w-0">
                                     <Package className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-                                    <span className="text-xs font-medium truncate">{categoria.nome}</span>
+                                    <span className="text-xs font-medium truncate text-foreground">{categoria.nome}</span>
                                   </div>
                                   
                                   <Badge variant="outline" className="ml-auto text-xs border-border/50">
@@ -351,11 +351,11 @@ export function SmartCategorySidebar({
                                       variant={isSubcategorySelected ? "default" : "ghost"}
                                       size="sm"
                                       onClick={() => selectSubcategory(principal.id, categoria.id, subcategoria.id)}
-                                      className="w-full justify-start h-7 px-2 transition-all hover:bg-muted/40"
+                                      className="w-full justify-start h-7 px-2 transition-all hover:bg-muted/50 dark:hover:bg-muted/10 dark:hover:text-foreground"
                                     >
                                       <div className="flex items-center gap-2 flex-1">
                                         <div className="w-2 h-2 rounded-full bg-muted-foreground/30"></div>
-                                        <span className="text-xs truncate">{subcategoria.nome}</span>
+                                        <span className="text-xs truncate text-foreground">{subcategoria.nome}</span>
                                         <Badge variant="outline" className="ml-auto text-xs border-border/50">
                                           {subcategoria.productCount}
                                         </Badge>
