@@ -28,6 +28,7 @@ export function ComposicoesEstoque() {
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   // Filtros hierárquicos para o sidebar
   const [hierarchicalFilters, setHierarchicalFilters] = useState<{
@@ -481,18 +482,20 @@ export function ComposicoesEstoque() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${sidebarCollapsed ? 'lg:grid-cols-[auto_1fr]' : 'lg:grid-cols-4'}`}>
         {/* Filters Sidebar */}
-        <div className="lg:col-span-1">
+        <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-1'}>
           <OptimizedCategorySidebar 
             products={productsForSidebar}
             hierarchicalFilters={hierarchicalFilters}
             onHierarchicalFiltersChange={setHierarchicalFilters}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
         </div>
 
         {/* Products Grid */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'}>
           {/* Search Bar */}
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Produtos com Composições</h3>
