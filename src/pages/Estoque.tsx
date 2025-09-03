@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Package, AlertTriangle, Boxes } from "lucide-react";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
+import { HierarchicalSidebar } from "@/components/estoque/HierarchicalSidebar";
 
 interface StockMovement {
   id: string;
@@ -458,106 +459,13 @@ const Estoque = () => {
                 <div className="flex gap-6">
                   {/* Sidebar */}
                   <div className="w-80 space-y-6">
-                    {/* Exibir categorias hierárquicas na sidebar */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm font-medium">Categorias Hierárquicas</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        {categoriesLoading ? (
-                          <div className="space-y-2">
-                            <div className="h-10 bg-muted rounded animate-pulse" />
-                            <div className="h-10 bg-muted rounded animate-pulse" />
-                            <div className="h-10 bg-muted rounded animate-pulse" />
-                          </div>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setHierarchicalFilters({})}
-                              className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                                !Object.values(hierarchicalFilters).some(Boolean)
-                                  ? "bg-primary text-primary-foreground" 
-                                  : "bg-muted hover:bg-muted/80"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Package className="h-4 w-4" />
-                                Todas
-                              </div>
-                              <span className="text-xs">({products.length})</span>
-                            </button>
-                            
-                            {/* Mostrar categorias principais */}
-                            {getCategoriasPrincipais().length === 0 ? (
-                              <div className="text-sm text-muted-foreground text-center py-4">
-                                Nenhuma categoria encontrada
-                              </div>
-                             ) : (
-                               getCategoriasPrincipais().map((catPrincipal) => {
-                                 const isSelected = hierarchicalFilters.categoriaPrincipal === catPrincipal.id;
-                                 const count = products.filter(p => 
-                                   p.categoria?.includes(catPrincipal.nome) || 
-                                   p.categoria === catPrincipal.nome
-                                 ).length;
-                                 
-                                 return (
-                                   <div key={catPrincipal.id} className="space-y-1">
-                                     <button
-                                       onClick={() => setHierarchicalFilters({ categoriaPrincipal: catPrincipal.id })}
-                                       className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                                         isSelected
-                                           ? "bg-primary text-primary-foreground" 
-                                           : "bg-muted hover:bg-muted/80"
-                                       }`}
-                                     >
-                                       <div className="flex items-center gap-2">
-                                         <div 
-                                           className="w-3 h-3 rounded-full"
-                                           style={{ backgroundColor: catPrincipal.cor }}
-                                         />
-                                         {catPrincipal.nome}
-                                       </div>
-                                       <span className="text-xs">({count})</span>
-                                     </button>
-                                     
-                                     {/* Mostrar categorias filhas se selecionada */}
-                                     {isSelected && getCategorias(catPrincipal.id).map((categoria) => {
-                                       const subCount = products.filter(p => 
-                                         p.categoria?.includes(categoria.nome)
-                                       ).length;
-                                       
-                                       return (
-                                         <button
-                                           key={categoria.id}
-                                           onClick={() => setHierarchicalFilters({ 
-                                             categoriaPrincipal: catPrincipal.id,
-                                             categoria: categoria.id 
-                                           })}
-                                           className={`w-full ml-4 flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                                             hierarchicalFilters.categoria === categoria.id
-                                               ? "bg-primary text-primary-foreground" 
-                                               : "bg-muted hover:bg-muted/80"
-                                           }`}
-                                         >
-                                           <div className="flex items-center gap-2">
-                                             <div 
-                                               className="w-2 h-2 rounded-full"
-                                               style={{ backgroundColor: categoria.cor }}
-                                             />
-                                             {categoria.nome}
-                                           </div>
-                                           <span className="text-xs">({subCount})</span>
-                                         </button>
-                                       );
-                                     })}
-                                   </div>
-                                 );
-                               })
-                             )}
-                           </>
-                         )}
-                       </CardContent>
-                    </Card>
+                    {/* Navegação Hierárquica de Categorias */}
+                    <HierarchicalSidebar
+                      products={products}
+                      hierarchicalFilters={hierarchicalFilters}
+                      onFiltersChange={setHierarchicalFilters}
+                    />
+                  </div>
 
                     {/* Ordenar por */}
                     <Card>
