@@ -75,7 +75,14 @@ export function ComposicoesEstoque() {
     isImporting
   } = useProdutosComposicoes();
 
-  const { getComposicoesForSku, loadComposicoes } = useComposicoesEstoque();
+  const { getComposicoesForSku, loadComposicoes, composicoes } = useComposicoesEstoque();
+
+  // Sincronizar composições quando produtos carregarem
+  useEffect(() => {
+    if (produtos && produtos.length > 0) {
+      loadComposicoes();
+    }
+  }, [produtos, loadComposicoes]);
 
   const abrirModalComposicoes = (produto: ProdutoComposicao) => {
     setProdutoSelecionado(produto);
