@@ -479,7 +479,7 @@ const Estoque = () => {
               <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
                 {/* Sidebar de categorias */}
                 <div className="xl:col-span-1">
-                  <div className="sticky top-6">
+                  <div className="sticky top-6 space-y-6">
                     <SmartCategorySidebar
                       products={products}
                       hierarchicalFilters={hierarchicalFilters}
