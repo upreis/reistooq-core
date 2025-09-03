@@ -166,10 +166,20 @@ export function EstoqueTable({
                 src={product.url_imagem} 
                 alt={product.nome} 
                 className="w-full h-full object-cover rounded-lg"
+                onError={(e) => {
+                  console.error('Erro ao carregar imagem:', product.url_imagem);
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  target.nextElementSibling?.classList.remove('hidden');
+                }}
+                onLoad={() => {
+                  console.log('Imagem carregada com sucesso:', product.url_imagem);
+                }}
               />
             ) : (
               <Package className="w-4 h-4 text-muted-foreground" />
             )}
+            <Package className="w-4 h-4 text-muted-foreground hidden" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-medium text-sm truncate">{product.nome}</p>
