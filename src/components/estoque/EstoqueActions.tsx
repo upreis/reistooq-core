@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
 import { ProductModal } from "./ProductModal";
 import { ImportModal } from "./ImportModal";
+import { CategoryHierarchyButton } from "./CategoryHierarchyButton";
 
 interface EstoqueActionsProps {
   onNewProduct: () => void;
@@ -316,6 +317,9 @@ export function EstoqueActions({
         <Download className="w-4 h-4" />
         Baixar Dados
       </Button>
+
+      {/* Botão Gerar Hierarquia */}
+      <CategoryHierarchyButton />
 
       {/* Modais */}
       <ProductModal
