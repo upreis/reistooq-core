@@ -472,9 +472,7 @@ const Estoque = () => {
                     onSearch={handleSearch}
                     onClearFilters={handleClearFilters}
                     hasActiveFilters={hasActiveFilters}
-                    useHierarchicalCategories={true}
-                    hierarchicalFilters={hierarchicalFilters}
-                    onHierarchicalFiltersChange={setHierarchicalFilters}
+                    useHierarchicalCategories={false}
                   />
                 </CardContent>
               </Card>
