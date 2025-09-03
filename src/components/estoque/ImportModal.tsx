@@ -51,8 +51,9 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     const columns = [
       { key: 'produto', label: 'Produto', required: true },
       { key: 'sku_pai', label: 'SKU Pai', required: true },
+      { key: 'categoria_principal', label: 'Categoria Principal', required: false },
     ];
-    
+
     // Adicionar colunas para até 10 componentes
     for (let i = 1; i <= 10; i++) {
       columns.push(
@@ -62,7 +63,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         { key: `uni_medida_${i}`, label: `Uni medida ${i}`, required: false }
       );
     }
-    
+
     return columns;
   };
 
@@ -188,6 +189,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         const exampleRow = [
           'KIT BOMBA DE ENCHER BECHIGA', // Produto
           'FL-003-ROSA-10', // SKU Pai
+          'Festas', // Categoria Principal
           'FL-003-ROSA-1', // SKU do componente 1
           'BOMBA DE ENCHER MANUAL', // Nome do Componente 1
           '10', // quantidade 1
