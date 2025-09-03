@@ -196,8 +196,8 @@ export function ComposicoesCategorySidebar({
                   "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
                   "px-2",
                   isSelected 
-                    ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
-                    : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
+                    ? "border-l-primary bg-primary/10 text-primary font-medium" 
+                    : "border-l-transparent text-foreground hover:border-l-primary/50 hover:bg-primary/5 hover:text-foreground",
                   level === 0 && "font-medium",
                   level === 1 && "text-sm ml-2"
                 )}
@@ -301,17 +301,14 @@ export function ComposicoesCategorySidebar({
               </span>
               
               {/* Contador */}
-              <Badge 
-                variant={isSelected ? "default" : "secondary"} 
-                className={cn(
-                  "ml-2 shrink-0 h-5 min-w-[20px] px-1.5 text-center font-medium tabular-nums",
-                  level === 0 && "text-xs",
-                  level === 1 && "text-[11px]",
-                  isSelected && "bg-primary/20 text-primary hover:bg-primary/20"
-                )}
-              >
+              <div className={cn(
+                "ml-2 shrink-0 h-6 min-w-[24px] px-2 text-center font-medium tabular-nums rounded-full flex items-center justify-center text-xs transition-colors",
+                isSelected 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted/80 text-muted-foreground border border-border/50"
+              )}>
                 {category.productCount}
-              </Badge>
+              </div>
             </div>
           </Button>
         )}
@@ -420,8 +417,8 @@ export function ComposicoesCategorySidebar({
             <span>Todas as categorias</span>
           </div>
           <Badge 
-            variant={!hasActiveFilters ? "secondary" : "outline"} 
-            className="text-xs font-medium tabular-nums min-w-[24px] h-5"
+            variant={!hasActiveFilters ? "default" : "secondary"} 
+            className="text-xs font-medium tabular-nums min-w-[28px] h-6 px-2 bg-muted/80 text-muted-foreground border border-border/50"
           >
             {totalProducts}
           </Badge>
