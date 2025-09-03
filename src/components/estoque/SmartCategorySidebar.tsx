@@ -14,6 +14,7 @@ import { useHierarchicalCategories } from "@/features/products/hooks/useHierarch
 import { CategoryCreationModal } from "./CategoryCreationModal";
 import { CategoryImportModal } from "./CategoryImportModal";
 import { Product } from "@/hooks/useProducts";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface SmartCategorySidebarProps {
   products: Product[];
@@ -203,7 +204,15 @@ export function SmartCategorySidebar({
           </Button>
 
           {/* Categorias hierárquicas */}
-          {categoriesWithCounts.map((principal) => (
+          <RadioGroup
+            value={hierarchicalFilters.categoriaPrincipal ?? ""}
+            onValueChange={(value) => {
+              if (value) {
+                selectPrincipalCategory(value);
+              }
+            }}
+          >
+            {categoriesWithCounts.map((principal) => (
             <div key={principal.id} className="space-y-1">
               {/* Categoria Principal */}
               <div className="flex items-center">
@@ -219,6 +228,7 @@ export function SmartCategorySidebar({
                     <ChevronRight className="h-3 w-3" />
                   )}
                 </Button>
+                <RadioGroupItem value={principal.id} id={`principal-${principal.id}`} className="mx-2" />
                 
                 <Button
                   variant={hierarchicalFilters.categoriaPrincipal === principal.id && !hierarchicalFilters.categoria ? "default" : "ghost"}
@@ -313,6 +323,7 @@ export function SmartCategorySidebar({
               )}
             </div>
           ))}
+          </RadioGroup>
 
           {/* Estado vazio */}
           {categoriesWithCounts.length === 0 && (
