@@ -465,12 +465,22 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       } else {
         // Para composições, processar múltiplos componentes por linha
         const expandedData: any[] = [];
+        // Guardar informações do SKU Pai (kit) para cadastrar em produtos_composicoes
+        const parentRows: Record<string, { nome: string; categoria_principal: string | null }> = {};
         
         mappedData.forEach((row, index) => {
           const rowErrors = validateRow(row, index);
           if (rowErrors.length > 0) {
             allErrors.push(...rowErrors);
             return;
+          }
+          
+          // Registrar informações do SKU Pai
+          if (row.sku_pai && row.produto) {
+            parentRows[row.sku_pai.trim()] = {
+              nome: row.produto.trim(),
+              categoria_principal: (row.categoria_principal?.trim() || null)
+            };
           }
           
           // Expandir cada linha em múltiplas composições
@@ -500,6 +510,32 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         // Atualizar mappedData com os dados expandidos
         mappedData.length = 0;
         mappedData.push(...expandedData);
+        
+        // Obter organização do usuário atual (para upsert de pais e componentes)
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('organizacao_id')
+          .eq('id', (await supabase.auth.getUser()).data.user?.id)
+          .single();
+        
+        if (!profileData?.organizacao_id) {
+          throw new Error('Organização não encontrada');
+        }
+        const organizationId = profileData.organizacao_id;
+        
+        // Cadastrar/atualizar os SKUs Pai em produtos_composicoes
+        const parentsToUpsert = Object.entries(parentRows).map(([sku, info]) => ({
+          sku_interno: sku,
+          nome: info.nome,
+          categoria_principal: info.categoria_principal,
+          organization_id: organizationId,
+        }));
+        if (parentsToUpsert.length > 0) {
+          const { error: upsertParentsError } = await supabase
+            .from('produtos_composicoes')
+            .upsert(parentsToUpsert, { onConflict: 'sku_interno,organization_id' });
+          if (upsertParentsError) throw upsertParentsError;
+        }
       }
 
       if (tipo === 'produtos') {
@@ -571,29 +607,25 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         let successCount = 0;
         const processingErrors: string[] = [];
         
-        // Verificar se todos os SKUs (produto e componente) existem
-        const allSkus = [...new Set([
-          ...mappedData.map(row => row.sku_produto).filter(Boolean),
-          ...mappedData.map(row => row.sku_componente).filter(Boolean)
-        ])];
+        // Verificar se os SKUs de componentes existem no cadastro de produtos
+        const componentSkus = [...new Set(
+          mappedData.map(row => row.sku_componente).filter(Boolean)
+        )];
         
-        const { data: existingProducts, error: existingError } = await supabase
+        const { data: existingComponents, error: existingError } = await supabase
           .from('produtos')
-          .select('sku_interno, id')
-          .in('sku_interno', allSkus);
-          
+          .select('sku_interno')
+          .in('sku_interno', componentSkus);
+        
         if (existingError) {
-          throw new Error('Erro ao verificar produtos existentes');
+          throw new Error('Erro ao verificar componentes existentes');
         }
         
-        const existingSkuMap = new Map(existingProducts?.map(p => [p.sku_interno, p.id]) || []);
+        const existingSkuSet = new Set((existingComponents || []).map(p => p.sku_interno));
         
-        // Validar se todos os SKUs existem
+        // Validar se todos os SKUs de componentes existem
         for (const row of mappedData) {
-          if (!existingSkuMap.has(row.sku_produto)) {
-            allErrors.push(`SKU Produto não encontrado: ${row.sku_produto}`);
-          }
-          if (!existingSkuMap.has(row.sku_componente)) {
+          if (!existingSkuSet.has(row.sku_componente)) {
             allErrors.push(`SKU Componente não encontrado: ${row.sku_componente}`);
           }
         }
@@ -702,8 +734,8 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
                   </>
                 ) : (
                   <>
-                    <li>SKU Produto, SKU Componente e Quantidade são obrigatórios</li>
-                    <li>SKU Produto deve existir no cadastro de produtos</li>
+                    <li>SKU Pai (kit), SKU Componente e Quantidade são obrigatórios</li>
+                    <li>SKU Pai não precisa existir no cadastro; será criado/atualizado em "Composições"</li>
                     <li>SKU Componente deve existir no cadastro de produtos</li>
                     <li>Quantidade deve ser um número maior que 0</li>
                   </>
