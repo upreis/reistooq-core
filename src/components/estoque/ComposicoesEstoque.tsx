@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download, Import } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download, Import, Trash2, MoreHorizontal } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useProdutosComposicoes, ProdutoComposicao } from "@/hooks/useProdutosComposicoes";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
+import { useComposicoesSelection } from "@/features/estoque/hooks/useComposicoesSelection";
 import { ComposicoesModal } from "./ComposicoesModal";
 import { ImportModal } from "./ImportModal";
 import { ImportarProdutosModal } from "../composicoes/ImportarProdutosModal";
@@ -20,6 +22,7 @@ import { useHierarchicalCategories } from "@/features/products/hooks/useHierarch
 import { cn } from "@/lib/utils";
 import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const sortOptions = [
   { id: "newest", name: "Mais Recentes", sortBy: "created_at", sortOrder: "desc" },
@@ -46,6 +49,19 @@ export function ComposicoesEstoque() {
 
   // Hook para categorias hierárquicas
   const { categories, getCategoriasPrincipais } = useHierarchicalCategories();
+
+  // Hook para seleção de itens
+  const {
+    selectedItems,
+    isSelectMode,
+    toggleSelectMode,
+    selectItem,
+    selectAll,
+    clearSelection,
+    isSelected,
+    getSelectedItems,
+    selectedCount
+  } = useComposicoesSelection();
 
   // Usar produtos de composições independentes
   const {
@@ -233,6 +249,23 @@ export function ComposicoesEstoque() {
     carregarCustos();
   }, [produtosFiltrados, getComposicoesForSku]);
 
+  // Funções para lidar com seleção
+  const handleDeleteSelected = async () => {
+    const selectedProducts = getSelectedItems(produtosFiltrados);
+    if (selectedProducts.length === 0) return;
+
+    if (confirm(`Tem certeza que deseja excluir ${selectedProducts.length} produto(s)?`)) {
+      try {
+        for (const produto of selectedProducts) {
+          deleteProduto(produto.id);
+        }
+        clearSelection();
+      } catch (error) {
+        console.error('Erro ao excluir produtos:', error);
+      }
+    }
+  };
+
   const renderProductCard = (product: ProdutoComposicao) => {
     const composicoes = getComposicoesForSku(product.sku_interno);
     
@@ -269,10 +302,24 @@ export function ComposicoesEstoque() {
     }
 
     const isExpanded = expandedCards.has(product.id);
+    const itemSelected = isSelected(product.id);
 
     return (
-      <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 border-border/40 bg-card/60 backdrop-blur-sm hover:bg-card/80">
+      <Card key={product.id} className={cn(
+        "group hover:shadow-xl transition-all duration-300 border-border/40 bg-card/60 backdrop-blur-sm hover:bg-card/80",
+        itemSelected && "ring-2 ring-primary border-primary/50 bg-primary/5"
+      )}>
         <CardContent className="p-6">
+          {/* Checkbox de seleção */}
+          {isSelectMode && (
+            <div className="flex justify-end mb-3">
+              <Checkbox 
+                checked={itemSelected}
+                onCheckedChange={() => selectItem(product.id)}
+                className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+            </div>
+          )}
           <header className="mb-5">
             <h3 className="font-semibold text-lg text-foreground leading-snug line-clamp-2 mb-2">{product.nome}</h3>
             <div className="flex items-center gap-2">
@@ -562,18 +609,78 @@ export function ComposicoesEstoque() {
           </div>
         </div>
 
-        {/* Área principal com melhor organização */}
+          {/* Área principal com melhor organização */}
         <div className="flex-1 min-w-0 space-y-6">
-          {/* Header da seção com pesquisa */}
+          {/* Header da seção com pesquisa e seleção */}
           <Card className="border-border/40 bg-card/30 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground mb-1">Produtos de Composições</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {produtosFiltrados?.length || 0} produtos encontrados
-                  </p>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h2 className="text-xl font-semibold text-foreground mb-1">Produtos de Composições</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {produtosFiltrados?.length || 0} produtos encontrados
+                      {isSelectMode && selectedCount > 0 && (
+                        <span className="ml-2 text-primary font-medium">
+                          • {selectedCount} selecionado(s)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  
+                  {/* Controles de seleção */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={isSelectMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={toggleSelectMode}
+                      className="gap-2"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      {isSelectMode ? "Cancelar" : "Selecionar"}
+                    </Button>
+                    
+                    {isSelectMode && (
+                      <>
+                     <div className="flex items-center gap-2">
+                       <Checkbox 
+                         checked={produtosFiltrados.length > 0 && selectedCount === produtosFiltrados.length}
+                         onCheckedChange={(checked) => {
+                           if (checked) {
+                             selectAll(produtosFiltrados);
+                           } else {
+                             clearSelection();
+                           }
+                         }}
+                         className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                       />
+                       <span className="text-sm text-muted-foreground">Todos</span>
+                     </div>
+                        
+                        {selectedCount > 0 && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="gap-2">
+                                <MoreHorizontal className="h-4 w-4" />
+                                Ações ({selectedCount})
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem 
+                                onClick={handleDeleteSelected}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Excluir Selecionados
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
+                
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
