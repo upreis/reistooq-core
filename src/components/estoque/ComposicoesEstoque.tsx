@@ -17,6 +17,8 @@ import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/hooks/useProducts";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
+import { cn } from "@/lib/utils";
+import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const sortOptions = [
@@ -32,9 +34,8 @@ export function ComposicoesEstoque() {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importProdutosModalOpen, setImportProdutosModalOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoriaPrincipalSelecionada, setCategoriaPrincipalSelecionada] = useState<string>("");
+  const { isCollapsed: sidebarCollapsed, toggleCollapse: toggleSidebar } = useSidebarCollapse();
   
   // Filtros hierárquicos para o sidebar
   const [hierarchicalFilters, setHierarchicalFilters] = useState<{
@@ -181,30 +182,40 @@ export function ComposicoesEstoque() {
     }
   };
 
-  // Converter produtos de composições para Products para compatibilidade com sidebar
-  const productsForSidebar: Product[] = produtos?.map(produto => ({
-    id: produto.id,
-    sku_interno: produto.sku_interno,
-    nome: produto.nome,
-    categoria: produto.categoria || null,
-    descricao: produto.descricao || null,
-    codigo_barras: produto.codigo_barras || null,
-    quantidade_atual: produto.quantidade_atual,
-    estoque_minimo: produto.estoque_minimo || 0,
-    estoque_maximo: 999999,
-    preco_custo: produto.preco_custo || null,
-    preco_venda: produto.preco_venda || null,
-    localizacao: null,
-    unidade_medida_id: null,
-    status: produto.status || 'active',
-    ativo: produto.ativo,
-    url_imagem: produto.url_imagem || null,
-    created_at: produto.created_at || new Date().toISOString(),
-    updated_at: produto.updated_at || new Date().toISOString(),
-    ultima_movimentacao: null,
-    organization_id: produto.organization_id,
-    integration_account_id: null,
-  })) || [];
+  // Preparar produtos para o sidebar (converter para formato Product)
+  const productsForSidebar: Product[] = useMemo(() => {
+    return produtos?.map(produto => ({
+      id: produto.id,
+      nome: produto.nome,
+      sku_interno: produto.sku_interno,
+      categoria_principal: produto.categoria_principal || '',
+      categoria: produto.categoria || '',
+      subcategoria: produto.subcategoria || '',
+      preco_venda: produto.preco_venda,
+      quantidade_atual: produto.quantidade_atual,
+      estoque_minimo: produto.estoque_minimo,
+      ativo: produto.ativo,
+      organization_id: produto.organization_id,
+      created_at: produto.created_at,
+      updated_at: produto.updated_at,
+      unidade_medida: 'un',
+      unidade_medida_id: null,
+      codigo_barras: null,
+      descricao: null,
+      preco_custo: 0,
+      estoque_maximo: null,
+      localizacao: null,
+      fornecedor: null,
+      data_validade: null,
+      lote: null,
+      ncm: null,
+      cest: null,
+      status: 'ativo',
+      url_imagem: null,
+      ultima_movimentacao: null,
+      integration_account_id: null
+    })) || [];
+  }, [produtos]);
 
   // Filtrar produtos baseado na busca e filtros hierárquicos
   const produtosFiltrados = useMemo(() => {
@@ -218,14 +229,9 @@ export function ComposicoesEstoque() {
         produto.categoria === hierarchicalFilters.categoria ||
         produto.subcategoria === hierarchicalFilters.subcategoria;
 
-      // Filtro adicional por categoria principal selecionada
-      const matchesCategoriaFiltro = !categoriaPrincipalSelecionada || 
-        categoriaPrincipalSelecionada === "all" ||
-        produto.categoria_principal === categoriaPrincipalSelecionada;
-      
-      return matchesSearch && matchesCategory && matchesCategoriaFiltro;
+      return matchesSearch && matchesCategory;
     }) || [];
-  }, [produtos, searchQuery, hierarchicalFilters, categoriaPrincipalSelecionada]);
+  }, [produtos, searchQuery, hierarchicalFilters]);
 
   // Carregar custos dos produtos quando as composições mudarem
   useEffect(() => {
@@ -560,94 +566,72 @@ export function ComposicoesEstoque() {
         </div>
       </div>
 
-      <div className={`grid grid-cols-1 gap-6 ${sidebarCollapsed ? 'lg:grid-cols-[auto_1fr]' : 'lg:grid-cols-4'}`}>
-        {/* Filters Sidebar */}
-        <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-1'}>
-          <OptimizedCategorySidebar 
-            products={productsForSidebar}
-            hierarchicalFilters={hierarchicalFilters}
-            onHierarchicalFiltersChange={setHierarchicalFilters}
-            isCollapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
+      {/* Layout principal com sidebar e conteúdo */}
+      <div className="flex gap-4">
+        {/* Sidebar de categorias - responsivo */}
+        <div className={cn(
+          "transition-all duration-300 flex-shrink-0",
+          sidebarCollapsed ? "w-12" : "w-64"
+        )}>
+          <div className="sticky top-6">
+            <OptimizedCategorySidebar 
+              products={productsForSidebar}
+              hierarchicalFilters={hierarchicalFilters}
+              onHierarchicalFiltersChange={setHierarchicalFilters}
+              isCollapsed={sidebarCollapsed}
+              onToggleCollapse={toggleSidebar}
+            />
+          </div>
         </div>
 
-        {/* Products Grid */}
-        <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'}>
-          <div className="space-y-6">
-            {/* Search and Category Filter */}
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-semibold">Produtos de Composições</h2>
-              <div className="flex items-center gap-3">
-                {/* Filtro de Categoria Principal */}
-                <Select
-                  value={categoriaPrincipalSelecionada}
-                  onValueChange={setCategoriaPrincipalSelecionada}
-                >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Filtrar por categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as categorias</SelectItem>
-                    {/* Usar categorias principais dos produtos importados */}
-                    {Array.from(new Set(
-                      produtos
-                        ?.map(p => p.categoria_principal)
-                        .filter(cat => cat && cat.trim() !== '')
-                    )).sort().map((categoria) => (
-                      <SelectItem key={categoria} value={categoria}>
-                        {categoria}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Search Bar */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar produtos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-80"
-                  />
-                </div>
-              </div>
+        {/* Área principal */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Pesquisa */}
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-xl font-semibold">Produtos de Composições</h2>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar produtos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-80"
+              />
             </div>
-
-            {/* Products Grid */}
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-4 space-y-2">
-                      <div className="h-4 bg-muted rounded w-3/4" />
-                      <div className="h-4 bg-muted rounded w-1/2" />
-                      <div className="h-20 bg-muted rounded" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : produtosFiltrados && produtosFiltrados.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {produtosFiltrados.map(renderProductCard)}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Boxes className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
-                <p className="text-muted-foreground mb-4">
-                  {searchQuery || Object.values(hierarchicalFilters).some(Boolean) 
-                    ? 'Tente ajustar os filtros ou a pesquisa.' 
-                    : 'Comece importando produtos do controle de estoque.'}
-                </p>
-                <Button onClick={() => setImportProdutosModalOpen(true)} className="gap-2">
-                  <Import className="h-4 w-4" />
-                  Importar Produtos do Estoque
-                </Button>
-              </div>
-            )}
           </div>
+
+          {/* Grid de produtos */}
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-4 space-y-2">
+                    <div className="h-4 bg-muted rounded w-3/4" />
+                    <div className="h-4 bg-muted rounded w-1/2" />
+                    <div className="h-20 bg-muted rounded" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : produtosFiltrados && produtosFiltrados.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {produtosFiltrados.map(renderProductCard)}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Boxes className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchQuery || Object.values(hierarchicalFilters).some(Boolean) 
+                  ? 'Tente ajustar os filtros ou a pesquisa.' 
+                  : 'Comece importando produtos do controle de estoque.'}
+              </p>
+              <Button onClick={() => setImportProdutosModalOpen(true)} className="gap-2">
+                <Import className="h-4 w-4" />
+                Importar Produtos do Estoque
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
