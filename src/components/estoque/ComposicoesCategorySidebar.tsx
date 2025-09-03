@@ -20,15 +20,12 @@ import {
   Filter,
   X,
   Grid3X3,
-  List
 } from "lucide-react";
-import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
-import { Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { ProdutoComposicao } from "@/hooks/useProdutosComposicoes";
 
-interface OptimizedCategorySidebarProps {
-  products: Product[];
+interface ComposicoesCategorySidebarProps {
+  produtos: ProdutoComposicao[];
   hierarchicalFilters: {
     categoriaPrincipal?: string;
     categoria?: string;
@@ -43,86 +40,63 @@ interface OptimizedCategorySidebarProps {
   onToggleCollapse?: () => void;
 }
 
-interface CategoryWithCount {
-  id: string;
+interface CategoryData {
   nome: string;
   productCount: number;
-  children?: CategoryWithCount[];
+  children?: CategoryData[];
 }
 
-export function OptimizedCategorySidebar({ 
-  products, 
+export function ComposicoesCategorySidebar({ 
+  produtos, 
   hierarchicalFilters, 
   onHierarchicalFiltersChange,
   isCollapsed = false,
   onToggleCollapse
-}: OptimizedCategorySidebarProps) {
+}: ComposicoesCategorySidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<'tree' | 'list'>('tree');
-  const isMobile = useIsMobile();
   
-  // Auto-expandir categorias que têm seleção ativa
-  useMemo(() => {
-    if (hierarchicalFilters.categoriaPrincipal && !expandedCategories.has(hierarchicalFilters.categoriaPrincipal)) {
-      setExpandedCategories(prev => new Set([...prev, hierarchicalFilters.categoriaPrincipal!]));
-    }
-    if (hierarchicalFilters.categoria && hierarchicalFilters.categoriaPrincipal) {
-      const categoryKey = `${hierarchicalFilters.categoriaPrincipal}-${hierarchicalFilters.categoria}`;
-      if (!expandedCategories.has(categoryKey)) {
-        setExpandedCategories(prev => new Set([...prev, categoryKey]));
-      }
-    }
-  }, [hierarchicalFilters.categoriaPrincipal, hierarchicalFilters.categoria]);
-  
-  const { getCategoriasPrincipais, getCategorias, getSubcategorias } = useHierarchicalCategories();
-
-  // Processar categorias com contadores
+  // Processar categorias diretamente dos produtos
   const categoriesWithCounts = useMemo(() => {
-    const principaisData = getCategoriasPrincipais();
-    
-    return principaisData.map(principal => {
-      const principalProducts = products.filter(product => 
-        (product as any).categoria_principal === principal.nome
-      );
+    const categoriaMap = new Map<string, {
+      produtos: ProdutoComposicao[];
+      subcategorias: Map<string, ProdutoComposicao[]>;
+    }>();
 
-      const categoriasData = getCategorias(principal.id);
-      const children = categoriasData.map(categoria => {
-        const categoriaProducts = products.filter(product => 
-          (product as any).categoria === categoria.nome
-        );
+    // Agrupar produtos por categoria principal
+    produtos.forEach(produto => {
+      if (produto.categoria_principal) {
+        if (!categoriaMap.has(produto.categoria_principal)) {
+          categoriaMap.set(produto.categoria_principal, {
+            produtos: [],
+            subcategorias: new Map()
+          });
+        }
+        const catData = categoriaMap.get(produto.categoria_principal)!;
+        catData.produtos.push(produto);
+        
+        // Agrupar por categoria secundária (se existir)
+        if (produto.categoria) {
+          if (!catData.subcategorias.has(produto.categoria)) {
+            catData.subcategorias.set(produto.categoria, []);
+          }
+          catData.subcategorias.get(produto.categoria)!.push(produto);
+        }
+      }
+    });
 
-        const subcategoriasData = getSubcategorias(categoria.id);
-        const subcategoriaChildren = subcategoriasData.map(subcategoria => {
-          const subcategoriaProducts = products.filter(product => 
-            (product as any).subcategoria === subcategoria.nome
-          );
+    // Converter para estrutura hierárquica
+    return Array.from(categoriaMap.entries()).map(([catPrincipal, data]) => ({
+      nome: catPrincipal,
+      productCount: data.produtos.length,
+      children: Array.from(data.subcategorias.entries()).map(([catSecundaria, produtos]) => ({
+        nome: catSecundaria,
+        productCount: produtos.length
+      })).filter(sub => sub.productCount > 0)
+    })).filter(cat => cat.productCount > 0);
+  }, [produtos]);
 
-          return {
-            id: subcategoria.id,
-            nome: subcategoria.nome,
-            productCount: subcategoriaProducts.length
-          };
-        });
-
-        return {
-          id: categoria.id,
-          nome: categoria.nome,
-          productCount: categoriaProducts.length,
-          children: subcategoriaChildren.length > 0 ? subcategoriaChildren : undefined
-        };
-      });
-
-      return {
-        id: principal.id,
-        nome: principal.nome,
-        productCount: principalProducts.length,
-        children: children.length > 0 ? children : undefined
-      };
-    }).filter(principal => principal.productCount > 0);
-  }, [products, getCategoriasPrincipais, getCategorias, getSubcategorias]);
-
-  // Filtrar categorias baseado APENAS na busca (não na seleção)
+  // Filtrar categorias baseado na busca
   const filteredCategories = useMemo(() => {
     if (!searchTerm) return categoriesWithCounts;
     
@@ -130,31 +104,29 @@ export function OptimizedCategorySidebar({
     return categoriesWithCounts.filter(principal => {
       if (principal.nome.toLowerCase().includes(search)) return true;
       return principal.children?.some(cat => 
-        cat.nome.toLowerCase().includes(search) ||
-        cat.children?.some(sub => sub.nome.toLowerCase().includes(search))
+        cat.nome.toLowerCase().includes(search)
       );
     }).map(principal => ({
       ...principal,
       children: principal.children?.filter(cat =>
-        cat.nome.toLowerCase().includes(search) ||
-        cat.children?.some(sub => sub.nome.toLowerCase().includes(search))
+        cat.nome.toLowerCase().includes(search)
       )
     }));
   }, [categoriesWithCounts, searchTerm]);
 
-  const toggleCategory = (categoryId: string) => {
+  const toggleCategory = (categoryName: string) => {
     setExpandedCategories(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
+      if (newSet.has(categoryName)) {
+        newSet.delete(categoryName);
       } else {
-        newSet.add(categoryId);
+        newSet.add(categoryName);
       }
       return newSet;
     });
   };
 
-  const selectCategory = (level: 'principal' | 'categoria' | 'subcategoria', categoryName: string, parentName?: string, grandParentName?: string) => {
+  const selectCategory = (level: 'principal' | 'categoria', categoryName: string, parentName?: string) => {
     switch (level) {
       case 'principal':
         if (hierarchicalFilters.categoriaPrincipal === categoryName && !hierarchicalFilters.categoria) {
@@ -170,7 +142,7 @@ export function OptimizedCategorySidebar({
         }
         break;
       case 'categoria':
-        if (hierarchicalFilters.categoria === categoryName && !hierarchicalFilters.subcategoria) {
+        if (hierarchicalFilters.categoria === categoryName) {
           // Se clicou na mesma categoria que já estava selecionada, voltar para principal
           onHierarchicalFiltersChange({ categoriaPrincipal: parentName });
         } else {
@@ -178,22 +150,6 @@ export function OptimizedCategorySidebar({
           onHierarchicalFiltersChange({ 
             categoriaPrincipal: parentName, 
             categoria: categoryName 
-          });
-        }
-        break;
-      case 'subcategoria':
-        if (hierarchicalFilters.subcategoria === categoryName) {
-          // Se clicou na mesma subcategoria que já estava selecionada, voltar para categoria
-          onHierarchicalFiltersChange({ 
-            categoriaPrincipal: grandParentName, 
-            categoria: parentName 
-          });
-        } else {
-          // Selecionar nova subcategoria
-          onHierarchicalFiltersChange({ 
-            categoriaPrincipal: grandParentName, 
-            categoria: parentName,
-            subcategoria: categoryName
           });
         }
         break;
@@ -206,29 +162,26 @@ export function OptimizedCategorySidebar({
   };
 
   const hasActiveFilters = Object.values(hierarchicalFilters).some(Boolean);
-  const totalProducts = products.length;
+  const totalProducts = produtos.length;
 
-  // Renderizar item de categoria com responsividade
+  // Renderizar item de categoria
   const renderCategoryItem = (
-    category: CategoryWithCount, 
+    category: CategoryData, 
     level: number = 0, 
-    parentIds: string[] = []
+    parentName?: string
   ) => {
-    const categoryKey = [...parentIds, category.id].join('-');
-    const isExpanded = expandedCategories.has(categoryKey);
+    const isExpanded = expandedCategories.has(category.nome);
     
     // Determinar se está selecionado baseado no nível
     const isSelected = level === 0 
       ? hierarchicalFilters.categoriaPrincipal === category.nome && !hierarchicalFilters.categoria
-      : level === 1
-      ? hierarchicalFilters.categoria === category.nome && !hierarchicalFilters.subcategoria
-      : hierarchicalFilters.subcategoria === category.nome;
+      : hierarchicalFilters.categoria === category.nome;
 
     const hasChildren = category.children && category.children.length > 0;
     const paddingLeft = isCollapsed ? 0 : level * 12;
 
     return (
-      <div key={categoryKey} className="space-y-1">
+      <div key={category.nome} className="space-y-1">
         {isCollapsed ? (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -237,8 +190,7 @@ export function OptimizedCategorySidebar({
                 size="sm"
                 onClick={() => {
                   if (level === 0) selectCategory('principal', category.nome);
-                  else if (level === 1) selectCategory('categoria', category.nome, parentIds[0]);
-                  else selectCategory('subcategoria', category.nome, parentIds[1], parentIds[0]);
+                  else selectCategory('categoria', category.nome, parentName);
                 }}
                 className={cn(
                   "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
@@ -247,8 +199,7 @@ export function OptimizedCategorySidebar({
                     ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
                     : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
                   level === 0 && "font-medium",
-                  level === 1 && "text-sm ml-2",
-                  level === 2 && "text-xs ml-4"
+                  level === 1 && "text-sm ml-2"
                 )}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -257,7 +208,7 @@ export function OptimizedCategorySidebar({
                     <div
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleCategory(categoryKey);
+                        toggleCategory(category.nome);
                       }}
                       className="flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-primary/20 rounded transition-colors cursor-pointer"
                     >
@@ -277,13 +228,8 @@ export function OptimizedCategorySidebar({
                       ) : (
                         <Folder className="h-4 w-4 text-current" />
                       )
-                    ) : level === 1 ? (
-                      <Package className="h-3 w-3 text-current" />
                     ) : (
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        isSelected ? "bg-current" : "bg-current opacity-60"
-                      )} />
+                      <Package className="h-3 w-3 text-current" />
                     )}
                   </div>
                 </div>
@@ -300,8 +246,7 @@ export function OptimizedCategorySidebar({
             size="sm"
             onClick={() => {
               if (level === 0) selectCategory('principal', category.nome);
-              else if (level === 1) selectCategory('categoria', category.nome, parentIds[0]);
-              else selectCategory('subcategoria', category.nome, parentIds[1], parentIds[0]);
+              else selectCategory('categoria', category.nome, parentName);
             }}
             className={cn(
               "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
@@ -310,8 +255,7 @@ export function OptimizedCategorySidebar({
                 ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
                 : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
               level === 0 && "font-medium",
-              level === 1 && "text-sm ml-2",
-              level === 2 && "text-xs ml-4"
+              level === 1 && "text-sm ml-2"
             )}
             style={{ paddingLeft: `${paddingLeft + 12}px` }}
           >
@@ -321,7 +265,7 @@ export function OptimizedCategorySidebar({
                 <div
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleCategory(categoryKey);
+                    toggleCategory(category.nome);
                   }}
                   className="flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-primary/20 rounded transition-colors cursor-pointer"
                 >
@@ -341,13 +285,8 @@ export function OptimizedCategorySidebar({
                   ) : (
                     <Folder className="h-4 w-4 text-current" />
                   )
-                ) : level === 1 ? (
-                  <Package className="h-3 w-3 text-current" />
                 ) : (
-                  <div className={cn(
-                    "w-2 h-2 rounded-full",
-                    isSelected ? "bg-current" : "bg-current opacity-60"
-                  )} />
+                  <Package className="h-3 w-3 text-current" />
                 )}
               </div>
               
@@ -356,21 +295,19 @@ export function OptimizedCategorySidebar({
                 "truncate flex-1 text-left transition-colors",
                 isSelected && "font-medium",
                 level === 0 && "font-medium",
-                level === 1 && "text-sm",
-                level === 2 && "text-xs"
+                level === 1 && "text-sm"
               )}>
                 {category.nome}
               </span>
               
-              {/* Contador com melhor contraste */}
+              {/* Contador */}
               <div className={cn(
                 "ml-auto flex-shrink-0 px-2 py-0.5 rounded-full text-center min-w-[28px] transition-colors",
                 isSelected 
                   ? "bg-brand-active-foreground/20 text-current" 
                   : "bg-muted text-muted-foreground",
                 level === 0 && "text-xs",
-                level === 1 && "text-[10px]",
-                level === 2 && "text-[9px] px-1.5 min-w-[24px]"
+                level === 1 && "text-[10px]"
               )}>
                 {category.productCount}
               </div>
@@ -382,7 +319,7 @@ export function OptimizedCategorySidebar({
         {isExpanded && hasChildren && !isCollapsed && (
           <div className="space-y-1">
             {category.children!.map(child => 
-              renderCategoryItem(child, level + 1, [...parentIds, category.id])
+              renderCategoryItem(child, level + 1, category.nome)
             )}
           </div>
         )}
@@ -427,28 +364,17 @@ export function OptimizedCategorySidebar({
             <Folder className="h-4 w-4 text-primary" />
             <h3 className="font-semibold text-sm">Categorias</h3>
           </div>
-          <div className="flex items-center gap-1">
+          {onToggleCollapse && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setViewMode(viewMode === 'tree' ? 'list' : 'tree')}
+              onClick={onToggleCollapse}
               className="h-7 w-7 p-0"
-              title={viewMode === 'tree' ? 'Visualização em lista' : 'Visualização em árvore'}
+              title="Recolher"
             >
-              {viewMode === 'tree' ? <List className="h-3 w-3" /> : <Grid3X3 className="h-3 w-3" />}
+              <ChevronRight className="h-3 w-3" />
             </Button>
-            {onToggleCollapse && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onToggleCollapse}
-                className="h-7 w-7 p-0"
-                title="Recolher"
-              >
-                <ChevronRight className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
+          )}
         </div>
         
         {/* Busca */}

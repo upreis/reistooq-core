@@ -12,7 +12,7 @@ import { ComposicoesModal } from "./ComposicoesModal";
 import { ImportModal } from "./ImportModal";
 import { ImportarProdutosModal } from "../composicoes/ImportarProdutosModal";
 import { adaptProdutoComposicaoToModalProduct } from "../composicoes/ComposicoesModalAdapter";
-import { OptimizedCategorySidebar } from "./OptimizedCategorySidebar";
+import { ComposicoesCategorySidebar } from "./ComposicoesCategorySidebar";
 import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/hooks/useProducts";
@@ -182,40 +182,6 @@ export function ComposicoesEstoque() {
     }
   };
 
-  // Preparar produtos para o sidebar (converter para formato Product)
-  const productsForSidebar: Product[] = useMemo(() => {
-    return produtos?.map(produto => ({
-      id: produto.id,
-      nome: produto.nome,
-      sku_interno: produto.sku_interno,
-      categoria_principal: produto.categoria_principal || '',
-      categoria: produto.categoria || '',
-      subcategoria: produto.subcategoria || '',
-      preco_venda: produto.preco_venda,
-      quantidade_atual: produto.quantidade_atual,
-      estoque_minimo: produto.estoque_minimo,
-      ativo: produto.ativo,
-      organization_id: produto.organization_id,
-      created_at: produto.created_at,
-      updated_at: produto.updated_at,
-      unidade_medida: 'un',
-      unidade_medida_id: null,
-      codigo_barras: null,
-      descricao: null,
-      preco_custo: 0,
-      estoque_maximo: null,
-      localizacao: null,
-      fornecedor: null,
-      data_validade: null,
-      lote: null,
-      ncm: null,
-      cest: null,
-      status: 'ativo',
-      url_imagem: null,
-      ultima_movimentacao: null,
-      integration_account_id: null
-    })) || [];
-  }, [produtos]);
 
   // Filtrar produtos baseado na busca e filtros hierárquicos
   const produtosFiltrados = useMemo(() => {
@@ -574,8 +540,8 @@ export function ComposicoesEstoque() {
           sidebarCollapsed ? "w-12" : "w-64"
         )}>
           <div className="sticky top-6">
-            <OptimizedCategorySidebar 
-              products={productsForSidebar}
+            <ComposicoesCategorySidebar 
+              produtos={produtos || []}
               hierarchicalFilters={hierarchicalFilters}
               onHierarchicalFiltersChange={setHierarchicalFilters}
               isCollapsed={sidebarCollapsed}
