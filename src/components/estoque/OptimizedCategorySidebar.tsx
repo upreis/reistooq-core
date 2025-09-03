@@ -461,24 +461,6 @@ export function OptimizedCategorySidebar({
             className="pl-7 h-8 text-xs"
           />
         </div>
-        
-        {/* Filtro ativo */}
-        {hasActiveFilters && (
-          <div className="flex items-center justify-between p-2 bg-primary/5 border border-primary/20 rounded-md">
-            <div className="flex items-center gap-1">
-              <Filter className="h-3 w-3 text-primary" />
-              <span className="text-xs font-medium text-primary">Filtro ativo</span>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={clearFilters}
-              className="h-5 w-5 p-0 text-primary hover:bg-primary/20"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </div>
-        )}
       </CardHeader>
       
       <CardContent className="p-3 space-y-1">
