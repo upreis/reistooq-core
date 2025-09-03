@@ -476,8 +476,8 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
             return;
           }
           
-          // Registrar informações do SKU Pai
-          if (row.sku_pai && row.produto) {
+          // Registrar informações do SKU Pai (apenas se não existir ainda)
+          if (row.sku_pai && row.produto && !parentRows[row.sku_pai.trim()]) {
             parentRows[row.sku_pai.trim()] = {
               nome: row.produto.trim(),
               categoria_principal: (row.categoria_principal?.trim() || null)
