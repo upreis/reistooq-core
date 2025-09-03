@@ -388,24 +388,6 @@ export function ComposicoesCategorySidebar({
             className="pl-8 h-9 text-sm border-border/60 focus:border-primary"
           />
         </div>
-        
-        {/* Filtro ativo */}
-        {hasActiveFilters && (
-          <div className="flex items-center justify-between p-2.5 bg-primary/8 border border-primary/30 rounded-lg">
-            <div className="flex items-center gap-1.5">
-              <Filter className="h-3.5 w-3.5 text-primary" />
-              <span className="text-xs font-medium text-primary">Filtro ativo</span>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={clearFilters}
-              className="h-6 w-6 p-0 text-primary hover:bg-primary/20 rounded-md"
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        )}
       </CardHeader>
       
       <CardContent className="p-3 space-y-1 overflow-visible">
