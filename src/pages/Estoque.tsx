@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Package, AlertTriangle, Boxes } from "lucide-react";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
+import { SmartCategorySidebar } from "@/components/estoque/SmartCategorySidebar";
 
 interface StockMovement {
   id: string;
@@ -456,193 +457,13 @@ const Estoque = () => {
                 </div>
 
                 <div className="flex gap-6">
-                  {/* Sidebar */}
+                  {/* Sidebar Inteligente */}
                   <div className="w-80 space-y-6">
-                    {/* Exibir categorias hierárquicas na sidebar */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm font-medium">Categorias Hierárquicas</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        {categoriesLoading ? (
-                          <div className="space-y-2">
-                            <div className="h-10 bg-muted rounded animate-pulse" />
-                            <div className="h-10 bg-muted rounded animate-pulse" />
-                            <div className="h-10 bg-muted rounded animate-pulse" />
-                          </div>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setHierarchicalFilters({})}
-                              className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                                !Object.values(hierarchicalFilters).some(Boolean)
-                                  ? "bg-primary text-primary-foreground" 
-                                  : "bg-muted hover:bg-muted/80"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Package className="h-4 w-4" />
-                                Todas
-                              </div>
-                              <span className="text-xs">({products.length})</span>
-                            </button>
-                            
-                            {/* Mostrar categorias principais */}
-                            {getCategoriasPrincipais().length === 0 ? (
-                              <div className="text-sm text-muted-foreground text-center py-4">
-                                Nenhuma categoria encontrada
-                              </div>
-                             ) : (
-                               getCategoriasPrincipais().map((catPrincipal) => {
-                                 const isSelected = hierarchicalFilters.categoriaPrincipal === catPrincipal.id;
-                                 const count = products.filter(p => 
-                                   p.categoria?.includes(catPrincipal.nome) || 
-                                   p.categoria === catPrincipal.nome
-                                 ).length;
-                                 
-                                 return (
-                                   <div key={catPrincipal.id} className="space-y-1">
-                                     <button
-                                       onClick={() => setHierarchicalFilters({ categoriaPrincipal: catPrincipal.id })}
-                                       className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                                         isSelected
-                                           ? "bg-primary text-primary-foreground" 
-                                           : "bg-muted hover:bg-muted/80"
-                                       }`}
-                                     >
-                                       <div className="flex items-center gap-2">
-                                         <div 
-                                           className="w-3 h-3 rounded-full"
-                                           style={{ backgroundColor: catPrincipal.cor }}
-                                         />
-                                         {catPrincipal.nome}
-                                       </div>
-                                       <span className="text-xs">({count})</span>
-                                     </button>
-                                     
-                                     {/* Mostrar categorias filhas se selecionada */}
-                                     {isSelected && getCategorias(catPrincipal.id).map((categoria) => {
-                                       const subCount = products.filter(p => 
-                                         p.categoria?.includes(categoria.nome)
-                                       ).length;
-                                       
-                                       return (
-                                         <button
-                                           key={categoria.id}
-                                           onClick={() => setHierarchicalFilters({ 
-                                             categoriaPrincipal: catPrincipal.id,
-                                             categoria: categoria.id 
-                                           })}
-                                           className={`w-full ml-4 flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                                             hierarchicalFilters.categoria === categoria.id
-                                               ? "bg-primary text-primary-foreground" 
-                                               : "bg-muted hover:bg-muted/80"
-                                           }`}
-                                         >
-                                           <div className="flex items-center gap-2">
-                                             <div 
-                                               className="w-2 h-2 rounded-full"
-                                               style={{ backgroundColor: categoria.cor }}
-                                             />
-                                             {categoria.nome}
-                                           </div>
-                                           <span className="text-xs">({subCount})</span>
-                                         </button>
-                                       );
-                                     })}
-                                   </div>
-                                 );
-                               })
-                             )}
-                           </>
-                         )}
-                       </CardContent>
-                    </Card>
-
-                    {/* Ordenar por */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm font-medium">Ordenar por</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        {[
-                          { value: "created_at", label: "Mais Recentes", order: 'desc' as const },
-                          { value: "nome", label: "A-Z", order: 'asc' as const },
-                          { value: "categoria", label: "Por Categoria", order: 'asc' as const },
-                          { value: "quantidade_atual", label: "Por Estoque", order: 'desc' as const }
-                        ].map((option) => (
-                          <button
-                            key={option.value}
-                            onClick={() => { setSortBy(option.value); setSortOrder(option.order); }}
-                            className={`w-full flex items-center p-2 rounded-lg text-sm transition-colors ${
-                              sortBy === option.value 
-                                ? "bg-primary text-primary-foreground" 
-                                : "bg-muted hover:bg-muted/80"
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </CardContent>
-                    </Card>
-
-                    {/* Status */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-sm font-medium">Status</CardTitle>
-                      </CardHeader>
-                       <CardContent className="space-y-2">
-                        {(() => {
-                          // Aplicar filtros de busca e categoria para contagem correta
-                          let baseProducts = products;
-                          if (searchTerm) {
-                            baseProducts = baseProducts.filter(p => 
-                              p.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              p.sku_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                              (p.codigo_barras && p.codigo_barras.includes(searchTerm))
-                            );
-                          }
-                          if (selectedCategory !== "all") {
-                            baseProducts = baseProducts.filter(p => p.categoria === selectedCategory);
-                          }
-
-                          const statusOptions = [
-                            { value: "all", label: "Todos", count: baseProducts.length },
-                            { value: "active", label: "Em Estoque", count: baseProducts.filter(p => p.ativo && p.quantidade_atual > p.estoque_minimo).length },
-                            { value: "low", label: "Estoque Baixo", count: baseProducts.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0).length },
-                            { value: "out", label: "Sem Estoque", count: baseProducts.filter(p => p.quantidade_atual === 0).length },
-                            { value: "high", label: "Estoque Alto", count: baseProducts.filter(p => p.quantidade_atual >= p.estoque_maximo).length }
-                          ];
-
-                          return (
-                            <>
-                              {statusOptions.map((status) => (
-                                <button
-                                  key={status.value}
-                                  onClick={() => setSelectedStatus(status.value)}
-                                  className={`w-full flex items-center justify-between p-2 rounded-lg text-sm transition-colors ${
-                                    selectedStatus === status.value 
-                                      ? "bg-primary text-primary-foreground" 
-                                      : "bg-muted hover:bg-muted/80"
-                                  }`}
-                                >
-                                  <span>{status.label}</span>
-                                  <span className="text-xs">({status.count})</span>
-                                </button>
-                              ))}
-
-                              <div className="pt-4 border-t">
-                                <p className="text-sm font-medium mb-2">Total de produtos:</p>
-                                <p className="text-2xl font-bold">{baseProducts.length}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {products.filter(p => !p.ativo).length} produtos inativos
-                                </p>
-                              </div>
-                            </>
-                          );
-                        })()}
-                      </CardContent>
-                    </Card>
+                    <SmartCategorySidebar
+                      products={products}
+                      hierarchicalFilters={hierarchicalFilters}
+                      onHierarchicalFiltersChange={setHierarchicalFilters}
+                    />
                   </div>
 
                   {/* Conteúdo Principal */}
