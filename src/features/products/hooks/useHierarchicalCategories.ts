@@ -40,8 +40,6 @@ export const useHierarchicalCategories = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Carregando categorias hierárquicas...');
-      
       const { data, error } = await supabase
         .from('categorias_produtos')
         .select('*')
@@ -50,12 +48,8 @@ export const useHierarchicalCategories = () => {
         .order('ordem', { ascending: true })
         .order('nome');
 
-      if (error) {
-        console.error('❌ Erro ao carregar categorias:', error);
-        throw error;
-      }
+      if (error) throw error;
       
-      console.log('✅ Categorias carregadas:', data?.length || 0);
       setCategories((data || []) as HierarchicalCategory[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar categorias');
