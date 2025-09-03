@@ -250,7 +250,7 @@ export function ComposicoesCategorySidebar({
             }}
             className={cn(
               "w-full h-auto py-2.5 transition-all relative group border-l-3",
-              "pl-3 pr-5",
+              "pl-3 pr-7",
               isSelected 
                 ? "border-l-primary bg-primary/10 text-primary font-medium shadow-sm" 
                 : "border-l-transparent text-foreground hover:border-l-primary/50 hover:bg-primary/5 hover:text-foreground",
@@ -305,7 +305,7 @@ export function ComposicoesCategorySidebar({
               
               {/* Lado direito: contador */}
               <div className={cn(
-                "inline-flex h-6 min-w-[24px] px-2 rounded-full flex-shrink-0 items-center justify-center text-xs font-medium tabular-nums transition-colors",
+                "inline-flex h-6 min-w-[28px] px-2 rounded-full flex-shrink-0 items-center justify-center text-xs font-medium tabular-nums transition-colors",
                 isSelected 
                   ? "bg-primary text-primary-foreground" 
                   : "bg-muted text-muted-foreground border border-border"
@@ -347,7 +347,7 @@ export function ComposicoesCategorySidebar({
               <p>Expandir categorias</p>
             </TooltipContent>
           </Tooltip>
-          <ScrollArea className="flex-1 overflow-x-visible pr-2">
+          <ScrollArea className="flex-1 overflow-x-visible pr-3">
             <div className="space-y-1">
               {filteredCategories.map(category => renderCategoryItem(category))}
             </div>
@@ -412,7 +412,7 @@ export function ComposicoesCategorySidebar({
         {/* Botão "Todas" */}
         <Button
           variant={!hasActiveFilters ? "default" : "ghost"}
-          className="w-full justify-between h-10 text-sm font-medium"
+          className="w-full justify-between h-10 text-sm font-medium pr-4"
           onClick={clearFilters}
         >
           <div className="flex items-center gap-2">
@@ -427,8 +427,8 @@ export function ComposicoesCategorySidebar({
           </Badge>
         </Button>
         
-        <ScrollArea className="h-[55vh] overflow-x-visible pr-2">
-          <div className="space-y-1 pr-6 overflow-visible">
+        <ScrollArea className="h-[55vh] overflow-x-visible pr-4">
+          <div className="space-y-1 pr-8 overflow-visible">
             {filteredCategories.length > 0 ? (
               filteredCategories.map(category => renderCategoryItem(category))
             ) : (
