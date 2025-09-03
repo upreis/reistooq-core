@@ -67,6 +67,13 @@ export default {
 					DEFAULT: 'hsl(var(--info))',
 					foreground: 'hsl(var(--info-foreground))'
 				},
+				brand: {
+					DEFAULT: 'hsl(var(--brand))',
+					foreground: 'hsl(var(--brand-foreground))',
+					hover: 'hsl(var(--brand-hover-bg))',
+					active: 'hsl(var(--brand-active-bg))',
+					'active-foreground': 'hsl(var(--brand-active-foreground))'
+				},
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
@@ -86,6 +93,12 @@ export default {
 				popover: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				interactive: {
+					'hover-bg': 'hsl(var(--interactive-hover-bg))',
+					'hover-text': 'hsl(var(--interactive-hover-text))',
+					'active-bg': 'hsl(var(--interactive-active-bg))',
+					'active-text': 'hsl(var(--interactive-active-text))'
 				}
 			},
 			backgroundImage: {

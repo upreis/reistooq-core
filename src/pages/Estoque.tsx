@@ -513,7 +513,7 @@ const Estoque = () => {
                             variant="ghost" 
                             size="sm" 
                             onClick={handleClearFilters}
-                            className="text-primary hover:text-primary/80"
+                            className="text-foreground hover:bg-brand-hover"
                           >
                             Limpar filtros
                           </Button>

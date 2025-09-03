@@ -150,7 +150,7 @@ export default function Header() {
               size="icon"
               onClick={() => setIsHidden(false)}
               title="Mostrar anúncios"
-              className="text-primary hover:text-primary"
+              className="text-foreground hover:text-foreground"
             >
               <Megaphone className="h-4 w-4" strokeWidth={2.5} />
             </Button>

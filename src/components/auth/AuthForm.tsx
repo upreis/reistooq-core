@@ -199,7 +199,7 @@ export function AuthForm({ mode, onToggleMode }: AuthFormProps) {
                 type="button"
                 variant="link"
                 onClick={() => setShowResetForm(true)}
-                className="p-0 h-auto text-sm text-muted-foreground hover:text-primary"
+                className="p-0 h-auto text-sm text-muted-foreground hover:text-foreground"
               >
                 Esqueci minha senha
               </Button>

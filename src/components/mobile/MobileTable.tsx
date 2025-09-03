@@ -155,8 +155,10 @@ export default function MobileTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "grid gap-2 py-3 px-4 border rounded-lg hover:bg-muted/30 transition-colors",
-                    isSelected && "bg-muted/50 border-primary",
+                    "grid gap-2 py-3 px-4 border rounded-lg transition-colors",
+                    isSelected 
+                      ? "border-brand bg-brand text-brand-active-foreground" 
+                      : "border-border hover:bg-brand-hover hover:text-foreground",
                     onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}
@@ -242,7 +244,9 @@ export default function MobileTable({
             key={item[keyField]}
             className={cn(
               "transition-colors",
-              isSelected && "ring-2 ring-primary bg-primary/5",
+              isSelected 
+                ? "border-brand bg-brand text-brand-active-foreground" 
+                : "border-border hover:bg-brand-hover hover:text-foreground",
               onRowClick && "cursor-pointer"
             )}
             onClick={() => onRowClick?.(item)}

@@ -232,11 +232,11 @@ export function OptimizedCategorySidebar({
             else selectCategory('subcategoria', parentIds[0], parentIds[1], category.id);
           }}
           className={cn(
-            "w-full justify-start h-auto py-2 transition-all relative group border-l-2 text-muted-foreground",
+            "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
             isCollapsed ? "px-2" : "px-3",
             isSelected 
-              ? "border-l-primary bg-transparent text-primary font-medium underline underline-offset-4 decoration-primary/70" 
-              : "border-l-transparent hover:border-l-primary/50 hover:bg-muted/30 hover:underline hover:decoration-primary/60 hover:underline-offset-4 dark:hover:text-yellow-400",
+              ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
+              : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
             level === 0 && "font-medium",
             level === 1 && "text-sm ml-2",
             level === 2 && "text-xs ml-4"
@@ -266,16 +266,16 @@ export function OptimizedCategorySidebar({
             <div className="flex-shrink-0">
               {level === 0 ? (
                 isSelected ? (
-                  <FolderOpen className="h-4 w-4 text-primary" />
+                  <FolderOpen className="h-4 w-4 text-current" />
                 ) : (
-                  <Folder className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <Folder className="h-4 w-4 text-current" />
                 )
               ) : level === 1 ? (
-                <Package className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                <Package className="h-3 w-3 text-current" />
               ) : (
                 <div className={cn(
-                  "w-2 h-2 rounded-full transition-colors",
-                  isSelected ? "bg-primary" : "bg-muted-foreground/40"
+                  "w-2 h-2 rounded-full",
+                  isSelected ? "bg-current" : "bg-current opacity-60"
                 )} />
               )}
             </div>
@@ -283,8 +283,8 @@ export function OptimizedCategorySidebar({
             {/* Nome da categoria */}
             {!isCollapsed && (
               <span className={cn(
-                "truncate flex-1 text-left transition-colors group-hover:dark:text-yellow-400",
-                isSelected && "text-primary font-medium",
+                "truncate flex-1 text-left transition-colors",
+                isSelected && "font-medium",
                 level === 0 && "font-medium",
                 level === 1 && "text-sm",
                 level === 2 && "text-xs"
@@ -298,7 +298,7 @@ export function OptimizedCategorySidebar({
               <div className={cn(
                 "ml-auto flex-shrink-0 px-2 py-0.5 rounded-full text-center min-w-[28px] transition-colors",
                 isSelected 
-                  ? "border border-primary/50 text-primary bg-transparent" 
+                  ? "bg-brand-active-foreground/20 text-current" 
                   : "bg-muted text-muted-foreground",
                 level === 0 && "text-xs",
                 level === 1 && "text-[10px]",

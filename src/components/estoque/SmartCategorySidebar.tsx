@@ -266,7 +266,7 @@ export function SmartCategorySidebar({
                           {isExpanded ? (
                             <ChevronDown className="h-3 w-3 text-primary" />
                           ) : (
-                            <ChevronRight className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <ChevronRight className="h-3 w-3 text-current transition-colors" />
                           )}
                         </div>
                         
@@ -274,7 +274,7 @@ export function SmartCategorySidebar({
                           {isExpanded ? (
                             <FolderOpen className="h-4 w-4 text-primary flex-shrink-0" />
                           ) : (
-                            <Folder className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                            <Folder className="h-4 w-4 text-current transition-colors flex-shrink-0" />
                           )}
                           <span className="text-sm font-medium truncate text-foreground">{principal.nome}</span>
                         </div>
@@ -326,7 +326,7 @@ export function SmartCategorySidebar({
                                    )}
                                   
                                   <div className="flex items-center gap-2 flex-1 min-w-0">
-                                    <Package className="h-3 w-3 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                                    <Package className="h-3 w-3 text-current transition-colors flex-shrink-0" />
                                     <span className="text-xs font-medium truncate text-foreground">{categoria.nome}</span>
                                   </div>
                                   

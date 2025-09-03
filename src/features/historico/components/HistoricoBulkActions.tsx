@@ -44,7 +44,7 @@ export function HistoricoBulkActions({
               variant="ghost"
               size="sm"
               onClick={onSelectAll}
-              className="text-primary hover:text-primary/80"
+              className="text-foreground hover:bg-brand-hover"
             >
               <CheckSquare className="h-4 w-4 mr-2" />
               Selecionar todos na página

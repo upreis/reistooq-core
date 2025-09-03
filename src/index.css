@@ -74,15 +74,18 @@
 @layer base {
   /* MaterialM theme variables are applied via JavaScript */
   :root {
-  /* Default gradients - Nova Paleta */
+    /* Default gradients - Nova Paleta */
     --gradient-primary: linear-gradient(135deg, hsl(210 73% 15%), hsl(210 73% 25%));
     --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(158 64% 52%));
     --gradient-warning: linear-gradient(135deg, hsl(43 96% 56%), hsl(43 96% 66%));
     --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
 
-    /* Brand Colors */
-    --brand-yellow: hsl(43 96% 56%); /* #F2C94C */
-    --brand-yellow-foreground: hsl(0 0% 7%); /* #0B1220 - dark text for yellow bg */
+    /* Brand Colors - Correção de Contraste */
+    --brand: hsl(43 96% 56%); /* #F2C94C - Amarelo principal */
+    --brand-foreground: hsl(0 0% 7%); /* #0B1220 - Texto preto para amarelo */
+    --brand-hover-bg: hsl(43 96% 56% / 0.2); /* Amarelo 20% transparente para hover */
+    --brand-active-bg: hsl(43 96% 56%); /* Amarelo sólido para ativo */
+    --brand-active-foreground: hsl(0 0% 7%); /* Texto preto para ativo */
 
     /* Success colors */
     --success: hsl(142 71% 45%);
@@ -108,26 +111,31 @@
     --status-info: hsl(214 95% 60%);
     --status-info-bg: hsl(214 95% 60% / 0.1);
 
-    /* Interactive States */
-    --interactive-hover: hsl(var(--muted) / 0.7); /* Neutral hover - not yellow */
-    --interactive-active: hsl(43 89% 43%); /* #C99212 */
-    --interactive-disabled: hsl(43 48% 28% / 0.4); /* #6B5A24 with 40% opacity */
+    /* Interactive States - Correção para Contraste */
+    --interactive-hover-bg: hsl(43 96% 56% / 0.2); /* Amarelo transparente */
+    --interactive-hover-text: hsl(var(--foreground)); /* Manter texto original */
+    --interactive-active-bg: hsl(43 96% 56%); /* Amarelo sólido */
+    --interactive-active-text: hsl(0 0% 7%); /* Texto preto */
+    --interactive-disabled: hsl(43 48% 28% / 0.4);
     --interactive-focus: hsl(var(--primary) / 0.2);
 
-    /* Button State Colors */
-    --button-hover: hsl(var(--muted) / 0.7); /* Neutral hover - not yellow */
-    --button-active: hsl(43 89% 43%); /* #C99212 */
-    --button-disabled: hsl(43 48% 28% / 0.4); /* #6B5A24 */
+    /* Button State Colors - Correção para Contraste */
+    --button-hover-bg: hsl(43 96% 56% / 0.2); /* Amarelo transparente */
+    --button-hover-text: hsl(var(--foreground)); /* Manter texto original */
+    --button-active-bg: hsl(43 96% 56%); /* Amarelo sólido */
+    --button-active-text: hsl(0 0% 7%); /* Texto preto */
+    --button-disabled: hsl(43 48% 28% / 0.4);
 
     /* Table Enhancement */
-    --table-header-dark: hsl(213 48% 13%); /* #0F1C2D */
-    --table-zebra-1: hsl(213 56% 9%); /* #0B1424 */
-    --table-zebra-2: hsl(213 52% 11%); /* #0D192A */
+    --table-header-dark: hsl(213 48% 13%);
+    --table-zebra-1: hsl(213 56% 9%);
+    --table-zebra-2: hsl(213 52% 11%);
 
     /* Table Specific - Applied dynamically by ThemeProvider */
     --table-header-bg: hsl(var(--muted) / 0.3);
-    --table-row-hover: hsl(var(--accent) / 0.05);
-    --table-row-selected: hsl(var(--primary) / 0.1);
+    --table-row-hover: hsl(43 96% 56% / 0.1); /* Hover amarelo transparente */
+    --table-row-selected: hsl(43 96% 56%); /* Selecionado amarelo sólido */
+    --table-row-selected-text: hsl(0 0% 7%); /* Texto preto quando selecionado */
     --table-border: hsl(var(--border));
 
     /* Gradients Adaptativos */
@@ -237,6 +245,46 @@
       transform: scale(1);
       opacity: 1;
     }
+  }
+  
+  /* Classes utilitárias para contraste correto */
+  .interactive-item {
+    @apply transition-colors duration-200;
+  }
+  
+  .interactive-item:hover {
+    background-color: hsl(var(--brand-hover-bg));
+    color: hsl(var(--foreground));
+  }
+  
+  .interactive-item[aria-selected="true"],
+  .interactive-item.selected {
+    background-color: hsl(var(--brand-active-bg));
+    color: hsl(var(--brand-active-foreground));
+  }
+  
+  .interactive-item[aria-selected="true"] *,
+  .interactive-item.selected * {
+    color: currentColor;
+  }
+  
+  /* Hover/Active para tabelas */
+  .table-row {
+    @apply transition-colors duration-200;
+  }
+  
+  .table-row:hover {
+    background-color: hsl(var(--table-row-hover));
+    color: hsl(var(--foreground));
+  }
+  
+  .table-row.selected {
+    background-color: hsl(var(--table-row-selected));
+    color: hsl(var(--table-row-selected-text));
+  }
+  
+  .table-row.selected * {
+    color: currentColor;
   }
 }
 

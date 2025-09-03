@@ -155,7 +155,7 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
                     variant="link"
                     size="sm"
                     onClick={() => setShowFilterConfirm(true)}
-                    className="h-auto p-0 text-xs text-primary hover:text-primary/80"
+                    className="h-auto p-0 text-xs text-foreground hover:bg-brand-hover"
                   >
                     Selecionar todos os {stats.readyCount} prontos para baixa?
                   </Button>
