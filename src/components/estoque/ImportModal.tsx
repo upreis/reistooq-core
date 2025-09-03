@@ -602,8 +602,11 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         
         // Validar se todos os SKUs de componentes existem
         const invalidComponents = [];
+        const parentSkus = new Set(Object.keys(parentRows));
+        
         for (const row of mappedData) {
-          if (!existingSkuSet.has(row.sku_componente)) {
+          // SKU componente deve existir OU ser um dos SKUs pai (para permitir auto-referência)
+          if (!existingSkuSet.has(row.sku_componente) && !parentSkus.has(row.sku_componente)) {
             invalidComponents.push(row.sku_componente);
             allErrors.push(`SKU Componente não encontrado: ${row.sku_componente}`);
           }
@@ -616,7 +619,9 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
             return;
           } else {
             // Modo "apenas válidos" - filtrar itens válidos
-            const validData = mappedData.filter(row => existingSkuSet.has(row.sku_componente));
+            const validData = mappedData.filter(row => 
+              existingSkuSet.has(row.sku_componente) || parentSkus.has(row.sku_componente)
+            );
             mappedData.length = 0;
             mappedData.push(...validData);
             warnings.push(`${invalidComponents.length} componentes inválidos foram ignorados: ${[...new Set(invalidComponents)].join(', ')}`);
