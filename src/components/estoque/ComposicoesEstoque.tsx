@@ -5,6 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download, Import, Trash2, MoreHorizontal } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useProdutosComposicoes, ProdutoComposicao } from "@/hooks/useProdutosComposicoes";
@@ -38,6 +39,7 @@ export function ComposicoesEstoque() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importProdutosModalOpen, setImportProdutosModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const { isCollapsed: sidebarCollapsed, toggleCollapse: toggleSidebar } = useSidebarCollapse();
   
   // Filtros hierárquicos para o sidebar
@@ -261,15 +263,14 @@ export function ComposicoesEstoque() {
     const selectedProducts = getSelectedItems(produtosFiltrados);
     if (selectedProducts.length === 0) return;
 
-    if (confirm(`Tem certeza que deseja excluir ${selectedProducts.length} produto(s)?`)) {
-      try {
-        for (const produto of selectedProducts) {
-          deleteProduto(produto.id);
-        }
-        clearSelection();
-      } catch (error) {
-        console.error('Erro ao excluir produtos:', error);
+    try {
+      for (const produto of selectedProducts) {
+        deleteProduto(produto.id);
       }
+      clearSelection();
+      setDeleteConfirmOpen(false);
+    } catch (error) {
+      console.error('Erro ao excluir produtos:', error);
     }
   };
 
@@ -668,13 +669,34 @@ export function ComposicoesEstoque() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem 
-                              onClick={handleDeleteSelected}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir Selecionados
-                            </DropdownMenuItem>
+                           <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                             <AlertDialogTrigger asChild>
+                               <DropdownMenuItem 
+                                 onSelect={(e) => e.preventDefault()}
+                                 className="text-destructive focus:text-destructive"
+                               >
+                                 <Trash2 className="h-4 w-4 mr-2" />
+                                 Excluir Selecionados
+                               </DropdownMenuItem>
+                             </AlertDialogTrigger>
+                             <AlertDialogContent>
+                               <AlertDialogHeader>
+                                 <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                 <AlertDialogDescription>
+                                   Tem certeza que deseja excluir {selectedCount} produto(s)? Esta ação não pode ser desfeita.
+                                 </AlertDialogDescription>
+                               </AlertDialogHeader>
+                               <AlertDialogFooter>
+                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                 <AlertDialogAction 
+                                   onClick={handleDeleteSelected}
+                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                 >
+                                   Excluir
+                                 </AlertDialogAction>
+                               </AlertDialogFooter>
+                             </AlertDialogContent>
+                           </AlertDialog>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
