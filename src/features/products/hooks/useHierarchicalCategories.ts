@@ -1,6 +1,7 @@
 // Hook para gerenciar categorias hierárquicas (Categoria Principal > Categoria > Subcategoria)
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { CategoryHierarchyGenerator } from '@/utils/categoryHierarchyGenerator';
 
 export interface HierarchicalCategory {
   id: string;
@@ -8,7 +9,7 @@ export interface HierarchicalCategory {
   descricao?: string;
   cor?: string;
   icone?: string;
-  nivel: 1 | 2 | 3; // 1=Principal, 2=Categoria, 3=Subcategoria
+  nivel: number; // 1=Principal, 2=Categoria, 3=Subcategoria
   categoria_principal_id?: string;
   categoria_id?: string;
   categoria_completa?: string;
@@ -24,7 +25,7 @@ export interface CreateHierarchicalCategoryData {
   descricao?: string;
   cor?: string;
   icone?: string;
-  nivel: 1 | 2 | 3;
+  nivel: number;
   categoria_principal_id?: string;
   categoria_id?: string;
   ordem?: number;
@@ -57,11 +58,47 @@ export const useHierarchicalCategories = () => {
       
       console.log('✅ Categorias carregadas:', data?.length || 0);
       setCategories((data || []) as HierarchicalCategory[]);
+      
+      // Auto-gerar hierarquia se necessário
+      await checkAndGenerateHierarchy((data || []) as HierarchicalCategory[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar categorias');
       console.error('Error loading hierarchical categories:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkAndGenerateHierarchy = async (currentCategories: HierarchicalCategory[]) => {
+    try {
+      // Contar categorias por nível
+      const level1Count = currentCategories.filter(c => c.nivel === 1).length;
+      const level2Count = currentCategories.filter(c => c.nivel === 2).length;
+      const level3Count = currentCategories.filter(c => c.nivel === 3).length;
+      
+      // Se há categorias principais mas poucas subcategorias, verificar se há produtos com hierarquia
+      if (level1Count > 0 && level2Count + level3Count < 5) {
+        const { data: products } = await supabase
+          .from('produtos')
+          .select('categoria')
+          .not('categoria', 'is', null)
+          .like('categoria', '%→%')
+          .limit(1);
+        
+        // Se há produtos com hierarquia, gerar automaticamente
+        if (products && products.length > 0) {
+          console.log('🔄 Auto-gerando hierarquia de categorias...');
+          const result = await CategoryHierarchyGenerator.generateFromProducts();
+          if (result.success && result.created && result.created > 0) {
+            console.log(`✅ ${result.created} categorias geradas automaticamente`);
+            // Recarregar categorias após geração
+            setTimeout(() => loadCategories(), 1000);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Erro na verificação automática:', error);
+      // Não exibir erro para o usuário, é um processo em background
     }
   };
 
