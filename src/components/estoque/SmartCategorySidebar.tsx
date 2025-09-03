@@ -413,6 +413,79 @@ export function SmartCategorySidebar({
         </CardContent>
       </Card>
 
+      {/* Filtros de Ordenação */}
+      <Card className="border-border/50 shadow-sm backdrop-blur-sm bg-card/80">
+        <CardHeader className="pb-4 border-b border-border/50">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Filter className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-semibold text-foreground">Ordenar por</CardTitle>
+              <p className="text-xs text-muted-foreground">Escolha a ordenação</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 space-y-2">
+          {[
+            { value: "created_at", label: "Mais Recentes", active: true },
+            { value: "nome", label: "A-Z", active: false },
+            { value: "categoria", label: "Por Categoria", active: false },
+            { value: "quantidade_atual", label: "Por Estoque", active: false }
+          ].map((option) => (
+            <Button
+              key={option.value}
+              variant={option.active ? "default" : "ghost"}
+              className="w-full justify-start h-9 transition-all hover:bg-muted/80"
+              onClick={() => {
+                // TODO: Implementar mudança de ordenação
+                console.log('Ordenar por:', option.value);
+              }}
+            >
+              <span className="text-sm font-medium">{option.label}</span>
+            </Button>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Filtros de Status */}
+      <Card className="border-border/50 shadow-sm backdrop-blur-sm bg-card/80">
+        <CardHeader className="pb-4 border-b border-border/50">
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Package className="h-4 w-4 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-semibold text-foreground">Status</CardTitle>
+              <p className="text-xs text-muted-foreground">Filtre por status</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 space-y-2">
+          {[
+            { value: "all", label: "Todos", count: products.length, active: true },
+            { value: "in_stock", label: "Em Estoque", count: products.filter(p => p.quantidade_atual > p.estoque_minimo).length, active: false },
+            { value: "low_stock", label: "Estoque Baixo", count: products.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0).length, active: false },
+            { value: "out_stock", label: "Sem Estoque", count: products.filter(p => p.quantidade_atual === 0).length, active: false },
+            { value: "high_stock", label: "Estoque Alto", count: products.filter(p => p.quantidade_atual >= p.estoque_maximo).length, active: false }
+          ].map((status) => (
+            <Button
+              key={status.value}
+              variant={status.active ? "default" : "ghost"}
+              className="w-full justify-between h-9 transition-all hover:bg-muted/80"
+              onClick={() => {
+                // TODO: Implementar filtro de status
+                console.log('Filtrar por status:', status.value);
+              }}
+            >
+              <span className="text-sm font-medium">{status.label}</span>
+              <Badge variant={status.active ? "secondary" : "outline"} className="text-xs">
+                ({status.count})
+              </Badge>
+            </Button>
+          ))}
+        </CardContent>
+      </Card>
     </>
   );
 }
