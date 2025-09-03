@@ -88,12 +88,32 @@ export default function MobileTable({
 
   // Desktop table view
   if (!isMobile) {
+    // Definir larguras específicas para cada tipo de coluna
+    const getColumnWidth = (column: MobileTableColumn) => {
+      switch (column.key) {
+        case 'nome': return '220px';
+        case 'codigo_barras': return '120px';
+        case 'sku_interno': return '100px';
+        case 'categoria_principal': return '140px';
+        case 'categoria_nivel2': return '120px';
+        case 'subcategoria': return '120px';
+        case 'quantidade_atual': return '100px';
+        case 'estoque_range': return '100px';
+        case 'precos': return '120px';
+        case 'ultima_movimentacao': return '110px';
+        default: return '1fr';
+      }
+    };
+
+    const gridCols = columns.map(col => getColumnWidth(col)).join(' ');
+    const fullGridTemplate = `${selectableItems ? '40px ' : ''}${gridCols}${actions.length > 0 ? ' 120px' : ''}`;
+
     return (
       <div className="w-full overflow-x-auto">
-        <div className="min-w-full">
+        <div className="min-w-fit">
           {/* Table Header */}
-          <div className="grid gap-4 py-3 px-4 bg-muted/50 rounded-lg text-sm font-medium mb-4"
-               style={{ gridTemplateColumns: `${selectableItems ? '40px ' : ''}repeat(${columns.length}, 1fr) ${actions.length > 0 ? '120px' : ''}` }}>
+          <div className="grid gap-2 py-3 px-4 bg-muted/50 rounded-lg text-xs font-medium mb-4"
+               style={{ gridTemplateColumns: fullGridTemplate }}>
             {selectableItems && (
               <div className="flex items-center">
                 <Checkbox
@@ -109,22 +129,23 @@ export default function MobileTable({
               <div 
                 key={column.key}
                 className={cn(
-                  "flex items-center",
+                  "flex items-center text-xs font-semibold truncate",
                   column.sortable && onSort && "cursor-pointer hover:text-foreground"
                 )}
                 onClick={() => column.sortable && onSort?.(column.key)}
+                title={column.label}
               >
-                {column.label}
+                <span className="truncate">{column.label}</span>
                 {column.sortable && sortBy === column.key && (
-                  <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                  <span className="ml-1 text-[10px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                 )}
               </div>
             ))}
-            {actions.length > 0 && <div>Ações</div>}
+            {actions.length > 0 && <div className="text-xs font-semibold">Ações</div>}
           </div>
 
           {/* Table Rows */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             {data.map((item) => {
               const isSelected = selectableItems ? selectedItems.includes(item[keyField]) : false;
               
@@ -132,10 +153,10 @@ export default function MobileTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "grid gap-4 py-4 px-4 border rounded-lg hover:bg-muted/30 transition-colors",
+                    "grid gap-2 py-3 px-4 border rounded-lg hover:bg-muted/30 transition-colors",
                     isSelected && "bg-muted/50 border-primary"
                   )}
-                  style={{ gridTemplateColumns: `${selectableItems ? '40px ' : ''}repeat(${columns.length}, 1fr) ${actions.length > 0 ? '120px' : ''}` }}
+                  style={{ gridTemplateColumns: fullGridTemplate }}
                 >
                   {selectableItems && (
                     <div className="flex items-center">
@@ -146,11 +167,13 @@ export default function MobileTable({
                     </div>
                   )}
                   {columns.map((column) => (
-                    <div key={column.key} className="flex items-center">
-                      {column.render 
-                        ? column.render(item[column.key], item)
-                        : item[column.key]
-                      }
+                    <div key={column.key} className="flex items-center min-w-0">
+                      <div className="min-w-0 w-full">
+                        {column.render 
+                          ? column.render(item[column.key], item)
+                          : <span className="text-xs truncate block">{item[column.key]}</span>
+                        }
+                      </div>
                     </div>
                   ))}
                   {actions.length > 0 && (
@@ -161,7 +184,7 @@ export default function MobileTable({
                           variant={action.variant || "outline"}
                           size="sm"
                           onClick={() => action.onClick(item)}
-                          className="text-xs px-2 h-8"
+                          className="text-[10px] px-1.5 h-7"
                           title={action.label}
                         >
                           {action.icon}

@@ -49,6 +49,24 @@
     hyphens: auto;
     overflow-wrap: break-word;
   }
+
+  /* Improved table styling for better text display */
+  .table-compact {
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+
+  .table-compact .table-cell {
+    padding: 0.5rem 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .table-compact .table-cell.allow-wrap {
+    white-space: normal;
+    word-break: break-word;
+  }
 }
 
 /* Enhanced Design System - Dark/Light Mode */

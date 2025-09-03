@@ -159,13 +159,13 @@ export function EstoqueTable({
       primary: true,
       sortable: true,
       render: (value: string, product: Product) => (
-        <div className="flex items-center space-x-3">
-          <div className="relative w-10 h-10 bg-muted rounded-lg flex items-center justify-center group">
+        <div className="flex items-center space-x-2 min-w-0">
+          <div className="relative w-8 h-8 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
             {product.url_imagem ? (
               <img 
                 src={product.url_imagem} 
                 alt={product.nome} 
-                className="w-full h-full object-cover rounded-lg"
+                className="w-full h-full object-cover rounded-md"
                 onError={(e) => {
                   console.error('Erro ao carregar imagem:', product.url_imagem);
                   const target = e.target as HTMLImageElement;
@@ -177,13 +177,13 @@ export function EstoqueTable({
                 }}
               />
             ) : (
-              <Package className="w-4 h-4 text-muted-foreground" />
+              <Package className="w-3 h-3 text-muted-foreground" />
             )}
-            <Package className="w-4 h-4 text-muted-foreground hidden" />
+            <Package className="w-3 h-3 text-muted-foreground hidden" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="font-medium text-sm truncate">{product.nome}</p>
-            <p className="text-xs text-muted-foreground truncate">
+            <p className="font-medium text-xs truncate leading-tight">{product.nome}</p>
+            <p className="text-[10px] text-muted-foreground truncate leading-tight">
               {product.descricao || "Sem descrição"}
             </p>
           </div>
@@ -195,7 +195,7 @@ export function EstoqueTable({
       label: "Código de Barras",
       sortable: true,
       render: (value: string) => (
-        <span className="text-xs font-mono text-muted-foreground">
+        <span className="text-[10px] font-mono text-muted-foreground block truncate">
           {value || "Sem código"}
         </span>
       )
@@ -205,7 +205,7 @@ export function EstoqueTable({
       label: "SKU",
       sortable: true,
       render: (value: string) => (
-        <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+        <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-nowrap">
           {value}
         </span>
       )
@@ -214,19 +214,31 @@ export function EstoqueTable({
       key: "categoria_principal",
       label: "Categoria Principal", 
       sortable: true,
-      render: (value: string) => value || "N/A"
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground block truncate leading-tight">
+          {value || "N/A"}
+        </span>
+      )
     },
     {
       key: "categoria_nivel2",
       label: "Categoria", 
       sortable: true,
-      render: (value: string) => value || "N/A"
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground block truncate leading-tight">
+          {value || "N/A"}
+        </span>
+      )
     },
     {
       key: "subcategoria", 
       label: "SubCategoria",
       sortable: true,
-      render: (value: string) => value || "N/A"
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground block truncate leading-tight">
+          {value || "N/A"}
+        </span>
+      )
     },
     {
       key: "quantidade_atual",
@@ -236,8 +248,8 @@ export function EstoqueTable({
         const stockStatus = getStockStatus(product);
         return (
           <div className="text-center">
-            <span className="text-lg font-bold block">{value}</span>
-            <Badge variant={stockStatus.variant} className="text-xs">
+            <span className="text-sm font-bold block leading-tight">{value}</span>
+            <Badge variant={stockStatus.variant} className="text-[9px] px-1 py-0 leading-tight">
               {stockStatus.label}
             </Badge>
           </div>
@@ -248,9 +260,9 @@ export function EstoqueTable({
       key: "estoque_range",
       label: "Mín/Máx",
       render: (_, product: Product) => (
-        <div className="text-xs">
-          <div>Mín: {product.estoque_minimo}</div>
-          <div>Máx: {product.estoque_maximo}</div>
+        <div className="text-[10px] leading-tight">
+          <div className="text-green-600 font-medium">Mín: {product.estoque_minimo}</div>
+          <div className="text-orange-600 font-medium">Máx: {product.estoque_maximo}</div>
         </div>
       )
     },
@@ -258,12 +270,12 @@ export function EstoqueTable({
       key: "precos",
       label: "Preços",
       render: (_, product: Product) => (
-        <div className="text-xs">
+        <div className="text-[10px] leading-tight">
           <div className={`${product.preco_custo && product.preco_custo > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
-            Custo: {formatPrice(product.preco_custo)}
+            C: {formatPrice(product.preco_custo)}
           </div>
           <div className={`${product.preco_venda && product.preco_venda > 0 ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>
-            Venda: {formatPrice(product.preco_venda)}
+            V: {formatPrice(product.preco_venda)}
           </div>
         </div>
       )
@@ -272,7 +284,7 @@ export function EstoqueTable({
       key: "ultima_movimentacao",
       label: "Última Mov.",
       render: (value: string) => (
-        <span className="text-xs text-muted-foreground">
+        <span className="text-[10px] text-muted-foreground block leading-tight">
           {value ? formatDate(value) : "N/A"}
         </span>
       )
