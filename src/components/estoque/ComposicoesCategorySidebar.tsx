@@ -250,7 +250,7 @@ export function ComposicoesCategorySidebar({
             }}
             className={cn(
               "w-full justify-start h-auto py-2.5 transition-all relative group border-l-3",
-              "px-3",
+              "pl-3 pr-7",
               isSelected 
                 ? "border-l-primary bg-primary/10 text-primary font-medium shadow-sm" 
                 : "border-l-transparent text-foreground hover:border-l-primary/50 hover:bg-primary/5 hover:text-foreground",
@@ -425,7 +425,7 @@ export function ComposicoesCategorySidebar({
         </Button>
         
         <ScrollArea className="h-[55vh]">
-          <div className="space-y-1 pr-1">
+          <div className="space-y-1 pr-6 md:pr-7">
             {filteredCategories.length > 0 ? (
               filteredCategories.map(category => renderCategoryItem(category))
             ) : (
