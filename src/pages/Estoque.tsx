@@ -409,29 +409,31 @@ const Estoque = () => {
               <span className="text-foreground font-medium">Gestão de Estoque</span>
             </nav>
 
-            {/* Header com melhor hierarquia visual */}
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-10">
-              <div className="space-y-3 flex-1 min-w-[300px]">
-                <h1 className="text-4xl font-bold tracking-tight text-foreground">
-                  Controle de Estoque
-                </h1>
+            {/* Header com título esticado */}
+            <div className="flex flex-col gap-6 mb-10">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <div className="space-y-3 flex-1 min-w-[300px]">
+                  <h1 className="text-4xl font-bold tracking-widest text-foreground">
+                    CONTROLE DE ESTOQUE
+                  </h1>
+                </div>
+                
+                {/* Actions no header com melhor organização */}
+                <div className="flex items-center gap-3 flex-wrap justify-end">
+                  <EstoqueActions
+                    onNewProduct={handleNewProduct}
+                    onDeleteSelected={handleDeleteSelected}
+                    onRefresh={handleRefresh}
+                    onSendAlerts={handleSendAlerts}
+                    selectedProducts={selectedProducts}
+                    products={products}
+                  />
+                </div>
               </div>
-              
-              {/* Actions no header com melhor organização */}
-              <div className="flex items-center gap-3 flex-wrap justify-end">
-                <EstoqueActions
-                  onNewProduct={handleNewProduct}
-                  onDeleteSelected={handleDeleteSelected}
-                  onRefresh={handleRefresh}
-                  onSendAlerts={handleSendAlerts}
-                  selectedProducts={selectedProducts}
-                  products={products}
-                />
-              </div>
-            </div>
 
-            {/* Stats Cards com melhor espaçamento */}
-            <EstoqueStats products={products} />
+              {/* Stats Cards movido para baixo do título */}
+              <EstoqueStats products={products} />
+            </div>
           </div>
         </div>
 

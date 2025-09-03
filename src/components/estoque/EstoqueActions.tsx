@@ -300,11 +300,7 @@ export function EstoqueActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Botão Previsão IA */}
-      <Button variant="outline" onClick={handlePredictiveAnalysis} className="gap-2">
-        <TrendingUp className="w-4 h-4" />
-        Previsão IA
-      </Button>
+      {/* Previsão IA removida */}
 
       {/* Botão Upload/Import */}
       <Button variant="outline" onClick={() => setImportModalOpen(true)} className="gap-2">
