@@ -17,6 +17,7 @@ import {
   XCircle,
   AlertTriangle,
   Info,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts } from "@/hooks/useProducts";
@@ -884,6 +885,29 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
                           <li key={index}>{error}</li>
                         ))}
                       </ul>
+                      
+                      {/* Botão para importar apenas válidos quando há erros */}
+                      {result.success === 0 && importOnlyValid && (
+                        <div className="mt-4 pt-4 border-t">
+                          <Button 
+                            onClick={processImport}
+                            disabled={isProcessing}
+                            className="w-full"
+                          >
+                            {isProcessing ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Importando apenas válidos...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                Importar Apenas Itens Válidos
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}
