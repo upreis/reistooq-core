@@ -10,6 +10,8 @@ import {
   FolderOpen,
   Plus
 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { CategoryCreationModal } from "./CategoryCreationModal";
 import { CategoryImportModal } from "./CategoryImportModal";
@@ -123,6 +125,57 @@ export function SmartCategorySidebar({
     setExpandedCategories(newExpanded);
   };
 
+  const getSelectedValue = () => {
+    if (hierarchicalFilters.subcategoria) {
+      return `subcategoria-${hierarchicalFilters.subcategoria}`;
+    }
+    if (hierarchicalFilters.categoria) {
+      return `categoria-${hierarchicalFilters.categoria}`;
+    }
+    if (hierarchicalFilters.categoriaPrincipal) {
+      return `principal-${hierarchicalFilters.categoriaPrincipal}`;
+    }
+    return "todas";
+  };
+
+  const handleRadioChange = (value: string) => {
+    if (value === "todas") {
+      clearFilters();
+      return;
+    }
+
+    const [type, id] = value.split('-');
+    
+    if (type === "principal") {
+      selectPrincipalCategory(id);
+    } else if (type === "categoria") {
+      // Find the principal category for this categoria
+      const principal = categoriesWithCounts.find(p => 
+        p.children?.some(c => c.id === id)
+      );
+      if (principal) {
+        selectCategory(principal.id, id);
+      }
+    } else if (type === "subcategoria") {
+      // Find the principal and categoria for this subcategoria
+      let principalId = "";
+      let categoriaId = "";
+      
+      categoriesWithCounts.forEach(principal => {
+        principal.children?.forEach(categoria => {
+          if (categoria.children?.some(sub => sub.id === id)) {
+            principalId = principal.id;
+            categoriaId = categoria.id;
+          }
+        });
+      });
+      
+      if (principalId && categoriaId) {
+        selectSubcategory(principalId, categoriaId, id);
+      }
+    }
+  };
+
   const selectCategory = (principalId: string, categoryId: string) => {
     onHierarchicalFiltersChange({
       categoriaPrincipal: principalId,
@@ -186,133 +239,125 @@ export function SmartCategorySidebar({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {/* Botão "Todas" */}
-          <Button
-            variant={!Object.values(hierarchicalFilters).some(Boolean) ? "default" : "ghost"}
-            className="w-full justify-between h-auto py-2"
-            onClick={clearFilters}
-          >
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              <span>Todas</span>
-            </div>
-            <Badge variant="secondary" className="text-xs">
-              {products.length}
-            </Badge>
-          </Button>
-
-          {/* Categorias hierárquicas */}
-          {categoriesWithCounts.map((principal) => (
-            <div key={principal.id} className="space-y-1">
-              {/* Categoria Principal */}
-              <div className="flex items-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-0 h-auto mr-1"
-                  onClick={() => toggleCategory(principal.id)}
-                >
-                  {expandedCategories.has(principal.id) ? (
-                    <ChevronDown className="h-3 w-3" />
-                  ) : (
-                    <ChevronRight className="h-3 w-3" />
-                  )}
-                </Button>
-                
-                <Button
-                  variant={hierarchicalFilters.categoriaPrincipal === principal.id && !hierarchicalFilters.categoria ? "default" : "ghost"}
-                  className="flex-1 justify-between h-auto py-2"
-                  onClick={() => {
-                    selectPrincipalCategory(principal.id);
-                    if (!expandedCategories.has(principal.id)) {
-                      toggleCategory(principal.id);
-                    }
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    {expandedCategories.has(principal.id) ? (
-                      <FolderOpen className="h-4 w-4" style={{ color: principal.cor }} />
-                    ) : (
-                      <Folder className="h-4 w-4" style={{ color: principal.cor }} />
-                    )}
-                    <span className="text-sm">{principal.nome}</span>
-                  </div>
-                  <Badge variant="secondary" className="text-xs">
-                    {principal.productCount}
-                  </Badge>
-                </Button>
-              </div>
-
-              {/* Categorias (Nível 2) */}
-              {expandedCategories.has(principal.id) && principal.children && (
-                <div className="ml-4 space-y-1">
-                  {principal.children.map((categoria) => (
-                    <div key={categoria.id} className="space-y-1">
-                      <div className="flex items-center">
-                        {categoria.children && categoria.children.length > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="p-0 h-auto mr-1"
-                            onClick={() => toggleCategory(categoria.id)}
-                          >
-                            {expandedCategories.has(categoria.id) ? (
-                              <ChevronDown className="h-3 w-3" />
-                            ) : (
-                              <ChevronRight className="h-3 w-3" />
-                            )}
-                          </Button>
-                        )}
-                        
-                        <Button
-                          variant={hierarchicalFilters.categoria === categoria.id && !hierarchicalFilters.subcategoria ? "default" : "ghost"}
-                          className="flex-1 justify-between h-auto py-1.5"
-                          onClick={() => selectCategory(principal.id, categoria.id)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full border"
-                              style={{ backgroundColor: categoria.cor }}
-                            />
-                            <span className="text-sm">{categoria.nome}</span>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {categoria.productCount}
-                          </Badge>
-                        </Button>
-                      </div>
-
-                      {/* Subcategorias (Nível 3) */}
-                      {expandedCategories.has(categoria.id) && categoria.children && (
-                        <div className="ml-4 space-y-1">
-                          {categoria.children.map((subcategoria) => (
-                            <Button
-                              key={subcategoria.id}
-                              variant={hierarchicalFilters.subcategoria === subcategoria.id ? "default" : "ghost"}
-                              className="w-full justify-between h-auto py-1"
-                              onClick={() => selectSubcategory(principal.id, categoria.id, subcategoria.id)}
-                            >
-                              <div className="flex items-center gap-2">
-                                <div 
-                                  className="w-2 h-2 rounded-full"
-                                  style={{ backgroundColor: subcategoria.cor }}
-                                />
-                                <span className="text-xs">{subcategoria.nome}</span>
-                              </div>
-                              <Badge variant="outline" className="text-xs">
-                                {subcategoria.productCount}
-                              </Badge>
-                            </Button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+        <CardContent className="space-y-3">
+          <RadioGroup value={getSelectedValue()} onValueChange={handleRadioChange}>
+            {/* Botão "Todas" */}
+            <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50">
+              <RadioGroupItem value="todas" id="todas" />
+              <Label htmlFor="todas" className="flex items-center justify-between w-full cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  <span>Todas</span>
                 </div>
-              )}
+                <Badge variant="secondary" className="text-xs">
+                  {products.length}
+                </Badge>
+              </Label>
             </div>
-          ))}
+
+            {/* Categorias hierárquicas */}
+            {categoriesWithCounts.map((principal) => (
+              <div key={principal.id} className="space-y-1">
+                {/* Categoria Principal */}
+                <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50">
+                  <RadioGroupItem value={`principal-${principal.id}`} id={`principal-${principal.id}`} />
+                  <Label htmlFor={`principal-${principal.id}`} className="flex items-center justify-between w-full cursor-pointer">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-0 h-auto"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          toggleCategory(principal.id);
+                        }}
+                      >
+                        {expandedCategories.has(principal.id) ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3" />
+                        )}
+                      </Button>
+                      {expandedCategories.has(principal.id) ? (
+                        <FolderOpen className="h-4 w-4" style={{ color: principal.cor }} />
+                      ) : (
+                        <Folder className="h-4 w-4" style={{ color: principal.cor }} />
+                      )}
+                      <span className="text-sm">{principal.nome}</span>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {principal.productCount}
+                    </Badge>
+                  </Label>
+                </div>
+
+                {/* Categorias (Nível 2) */}
+                {expandedCategories.has(principal.id) && principal.children && (
+                  <div className="ml-6 space-y-1">
+                    {principal.children.map((categoria) => (
+                      <div key={categoria.id} className="space-y-1">
+                        <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50">
+                          <RadioGroupItem value={`categoria-${categoria.id}`} id={`categoria-${categoria.id}`} />
+                          <Label htmlFor={`categoria-${categoria.id}`} className="flex items-center justify-between w-full cursor-pointer">
+                            <div className="flex items-center gap-2">
+                              {categoria.children && categoria.children.length > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-0 h-auto"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    toggleCategory(categoria.id);
+                                  }}
+                                >
+                                  {expandedCategories.has(categoria.id) ? (
+                                    <ChevronDown className="h-3 w-3" />
+                                  ) : (
+                                    <ChevronRight className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              )}
+                              <div 
+                                className="w-3 h-3 rounded-full border"
+                                style={{ backgroundColor: categoria.cor }}
+                              />
+                              <span className="text-sm">{categoria.nome}</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {categoria.productCount}
+                            </Badge>
+                          </Label>
+                        </div>
+
+                        {/* Subcategorias (Nível 3) */}
+                        {expandedCategories.has(categoria.id) && categoria.children && (
+                          <div className="ml-6 space-y-1">
+                            {categoria.children.map((subcategoria) => (
+                              <div key={subcategoria.id} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50">
+                                <RadioGroupItem value={`subcategoria-${subcategoria.id}`} id={`subcategoria-${subcategoria.id}`} />
+                                <Label htmlFor={`subcategoria-${subcategoria.id}`} className="flex items-center justify-between w-full cursor-pointer">
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className="w-2 h-2 rounded-full"
+                                      style={{ backgroundColor: subcategoria.cor }}
+                                    />
+                                    <span className="text-xs">{subcategoria.nome}</span>
+                                  </div>
+                                  <Badge variant="outline" className="text-xs">
+                                    {subcategoria.productCount}
+                                  </Badge>
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </RadioGroup>
 
           {/* Estado vazio */}
           {categoriesWithCounts.length === 0 && (
