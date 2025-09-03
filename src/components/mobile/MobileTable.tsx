@@ -34,6 +34,7 @@ interface MobileTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (field: string) => void;
+  onRowClick?: (item: any) => void;
 }
 
 export default function MobileTable({
@@ -49,6 +50,7 @@ export default function MobileTable({
   sortBy,
   sortOrder,
   onSort,
+  onRowClick,
 }: MobileTableProps) {
   const isMobile = useIsMobile();
   
@@ -154,9 +156,11 @@ export default function MobileTable({
                   key={item[keyField]}
                   className={cn(
                     "grid gap-2 py-3 px-4 border rounded-lg hover:bg-muted/30 transition-colors",
-                    isSelected && "bg-muted/50 border-primary"
+                    isSelected && "bg-muted/50 border-primary",
+                    onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}
+                  onClick={() => onRowClick?.(item)}
                 >
                   {selectableItems && (
                     <div className="flex items-center">
@@ -238,8 +242,10 @@ export default function MobileTable({
             key={item[keyField]}
             className={cn(
               "transition-colors",
-              isSelected && "ring-2 ring-primary bg-primary/5"
+              isSelected && "ring-2 ring-primary bg-primary/5",
+              onRowClick && "cursor-pointer"
             )}
+            onClick={() => onRowClick?.(item)}
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">

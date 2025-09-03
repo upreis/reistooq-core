@@ -45,6 +45,7 @@ import {
 import { Product } from "@/hooks/useProducts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MobileTable from "@/components/mobile/MobileTable";
+import { ProductDetailsModal } from "./ProductDetailsModal";
 
 interface EstoqueTableProps {
   products: Product[];
@@ -79,6 +80,8 @@ export function EstoqueTable({
   const [imageUploadProduct, setImageUploadProduct] = useState<Product | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [selectedProductForDetails, setSelectedProductForDetails] = useState<Product | null>(null);
 
   const getStockStatus = (product: Product) => {
     if (product.quantidade_atual === 0) {
@@ -344,6 +347,10 @@ export function EstoqueTable({
         sortOrder={sortOrder}
         onSort={onSort}
         emptyMessage="Nenhum produto encontrado. Cadastre produtos para gerenciar o estoque."
+        onRowClick={(product: Product) => {
+          setSelectedProductForDetails(product);
+          setDetailsModalOpen(true);
+        }}
       />
 
       {/* Movement Modal */}
@@ -470,6 +477,17 @@ export function EstoqueTable({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Product Details Modal */}
+      <ProductDetailsModal
+        product={selectedProductForDetails}
+        open={detailsModalOpen}
+        onOpenChange={setDetailsModalOpen}
+        onEditProduct={(product) => {
+          setDetailsModalOpen(false);
+          onEditProduct(product);
+        }}
+      />
     </>
   );
 }
