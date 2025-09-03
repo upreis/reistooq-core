@@ -3,14 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download } from "lucide-react";
+import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download, Import } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useShopProducts } from "@/features/shop/hooks/useShopProducts";
-import { ShopProduct } from "@/features/shop/types/shop.types";
+import { useProdutosComposicoes, ProdutoComposicao } from "@/hooks/useProdutosComposicoes";
 import { useComposicoesEstoque } from "@/hooks/useComposicoesEstoque";
 import { ComposicoesModal } from "./ComposicoesModal";
 import { ImportModal } from "./ImportModal";
+import { ImportarProdutosModal } from "../composicoes/ImportarProdutosModal";
+import { adaptProdutoComposicaoToModalProduct } from "../composicoes/ComposicoesModalAdapter";
 import { OptimizedCategorySidebar } from "./OptimizedCategorySidebar";
 import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,11 +25,13 @@ const sortOptions = [
 
 export function ComposicoesEstoque() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [produtoSelecionado, setProdutoSelecionado] = useState<ShopProduct | null>(null);
+  const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoComposicao | null>(null);
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [importProdutosModalOpen, setImportProdutosModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Filtros hierárquicos para o sidebar
   const [hierarchicalFilters, setHierarchicalFilters] = useState<{
@@ -37,21 +40,21 @@ export function ComposicoesEstoque() {
     subcategoria?: string;
   }>({});
 
+  // Usar produtos de composições independentes
   const {
-    products,
-    categories,
+    produtos,
     isLoading,
-    filters,
-    updateFilters,
-    totalPages,
-    hasNextPage,
-    hasPrevPage,
-    total
-  } = useShopProducts();
+    createProduto,
+    updateProduto,
+    deleteProduto,
+    importarDoEstoque,
+    sincronizarComponentes,
+    isImporting
+  } = useProdutosComposicoes();
 
   const { getComposicoesForSku, loadComposicoes } = useComposicoesEstoque();
 
-  const abrirModalComposicoes = (produto: ShopProduct) => {
+  const abrirModalComposicoes = (produto: ProdutoComposicao) => {
     setProdutoSelecionado(produto);
     setModalOpen(true);
   };
@@ -63,6 +66,7 @@ export function ComposicoesEstoque() {
 
   const handleSalvarComposicoes = () => {
     loadComposicoes(); // Recarrega as composições
+    sincronizarComponentes(); // Sincroniza componentes em uso
   };
 
   const toggleCardExpansion = (productId: string) => {
@@ -121,52 +125,53 @@ export function ComposicoesEstoque() {
     }
   };
 
-  // Converter ShopProducts para Products para compatibilidade
-  const productsForSidebar: Product[] = products?.map(product => ({
-    id: product.id,
-    sku_interno: product.sku_interno,
-    nome: product.nome,
-    categoria: product.categoria || null,
-    descricao: product.descricao || null,
-    codigo_barras: product.codigo_barras || null,
-    quantidade_atual: product.quantidade_atual,
-    estoque_minimo: product.estoque_minimo || 0,
-    estoque_maximo: 999999, // Valor padrão já que ShopProduct não tem esta propriedade
-    preco_custo: product.preco_custo || null,
-    preco_venda: product.preco_venda || null,
-    localizacao: null, // ShopProduct não tem esta propriedade
+  // Converter produtos de composições para Products para compatibilidade com sidebar
+  const productsForSidebar: Product[] = produtos?.map(produto => ({
+    id: produto.id,
+    sku_interno: produto.sku_interno,
+    nome: produto.nome,
+    categoria: produto.categoria || null,
+    descricao: produto.descricao || null,
+    codigo_barras: produto.codigo_barras || null,
+    quantidade_atual: produto.quantidade_atual,
+    estoque_minimo: produto.estoque_minimo || 0,
+    estoque_maximo: 999999,
+    preco_custo: produto.preco_custo || null,
+    preco_venda: produto.preco_venda || null,
+    localizacao: null,
     unidade_medida_id: null,
-    status: product.stock_status || 'in_stock',
-    ativo: true,
-    url_imagem: product.url_imagem || null,
-    created_at: product.created_at || new Date().toISOString(),
-    updated_at: product.updated_at || new Date().toISOString(),
+    status: produto.status || 'active',
+    ativo: produto.ativo,
+    url_imagem: produto.url_imagem || null,
+    created_at: produto.created_at || new Date().toISOString(),
+    updated_at: produto.updated_at || new Date().toISOString(),
     ultima_movimentacao: null,
-    organization_id: null,
+    organization_id: produto.organization_id,
     integration_account_id: null,
   })) || [];
 
-  // Atualizar filtros com base na seleção hierárquica
-  useEffect(() => {
-    const searchFromFilters = filters?.search || '';
-    updateFilters({
-      search: searchFromFilters,
-      categoria: hierarchicalFilters.categoriaPrincipal || 
-                 hierarchicalFilters.categoria || 
-                 hierarchicalFilters.subcategoria || 
-                 undefined,
-      page: 1
-    });
-  }, [hierarchicalFilters, updateFilters]);
+  // Filtrar produtos baseado na busca e filtros hierárquicos
+  const produtosFiltrados = produtos?.filter(produto => {
+    const matchesSearch = !searchQuery || 
+      produto.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      produto.sku_interno.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesCategory = !hierarchicalFilters.categoriaPrincipal || 
+      produto.categoria_principal === hierarchicalFilters.categoriaPrincipal ||
+      produto.categoria === hierarchicalFilters.categoria ||
+      produto.subcategoria === hierarchicalFilters.subcategoria;
+    
+    return matchesSearch && matchesCategory;
+  }) || [];
 
   // Carregar custos dos produtos quando as composições mudarem
   useEffect(() => {
     const carregarCustos = async () => {
-      if (!products || products.length === 0) return;
+      if (!produtosFiltrados || produtosFiltrados.length === 0) return;
       
       try {
         const skusUnicos = Array.from(new Set(
-          products.flatMap(p => {
+          produtosFiltrados.flatMap(p => {
             const comps = getComposicoesForSku(p.sku_interno);
             return comps?.map(c => c.sku_componente) || [];
           })
@@ -191,9 +196,9 @@ export function ComposicoesEstoque() {
     };
 
     carregarCustos();
-  }, [products, getComposicoesForSku]);
+  }, [produtosFiltrados, getComposicoesForSku]);
 
-  const renderProductCard = (product: ShopProduct) => {
+  const renderProductCard = (product: ProdutoComposicao) => {
     const composicoes = getComposicoesForSku(product.sku_interno);
     
     // Calcular custo total da composição
@@ -454,26 +459,36 @@ export function ComposicoesEstoque() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold text-foreground">Composições de Produtos</h2>
-          <div className="text-sm text-muted-foreground">
-            Visualize e gerencie os componentes de cada SKU
+          <h1 className="text-2xl font-semibold text-foreground">Composições de Produtos</h1>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>🏠</span>
+            <span>/</span>
+            <span>Estoque</span>
+            <span>/</span>
+            <span className="text-primary">Composições</span>
           </div>
         </div>
         
-        {/* Actions */}
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setImportModalOpen(true)} 
+          <Button
+            variant="outline"
+            onClick={() => setImportProdutosModalOpen(true)}
+            className="gap-2"
+          >
+            <Import className="w-4 h-4" />
+            Importar do Estoque
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setImportModalOpen(true)}
             className="gap-2"
           >
             <Upload className="w-4 h-4" />
-            Importar
+            Importar Excel
           </Button>
-          
-          <Button 
-            variant="outline" 
-            onClick={handleDownloadComposicoes} 
+          <Button
+            variant="outline"
+            onClick={handleDownloadComposicoes}
             className="gap-2"
           >
             <Download className="w-4 h-4" />
@@ -496,69 +511,54 @@ export function ComposicoesEstoque() {
 
         {/* Products Grid */}
         <div className={sidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'}>
-          {/* Search Bar */}
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Produtos com Composições</h3>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produtos..."
-                value={filters?.search || ''}
-                onChange={(e) => updateFilters({ search: e.target.value })}
-                className="pl-10 w-80"
-              />
+          <div className="space-y-6">
+            {/* Search Bar */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Produtos de Composições</h2>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar produtos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-80"
+                />
+              </div>
             </div>
+
+            {/* Products Grid */}
+            {isLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-4 space-y-2">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-4 bg-muted rounded w-1/2" />
+                      <div className="h-20 bg-muted rounded" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : produtosFiltrados && produtosFiltrados.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {produtosFiltrados.map(renderProductCard)}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Boxes className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+                <p className="text-muted-foreground mb-4">
+                  {searchQuery || Object.values(hierarchicalFilters).some(Boolean) 
+                    ? 'Tente ajustar os filtros ou a pesquisa.' 
+                    : 'Comece importando produtos do controle de estoque.'}
+                </p>
+                <Button onClick={() => setImportProdutosModalOpen(true)} className="gap-2">
+                  <Import className="h-4 w-4" />
+                  Importar Produtos do Estoque
+                </Button>
+              </div>
+            )}
           </div>
-
-          {/* Products Grid */}
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4 space-y-2">
-                    <div className="h-4 bg-muted rounded w-3/4" />
-                    <div className="h-4 bg-muted rounded w-1/2" />
-                    <div className="h-20 bg-muted rounded" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : products && products.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {products.map(renderProductCard)}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Boxes className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
-              <p className="text-muted-foreground">
-                Tente ajustar os filtros ou a pesquisa para encontrar produtos.
-              </p>
-            </div>
-          )}
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <Button 
-                variant="outline" 
-                disabled={!hasPrevPage}
-                onClick={() => updateFilters({ page: filters.page - 1 })}
-              >
-                Anterior
-              </Button>
-              <span className="px-4 py-2 text-sm text-muted-foreground">
-                Página {filters.page} de {totalPages}
-              </span>
-              <Button 
-                variant="outline"
-                disabled={!hasNextPage}
-                onClick={() => updateFilters({ page: filters.page + 1 })}
-              >
-                Próxima
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -566,12 +566,12 @@ export function ComposicoesEstoque() {
       <ComposicoesModal
         isOpen={modalOpen}
         onClose={fecharModal}
-        produto={produtoSelecionado}
+        produto={produtoSelecionado ? adaptProdutoComposicaoToModalProduct(produtoSelecionado) : null}
         composicoes={produtoSelecionado ? getComposicoesForSku(produtoSelecionado.sku_interno) : []}
         onSave={handleSalvarComposicoes}
       />
 
-      {/* Modal de Importação */}
+      {/* Modal de Importação de Excel */}
       <ImportModal
         open={importModalOpen}
         onOpenChange={setImportModalOpen}
@@ -580,6 +580,14 @@ export function ComposicoesEstoque() {
           setImportModalOpen(false);
         }}
         tipo="composicoes"
+      />
+
+      {/* Modal de Importação de Produtos do Estoque */}
+      <ImportarProdutosModal
+        open={importProdutosModalOpen}
+        onOpenChange={setImportProdutosModalOpen}
+        onImportar={importarDoEstoque}
+        isImporting={isImporting}
       />
     </div>
   );

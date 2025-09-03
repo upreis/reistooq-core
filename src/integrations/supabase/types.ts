@@ -305,6 +305,36 @@ export type Database = {
           },
         ]
       }
+      componentes_em_uso: {
+        Row: {
+          created_at: string | null
+          id: string
+          nome_produto_composicao: string
+          organization_id: string
+          quantidade_necessaria: number
+          sku_componente: string
+          sku_produto_composicao: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          nome_produto_composicao: string
+          organization_id: string
+          quantidade_necessaria?: number
+          sku_componente: string
+          sku_produto_composicao: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          nome_produto_composicao?: string
+          organization_id?: string
+          quantidade_necessaria?: number
+          sku_componente?: string
+          sku_produto_composicao?: string
+        }
+        Relationships: []
+      }
       configuracoes: {
         Row: {
           chave: string
@@ -1911,6 +1941,72 @@ export type Database = {
           },
         ]
       }
+      produtos_composicoes: {
+        Row: {
+          ativo: boolean | null
+          categoria: string | null
+          categoria_nivel2: string | null
+          categoria_principal: string | null
+          codigo_barras: string | null
+          created_at: string | null
+          descricao: string | null
+          estoque_minimo: number | null
+          id: string
+          nome: string
+          organization_id: string
+          preco_custo: number | null
+          preco_venda: number | null
+          quantidade_atual: number | null
+          sku_interno: string
+          status: string | null
+          subcategoria: string | null
+          updated_at: string | null
+          url_imagem: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          categoria?: string | null
+          categoria_nivel2?: string | null
+          categoria_principal?: string | null
+          codigo_barras?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          estoque_minimo?: number | null
+          id?: string
+          nome: string
+          organization_id: string
+          preco_custo?: number | null
+          preco_venda?: number | null
+          quantidade_atual?: number | null
+          sku_interno: string
+          status?: string | null
+          subcategoria?: string | null
+          updated_at?: string | null
+          url_imagem?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          categoria?: string | null
+          categoria_nivel2?: string | null
+          categoria_principal?: string | null
+          codigo_barras?: string | null
+          created_at?: string | null
+          descricao?: string | null
+          estoque_minimo?: number | null
+          id?: string
+          nome?: string
+          organization_id?: string
+          preco_custo?: number | null
+          preco_venda?: number | null
+          quantidade_atual?: number | null
+          sku_interno?: string
+          status?: string | null
+          subcategoria?: string | null
+          updated_at?: string | null
+          url_imagem?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -2979,6 +3075,10 @@ export type Database = {
       }
       set_integration_secret: {
         Args: { _key: string; _provider: string; _value: string }
+        Returns: undefined
+      }
+      sincronizar_componentes_em_uso: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       split_existing_categories: {
