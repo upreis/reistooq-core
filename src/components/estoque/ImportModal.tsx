@@ -373,7 +373,8 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       let warnings: string[] = [];
       let rowsToCreate: any[] = [];
       let rowsToReactivate: { id: string; data: any }[] = [];
-      
+      // Armazenar pais (kits) detectados durante o pré-processamento das composições
+      let parentRows: Record<string, { nome: string; categoria_principal: string | null }> = {};
       if (tipo === 'produtos') {
         // Verificar SKUs duplicados na planilha
         const skus = mappedData.map(row => row.sku_interno).filter(Boolean);
@@ -466,8 +467,6 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         // Para composições, processar múltiplos componentes por linha
         const expandedData: any[] = [];
         // Guardar informações do SKU Pai (kit) para cadastrar em produtos_composicoes
-        const parentRows: Record<string, { nome: string; categoria_principal: string | null }> = {};
-        
         mappedData.forEach((row, index) => {
           const rowErrors = validateRow(row, index);
           if (rowErrors.length > 0) {
@@ -512,30 +511,6 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         mappedData.push(...expandedData);
         
         // Obter organização do usuário atual (para upsert de pais e componentes)
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('organizacao_id')
-          .eq('id', (await supabase.auth.getUser()).data.user?.id)
-          .single();
-        
-        if (!profileData?.organizacao_id) {
-          throw new Error('Organização não encontrada');
-        }
-        const organizationId = profileData.organizacao_id;
-        
-        // Cadastrar/atualizar os SKUs Pai em produtos_composicoes
-        const parentsToUpsert = Object.entries(parentRows).map(([sku, info]) => ({
-          sku_interno: sku,
-          nome: info.nome,
-          categoria_principal: info.categoria_principal,
-          organization_id: organizationId,
-        }));
-        if (parentsToUpsert.length > 0) {
-          const { error: upsertParentsError } = await supabase
-            .from('produtos_composicoes')
-            .upsert(parentsToUpsert, { onConflict: 'sku_interno,organization_id' });
-          if (upsertParentsError) throw upsertParentsError;
-        }
       }
 
       if (tipo === 'produtos') {
@@ -644,6 +619,20 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           
         if (!profileData?.organizacao_id) {
           throw new Error('Organização não encontrada');
+        }
+
+        // Cadastrar/atualizar os SKUs Pai em produtos_composicoes (apenas após validação)
+        const parentsToUpsert = Object.entries(parentRows).map(([sku, info]) => ({
+          sku_interno: sku,
+          nome: info.nome,
+          categoria_principal: info.categoria_principal,
+          organization_id: profileData.organizacao_id,
+        }));
+        if (parentsToUpsert.length > 0) {
+          const { error: upsertParentsError } = await supabase
+            .from('produtos_composicoes')
+            .upsert(parentsToUpsert, { onConflict: 'sku_interno,organization_id' });
+          if (upsertParentsError) throw upsertParentsError;
         }
 
         // Processar cada composição
