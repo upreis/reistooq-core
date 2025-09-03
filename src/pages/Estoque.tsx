@@ -415,9 +415,6 @@ const Estoque = () => {
                 <h1 className="text-4xl font-bold tracking-tight text-foreground">
                   Controle de Estoque
                 </h1>
-                <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
-                  Gerencie seu inventário, monitore níveis de estoque e otimize suas operações com relatórios em tempo real
-                </p>
               </div>
               
               {/* Actions no header com melhor organização */}
