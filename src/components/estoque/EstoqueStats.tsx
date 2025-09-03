@@ -123,51 +123,57 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
       {stats.map((stat, index) => {
         const IconComponent = stat.icon;
         
         return (
-          <Card key={index} className="relative overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                      <IconComponent className={`w-4 h-4 ${stat.color}`} />
-                    </div>
-                    {stat.trend && (
-                      <Badge 
-                        variant={
-                          stat.trend === "critical" ? "destructive" : 
-                          stat.trend === "warning" ? "secondary" : 
-                          "default"
-                        }
-                        className="text-xs"
-                      >
-                        {stat.trend === "critical" && <AlertTriangle className="w-3 h-3 mr-1" />}
-                        {stat.trend === "warning" && <TrendingDown className="w-3 h-3 mr-1" />}
-                        {stat.trend === "good" && <TrendingUp className="w-3 h-3 mr-1" />}
-                        {stat.trend === "up" && <TrendingUp className="w-3 h-3 mr-1" />}
-                        {stat.trend === "critical" ? "Crítico" : 
-                         stat.trend === "warning" ? "Atenção" : 
-                         stat.trend === "good" ? "Bom" : "Alta"}
-                      </Badge>
-                    )}
+          <Card key={index} className="relative overflow-hidden border-border/50 shadow-sm backdrop-blur-sm bg-card/80 hover:shadow-md transition-all group">
+            <CardContent className="p-6">
+              <div className="space-y-3">
+                {/* Header com ícone e trend */}
+                <div className="flex items-center justify-between">
+                  <div className={`p-3 rounded-xl ${stat.bgColor} group-hover:scale-110 transition-transform`}>
+                    <IconComponent className={`w-5 h-5 ${stat.color}`} />
                   </div>
-                  
-                  <p className="text-xs text-muted-foreground mb-1">
+                  {stat.trend && (
+                    <Badge 
+                      variant={
+                        stat.trend === "critical" ? "destructive" : 
+                        stat.trend === "warning" ? "secondary" : 
+                        "default"
+                      }
+                      className="text-xs shadow-sm"
+                    >
+                      {stat.trend === "critical" && <AlertTriangle className="w-3 h-3 mr-1" />}
+                      {stat.trend === "warning" && <TrendingDown className="w-3 h-3 mr-1" />}
+                      {stat.trend === "good" && <TrendingUp className="w-3 h-3 mr-1" />}
+                      {stat.trend === "up" && <TrendingUp className="w-3 h-3 mr-1" />}
+                      {stat.trend === "critical" ? "Crítico" : 
+                       stat.trend === "warning" ? "Atenção" : 
+                       stat.trend === "good" ? "Bom" : "Alta"}
+                    </Badge>
+                  )}
+                </div>
+                
+                {/* Título */}
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
                     {stat.title}
                   </p>
                   
-                  <p className="text-lg font-bold mb-1">
+                  <p className="text-2xl font-bold text-foreground tracking-tight">
                     {stat.value}
                   </p>
-                  
-                  <p className="text-xs text-muted-foreground">
-                    {stat.subtitle}
-                  </p>
                 </div>
+                
+                {/* Subtítulo */}
+                <p className="text-xs text-muted-foreground/80 leading-relaxed">
+                  {stat.subtitle}
+                </p>
+
+                {/* Indicador visual sutil */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
             </CardContent>
           </Card>

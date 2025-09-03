@@ -13,6 +13,7 @@ import { ProductModal } from "@/components/estoque/ProductModal";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Package, AlertTriangle, Boxes } from "lucide-react";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
@@ -392,53 +393,70 @@ const Estoque = () => {
 
   return (
     <EstoqueGuard>
-      <div className="space-y-6">
-        {/* Breadcrumb */}
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <span>🏠</span>
-          <span>/</span>
-          <span className="text-primary">Gestão de Estoque</span>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        {/* Header moderno com gradiente */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border/50">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+          <div className="relative container mx-auto px-6 py-8">
+            {/* Breadcrumb melhorado */}
+            <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+              <Package className="h-4 w-4" />
+              <span>/</span>
+              <span className="text-foreground font-medium">Gestão de Estoque</span>
+            </nav>
+
+            {/* Header com título e ações */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
+                  Controle de Estoque
+                </h1>
+                <p className="text-muted-foreground">
+                  Gerencie seu inventário, monitore níveis de estoque e otimize suas operações
+                </p>
+              </div>
+              
+              {/* Actions rápidas no header */}
+              <div className="flex items-center gap-3">
+                <EstoqueActions
+                  onNewProduct={handleNewProduct}
+                  onDeleteSelected={handleDeleteSelected}
+                  onRefresh={handleRefresh}
+                  onSendAlerts={handleSendAlerts}
+                  selectedProducts={selectedProducts}
+                  products={products}
+                />
+              </div>
+            </div>
+
+            {/* Stats Cards melhorados */}
+            <EstoqueStats products={products} />
+          </div>
         </div>
 
-        {/* Stats Cards */}
-        <EstoqueStats products={products} />
-
-        {/* Actions Bar */}
-        <EstoqueActions
-          onNewProduct={handleNewProduct}
-          onDeleteSelected={handleDeleteSelected}
-          onRefresh={handleRefresh}
-          onSendAlerts={handleSendAlerts}
-          selectedProducts={selectedProducts}
-          products={products}
-        />
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Gestão de Estoque
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="estoque" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="estoque" className="flex items-center gap-2">
+        {/* Conteúdo principal */}
+        <div className="container mx-auto px-6 py-6">
+          <Tabs defaultValue="estoque" className="w-full">
+            <div className="flex items-center justify-between mb-6">
+              <TabsList className="grid w-auto grid-cols-2 bg-muted/50 backdrop-blur-sm">
+                <TabsTrigger value="estoque" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   <Package className="h-4 w-4" />
                   Controle de Estoque
-                  <span className="text-xs text-muted-foreground">
-                    ({products.length})
-                  </span>
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {products.length}
+                  </Badge>
                 </TabsTrigger>
-                <TabsTrigger value="composicoes" className="flex items-center gap-2">
+                <TabsTrigger value="composicoes" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   <Boxes className="h-4 w-4" />
                   Composições
                 </TabsTrigger>
               </TabsList>
-              
-              <TabsContent value="estoque" className="mt-6">
-                {/* Filtros Principais */}
-                <div className="mb-6">
+            </div>
+            
+            <TabsContent value="estoque" className="space-y-6">
+              {/* Filtros em card separado */}
+              <Card className="border-border/50 shadow-sm">
+                <CardContent className="p-6">
                   <EstoqueFilters
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
@@ -454,43 +472,78 @@ const Estoque = () => {
                     hierarchicalFilters={hierarchicalFilters}
                     onHierarchicalFiltersChange={setHierarchicalFilters}
                   />
-                </div>
+                </CardContent>
+              </Card>
 
-                <div className="flex gap-6">
-                  {/* Sidebar Inteligente */}
-                  <div className="w-80 space-y-6">
+              {/* Layout principal com sidebar e tabela */}
+              <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                {/* Sidebar de categorias */}
+                <div className="xl:col-span-1">
+                  <div className="sticky top-6">
                     <SmartCategorySidebar
                       products={products}
                       hierarchicalFilters={hierarchicalFilters}
                       onHierarchicalFiltersChange={setHierarchicalFilters}
                     />
                   </div>
+                </div>
 
-                  {/* Conteúdo Principal */}
-                  <div className="flex-1">
-                    {initialLoading ? (
-                      <EstoqueSkeleton />
-                    ) : (
-                      <>
-                        {/* Tabela */}
-                        <div className="mt-6">
-                          <EstoqueTable
-                            products={paginatedProducts}
-                            selectedProducts={selectedProducts}
-                            onSelectProduct={handleSelectProduct}
-                            onSelectAll={handleSelectAll}
-                            onEditProduct={handleEditProduct}
-                            onDeleteProduct={handleDeleteProduct}
-                            onStockMovement={handleStockMovement}
-                            sortBy={sortBy}
-                            sortOrder={sortOrder}
-                            onSort={handleSort}
-                          />
+                {/* Área principal da tabela */}
+                <div className="xl:col-span-3 space-y-6">
+                  {/* Indicadores de filtros ativos */}
+                  {hasActiveFilters && (
+                    <Card className="border-primary/20 bg-primary/5">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-primary" />
+                            <span className="text-sm font-medium">Filtros ativos:</span>
+                            <Badge variant="outline" className="text-primary border-primary/30">
+                              {products.length} produto(s) encontrado(s)
+                            </Badge>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={handleClearFilters}
+                            className="text-primary hover:text-primary/80"
+                          >
+                            Limpar filtros
+                          </Button>
                         </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                        {/* Paginação */}
-                        {products.length > itemsPerPage && (
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6">
+                  {/* Tabela principal */}
+                  <Card className="border-border/50 shadow-sm">
+                    <CardContent className="p-0">
+                      {initialLoading ? (
+                        <div className="p-6">
+                          <EstoqueSkeleton />
+                        </div>
+                      ) : (
+                        <EstoqueTable
+                          products={paginatedProducts}
+                          selectedProducts={selectedProducts}
+                          onSelectProduct={handleSelectProduct}
+                          onSelectAll={handleSelectAll}
+                          onEditProduct={handleEditProduct}
+                          onDeleteProduct={handleDeleteProduct}
+                          onStockMovement={handleStockMovement}
+                          sortBy={sortBy}
+                          sortOrder={sortOrder}
+                          onSort={handleSort}
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Paginação melhorada */}
+                  {products.length > itemsPerPage && (
+                    <Card className="border-border/50 shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <p className="text-sm text-muted-foreground">
                               Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
                               {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
@@ -519,20 +572,19 @@ const Estoque = () => {
                                 Próximo
                               </Button>
                             </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
-              </TabsContent>
-              
-              <TabsContent value="composicoes" className="mt-6">
-                <ComposicoesEstoque />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="composicoes">
+              <ComposicoesEstoque />
+            </TabsContent>
+          </Tabs>
+        </div>
 
         {/* Modal de Edição de Produto */}
         <ProductModal
