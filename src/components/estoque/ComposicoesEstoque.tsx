@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -207,23 +207,25 @@ export function ComposicoesEstoque() {
   })) || [];
 
   // Filtrar produtos baseado na busca e filtros hierárquicos
-  const produtosFiltrados = produtos?.filter(produto => {
-    const matchesSearch = !searchQuery || 
-      produto.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      produto.sku_interno.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = !hierarchicalFilters.categoriaPrincipal || 
-      produto.categoria_principal === hierarchicalFilters.categoriaPrincipal ||
-      produto.categoria === hierarchicalFilters.categoria ||
-      produto.subcategoria === hierarchicalFilters.subcategoria;
+  const produtosFiltrados = useMemo(() => {
+    return produtos?.filter(produto => {
+      const matchesSearch = !searchQuery || 
+        produto.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        produto.sku_interno.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = !hierarchicalFilters.categoriaPrincipal || 
+        produto.categoria_principal === hierarchicalFilters.categoriaPrincipal ||
+        produto.categoria === hierarchicalFilters.categoria ||
+        produto.subcategoria === hierarchicalFilters.subcategoria;
 
-    // Filtro adicional por categoria principal selecionada
-    const matchesCategoriaFiltro = !categoriaPrincipalSelecionada || categoriaPrincipalSelecionada === "all" ||
-      produto.categoria_principal === categoriaPrincipalSelecionada ||
-      produto.categoria === categoriaPrincipalSelecionada;
-    
-    return matchesSearch && matchesCategory && matchesCategoriaFiltro;
-  }) || [];
+      // Filtro adicional por categoria principal selecionada
+      const matchesCategoriaFiltro = !categoriaPrincipalSelecionada || 
+        categoriaPrincipalSelecionada === "all" ||
+        produto.categoria_principal === categoriaPrincipalSelecionada;
+      
+      return matchesSearch && matchesCategory && matchesCategoriaFiltro;
+    }) || [];
+  }, [produtos, searchQuery, hierarchicalFilters, categoriaPrincipalSelecionada]);
 
   // Carregar custos dos produtos quando as composições mudarem
   useEffect(() => {
@@ -243,7 +245,7 @@ export function ComposicoesEstoque() {
         const { data: produtosCusto } = await supabase
           .from('produtos')
           .select('sku_interno, preco_custo')
-          .in('sku_interno', skusUnicos);
+          .in('sku_interno', skusUnicos as string[]);
 
         const custosMap: Record<string, number> = {};
         produtosCusto?.forEach(p => {
