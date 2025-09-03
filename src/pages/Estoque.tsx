@@ -397,31 +397,31 @@ const Estoque = () => {
 
   return (
     <EstoqueGuard>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-        {/* Header moderno com gradiente */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-b border-border/50">
-          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-          <div className="relative container mx-auto px-6 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10">
+        {/* Header moderno com melhor espaçamento */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-primary/3 via-primary/5 to-primary/3 border-b border-border/30">
+          <div className="absolute inset-0 bg-grid-pattern opacity-3"></div>
+          <div className="relative container mx-auto px-6 py-12">
             {/* Breadcrumb melhorado */}
-            <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+            <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-8">
               <Package className="h-4 w-4" />
               <span>/</span>
               <span className="text-foreground font-medium">Gestão de Estoque</span>
             </nav>
 
-            {/* Header com título e ações */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
+            {/* Header com melhor hierarquia visual */}
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-10">
+              <div className="space-y-3">
+                <h1 className="text-4xl font-bold tracking-tight text-foreground">
                   Controle de Estoque
                 </h1>
-                <p className="text-muted-foreground">
-                  Gerencie seu inventário, monitore níveis de estoque e otimize suas operações
+                <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
+                  Gerencie seu inventário, monitore níveis de estoque e otimize suas operações com relatórios em tempo real
                 </p>
               </div>
               
-              {/* Actions rápidas no header */}
-              <div className="flex items-center gap-3">
+              {/* Actions no header com melhor organização */}
+              <div className="flex items-center gap-3 lg:flex-shrink-0">
                 <EstoqueActions
                   onNewProduct={handleNewProduct}
                   onDeleteSelected={handleDeleteSelected}
@@ -433,34 +433,40 @@ const Estoque = () => {
               </div>
             </div>
 
-            {/* Stats Cards melhorados */}
+            {/* Stats Cards com melhor espaçamento */}
             <EstoqueStats products={products} />
           </div>
         </div>
 
-        {/* Conteúdo principal */}
-        <div className="w-full px-1 py-4 max-w-none">
+        {/* Conteúdo principal com melhor espaçamento */}
+        <div className="container mx-auto px-6 py-8 max-w-none">
           <Tabs defaultValue="estoque" className="w-full">
-            <div className="flex items-center justify-between mb-6">
-              <TabsList className="grid w-auto grid-cols-2 bg-muted/50 backdrop-blur-sm">
-                <TabsTrigger value="estoque" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <div className="flex items-center justify-between mb-8">
+              <TabsList className="grid w-auto grid-cols-2 h-12 bg-muted/30 backdrop-blur-sm border border-border/50">
+                <TabsTrigger 
+                  value="estoque" 
+                  className="flex items-center gap-3 px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-sm font-medium"
+                >
                   <Package className="h-4 w-4" />
                   Controle de Estoque
-                  <Badge variant="secondary" className="ml-2 text-xs">
+                  <Badge variant="secondary" className="ml-2 text-xs px-2 py-0.5">
                     {products.length}
                   </Badge>
                 </TabsTrigger>
-                <TabsTrigger value="composicoes" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                <TabsTrigger 
+                  value="composicoes" 
+                  className="flex items-center gap-3 px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-sm font-medium"
+                >
                   <Boxes className="h-4 w-4" />
                   Composições
                 </TabsTrigger>
               </TabsList>
             </div>
             
-            <TabsContent value="estoque" className="space-y-6">
-              {/* Filtros em card separado */}
-              <Card className="border-border/50 shadow-sm">
-                <CardContent className="p-6">
+            <TabsContent value="estoque" className="space-y-8">
+              {/* Filtros em card redesenhado */}
+              <Card className="border-border/40 shadow-sm bg-card/50 backdrop-blur-sm">
+                <CardContent className="p-8">
                   <EstoqueFilters
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
@@ -478,7 +484,7 @@ const Estoque = () => {
               </Card>
 
               {/* Layout principal com sidebar e tabela */}
-              <div className="flex gap-4">
+              <div className="flex gap-6">
                 {/* Sidebar de categorias - responsivo */}
                 <div className={cn(
                   "transition-all duration-300 flex-shrink-0",
@@ -495,25 +501,29 @@ const Estoque = () => {
                   </div>
                 </div>
 
-                {/* Área principal da tabela */}
-                <div className="flex-1 min-w-0 space-y-4">
-                  {/* Indicadores de filtros ativos */}
+                {/* Área principal da tabela com melhor espaçamento */}
+                <div className="flex-1 min-w-0 space-y-6">
+                  {/* Indicadores de filtros ativos redesenhados */}
                   {hasActiveFilters && (
-                    <Card className="border-primary/20 bg-primary/5">
-                      <CardContent className="p-4">
+                    <Card className="border-primary/20 bg-primary/5 backdrop-blur-sm">
+                      <CardContent className="p-5">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-primary" />
-                            <span className="text-sm font-medium">Filtros ativos:</span>
-                            <Badge variant="outline" className="text-primary border-primary/30">
-                              {products.length} produto(s) encontrado(s)
-                            </Badge>
+                          <div className="flex items-center gap-3">
+                            <div className="p-1.5 rounded-md bg-primary/10">
+                              <Package className="h-4 w-4 text-primary" />
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-foreground">Filtros ativos</span>
+                              <Badge variant="outline" className="ml-3 text-primary border-primary/30 bg-primary/5">
+                                {products.length} produto(s) encontrado(s)
+                              </Badge>
+                            </div>
                           </div>
                           <Button 
                             variant="ghost" 
                             size="sm" 
                             onClick={handleClearFilters}
-                            className="text-foreground hover:bg-brand-hover"
+                            className="text-foreground hover:bg-primary/10 px-4"
                           >
                             Limpar filtros
                           </Button>

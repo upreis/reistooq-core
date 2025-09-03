@@ -271,35 +271,39 @@ export function ComposicoesEstoque() {
     const isExpanded = expandedCards.has(product.id);
 
     return (
-      <Card key={product.id} className="group hover:shadow-lg transition-shadow">
-        <CardContent className="p-5">
-          <header className="mb-4">
-            <h3 className="font-semibold text-base text-foreground leading-snug line-clamp-2">{product.nome}</h3>
+      <Card key={product.id} className="group hover:shadow-xl transition-all duration-300 border-border/40 bg-card/60 backdrop-blur-sm hover:bg-card/80">
+        <CardContent className="p-6">
+          <header className="mb-5">
+            <h3 className="font-semibold text-lg text-foreground leading-snug line-clamp-2 mb-2">{product.nome}</h3>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">SKU Pai:</span>
-              <Badge variant="outline" className="font-mono text-[11px]">{product.sku_interno}</Badge>
+              <span className="text-xs text-muted-foreground font-medium">SKU:</span>
+              <Badge variant="outline" className="font-mono text-xs px-2 py-1">{product.sku_interno}</Badge>
             </div>
           </header>
 
-          <section className="space-y-3">
-            {/* Resumo da composição */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Boxes className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Composição</span>
-                <span className="text-xs text-muted-foreground">{(composicoes?.length || 0)} componentes</span>
+          <section className="space-y-4">
+            {/* Resumo da composição com melhor layout */}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 rounded-md bg-primary/10">
+                  <Boxes className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-foreground">Composição</span>
+                  <p className="text-xs text-muted-foreground">{(composicoes?.length || 0)} componentes</p>
+                </div>
               </div>
               
-              {/* Status do estoque */}
+              {/* Status do estoque melhorado */}
               {composicoes && composicoes.length > 0 && (
                 <div className="flex items-center gap-2">
                   {componenteLimitante ? (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex items-center gap-1 text-orange-600 cursor-help">
-                            <AlertTriangle className="h-3 w-3" />
-                            <span className="text-xs font-medium">Limitado</span>
+                          <div className="flex items-center gap-2 text-orange-600 cursor-help p-2 rounded-md bg-orange-50">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span className="text-sm font-medium">{estoqueDisponivel}</span>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -310,9 +314,9 @@ export function ComposicoesEstoque() {
                       </Tooltip>
                     </TooltipProvider>
                   ) : (
-                    <div className="flex items-center gap-1 text-green-600">
-                      <CheckCircle className="h-3 w-3" />
-                      <span className="text-xs font-medium">Disponível</span>
+                    <div className="flex items-center gap-2 text-green-600 p-2 rounded-md bg-green-50">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-sm font-medium">Disponível</span>
                     </div>
                   )}
                 </div>
@@ -490,50 +494,58 @@ export function ComposicoesEstoque() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold text-foreground">Composições de Produtos</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span>🏠</span>
-            <span>/</span>
-            <span>Estoque</span>
-            <span>/</span>
-            <span className="text-primary">Composições</span>
+    <div className="space-y-8">
+      {/* Header moderno melhorado */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-primary/2 via-primary/4 to-primary/2 border border-border/30 rounded-xl p-8">
+        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>🏠</span>
+              <span>/</span>
+              <span>Estoque</span>
+              <span>/</span>
+              <span className="text-primary font-medium">Composições</span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Composições de Produtos</h1>
+              <p className="text-muted-foreground max-w-2xl">
+                Gerencie as composições dos seus produtos, defina componentes e monitore custos
+              </p>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setImportProdutosModalOpen(true)}
-            className="gap-2"
-          >
-            <Import className="w-4 h-4" />
-            Importar do Estoque
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setImportModalOpen(true)}
-            className="gap-2"
-          >
-            <Upload className="w-4 h-4" />
-            Importar Excel
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleDownloadComposicoes}
-            className="gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Baixar Dados
-          </Button>
+          
+          <div className="flex items-center gap-3 lg:flex-shrink-0">
+            <Button
+              variant="outline"
+              onClick={() => setImportProdutosModalOpen(true)}
+              className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+            >
+              <Import className="w-4 h-4" />
+              Importar do Estoque
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setImportModalOpen(true)}
+              className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+            >
+              <Upload className="w-4 h-4" />
+              Importar Excel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDownloadComposicoes}
+              className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+            >
+              <Download className="w-4 h-4" />
+              Baixar Dados
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Layout principal com sidebar e conteúdo */}
-      <div className="flex gap-4">
+      <div className="flex gap-6">
         {/* Sidebar de categorias - responsivo */}
         <div className={cn(
           "transition-all duration-300 flex-shrink-0",
@@ -550,31 +562,44 @@ export function ComposicoesEstoque() {
           </div>
         </div>
 
-        {/* Área principal */}
-        <div className="flex-1 min-w-0 space-y-4">
-          {/* Pesquisa */}
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-xl font-semibold">Produtos de Composições</h2>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produtos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-80"
-              />
-            </div>
-          </div>
+        {/* Área principal com melhor organização */}
+        <div className="flex-1 min-w-0 space-y-6">
+          {/* Header da seção com pesquisa */}
+          <Card className="border-border/40 bg-card/30 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground mb-1">Produtos de Composições</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {produtosFiltrados?.length || 0} produtos encontrados
+                  </p>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar produtos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 w-80 bg-background/60 border-border/60"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Grid de produtos */}
+          {/* Grid de produtos com melhor espaçamento */}
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4 space-y-2">
-                    <div className="h-4 bg-muted rounded w-3/4" />
+                <Card key={i} className="animate-pulse border-border/40">
+                  <CardContent className="p-6 space-y-4">
+                    <div className="h-5 bg-muted rounded w-3/4" />
                     <div className="h-4 bg-muted rounded w-1/2" />
-                    <div className="h-20 bg-muted rounded" />
+                    <div className="h-24 bg-muted rounded" />
+                    <div className="flex gap-2">
+                      <div className="h-8 bg-muted rounded flex-1" />
+                      <div className="h-8 bg-muted rounded w-16" />
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -584,19 +609,25 @@ export function ComposicoesEstoque() {
               {produtosFiltrados.map(renderProductCard)}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Boxes className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery || Object.values(hierarchicalFilters).some(Boolean) 
-                  ? 'Tente ajustar os filtros ou a pesquisa.' 
-                  : 'Comece importando produtos do controle de estoque.'}
-              </p>
-              <Button onClick={() => setImportProdutosModalOpen(true)} className="gap-2">
-                <Import className="h-4 w-4" />
-                Importar Produtos do Estoque
-              </Button>
-            </div>
+            <Card className="border-border/40 bg-card/20">
+              <CardContent className="text-center py-16">
+                <Boxes className="h-16 w-16 text-muted-foreground/40 mx-auto mb-6" />
+                <h3 className="text-xl font-semibold mb-3 text-foreground">Nenhum produto encontrado</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  {searchQuery || Object.values(hierarchicalFilters).some(Boolean) 
+                    ? 'Tente ajustar os filtros ou termo de pesquisa para encontrar produtos.' 
+                    : 'Comece importando produtos do controle de estoque para criar composições.'}
+                </p>
+                <Button 
+                  onClick={() => setImportProdutosModalOpen(true)} 
+                  className="gap-2 bg-primary hover:bg-primary/90"
+                  size="lg"
+                >
+                  <Import className="h-5 w-5" />
+                  Importar Produtos do Estoque
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>

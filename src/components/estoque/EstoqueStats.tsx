@@ -123,17 +123,17 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {stats.map((stat, index) => {
         const IconComponent = stat.icon;
         
         return (
-          <Card key={index} className="relative overflow-hidden border-border/50 shadow-sm backdrop-blur-sm bg-card/80 hover:shadow-md transition-all group">
-            <CardContent className="p-6">
-              <div className="space-y-3">
+          <Card key={index} className="relative overflow-hidden border-border/40 bg-card/60 backdrop-blur-sm hover:bg-card/80 hover:shadow-lg transition-all duration-300 group">
+            <CardContent className="p-5">
+              <div className="space-y-4">
                 {/* Header com ícone e trend */}
-                <div className="flex items-center justify-between">
-                  <div className={`p-3 rounded-xl ${stat.bgColor} group-hover:scale-110 transition-transform`}>
+                <div className="flex items-start justify-between">
+                  <div className={`p-2.5 rounded-lg ${stat.bgColor} group-hover:scale-105 transition-transform duration-200`}>
                     <IconComponent className={`w-5 h-5 ${stat.color}`} />
                   </div>
                   {stat.trend && (
@@ -143,12 +143,12 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
                         stat.trend === "warning" ? "secondary" : 
                         "default"
                       }
-                      className="text-xs shadow-sm"
+                      className="text-[10px] px-2 py-0.5 h-5 shadow-sm border-0"
                     >
-                      {stat.trend === "critical" && <AlertTriangle className="w-3 h-3 mr-1" />}
-                      {stat.trend === "warning" && <TrendingDown className="w-3 h-3 mr-1" />}
-                      {stat.trend === "good" && <TrendingUp className="w-3 h-3 mr-1" />}
-                      {stat.trend === "up" && <TrendingUp className="w-3 h-3 mr-1" />}
+                      {stat.trend === "critical" && <AlertTriangle className="w-2.5 h-2.5 mr-1" />}
+                      {stat.trend === "warning" && <TrendingDown className="w-2.5 h-2.5 mr-1" />}
+                      {stat.trend === "good" && <TrendingUp className="w-2.5 h-2.5 mr-1" />}
+                      {stat.trend === "up" && <TrendingUp className="w-2.5 h-2.5 mr-1" />}
                       {stat.trend === "critical" ? "Crítico" : 
                        stat.trend === "warning" ? "Atenção" : 
                        stat.trend === "good" ? "Bom" : "Alta"}
@@ -156,24 +156,23 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
                   )}
                 </div>
                 
-                {/* Título */}
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
+                {/* Conteúdo principal */}
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground/90 uppercase tracking-wide">
                     {stat.title}
                   </p>
                   
-                  <p className="text-2xl font-bold text-foreground tracking-tight">
+                  <p className="text-2xl font-bold text-foreground tracking-tight leading-none">
                     {stat.value}
                   </p>
+                  
+                  <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                    {stat.subtitle}
+                  </p>
                 </div>
-                
-                {/* Subtítulo */}
-                <p className="text-xs text-muted-foreground/80 leading-relaxed">
-                  {stat.subtitle}
-                </p>
 
                 {/* Indicador visual sutil */}
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
             </CardContent>
           </Card>
