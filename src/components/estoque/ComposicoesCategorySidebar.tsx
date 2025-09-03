@@ -249,11 +249,11 @@ export function ComposicoesCategorySidebar({
               else selectCategory('categoria', category.nome, parentName);
             }}
             className={cn(
-              "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
+              "w-full justify-start h-auto py-2.5 transition-all relative group border-l-3",
               "px-3",
               isSelected 
-                ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
-                : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
+                ? "border-l-primary bg-primary/10 text-primary font-medium shadow-sm" 
+                : "border-l-transparent text-foreground hover:border-l-primary/50 hover:bg-primary/5 hover:text-foreground",
               level === 0 && "font-medium",
               level === 1 && "text-sm ml-2"
             )}
@@ -301,16 +301,17 @@ export function ComposicoesCategorySidebar({
               </span>
               
               {/* Contador */}
-              <div className={cn(
-                "ml-auto flex-shrink-0 px-2 py-0.5 rounded-full text-center min-w-[28px] transition-colors",
-                isSelected 
-                  ? "bg-brand-active-foreground/20 text-current" 
-                  : "bg-muted text-muted-foreground",
-                level === 0 && "text-xs",
-                level === 1 && "text-[10px]"
-              )}>
+              <Badge 
+                variant={isSelected ? "default" : "secondary"} 
+                className={cn(
+                  "ml-2 shrink-0 h-5 min-w-[20px] px-1.5 text-center font-medium tabular-nums",
+                  level === 0 && "text-xs",
+                  level === 1 && "text-[11px]",
+                  isSelected && "bg-primary/20 text-primary hover:bg-primary/20"
+                )}
+              >
                 {category.productCount}
-              </div>
+              </Badge>
             </div>
           </Button>
         )}
@@ -379,29 +380,29 @@ export function ComposicoesCategorySidebar({
         
         {/* Busca */}
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Buscar categoria..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-7 h-8 text-xs"
+            className="pl-8 h-9 text-sm border-border/60 focus:border-primary"
           />
         </div>
         
         {/* Filtro ativo */}
         {hasActiveFilters && (
-          <div className="flex items-center justify-between p-2 bg-primary/5 border border-primary/20 rounded-md">
-            <div className="flex items-center gap-1">
-              <Filter className="h-3 w-3 text-primary" />
+          <div className="flex items-center justify-between p-2.5 bg-primary/8 border border-primary/30 rounded-lg">
+            <div className="flex items-center gap-1.5">
+              <Filter className="h-3.5 w-3.5 text-primary" />
               <span className="text-xs font-medium text-primary">Filtro ativo</span>
             </div>
             <Button
               size="sm"
               variant="ghost"
               onClick={clearFilters}
-              className="h-5 w-5 p-0 text-primary hover:bg-primary/20"
+              className="h-6 w-6 p-0 text-primary hover:bg-primary/20 rounded-md"
             >
-              <X className="h-3 w-3" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         )}
@@ -411,28 +412,36 @@ export function ComposicoesCategorySidebar({
         {/* Botão "Todas" */}
         <Button
           variant={!hasActiveFilters ? "default" : "ghost"}
-          className="w-full justify-between h-9 text-sm"
+          className="w-full justify-between h-10 text-sm font-medium"
           onClick={clearFilters}
         >
           <div className="flex items-center gap-2">
             <Package className="h-4 w-4" />
-            <span>Todas</span>
+            <span>Todas as categorias</span>
           </div>
-          <Badge variant={!hasActiveFilters ? "secondary" : "outline"} className="text-xs">
+          <Badge 
+            variant={!hasActiveFilters ? "secondary" : "outline"} 
+            className="text-xs font-medium tabular-nums min-w-[24px] h-5"
+          >
             {totalProducts}
           </Badge>
         </Button>
         
-        <ScrollArea className="h-[50vh]">
-          <div className="space-y-1 pr-2">
+        <ScrollArea className="h-[55vh]">
+          <div className="space-y-1 pr-1">
             {filteredCategories.length > 0 ? (
               filteredCategories.map(category => renderCategoryItem(category))
             ) : (
-              <div className="text-center py-6">
-                <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                <p className="text-xs text-muted-foreground">
-                  {searchTerm ? 'Nenhuma categoria encontrada' : 'Sem categorias'}
+              <div className="text-center py-8">
+                <Package className="h-10 w-10 mx-auto mb-3 text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground font-medium">
+                  {searchTerm ? 'Nenhuma categoria encontrada' : 'Sem categorias disponíveis'}
                 </p>
+                {searchTerm && (
+                  <p className="text-xs text-muted-foreground/70 mt-1">
+                    Tente um termo diferente
+                  </p>
+                )}
               </div>
             )}
           </div>
