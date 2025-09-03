@@ -476,9 +476,9 @@ const Estoque = () => {
               </Card>
 
               {/* Layout principal com sidebar e tabela */}
-              <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+              <div className="flex gap-6">
                 {/* Sidebar de categorias */}
-                <div className="xl:col-span-1">
+                <div className="w-72 flex-shrink-0">
                   <div className="sticky top-6 space-y-6">
                     <SmartCategorySidebar
                       products={products}
@@ -489,7 +489,7 @@ const Estoque = () => {
                 </div>
 
                 {/* Área principal da tabela */}
-                <div className="xl:col-span-3 space-y-6">
+                <div className="flex-1 min-w-0 space-y-6">
                   {/* Indicadores de filtros ativos */}
                   {hasActiveFilters && (
                     <Card className="border-primary/20 bg-primary/5">
