@@ -69,7 +69,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     return columns;
   };
 
-  const templateColumns = tipo === 'produtos' ? [
+  const getProductColumns = () => ([
     { key: 'sku_interno', label: 'SKU Interno', required: true },
     { key: 'nome', label: 'Nome', required: true },
     { key: 'categoria_principal', label: 'Categoria Principal', required: false },
@@ -85,7 +85,9 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     { key: 'codigo_barras', label: 'Código de Barras', required: false },
     { key: 'localizacao', label: 'Localização', required: false },
     { key: 'unidade_medida_id', label: 'Unidade de Medida ID', required: false },
-  ] : getCompositionColumns();
+  ]);
+
+  const templateColumns = tipo === 'produtos' ? getProductColumns() : getCompositionColumns();
 
   const downloadTemplate = async () => {
     if (tipo === 'produtos') {
@@ -280,22 +282,22 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     }
   };
 
-  const validateRow = (row: any, index: number): string[] => {
+  const validateRow = (row: any, index: number, mode: 'produtos' | 'composicoes' = tipo): string[] => {
     const errors: string[] = [];
     
-    if (tipo === 'produtos') {
-      if (!row.sku_interno || row.sku_interno.trim() === '') {
+    if (mode === 'produtos') {
+      if (!row.sku_interno || String(row.sku_interno).trim() === '') {
         errors.push(`Linha ${index + 2}: SKU Interno é obrigatório`);
       }
       
-      if (!row.nome || row.nome.trim() === '') {
+      if (!row.nome || String(row.nome).trim() === '') {
         errors.push(`Linha ${index + 2}: Nome é obrigatório`);
       }
 
       // Validar URL da imagem se fornecida
-      if (row.url_imagem && row.url_imagem.trim() !== '') {
+      if (row.url_imagem && String(row.url_imagem).trim() !== '') {
         try {
-          new URL(row.url_imagem.trim());
+          new URL(String(row.url_imagem).trim());
         } catch {
           errors.push(`Linha ${index + 2}: URL da imagem inválida`);
         }
@@ -310,15 +312,15 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       });
     } else {
       // Validação para composições
-      if (!row.produto || row.produto.trim() === '') {
+      if (!row.produto || String(row.produto).trim() === '') {
         errors.push(`Linha ${index + 2}: Produto é obrigatório`);
       }
       
-      if (!row.sku_pai || row.sku_pai.trim() === '') {
+      if (!row.sku_pai || String(row.sku_pai).trim() === '') {
         errors.push(`Linha ${index + 2}: SKU Pai é obrigatório`);
       }
       
-      if (!row.sku_componente_1 || row.sku_componente_1.trim() === '') {
+      if (!row.sku_componente_1 || String(row.sku_componente_1).trim() === '') {
         errors.push(`Linha ${index + 2}: SKU do componente 1 é obrigatório`);
       }
       
@@ -331,7 +333,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         const skuComponente = row[`sku_componente_${i}`];
         const quantidade = row[`quantidade_${i}`];
         
-        if (skuComponente && skuComponente.trim() !== '') {
+        if (skuComponente && String(skuComponente).trim() !== '') {
           if (!quantidade || isNaN(Number(quantidade)) || Number(quantidade) <= 0) {
             errors.push(`Linha ${index + 2}: quantidade ${i} deve ser um número maior que 0 quando SKU do componente ${i} for informado`);
           }
@@ -351,42 +353,59 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
-      // Escolher a aba com maior correspondência de colunas esperadas para o tipo atual
-      const expectedHeaders = templateColumns.map(c => c.label.toString().trim().toLowerCase());
-      let bestSheet = workbook.SheetNames[0];
-      let bestScore = -1;
-      for (const name of workbook.SheetNames) {
-        const ws = workbook.Sheets[name];
-        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
-        const headersRow = (aoa?.[0] || []).map((h: any) => String(h || '').trim().toLowerCase());
-        const score = headersRow.filter((h: string) => expectedHeaders.includes(h)).length;
-        if (score > bestScore) { bestScore = score; bestSheet = name; }
-      }
-      const worksheet = workbook.Sheets[bestSheet];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      if (jsonData.length === 0) {
-        throw new Error("Planilha vazia ou formato inválido");
-      }
-
-      // Mapear colunas para campos do banco com tolerância a variações no cabeçalho
+      // Normalizador de texto para cabeçalhos
       const normalize = (s: any) => String(s || '').toLowerCase()
         .normalize('NFD').replace(/\p{Diacritic}/gu, '')
         .replace(/[\-_]+/g, ' ')
         .replace(/\s+/g, ' ').trim();
 
-      const aliasMap: Record<string, string[]> = tipo === 'produtos' ? {
+      // Escolher a aba com maior correspondência considerando ambos os formatos
+      const produtosHeaders = getProductColumns().map(c => normalize(c.label));
+      const composicoesHeaders = getCompositionColumns().map(c => normalize(c.label));
+      const expectedHeaders = Array.from(new Set([...produtosHeaders, ...composicoesHeaders]));
+
+      let bestSheet = workbook.SheetNames[0];
+      let bestScore = -1;
+      for (const name of workbook.SheetNames) {
+        const ws = workbook.Sheets[name];
+        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+        const headersRow = (aoa?.[0] || []).map((h: any) => normalize(h));
+        const score = headersRow.filter((h: string) => expectedHeaders.includes(h)).length;
+        if (score > bestScore) { bestScore = score; bestSheet = name; }
+      }
+
+      const worksheet = workbook.Sheets[bestSheet];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      if (jsonData.length === 0) {
+        throw new Error("Planilha vazia ou formato inválido");
+      }
+
+      // Detectar automaticamente o tipo a partir dos cabeçalhos
+      const aoaSelected = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+      const headersNorm = (aoaSelected?.[0] || []).map((h: any) => normalize(h));
+      const isComposicoesSheet = headersNorm.includes(normalize('SKU do componente 1')) || headersNorm.includes(normalize('SKU Pai'));
+      const isProdutosSheet = headersNorm.includes(normalize('SKU Interno')) || headersNorm.includes(normalize('Nome'));
+      const importMode: 'produtos' | 'composicoes' = isComposicoesSheet ? 'composicoes' : (isProdutosSheet ? 'produtos' : tipo);
+      if (importMode !== tipo) {
+        toast({ title: 'Tipo detectado automaticamente', description: `Detectamos um arquivo de ${importMode}. Vamos importar nesse modo.` });
+      }
+
+      const columnsToUse = importMode === tipo ? templateColumns : (importMode === 'produtos' ? getProductColumns() : getCompositionColumns());
+
+      // Aliases apenas para produtos (planilhas do estoque variam bastante)
+      const aliasMap: Record<string, string[]> = importMode === 'produtos' ? {
         sku_interno: ['sku', 'sku interno', 'sku do produto', 'sku produto', 'sku estoque', 'sku_interno', 'sku-interno'],
         nome: ['nome', 'nome do produto', 'produto', 'titulo', 'título'],
       } : {};
 
+      // Mapeamento tolerante usando os cabeçalhos da planilha
       const mappedData = (XLSX.utils.sheet_to_json(worksheet) as any[]).map((row: any) => {
         const mappedRow: any = {};
-        // Mapa (cabeçalho normalizado -> cabeçalho original)
         const headerMap: Record<string, string> = {};
         Object.keys(row).forEach((h) => { headerMap[normalize(h)] = h; });
 
-        templateColumns.forEach(col => {
+        columnsToUse.forEach(col => {
           let value: any = '';
           const primary = headerMap[normalize(col.label)];
           if (primary) {
@@ -411,7 +430,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       let rowsToReactivate: { id: string; data: any }[] = [];
       // Armazenar pais (kits) detectados durante o pré-processamento das composições
       let parentRows: Record<string, { nome: string; categoria_principal: string | null }> = {};
-      if (tipo === 'produtos') {
+      if (importMode === 'produtos') {
         // Verificar SKUs duplicados na planilha
         const skus = mappedData.map(row => row.sku_interno).filter(Boolean);
         const duplicateSkus = skus.filter((sku, index) => skus.indexOf(sku) !== index);
@@ -448,7 +467,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         }
 
         mappedData.forEach((row, index) => {
-          const rowErrors = validateRow(row, index);
+          const rowErrors = validateRow(row, index, 'produtos');
           const existing = existingMap[row.sku_interno];
           const isActiveDuplicate = !!existing && existing.ativo === true;
           
