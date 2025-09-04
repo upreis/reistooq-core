@@ -442,49 +442,56 @@ export function ComposicoesEstoque() {
                         const componenteNaoExiste = comp.nome_componente === comp.sku_componente;
                         
                         return (
-                          <div 
-                            key={index} 
-                            className={`grid grid-cols-[1fr_auto_auto] gap-3 items-center text-xs rounded px-2 py-1 ${
-                              componenteNaoExiste
-                                ? 'bg-destructive text-destructive-foreground border border-destructive'
-                                : isLimitante 
-                                ? 'bg-destructive/10 border border-destructive/30' 
-                                : ''
-                            }`}
-                          >
-                            {componenteNaoExiste ? (
-                              <div className="col-span-3 flex items-center justify-between w-full">
-                                <div className="flex items-center gap-2">
+                          <div key={index} className="relative">
+                            {/* Badge "NÃO CADASTRADO" no canto superior */}
+                            {componenteNaoExiste && (
+                              <div className="absolute -top-1 -right-1 z-10">
+                                <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 font-medium">
+                                  NÃO CADASTRADO
+                                </Badge>
+                              </div>
+                            )}
+                            
+                            <div 
+                              className={`grid grid-cols-[1fr_auto_auto] gap-3 items-center text-xs rounded px-2 py-1 ${
+                                componenteNaoExiste
+                                  ? 'bg-destructive text-destructive-foreground border border-destructive'
+                                  : isLimitante 
+                                  ? 'bg-destructive/10 border border-destructive/30' 
+                                  : ''
+                              }`}
+                            >
+                              {componenteNaoExiste ? (
+                                <div className="col-span-3 flex items-center justify-between w-full">
                                   <Badge variant="outline" className="border-destructive-foreground text-destructive-foreground font-mono text-[11px] px-1.5 py-0.5">
                                     {comp.sku_componente}
                                   </Badge>
-                                  <span className="text-[11px] font-medium whitespace-nowrap">NÃO CADASTRADO</span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
+                                    className="h-5 px-2 text-[10px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary flex-shrink-0"
+                                  >
+                                    <Plus className="h-2.5 w-2.5 mr-1" />
+                                    Cadastrar
+                                  </Button>
                                 </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
-                                  className="h-5 px-2 text-[10px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary flex-shrink-0"
-                                >
-                                  <Plus className="h-2.5 w-2.5 mr-1" />
-                                  Cadastrar
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center gap-1">
-                                  <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5">
-                                    {comp.sku_componente}
-                                  </Badge>
-                                </div>
-                                <div className="text-right text-muted-foreground">
-                                  {formatMoney(custoUnitario)}
-                                </div>
-                                <div className="text-right text-muted-foreground">
-                                  {comp.quantidade}x
-                                </div>
-                              </>
-                            )}
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-1">
+                                    <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5">
+                                      {comp.sku_componente}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-right text-muted-foreground">
+                                    {formatMoney(custoUnitario)}
+                                  </div>
+                                  <div className="text-right text-muted-foreground">
+                                    {comp.quantidade}x
+                                  </div>
+                                </>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
