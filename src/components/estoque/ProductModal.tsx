@@ -374,9 +374,14 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                       disabled={!selectedCategoriaPrincipal}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Ex: Smartphones" />
+                        <SelectValue placeholder={!selectedCategoriaPrincipal ? "Selecione uma categoria principal" : getCategorias(selectedCategoriaPrincipal).length === 0 ? "Nenhuma categoria disponível" : "Ex: Smartphones"} />
                       </SelectTrigger>
                       <SelectContent>
+                        {getCategorias(selectedCategoriaPrincipal).length === 0 && (
+                          <div className="p-2 text-muted-foreground text-sm">
+                            Nenhuma categoria disponível para esta categoria principal
+                          </div>
+                        )}
                         {getCategorias(selectedCategoriaPrincipal).map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             {cat.nome}
@@ -398,9 +403,14 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                       disabled={!selectedCategoria}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Ex: iPhone" />
+                        <SelectValue placeholder={!selectedCategoria ? "Selecione uma categoria" : getSubcategorias(selectedCategoria).length === 0 ? "Nenhuma subcategoria disponível" : "Ex: iPhone"} />
                       </SelectTrigger>
                       <SelectContent>
+                        {getSubcategorias(selectedCategoria).length === 0 && (
+                          <div className="p-2 text-muted-foreground text-sm">
+                            Nenhuma subcategoria disponível para esta categoria
+                          </div>
+                        )}
                         {getSubcategorias(selectedCategoria).map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             {cat.nome}
