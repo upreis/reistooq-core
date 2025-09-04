@@ -534,6 +534,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           const rowErrors = validateRow(row, index);
           if (rowErrors.length > 0) {
             allErrors.push(...rowErrors);
+            failedRows.push({ row: index + 2, data: row, error: rowErrors.join('; ') });
             return;
           }
           
@@ -666,15 +667,26 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         const invalidComponents = [];
         const parentSkus = new Set(Object.keys(parentRows));
         
-        for (const row of mappedData) {
+        // Mapear linhas com componentes inválidos e registrar como falhas
+        const invalidRowIndexes: number[] = [];
+        for (let i = 0; i < mappedData.length; i++) {
+          const row = mappedData[i];
           // SKU componente deve existir no cadastro OU ser um SKU pai OU ser auto-referência (componente == produto)
           const isSelfReference = row.sku_componente === row.sku_produto;
           if (!existingSkuSet.has(row.sku_componente) && !parentSkus.has(row.sku_componente) && !isSelfReference) {
             invalidComponents.push(row.sku_componente);
             allErrors.push(`SKU Componente não encontrado: ${row.sku_componente}`);
+            invalidRowIndexes.push(i);
           }
         }
-        
+        invalidRowIndexes.forEach((i) => {
+          const row = mappedData[i];
+          failedRows.push({
+            row: i + 2,
+            data: row,
+            error: `SKU Componente não encontrado: ${row.sku_componente}`,
+          });
+        });
         if (allErrors.length > 0) {
           if (!importOnlyValid) {
             // Modo "tudo ou nada" - rejeitar tudo se há erros
@@ -766,6 +778,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
             successCount++;
           } catch (error: any) {
             processingErrors.push(`Erro ao processar linha ${i + 2} (${row.sku_produto} -> ${row.sku_componente}): ${error.message}`);
+            failedRows.push({ row: i + 2, data: row, error: error.message || 'Erro desconhecido' });
           }
           
           setProgress(((i + 1) / mappedData.length) * 100);
@@ -775,7 +788,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           success: successCount,
           errors: processingErrors,
           warnings: warnings,
-          failed: []
+          failed: failedRows
         });
 
         if (successCount > 0) {
@@ -1043,6 +1056,25 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
                       </ul>
                     </AlertDescription>
                   </Alert>
+                )}
+
+                {result.failed && result.failed.length > 0 && result.errors.length === 0 && (
+                  <div className="mt-2 pt-4 border-t space-y-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => downloadFailedItemsReport(
+                        result.failed, 
+                        `itens_com_erro_${tipo}_${new Date().toISOString().split('T')[0]}.xlsx`
+                      )}
+                      className="w-full"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Baixar Relatório de Itens Ignorados ({result.failed.length} itens)
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
+                      Alguns itens foram ignorados durante a importação. Baixe o relatório para corrigi-los.
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
