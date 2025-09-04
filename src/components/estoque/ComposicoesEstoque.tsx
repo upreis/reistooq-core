@@ -444,14 +444,6 @@ export function ComposicoesEstoque() {
                         return (
                           <div key={index} className="relative">
                             {/* Badge "NÃO CADASTRADO" no canto superior */}
-                            {componenteNaoExiste && (
-                              <div className="absolute -top-1 -right-1 z-10">
-                                <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 font-medium">
-                                  NÃO CADASTRADO
-                                </Badge>
-                              </div>
-                            )}
-                            
                             <div 
                               className={`grid grid-cols-[1fr_auto_auto] gap-3 items-center text-xs rounded px-2 py-1 ${
                                 componenteNaoExiste
@@ -555,7 +547,7 @@ export function ComposicoesEstoque() {
                                 ? 'border-destructive/30 bg-destructive/5' 
                                 : 'border-border'
                             } relative`}>
-                              {componenteNaoExiste ? (
+                              {false ? (
                                 <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-md font-medium">
                                   NÃO CADASTRADO
                                 </div>
