@@ -678,16 +678,23 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
             invalidRowIndexes.push(i);
           }
         }
+        
+        // Componentes não encontrados viram avisos, não impedem a importação
+        const missingComponents = new Set<string>();
         invalidRowIndexes.forEach((i) => {
           const row = mappedData[i];
-          failedRows.push({
-            row: i + 2,
-            data: row,
-            error: `SKU Componente não encontrado: ${row.sku_componente}`,
-          });
+          missingComponents.add(row.sku_componente);
         });
+        
+        if (missingComponents.size > 0) {
+          warnings.push(
+            `⚠️ ${missingComponents.size} componente(s) não encontrado(s) no controle de estoque: ${Array.from(missingComponents).join(', ')}. ` +
+            `É necessário cadastrar estes componentes na aba "Estoque" antes de utilizá-los em composições.`
+          );
+        }
+        
+        // Continuar com a importação apenas dos itens válidos
         if (allErrors.length > 0) {
-          // Rejeitar completamente a importação se há erros
           setResult({ success: 0, errors: allErrors, warnings: [], failed: failedRows });
           return;
         }
