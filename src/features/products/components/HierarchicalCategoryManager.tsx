@@ -206,7 +206,7 @@ export function HierarchicalCategoryManager() {
         : 0;
     
     const hasSubcategories = subcategoriesCount > 0;
-    const isClickable = !!onClick && hasSubcategories;
+    const isClickable = !!onClick; // Permitir navegação mesmo sem subitens para criar novos
 
     return (
       <Card 
