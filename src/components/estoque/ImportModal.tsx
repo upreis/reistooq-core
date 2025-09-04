@@ -605,8 +605,9 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         const parentSkus = new Set(Object.keys(parentRows));
         
         for (const row of mappedData) {
-          // SKU componente deve existir OU ser um dos SKUs pai (para permitir auto-referência)
-          if (!existingSkuSet.has(row.sku_componente) && !parentSkus.has(row.sku_componente)) {
+          // SKU componente deve existir no cadastro OU ser um SKU pai OU ser auto-referência (componente == produto)
+          const isSelfReference = row.sku_componente === row.sku_produto;
+          if (!existingSkuSet.has(row.sku_componente) && !parentSkus.has(row.sku_componente) && !isSelfReference) {
             invalidComponents.push(row.sku_componente);
             allErrors.push(`SKU Componente não encontrado: ${row.sku_componente}`);
           }
@@ -620,7 +621,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           } else {
             // Modo "apenas válidos" - filtrar itens válidos
             const validData = mappedData.filter(row => 
-              existingSkuSet.has(row.sku_componente) || parentSkus.has(row.sku_componente)
+              existingSkuSet.has(row.sku_componente) || parentSkus.has(row.sku_componente) || row.sku_componente === row.sku_produto
             );
             mappedData.length = 0;
             mappedData.push(...validData);
