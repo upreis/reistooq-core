@@ -324,12 +324,13 @@ export function HierarchicalCategoryManager() {
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => {
+                onClick={async () => {
                   toast({
-                    title: "🔄 Atualizando categorias",
-                    description: "Recarregando hierarquia de categorias...",
+                    title: "🔄 Sincronizando categorias",
+                    description: "Criando/atualizando a hierarquia padrão e recarregando...",
                   });
-                  refreshCategories();
+                  await syncCategories();
+                  await refreshCategories();
                 }}
               >
                 <BarChart3 className="h-4 w-4 mr-2" />
