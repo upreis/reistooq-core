@@ -628,6 +628,35 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           }
         }
         
+        // Converter "Uni medida" textual para ID da unidade de medida
+        try {
+          const { data: unidades } = await supabase
+            .from('unidades_medida')
+            .select('id, nome, abreviacao')
+            .eq('ativo', true);
+
+          const unidadeMap = new Map<string, string>();
+          (unidades || []).forEach((u: any) => {
+            if (u.nome) unidadeMap.set(String(u.nome).trim().toLowerCase(), u.id);
+            if (u.abreviacao) unidadeMap.set(String(u.abreviacao).trim().toLowerCase(), u.id);
+          });
+
+          mappedData.forEach((row: any) => {
+            if (row.unidade_medida_id) {
+              const key = String(row.unidade_medida_id).trim().toLowerCase();
+              const id = unidadeMap.get(key);
+              if (id) {
+                row.unidade_medida_id = id;
+              } else {
+                warnings.push(`Unidade de medida "${row.unidade_medida_id}" não encontrada para ${row.sku_produto} -> ${row.sku_componente}. Definido como vazio.`);
+                row.unidade_medida_id = null;
+              }
+            }
+          });
+        } catch (e) {
+          console.warn('Não foi possível mapear unidades de medida, prosseguindo sem ID.', e);
+        }
+
         // Buscar organization_id do usuário atual
         const { data: profileData } = await supabase
           .from('profiles')
