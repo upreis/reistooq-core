@@ -535,7 +535,6 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           if (rowErrors.length > 0) {
             allErrors.push(...rowErrors);
             failedRows.push({ row: index + 2, data: row, error: rowErrors.join('; ') });
-            return;
           }
           
           // Registrar informações do SKU Pai (apenas se não existir ainda)
@@ -688,19 +687,9 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           });
         });
         if (allErrors.length > 0) {
-          if (!importOnlyValid) {
-            // Modo "tudo ou nada" - rejeitar tudo se há erros
-            setResult({ success: 0, errors: allErrors, warnings: [], failed: failedRows });
-            return;
-          } else {
-            // Modo "apenas válidos" - filtrar itens válidos
-            const validData = mappedData.filter(row => 
-              existingSkuSet.has(row.sku_componente) || parentSkus.has(row.sku_componente) || row.sku_componente === row.sku_produto
-            );
-            mappedData.length = 0;
-            mappedData.push(...validData);
-            warnings.push(`${invalidComponents.length} componentes inválidos foram ignorados: ${[...new Set(invalidComponents)].join(', ')}`);
-          }
+          // Rejeitar completamente a importação se há erros
+          setResult({ success: 0, errors: allErrors, warnings: [], failed: failedRows });
+          return;
         }
         
         // Converter "Uni medida" textual para ID da unidade de medida
