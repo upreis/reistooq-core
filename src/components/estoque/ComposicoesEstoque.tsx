@@ -459,23 +459,25 @@ export function ComposicoesEstoque() {
                                 {comp.sku_componente}
                                </Badge>
                                {componenteNaoExiste && (
-                                 <>
+                                 <div className="flex items-center gap-1">
                                    <span className="text-[9px] font-medium">NÃO CADASTRADO</span>
                                    <Button
                                      variant="outline"
                                      size="sm"
                                      onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
-                                     className="ml-1 h-4 px-1 text-[9px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary"
+                                     className="h-4 px-1 text-[9px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary"
                                    >
                                      <Plus className="h-2 w-2 mr-0.5" />
                                      Cadastrar
                                    </Button>
-                                 </>
+                                 </div>
                                )}
                              </div>
-                            <div className="text-right text-muted-foreground">
-                              {formatMoney(custoUnitario)}
-                            </div>
+                            {!componenteNaoExiste && (
+                              <div className="text-right text-muted-foreground">
+                                {formatMoney(custoUnitario)}
+                              </div>
+                            )}
                             <div className="text-right text-muted-foreground">
                               {comp.quantidade}x
                             </div>
