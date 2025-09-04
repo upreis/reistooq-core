@@ -57,9 +57,10 @@ interface ProductModalProps {
   product?: Product | null;
   onSuccess: () => void;
   initialBarcode?: string;
+  initialSku?: string;
 }
 
-export function ProductModal({ open, onOpenChange, product, onSuccess, initialBarcode }: ProductModalProps) {
+export function ProductModal({ open, onOpenChange, product, onSuccess, initialBarcode, initialSku }: ProductModalProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -113,7 +114,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
       
       form.reset({
-        sku_interno: "",
+        sku_interno: initialSku || "",
         nome: "",
         categoria: "",
         descricao: "",
@@ -130,7 +131,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       setImageFile(null);
       setImagePreview(null);
     }
-  }, [product, open, form, initialBarcode, getUnidadeBasePorTipo, unidades]);
+  }, [product, open, form, initialBarcode, initialSku, getUnidadeBasePorTipo, unidades]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

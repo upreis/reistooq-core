@@ -15,12 +15,13 @@ import { ComposicoesModal } from "./ComposicoesModal";
 import { ImportModal } from "./ImportModal";
 import { ImportarProdutosModal } from "../composicoes/ImportarProdutosModal";
 import { adaptProdutoComposicaoToModalProduct } from "../composicoes/ComposicoesModalAdapter";
+import { ProductModal } from "./ProductModal";
 import { ComposicoesCategorySidebar } from "./ComposicoesCategorySidebar";
 import { ComposicoesFilters } from "./ComposicoesFilters";
 import { useComposicoesFilters } from "@/features/estoque/hooks/useComposicoesFilters";
 import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
-import { Product } from "@/hooks/useProducts";
+import { Product, useProducts } from "@/hooks/useProducts";
 import { toast } from "sonner";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,8 @@ export function ComposicoesEstoque() {
   const [importProdutosModalOpen, setImportProdutosModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [skuParaCadastro, setSkuParaCadastro] = useState<string>("");
   const { isCollapsed: sidebarCollapsed, toggleCollapse: toggleSidebar } = useSidebarCollapse();
   
   // Filtros hierárquicos para o sidebar
@@ -81,6 +84,9 @@ export function ComposicoesEstoque() {
   } = useProdutosComposicoes();
 
   const { getComposicoesForSku, loadComposicoes, composicoes } = useComposicoesEstoque();
+
+  // Hook para produtos do controle de estoque (para criar novos produtos)
+  const { createProduct } = useProducts();
 
   // Hook para filtros inteligentes
   const { filters, setFilters, filteredData, stats } = useComposicoesFilters(produtos, composicoes, custosProdutos);
@@ -280,6 +286,20 @@ export function ComposicoesEstoque() {
     }
   };
 
+  // Funções para cadastro de novos produtos
+  const abrirModalCadastroProduto = (sku: string) => {
+    setSkuParaCadastro(sku);
+    setProductModalOpen(true);
+  };
+
+  const handleSuccessProduct = () => {
+    setProductModalOpen(false);
+    setSkuParaCadastro("");
+    // Recarregar composições para atualizar dados
+    loadComposicoes();
+    sincronizarComponentes();
+  };
+
   const renderProductCard = (product: ProdutoComposicao) => {
     const composicoes = getComposicoesForSku(product.sku_interno);
     
@@ -437,11 +457,22 @@ export function ComposicoesEstoque() {
                                 componenteNaoExiste ? 'border-destructive-foreground text-destructive-foreground' : ''
                               }`}>
                                 {comp.sku_componente}
-                              </Badge>
-                              {componenteNaoExiste && (
-                                <span className="text-[9px] font-medium">NÃO CADASTRADO</span>
-                              )}
-                            </div>
+                               </Badge>
+                               {componenteNaoExiste && (
+                                 <>
+                                   <span className="text-[9px] font-medium">NÃO CADASTRADO</span>
+                                   <Button
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
+                                     className="ml-1 h-4 px-1 text-[9px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary"
+                                   >
+                                     <Plus className="h-2 w-2 mr-0.5" />
+                                     Cadastrar
+                                   </Button>
+                                 </>
+                               )}
+                             </div>
                             <div className="text-right text-muted-foreground">
                               {formatMoney(custoUnitario)}
                             </div>
@@ -549,6 +580,21 @@ export function ComposicoesEstoque() {
                                   <div className="font-semibold">{formatMoney(custoTotalItem)}</div>
                                 </div>
                               </div>
+                              
+                              {/* Botão de cadastro para componentes não cadastrados */}
+                              {componenteNaoExiste && (
+                                <div className="mt-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
+                                    className="w-full text-xs bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary"
+                                  >
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Cadastrar Produto
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -825,6 +871,14 @@ export function ComposicoesEstoque() {
         onOpenChange={setImportProdutosModalOpen}
         onImportar={importarDoEstoque}
         isImporting={isImporting}
+      />
+
+      {/* Modal de Cadastro de Produto */}
+      <ProductModal
+        open={productModalOpen}
+        onOpenChange={setProductModalOpen}
+        initialSku={skuParaCadastro}
+        onSuccess={handleSuccessProduct}
       />
     </div>
   );
