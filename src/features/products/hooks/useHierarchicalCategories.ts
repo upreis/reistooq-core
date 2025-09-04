@@ -1,7 +1,7 @@
 // Hook para gerenciar categorias hierárquicas (Categoria Principal > Categoria > Subcategoria)
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { CategoryHierarchyGenerator } from '@/utils/categoryHierarchyGenerator';
+import { useCurrentProfile } from '@/hooks/useCurrentProfile';
 
 export interface HierarchicalCategory {
   id: string;
@@ -36,16 +36,30 @@ export const useHierarchicalCategories = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { profile, loading: profileLoading } = useCurrentProfile();
+  const orgId = profile?.organizacao_id || null;
+  const generationAttemptedRef = useRef(false);
+  const autoGenDisabledRef = useRef(false);
+
   const loadCategories = async () => {
     try {
+      if (profileLoading) return; // Aguarda perfil
+
       setLoading(true);
       setError(null);
       
-      console.log('🔍 Carregando categorias hierárquicas...');
+      if (!orgId) {
+        console.warn('⚠️ Organização não disponível. Pulando carregamento de categorias.');
+        setCategories([]);
+        return;
+      }
+      
+      console.log('🔍 Carregando categorias hierárquicas para org:', orgId);
       
       const { data, error } = await supabase
         .from('categorias_produtos')
         .select('*')
+        .eq('organization_id', orgId)
         .eq('ativo', true)
         .order('nivel', { ascending: true })
         .order('ordem', { ascending: true })
@@ -71,6 +85,15 @@ export const useHierarchicalCategories = () => {
 
   const checkAndGenerateHierarchy = async (currentCategories: HierarchicalCategory[]) => {
     try {
+      if (autoGenDisabledRef.current) {
+        console.warn('⏹️ Auto-geração desabilitada nesta sessão (RLS bloqueou inserções).');
+        return;
+      }
+      if (generationAttemptedRef.current) {
+        console.log('ℹ️ Auto-geração já foi tentada nesta sessão.');
+        return;
+      }
+
       // Contar categorias por nível
       const level1Count = currentCategories.filter(c => c.nivel === 1).length;
       const level2Count = currentCategories.filter(c => c.nivel === 2).length;
@@ -83,8 +106,9 @@ export const useHierarchicalCategories = () => {
         'Total': currentCategories.length
       });
       
-      // SEMPRE criar hierarquia se não há categorias de nível 2 ou se há muito poucas
+      // Criar hierarquia se há poucas categorias nível 2
       if (level2Count < 10) {
+        generationAttemptedRef.current = true;
         console.log('🔄 Iniciando criação da hierarquia completa...');
         await createCompleteHierarchy();
         return;
@@ -96,10 +120,15 @@ export const useHierarchicalCategories = () => {
       console.error('❌ Erro na verificação automática:', error);
     }
   };
-
   const createCompleteHierarchy = async () => {
     try {
+      if (!orgId) {
+        console.warn('⚠️ Organização não disponível. Abortando criação automática.');
+        return;
+      }
       console.log('🔄 Criando hierarquia completa de categorias...');
+      let hadRlsError = false;
+      let createdAny = false;
       
       // Estrutura completa extraída das imagens
       const hierarchyData = {
@@ -163,6 +192,7 @@ export const useHierarchicalCategories = () => {
           .select('id')
           .eq('nome', principalName)
           .eq('nivel', 1)
+          .eq('organization_id', orgId)
           .maybeSingle();
 
         let principalId = existingPrincipal?.id;
@@ -176,16 +206,18 @@ export const useHierarchicalCategories = () => {
               nivel: 1,
               ativo: true,
               ordem: Object.keys(hierarchyData).indexOf(principalName) + 1,
-              organization_id: null as any // Bypass TypeScript para permitir NULL
+              organization_id: orgId
             })
             .select('id')
             .maybeSingle();
 
           if (principalError) {
+            if ((principalError as any).code === '42501') hadRlsError = true;
             console.error('❌ Erro ao criar categoria principal:', principalError);
             continue;
           }
           
+          createdAny = true;
           principalId = newPrincipal?.id;
           console.log(`✅ Categoria principal criada: ${principalName}`);
         } else {
@@ -222,7 +254,7 @@ export const useHierarchicalCategories = () => {
                 categoria_principal_id: principalId,
                 ativo: true,
                 ordem: Object.keys(categories).indexOf(categoryName) + 1,
-                organization_id: null as any // Bypass TypeScript para permitir NULL
+                organization_id: orgId
               })
               .select('id')
               .maybeSingle();
@@ -265,12 +297,14 @@ export const useHierarchicalCategories = () => {
                   categoria_id: categoryId,
                   ativo: true,
                   ordem: i + 1,
-                  organization_id: null as any // Bypass TypeScript para permitir NULL
+                  organization_id: orgId
                 });
 
               if (subcategoryError) {
+                if ((subcategoryError as any).code === '42501') hadRlsError = true;
                 console.error('❌ Erro ao criar subcategoria:', subcategoryError);
               } else {
+                createdAny = true;
                 console.log(`      ✅ Subcategoria criada: ${subcategoryName}`);
               }
             } else {
