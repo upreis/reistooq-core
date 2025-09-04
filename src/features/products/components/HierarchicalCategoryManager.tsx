@@ -44,7 +44,7 @@ export function HierarchicalCategoryManager() {
     getCategorias,
     getSubcategorias,
     refreshCategories,
-    seedDefaultCategories
+    syncCategories
   } = useHierarchicalCategories();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -177,15 +177,15 @@ export function HierarchicalCategoryManager() {
 
   const handleSeedCategories = async () => {
     try {
-      const result = await seedDefaultCategories() as any;
+      await syncCategories();
       toast({
-        title: "✅ Categorias criadas",
-        description: `Hierarquia completa criada: ${result.created_level1} principais, ${result.created_level2} categorias, ${result.created_level3} subcategorias`,
+        title: "✅ Categorias sincronizadas",
+        description: "Hierarquia completa foi criada com sucesso",
       });
     } catch (error) {
       toast({
         title: "❌ Erro",
-        description: "Erro ao criar categorias padrão. Tente novamente.",
+        description: "Erro ao sincronizar categorias. Tente novamente.",
         variant: "destructive",
       });
     }
