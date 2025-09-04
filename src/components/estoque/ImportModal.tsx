@@ -662,41 +662,27 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         
         const existingSkuSet = new Set((existingComponents || []).map(p => p.sku_interno));
         
-        // Validar se todos os SKUs de componentes existem
-        const invalidComponents = [];
+        // Identificar componentes não cadastrados para avisos (mas não impedir importação)
         const parentSkus = new Set(Object.keys(parentRows));
+        const missingComponents = new Set<string>();
         
-        // Mapear linhas com componentes inválidos e registrar como falhas
-        const invalidRowIndexes: number[] = [];
         for (let i = 0; i < mappedData.length; i++) {
           const row = mappedData[i];
           // SKU componente deve existir no cadastro OU ser um SKU pai OU ser auto-referência (componente == produto)
           const isSelfReference = row.sku_componente === row.sku_produto;
           if (!existingSkuSet.has(row.sku_componente) && !parentSkus.has(row.sku_componente) && !isSelfReference) {
-            invalidComponents.push(row.sku_componente);
-            allErrors.push(`SKU Componente não encontrado: ${row.sku_componente}`);
-            invalidRowIndexes.push(i);
+            missingComponents.add(row.sku_componente);
+            // Para componentes não encontrados, usar o próprio SKU como nome (para aparecer como "NÃO CADASTRADO" na UI)
+            row.nome_componente = row.sku_componente;
           }
         }
         
-        // Componentes não encontrados viram avisos, não impedem a importação
-        const missingComponents = new Set<string>();
-        invalidRowIndexes.forEach((i) => {
-          const row = mappedData[i];
-          missingComponents.add(row.sku_componente);
-        });
-        
         if (missingComponents.size > 0) {
           warnings.push(
-            `⚠️ ${missingComponents.size} componente(s) não encontrado(s) no controle de estoque: ${Array.from(missingComponents).join(', ')}. ` +
-            `É necessário cadastrar estes componentes na aba "Estoque" antes de utilizá-los em composições.`
+            `⚠️ ${missingComponents.size} componente(s) não encontrado(s) no controle de estoque serão importados como "NÃO CADASTRADO": ${Array.from(missingComponents).join(', ')}. ` +
+            `Use o botão "+ Cadastrar" para registrá-los no estoque.`
           );
         }
-        
-        // Filtrar apenas os itens válidos para importação (remover os com componentes não encontrados)
-        const validData = mappedData.filter((_, index) => !invalidRowIndexes.includes(index));
-        mappedData.length = 0;
-        mappedData.push(...validData);
         
         // Apenas interromper se há outros tipos de erros (não relacionados a componentes não encontrados)
         const nonComponentErrors = allErrors.filter(error => !error.includes('SKU Componente não encontrado'));
