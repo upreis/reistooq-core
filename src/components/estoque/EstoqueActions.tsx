@@ -32,7 +32,9 @@ import {
   AlertTriangle,
   BarChart3,
   Package,
+  Settings,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import * as XLSX from 'xlsx';
 import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
@@ -195,6 +197,14 @@ export function EstoqueActions({
             {lowStockCount + outOfStockCount}
           </Badge>
         )}
+      </Button>
+
+      {/* Botão Gerenciar Categorias */}
+      <Button variant="outline" asChild className="gap-2">
+        <Link to="/category-manager">
+          <Settings className="w-4 h-4" />
+          Gerenciar Categorias
+        </Link>
       </Button>
 
       {/* Modal Retorno de Estoque */}
