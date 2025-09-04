@@ -78,6 +78,18 @@ export const useCatalogCategories = () => {
   useEffect(() => {
     loadCategories();
   }, []);
+  
+  // Forçar reload na montagem do componente
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (categories.length === 0) {
+        console.log('🔄 Recarregando categorias automaticamente...');
+        loadCategories();
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [categories.length]);
 
   return {
     categories,

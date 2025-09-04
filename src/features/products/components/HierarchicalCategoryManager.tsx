@@ -1,5 +1,5 @@
 // Visualizador do catálogo global de categorias (somente leitura)
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, ChevronRight, Tags, Layers, Package, Search, Filter, RefreshCw, BookOpen, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +26,11 @@ export function HierarchicalCategoryManager() {
     getSubcategorias,
     refreshCategories
   } = useCatalogCategories();
+  
+  // Limpar cache e forçar reload na montagem
+  useEffect(() => {
+    refreshCategories();
+  }, []);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState<number | null>(null);
