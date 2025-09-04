@@ -463,17 +463,7 @@ const Estoque = () => {
                 </h1>
               </div>
               
-              {/* Actions no header com melhor organização */}
-              <div className="flex items-center gap-3 flex-wrap justify-end">
-                <EstoqueActions
-                  onNewProduct={handleNewProduct}
-                  onDeleteSelected={handleDeleteSelected}
-                  onRefresh={handleRefresh}
-                  onSendAlerts={handleSendAlerts}
-                  selectedProducts={selectedProducts}
-                  products={products}
-                />
-              </div>
+            
             </div>
 
             {/* Stats Cards com melhor espaçamento */}
@@ -507,6 +497,18 @@ const Estoque = () => {
             </div>
             
             <TabsContent value="estoque" className="space-y-8">
+              {/* Actions específicas da aba Controle de Estoque */}
+              <div className="flex items-center gap-3 flex-wrap justify-end mb-6">
+                <EstoqueActions
+                  onNewProduct={handleNewProduct}
+                  onDeleteSelected={handleDeleteSelected}
+                  onRefresh={handleRefresh}
+                  onSendAlerts={handleSendAlerts}
+                  selectedProducts={selectedProducts}
+                  products={products}
+                />
+              </div>
+
               {/* Busca e Filtros Inteligentes na aba Controle de Estoque */}
               <div className="flex gap-4 items-start">
                 {/* Busca */}
