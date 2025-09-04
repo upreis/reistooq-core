@@ -74,31 +74,130 @@ export const useHierarchicalCategories = () => {
       // Contar categorias por nível
       const level1Count = currentCategories.filter(c => c.nivel === 1).length;
       const level2Count = currentCategories.filter(c => c.nivel === 2).length;
-      const level3Count = currentCategories.filter(c => c.nivel === 3).length;
       
-      // Se há categorias principais mas poucas subcategorias, verificar se há produtos com hierarquia
-      if (level1Count > 0 && level2Count + level3Count < 5) {
-        const { data: products } = await supabase
-          .from('produtos')
-          .select('categoria')
-          .not('categoria', 'is', null)
-          .like('categoria', '%→%')
-          .limit(1);
-        
-        // Se há produtos com hierarquia, gerar automaticamente
-        if (products && products.length > 0) {
-          console.log('🔄 Auto-gerando hierarquia de categorias...');
-          const result = await CategoryHierarchyGenerator.generateFromProducts();
-          if (result.success && result.created && result.created > 0) {
-            console.log(`✅ ${result.created} categorias geradas automaticamente`);
-            // Recarregar categorias após geração
-            setTimeout(() => loadCategories(), 1000);
-          }
-        }
+      // Se não há muitas categorias, criar a estrutura completa das imagens
+      if (level1Count < 5) {
+        await createCompleteHierarchy();
       }
     } catch (error) {
       console.log('Erro na verificação automática:', error);
-      // Não exibir erro para o usuário, é um processo em background
+    }
+  };
+
+  const createCompleteHierarchy = async () => {
+    try {
+      console.log('🔄 Criando hierarquia completa de categorias...');
+      
+      // Estrutura completa extraída das imagens
+      const hierarchyData = {
+        'Beleza e Cuidado Pessoal': {
+          'Barbearia': ['Navalhas de Barbear', 'Pentes Alisadores de Barbas', 'Pincéis de Barba', 'Produtos Pós Barba'],
+          'Cuidados com a Pele': ['Autobronzeador', 'Cuidado Facial', 'Cuidado do Corpo', 'Proteção Solar'],
+          'Cuidados com o Cabelo': ['Cremes de Pentear', 'Fixadores para o Cabelo', 'Tratamentos com Cabelo'],
+          'Farmácia': ['Algodões', 'Bandagens', 'Bicarbonato de Sódio', 'Bolsas de Colostomia'],
+          'Higiene Pessoal': ['Absorventes para Axilas', 'Barbeadores Descartáveis', 'Cartuchos para Barbeadores'],
+          'Manicure e Pedicure': ['Acetonas', 'Decoração de Unhas', 'Dedos para Treino', 'Diluentes de Esmaltes']
+        },
+        'Bebês': {
+          'Higiene e Cuidados com o Bebê': ['Escovas e Pentes', 'Esponjas de Banho', 'Fraldas', 'Kits Cuidados para Bebês'],
+          'Alimentação e Amamentação': ['Babadores', 'Bombas de Tirar Leite', 'Cadeiras de Alimentação', 'Copos, Pratos e Talheres'],
+          'Brinquedos para Bebês': ['Balanços', 'Bolas', 'Bonecos de Atividades', 'Brinquedos de Empurrar e Puxar'],
+          'Quarto do Bebê': ['Almofadas', 'Berços e Moises', 'Colchão para Berço', 'Enfeites de Porta']
+        },
+        'Arte, Papelaria e Armarinho': {
+          'Artigos de Armarinho': ['Flores de Tecido', 'Franjas', 'Lantejuelas', 'Lãs'],
+          'Materiais Escolares': ['Agendas', 'Comercial e Organização', 'Elásticos de Borracha', 'Escolar'],
+          'Arte e Trabalhos Manuais': ['Artesanato em Cerâmica', 'Artesanato em Resina', 'Pincéis e Objetos para Pintar']
+        },
+        'Animais': {
+          'Cães': ['Adestramento', 'Alimento, Petisco e Suplemento', 'Cadeiras de Rocha', 'Camas e Casas'],
+          'Gatos': ['Gatos', 'Higiene', 'Portas e Rampas'],
+          'Peixes': ['Acessórios para Aquários', 'Alimentos'],
+          'Aves e Acessórios': ['Anilhas de Marcação', 'Bebedouros e Comedouros', 'Brinquedos', 'Gaiolas']
+        },
+        'Alimentos e Bebidas': {
+          'Bebidas': ['Bebidas Alcoólicas Mistas', 'Bebidas Aperitivas', 'Bebidas Brancas e Licores', 'Cervejas'],
+          'Mercearia': ['Algas Marinhas Nori', 'Alimentos Instantâneos', 'Arroz, Legumes e Sementes', 'Açúcar e Adoçantes'],
+          'Frescos': ['Carnes e Frangos', 'Frios', 'Frutas e Vegetais', 'Laticínios']
+        },
+        'Acessórios para Veículos': {
+          'Peças de Carros e Caminhonetes': ['Eletroventiladores', 'Fechaduras e Chaves', 'Filtros', 'Freios'],
+          'Limpeza Automotiva': ['Anticorrosivos', 'Aspiradores', 'Brilhos', 'Ceras'],
+          'Som Automotivo': ['Alto-Falantes', 'Antenas', 'Cabos e Conectores', 'Caixas Acústicas']
+        }
+      };
+
+      // Criar categorias principais
+      for (const [principalName, categories] of Object.entries(hierarchyData)) {
+        // Criar categoria principal
+        const { data: principal, error: principalError } = await supabase
+          .from('categorias_produtos')
+          .insert({
+            nome: principalName,
+            nivel: 1,
+            ativo: true,
+            ordem: Object.keys(hierarchyData).indexOf(principalName) + 1,
+            organization_id: '' // Will be set by RLS trigger
+          })
+          .select()
+          .single();
+
+        if (principalError && !principalError.message.includes('duplicate')) {
+          console.error('Erro ao criar categoria principal:', principalError);
+          continue;
+        }
+
+        const principalId = principal?.id;
+        if (!principalId) continue;
+
+        // Criar categorias de nível 2
+        for (const [categoryName, subcategories] of Object.entries(categories)) {
+          const { data: category, error: categoryError } = await supabase
+            .from('categorias_produtos')
+            .insert({
+              nome: categoryName,
+              nivel: 2,
+              categoria_principal_id: principalId,
+              ativo: true,
+              ordem: Object.keys(categories).indexOf(categoryName) + 1,
+              organization_id: '' // Will be set by RLS trigger
+            })
+            .select()
+            .single();
+
+          if (categoryError && !categoryError.message.includes('duplicate')) {
+            console.error('Erro ao criar categoria:', categoryError);
+            continue;
+          }
+
+          const categoryId = category?.id;
+          if (!categoryId) continue;
+
+          // Criar subcategorias de nível 3
+          for (let i = 0; i < subcategories.length; i++) {
+            const subcategoryName = subcategories[i];
+            const { error: subcategoryError } = await supabase
+              .from('categorias_produtos')
+              .insert({
+                nome: subcategoryName,
+                nivel: 3,
+                categoria_id: categoryId,
+                ativo: true,
+                ordem: i + 1,
+                organization_id: '' // Will be set by RLS trigger
+              });
+
+            if (subcategoryError && !subcategoryError.message.includes('duplicate')) {
+              console.error('Erro ao criar subcategoria:', subcategoryError);
+            }
+          }
+        }
+      }
+
+      console.log('✅ Hierarquia completa criada com sucesso!');
+      
+    } catch (error) {
+      console.error('Erro ao criar hierarquia completa:', error);
     }
   };
 
