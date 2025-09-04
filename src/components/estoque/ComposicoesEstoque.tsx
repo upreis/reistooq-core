@@ -124,121 +124,142 @@ export function ComposicoesEstoque() {
         return;
       }
 
-      // Preparar dados para exportação com todas as composições dos produtos visíveis
+      // Preparar dados no formato específico da aba composições
       const exportData: any[] = [];
       
       for (const produto of produtosFinaisFiltrados) {
         const composicoesProduto = getComposicoesForSku(produto.sku_interno) || [];
         
-        if (composicoesProduto.length === 0) {
-          // Produto sem composições - adicionar linha vazia
-          exportData.push({
-            'Nome do Produto': produto.nome,
-            'SKU Produto': produto.sku_interno,
-            'Categoria Principal': produto.categoria_principal || '',
-            'Categoria': produto.categoria || '',
-            'Subcategoria': produto.subcategoria || '',
-            'Status': produto.ativo ? 'Ativo' : 'Inativo',
-            'Quantidade Atual': produto.quantidade_atual || 0,
-            'Custo Total da Composição': 'R$ 0,00',
-            'Pode Produzir': 0,
-            'Componentes': 'Sem composições definidas',
-            'SKU Componente': '',
-            'Nome Componente': '',
-            'Quantidade Necessária': '',
-            'Unidade de Medida': '',
-            'Custo Unitário': '',
-            'Estoque Componente': '',
-            'Subtotal': ''
-          });
-        } else {
-          // Calcular custo total da composição
-          const custoTotal = composicoesProduto.reduce((total, comp) => {
-            const custoUnitario = custosProdutos[comp.sku_componente] || 0;
-            return total + (custoUnitario * comp.quantidade);
-          }, 0);
+        // Calcular métricas do produto
+        const custoTotal = composicoesProduto.reduce((total, comp) => {
+          const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+          return total + (custoUnitario * comp.quantidade);
+        }, 0);
 
-          // Calcular estoque disponível baseado nos componentes
-          let estoqueDisponivel = produto.quantidade_atual;
-          if (composicoesProduto.length > 0) {
-            let menorEstoquePossivel = Infinity;
-            for (const comp of composicoesProduto) {
-              const estoqueComponente = comp.estoque_componente || 0;
-              const quantidadeNecessaria = comp.quantidade;
-              const possiveisUnidades = Math.floor(estoqueComponente / quantidadeNecessaria);
-              if (possiveisUnidades < menorEstoquePossivel) {
-                menorEstoquePossivel = possiveisUnidades;
-              }
+        // Calcular estoque disponível (pode produzir)
+        let estoqueDisponivel = produto.quantidade_atual;
+        let componenteLimitante = null;
+        
+        if (composicoesProduto.length > 0) {
+          let menorEstoquePossivel = Infinity;
+          for (const comp of composicoesProduto) {
+            const estoqueComponente = comp.estoque_componente || 0;
+            const quantidadeNecessaria = comp.quantidade;
+            const possiveisUnidades = Math.floor(estoqueComponente / quantidadeNecessaria);
+            if (possiveisUnidades < menorEstoquePossivel) {
+              menorEstoquePossivel = possiveisUnidades;
+              componenteLimitante = comp.sku_componente;
             }
-            estoqueDisponivel = menorEstoquePossivel === Infinity ? 0 : menorEstoquePossivel;
           }
+          estoqueDisponivel = menorEstoquePossivel === Infinity ? 0 : menorEstoquePossivel;
+        }
 
-          // Adicionar uma linha para cada componente
+        // Linha principal do produto com resumo da composição
+        exportData.push({
+          'Produto': produto.nome,
+          'SKU': produto.sku_interno,
+          'Categoria Principal': produto.categoria_principal || '',
+          'Status': produto.ativo ? 'Ativo' : 'Inativo',
+          'Custo Total': formatMoney(custoTotal),
+          'Pode Produzir': estoqueDisponivel,
+          'Total de Componentes': composicoesProduto.length,
+          'Componente Limitante': componenteLimitante || '',
+          'Observação': composicoesProduto.length === 0 ? 'Produto sem composições definidas' : 'Ver componentes abaixo'
+        });
+
+        // Adicionar linha para cada componente (formato detalhado)
+        if (composicoesProduto.length > 0) {
           composicoesProduto.forEach((comp, index) => {
             const custoUnitario = custosProdutos[comp.sku_componente] || 0;
-            const subtotal = custoUnitario * comp.quantidade;
+            const componenteNaoExiste = comp.nome_componente === comp.sku_componente;
             
             exportData.push({
-              'Nome do Produto': index === 0 ? produto.nome : '',
-              'SKU Produto': index === 0 ? produto.sku_interno : '',
-              'Categoria Principal': index === 0 ? (produto.categoria_principal || '') : '',
-              'Categoria': index === 0 ? (produto.categoria || '') : '',
-              'Subcategoria': index === 0 ? (produto.subcategoria || '') : '',
-              'Status': index === 0 ? (produto.ativo ? 'Ativo' : 'Inativo') : '',
-              'Quantidade Atual': index === 0 ? (produto.quantidade_atual || 0) : '',
-              'Custo Total da Composição': index === 0 ? formatMoney(custoTotal) : '',
-              'Pode Produzir': index === 0 ? estoqueDisponivel : '',
-              'Componentes': index === 0 ? `${composicoesProduto.length} componentes` : '',
+              'Produto': '', // Vazio para componentes
+              'SKU': '', // Vazio para componentes  
+              'Categoria Principal': '', // Vazio para componentes
+              'Status': '', // Vazio para componentes
+              'Custo Total': '', // Vazio para componentes
+              'Pode Produzir': '', // Vazio para componentes
+              'Total de Componentes': '', // Vazio para componentes
+              'Componente Limitante': '', // Vazio para componentes
+              'Observação': `Componente ${index + 1}/${composicoesProduto.length}`,
               'SKU Componente': comp.sku_componente,
-              'Nome Componente': comp.nome_componente,
+              'Nome do Componente': componenteNaoExiste ? 'NÃO CADASTRADO' : comp.nome_componente,
               'Quantidade Necessária': comp.quantidade,
-              'Unidade de Medida': comp.unidade_medida_id || '',
+              'Unidade': comp.unidade_medida_id || '',
               'Custo Unitário': formatMoney(custoUnitario),
-              'Estoque Componente': comp.estoque_componente || 0,
-              'Subtotal': formatMoney(subtotal)
+              'Estoque Disponível': comp.estoque_componente || 0,
+              'Subtotal': formatMoney(custoUnitario * comp.quantidade),
+              'Status Componente': componenteNaoExiste ? 'ERRO - Não cadastrado' : (comp.estoque_componente > 0 ? 'OK' : 'SEM ESTOQUE')
             });
           });
         }
+
+        // Linha separadora entre produtos
+        exportData.push({
+          'Produto': '---',
+          'SKU': '---', 
+          'Categoria Principal': '---',
+          'Status': '---',
+          'Custo Total': '---',
+          'Pode Produzir': '---',
+          'Total de Componentes': '---',
+          'Componente Limitante': '---',
+          'Observação': '---',
+          'SKU Componente': '---',
+          'Nome do Componente': '---',
+          'Quantidade Necessária': '---',
+          'Unidade': '---',
+          'Custo Unitário': '---',
+          'Estoque Disponível': '---',
+          'Subtotal': '---',
+          'Status Componente': '---'
+        });
+      }
+
+      // Remover última linha separadora
+      if (exportData.length > 0 && exportData[exportData.length - 1]['Produto'] === '---') {
+        exportData.pop();
       }
 
       // Criar workbook e worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(exportData);
       
-      // Ajustar largura das colunas
+      // Ajustar largura das colunas para o formato de composições
       const colWidths = [
-        { wpx: 200 }, // Nome do Produto
-        { wpx: 120 }, // SKU Produto
+        { wpx: 250 }, // Produto
+        { wpx: 120 }, // SKU
         { wpx: 150 }, // Categoria Principal
-        { wpx: 120 }, // Categoria
-        { wpx: 120 }, // Subcategoria
         { wpx: 80 },  // Status
-        { wpx: 100 }, // Quantidade Atual
         { wpx: 120 }, // Custo Total
         { wpx: 100 }, // Pode Produzir
-        { wpx: 120 }, // Componentes
+        { wpx: 120 }, // Total de Componentes
+        { wpx: 150 }, // Componente Limitante
+        { wpx: 200 }, // Observação
         { wpx: 120 }, // SKU Componente
-        { wpx: 200 }, // Nome Componente
+        { wpx: 200 }, // Nome do Componente
         { wpx: 120 }, // Quantidade Necessária
-        { wpx: 120 }, // Unidade de Medida
-        { wpx: 100 }, // Custo Unitário
-        { wpx: 120 }, // Estoque Componente
-        { wpx: 100 }  // Subtotal
+        { wpx: 80 },  // Unidade
+        { wpx: 120 }, // Custo Unitário
+        { wpx: 120 }, // Estoque Disponível
+        { wpx: 120 }, // Subtotal
+        { wpx: 150 }  // Status Componente
       ];
       ws['!cols'] = colWidths;
       
       // Adicionar worksheet ao workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Composições');
+      XLSX.utils.book_append_sheet(wb, ws, 'Produtos de Composição');
       
-      // Nome do arquivo com data e filtros aplicados
+      // Nome do arquivo específico para composições
       const dataAtual = new Date().toISOString().split('T')[0];
       const totalProdutos = produtosFinaisFiltrados.length;
-      const fileName = `composicoes_estoque_${totalProdutos}produtos_${dataAtual}.xlsx`;
+      const fileName = `produtos_composicoes_${totalProdutos}itens_${dataAtual}.xlsx`;
       
       // Baixar o arquivo
       XLSX.writeFile(wb, fileName);
       
-      console.log(`Dados das composições baixados: ${fileName}`);
+      console.log(`Dados dos produtos de composição baixados: ${fileName}`);
       console.log(`Total de produtos exportados: ${totalProdutos}`);
       
     } catch (error) {
