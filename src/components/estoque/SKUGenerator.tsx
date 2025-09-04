@@ -268,7 +268,7 @@ export const SKUGenerator: React.FC<SKUGeneratorProps> = ({
                   <Label htmlFor="separador">Separador</Label>
                   <Select
                     value={config.separador}
-                    onValueChange={(value) => setConfig({ ...config, separador: value })}
+                    onValueChange={(value) => setConfig({ ...config, separador: value === '__none__' ? '' : value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -277,7 +277,7 @@ export const SKUGenerator: React.FC<SKUGeneratorProps> = ({
                       <SelectItem value="-">Hífen (-)</SelectItem>
                       <SelectItem value="_">Underscore (_)</SelectItem>
                       <SelectItem value=".">Ponto (.)</SelectItem>
-                      <SelectItem value="">Sem separador</SelectItem>
+                      <SelectItem value="__none__">Sem separador</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -18,7 +18,7 @@ export const AuditLogsViewer: React.FC = () => {
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
       ...prev,
-      [key]: value || undefined
+      [key]: value === 'all' || !value ? undefined : value
     }));
   };
 
@@ -138,14 +138,14 @@ export const AuditLogsViewer: React.FC = () => {
               <div className="space-y-2">
                 <Label>Ação</Label>
                 <Select 
-                  value={filters.action || ''} 
+                  value={filters.action || 'all'} 
                   onValueChange={(value) => handleFilterChange('action', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todas as ações" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as ações</SelectItem>
+                    <SelectItem value="all">Todas as ações</SelectItem>
                     <SelectItem value="create">Criação</SelectItem>
                     <SelectItem value="update">Edição</SelectItem>
                     <SelectItem value="delete">Exclusão</SelectItem>
@@ -157,14 +157,14 @@ export const AuditLogsViewer: React.FC = () => {
               <div className="space-y-2">
                 <Label>Tipo de Recurso</Label>
                 <Select 
-                  value={filters.resource_type || ''} 
+                  value={filters.resource_type || 'all'} 
                   onValueChange={(value) => handleFilterChange('resource_type', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Todos os recursos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos os recursos</SelectItem>
+                    <SelectItem value="all">Todos os recursos</SelectItem>
                     <SelectItem value="user">Usuário</SelectItem>
                     <SelectItem value="role">Cargo</SelectItem>
                     <SelectItem value="product">Produto</SelectItem>

@@ -105,7 +105,7 @@ export const ColumnMapper: React.FC<ColumnMapperProps> = ({
   const handleMappingChange = (excelColumn: string, systemField: string | null) => {
     const newMappings = { ...mappings };
     
-    if (systemField === null || systemField === '') {
+    if (systemField === null || systemField === '' || systemField === '__unmapped__') {
       delete newMappings[excelColumn];
     } else {
       // Remover mapeamento anterior do mesmo campo do sistema
@@ -260,13 +260,13 @@ export const ColumnMapper: React.FC<ColumnMapperProps> = ({
                 <div className="flex-1">
                   <Select
                     value={mappings[header] || ''}
-                    onValueChange={(value) => handleMappingChange(header, value === '' ? null : value)}
+                    onValueChange={(value) => handleMappingChange(header, value === '__unmapped__' ? null : value)}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um campo" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Não mapear</SelectItem>
+                      <SelectItem value="__unmapped__">Não mapear</SelectItem>
                       <Separator className="my-1" />
                       {SYSTEM_FIELDS.map((field) => {
                         const status = getFieldStatus(field.key);

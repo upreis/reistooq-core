@@ -360,13 +360,13 @@ export function HierarchicalCategoryManager() {
               </div>
               
               {/* Filtro por nível */}
-              <Select value={filterLevel?.toString() || ''} onValueChange={(value) => setFilterLevel(value ? parseInt(value) : null)}>
+              <Select value={filterLevel?.toString() || 'all'} onValueChange={(value) => setFilterLevel(value === 'all' ? null : parseInt(value))}>
                 <SelectTrigger className="w-48">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Filtrar por nível" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os níveis</SelectItem>
+                  <SelectItem value="all">Todos os níveis</SelectItem>
                   <SelectItem value="1">Categorias Principais</SelectItem>
                   <SelectItem value="2">Categorias</SelectItem>
                   <SelectItem value="3">Subcategorias</SelectItem>

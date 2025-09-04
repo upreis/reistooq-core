@@ -53,7 +53,7 @@ export function PedidosFiltersAccessible({
   }, []);
 
   const hasActiveFilters = Object.keys(filters).some(key => 
-    filters[key] !== undefined && filters[key] !== ''
+    filters[key] !== undefined && filters[key] !== '' && filters[key] !== 'all'
   );
 
   return (
@@ -97,7 +97,7 @@ export function PedidosFiltersAccessible({
               <SelectValue placeholder="Todos os status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os status</SelectItem>
+              <SelectItem value="all">Todos os status</SelectItem>
               <SelectItem value="pending">Pendente</SelectItem>
               <SelectItem value="ready_to_ship">Pronto para Envio</SelectItem>
               <SelectItem value="shipped">Enviado</SelectItem>
