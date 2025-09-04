@@ -21,6 +21,7 @@ import { useComposicoesFilters } from "@/features/estoque/hooks/useComposicoesFi
 import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/hooks/useProducts";
+import { toast } from "sonner";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { cn } from "@/lib/utils";
 import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
@@ -120,7 +121,7 @@ export function ComposicoesEstoque() {
     try {
       // Usar os dados filtrados que já estão sendo exibidos na página
       if (!produtosFinaisFiltrados || produtosFinaisFiltrados.length === 0) {
-        console.warn('Nenhum produto de composição disponível para download');
+        toast.error('Nenhum produto de composição disponível para download');
         return;
       }
 
@@ -259,11 +260,14 @@ export function ComposicoesEstoque() {
       // Baixar o arquivo
       XLSX.writeFile(wb, fileName);
       
+      // Feedback de sucesso
+      toast.success(`Dados das composições baixados com sucesso! (${totalProdutos} produtos)`);
       console.log(`Dados dos produtos de composição baixados: ${fileName}`);
       console.log(`Total de produtos exportados: ${totalProdutos}`);
       
     } catch (error) {
       console.error('Erro ao baixar dados das composições:', error);
+      toast.error('Erro ao baixar dados das composições');
     }
   };
 
