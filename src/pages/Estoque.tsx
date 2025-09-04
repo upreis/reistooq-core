@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Package, AlertTriangle, Boxes, Search, X } from "lucide-react";
+import { Package, AlertTriangle, Boxes, Search, X, Filter } from "lucide-react";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { OptimizedCategorySidebar } from "@/components/estoque/OptimizedCategorySidebar";
@@ -55,7 +55,7 @@ const Estoque = () => {
   const [sortBy, setSortBy] = useState<string>("created_at");
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
@@ -254,6 +254,20 @@ const Estoque = () => {
   };
 
   const hasActiveFilters = searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all" || Object.values(hierarchicalFilters).some(Boolean);
+  
+  const appliedFilters = {
+    busca: searchTerm,
+    categoria: selectedCategory !== "all" ? selectedCategory : null,
+    status: selectedStatus !== "all" ? selectedStatus : null,
+    ...hierarchicalFilters
+  };
+  
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setSelectedCategory("all");
+    setSelectedStatus("all");
+    setHierarchicalFilters({});
+  };
 
   const handleStockMovement = async (productId: string, type: 'entrada' | 'saida', quantity: number, reason?: string) => {
     const product = products.find(p => p.id === productId);
@@ -440,12 +454,14 @@ const Estoque = () => {
     finalFilteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
     [finalFilteredProducts, currentPage, itemsPerPage]
   );
+  
+  const totalPages = Math.ceil(finalFilteredProducts.length / itemsPerPage);
 
   return (
     <EstoqueGuard>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10">
         {/* Header moderno com melhor espaçamento */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-primary/3 via-primary/5 to-primary/3 border-b border-border/30">&
+        <div className="relative overflow-hidden bg-gradient-to-r from-primary/3 via-primary/5 to-primary/3 border-b border-border/30">
           <div className="absolute inset-0 bg-grid-pattern opacity-3"></div>
           <div className="relative container mx-auto px-6 py-12">
             {/* Breadcrumb melhorado */}
@@ -566,35 +582,36 @@ const Estoque = () => {
                 <div className="flex-1 min-w-0 space-y-6">
                   {/* Indicadores de filtros ativos redesenhados */}
                   {hasActiveFilters && (
-                    <Card className="border-border/40 bg-card/60 backdrop-blur-sm">
-                      <CardContent className="p-5">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-1.5 rounded-md bg-primary/10">
-                              <Package className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <span className="text-sm font-medium text-foreground">Filtros ativos</span>
-                              <Badge variant="outline" className="ml-3 text-primary border-primary/30 bg-primary/5">
-                                {products.length} produto(s) encontrado(s)
-                              </Badge>
-                            </div>
+                    <Card className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Filter className="h-4 w-4 text-primary" />
+                          <span className="text-sm font-medium">Filtros ativos</span>
+                          <div className="flex gap-2">
+                            {hasActiveFilters && Object.entries(appliedFilters)
+                              .filter(([_, value]) => value)
+                              .map(([key, value]) => (
+                                <span key={key} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                                  {key}: {String(value)}
+                                </span>
+                              ))
+                            }
                           </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={handleClearFilters}
-                            className="text-foreground hover:bg-primary/10 px-4"
-                          >
-                            Limpar filtros
-                          </Button>
                         </div>
-                      </CardContent>
+                        <Button
+                          variant="ghost" 
+                          size="sm"
+                          onClick={clearAllFilters}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          Limpar todos
+                        </Button>
+                      </div>
                     </Card>
                   )}
 
                   {/* Tabela principal */}
-                  <div className="border border-border/40 rounded-lg shadow-sm bg-card/60 backdrop-blur-sm">
+                  <Card>
                     {initialLoading ? (
                       <div className="p-6">
                         <EstoqueSkeleton />
@@ -615,43 +632,55 @@ const Estoque = () => {
                         />
                       </TableWrapper>
                     )}
-                  </div>
+                  </Card>
 
                   {/* Paginação melhorada */}
                   {finalFilteredProducts.length > itemsPerPage && (
-                    <Card className="border-border/40 bg-card/60 backdrop-blur-sm shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <p className="text-sm text-muted-foreground">
-                              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
-                              {Math.min(currentPage * itemsPerPage, finalFilteredProducts.length)} de{" "}
-                              {finalFilteredProducts.length} produtos
-                            </p>
-                            <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <Card className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <p className="text-sm text-muted-foreground">
+                            Mostrando {((currentPage - 1) * itemsPerPage) + 1} até {Math.min(currentPage * itemsPerPage, finalFilteredProducts.length)} de {finalFilteredProducts.length} produtos
+                          </p>
+                          
+                          <div className="flex items-center gap-4">
+                            {/* Seletor de itens por página */}
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">Itens por página:</span>
+                              <select
+                                value={itemsPerPage}
+                                onChange={(e) => {
+                                  setItemsPerPage(Number(e.target.value));
+                                  setCurrentPage(1);
+                                }}
+                                className="border border-input bg-background px-2 py-1 rounded text-sm"
+                              >
+                                <option value={10}>10</option>
+                                <option value={25}>25</option>
+                                <option value={50}>50</option>
+                                <option value={100}>100</option>
+                              </select>
+                            </div>
+                            
+                            <div className="flex gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                 disabled={currentPage === 1}
-                                className="w-full sm:w-auto"
                               >
                                 Anterior
                               </Button>
-                              <span className="text-sm text-center">
-                                Página {currentPage} de {Math.ceil(finalFilteredProducts.length / itemsPerPage)}
-                              </span>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setCurrentPage(Math.min(Math.ceil(finalFilteredProducts.length / itemsPerPage), currentPage + 1))}
-                                disabled={currentPage === Math.ceil(finalFilteredProducts.length / itemsPerPage)}
-                                className="w-full sm:w-auto"
+                                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                disabled={currentPage === totalPages}
                               >
-                                Próximo
+                                Próxima
                               </Button>
                             </div>
+                          </div>
                         </div>
-                      </CardContent>
                     </Card>
                   )}
                 </div>
@@ -659,7 +688,9 @@ const Estoque = () => {
             </TabsContent>
             
             <TabsContent value="composicoes">
-              <ComposicoesEstoque />
+              <Card className="p-6">
+                <ComposicoesEstoque />
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
