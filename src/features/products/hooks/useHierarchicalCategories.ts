@@ -90,6 +90,19 @@ export const useHierarchicalCategories = () => {
       
       // Estrutura completa extraída das imagens
       const hierarchyData = {
+        'Casa, Móveis e Decoração': {
+          'Decoração': ['Almofadas', 'Arranjos e Flores Artificiais', 'Cestas', 'Cortinas e Persianas'],
+          'Móveis': ['Poltronas e Sofás', 'Mesas', 'Cadeiras', 'Estantes e Prateleiras'],
+          'Organização': ['Cabides', 'Caixas Organizadoras', 'Ganchos', 'Prateleiras'],
+          'Iluminação': ['Luminárias', 'Abajures', 'Lâmpadas', 'Lustres'],
+          'Jardim': ['Vasos', 'Plantas Artificiais', 'Ferramentas de Jardim', 'Sementes']
+        },
+        'Eletrônicos, Áudio e Vídeo': {
+          'Smartphones': ['iPhone', 'Samsung Galaxy', 'Xiaomi', 'Motorola'],
+          'Tablets': ['iPad', 'Samsung Tab', 'Lenovo Tab', 'Positivo'],
+          'Notebooks': ['Dell', 'HP', 'Lenovo', 'Asus'],
+          'Áudio': ['Fones de Ouvido', 'Caixas de Som', 'Microfones', 'Amplificadores']
+        },
         'Beleza e Cuidado Pessoal': {
           'Barbearia': ['Navalhas de Barbear', 'Pentes Alisadores de Barbas', 'Pincéis de Barba', 'Produtos Pós Barba'],
           'Cuidados com a Pele': ['Autobronzeador', 'Cuidado Facial', 'Cuidado do Corpo', 'Proteção Solar'],
@@ -140,7 +153,7 @@ export const useHierarchicalCategories = () => {
             organization_id: '' // Will be set by RLS trigger
           })
           .select()
-          .single();
+          .maybeSingle();
 
         if (principalError && !principalError.message.includes('duplicate')) {
           console.error('Erro ao criar categoria principal:', principalError);
@@ -163,7 +176,7 @@ export const useHierarchicalCategories = () => {
               organization_id: '' // Will be set by RLS trigger
             })
             .select()
-            .single();
+            .maybeSingle();
 
           if (categoryError && !categoryError.message.includes('duplicate')) {
             console.error('Erro ao criar categoria:', categoryError);
