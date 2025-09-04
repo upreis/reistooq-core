@@ -48,23 +48,28 @@ export function HierarchicalCategoryManager() {
   // Navegação hierárquica
   const handleNavigateToPrincipal = (principal: CatalogCategory) => {
     setActivePrincipal(principal);
+    setActiveCategoria(null);
     setCurrentView('categoria');
+    setSearchTerm('');
   };
 
   const handleNavigateToCategoria = (categoria: CatalogCategory) => {
     setActiveCategoria(categoria);
     setCurrentView('subcategoria');
+    setSearchTerm('');
   };
 
   const handleBackToCategoria = () => {
     setActiveCategoria(null);
     setCurrentView('categoria');
+    setSearchTerm('');
   };
 
   const handleBackToPrincipal = () => {
     setActivePrincipal(null);
     setActiveCategoria(null);
     setCurrentView('principal');
+    setSearchTerm('');
   };
 
   // Função para renderizar cards clicáveis com design moderno
@@ -184,10 +189,10 @@ export function HierarchicalCategoryManager() {
   // Debug: listas calculadas por nível (evita lógica duplicada e facilita inspeção)
   const principalList = getFilteredCategories(categoriasPrincipais);
   const categoriaList = activePrincipal 
-    ? getCategorias(activePrincipal.id).filter(cat => getFilteredCategories([cat]).length > 0)
+    ? getFilteredCategories(getCategorias(activePrincipal.id))
     : [];
   const subList = activeCategoria 
-    ? getSubcategorias(activeCategoria.id).filter(sub => getFilteredCategories([sub]).length > 0)
+    ? getFilteredCategories(getSubcategorias(activeCategoria.id))
     : [];
   
   console.log('🧭 UI listas visíveis => Principais:', principalList.length, '| Categorias:', categoriaList.length, '| Subcategorias:', subList.length);
@@ -328,6 +333,9 @@ export function HierarchicalCategoryManager() {
             {currentView === 'principal' && 'Categorias Principais'}
             {currentView === 'categoria' && `Categorias de "${activePrincipal?.nome}"`}
             {currentView === 'subcategoria' && `Subcategorias de "${activeCategoria?.nome}"`}
+            <Badge variant="outline" className="text-xs h-5 px-2">
+              {(currentView === 'principal' ? principalList.length : currentView === 'categoria' ? categoriaList.length : subList.length)} itens
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -343,7 +351,7 @@ export function HierarchicalCategoryManager() {
               )}
               
               {currentView === 'categoria' && activePrincipal && (
-                getFilteredCategories(getCategorias(activePrincipal.id)).map(categoria => 
+                categoriaList.map(categoria => 
                   renderCategoryCard(
                     categoria, 
                     () => handleNavigateToCategoria(categoria)
@@ -352,10 +360,9 @@ export function HierarchicalCategoryManager() {
               )}
               
               {currentView === 'subcategoria' && activeCategoria && (
-                getFilteredCategories(getSubcategorias(activeCategoria.id))
-                  .map(subcategoria => 
-                    renderCategoryCard(subcategoria)
-                  )
+                subList.map(subcategoria => 
+                  renderCategoryCard(subcategoria)
+                )
               )}
             </div>
             
