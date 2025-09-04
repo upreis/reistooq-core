@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { useCatalogCategories, CatalogCategory } from '../hooks/useCatalogCategories';
 
 const NIVEL_LABELS = {
@@ -309,7 +309,7 @@ export function HierarchicalCategoryManager() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="max-h-[65vh] pr-2">
+          <div className="pr-2">
             <div className="grid gap-3">
               {currentView === 'principal' && (
                 getFilteredCategories(categoriasPrincipais).map(principal => 
@@ -369,7 +369,7 @@ export function HierarchicalCategoryManager() {
               }
               return null;
             })()}
-          </ScrollArea>
+          </div>
         </CardContent>
       </Card>
     </div>
