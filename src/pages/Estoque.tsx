@@ -16,7 +16,8 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Boxes } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Package, AlertTriangle, Boxes, Search, X } from "lucide-react";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { OptimizedCategorySidebar } from "@/components/estoque/OptimizedCategorySidebar";
@@ -506,14 +507,40 @@ const Estoque = () => {
             </div>
             
             <TabsContent value="estoque" className="space-y-8">
-              {/* Filtros Inteligentes */}
-              <EstoqueIntelligentFilters 
-                filters={intelligentFilters}
-                onFiltersChange={setIntelligentFilters}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
-                stats={intelligentStats}
-              />
+              {/* Busca e Filtros Inteligentes na aba Controle de Estoque */}
+              <div className="flex gap-4 items-start">
+                {/* Busca */}
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar produtos por nome, SKU ou código de barras..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-10 bg-background/60 border-border/60"
+                    />
+                    {searchTerm && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                        onClick={() => setSearchTerm("")}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Filtros Inteligentes - apenas nesta aba */}
+                <EstoqueIntelligentFilters 
+                  filters={intelligentFilters}
+                  onFiltersChange={setIntelligentFilters}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  stats={intelligentStats}
+                />
+              </div>
 
               {/* Layout principal com sidebar e tabela */}
               <div className="flex gap-6">
