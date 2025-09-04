@@ -510,10 +510,27 @@ const Estoque = () => {
               <EstoqueIntelligentFilters 
                 filters={intelligentFilters}
                 onFiltersChange={setIntelligentFilters}
-                searchTerm={searchTerm}
-                onSearchChange={setSearchTerm}
                 stats={intelligentStats}
               />
+
+              {/* Filtros tradicionais (busca e categorias) */}
+              <Card className="border-border/40 shadow-sm bg-card/50 backdrop-blur-sm">
+                <CardContent className="p-8">
+                  <EstoqueFilters
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={setSelectedCategory}
+                    selectedStatus={selectedStatus}
+                    onStatusChange={setSelectedStatus}
+                    categories={categories}
+                    onSearch={handleSearch}
+                    onClearFilters={handleClearFilters}
+                    hasActiveFilters={hasActiveFilters}
+                    useHierarchicalCategories={false}
+                  />
+                </CardContent>
+              </Card>
 
               {/* Layout principal com sidebar e tabela */}
               <div className="flex gap-6">

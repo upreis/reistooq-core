@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Filter, SortAsc, AlertTriangle, Package, TrendingUp, TrendingDown, Calendar, Type, ShieldAlert, Search, X } from 'lucide-react';
+import { Filter, SortAsc, AlertTriangle, Package, TrendingUp, TrendingDown, Calendar, Type, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface EstoqueFilterState {
@@ -16,8 +15,6 @@ export interface EstoqueFilterState {
 export interface EstoqueFiltersProps {
   filters: EstoqueFilterState;
   onFiltersChange: (filters: EstoqueFilterState) => void;
-  searchTerm: string;
-  onSearchChange: (value: string) => void;
   stats: {
     total: number;
     displayed: number;
@@ -60,7 +57,7 @@ const stockRanges = [
   { id: '50+', name: '50+ unidades' },
 ] as const;
 
-export function EstoqueIntelligentFilters({ filters, onFiltersChange, searchTerm, onSearchChange, stats }: EstoqueFiltersProps) {
+export function EstoqueIntelligentFilters({ filters, onFiltersChange, stats }: EstoqueFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const updateFilter = (key: keyof EstoqueFilterState, value: any) => {
@@ -86,31 +83,6 @@ export function EstoqueIntelligentFilters({ filters, onFiltersChange, searchTerm
 
   return (
     <div className="space-y-4">
-      {/* Barra de busca sempre visível */}
-      <Card className="border-border/40 bg-card/50 backdrop-blur-sm">
-        <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar produtos por nome, SKU ou código de barras..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 pr-10 bg-background/60 border-border/60"
-            />
-            {searchTerm && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                onClick={() => onSearchChange("")}
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Botão de filtro compacto */}
       <div className="flex items-center justify-between">
         <Button
@@ -133,11 +105,8 @@ export function EstoqueIntelligentFilters({ filters, onFiltersChange, searchTerm
           )}
         </Button>
         
-        {(hasActiveFilters || searchTerm) && (
-          <Button variant="ghost" size="sm" onClick={() => {
-            resetFilters();
-            onSearchChange("");
-          }}>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={resetFilters}>
             Limpar filtros
           </Button>
         )}
