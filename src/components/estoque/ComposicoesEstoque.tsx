@@ -462,7 +462,7 @@ export function ComposicoesEstoque() {
                               }`}
                             >
                               {componenteNaoExiste ? (
-                                <div className="col-span-3 flex items-center justify-between w-full">
+                                <div className="col-span-3 flex items-center gap-2">
                                   <Badge variant="outline" className="border-destructive-foreground text-destructive-foreground font-mono text-[11px] px-1.5 py-0.5">
                                     {comp.sku_componente}
                                   </Badge>
@@ -470,7 +470,7 @@ export function ComposicoesEstoque() {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
-                                    className="h-5 px-2 text-[10px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary flex-shrink-0"
+                                    className="h-5 px-2 text-[10px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary"
                                   >
                                     <Plus className="h-2.5 w-2.5 mr-1" />
                                     Cadastrar
