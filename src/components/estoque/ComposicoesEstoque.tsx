@@ -566,7 +566,7 @@ export function ComposicoesEstoque() {
                               )}
                               <div className="flex items-center justify-between">
                                 <div className="text-sm font-medium truncate pr-2">
-                                  {componenteNaoExiste ? `${comp.sku_componente} (NÃO CADASTRADO)` : comp.nome_componente}
+                                  {componenteNaoExiste ? comp.sku_componente : comp.nome_componente}
                                 </div>
                                 <Badge variant="outline" className={`font-mono text-[10px] truncate flex-shrink-0 ${
                                   componenteNaoExiste ? 'border-destructive text-destructive' : ''
