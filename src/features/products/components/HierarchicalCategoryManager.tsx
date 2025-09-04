@@ -332,14 +332,12 @@ export function HierarchicalCategoryManager() {
               )}
               
               {currentView === 'categoria' && activePrincipal && (
-                getCategorias(activePrincipal.id)
-                  .filter(cat => getFilteredCategories([cat]).length > 0)
-                  .map(categoria => 
-                    renderCategoryCard(
-                      categoria, 
-                      () => handleNavigateToCategoria(categoria)
-                    )
+                getFilteredCategories(getCategorias(activePrincipal.id)).map(categoria => 
+                  renderCategoryCard(
+                    categoria, 
+                    () => handleNavigateToCategoria(categoria)
                   )
+                )
               )}
               
               {currentView === 'subcategoria' && activeCategoria && (
