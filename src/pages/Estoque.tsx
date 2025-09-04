@@ -9,6 +9,8 @@ import { EstoqueTable } from "@/components/estoque/EstoqueTable";
 import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { EstoqueStats } from "@/components/estoque/EstoqueStats";
 import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
+import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntelligentFilters";
+import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +62,9 @@ const Estoque = () => {
   const { toast } = useToast();
   const { getCategoriasPrincipais, getCategorias, getSubcategorias, categories: hierarchicalCategories, loading: categoriesLoading } = useHierarchicalCategories();
   const { isCollapsed: sidebarCollapsed, toggleCollapse: toggleSidebar } = useSidebarCollapse();
+
+  // Hook para filtros inteligentes
+  const { filters: intelligentFilters, setFilters: setIntelligentFilters, filteredData: intelligentFilteredData, stats: intelligentStats } = useEstoqueFilters(products);
 
   // Filtros estáveis para evitar loops
   const stableFilters = useMemo(() => 
@@ -390,9 +395,49 @@ const Estoque = () => {
   };
 
   // Memoizar dados derivados para melhor performance
+  // Aplicar filtros hierárquicos e busca aos dados já filtrados pelos filtros inteligentes
+  const finalFilteredProducts = useMemo(() => {
+    let filtered = [...intelligentFilteredData];
+
+    // Aplicar filtros hierárquicos
+    if (hierarchicalFilters.categoriaPrincipal || hierarchicalFilters.categoria || hierarchicalFilters.subcategoria) {
+      filtered = filtered.filter(product => {
+        const categoriaCompleta = product.categoria || '';
+        
+        if (hierarchicalFilters.subcategoria) {
+          const subcategoria = getSubcategorias(hierarchicalFilters.categoria || '').find(c => c.id === hierarchicalFilters.subcategoria);
+          return categoriaCompleta.includes(subcategoria?.nome || '');
+        }
+        
+        if (hierarchicalFilters.categoria) {
+          const categoria = getCategorias(hierarchicalFilters.categoriaPrincipal || '').find(c => c.id === hierarchicalFilters.categoria);
+          return categoriaCompleta.includes(categoria?.nome || '');
+        }
+        
+        if (hierarchicalFilters.categoriaPrincipal) {
+          const categoriaPrincipal = getCategoriasPrincipais().find(c => c.id === hierarchicalFilters.categoriaPrincipal);
+          return categoriaCompleta.includes(categoriaPrincipal?.nome || '') || categoriaCompleta === categoriaPrincipal?.nome;
+        }
+        
+        return true;
+      });
+    }
+
+    // Aplicar busca por termo
+    if (searchTerm) {
+      filtered = filtered.filter(product => 
+        product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.sku_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.codigo_barras && product.codigo_barras.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    return filtered;
+  }, [intelligentFilteredData, hierarchicalFilters, searchTerm, getCategoriasPrincipais, getCategorias, getSubcategorias]);
+
   const paginatedProducts = useMemo(() => 
-    products.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
-    [products, currentPage, itemsPerPage]
+    finalFilteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
+    [finalFilteredProducts, currentPage, itemsPerPage]
   );
 
   return (
@@ -447,7 +492,7 @@ const Estoque = () => {
                   <Package className="h-4 w-4" />
                   Controle de Estoque
                   <Badge variant="secondary" className="ml-2 text-xs px-2 py-0.5">
-                    {products.length}
+                    {finalFilteredProducts.length}
                   </Badge>
                 </TabsTrigger>
                 <TabsTrigger 
@@ -461,7 +506,14 @@ const Estoque = () => {
             </div>
             
             <TabsContent value="estoque" className="space-y-8">
-              {/* Filtros em card redesenhado */}
+              {/* Filtros Inteligentes */}
+              <EstoqueIntelligentFilters 
+                filters={intelligentFilters}
+                onFiltersChange={setIntelligentFilters}
+                stats={intelligentStats}
+              />
+
+              {/* Filtros tradicionais (busca e categorias) */}
               <Card className="border-border/40 shadow-sm bg-card/50 backdrop-blur-sm">
                 <CardContent className="p-8">
                   <EstoqueFilters
@@ -554,14 +606,14 @@ const Estoque = () => {
                   </div>
 
                   {/* Paginação melhorada */}
-                  {products.length > itemsPerPage && (
+                  {finalFilteredProducts.length > itemsPerPage && (
                     <Card className="border-border/50 shadow-sm">
                       <CardContent className="p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <p className="text-sm text-muted-foreground">
                               Mostrando {((currentPage - 1) * itemsPerPage) + 1} a{" "}
-                              {Math.min(currentPage * itemsPerPage, products.length)} de{" "}
-                              {products.length} produtos
+                              {Math.min(currentPage * itemsPerPage, finalFilteredProducts.length)} de{" "}
+                              {finalFilteredProducts.length} produtos
                             </p>
                             <div className="flex flex-col sm:flex-row items-center gap-2">
                               <Button
@@ -574,13 +626,13 @@ const Estoque = () => {
                                 Anterior
                               </Button>
                               <span className="text-sm text-center">
-                                Página {currentPage} de {Math.ceil(products.length / itemsPerPage)}
+                                Página {currentPage} de {Math.ceil(finalFilteredProducts.length / itemsPerPage)}
                               </span>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setCurrentPage(Math.min(Math.ceil(products.length / itemsPerPage), currentPage + 1))}
-                                disabled={currentPage === Math.ceil(products.length / itemsPerPage)}
+                                onClick={() => setCurrentPage(Math.min(Math.ceil(finalFilteredProducts.length / itemsPerPage), currentPage + 1))}
+                                disabled={currentPage === Math.ceil(finalFilteredProducts.length / itemsPerPage)}
                                 className="w-full sm:w-auto"
                               >
                                 Próximo
