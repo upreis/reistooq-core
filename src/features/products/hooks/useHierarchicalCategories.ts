@@ -73,11 +73,13 @@ export const useHierarchicalCategories = () => {
       setCategories((data || []) as HierarchicalCategory[]);
       
       // Auto-sincronizar se necessário e não tentado ainda
+      const level1Count = (data || []).filter(c => c.nivel === 1).length;
       const level2Count = (data || []).filter(c => c.nivel === 2).length;
-      if (level2Count < 10 && !generationAttemptedRef.current) {
+      // Se faltam principais (<8) ou quase nenhum nível 2 (<10), sincroniza
+      if ((level1Count < 8 || level2Count < 10) && !generationAttemptedRef.current) {
         generationAttemptedRef.current = true;
-        console.log('🔄 Executando sincronização automática de categorias...');
-        setTimeout(syncCategories, 1000);
+        console.log('🔄 Executando sincronização automática de categorias (faltando principais ou categorias)...');
+        setTimeout(syncCategories, 500);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar categorias');
