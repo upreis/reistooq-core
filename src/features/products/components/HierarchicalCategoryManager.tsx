@@ -1,6 +1,6 @@
 // Visualizador do catálogo global de categorias (somente leitura)
 import { useState } from 'react';
-import { ArrowLeft, ChevronRight, Tags, Layers, Package, Search, Filter, RefreshCw, BookOpen, Eye } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Tags, Layers, Package, Search, Filter, RefreshCw, BookOpen, Eye, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -287,8 +287,19 @@ export function HierarchicalCategoryManager() {
                   placeholder="Pesquisar categorias..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-64 pr-8"
                 />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label="Limpar pesquisa"
+                    title="Limpar pesquisa"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
               
               {/* Filtro por nível */}
@@ -341,8 +352,7 @@ export function HierarchicalCategoryManager() {
               )}
               
               {currentView === 'subcategoria' && activeCategoria && (
-                getSubcategorias(activeCategoria.id)
-                  .filter(sub => getFilteredCategories([sub]).length > 0)
+                getFilteredCategories(getSubcategorias(activeCategoria.id))
                   .map(subcategoria => 
                     renderCategoryCard(subcategoria)
                   )
@@ -355,9 +365,9 @@ export function HierarchicalCategoryManager() {
               if (currentView === 'principal') {
                 currentCategories = getFilteredCategories(categoriasPrincipais);
               } else if (currentView === 'categoria' && activePrincipal) {
-                currentCategories = getCategorias(activePrincipal.id).filter(cat => getFilteredCategories([cat]).length > 0);
+                currentCategories = getFilteredCategories(getCategorias(activePrincipal.id));
               } else if (currentView === 'subcategoria' && activeCategoria) {
-                currentCategories = getSubcategorias(activeCategoria.id).filter(sub => getFilteredCategories([sub]).length > 0);
+                currentCategories = getFilteredCategories(getSubcategorias(activeCategoria.id));
               }
               
               if (currentCategories.length === 0) {
