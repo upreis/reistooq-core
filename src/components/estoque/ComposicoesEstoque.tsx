@@ -118,97 +118,131 @@ export function ComposicoesEstoque() {
 
   const handleDownloadComposicoes = async () => {
     try {
-      // Buscar todas as composições da organização com dados dos produtos
-      const { data: composicoesData, error } = await supabase
-        .from('produto_componentes')
-        .select(`
-          *,
-          unidades_medida:unidade_medida_id (
-            nome,
-            abreviacao
-          )
-        `);
-
-      if (error) {
-        console.error('Erro ao buscar composições:', error);
+      // Usar os dados filtrados que já estão sendo exibidos na página
+      if (!produtosFinaisFiltrados || produtosFinaisFiltrados.length === 0) {
+        console.warn('Nenhum produto de composição disponível para download');
         return;
       }
 
-      // Buscar dados dos produtos para obter categoria principal
-      const skusProdutos = Array.from(new Set(composicoesData?.map(comp => comp.sku_produto) || []));
+      // Preparar dados para exportação com todas as composições dos produtos visíveis
+      const exportData: any[] = [];
       
-      const { data: produtosData } = await supabase
-        .from('produtos_composicoes')
-        .select('sku_interno, categoria_principal, nome')
-        .in('sku_interno', skusProdutos);
+      for (const produto of produtosFinaisFiltrados) {
+        const composicoesProduto = getComposicoesForSku(produto.sku_interno) || [];
+        
+        if (composicoesProduto.length === 0) {
+          // Produto sem composições - adicionar linha vazia
+          exportData.push({
+            'Nome do Produto': produto.nome,
+            'SKU Produto': produto.sku_interno,
+            'Categoria Principal': produto.categoria_principal || '',
+            'Categoria': produto.categoria || '',
+            'Subcategoria': produto.subcategoria || '',
+            'Status': produto.ativo ? 'Ativo' : 'Inativo',
+            'Quantidade Atual': produto.quantidade_atual || 0,
+            'Custo Total da Composição': 'R$ 0,00',
+            'Pode Produzir': 0,
+            'Componentes': 'Sem composições definidas',
+            'SKU Componente': '',
+            'Nome Componente': '',
+            'Quantidade Necessária': '',
+            'Unidade de Medida': '',
+            'Custo Unitário': '',
+            'Estoque Componente': '',
+            'Subtotal': ''
+          });
+        } else {
+          // Calcular custo total da composição
+          const custoTotal = composicoesProduto.reduce((total, comp) => {
+            const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+            return total + (custoUnitario * comp.quantidade);
+          }, 0);
 
-      // Criar mapa de produtos para facilitar busca
-      const produtosMap = new Map();
-      produtosData?.forEach(produto => {
-        produtosMap.set(produto.sku_interno, produto);
-      });
+          // Calcular estoque disponível baseado nos componentes
+          let estoqueDisponivel = produto.quantidade_atual;
+          if (composicoesProduto.length > 0) {
+            let menorEstoquePossivel = Infinity;
+            for (const comp of composicoesProduto) {
+              const estoqueComponente = comp.estoque_componente || 0;
+              const quantidadeNecessaria = comp.quantidade;
+              const possiveisUnidades = Math.floor(estoqueComponente / quantidadeNecessaria);
+              if (possiveisUnidades < menorEstoquePossivel) {
+                menorEstoquePossivel = possiveisUnidades;
+              }
+            }
+            estoqueDisponivel = menorEstoquePossivel === Infinity ? 0 : menorEstoquePossivel;
+          }
 
-      // Criar template vazio com estrutura para 10 componentes
-      const templateData = [{
-        'Produto': '',
-        'SKU Pai': '',
-        'Categoria Principal': '',
-        'SKU do Componente 1': '',
-        'Nome do Componente 1': '',
-        'Quantidade 1': '',
-        'Un medida 1': '',
-        'SKU do Componente 2': '',
-        'Nome do Componente 2': '',
-        'Quantidade 2': '',
-        'Un medida 2': '',
-        'SKU do Componente 3': '',
-        'Nome do Componente 3': '',
-        'Quantidade 3': '',
-        'Un medida 3': '',
-        'SKU do Componente 4': '',
-        'Nome do Componente 4': '',
-        'Quantidade 4': '',
-        'Un medida 4': '',
-        'SKU do Componente 5': '',
-        'Nome do Componente 5': '',
-        'Quantidade 5': '',
-        'Un medida 5': '',
-        'SKU do Componente 6': '',
-        'Nome do Componente 6': '',
-        'Quantidade 6': '',
-        'Un medida 6': '',
-        'SKU do Componente 7': '',
-        'Nome do Componente 7': '',
-        'Quantidade 7': '',
-        'Un medida 7': '',
-        'SKU do Componente 8': '',
-        'Nome do Componente 8': '',
-        'Quantidade 8': '',
-        'Un medida 8': '',
-        'SKU do Componente 9': '',
-        'Nome do Componente 9': '',
-        'Quantidade 9': '',
-        'Un medida 9': '',
-        'SKU do Componente 10': '',
-        'Nome do Componente 10': '',
-        'Quantidade 10': '',
-        'Un medida 10': ''
-      }];
+          // Adicionar uma linha para cada componente
+          composicoesProduto.forEach((comp, index) => {
+            const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+            const subtotal = custoUnitario * comp.quantidade;
+            
+            exportData.push({
+              'Nome do Produto': index === 0 ? produto.nome : '',
+              'SKU Produto': index === 0 ? produto.sku_interno : '',
+              'Categoria Principal': index === 0 ? (produto.categoria_principal || '') : '',
+              'Categoria': index === 0 ? (produto.categoria || '') : '',
+              'Subcategoria': index === 0 ? (produto.subcategoria || '') : '',
+              'Status': index === 0 ? (produto.ativo ? 'Ativo' : 'Inativo') : '',
+              'Quantidade Atual': index === 0 ? (produto.quantidade_atual || 0) : '',
+              'Custo Total da Composição': index === 0 ? formatMoney(custoTotal) : '',
+              'Pode Produzir': index === 0 ? estoqueDisponivel : '',
+              'Componentes': index === 0 ? `${composicoesProduto.length} componentes` : '',
+              'SKU Componente': comp.sku_componente,
+              'Nome Componente': comp.nome_componente,
+              'Quantidade Necessária': comp.quantidade,
+              'Unidade de Medida': comp.unidade_medida_id || '',
+              'Custo Unitário': formatMoney(custoUnitario),
+              'Estoque Componente': comp.estoque_componente || 0,
+              'Subtotal': formatMoney(subtotal)
+            });
+          });
+        }
+      }
 
       // Criar workbook e worksheet
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(templateData);
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Ajustar largura das colunas
+      const colWidths = [
+        { wpx: 200 }, // Nome do Produto
+        { wpx: 120 }, // SKU Produto
+        { wpx: 150 }, // Categoria Principal
+        { wpx: 120 }, // Categoria
+        { wpx: 120 }, // Subcategoria
+        { wpx: 80 },  // Status
+        { wpx: 100 }, // Quantidade Atual
+        { wpx: 120 }, // Custo Total
+        { wpx: 100 }, // Pode Produzir
+        { wpx: 120 }, // Componentes
+        { wpx: 120 }, // SKU Componente
+        { wpx: 200 }, // Nome Componente
+        { wpx: 120 }, // Quantidade Necessária
+        { wpx: 120 }, // Unidade de Medida
+        { wpx: 100 }, // Custo Unitário
+        { wpx: 120 }, // Estoque Componente
+        { wpx: 100 }  // Subtotal
+      ];
+      ws['!cols'] = colWidths;
       
       // Adicionar worksheet ao workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Composições');
       
+      // Nome do arquivo com data e filtros aplicados
+      const dataAtual = new Date().toISOString().split('T')[0];
+      const totalProdutos = produtosFinaisFiltrados.length;
+      const fileName = `composicoes_estoque_${totalProdutos}produtos_${dataAtual}.xlsx`;
+      
       // Baixar o arquivo
-      const fileName = `template_composicoes_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
       
-      console.log(`Template baixado: ${fileName}`);
+      console.log(`Dados das composições baixados: ${fileName}`);
+      console.log(`Total de produtos exportados: ${totalProdutos}`);
+      
     } catch (error) {
-      console.error('Erro ao baixar template das composições:', error);
+      console.error('Erro ao baixar dados das composições:', error);
     }
   };
 
