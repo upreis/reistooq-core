@@ -16,6 +16,8 @@ import { ImportModal } from "./ImportModal";
 import { ImportarProdutosModal } from "../composicoes/ImportarProdutosModal";
 import { adaptProdutoComposicaoToModalProduct } from "../composicoes/ComposicoesModalAdapter";
 import { ComposicoesCategorySidebar } from "./ComposicoesCategorySidebar";
+import { ComposicoesFilters } from "./ComposicoesFilters";
+import { useComposicoesFilters } from "@/features/estoque/hooks/useComposicoesFilters";
 import { formatMoney } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/hooks/useProducts";
@@ -78,6 +80,9 @@ export function ComposicoesEstoque() {
   } = useProdutosComposicoes();
 
   const { getComposicoesForSku, loadComposicoes, composicoes } = useComposicoesEstoque();
+
+  // Hook para filtros inteligentes
+  const { filters, setFilters, filteredData, stats } = useComposicoesFilters(produtos, composicoes, custosProdutos);
 
   // Sincronizar composições quando produtos carregarem
   useEffect(() => {
@@ -208,9 +213,9 @@ export function ComposicoesEstoque() {
   };
 
 
-  // Filtrar produtos baseado na busca e filtros hierárquicos
-  const produtosFiltrados = useMemo(() => {
-    return produtos?.filter(produto => {
+  // Aplicar filtro de busca aos dados já filtrados pelo hook
+  const produtosFinaisFiltrados = useMemo(() => {
+    return filteredData?.filter(produto => {
       const matchesSearch = !searchQuery || 
         produto.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
         produto.sku_interno.toLowerCase().includes(searchQuery.toLowerCase());
@@ -222,16 +227,16 @@ export function ComposicoesEstoque() {
 
       return matchesSearch && matchesCategory;
     }) || [];
-  }, [produtos, searchQuery, hierarchicalFilters]);
+  }, [filteredData, searchQuery, hierarchicalFilters]);
 
   // Carregar custos dos produtos quando as composições mudarem
   useEffect(() => {
     const carregarCustos = async () => {
-      if (!produtosFiltrados || produtosFiltrados.length === 0) return;
+      if (!produtosFinaisFiltrados || produtosFinaisFiltrados.length === 0) return;
       
       try {
         const skusUnicos = Array.from(new Set(
-          produtosFiltrados.flatMap(p => {
+          produtosFinaisFiltrados.flatMap(p => {
             const comps = getComposicoesForSku(p.sku_interno);
             return comps?.map(c => c.sku_componente) || [];
           })
@@ -256,11 +261,11 @@ export function ComposicoesEstoque() {
     };
 
     carregarCustos();
-  }, [produtosFiltrados, getComposicoesForSku]);
+  }, [produtosFinaisFiltrados, getComposicoesForSku]);
 
   // Funções para lidar com seleção
   const handleDeleteSelected = async () => {
-    const selectedProducts = getSelectedItems(produtosFiltrados);
+    const selectedProducts = getSelectedItems(produtosFinaisFiltrados);
     if (selectedProducts.length === 0) return;
 
     try {
@@ -641,8 +646,14 @@ export function ComposicoesEstoque() {
           </div>
         </div>
 
-          {/* Área principal com melhor organização */}
         <div className="flex-1 min-w-0 space-y-6">
+          {/* Filtros Inteligentes */}
+          <ComposicoesFilters 
+            filters={filters}
+            onFiltersChange={setFilters}
+            stats={stats}
+          />
+
           {/* Header da seção com pesquisa e seleção */}
           <Card className="border-border/40 bg-card/30 backdrop-blur-sm">
             <CardContent className="p-6">
@@ -651,7 +662,7 @@ export function ComposicoesEstoque() {
                   <div>
                     <h2 className="text-xl font-semibold text-foreground mb-1">Produtos de Composições</h2>
                     <p className="text-sm text-muted-foreground">
-                      {produtosFiltrados?.length || 0} produtos encontrados
+                      {filteredData?.length || 0} produtos encontrados
                       {isSelectMode && selectedCount > 0 && (
                         <span className="ml-2 text-primary font-medium">
                           • {selectedCount} selecionado(s)
@@ -674,10 +685,10 @@ export function ComposicoesEstoque() {
                     
                       <div className="flex items-center gap-2">
                         <Checkbox 
-                          checked={produtosFiltrados.length > 0 && selectedCount === produtosFiltrados.length}
+                          checked={produtosFinaisFiltrados.length > 0 && selectedCount === produtosFinaisFiltrados.length}
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              selectAll(produtosFiltrados);
+                              selectAll(produtosFinaisFiltrados);
                             } else {
                               clearSelection();
                             }
@@ -759,9 +770,9 @@ export function ComposicoesEstoque() {
                 </Card>
               ))}
             </div>
-          ) : produtosFiltrados && produtosFiltrados.length > 0 ? (
+          ) : produtosFinaisFiltrados && produtosFinaisFiltrados.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {produtosFiltrados.map(renderProductCard)}
+              {produtosFinaisFiltrados.map(renderProductCard)}
             </div>
           ) : (
             <Card className="border-border/40 bg-card/20">
