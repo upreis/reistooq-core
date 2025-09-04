@@ -478,9 +478,11 @@ export function ComposicoesEstoque() {
                                 {formatMoney(custoUnitario)}
                               </div>
                             )}
-                            <div className="text-right text-muted-foreground">
-                              {comp.quantidade}x
-                            </div>
+                            {!componenteNaoExiste && (
+                              <div className="text-right text-muted-foreground">
+                                {comp.quantidade}x
+                              </div>
+                            )}
                           </div>
                         );
                       })}
