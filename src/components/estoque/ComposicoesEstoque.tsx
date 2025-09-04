@@ -412,19 +412,29 @@ export function ComposicoesEstoque() {
                       {composicoes.map((comp, index) => {
                         const isLimitante = componenteLimitante?.sku === comp.sku_componente;
                         const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+                        // Verifica se o componente não existe no controle de estoque
+                        const componenteNaoExiste = comp.nome_componente === comp.sku_componente;
+                        
                         return (
                           <div 
                             key={index} 
                             className={`grid grid-cols-[1fr_auto_auto] gap-3 items-center text-xs rounded px-2 py-1 ${
-                              isLimitante 
+                              componenteNaoExiste
+                                ? 'bg-destructive text-destructive-foreground border border-destructive'
+                                : isLimitante 
                                 ? 'bg-destructive/10 border border-destructive/30' 
                                 : ''
                             }`}
                           >
-                            <div>
-                              <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5">
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className={`font-mono text-[10px] px-1.5 py-0.5 ${
+                                componenteNaoExiste ? 'border-destructive-foreground text-destructive-foreground' : ''
+                              }`}>
                                 {comp.sku_componente}
                               </Badge>
+                              {componenteNaoExiste && (
+                                <span className="text-[9px] font-medium">NÃO CADASTRADO</span>
+                              )}
                             </div>
                             <div className="text-right text-muted-foreground">
                               {formatMoney(custoUnitario)}
@@ -484,17 +494,33 @@ export function ComposicoesEstoque() {
                           const estoqueComponente = comp.estoque_componente || 0;
                           const possiveisUnidades = Math.floor(estoqueComponente / comp.quantidade);
                           const isLimitante = componenteLimitante?.sku === comp.sku_componente;
+                          // Verifica se o componente não existe no controle de estoque
+                          const componenteNaoExiste = comp.nome_componente === comp.sku_componente;
                           
                           return (
-                            <div key={index} className={`border rounded-md p-3 space-y-2 ${isLimitante ? 'border-destructive/30 bg-destructive/5' : 'border-border'} relative`}>
-                              {isLimitante && (
+                            <div key={index} className={`border rounded-md p-3 space-y-2 ${
+                              componenteNaoExiste 
+                                ? 'border-destructive bg-destructive/10'
+                                : isLimitante 
+                                ? 'border-destructive/30 bg-destructive/5' 
+                                : 'border-border'
+                            } relative`}>
+                              {componenteNaoExiste ? (
+                                <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-md font-medium">
+                                  NÃO CADASTRADO
+                                </div>
+                              ) : isLimitante && (
                                 <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-md font-medium">
                                   LIMITANTE
                                 </div>
                               )}
                               <div className="flex items-center justify-between">
-                                <div className="text-sm font-medium truncate pr-2">{comp.nome_componente}</div>
-                                <Badge variant="outline" className="font-mono text-[10px] truncate flex-shrink-0">
+                                <div className="text-sm font-medium truncate pr-2">
+                                  {componenteNaoExiste ? `${comp.sku_componente} (NÃO CADASTRADO)` : comp.nome_componente}
+                                </div>
+                                <Badge variant="outline" className={`font-mono text-[10px] truncate flex-shrink-0 ${
+                                  componenteNaoExiste ? 'border-destructive text-destructive' : ''
+                                }`}>
                                   {comp.sku_componente}
                                 </Badge>
                               </div>
