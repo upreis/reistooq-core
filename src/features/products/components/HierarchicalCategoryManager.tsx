@@ -180,7 +180,18 @@ export function HierarchicalCategoryManager() {
       </Alert>
     );
   }
-
+  
+  // Debug: listas calculadas por nível (evita lógica duplicada e facilita inspeção)
+  const principalList = getFilteredCategories(categoriasPrincipais);
+  const categoriaList = activePrincipal 
+    ? getCategorias(activePrincipal.id).filter(cat => getFilteredCategories([cat]).length > 0)
+    : [];
+  const subList = activeCategoria 
+    ? getSubcategorias(activeCategoria.id).filter(sub => getFilteredCategories([sub]).length > 0)
+    : [];
+  
+  console.log('🧭 UI listas visíveis => Principais:', principalList.length, '| Categorias:', categoriaList.length, '| Subcategorias:', subList.length);
+  
   return (
     <div className="space-y-6">
       {/* Header com estatísticas */}
