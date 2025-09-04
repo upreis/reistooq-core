@@ -351,19 +351,53 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
+      // Escolher a aba com maior correspondência de colunas esperadas para o tipo atual
+      const expectedHeaders = templateColumns.map(c => c.label.toString().trim().toLowerCase());
+      let bestSheet = workbook.SheetNames[0];
+      let bestScore = -1;
+      for (const name of workbook.SheetNames) {
+        const ws = workbook.Sheets[name];
+        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+        const headersRow = (aoa?.[0] || []).map((h: any) => String(h || '').trim().toLowerCase());
+        const score = headersRow.filter((h: string) => expectedHeaders.includes(h)).length;
+        if (score > bestScore) { bestScore = score; bestSheet = name; }
+      }
+      const worksheet = workbook.Sheets[bestSheet];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       if (jsonData.length === 0) {
         throw new Error("Planilha vazia ou formato inválido");
       }
 
-      // Mapear colunas para campos do banco
-      const mappedData = jsonData.map((row: any) => {
+      // Mapear colunas para campos do banco com tolerância a variações no cabeçalho
+      const normalize = (s: any) => String(s || '').toLowerCase()
+        .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+        .replace(/[\-_]+/g, ' ')
+        .replace(/\s+/g, ' ').trim();
+
+      const aliasMap: Record<string, string[]> = tipo === 'produtos' ? {
+        sku_interno: ['sku', 'sku interno', 'sku do produto', 'sku produto', 'sku estoque', 'sku_interno', 'sku-interno'],
+        nome: ['nome', 'nome do produto', 'produto', 'titulo', 'título'],
+      } : {};
+
+      const mappedData = (XLSX.utils.sheet_to_json(worksheet) as any[]).map((row: any) => {
         const mappedRow: any = {};
+        // Mapa (cabeçalho normalizado -> cabeçalho original)
+        const headerMap: Record<string, string> = {};
+        Object.keys(row).forEach((h) => { headerMap[normalize(h)] = h; });
+
         templateColumns.forEach(col => {
-          mappedRow[col.key] = row[col.label] || '';
+          let value: any = '';
+          const primary = headerMap[normalize(col.label)];
+          if (primary) {
+            value = row[primary];
+          } else if (aliasMap[col.key]) {
+            for (const alias of aliasMap[col.key]) {
+              const key = headerMap[normalize(alias)];
+              if (key) { value = row[key]; break; }
+            }
+          }
+          mappedRow[col.key] = value ?? '';
         });
         return mappedRow;
       });
