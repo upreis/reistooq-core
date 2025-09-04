@@ -44,10 +44,12 @@ export const useCatalogCategories = () => {
       }
       
       console.log('✅ Catálogo carregado:', data?.length || 0, 'categorias');
+      console.log('🔍 Debug - primeiras categorias:', data?.slice(0, 5));
       setCategories((data || []) as CatalogCategory[]);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar catálogo');
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar catálogo';
+      setError(errorMessage);
       console.error('Error loading catalog categories:', err);
     } finally {
       setLoading(false);
