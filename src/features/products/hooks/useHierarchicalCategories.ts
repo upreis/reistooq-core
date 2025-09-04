@@ -74,13 +74,26 @@ export const useHierarchicalCategories = () => {
       // Contar categorias por nível
       const level1Count = currentCategories.filter(c => c.nivel === 1).length;
       const level2Count = currentCategories.filter(c => c.nivel === 2).length;
+      const level3Count = currentCategories.filter(c => c.nivel === 3).length;
       
-      // Se não há muitas categorias, criar a estrutura completa das imagens
-      if (level1Count < 5) {
+      console.log('📊 Auditoria de categorias:', {
+        'Categorias Principais (nível 1)': level1Count,
+        'Categorias (nível 2)': level2Count,
+        'Subcategorias (nível 3)': level3Count,
+        'Total': currentCategories.length
+      });
+      
+      // SEMPRE criar hierarquia se não há categorias de nível 2 ou se há muito poucas
+      if (level2Count < 10) {
+        console.log('🔄 Iniciando criação da hierarquia completa...');
         await createCompleteHierarchy();
+        return;
       }
+
+      console.log('✅ Hierarquia já existe com', level2Count, 'categorias de nível 2');
+      
     } catch (error) {
-      console.log('Erro na verificação automática:', error);
+      console.error('❌ Erro na verificação automática:', error);
     }
   };
 
@@ -140,74 +153,140 @@ export const useHierarchicalCategories = () => {
         }
       };
 
-      // Criar categorias principais
+      // Criar/buscar categorias principais
       for (const [principalName, categories] of Object.entries(hierarchyData)) {
-        // Criar categoria principal
-        const { data: principal, error: principalError } = await supabase
+        console.log(`🔄 Processando categoria principal: ${principalName}`);
+        
+        // Primeiro, tentar buscar a categoria principal existente
+        let { data: existingPrincipal } = await supabase
           .from('categorias_produtos')
-          .insert({
-            nome: principalName,
-            nivel: 1,
-            ativo: true,
-            ordem: Object.keys(hierarchyData).indexOf(principalName) + 1,
-            organization_id: '' // Will be set by RLS trigger
-          })
-          .select()
+          .select('id')
+          .eq('nome', principalName)
+          .eq('nivel', 1)
           .maybeSingle();
 
-        if (principalError && !principalError.message.includes('duplicate')) {
-          console.error('Erro ao criar categoria principal:', principalError);
+        let principalId = existingPrincipal?.id;
+
+        // Se não existir, criar nova categoria principal
+        if (!principalId) {
+          const { data: newPrincipal, error: principalError } = await supabase
+            .from('categorias_produtos')
+            .insert({
+              nome: principalName,
+              nivel: 1,
+              ativo: true,
+              ordem: Object.keys(hierarchyData).indexOf(principalName) + 1,
+              organization_id: '' // Will be set by RLS trigger
+            })
+            .select('id')
+            .maybeSingle();
+
+          if (principalError) {
+            console.error('❌ Erro ao criar categoria principal:', principalError);
+            continue;
+          }
+          
+          principalId = newPrincipal?.id;
+          console.log(`✅ Categoria principal criada: ${principalName}`);
+        } else {
+          console.log(`✅ Categoria principal encontrada: ${principalName}`);
+        }
+
+        if (!principalId) {
+          console.error(`❌ Não foi possível obter ID para ${principalName}`);
           continue;
         }
 
-        const principalId = principal?.id;
-        if (!principalId) continue;
-
         // Criar categorias de nível 2
         for (const [categoryName, subcategories] of Object.entries(categories)) {
-          const { data: category, error: categoryError } = await supabase
+          console.log(`  🔄 Processando categoria de nível 2: ${categoryName}`);
+          
+          // Verificar se a categoria de nível 2 já existe
+          let { data: existingCategory } = await supabase
             .from('categorias_produtos')
-            .insert({
-              nome: categoryName,
-              nivel: 2,
-              categoria_principal_id: principalId,
-              ativo: true,
-              ordem: Object.keys(categories).indexOf(categoryName) + 1,
-              organization_id: '' // Will be set by RLS trigger
-            })
-            .select()
+            .select('id')
+            .eq('nome', categoryName)
+            .eq('nivel', 2)
+            .eq('categoria_principal_id', principalId)
             .maybeSingle();
 
-          if (categoryError && !categoryError.message.includes('duplicate')) {
-            console.error('Erro ao criar categoria:', categoryError);
-            continue;
+          let categoryId = existingCategory?.id;
+
+          // Se não existir, criar nova categoria de nível 2
+          if (!categoryId) {
+            const { data: newCategory, error: categoryError } = await supabase
+              .from('categorias_produtos')
+              .insert({
+                nome: categoryName,
+                nivel: 2,
+                categoria_principal_id: principalId,
+                ativo: true,
+                ordem: Object.keys(categories).indexOf(categoryName) + 1,
+                organization_id: '' // Will be set by RLS trigger
+              })
+              .select('id')
+              .maybeSingle();
+
+            if (categoryError) {
+              console.error('❌ Erro ao criar categoria de nível 2:', categoryError);
+              continue;
+            }
+            
+            categoryId = newCategory?.id;
+            console.log(`    ✅ Categoria de nível 2 criada: ${categoryName}`);
+          } else {
+            console.log(`    ✅ Categoria de nível 2 encontrada: ${categoryName}`);
           }
 
-          const categoryId = category?.id;
-          if (!categoryId) continue;
+          if (!categoryId) {
+            console.error(`❌ Não foi possível obter ID para categoria ${categoryName}`);
+            continue;
+          }
 
           // Criar subcategorias de nível 3
           for (let i = 0; i < subcategories.length; i++) {
             const subcategoryName = subcategories[i];
-            const { error: subcategoryError } = await supabase
+            
+            // Verificar se a subcategoria já existe
+            const { data: existingSubcategory } = await supabase
               .from('categorias_produtos')
-              .insert({
-                nome: subcategoryName,
-                nivel: 3,
-                categoria_id: categoryId,
-                ativo: true,
-                ordem: i + 1,
-                organization_id: '' // Will be set by RLS trigger
-              });
+              .select('id')
+              .eq('nome', subcategoryName)
+              .eq('nivel', 3)
+              .eq('categoria_id', categoryId)
+              .maybeSingle();
 
-            if (subcategoryError && !subcategoryError.message.includes('duplicate')) {
-              console.error('Erro ao criar subcategoria:', subcategoryError);
+            if (!existingSubcategory) {
+              const { error: subcategoryError } = await supabase
+                .from('categorias_produtos')
+                .insert({
+                  nome: subcategoryName,
+                  nivel: 3,
+                  categoria_id: categoryId,
+                  ativo: true,
+                  ordem: i + 1,
+                  organization_id: '' // Will be set by RLS trigger
+                });
+
+              if (subcategoryError) {
+                console.error('❌ Erro ao criar subcategoria:', subcategoryError);
+              } else {
+                console.log(`      ✅ Subcategoria criada: ${subcategoryName}`);
+              }
+            } else {
+              console.log(`      ✅ Subcategoria já existe: ${subcategoryName}`);
             }
           }
         }
       }
 
-      console.log('✅ Hierarquia completa criada com sucesso!');
+      console.log('✅ Hierarquia completa processada com sucesso!');
+      
+      // Recarregar categorias após criação
+      setTimeout(() => {
+        console.log('🔄 Recarregando categorias após criação da hierarquia...');
+        loadCategories();
+      }, 1000);
       
     } catch (error) {
       console.error('Erro ao criar hierarquia completa:', error);

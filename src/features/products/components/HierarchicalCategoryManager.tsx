@@ -1,6 +1,6 @@
 // Gerenciador de categorias hierárquicas com interface para cadastro de Categoria Principal > Categoria > Subcategoria
 import { useState } from 'react';
-import { Plus, FolderOpen, Edit2, Trash2, ChevronRight, Tags, Layers, Grid3X3, ArrowLeft, ChevronDown } from 'lucide-react';
+import { Plus, FolderOpen, Edit2, Trash2, ChevronRight, Tags, Layers, Grid3X3, ArrowLeft, ChevronDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -40,7 +40,8 @@ export function HierarchicalCategoryManager() {
     deleteCategory,
     getCategoriasPrincipais,
     getCategorias,
-    getSubcategorias
+    getSubcategorias,
+    refreshCategories
   } = useHierarchicalCategories();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -320,166 +321,184 @@ export function HierarchicalCategoryManager() {
             Categorias Hierárquicas
           </CardTitle>
           
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" onClick={() => openCreateDialog(1)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Nova Categoria Principal
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingCategory ? 'Editar' : 'Nova'} {NIVEL_LABELS[form.watch('nivel') || 1]}
-                </DialogTitle>
-              </DialogHeader>
+          <div className="flex items-center gap-2">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => {
+                toast({
+                  title: "Atualizando categorias",
+                  description: "Recarregando hierarquia de categorias...",
+                });
+                refreshCategories();
+              }}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Atualizar
+            </Button>
+            
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" onClick={() => openCreateDialog(1)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nova Categoria Principal
+                </Button>
+              </DialogTrigger>
               
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="nome"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome da {NIVEL_LABELS[form.watch('nivel') || 1]}</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: Eletrônicos, Smartphones, iPhone..." {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="descricao"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Descrição (opcional)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Descreva esta categoria..."
-                            className="resize-none"
-                            rows={2}
-                            {...field} 
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {!editingCategory && form.watch('nivel') > 1 && (
-                    <>
-                      {form.watch('nivel') >= 2 && (
-                        <FormField
-                          control={form.control}
-                          name="categoria_principal_id"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Categoria Principal</FormLabel>
-                              <Select value={field.value} onValueChange={field.onChange}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {categoriasPrincipais.map((cat) => (
-                                    <SelectItem key={cat.id} value={cat.id}>
-                                      {cat.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                      
-                      {form.watch('nivel') === 3 && form.watch('categoria_principal_id') && (
-                        <FormField
-                          control={form.control}
-                          name="categoria_id"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Categoria</FormLabel>
-                              <Select value={field.value} onValueChange={field.onChange}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Selecione..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {getCategorias(form.watch('categoria_principal_id') || '').map((cat) => (
-                                    <SelectItem key={cat.id} value={cat.id}>
-                                      {cat.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </>
-                  )}
-                  
-                  <div className="grid grid-cols-2 gap-4">
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingCategory ? 'Editar' : 'Nova'} {NIVEL_LABELS[form.watch('nivel') || 1]}
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="cor"
+                      name="nome"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Cor</FormLabel>
-                          <div className="grid grid-cols-4 gap-2">
-                            {CATEGORY_COLORS.map((color) => (
-                              <button
-                                key={color}
-                                type="button"
-                                className={`w-8 h-8 rounded-full border-2 transition-all ${
-                                  field.value === color 
-                                    ? 'border-primary scale-110' 
-                                    : 'border-muted-foreground/20 hover:border-muted-foreground/40'
-                                }`}
-                                style={{ backgroundColor: color }}
-                                onClick={() => field.onChange(color)}
-                              />
-                            ))}
-                          </div>
+                          <FormLabel>Nome da {NIVEL_LABELS[form.watch('nivel') || 1]}</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: Eletrônicos, Smartphones, iPhone..." {...field} />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
                     
                     <FormField
                       control={form.control}
-                      name="icone"
+                      name="descricao"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Ícone</FormLabel>
-                          <Select value={field.value} onValueChange={field.onChange}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {CATEGORY_ICONS.map((icon) => (
-                                <SelectItem key={icon} value={icon}>
-                                  {icon}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>Descrição (opcional)</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Descreva esta categoria..."
+                              className="resize-none"
+                              rows={2}
+                              {...field} 
+                            />
+                          </FormControl>
                         </FormItem>
                       )}
                     />
-                  </div>
-                  
-                  <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={closeDialog}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit">
-                      {editingCategory ? 'Atualizar' : 'Criar'}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                    
+                    {!editingCategory && form.watch('nivel') > 1 && (
+                      <>
+                        {form.watch('nivel') >= 2 && (
+                          <FormField
+                            control={form.control}
+                            name="categoria_principal_id"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Categoria Principal</FormLabel>
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {categoriasPrincipais.map((cat) => (
+                                      <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                        
+                        {form.watch('nivel') === 3 && form.watch('categoria_principal_id') && (
+                          <FormField
+                            control={form.control}
+                            name="categoria_id"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Categoria</FormLabel>
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {getCategorias(form.watch('categoria_principal_id') || '').map((cat) => (
+                                      <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                            )}
+                          />
+                        )}
+                      </>
+                    )}
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="cor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cor</FormLabel>
+                            <div className="grid grid-cols-4 gap-2">
+                              {CATEGORY_COLORS.map((color) => (
+                                <button
+                                  key={color}
+                                  type="button"
+                                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                    field.value === color 
+                                      ? 'border-primary scale-110' 
+                                      : 'border-muted-foreground/20 hover:border-muted-foreground/40'
+                                  }`}
+                                  style={{ backgroundColor: color }}
+                                  onClick={() => field.onChange(color)}
+                                />
+                              ))}
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="icone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ícone</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {CATEGORY_ICONS.map((icon) => (
+                                  <SelectItem key={icon} value={icon}>
+                                    {icon}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={closeDialog}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit">
+                        {editingCategory ? 'Atualizar' : 'Criar'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       
