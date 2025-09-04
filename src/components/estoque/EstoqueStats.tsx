@@ -128,7 +128,7 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
         const IconComponent = stat.icon;
         
         return (
-          <Card key={index} className="relative overflow-hidden border-border/40 bg-card/60 backdrop-blur-sm hover:bg-card/80 hover:shadow-lg transition-all duration-300 group">
+          <Card key={index} className="relative overflow-hidden hover:shadow-lg transition-all duration-300 group">
             <CardContent className="p-5">
               <div className="space-y-4">
                 {/* Header com ícone e trend */}

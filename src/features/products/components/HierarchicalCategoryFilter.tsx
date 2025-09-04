@@ -104,7 +104,7 @@ export function HierarchicalCategoryFilter({
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma categoria principal..." />
             </SelectTrigger>
-            <SelectContent className="max-h-64 overflow-auto z-[60] bg-popover">
+            <SelectContent className="max-h-64 overflow-auto z-[60] bg-popover border shadow-lg">
               {categoriasPrincipais.map((cat) => (
                 <SelectItem key={cat.id} value={cat.id}>
                   <div className="flex items-center gap-2">
@@ -128,7 +128,7 @@ export function HierarchicalCategoryFilter({
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma categoria..." />
               </SelectTrigger>
-              <SelectContent className="max-h-64 overflow-auto z-[60] bg-popover">
+              <SelectContent className="max-h-64 overflow-auto z-[60] bg-popover border shadow-lg">
                 {categorias.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     <div className="flex items-center gap-2">
@@ -153,7 +153,7 @@ export function HierarchicalCategoryFilter({
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma subcategoria..." />
               </SelectTrigger>
-              <SelectContent className="max-h-64 overflow-auto z-[60] bg-popover">
+              <SelectContent className="max-h-64 overflow-auto z-[60] bg-popover border shadow-lg">
                 {subcategorias.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id}>
                     <div className="flex items-center gap-2">

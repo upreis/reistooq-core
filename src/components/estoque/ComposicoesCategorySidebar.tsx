@@ -358,7 +358,7 @@ export function ComposicoesCategorySidebar({
   }
 
   return (
-    <Card className="border-border/50 shadow-sm">
+    <Card className="shadow-sm">
       <CardHeader className="pb-3 space-y-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

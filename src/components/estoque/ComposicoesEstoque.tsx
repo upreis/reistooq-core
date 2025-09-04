@@ -319,7 +319,7 @@ export function ComposicoesEstoque() {
 
     return (
       <Card key={product.id} className={cn(
-        "group hover:shadow-xl transition-all duration-300 border-border/40 bg-card/60 backdrop-blur-sm hover:bg-card/80",
+        "group hover:shadow-xl transition-all duration-300",
         itemSelected && "ring-2 ring-primary border-primary/50 bg-primary/5"
       )}>
         <CardContent className="p-6">
