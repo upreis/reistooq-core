@@ -693,9 +693,15 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           );
         }
         
-        // Continuar com a importação apenas dos itens válidos
-        if (allErrors.length > 0) {
-          setResult({ success: 0, errors: allErrors, warnings: [], failed: failedRows });
+        // Filtrar apenas os itens válidos para importação (remover os com componentes não encontrados)
+        const validData = mappedData.filter((_, index) => !invalidRowIndexes.includes(index));
+        mappedData.length = 0;
+        mappedData.push(...validData);
+        
+        // Apenas interromper se há outros tipos de erros (não relacionados a componentes não encontrados)
+        const nonComponentErrors = allErrors.filter(error => !error.includes('SKU Componente não encontrado'));
+        if (nonComponentErrors.length > 0) {
+          setResult({ success: 0, errors: nonComponentErrors, warnings: [], failed: failedRows });
           return;
         }
         
