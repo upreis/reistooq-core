@@ -1,14 +1,16 @@
-// Gerenciador de categorias hierárquicas com interface para cadastro de Categoria Principal > Categoria > Subcategoria
+// Gerenciador de categorias hierárquicas REFATORADO com UX/UI melhorada
 import { useState } from 'react';
-import { Plus, FolderOpen, Edit2, Trash2, ChevronRight, Tags, Layers, Grid3X3, ArrowLeft, ChevronDown, RefreshCw } from 'lucide-react';
+import { Plus, ArrowLeft, ChevronRight, Tags, Layers, Edit2, Trash2, Package, Search, Filter, Download, Upload, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useHierarchicalCategories, CreateHierarchicalCategoryData, HierarchicalCategory } from '../hooks/useHierarchicalCategories';
@@ -46,9 +48,8 @@ export function HierarchicalCategoryManager() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<HierarchicalCategory | null>(null);
-  const [selectedLevel, setSelectedLevel] = useState<1 | 2 | 3>(1);
-  const [selectedPrincipal, setSelectedPrincipal] = useState<string>('');
-  const [selectedCategoria, setSelectedCategoria] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterLevel, setFilterLevel] = useState<number | null>(null);
   
   // Estados para navegação hierárquica
   const [currentView, setCurrentView] = useState<'principal' | 'categoria' | 'subcategoria'>('principal');
@@ -70,78 +71,66 @@ export function HierarchicalCategoryManager() {
 
   const categoriasPrincipais = getCategoriasPrincipais();
 
+  // Estatísticas
+  const stats = {
+    total: categories.length,
+    principais: categoriasPrincipais.length,
+    categorias: categories.filter(c => c.nivel === 2).length,
+    subcategorias: categories.filter(c => c.nivel === 3).length
+  };
+
   const handleSubmit = async (data: CreateHierarchicalCategoryData) => {
     try {
       if (editingCategory) {
         await updateCategory(editingCategory.id, data);
         toast({
-          title: "Categoria atualizada",
-          description: "Categoria foi atualizada com sucesso",
+          title: "✅ Categoria atualizada",
+          description: `${NIVEL_LABELS[data.nivel]} foi atualizada com sucesso`,
         });
       } else {
         await createCategory(data);
         toast({
-          title: "Categoria criada",
-          description: "Nova categoria foi criada com sucesso",
+          title: "✅ Categoria criada",
+          description: `${NIVEL_LABELS[data.nivel]} foi criada com sucesso`,
         });
       }
-      
-      setIsDialogOpen(false);
-      setEditingCategory(null);
-      form.reset();
+      closeDialog();
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Erro ao salvar categoria",
-        variant: "destructive"
+        title: "❌ Erro",
+        description: "Erro ao salvar categoria. Tente novamente.",
+        variant: "destructive",
       });
     }
   };
 
-  const handleEdit = (category: HierarchicalCategory) => {
-    setEditingCategory(category);
-    form.setValue('nome', category.nome);
-    form.setValue('descricao', category.descricao || '');
-    form.setValue('cor', category.cor || CATEGORY_COLORS[0]);
-    form.setValue('icone', category.icone || CATEGORY_ICONS[0]);
-    form.setValue('nivel', category.nivel);
-    form.setValue('categoria_principal_id', category.categoria_principal_id);
-    form.setValue('categoria_id', category.categoria_id);
-    form.setValue('ordem', category.ordem || 0);
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta categoria?')) {
-      try {
-        await deleteCategory(id);
-        toast({
-          title: "Categoria excluída",
-          description: "Categoria foi excluída com sucesso",
-        });
-      } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Erro ao excluir categoria",
-          variant: "destructive"
-        });
-      }
-    }
-  };
-
-  const openCreateDialog = (nivel: 1 | 2 | 3, principalId?: string, categoriaId?: string) => {
-    setEditingCategory(null);
-    setSelectedLevel(nivel);
+  const openCreateDialog = (nivel: 1 | 2 | 3, categoriaPrincipalId?: string, categoriaId?: string) => {
     form.reset({
       nome: '',
       descricao: '',
-      cor: CATEGORY_COLORS[0],
+      cor: CATEGORY_COLORS[Math.floor(Math.random() * CATEGORY_COLORS.length)],
       icone: CATEGORY_ICONS[0],
       nivel,
-      categoria_principal_id: principalId,
+      categoria_principal_id: categoriaPrincipalId,
       categoria_id: categoriaId,
       ordem: 0
     });
+    setEditingCategory(null);
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (category: HierarchicalCategory) => {
+    form.reset({
+      nome: category.nome,
+      descricao: category.descricao || '',
+      cor: category.cor || CATEGORY_COLORS[0],
+      icone: category.icone || CATEGORY_ICONS[0],
+      nivel: category.nivel,
+      categoria_principal_id: category.categoria_principal_id,
+      categoria_id: category.categoria_id,
+      ordem: category.ordem || 0
+    });
+    setEditingCategory(category);
     setIsDialogOpen(true);
   };
 
@@ -151,10 +140,27 @@ export function HierarchicalCategoryManager() {
     form.reset();
   };
 
+  const handleDelete = async (category: HierarchicalCategory) => {
+    if (window.confirm(`Tem certeza que deseja excluir "${category.nome}"?`)) {
+      try {
+        await deleteCategory(category.id);
+        toast({
+          title: "✅ Categoria excluída",
+          description: "Categoria foi excluída com sucesso",
+        });
+      } catch (error) {
+        toast({
+          title: "❌ Erro",
+          description: "Erro ao excluir categoria. Tente novamente.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   // Navegação hierárquica
-  const handleNavigateToPrincipal = (categoria: HierarchicalCategory) => {
-    setActivePrincipal(categoria);
-    setActiveCategoria(null);
+  const handleNavigateToPrincipal = (principal: HierarchicalCategory) => {
+    setActivePrincipal(principal);
     setCurrentView('categoria');
   };
 
@@ -174,172 +180,203 @@ export function HierarchicalCategoryManager() {
     setCurrentView('principal');
   };
 
-  // Renderização de card clicável
-  const renderClickableCard = (category: HierarchicalCategory, onClick?: () => void) => (
-    <div
-      key={category.id}
-      className="group relative p-4 rounded-lg border border-border bg-card hover:shadow-md transition-all cursor-pointer"
-      onClick={onClick}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Badge 
-            style={{ 
-              backgroundColor: category.cor || CATEGORY_COLORS[0], 
-              color: 'white' 
-            }}
-            className="text-xs"
-          >
-            {NIVEL_LABELS[category.nivel]}
-          </Badge>
-          <span className="font-medium">{category.nome}</span>
-          {onClick && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-        </div>
-        
-        <div className="hidden group-hover:flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          {category.nivel < 3 && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs"
-              onClick={() => openCreateDialog(
-                (category.nivel + 1) as 2 | 3,
-                category.nivel === 1 ? category.id : category.categoria_principal_id,
-                category.nivel === 2 ? category.id : undefined
-              )}
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              {category.nivel === 1 ? 'Categoria' : 'Subcategoria'}
-            </Button>
-          )}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8"
-            onClick={() => handleEdit(category)}
-          >
-            <Edit2 className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 text-destructive hover:text-destructive"
-            onClick={() => handleDelete(category.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-      
-      {category.descricao && (
-        <p className="text-sm text-muted-foreground mb-2">
-          {category.descricao}
-        </p>
-      )}
-      
-      <div className="text-xs text-muted-foreground">
-        {category.categoria_completa}
-      </div>
-    </div>
-  );
+  // Função para renderizar cards clicáveis com design moderno
+  const renderCategoryCard = (category: HierarchicalCategory, onClick?: () => void) => {
+    const subcategoriesCount = category.nivel === 1 
+      ? getCategorias(category.id).length 
+      : category.nivel === 2 
+        ? getSubcategorias(category.id).length 
+        : 0;
+    
+    const hasSubcategories = subcategoriesCount > 0;
+    const isClickable = !!onClick && hasSubcategories;
 
-  const renderCategoryCard = (category: HierarchicalCategory, level: number) => (
-    <div
-      key={category.id}
-      className={`group relative p-4 rounded-lg border border-border bg-card hover:shadow-md transition-all ${
-        level > 1 ? 'ml-6' : ''
-      }`}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          {level > 1 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-          <Badge 
-            style={{ 
-              backgroundColor: category.cor || CATEGORY_COLORS[0], 
-              color: 'white' 
-            }}
-            className="text-xs"
-          >
-            {NIVEL_LABELS[category.nivel]}
-          </Badge>
-          <span className="font-medium">{category.nome}</span>
-        </div>
-        
-        <div className="hidden group-hover:flex items-center gap-1">
-          {category.nivel < 3 && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs"
-              onClick={() => openCreateDialog(
-                (category.nivel + 1) as 2 | 3,
-                category.nivel === 1 ? category.id : category.categoria_principal_id,
-                category.nivel === 2 ? category.id : undefined
+    return (
+      <Card 
+        key={category.id} 
+        className={`group transition-all duration-300 ${
+          isClickable 
+            ? 'hover:shadow-xl hover:scale-[1.02] cursor-pointer border-muted hover:border-primary/50 hover:bg-primary/5' 
+            : 'border-muted hover:shadow-md'
+        }`}
+        onClick={isClickable ? onClick : undefined}
+      >
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 flex-1">
+              {/* Indicador visual da categoria */}
+              <div className="relative">
+                <div 
+                  className="w-4 h-4 rounded-full border-2 border-white shadow-lg"
+                  style={{ backgroundColor: category.cor || '#6366f1' }}
+                />
+                {hasSubcategories && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                )}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-semibold text-sm truncate">{category.nome}</h4>
+                  <Badge variant="outline" className="text-xs h-5 px-2 shrink-0">
+                    Nível {category.nivel}
+                  </Badge>
+                </div>
+                
+                {category.descricao && (
+                  <p className="text-xs text-muted-foreground truncate mb-2">
+                    {category.descricao}
+                  </p>
+                )}
+                
+                {/* Indicadores de subcategorias */}
+                {hasSubcategories && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs h-5">
+                      <Package className="w-3 h-3 mr-1" />
+                      {subcategoriesCount} {category.nivel === 1 ? 'categorias' : 'subcategorias'}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Botões de ação */}
+              <div className="flex opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 hover:bg-blue-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEditDialog(category);
+                  }}
+                >
+                  <Edit2 className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 text-destructive hover:bg-red-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(category);
+                  }}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              {/* Seta para navegação */}
+              {isClickable && (
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors ml-2" />
               )}
-            >
-              <Plus className="h-3 w-3 mr-1" />
-              {category.nivel === 1 ? 'Categoria' : 'Subcategoria'}
-            </Button>
-          )}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8"
-            onClick={() => handleEdit(category)}
-          >
-            <Edit2 className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 text-destructive hover:text-destructive"
-            onClick={() => handleDelete(category.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-      
-      {category.descricao && (
-        <p className="text-sm text-muted-foreground mb-2">
-          {category.descricao}
-        </p>
-      )}
-      
-      <div className="text-xs text-muted-foreground">
-        {category.categoria_completa}
-      </div>
-    </div>
-  );
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Filtrar categorias baseado na pesquisa
+  const getFilteredCategories = (categoriesList: HierarchicalCategory[]) => {
+    return categoriesList.filter(category => 
+      category.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (category.descricao && category.descricao.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Layers className="h-5 w-5" />
-            Categorias Hierárquicas
-          </CardTitle>
+    <div className="space-y-6">
+      {/* Header com estatísticas */}
+      <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Layers className="h-6 w-6" />
+                Gerenciador de Categorias
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                Configure a estrutura hierárquica: Categoria Principal → Categoria → Subcategoria
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  toast({
+                    title: "🔄 Atualizando categorias",
+                    description: "Recarregando hierarquia de categorias...",
+                  });
+                  refreshCategories();
+                }}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Sincronizar
+              </Button>
+            </div>
+          </div>
           
-          <div className="flex items-center gap-2">
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => {
-                toast({
-                  title: "Atualizando categorias",
-                  description: "Recarregando hierarquia de categorias...",
-                });
-                refreshCategories();
-              }}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Atualizar
-            </Button>
+          {/* Estatísticas */}
+          <div className="grid grid-cols-4 gap-4 mt-4">
+            <div className="text-center p-3 bg-white/50 rounded-lg border">
+              <div className="text-2xl font-bold text-primary">{stats.total}</div>
+              <div className="text-xs text-muted-foreground">Total</div>
+            </div>
+            <div className="text-center p-3 bg-white/50 rounded-lg border">
+              <div className="text-2xl font-bold text-orange-600">{stats.principais}</div>
+              <div className="text-xs text-muted-foreground">Principais</div>
+            </div>
+            <div className="text-center p-3 bg-white/50 rounded-lg border">
+              <div className="text-2xl font-bold text-green-600">{stats.categorias}</div>
+              <div className="text-xs text-muted-foreground">Categorias</div>
+            </div>
+            <div className="text-center p-3 bg-white/50 rounded-lg border">
+              <div className="text-2xl font-bold text-blue-600">{stats.subcategorias}</div>
+              <div className="text-xs text-muted-foreground">Subcategorias</div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Área de controle principal */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Pesquisa */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Pesquisar categorias..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              
+              {/* Filtro por nível */}
+              <Select value={filterLevel?.toString() || ''} onValueChange={(value) => setFilterLevel(value ? parseInt(value) : null)}>
+                <SelectTrigger className="w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filtrar por nível" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos os níveis</SelectItem>
+                  <SelectItem value="1">Categorias Principais</SelectItem>
+                  <SelectItem value="2">Categorias</SelectItem>
+                  <SelectItem value="3">Subcategorias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" onClick={() => openCreateDialog(1)}>
+                <Button onClick={() => openCreateDialog(1)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nova Categoria Principal
                 </Button>
@@ -363,6 +400,7 @@ export function HierarchicalCategoryManager() {
                           <FormControl>
                             <Input placeholder="Ex: Eletrônicos, Smartphones, iPhone..." {...field} />
                           </FormControl>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -451,7 +489,7 @@ export function HierarchicalCategoryManager() {
                                   type="button"
                                   className={`w-8 h-8 rounded-full border-2 transition-all ${
                                     field.value === color 
-                                      ? 'border-primary scale-110' 
+                                      ? 'border-primary scale-110 shadow-lg' 
                                       : 'border-muted-foreground/20 hover:border-muted-foreground/40'
                                   }`}
                                   style={{ backgroundColor: color }}
@@ -486,7 +524,7 @@ export function HierarchicalCategoryManager() {
                       />
                     </div>
                     
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 pt-4">
                       <Button type="button" variant="outline" onClick={closeDialog}>
                         Cancelar
                       </Button>
@@ -499,134 +537,131 @@ export function HierarchicalCategoryManager() {
               </DialogContent>
             </Dialog>
           </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent>
-        {/* Navegação/Breadcrumb */}
-        {currentView !== 'principal' && (
-          <div className="flex items-center gap-2 mb-4 p-3 bg-muted/50 rounded-lg">
-            <Button variant="ghost" size="sm" onClick={handleBackToPrincipal}>
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Categorias Principais
-            </Button>
-            
-            {activePrincipal && (
+        </CardHeader>
+        
+        <CardContent>
+          {/* Navegação/Breadcrumb */}
+          {currentView !== 'principal' && (
+            <div className="flex items-center gap-2 mb-6 p-4 bg-muted/30 rounded-lg border">
+              <Button variant="ghost" size="sm" onClick={handleBackToPrincipal} className="hover:bg-primary/10">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Categorias Principais
+              </Button>
+              
+              {activePrincipal && (
+                <>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={currentView === 'subcategoria' ? handleBackToCategoria : undefined}
+                    className={`${currentView === 'categoria' ? 'font-medium bg-primary/10' : ''} hover:bg-primary/10`}
+                  >
+                    {activePrincipal.nome}
+                  </Button>
+                </>
+              )}
+              
+              {activeCategoria && (
+                <>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm bg-primary/10 px-3 py-1 rounded-md">{activeCategoria.nome}</span>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                <p className="text-muted-foreground">Carregando categorias...</p>
+              </div>
+            ) : (
               <>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={currentView === 'subcategoria' ? handleBackToCategoria : undefined}
-                  className={currentView === 'categoria' ? 'font-medium' : ''}
-                >
-                  {activePrincipal.nome}
-                </Button>
-              </>
-            )}
-            
-            {activeCategoria && (
-              <>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium text-sm">{activeCategoria.nome}</span>
+                {/* Visualização de Categorias Principais */}
+                {currentView === 'principal' && (
+                  <>
+                    {categoriasPrincipais.length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Tags className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                        <h3 className="text-lg font-medium mb-2">Nenhuma categoria criada ainda</h3>
+                        <p className="text-sm">Crie uma Categoria Principal para começar a organizar seus produtos</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {getFilteredCategories(categoriasPrincipais).map((principal) => 
+                          renderCategoryCard(principal, () => handleNavigateToPrincipal(principal))
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Visualização de Categorias (nível 2) */}
+                {currentView === 'categoria' && activePrincipal && (
+                  <>
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-xl font-semibold">Categorias de {activePrincipal.nome}</h3>
+                        <p className="text-sm text-muted-foreground">Organize seus produtos em categorias específicas</p>
+                      </div>
+                      <Button onClick={() => openCreateDialog(2, activePrincipal.id)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nova Categoria
+                      </Button>
+                    </div>
+                    
+                    {getCategorias(activePrincipal.id).length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Package className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                        <h3 className="text-lg font-medium mb-2">Nenhuma categoria criada ainda</h3>
+                        <p className="text-sm">Crie categorias para organizar os produtos de {activePrincipal.nome}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {getFilteredCategories(getCategorias(activePrincipal.id)).map((categoria) => 
+                          renderCategoryCard(categoria, () => handleNavigateToCategoria(categoria))
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Visualização de Subcategorias (nível 3) */}
+                {currentView === 'subcategoria' && activeCategoria && (
+                  <>
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h3 className="text-xl font-semibold">Subcategorias de {activeCategoria.nome}</h3>
+                        <p className="text-sm text-muted-foreground">Detalhe ainda mais a organização dos seus produtos</p>
+                      </div>
+                      <Button onClick={() => openCreateDialog(3, activeCategoria.categoria_principal_id, activeCategoria.id)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nova Subcategoria
+                      </Button>
+                    </div>
+                    
+                    {getSubcategorias(activeCategoria.id).length === 0 ? (
+                      <div className="text-center py-12 text-muted-foreground">
+                        <Tags className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                        <h3 className="text-lg font-medium mb-2">Nenhuma subcategoria criada ainda</h3>
+                        <p className="text-sm">Crie subcategorias para detalhar ainda mais {activeCategoria.nome}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {getFilteredCategories(getSubcategorias(activeCategoria.id)).map((subcategoria) => 
+                          renderCategoryCard(subcategoria)
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
               </>
             )}
           </div>
-        )}
-
-        <div className="space-y-4">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <>
-              {/* Visualização de Categorias Principais */}
-              {currentView === 'principal' && (
-                <>
-                  {categoriasPrincipais.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Tags className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma categoria criada ainda</p>
-                      <p className="text-sm">Crie uma Categoria Principal para começar</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {categoriasPrincipais.map((principal) => 
-                        renderClickableCard(principal, () => handleNavigateToPrincipal(principal))
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Visualização de Categorias (nível 2) */}
-              {currentView === 'categoria' && activePrincipal && (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">
-                      Categorias de {activePrincipal.nome}
-                    </h3>
-                    <Button 
-                      size="sm" 
-                      onClick={() => openCreateDialog(2, activePrincipal.id)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nova Categoria
-                    </Button>
-                  </div>
-                  
-                  {getCategorias(activePrincipal.id).length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Grid3X3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma categoria criada ainda</p>
-                      <p className="text-sm">Crie categorias para organizar seus produtos</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {getCategorias(activePrincipal.id).map((categoria) => 
-                        renderClickableCard(categoria, () => handleNavigateToCategoria(categoria))
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Visualização de Subcategorias (nível 3) */}
-              {currentView === 'subcategoria' && activeCategoria && (
-                <>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">
-                      Subcategorias de {activeCategoria.nome}
-                    </h3>
-                    <Button 
-                      size="sm" 
-                      onClick={() => openCreateDialog(3, activeCategoria.categoria_principal_id, activeCategoria.id)}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nova Subcategoria
-                    </Button>
-                  </div>
-                  
-                  {getSubcategorias(activeCategoria.id).length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Nenhuma subcategoria criada ainda</p>
-                      <p className="text-sm">Crie subcategorias para detalhar ainda mais seus produtos</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {getSubcategorias(activeCategoria.id).map((subcategoria) => 
-                        renderClickableCard(subcategoria)
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

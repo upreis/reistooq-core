@@ -176,7 +176,7 @@ export const useHierarchicalCategories = () => {
               nivel: 1,
               ativo: true,
               ordem: Object.keys(hierarchyData).indexOf(principalName) + 1,
-              organization_id: '' // Will be set by RLS trigger
+              organization_id: null as any // Bypass TypeScript para permitir NULL
             })
             .select('id')
             .maybeSingle();
@@ -222,7 +222,7 @@ export const useHierarchicalCategories = () => {
                 categoria_principal_id: principalId,
                 ativo: true,
                 ordem: Object.keys(categories).indexOf(categoryName) + 1,
-                organization_id: '' // Will be set by RLS trigger
+                organization_id: null as any // Bypass TypeScript para permitir NULL
               })
               .select('id')
               .maybeSingle();
@@ -265,7 +265,7 @@ export const useHierarchicalCategories = () => {
                   categoria_id: categoryId,
                   ativo: true,
                   ordem: i + 1,
-                  organization_id: '' // Will be set by RLS trigger
+                  organization_id: null as any // Bypass TypeScript para permitir NULL
                 });
 
               if (subcategoryError) {
@@ -299,7 +299,7 @@ export const useHierarchicalCategories = () => {
       .insert({
         ...data,
         ativo: true,
-        organization_id: '' // Will be set by RLS trigger
+        organization_id: null as any // Bypass TypeScript para permitir NULL - será preenchido pelo trigger RLS
       });
 
     if (error) throw error;
