@@ -125,132 +125,74 @@ export function ComposicoesEstoque() {
         return;
       }
 
-      // Preparar dados no formato específico da aba composições
-      const exportData: any[] = [];
-      
-      for (const produto of produtosFinaisFiltrados) {
-        const composicoesProduto = getComposicoesForSku(produto.sku_interno) || [];
-        
-        // Calcular métricas do produto
-        const custoTotal = composicoesProduto.reduce((total, comp) => {
-          const custoUnitario = custosProdutos[comp.sku_componente] || 0;
-          return total + (custoUnitario * comp.quantidade);
-        }, 0);
-
-        // Calcular estoque disponível (pode produzir)
-        let estoqueDisponivel = produto.quantidade_atual;
-        let componenteLimitante = null;
-        
-        if (composicoesProduto.length > 0) {
-          let menorEstoquePossivel = Infinity;
-          for (const comp of composicoesProduto) {
-            const estoqueComponente = comp.estoque_componente || 0;
-            const quantidadeNecessaria = comp.quantidade;
-            const possiveisUnidades = Math.floor(estoqueComponente / quantidadeNecessaria);
-            if (possiveisUnidades < menorEstoquePossivel) {
-              menorEstoquePossivel = possiveisUnidades;
-              componenteLimitante = comp.sku_componente;
-            }
-          }
-          estoqueDisponivel = menorEstoquePossivel === Infinity ? 0 : menorEstoquePossivel;
-        }
-
-        // Linha principal do produto com resumo da composição
-        exportData.push({
-          'Produto': produto.nome,
-          'SKU': produto.sku_interno,
-          'Categoria Principal': produto.categoria_principal || '',
-          'Status': produto.ativo ? 'Ativo' : 'Inativo',
-          'Custo Total': formatMoney(custoTotal),
-          'Pode Produzir': estoqueDisponivel,
-          'Total de Componentes': composicoesProduto.length,
-          'Componente Limitante': componenteLimitante || '',
-          'Observação': composicoesProduto.length === 0 ? 'Produto sem composições definidas' : 'Ver componentes abaixo'
-        });
-
-        // Adicionar linha para cada componente (formato detalhado)
-        if (composicoesProduto.length > 0) {
-          composicoesProduto.forEach((comp, index) => {
-            const custoUnitario = custosProdutos[comp.sku_componente] || 0;
-            const componenteNaoExiste = comp.nome_componente === comp.sku_componente;
-            
-            exportData.push({
-              'Produto': '', // Vazio para componentes
-              'SKU': '', // Vazio para componentes  
-              'Categoria Principal': '', // Vazio para componentes
-              'Status': '', // Vazio para componentes
-              'Custo Total': '', // Vazio para componentes
-              'Pode Produzir': '', // Vazio para componentes
-              'Total de Componentes': '', // Vazio para componentes
-              'Componente Limitante': '', // Vazio para componentes
-              'Observação': `Componente ${index + 1}/${composicoesProduto.length}`,
-              'SKU Componente': comp.sku_componente,
-              'Nome do Componente': componenteNaoExiste ? 'NÃO CADASTRADO' : comp.nome_componente,
-              'Quantidade Necessária': comp.quantidade,
-              'Unidade': comp.unidade_medida_id || '',
-              'Custo Unitário': formatMoney(custoUnitario),
-              'Estoque Disponível': comp.estoque_componente || 0,
-              'Subtotal': formatMoney(custoUnitario * comp.quantidade),
-              'Status Componente': componenteNaoExiste ? 'ERRO - Não cadastrado' : (comp.estoque_componente > 0 ? 'OK' : 'SEM ESTOQUE')
-            });
-          });
-        }
-
-        // Linha separadora entre produtos
-        exportData.push({
-          'Produto': '---',
-          'SKU': '---', 
-          'Categoria Principal': '---',
-          'Status': '---',
-          'Custo Total': '---',
-          'Pode Produzir': '---',
-          'Total de Componentes': '---',
-          'Componente Limitante': '---',
-          'Observação': '---',
-          'SKU Componente': '---',
-          'Nome do Componente': '---',
-          'Quantidade Necessária': '---',
-          'Unidade': '---',
-          'Custo Unitário': '---',
-          'Estoque Disponível': '---',
-          'Subtotal': '---',
-          'Status Componente': '---'
-        });
-      }
-
-      // Remover última linha separadora
-      if (exportData.length > 0 && exportData[exportData.length - 1]['Produto'] === '---') {
-        exportData.pop();
-      }
-
-      // Criar workbook e worksheet
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      
-      // Ajustar largura das colunas para o formato de composições
-      const colWidths = [
-        { wpx: 250 }, // Produto
-        { wpx: 120 }, // SKU
-        { wpx: 150 }, // Categoria Principal
-        { wpx: 80 },  // Status
-        { wpx: 120 }, // Custo Total
-        { wpx: 100 }, // Pode Produzir
-        { wpx: 120 }, // Total de Componentes
-        { wpx: 150 }, // Componente Limitante
-        { wpx: 200 }, // Observação
-        { wpx: 120 }, // SKU Componente
-        { wpx: 200 }, // Nome do Componente
-        { wpx: 120 }, // Quantidade Necessária
-        { wpx: 80 },  // Unidade
-        { wpx: 120 }, // Custo Unitário
-        { wpx: 120 }, // Estoque Disponível
-        { wpx: 120 }, // Subtotal
-        { wpx: 150 }  // Status Componente
+      // Preparar dados exatamente no template de composições (uma linha por produto)
+      const headers: string[] = [
+        'Produto',
+        'SKU Pai',
+        'Categoria Principal',
+        // Componentes 1..10 (SKU, Nome, quantidade, Uni medida)
+        ...Array.from({ length: 10 }).flatMap((_, i) => [
+          `SKU do componente ${i + 1}`,
+          `Nome do Componente ${i + 1}`,
+          `quantidade ${i + 1}`,
+          `Uni medida ${i + 1}`,
+        ]),
       ];
-      ws['!cols'] = colWidths;
-      
-      // Adicionar worksheet ao workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Produtos de Composição');
+
+      const rows: (string | number)[][] = [];
+
+      for (const produto of produtosFinaisFiltrados) {
+        const row: (string | number)[] = Array(headers.length).fill('');
+        // Cabeçalho principal
+        row[0] = produto.nome;
+        row[1] = produto.sku_interno; // SKU Pai
+        row[2] = produto.categoria_principal || '';
+
+        // Preencher componentes na ordem
+        const composicoesProduto = getComposicoesForSku(produto.sku_interno) || [];
+        for (let i = 0; i < 10; i++) {
+          const comp = composicoesProduto[i];
+          const baseIndex = 3 + i * 4; // início do bloco do componente i
+          if (comp) {
+            const componenteNaoExiste = comp.nome_componente === comp.sku_componente;
+            row[baseIndex + 0] = comp.sku_componente || '';
+            row[baseIndex + 1] = componenteNaoExiste ? 'NÃO CADASTRADO' : (comp.nome_componente || '');
+            row[baseIndex + 2] = comp.quantidade ?? '';
+            row[baseIndex + 3] = comp.unidade_medida_id || '';
+          } else {
+            // deixa em branco quando não há componente
+            row[baseIndex + 0] = '';
+            row[baseIndex + 1] = '';
+            row[baseIndex + 2] = '';
+            row[baseIndex + 3] = '';
+          }
+        }
+
+        rows.push(row);
+      }
+
+      // Criar workbook e worksheet no formato do template
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([
+        headers,
+        ...rows,
+      ]);
+
+      // Larguras básicas para melhor leitura
+      ws['!cols'] = [
+        { wpx: 240 }, // Produto
+        { wpx: 140 }, // SKU Pai
+        { wpx: 160 }, // Categoria Principal
+        ...Array.from({ length: 10 }).flatMap(() => ([
+          { wpx: 140 }, // SKU do componente
+          { wpx: 200 }, // Nome do componente
+          { wpx: 100 }, // quantidade
+          { wpx: 120 }, // Uni medida
+        ])),
+      ];
+
+      // Adicionar worksheet ao workbook com o nome do template
+      XLSX.utils.book_append_sheet(wb, ws, 'Template');
       
       // Nome do arquivo específico para composições
       const dataAtual = new Date().toISOString().split('T')[0];
