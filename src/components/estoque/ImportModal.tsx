@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProducts } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
+import { downloadFailedItemsReport } from "@/utils/exportUtils";
 import * as XLSX from 'xlsx';
 
 interface ImportModalProps {
@@ -36,6 +37,7 @@ interface ImportResult {
   success: number;
   errors: string[];
   warnings: string[];
+  failed: { row: number; data: any; error: string }[];
 }
 
 export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }: ImportModalProps) {
@@ -424,6 +426,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       // Validar dados
       let allErrors: string[] = [];
       const validRows: any[] = [];
+      const failedRows: { row: number; data: any; error: string }[] = [];
 
       let warnings: string[] = [];
       let rowsToCreate: any[] = [];
@@ -436,7 +439,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         const duplicateSkus = skus.filter((sku, index) => skus.indexOf(sku) !== index);
         if (duplicateSkus.length > 0) {
           allErrors.push(`SKUs duplicados na planilha: ${[...new Set(duplicateSkus)].join(', ')}`);
-          setResult({ success: 0, errors: allErrors, warnings: [] });
+          setResult({ success: 0, errors: allErrors, warnings: [], failed: [] });
           return;
         }
 
@@ -509,13 +512,18 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
             }
           } else {
             allErrors.push(...rowErrors);
+            failedRows.push({
+              row: index + 2,
+              data: row,
+              error: rowErrors.join('; ')
+            });
           }
         });
 
         console.log(`A reativar: ${rowsToReactivate.length} | A criar: ${rowsToCreate.length}`);
 
         if (allErrors.length > 0) {
-          setResult({ success: 0, errors: allErrors, warnings: [] });
+          setResult({ success: 0, errors: allErrors, warnings: [], failed: failedRows });
           return;
         }
       } else {
@@ -557,7 +565,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         });
 
         if (allErrors.length > 0) {
-          setResult({ success: 0, errors: allErrors, warnings: [] });
+          setResult({ success: 0, errors: allErrors, warnings: [], failed: failedRows });
           return;
         }
         
@@ -622,7 +630,8 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         setResult({
           success: successCount,
           errors: processingErrors,
-          warnings: warnings
+          warnings: warnings,
+          failed: []
         });
 
         if (successCount > 0) {
@@ -669,7 +678,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         if (allErrors.length > 0) {
           if (!importOnlyValid) {
             // Modo "tudo ou nada" - rejeitar tudo se há erros
-            setResult({ success: 0, errors: allErrors, warnings: [] });
+            setResult({ success: 0, errors: allErrors, warnings: [], failed: failedRows });
             return;
           } else {
             // Modo "apenas válidos" - filtrar itens válidos
@@ -765,7 +774,8 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         setResult({
           success: successCount,
           errors: processingErrors,
-          warnings: warnings
+          warnings: warnings,
+          failed: []
         });
 
         if (successCount > 0) {
@@ -782,7 +792,8 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       setResult({
         success: 0,
         errors: [error instanceof Error ? error.message : 'Erro desconhecido'],
-        warnings: []
+        warnings: [],
+        failed: []
       });
     } finally {
       setIsProcessing(false);
@@ -974,6 +985,26 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
                         ))}
                       </ul>
                       
+                      {/* Botão para baixar relatório de erros */}
+                      {result.failed && result.failed.length > 0 && (
+                        <div className="mt-4 pt-4 border-t space-y-2">
+                          <Button 
+                            variant="outline"
+                            onClick={() => downloadFailedItemsReport(
+                              result.failed, 
+                              `itens_com_erro_${tipo}_${new Date().toISOString().split('T')[0]}.xlsx`
+                            )}
+                            className="w-full"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Baixar Relatório de Erros ({result.failed.length} itens)
+                          </Button>
+                          <p className="text-xs text-muted-foreground">
+                            O relatório contém os dados originais e a descrição dos erros para correção.
+                          </p>
+                        </div>
+                      )}
+
                       {/* Botão para importar apenas válidos quando há erros */}
                       {result.success === 0 && importOnlyValid && (
                         <div className="mt-4 pt-4 border-t">
