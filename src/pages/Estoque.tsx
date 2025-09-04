@@ -445,7 +445,7 @@ const Estoque = () => {
     <EstoqueGuard>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10">
         {/* Header moderno com melhor espaçamento */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-primary/3 via-primary/5 to-primary/3 border-b border-border/30">
+        <div className="relative overflow-hidden bg-gradient-to-r from-primary/3 via-primary/5 to-primary/3 border-b border-border/30">&
           <div className="absolute inset-0 bg-grid-pattern opacity-3"></div>
           <div className="relative container mx-auto px-6 py-12">
             {/* Breadcrumb melhorado */}
@@ -566,7 +566,7 @@ const Estoque = () => {
                 <div className="flex-1 min-w-0 space-y-6">
                   {/* Indicadores de filtros ativos redesenhados */}
                   {hasActiveFilters && (
-                    <Card className="border-primary/20 bg-primary/5 backdrop-blur-sm">
+                    <Card className="border-border/40 bg-card/60 backdrop-blur-sm">
                       <CardContent className="p-5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -594,7 +594,7 @@ const Estoque = () => {
                   )}
 
                   {/* Tabela principal */}
-                  <div className="border border-border/50 rounded-lg shadow-sm">
+                  <div className="border border-border/40 rounded-lg shadow-sm bg-card/60 backdrop-blur-sm">
                     {initialLoading ? (
                       <div className="p-6">
                         <EstoqueSkeleton />
@@ -619,7 +619,7 @@ const Estoque = () => {
 
                   {/* Paginação melhorada */}
                   {finalFilteredProducts.length > itemsPerPage && (
-                    <Card className="border-border/50 shadow-sm">
+                    <Card className="border-border/40 bg-card/60 backdrop-blur-sm shadow-sm">
                       <CardContent className="p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <p className="text-sm text-muted-foreground">
