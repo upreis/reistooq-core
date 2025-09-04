@@ -140,14 +140,23 @@ export const useHierarchicalCategories = () => {
   };
 
   // Helpers para filtrar por nível
-  const getCategoriasPrincipais = () => 
-    categories.filter(cat => cat.nivel === 1);
+  const getCategoriasPrincipais = () => {
+    const principais = categories.filter(cat => cat.nivel === 1);
+    console.log('🔍 Hook getCategoriasPrincipais:', principais.length, principais.map(c => c.nome));
+    return principais;
+  };
 
-  const getCategorias = (categoriaPrincipalId: string) => 
-    categories.filter(cat => cat.nivel === 2 && cat.categoria_principal_id === categoriaPrincipalId);
+  const getCategorias = (categoriaPrincipalId: string) => {
+    const cats = categories.filter(cat => cat.nivel === 2 && cat.categoria_principal_id === categoriaPrincipalId);
+    console.log('🔍 Hook getCategorias para', categoriaPrincipalId, ':', cats.length, cats.map(c => c.nome));
+    return cats;
+  };
 
-  const getSubcategorias = (categoriaId: string) => 
-    categories.filter(cat => cat.nivel === 3 && cat.categoria_id === categoriaId);
+  const getSubcategorias = (categoriaId: string) => {
+    const subcats = categories.filter(cat => cat.nivel === 3 && cat.categoria_id === categoriaId);
+    console.log('🔍 Hook getSubcategorias para', categoriaId, ':', subcats.length, subcats.map(c => c.nome));
+    return subcats;
+  };
 
   useEffect(() => {
     loadCategories();
