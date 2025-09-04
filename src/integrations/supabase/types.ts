@@ -239,6 +239,69 @@ export type Database = {
         }
         Relationships: []
       }
+      categorias_catalogo: {
+        Row: {
+          ativo: boolean
+          categoria_completa: string | null
+          categoria_id: string | null
+          categoria_principal_id: string | null
+          cor: string | null
+          created_at: string
+          descricao: string | null
+          icone: string | null
+          id: string
+          nivel: number
+          nome: string
+          ordem: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          categoria_completa?: string | null
+          categoria_id?: string | null
+          categoria_principal_id?: string | null
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nivel: number
+          nome: string
+          ordem?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          categoria_completa?: string | null
+          categoria_id?: string | null
+          categoria_principal_id?: string | null
+          cor?: string | null
+          created_at?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nivel?: number
+          nome?: string
+          ordem?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categorias_catalogo_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_catalogo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categorias_catalogo_categoria_principal_id_fkey"
+            columns: ["categoria_principal_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_catalogo"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categorias_produtos: {
         Row: {
           ativo: boolean | null
