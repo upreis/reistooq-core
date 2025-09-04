@@ -594,20 +594,23 @@ export function ComposicoesEstoque() {
                                 </div>
                               </div>
                               
-                              {/* Botão de cadastro para componentes não cadastrados */}
-                              {componenteNaoExiste && (
-                                <div className="mt-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
-                                    className="w-full text-xs bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary"
-                                  >
-                                    <Plus className="h-3 w-3 mr-1" />
-                                    Cadastrar Produto
-                                  </Button>
-                                </div>
-                              )}
+                               {/* Botão de cadastro para componentes não cadastrados */}
+                               {componenteNaoExiste && (
+                                 <div className="mt-2 flex flex-col items-center space-y-1">
+                                   <div className="text-xs font-medium text-destructive">
+                                     NÃO CADASTRADO
+                                   </div>
+                                   <Button
+                                     variant="outline"
+                                     size="sm"
+                                     onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
+                                     className="text-xs bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary"
+                                   >
+                                     <Plus className="h-3 w-3 mr-1" />
+                                     + Cadastrar
+                                   </Button>
+                                 </div>
+                               )}
                             </div>
                           );
                         })}
