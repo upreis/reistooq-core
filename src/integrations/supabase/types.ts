@@ -3073,6 +3073,10 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: undefined
       }
+      seed_default_categories: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       set_integration_secret: {
         Args: { _key: string; _provider: string; _value: string }
         Returns: undefined

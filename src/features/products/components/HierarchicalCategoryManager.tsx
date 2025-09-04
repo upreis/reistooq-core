@@ -43,7 +43,8 @@ export function HierarchicalCategoryManager() {
     getCategoriasPrincipais,
     getCategorias,
     getSubcategorias,
-    refreshCategories
+    refreshCategories,
+    seedDefaultCategories
   } = useHierarchicalCategories();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -172,6 +173,22 @@ export function HierarchicalCategoryManager() {
   const handleBackToCategoria = () => {
     setActiveCategoria(null);
     setCurrentView('categoria');
+  };
+
+  const handleSeedCategories = async () => {
+    try {
+      const result = await seedDefaultCategories() as any;
+      toast({
+        title: "✅ Categorias criadas",
+        description: `Hierarquia completa criada: ${result.created_level1} principais, ${result.created_level2} categorias, ${result.created_level3} subcategorias`,
+      });
+    } catch (error) {
+      toast({
+        title: "❌ Erro",
+        description: "Erro ao criar categorias padrão. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleBackToPrincipal = () => {
@@ -582,11 +599,17 @@ export function HierarchicalCategoryManager() {
                 {/* Visualização de Categorias Principais */}
                 {currentView === 'principal' && (
                   <>
-                    {categoriasPrincipais.length === 0 ? (
+                     {categoriasPrincipais.length === 0 ? (
                       <div className="text-center py-12 text-muted-foreground">
                         <Tags className="h-16 w-16 mx-auto mb-4 opacity-50" />
                         <h3 className="text-lg font-medium mb-2">Nenhuma categoria criada ainda</h3>
-                        <p className="text-sm">Crie uma Categoria Principal para começar a organizar seus produtos</p>
+                        <p className="text-sm mb-6">Crie uma Categoria Principal para começar a organizar seus produtos</p>
+                        <div className="flex justify-center gap-4">
+                          <Button variant="outline" onClick={handleSeedCategories}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Criar Hierarquia Completa
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-3">

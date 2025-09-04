@@ -72,9 +72,6 @@ export const useHierarchicalCategories = () => {
       
       console.log('✅ Categorias carregadas:', data?.length || 0);
       setCategories((data || []) as HierarchicalCategory[]);
-      
-      // Auto-gerar hierarquia se necessário
-      await checkAndGenerateHierarchy((data || []) as HierarchicalCategory[]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar categorias');
       console.error('Error loading hierarchical categories:', err);
@@ -383,9 +380,30 @@ export const useHierarchicalCategories = () => {
     return subcats;
   };
 
+  const seedDefaultCategories = async () => {
+    try {
+      const { data, error } = await supabase.rpc('seed_default_categories');
+      
+      if (error) {
+        console.error('❌ Erro ao criar categorias padrão:', error);
+        throw error;
+      }
+      
+      console.log('✅ Categorias padrão criadas:', data);
+      
+      // Recarregar categorias após criação
+      await loadCategories();
+      
+      return data;
+    } catch (error) {
+      console.error('Erro ao criar categorias padrão:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     loadCategories();
-  }, []);
+  }, [profileLoading, orgId]);
 
   return {
     categories,
@@ -395,6 +413,7 @@ export const useHierarchicalCategories = () => {
     updateCategory,
     deleteCategory,
     refreshCategories: loadCategories,
+    seedDefaultCategories,
     getCategoriasPrincipais,
     getCategorias,
     getSubcategorias
