@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCatalogCategories, CatalogCategory } from '../hooks/useCatalogCategories';
 
 const NIVEL_LABELS = {
@@ -308,65 +309,67 @@ export function HierarchicalCategoryManager() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3">
-            {currentView === 'principal' && (
-              getFilteredCategories(categoriasPrincipais).map(principal => 
-                renderCategoryCard(
-                  principal, 
-                  () => handleNavigateToPrincipal(principal)
-                )
-              )
-            )}
-            
-            {currentView === 'categoria' && activePrincipal && (
-              getCategorias(activePrincipal.id)
-                .filter(cat => getFilteredCategories([cat]).length > 0)
-                .map(categoria => 
+          <ScrollArea className="max-h-[65vh] pr-2">
+            <div className="grid gap-3">
+              {currentView === 'principal' && (
+                getFilteredCategories(categoriasPrincipais).map(principal => 
                   renderCategoryCard(
-                    categoria, 
-                    () => handleNavigateToCategoria(categoria)
+                    principal, 
+                    () => handleNavigateToPrincipal(principal)
                   )
                 )
-            )}
+              )}
+              
+              {currentView === 'categoria' && activePrincipal && (
+                getCategorias(activePrincipal.id)
+                  .filter(cat => getFilteredCategories([cat]).length > 0)
+                  .map(categoria => 
+                    renderCategoryCard(
+                      categoria, 
+                      () => handleNavigateToCategoria(categoria)
+                    )
+                  )
+              )}
+              
+              {currentView === 'subcategoria' && activeCategoria && (
+                getSubcategorias(activeCategoria.id)
+                  .filter(sub => getFilteredCategories([sub]).length > 0)
+                  .map(subcategoria => 
+                    renderCategoryCard(subcategoria)
+                  )
+              )}
+            </div>
             
-            {currentView === 'subcategoria' && activeCategoria && (
-              getSubcategorias(activeCategoria.id)
-                .filter(sub => getFilteredCategories([sub]).length > 0)
-                .map(subcategoria => 
-                  renderCategoryCard(subcategoria)
-                )
-            )}
-          </div>
-          
-          {/* Estado vazio */}
-          {(() => {
-            let currentCategories = [];
-            if (currentView === 'principal') {
-              currentCategories = getFilteredCategories(categoriasPrincipais);
-            } else if (currentView === 'categoria' && activePrincipal) {
-              currentCategories = getCategorias(activePrincipal.id).filter(cat => getFilteredCategories([cat]).length > 0);
-            } else if (currentView === 'subcategoria' && activeCategoria) {
-              currentCategories = getSubcategorias(activeCategoria.id).filter(sub => getFilteredCategories([sub]).length > 0);
-            }
-            
-            if (currentCategories.length === 0) {
-              return (
-                <div className="text-center py-12">
-                  <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    {searchTerm ? 'Nenhum resultado encontrado' : 'Nenhuma categoria disponível'}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {searchTerm 
-                      ? 'Tente ajustar os termos da pesquisa'
-                      : `Não há ${NIVEL_LABELS[currentView === 'principal' ? 1 : currentView === 'categoria' ? 2 : 3].toLowerCase()}s disponíveis neste nível`
-                    }
-                  </p>
-                </div>
-              );
-            }
-            return null;
-          })()}
+            {/* Estado vazio */}
+            {(() => {
+              let currentCategories: any[] = [];
+              if (currentView === 'principal') {
+                currentCategories = getFilteredCategories(categoriasPrincipais);
+              } else if (currentView === 'categoria' && activePrincipal) {
+                currentCategories = getCategorias(activePrincipal.id).filter(cat => getFilteredCategories([cat]).length > 0);
+              } else if (currentView === 'subcategoria' && activeCategoria) {
+                currentCategories = getSubcategorias(activeCategoria.id).filter(sub => getFilteredCategories([sub]).length > 0);
+              }
+              
+              if (currentCategories.length === 0) {
+                return (
+                  <div className="text-center py-12">
+                    <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">
+                      {searchTerm ? 'Nenhum resultado encontrado' : 'Nenhuma categoria disponível'}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {searchTerm 
+                        ? 'Tente ajustar os termos da pesquisa'
+                        : `Não há ${NIVEL_LABELS[currentView === 'principal' ? 1 : currentView === 'categoria' ? 2 : 3].toLowerCase()}s disponíveis neste nível`
+                      }
+                    </p>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>
