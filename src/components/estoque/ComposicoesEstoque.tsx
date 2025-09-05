@@ -343,7 +343,7 @@ export function ComposicoesEstoque() {
         "group hover:shadow-xl transition-all duration-300",
         itemSelected && "ring-2 ring-primary border-primary/50 bg-primary/5"
       )}>
-        <CardContent className="p-6">
+        <CardContent className="p-3 md:p-6">
           {/* Checkbox de seleção */}
           <div className="flex justify-end mb-3">
             <Checkbox 
@@ -849,7 +849,7 @@ export function ComposicoesEstoque() {
             </CardContent>
           </Card>
 
-          {/* Grid de produtos com melhor espaçamento */}
+          {/* Grid de produtos com melhor espaçamento - lista completa no mobile */}
           {isLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -867,7 +867,7 @@ export function ComposicoesEstoque() {
               ))}
             </div>
           ) : produtosFinaisFiltrados && produtosFinaisFiltrados.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
               {produtosFinaisFiltrados.map(renderProductCard)}
             </div>
           ) : (
