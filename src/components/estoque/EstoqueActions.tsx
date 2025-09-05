@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
 import { ProductModal } from "./ProductModal";
 import { ImportModal } from "./ImportModal";
+import { useCatalogCategories } from "@/features/products/hooks/useCatalogCategories";
 
 
 interface EstoqueActionsProps {
@@ -66,6 +67,7 @@ export function EstoqueActions({
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const { toast } = useToast();
+  const { refreshCategories } = useCatalogCategories();
 
   const handleReturnStock = () => {
     if (!selectedProductForReturn || returnQuantity <= 0) {
@@ -156,7 +158,7 @@ export function EstoqueActions({
   return (
     <div className="flex flex-wrap items-center gap-3 p-4 bg-card border border-gray-600 rounded-lg">
       {/* Botão Novo Produto */}
-      <Button onClick={() => setProductModalOpen(true)} className="gap-2">
+      <Button onClick={() => { refreshCategories(); setProductModalOpen(true); }} className="gap-2">
         <Plus className="w-4 h-4" />
         Novo Produto
       </Button>
