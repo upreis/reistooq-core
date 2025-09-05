@@ -340,10 +340,10 @@ export function ComposicoesEstoque() {
 
     return (
       <Card key={product.id} className={cn(
-        "group hover:shadow-xl transition-all duration-300",
+        "group hover:shadow-xl transition-all duration-300 w-full rounded-none md:rounded-lg border-x-0 md:border-x border-t-0 first:border-t md:border-t",
         itemSelected && "ring-2 ring-primary border-primary/50 bg-primary/5"
       )}>
-        <CardContent className="p-3 md:p-6">
+        <CardContent className="p-4 md:p-6">
           {/* Checkbox de seleção */}
           <div className="flex justify-end mb-3">
             <Checkbox 
@@ -721,7 +721,7 @@ export function ComposicoesEstoque() {
           </div>
         )}
 
-        <div className="flex-1 min-w-0 space-y-6">
+        <div className="flex-1 min-w-0 space-y-6 -mx-4 md:mx-0">
           {/* Filtros Inteligentes - ocultos no mobile */}
           <div className="hidden md:block">
             <ComposicoesFilters 
@@ -851,10 +851,10 @@ export function ComposicoesEstoque() {
 
           {/* Grid de produtos com melhor espaçamento - lista completa no mobile */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-0 md:gap-6 px-4 md:px-0">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="animate-pulse border-border/40">
-                  <CardContent className="p-6 space-y-4">
+                <Card key={i} className="animate-pulse border-border/40 w-full rounded-none md:rounded-lg border-x-0 md:border-x border-t-0 first:border-t md:border-t">
+                  <CardContent className="p-4 md:p-6 space-y-4">
                     <div className="h-5 bg-muted rounded w-3/4" />
                     <div className="h-4 bg-muted rounded w-1/2" />
                     <div className="h-24 bg-muted rounded" />
@@ -867,11 +867,11 @@ export function ComposicoesEstoque() {
               ))}
             </div>
           ) : produtosFinaisFiltrados && produtosFinaisFiltrados.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-0 md:gap-6 px-4 md:px-0">
               {produtosFinaisFiltrados.map(renderProductCard)}
             </div>
           ) : (
-            <Card className="border-border/40 bg-card/20">
+            <Card className="border-border/40 bg-card/20 w-full rounded-none md:rounded-lg border-x-0 md:border-x mx-4 md:mx-0">
               <CardContent className="text-center py-16">
                 <Boxes className="h-16 w-16 text-muted-foreground/40 mx-auto mb-6" />
                 <h3 className="text-xl font-semibold mb-3 text-foreground">Nenhum produto encontrado</h3>
