@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useUnidadesMedida } from "@/hooks/useUnidadesMedida";
 import { supabase } from "@/integrations/supabase/client";
-import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
+import { useCatalogCategories } from "@/features/products/hooks/useCatalogCategories";
 
 const productSchema = z.object({
   sku_interno: z.string().min(1, "SKU interno é obrigatório"),
@@ -69,7 +69,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
   const { unidades, loading: loadingUnidades, getUnidadeBasePorTipo } = useUnidadesMedida();
-  const { getCategoriasPrincipais, getCategorias } = useHierarchicalCategories();
+  const { getCategoriasPrincipais, getCategorias } = useCatalogCategories();
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
