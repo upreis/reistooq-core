@@ -631,8 +631,8 @@ export function ComposicoesEstoque() {
 
   return (
     <div className="space-y-8">
-      {/* Header moderno melhorado */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-primary/2 via-primary/4 to-primary/2 border border-border/30 rounded-xl p-8">
+      {/* Header moderno melhorado - oculto no mobile */}
+      <div className="hidden md:block relative overflow-hidden bg-gradient-to-r from-primary/2 via-primary/4 to-primary/2 border border-border/30 rounded-xl p-8">
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
         <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           <div className="space-y-4">
