@@ -5,9 +5,9 @@ import { Home, Package, ShoppingCart, QrCode, BarChart3 } from "lucide-react";
 
 const NAV_ITEMS = [
   {
-    label: "Início",
-    href: "/",
-    icon: Home,
+    label: "De-Para",
+    href: "/de-para",
+    icon: Package,
   },
   {
     label: "Estoque",
@@ -18,11 +18,6 @@ const NAV_ITEMS = [
     label: "Scanner", 
     href: "/scanner",
     icon: QrCode,
-  },
-  {
-    label: "Pedidos",
-    href: "/pedidos",
-    icon: ShoppingCart,
   },
   {
     label: "Mais",
@@ -36,7 +31,7 @@ export default function MobileBottomNav() {
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t safe-area-bottom">
-      <nav className="grid grid-cols-5 h-16 min-h-[64px]">
+      <nav className="grid grid-cols-4 h-16 min-h-[64px]">
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname === item.href;
           const Icon = item.icon;

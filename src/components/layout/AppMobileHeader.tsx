@@ -153,7 +153,22 @@ export default function AppMobileHeader({ title, actions }: AppMobileHeaderProps
                 </nav>
               </div>
 
-              {/* Footer do Menu - Removido para colocar na página inicial */}
+              {/* Footer do Menu */}
+              <div className="p-4 border-t bg-muted/30 mt-auto">
+                <div className="space-y-2">
+                  <button 
+                    onClick={handleSignOut}
+                    className="flex items-center gap-3 w-full px-3 py-3 text-sm rounded-lg hover:bg-muted transition-colors text-red-600 dark:text-red-400"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span className="font-medium">Sair</span>
+                  </button>
+                  <div className="flex items-center justify-between px-3">
+                    <span className="text-xs text-muted-foreground">Tema</span>
+                    <ThemeToggle />
+                  </div>
+                </div>
+              </div>
             </div>
           </SheetContent>
         </Sheet>
