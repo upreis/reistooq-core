@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Filter, SortAsc, AlertTriangle, Package, TrendingUp, TrendingDown, Calendar, Type, ShieldAlert, X } from 'lucide-react';
+import { Filter, SortAsc, AlertTriangle, Package, TrendingUp, TrendingDown, Calendar, Type, ShieldAlert, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface EstoqueFilterState {
@@ -85,19 +85,20 @@ export function EstoqueIntelligentFilters({ filters, onFiltersChange, searchTerm
                           filters.orderBy !== 'recent';
 
   return (
-    <div className="space-y-4">
-      {/* Botão de filtro compacto */}
+    <div className="space-y-3 md:space-y-4">
+      {/* Botão de filtro compacto - melhorado para mobile */}
       <div className="flex items-center justify-between">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="gap-2"
+          className="gap-2 h-9 md:h-10 text-xs md:text-sm"
         >
-          <Filter className="h-4 w-4" />
-          Filtros Inteligentes
+          <Filter className="h-3 w-3 md:h-4 md:w-4" />
+          <span className="hidden sm:inline">Filtros Inteligentes</span>
+          <span className="sm:hidden">Filtros</span>
           {hasActiveFilters && (
-            <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+            <Badge variant="secondary" className="ml-1 h-4 w-4 md:h-5 md:w-5 rounded-full p-0 text-xs">
               {[
                 filters.statusFilter !== 'all',
                 filters.priceRange !== 'all', 
@@ -106,11 +107,17 @@ export function EstoqueIntelligentFilters({ filters, onFiltersChange, searchTerm
               ].filter(Boolean).length}
             </Badge>
           )}
+          <ChevronDown className={cn("h-3 w-3 md:h-4 md:w-4 transition-transform", isExpanded && "rotate-180")} />
         </Button>
         
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
-            Limpar filtros
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={resetFilters}
+            className="text-xs md:text-sm h-9 md:h-10 px-2 md:px-3"
+          >
+            Limpar
           </Button>
         )}
       </div>

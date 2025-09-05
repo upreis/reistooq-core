@@ -489,55 +489,53 @@ const Estoque = () => {
           </div>
         </div>
 
-        {/* Conteúdo principal com melhor espaçamento */}
-        <div className="container mx-auto px-6 py-8 max-w-none">
+        {/* Conteúdo principal - ajustado para mobile */}
+        <div className="container mx-auto px-3 md:px-6 py-4 md:py-8 max-w-none">
           <Tabs defaultValue="estoque" className="w-full">
-            <div className="flex items-center justify-between mb-8">
-              <TabsList className="grid w-auto grid-cols-2 h-12 bg-muted/30 backdrop-blur-sm border border-border/50">
+            {/* Tabs mais compactas no mobile */}
+            <div className="flex items-center justify-between mb-4 md:mb-8">
+              <TabsList className="grid w-auto grid-cols-2 h-10 md:h-12 bg-muted/30 backdrop-blur-sm border border-border/50">
                 <TabsTrigger 
                   value="estoque" 
-                  className="flex items-center gap-3 px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-sm font-medium"
+                  className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-xs md:text-sm font-medium"
                 >
-                  <Package className="h-4 w-4" />
-                  Controle de Estoque
-                  <Badge variant="secondary" className="ml-2 text-xs px-2 py-0.5">
+                  <Package className="h-3 w-3 md:h-4 md:w-4" />
+                  <span className="hidden sm:inline">Controle de</span> Estoque
+                  <Badge variant="secondary" className="ml-1 md:ml-2 text-xs px-1.5 md:px-2 py-0.5">
                     {finalFilteredProducts.length}
                   </Badge>
                 </TabsTrigger>
                 <TabsTrigger 
                   value="composicoes" 
-                  className="flex items-center gap-3 px-6 py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-sm font-medium"
+                  className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-xs md:text-sm font-medium"
                 >
-                  <Boxes className="h-4 w-4" />
+                  <Boxes className="h-3 w-3 md:h-4 md:w-4" />
                   Composições
                 </TabsTrigger>
               </TabsList>
             </div>
-            
-            <TabsContent value="estoque" className="space-y-8">
-              {/* Actions específicas da aba Controle de Estoque */}
-              <div className="flex items-center gap-3 flex-wrap justify-end mb-6">
-                <EstoqueActions
-                  onNewProduct={handleNewProduct}
-                  onDeleteSelected={handleDeleteSelected}
-                  onRefresh={handleRefresh}
-                  onSendAlerts={handleSendAlerts}
-                  selectedProducts={selectedProducts}
-                  products={products}
-                />
-              </div>
+            <TabsContent value="estoque" className="space-y-4 md:space-y-8">
+              {/* Actions - já otimizadas para mobile */}
+              <EstoqueActions
+                onNewProduct={handleNewProduct}
+                onDeleteSelected={handleDeleteSelected}
+                onRefresh={handleRefresh}
+                onSendAlerts={handleSendAlerts}
+                selectedProducts={selectedProducts}
+                products={products}
+              />
 
-              {/* Busca e Filtros Inteligentes na aba Controle de Estoque */}
-              <div className="flex gap-4 items-start">
-                {/* Busca */}
+              {/* Busca e Filtros - layout mobile otimizado */}
+              <div className="space-y-3 md:space-y-0 md:flex md:gap-4 md:items-start">
+                {/* Busca - mais compacta no mobile */}
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Buscar produtos por nome, SKU ou código de barras..."
+                      placeholder="Buscar produtos..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-10 bg-background/60 border-border/60"
+                      className="pl-10 pr-10 bg-background/60 border-border/60 h-9 md:h-10 text-sm"
                     />
                     {searchTerm && (
                       <Button
@@ -552,21 +550,23 @@ const Estoque = () => {
                   </div>
                 </div>
                 
-                {/* Filtros Inteligentes - apenas nesta aba */}
-                <EstoqueIntelligentFilters 
-                  filters={intelligentFilters}
-                  onFiltersChange={setIntelligentFilters}
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  stats={intelligentStats}
-                />
+                {/* Filtros Inteligentes - versão compacta mobile */}
+                <div className="w-full md:w-auto">
+                  <EstoqueIntelligentFilters 
+                    filters={intelligentFilters}
+                    onFiltersChange={setIntelligentFilters}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    stats={intelligentStats}
+                  />
+                </div>
               </div>
 
-              {/* Layout principal com sidebar e tabela */}
-              <div className="flex gap-6">
-                {/* Sidebar de categorias - responsivo */}
+              {/* Layout principal - mobile primeiro, desktop com sidebar */}
+              <div className="flex flex-col md:flex-row gap-3 md:gap-6">
+                {/* Sidebar de categorias - oculta no mobile */}
                 <div className={cn(
-                  "transition-all duration-300 flex-shrink-0",
+                  "transition-all duration-300 flex-shrink-0 hidden md:block",
                   sidebarCollapsed ? "w-12" : "w-64"
                 )}>
                   <div className="sticky top-6">

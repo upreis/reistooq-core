@@ -53,23 +53,12 @@ export default function MobileTable({
   onRowClick,
 }: MobileTableProps) {
   const isMobile = useIsMobile();
-  
+
   if (loading) {
     return (
-      <div className="space-y-3">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="h-3 bg-muted rounded w-1/2"></div>
-                <div className="h-3 bg-muted rounded w-2/3"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="text-muted-foreground mt-2">Carregando...</p>
       </div>
     );
   }
@@ -82,11 +71,12 @@ export default function MobileTable({
     );
   }
 
+  const selectableItems = !!onSelectItem;
+  const allSelected = selectableItems && selectedItems.length === data.length && data.length > 0;
+  const someSelected = selectableItems && selectedItems.length > 0 && selectedItems.length < data.length;
+
   const primaryColumn = columns.find(col => col.primary);
   const secondaryColumns = columns.filter(col => !col.primary);
-  const selectableItems = onSelectItem && selectedItems;
-  const allSelected = selectableItems && data.length > 0 && selectedItems.length === data.length;
-  const someSelected = selectableItems && selectedItems.length > 0 && selectedItems.length < data.length;
 
   // Desktop table view
   if (!isMobile) {
@@ -139,15 +129,21 @@ export default function MobileTable({
               >
                 <span className="truncate">{column.label}</span>
                 {column.sortable && sortBy === column.key && (
-                  <span className="ml-1 text-[10px]">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                  <span className="ml-1 text-xs">
+                    {sortOrder === 'asc' ? '↑' : '↓'}
+                  </span>
                 )}
               </div>
             ))}
-            {actions.length > 0 && <div className="text-xs font-semibold">Ações</div>}
+            {actions.length > 0 && (
+              <div className="text-center text-xs font-semibold">
+                Ações
+              </div>
+            )}
           </div>
 
           {/* Table Rows */}
-          <div className="space-y-1">
+          <div className="space-y-2">
             {data.map((item) => {
               const isSelected = selectableItems ? selectedItems.includes(item[keyField]) : false;
               
@@ -155,10 +151,10 @@ export default function MobileTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "grid gap-2 py-3 px-4 border rounded-lg transition-colors",
+                    "grid gap-2 py-2 px-4 rounded-md border transition-colors",
                     isSelected 
-                      ? "border-brand bg-brand text-brand-active-foreground" 
-                      : "border-border hover:bg-brand-hover hover:text-foreground",
+                      ? "bg-primary/10 border-primary/20" 
+                      : "border-border hover:bg-muted/50",
                     onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}
@@ -168,9 +164,7 @@ export default function MobileTable({
                     <div className="flex items-center">
                       <Checkbox
                         checked={isSelected}
-                        onCheckedChange={(checked) => {
-                          onSelectItem(item[keyField]);
-                        }}
+                        onCheckedChange={() => onSelectItem(item[keyField])}
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
@@ -213,9 +207,9 @@ export default function MobileTable({
     );
   }
 
-  // Mobile card view
+  // Mobile card view - layout mais compacto
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Selection header on mobile */}
       {selectableItems && (
         <Card>
@@ -229,19 +223,17 @@ export default function MobileTable({
                     if (el) (el as any).indeterminate = someSelected;
                   }}
                 />
-                <span className="text-sm">
-                  {selectedItems.length > 0 
-                    ? `${selectedItems.length} selecionado(s)`
-                    : "Selecionar todos"
-                  }
-                </span>
+                <span className="text-sm">Selecionar todos</span>
               </div>
+              <Badge variant="secondary" className="text-xs">
+                {selectedItems.length} de {data.length}
+              </Badge>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Mobile Cards */}
+      {/* Mobile Cards - layout mais compacto */}
       {data.map((item) => {
         const isSelected = selectableItems ? selectedItems.includes(item[keyField]) : false;
         
@@ -249,15 +241,15 @@ export default function MobileTable({
           <Card 
             key={item[keyField]}
             className={cn(
-              "transition-colors",
+              "transition-colors border-l-4",
               isSelected 
-                ? "border-brand bg-brand text-brand-active-foreground" 
-                : "border-border hover:bg-brand-hover hover:text-foreground",
+                ? "border-l-primary bg-primary/5 border-primary/20" 
+                : "border-l-transparent border-border hover:bg-muted/50",
               onRowClick && "cursor-pointer"
             )}
             onClick={() => onRowClick?.(item)}
           >
-            <CardHeader className="pb-3">
+            <CardContent className="p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-2 min-w-0 flex-1">
                   {selectableItems && (
@@ -265,63 +257,60 @@ export default function MobileTable({
                       checked={isSelected}
                       onCheckedChange={() => onSelectItem(item[keyField])}
                       onClick={(e) => e.stopPropagation()}
-                      className="mt-0.5"
+                      className="mt-0.5 h-4 w-4"
                     />
                   )}
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 space-y-1">
+                    {/* Primary info - título mais compacto */}
                     {primaryColumn && (
-                      <h3 className="font-medium text-sm leading-tight mobile-text">
+                      <h3 className="font-medium text-sm leading-tight text-foreground">
                         {primaryColumn.render 
                           ? primaryColumn.render(item[primaryColumn.key], item)
                           : item[primaryColumn.key]
                         }
                       </h3>
                     )}
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-3">
-              {/* Secondary fields */}
-              <div className="space-y-2">
-                {secondaryColumns.map((column) => (
-                  <div key={column.key} className="flex justify-between items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {column.label}
-                    </span>
-                    <div className="text-xs font-medium mobile-text">
-                      {column.render 
-                        ? column.render(item[column.key], item)
-                        : item[column.key]
-                      }
+                    
+                    {/* Secondary info - layout em grid compacto */}
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                      {secondaryColumns.slice(0, 6).map((column) => (
+                        <div key={column.key} className="min-w-0">
+                          <span className="text-muted-foreground block leading-tight">
+                            {column.label}:
+                          </span>
+                          <div className="text-foreground font-medium leading-tight">
+                            {column.render 
+                              ? column.render(item[column.key], item)
+                              : <span className="truncate block">{item[column.key] || "N/A"}</span>
+                            }
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-              
-              {/* Actions */}
-              {actions.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {actions.map((action, index) => (
-                    <Button
-                      key={index}
-                      variant={action.variant || "outline"}
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        action.onClick(item);
-                      }}
-                      className="text-xs h-7"
-                    >
-                      {action.icon && (
-                        <span className="mr-1">{action.icon}</span>
-                      )}
-                      {action.label}
-                    </Button>
-                  ))}
                 </div>
-              )}
+                
+                {/* Actions - mais compactas */}
+                {actions.length > 0 && (
+                  <div className="flex flex-col gap-1 ml-2">
+                    {actions.map((action, index) => (
+                      <Button
+                        key={index}
+                        variant={action.variant || "outline"}
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          action.onClick(item);
+                        }}
+                        className="h-6 w-6 p-0 flex-shrink-0"
+                        title={action.label}
+                      >
+                        {action.icon}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         );
