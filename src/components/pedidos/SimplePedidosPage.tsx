@@ -53,6 +53,8 @@ import { PedidosModalsSection } from './components/PedidosModalsSection';
 import { PedidosStatusBar } from './components/PedidosStatusBar';
 import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
+import { MobilePedidosPage } from './MobilePedidosPage';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 type Order = {
@@ -89,6 +91,8 @@ type Props = {
 };
 
 function SimplePedidosPage({ className }: Props) {
+  const isMobile = useIsMobile();
+  
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: async (filters) => {

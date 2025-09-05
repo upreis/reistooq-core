@@ -300,6 +300,74 @@
   }
 }
 
+/* Mobile optimizations */
+@layer base {
+  /* Safe area support for notched devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Touch optimization */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Scrollbar hide for mobile */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Mobile specific improvements */
+  @media (max-width: 768px) {
+    /* Prevent zoom on input focus */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="number"],
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+    
+    /* Better contrast for mobile dark theme */
+    .dark .text-muted-foreground {
+      color: hsl(var(--muted-foreground)) !important;
+      opacity: 0.85;
+    }
+    
+    /* Minimum touch targets */
+    button:not(.compact),
+    a:not(.compact),
+    input[type="checkbox"],
+    input[type="radio"] {
+      min-height: 44px;
+    }
+    
+    /* Prevent text size adjust */
+    html {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+    
+    /* Improve table overflow */
+    .table-mobile {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}
+
 /* Announcement Banner Theme Overrides */
 @layer components {
   /* Default (fallback) to light if no theme attribute/class is present */

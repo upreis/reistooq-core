@@ -106,11 +106,16 @@ export default function AppMobileHeader({ title, actions }: AppMobileHeaderProps
   };
 
   return (
-    <div className="md:hidden sticky top-0 z-40 bg-background border-b">
-      <div className="flex items-center gap-2 px-3 h-12">
+    <div className="md:hidden sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b safe-area-top">
+      <div className="flex items-center gap-2 px-3 h-12 min-h-[48px]">
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Menu" className="shrink-0">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              aria-label="Menu" 
+              className="shrink-0 h-10 w-10 touch-manipulation"
+            >
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -153,17 +158,21 @@ export default function AppMobileHeader({ title, actions }: AppMobileHeaderProps
           </SheetContent>
         </Sheet>
 
-        <h1 className="text-base font-medium truncate min-w-0 flex-1 mobile-text">
+        <h1 className="text-base font-semibold truncate min-w-0 flex-1 text-foreground">
           {title}
         </h1>
 
         <div className="flex items-center gap-1 shrink-0">
           {actions}
-          <Button variant="ghost" size="icon" className="relative">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative h-10 w-10 touch-manipulation"
+          >
             <Bell className="h-4 w-4" />
             <Badge 
               variant="destructive" 
-              className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-xs"
+              className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
             >
               3
             </Badge>
