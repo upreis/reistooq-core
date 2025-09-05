@@ -560,15 +560,15 @@ const Estoque = () => {
                     </div>
                   </div>
                   
-                  {/* Filtros Inteligentes - ao lado da busca no mobile */}
+                  {/* Filtros - padrão simples igual à aba Composições */}
                   <div className="w-auto md:w-auto">
-                    <EstoqueIntelligentFilters 
-                      filters={intelligentFilters}
-                      onFiltersChange={setIntelligentFilters}
-                      searchTerm={searchTerm}
-                      onSearchChange={setSearchTerm}
-                      stats={intelligentStats}
-                    />
+                    <Button
+                      variant="outline" 
+                      className="bg-background/60 border-border/60 flex-shrink-0 h-9 md:h-10 text-sm px-3 gap-2"
+                    >
+                      <Filter className="h-4 w-4" />
+                      <span className="hidden md:inline">Filtros</span>
+                    </Button>
                   </div>
 
                   {/* Botão de categorias no mobile */}
