@@ -31,7 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useUnidadesMedida } from "@/hooks/useUnidadesMedida";
 import { supabase } from "@/integrations/supabase/client";
-import { useCatalogCategories } from "@/features/products/hooks/useCatalogCategories";
+import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 
 const productSchema = z.object({
   sku_interno: z.string().min(1, "SKU interno é obrigatório"),
@@ -69,7 +69,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
   const { unidades, loading: loadingUnidades, getUnidadeBasePorTipo } = useUnidadesMedida();
-  const { getCategoriasPrincipais, getCategorias } = useCatalogCategories();
+  const { categories, loading: catalogLoading, error: catalogError, getCategoriasPrincipais, getCategorias } = useHierarchicalCategories();
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -131,6 +131,10 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       setImagePreview(null);
     }
   }, [product, open, form, initialBarcode, initialSku, getUnidadeBasePorTipo, unidades]);
+
+  useEffect(() => {
+    console.info('🧭 ProductModal categorias (org):', { loading: catalogLoading, total: categories?.length });
+  }, [catalogLoading, categories]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -344,13 +348,19 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                        <SelectTrigger>
                          <SelectValue placeholder="Ex: Eletrônicos" />
                        </SelectTrigger>
-                       <SelectContent className="bg-background border max-h-[200px] overflow-y-auto z-50">
-                         {getCategoriasPrincipais().map((cat) => (
-                           <SelectItem key={cat.id} value={cat.id} className="hover:bg-muted">
-                             {cat.nome}
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
+                        <SelectContent className="bg-background border max-h-[260px] overflow-y-auto z-[80]">
+                          {catalogLoading && (
+                            <div className="p-2 text-muted-foreground text-sm">Carregando categorias...</div>
+                          )}
+                          {!catalogLoading && getCategoriasPrincipais().length === 0 && (
+                            <div className="p-2 text-muted-foreground text-sm">Nenhuma categoria principal encontrada</div>
+                          )}
+                          {!catalogLoading && getCategoriasPrincipais().map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id} className="hover:bg-muted">
+                              {cat.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                      </Select>
                    </div>
 
@@ -365,21 +375,22 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                        }}
                        disabled={!selectedCategoriaPrincipal}
                      >
-                       <SelectTrigger>
-                         <SelectValue placeholder={!selectedCategoriaPrincipal ? "Selecione uma..." : getCategorias(selectedCategoriaPrincipal).length === 0 ? "Nenhuma categoria..." : "Selecione uma..."} />
-                       </SelectTrigger>
-                       <SelectContent className="bg-background border max-h-[200px] overflow-y-auto z-50">
-                         {getCategorias(selectedCategoriaPrincipal).length === 0 && (
-                           <div className="p-2 text-muted-foreground text-sm">
-                             Nenhuma categoria disponível para esta categoria principal
-                           </div>
-                         )}
-                         {getCategorias(selectedCategoriaPrincipal).map((cat) => (
-                           <SelectItem key={cat.id} value={cat.id} className="hover:bg-muted">
-                             {cat.nome}
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
+                        <SelectTrigger>
+                          <SelectValue placeholder={!selectedCategoriaPrincipal ? "Selecione uma..." : getCategorias(selectedCategoriaPrincipal).length === 0 ? "Nenhuma categoria..." : "Selecione uma..."} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border max-h-[260px] overflow-y-auto z-[80]">
+                          {!selectedCategoriaPrincipal && (
+                            <div className="p-2 text-muted-foreground text-sm">Selecione uma categoria principal</div>
+                          )}
+                          {selectedCategoriaPrincipal && getCategorias(selectedCategoriaPrincipal).length === 0 && (
+                            <div className="p-2 text-muted-foreground text-sm">Nenhuma categoria disponível</div>
+                          )}
+                          {selectedCategoriaPrincipal && getCategorias(selectedCategoriaPrincipal).map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id} className="hover:bg-muted">
+                              {cat.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                      </Select>
                    </div>
                  </div>
