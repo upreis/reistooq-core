@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download, Import, Trash2, MoreHorizontal } from "lucide-react";
+import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download, Import, Trash2, MoreHorizontal, Filter } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -828,6 +828,14 @@ export function ComposicoesEstoque() {
                     />
                   </div>
                   {/* Botão de filtros no mobile */}
+                  <Button
+                    variant="outline" 
+                    size="icon"
+                    className="md:hidden bg-background/60 border-border/60 flex-shrink-0"
+                  >
+                    <Filter className="h-4 w-4" />
+                  </Button>
+                  {/* Botão de categorias no mobile */}
                   <Button
                     variant="outline"
                     size="icon"
