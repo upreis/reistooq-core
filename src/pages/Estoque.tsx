@@ -57,6 +57,7 @@ const Estoque = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [newProductModalOpen, setNewProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   const { getProducts, getCategories, updateProduct, deleteProduct } = useProducts();
@@ -359,11 +360,7 @@ const Estoque = () => {
   };
 
   const handleNewProduct = () => {
-    // Implementar modal de novo produto
-    toast({
-      title: "Novo produto",
-      description: "Modal de criação de produto será implementado.",
-    });
+    setNewProductModalOpen(true);
   };
   const handleRefresh = () => loadProducts();
   const getStockStatus = (product: Product) => {
@@ -719,6 +716,20 @@ const Estoque = () => {
           onOpenChange={setEditModalOpen}
           product={editingProduct}
           onSuccess={handleEditSuccess}
+        />
+
+        {/* Modal de Novo Produto */}
+        <ProductModal
+          open={newProductModalOpen}
+          onOpenChange={setNewProductModalOpen}
+          onSuccess={() => {
+            setNewProductModalOpen(false);
+            loadProducts();
+            toast({
+              title: "Produto criado",
+              description: "Produto criado com sucesso!",
+            });
+          }}
         />
       </div>
     </EstoqueGuard>
