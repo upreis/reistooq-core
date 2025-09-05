@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   Package, 
   AlertTriangle, 
@@ -8,15 +9,24 @@ import {
   BarChart3,
   DollarSign,
   ShoppingCart,
-  Activity
+  Activity,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
 
 interface EstoqueStatsProps {
   products: Product[];
 }
 
 export function EstoqueStats({ products }: EstoqueStatsProps) {
+  const isMobile = useIsMobile();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const totalProducts = products.length;
   const activeProducts = products.filter(p => p.ativo).length;
   const inactiveProducts = totalProducts - activeProducts;
@@ -122,6 +132,120 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
     }
   ];
 
+  if (!isVisible) {
+    return (
+      <div className="md:hidden flex justify-end mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsVisible(true)}
+          className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <Eye className="h-4 w-4" />
+          Mostrar estatísticas
+        </Button>
+      </div>
+    );
+  }
+
+  if (isMobile) {
+    // Versão mobile compacta
+    const mobileStats = isExpanded ? stats : stats.slice(0, 3);
+    
+    return (
+      <div className="space-y-3 mb-4">
+        {/* Controles mobile */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-muted-foreground">Estatísticas</h3>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              {isExpanded ? (
+                <>
+                  <ChevronUp className="h-3 w-3" />
+                  Recolher
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-3 w-3" />
+                  Ver mais
+                </>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsVisible(false)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <EyeOff className="h-3 w-3" />
+              Ocultar
+            </Button>
+          </div>
+        </div>
+
+        {/* Cards compactos mobile */}
+        <div className="grid grid-cols-1 gap-2">
+          {mobileStats.map((stat, index) => {
+            const IconComponent = stat.icon;
+            
+            return (
+              <Card key={index} className="overflow-hidden">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    {/* Ícone e título compactos */}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className={`p-1.5 rounded-md ${stat.bgColor} shrink-0`}>
+                        <IconComponent className={`w-3.5 h-3.5 ${stat.color}`} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-muted-foreground truncate">
+                          {stat.title}
+                        </p>
+                        <p className="text-lg font-bold text-foreground leading-tight">
+                          {stat.value}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Badge de trend compacto */}
+                    {stat.trend && (
+                      <Badge 
+                        variant={
+                          stat.trend === "critical" ? "destructive" : 
+                          stat.trend === "warning" ? "secondary" : 
+                          "default"
+                        }
+                        className="text-[9px] px-1.5 py-0.5 h-4 shrink-0"
+                      >
+                        {stat.trend === "critical" && <AlertTriangle className="w-2 h-2" />}
+                        {stat.trend === "warning" && <TrendingDown className="w-2 h-2" />}
+                        {stat.trend === "good" && <TrendingUp className="w-2 h-2" />}
+                        {stat.trend === "up" && <TrendingUp className="w-2 h-2" />}
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {/* Subtitle apenas quando expandido */}
+                  {isExpanded && (
+                    <p className="text-xs text-muted-foreground/70 mt-2 leading-relaxed">
+                      {stat.subtitle}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Versão desktop original
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
       {stats.map((stat, index) => {
