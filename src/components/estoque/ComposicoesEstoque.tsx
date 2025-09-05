@@ -344,14 +344,6 @@ export function ComposicoesEstoque() {
         itemSelected && "ring-2 ring-primary border-primary/50 bg-primary/5"
       )}>
         <CardContent className="p-3 md:p-6">
-          {/* Checkbox de seleção */}
-          <div className="flex justify-end mb-3">
-            <Checkbox 
-              checked={itemSelected}
-              onCheckedChange={() => selectItem(product.id)}
-              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-            />
-          </div>
           <header className="mb-5">
             <h3 className="font-semibold text-lg text-foreground leading-snug line-clamp-2 mb-2">{product.nome}</h3>
             <div className="flex items-center gap-2">
