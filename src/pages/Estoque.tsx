@@ -570,12 +570,22 @@ const Estoque = () => {
                       stats={intelligentStats}
                     />
                   </div>
+
+                  {/* Botão de categorias no mobile */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="md:hidden bg-background/60 border-border/60 flex-shrink-0"
+                    onClick={toggleSidebar}
+                  >
+                    <Package className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
 
               {/* Layout principal - mobile primeiro, desktop com sidebar */}
-              <div className="flex flex-col md:flex-row gap-3 md:gap-6">
-                {/* Sidebar de categorias - oculta no mobile */}
+              <div className="flex flex-col md:flex-row gap-3 md:gap-6 relative">
+                {/* Sidebar de categorias - oculta no mobile por padrão */}
                 <div className={cn(
                   "transition-all duration-300 flex-shrink-0 hidden md:block",
                   sidebarCollapsed ? "w-12" : "w-64"
@@ -590,6 +600,28 @@ const Estoque = () => {
                     />
                   </div>
                 </div>
+
+                {/* Sidebar mobile overlay */}
+                {!sidebarCollapsed && (
+                  <div className="md:hidden fixed inset-0 z-50 bg-black/20 backdrop-blur-sm">
+                    <div className="absolute left-0 top-0 h-full w-72 bg-background border-r border-border shadow-xl">
+                      <div className="p-6">
+                        <OptimizedCategorySidebar
+                          products={products}
+                          hierarchicalFilters={hierarchicalFilters}
+                          onHierarchicalFiltersChange={setHierarchicalFilters}
+                          isCollapsed={false}
+                          onToggleCollapse={toggleSidebar}
+                        />
+                      </div>
+                    </div>
+                    {/* Área para fechar clicando fora */}
+                    <div 
+                      className="absolute inset-0" 
+                      onClick={toggleSidebar}
+                    />
+                  </div>
+                )}
 
                 {/* Área principal da tabela com melhor espaçamento */}
                 <div className="flex-1 min-w-0 space-y-6">
