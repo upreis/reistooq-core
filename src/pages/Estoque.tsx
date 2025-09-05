@@ -492,27 +492,40 @@ const Estoque = () => {
         {/* Conteúdo principal - ajustado para mobile */}
         <div className="container mx-auto px-3 md:px-6 py-4 md:py-8 max-w-none">
           <Tabs defaultValue="estoque" className="w-full">
-            {/* Tabs mais compactas no mobile */}
-            <div className="flex items-center justify-between mb-4 md:mb-8">
-              <TabsList className="grid w-auto grid-cols-2 h-10 md:h-12 bg-muted/30 backdrop-blur-sm border border-border/50">
-                <TabsTrigger 
-                  value="estoque" 
-                  className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-xs md:text-sm font-medium"
+            {/* Container das tabs com botão no mobile */}
+            <div className="flex items-center gap-2 mb-4 md:mb-8">
+              {/* Tabs ocupando 80% no mobile */}
+              <div className="flex-1 md:w-auto">
+                <TabsList className="grid w-full md:w-auto grid-cols-2 h-10 md:h-12 bg-muted/30 backdrop-blur-sm border border-border/50">
+                  <TabsTrigger 
+                    value="estoque" 
+                    className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-xs md:text-sm font-medium"
+                  >
+                    <Package className="h-3 w-3 md:h-4 md:w-4" />
+                    <span className="hidden sm:inline">Controle de</span> Estoque
+                    <Badge variant="secondary" className="ml-1 md:ml-2 text-xs px-1.5 md:px-2 py-0.5">
+                      {finalFilteredProducts.length}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="composicoes" 
+                    className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-xs md:text-sm font-medium"
+                  >
+                    <Boxes className="h-3 w-3 md:h-4 md:w-4" />
+                    Composições
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              
+              {/* Botão Novo Produto ocupando 20% no mobile */}
+              <div className="w-1/5 md:hidden">
+                <Button
+                  onClick={handleNewProduct}
+                  className="w-full h-10 text-xs px-2 bg-primary hover:bg-primary/90"
                 >
-                  <Package className="h-3 w-3 md:h-4 md:w-4" />
-                  <span className="hidden sm:inline">Controle de</span> Estoque
-                  <Badge variant="secondary" className="ml-1 md:ml-2 text-xs px-1.5 md:px-2 py-0.5">
-                    {finalFilteredProducts.length}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="composicoes" 
-                  className="flex items-center gap-2 md:gap-3 px-3 md:px-6 py-2 md:py-3 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/50 text-xs md:text-sm font-medium"
-                >
-                  <Boxes className="h-3 w-3 md:h-4 md:w-4" />
-                  Composições
-                </TabsTrigger>
-              </TabsList>
+                  + Novo
+                </Button>
+              </div>
             </div>
             <TabsContent value="estoque" className="space-y-4 md:space-y-8">
               {/* Actions - já otimizadas para mobile */}
