@@ -724,7 +724,7 @@ export function ComposicoesEstoque() {
           </div>
 
           {/* Busca e Filtros - layout mobile igual ao controle de estoque */}
-          <div className="space-y-3 md:space-y-0 md:flex md:gap-4 md:items-start">
+          <div className="space-y-2 md:space-y-0 md:flex md:gap-4 md:items-start">
             {/* Container flex para busca e filtros no mobile */}
             <div className="flex gap-2 md:flex-1">
               {/* Busca - mais compacta no mobile */}
