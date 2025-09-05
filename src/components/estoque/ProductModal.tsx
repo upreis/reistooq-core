@@ -69,7 +69,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
   const { unidades, loading: loadingUnidades, getUnidadeBasePorTipo } = useUnidadesMedida();
-  const { categories, loading: catalogLoading, error: catalogError, getCategoriasPrincipais, getCategorias } = useCatalogCategories();
+  const { categories, loading: catalogLoading, error: catalogError, getCategoriasPrincipais, getCategorias, refreshCategories } = useCatalogCategories();
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -135,6 +135,13 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   useEffect(() => {
     console.info('🧭 ProductModal CATÁLOGO GLOBAL:', { loading: catalogLoading, total: categories?.length, principais: getCategoriasPrincipais()?.length });
   }, [catalogLoading, categories, getCategoriasPrincipais]);
+
+  useEffect(() => {
+    if (open) {
+      console.info('🔄 Recarregando catálogo ao abrir modal...');
+      refreshCategories?.();
+    }
+  }, [open, refreshCategories]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
