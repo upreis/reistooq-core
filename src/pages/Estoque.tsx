@@ -482,8 +482,10 @@ const Estoque = () => {
             
             </div>
 
-            {/* Stats Cards com melhor espaçamento */}
-            <EstoqueStats products={products} />
+            {/* Stats Cards - oculto no mobile */}
+            <div className="hidden md:block">
+              <EstoqueStats products={products} />
+            </div>
           </div>
         </div>
 
