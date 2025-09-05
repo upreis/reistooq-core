@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import MobileTable from "@/components/mobile/MobileTable";
 
 const sortOptions = [
   { id: "newest", name: "Mais Recentes", sortBy: "created_at", sortOrder: "desc" },
@@ -300,6 +301,143 @@ export function ComposicoesEstoque() {
     sincronizarComponentes();
   };
 
+  // Configuração das colunas para MobileTable
+  const columns = [
+    {
+      key: "nome",
+      label: "Produto",
+      primary: true,
+      sortable: true,
+      render: (value: string, product: ProdutoComposicao) => {
+        const composicoes = getComposicoesForSku(product.sku_interno);
+        return (
+          <div className="flex items-center space-x-3 min-w-0">
+            <div className="relative w-10 h-10 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+              {product.url_imagem ? (
+                <img 
+                  src={product.url_imagem} 
+                  alt={product.nome} 
+                  className="w-full h-full object-cover rounded-md"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+              ) : (
+                <Boxes className="w-4 h-4 text-muted-foreground" />
+              )}
+              <Boxes className="w-4 h-4 text-muted-foreground hidden" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-sm truncate leading-tight">{product.nome}</p>
+              <p className="text-xs text-muted-foreground truncate leading-tight">
+                SKU: {product.sku_interno}
+              </p>
+              <p className="text-xs text-primary font-medium">
+                {composicoes?.length || 0} componentes
+              </p>
+            </div>
+          </div>
+        );
+      }
+    },
+    {
+      key: "custo_total",
+      label: "Custo Total",
+      render: (_, product: ProdutoComposicao) => {
+        const composicoes = getComposicoesForSku(product.sku_interno);
+        const custoTotal = composicoes?.reduce((total, comp) => {
+          const custoUnitario = custosProdutos[comp.sku_componente] || 0;
+          return total + (custoUnitario * comp.quantidade);
+        }, 0) || 0;
+        
+        return (
+          <div className="text-right">
+            <span className="text-sm font-semibold text-[var(--brand-yellow)]">
+              {formatMoney(custoTotal)}
+            </span>
+          </div>
+        );
+      }
+    },
+    {
+      key: "estoque_disponivel",
+      label: "Pode Produzir",
+      render: (_, product: ProdutoComposicao) => {
+        const composicoes = getComposicoesForSku(product.sku_interno);
+        let estoqueDisponivel = product.quantidade_atual;
+        let componenteLimitante = null;
+        
+        if (composicoes && composicoes.length > 0) {
+          let menorEstoquePossivel = Infinity;
+          
+          for (const comp of composicoes) {
+            const estoqueComponente = comp.estoque_componente || 0;
+            const quantidadeNecessaria = comp.quantidade;
+            const possiveisUnidades = Math.floor(estoqueComponente / quantidadeNecessaria);
+            
+            if (possiveisUnidades < menorEstoquePossivel) {
+              menorEstoquePossivel = possiveisUnidades;
+              componenteLimitante = {
+                nome: comp.nome_componente,
+                sku: comp.sku_componente,
+                estoque: estoqueComponente,
+                necessario: quantidadeNecessaria
+              };
+            }
+          }
+          
+          estoqueDisponivel = menorEstoquePossivel === Infinity ? 0 : menorEstoquePossivel;
+        }
+
+        return (
+          <div className="text-center">
+            <span className="text-sm font-bold block">{estoqueDisponivel} unid.</span>
+            {componenteLimitante ? (
+              <Badge variant="secondary" className="text-xs">
+                Limitado
+              </Badge>
+            ) : (
+              <Badge variant="default" className="text-xs">
+                Disponível
+              </Badge>
+            )}
+          </div>
+        );
+      }
+    }
+  ];
+
+  // Configuração das ações para MobileTable
+  const actions = [
+    {
+      label: "Composições",
+      onClick: (product: ProdutoComposicao) => abrirModalComposicoes(product),
+      icon: <Boxes className="w-4 h-4" />,
+      variant: "outline" as const
+    },
+    {
+      label: "Editar",
+      onClick: (product: ProdutoComposicao) => {
+        setProdutoSelecionado(product);
+        setProductModalOpen(true);
+      },
+      icon: <Edit className="w-4 h-4" />,
+      variant: "outline" as const
+    },
+    {
+      label: "Excluir",
+      onClick: (product: ProdutoComposicao) => {
+        if (window.confirm(`Tem certeza que deseja excluir ${product.nome}?`)) {
+          deleteProduto(product.id);
+        }
+      },
+      icon: <Trash2 className="w-4 h-4" />,
+      variant: "destructive" as const
+    }
+  ];
+
   const renderProductCard = (product: ProdutoComposicao) => {
     const composicoes = getComposicoesForSku(product.sku_interno);
     
@@ -340,10 +478,10 @@ export function ComposicoesEstoque() {
 
     return (
       <Card key={product.id} className={cn(
-        "group hover:shadow-xl transition-all duration-300 w-full rounded-none md:rounded-lg border-x-0 md:border-x border-t-0 first:border-t md:border-t",
+        "group hover:shadow-xl transition-all duration-300",
         itemSelected && "ring-2 ring-primary border-primary/50 bg-primary/5"
       )}>
-        <CardContent className="p-4 md:p-6">
+        <CardContent className="p-3 md:p-6">
           {/* Checkbox de seleção */}
           <div className="flex justify-end mb-3">
             <Checkbox 
@@ -721,7 +859,7 @@ export function ComposicoesEstoque() {
           </div>
         )}
 
-        <div className="flex-1 min-w-0 space-y-6 -mx-4 md:mx-0">
+        <div className="flex-1 min-w-0 space-y-6">
           {/* Filtros Inteligentes - ocultos no mobile */}
           <div className="hidden md:block">
             <ComposicoesFilters 
@@ -849,29 +987,46 @@ export function ComposicoesEstoque() {
             </CardContent>
           </Card>
 
-          {/* Grid de produtos com melhor espaçamento - lista completa no mobile */}
+          {/* Lista de produtos usando MobileTable - igual ao controle de estoque */}
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-0 md:gap-6 px-4 md:px-0">
+            <div className="space-y-3">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i} className="animate-pulse border-border/40 w-full rounded-none md:rounded-lg border-x-0 md:border-x border-t-0 first:border-t md:border-t">
-                  <CardContent className="p-4 md:p-6 space-y-4">
-                    <div className="h-5 bg-muted rounded w-3/4" />
-                    <div className="h-4 bg-muted rounded w-1/2" />
-                    <div className="h-24 bg-muted rounded" />
-                    <div className="flex gap-2">
-                      <div className="h-8 bg-muted rounded flex-1" />
-                      <div className="h-8 bg-muted rounded w-16" />
+                <Card key={i} className="animate-pulse border-border/40">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-muted rounded-md" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-muted rounded w-3/4" />
+                        <div className="h-3 bg-muted rounded w-1/2" />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : produtosFinaisFiltrados && produtosFinaisFiltrados.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-0 md:gap-6 px-4 md:px-0">
-              {produtosFinaisFiltrados.map(renderProductCard)}
-            </div>
+            <MobileTable
+              data={produtosFinaisFiltrados}
+              columns={columns}
+              selectedItems={Array.from(selectedItems)}
+              onSelectItem={selectItem}
+              onSelectAll={(selected: boolean) => {
+                if (selected) {
+                  selectAll(produtosFinaisFiltrados);
+                } else {
+                  clearSelection();
+                }
+              }}
+              keyField="id"
+              actions={actions}
+              sortBy="nome"
+              sortOrder="asc"
+              onSort={() => {}}
+              emptyMessage="Nenhum produto de composição encontrado."
+              onRowClick={(product: ProdutoComposicao) => abrirModalComposicoes(product)}
+            />
           ) : (
-            <Card className="border-border/40 bg-card/20 w-full rounded-none md:rounded-lg border-x-0 md:border-x mx-4 md:mx-0">
+            <Card className="border-border/40 bg-card/20">
               <CardContent className="text-center py-16">
                 <Boxes className="h-16 w-16 text-muted-foreground/40 mx-auto mb-6" />
                 <h3 className="text-xl font-semibold mb-3 text-foreground">Nenhum produto encontrado</h3>
