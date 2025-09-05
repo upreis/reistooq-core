@@ -1,0 +1,350 @@
+-- Limpar dados existentes e popular com estrutura completa de categorias
+TRUNCATE TABLE public.categorias_catalogo CASCADE;
+
+-- Inserir todas as 26 categorias principais (Nível 1)
+INSERT INTO public.categorias_catalogo (nivel, nome, ordem, ativo, categoria_completa) VALUES
+(1, 'Acessórios para Veículos', 1, true, 'Acessórios para Veículos'),
+(1, 'Agro', 2, true, 'Agro'),
+(1, 'Alimentos e Bebidas', 3, true, 'Alimentos e Bebidas'),
+(1, 'Animais', 4, true, 'Animais'),
+(1, 'Antiguidades e Coleções', 5, true, 'Antiguidades e Coleções'),
+(1, 'Arte, Papelaria e Armarinho', 6, true, 'Arte, Papelaria e Armarinho'),
+(1, 'Bebês', 7, true, 'Bebês'),
+(1, 'Beleza e Cuidado Pessoal', 8, true, 'Beleza e Cuidado Pessoal'),
+(1, 'Brinquedos e Hobbies', 9, true, 'Brinquedos e Hobbies'),
+(1, 'Calçados, Roupas e Bolsas', 10, true, 'Calçados, Roupas e Bolsas'),
+(1, 'Câmeras e Acessórios', 11, true, 'Câmeras e Acessórios'),
+(1, 'Casa, Móveis e Decoração', 12, true, 'Casa, Móveis e Decoração'),
+(1, 'Celulares e Telefones', 13, true, 'Celulares e Telefones'),
+(1, 'Construção', 14, true, 'Construção'),
+(1, 'Eletrodomésticos', 15, true, 'Eletrodomésticos'),
+(1, 'Eletrônicos, Áudio e Vídeo', 16, true, 'Eletrônicos, Áudio e Vídeo'),
+(1, 'Esportes e Fitness', 17, true, 'Esportes e Fitness'),
+(1, 'Ferramentas', 18, true, 'Ferramentas'),
+(1, 'Festas e Lembrancinhas', 19, true, 'Festas e Lembrancinhas'),
+(1, 'Games', 20, true, 'Games'),
+(1, 'Indústria e Comércio', 21, true, 'Indústria e Comércio'),
+(1, 'Informática', 22, true, 'Informática'),
+(1, 'Instrumentos Musicais', 23, true, 'Instrumentos Musicais'),
+(1, 'Joias e Relógios', 24, true, 'Joias e Relógios'),
+(1, 'Mais Categorias', 25, true, 'Mais Categorias'),
+(1, 'Saúde', 26, true, 'Saúde');
+
+-- Inserir todas as 252 categorias de nível 2
+WITH categorias_nivel2 AS (
+  SELECT * FROM (VALUES
+    -- Acessórios para Veículos
+    ('Aces. de Carros e Caminhonetes', 'Acessórios para Veículos'),
+    ('Aces. de Motos e Quadriciclos', 'Acessórios para Veículos'),
+    ('Acessórios Náuticos', 'Acessórios para Veículos'),
+    ('Acessórios de Linha Pesada', 'Acessórios para Veículos'),
+    ('Ferramentas para Veículos', 'Acessórios para Veículos'),
+    ('GNV', 'Acessórios para Veículos'),
+    ('Limpeza Automotiva', 'Acessórios para Veículos'),
+    ('Lubrificantes e Fluidos', 'Acessórios para Veículos'),
+    ('Navegadores GPS para Vehículos', 'Acessórios para Veículos'),
+    ('Outros', 'Acessórios para Veículos'),
+    ('Performance', 'Acessórios para Veículos'),
+    ('Peças Náuticas', 'Acessórios para Veículos'),
+    ('Peças de Carros e Caminhonetes', 'Acessórios para Veículos'),
+    ('Peças de Motos e Quadriciclos', 'Acessórios para Veículos'),
+    ('Pneus e Acessórios', 'Acessórios para Veículos'),
+    ('Rodas', 'Acessórios para Veículos'),
+    ('Segurança Veicular', 'Acessórios para Veículos'),
+    ('Som Automotivo', 'Acessórios para Veículos'),
+    ('Tuning', 'Acessórios para Veículos'),
+    
+    -- Agro
+    ('Agricultura de Precisão', 'Agro'),
+    ('Apicultura', 'Agro'),
+    ('Armezenamento', 'Agro'),
+    ('Energia Renovável', 'Agro'),
+    ('Ferramentas de Trabalho', 'Agro'),
+    ('Infra-estrutura Rural', 'Agro'),
+    ('Insumos Agrícolas', 'Agro'),
+    ('Insumos Gadeiros', 'Agro'),
+    ('Irrigação', 'Agro'),
+    ('Maquinaria Agrícola', 'Agro'),
+    ('Máquinas Forrageiras', 'Agro'),
+    ('Produçao Animal', 'Agro'),
+    ('Proteção de Culturas', 'Agro'),
+    
+    -- Alimentos e Bebidas
+    ('Bebidas', 'Alimentos e Bebidas'),
+    ('Comida Preparada', 'Alimentos e Bebidas'),
+    ('Congelados', 'Alimentos e Bebidas'),
+    ('Frescos', 'Alimentos e Bebidas'),
+    ('Mercearia', 'Alimentos e Bebidas'),
+    
+    -- Animais
+    ('Anfíbios e Répteis', 'Animais'),
+    ('Aves e Acessórios', 'Animais'),
+    ('Cavalos', 'Animais'),
+    ('Coelhos', 'Animais'),
+    ('Cães', 'Animais'),
+    ('Gatos', 'Animais'),
+    ('Peixes', 'Animais'),
+    ('Roedores', 'Animais'),
+    
+    -- Antiguidades e Coleções
+    ('Antiguidades', 'Antiguidades e Coleções'),
+    ('Cédulas e Moedas', 'Antiguidades e Coleções'),
+    ('Filatelia', 'Antiguidades e Coleções'),
+    ('Militaria e Afins', 'Antiguidades e Coleções'),
+    
+    -- Arte, Papelaria e Armarinho
+    ('Arte e Trabalhos Manuais', 'Arte, Papelaria e Armarinho'),
+    ('Artigos de Armarinho', 'Arte, Papelaria e Armarinho'),
+    ('Materiais Escolares', 'Arte, Papelaria e Armarinho'),
+    
+    -- Bebês
+    ('Alimentação e Amamentação', 'Bebês'),
+    ('Alimentos para Bebês', 'Bebês'),
+    ('Andadores e Mini Veículos', 'Bebês'),
+    ('Banho do Bebê', 'Bebês'),
+    ('Brinquedos para Bebês', 'Bebês'),
+    ('Chupetas e Mordedores', 'Bebês'),
+    ('Higiene e Cuidados com o Bebê', 'Bebês'),
+    ('Maternidade', 'Bebês'),
+    ('Passeio do Bebê', 'Bebês'),
+    ('Quarto do Bebê', 'Bebês'),
+    ('Roupas de Bebê', 'Bebês'),
+    ('Saúde do Bebê', 'Bebês'),
+    ('Segurança para Bebê', 'Bebês'),
+    
+    -- Beleza e Cuidado Pessoal
+    ('Artefatos para Cabelo', 'Beleza e Cuidado Pessoal'),
+    ('Artigos para Cabeleireiros', 'Beleza e Cuidado Pessoal'),
+    ('Barbearia', 'Beleza e Cuidado Pessoal'),
+    ('Cuidados com a Pele', 'Beleza e Cuidado Pessoal'),
+    ('Cuidados com o Cabelo', 'Beleza e Cuidado Pessoal'),
+    ('Depilação', 'Beleza e Cuidado Pessoal'),
+    ('Farmácia', 'Beleza e Cuidado Pessoal'),
+    ('Higiene Pessoal', 'Beleza e Cuidado Pessoal'),
+    ('Manicure e Pedicure', 'Beleza e Cuidado Pessoal'),
+    ('Maquiagem', 'Beleza e Cuidado Pessoal'),
+    ('Tratamentos de Beleza', 'Beleza e Cuidado Pessoal'),
+    
+    -- Brinquedos e Hobbies
+    ('Anti-stress e Engenho', 'Brinquedos e Hobbies'),
+    ('Ar Livre e Playground', 'Brinquedos e Hobbies'),
+    ('Artes e Atividades', 'Brinquedos e Hobbies'),
+    ('Bonecos e Bonecas', 'Brinquedos e Hobbies'),
+    ('Brinquedos Eletrônicos', 'Brinquedos e Hobbies'),
+    ('Brinquedos de Faz de Conta', 'Brinquedos e Hobbies'),
+    ('Brinquedos de Montar', 'Brinquedos e Hobbies'),
+    ('Brinquedos de Praia e Piscina', 'Brinquedos e Hobbies'),
+    ('Casinhas e Barracas', 'Brinquedos e Hobbies'),
+    ('Fantoches e Marionetas', 'Brinquedos e Hobbies'),
+    ('Hobbies', 'Brinquedos e Hobbies'),
+    ('Instrumentos Musicais', 'Brinquedos e Hobbies'),
+    ('Jogos de Salão', 'Brinquedos e Hobbies'),
+    ('Jogos de Tabuleiro e Cartas', 'Brinquedos e Hobbies'),
+    ('Lançadores de Brinquedo', 'Brinquedos e Hobbies'),
+    ('Mini Veículos e Bicicletas', 'Brinquedos e Hobbies'),
+    ('Patins e Skates', 'Brinquedos e Hobbies'),
+    ('Piscinas de Bolas e Infláveis', 'Brinquedos e Hobbies'),
+    ('Veículos de Brinquedo', 'Brinquedos e Hobbies'),
+    ('Álbuns e Figurinhas', 'Brinquedos e Hobbies'),
+    
+    -- Calçados, Roupas e Bolsas
+    ('Acessórios de Moda', 'Calçados, Roupas e Bolsas'),
+    ('Calçados', 'Calçados, Roupas e Bolsas'),
+    ('Indumentária Laboral e Escolar', 'Calçados, Roupas e Bolsas'),
+    ('Malas e Bolsas', 'Calçados, Roupas e Bolsas'),
+    ('Moda Fitness', 'Calçados, Roupas e Bolsas'),
+    ('Moda Íntima e Lingerie', 'Calçados, Roupas e Bolsas'),
+    
+    -- Câmeras e Acessórios
+    ('Câmeras', 'Câmeras e Acessórios'),
+    ('Acessórios para Câmeras', 'Câmeras e Acessórios'),
+    ('Instrumentos Ópticos', 'Câmeras e Acessórios'),
+    ('Lentes e Filtros', 'Câmeras e Acessórios'),
+    ('Cabos', 'Câmeras e Acessórios'),
+    ('Equipamento de Revelação', 'Câmeras e Acessórios'),
+    ('Álbuns e Porta-retratos', 'Câmeras e Acessórios'),
+    
+    -- Casa, Móveis e Decoração
+    ('Cozinha', 'Casa, Móveis e Decoração'),
+    ('Banheiros', 'Casa, Móveis e Decoração'),
+    ('Camas, Colchões e Acessórios', 'Casa, Móveis e Decoração'),
+    ('Cuidado da Casa e Lavanderia', 'Casa, Móveis e Decoração'),
+    ('Enfeites e Decoração da Casa', 'Casa, Móveis e Decoração'),
+    ('Iluminação Residencial', 'Casa, Móveis e Decoração'),
+    ('Jardim e Ar Livre', 'Casa, Móveis e Decoração'),
+    ('Móveis para Casa', 'Casa, Móveis e Decoração'),
+    ('Organização para Casa', 'Casa, Móveis e Decoração'),
+    ('Segurança para Casa', 'Casa, Móveis e Decoração'),
+    ('Têxteis de Casa e Decoração', 'Casa, Móveis e Decoração'),
+    
+    -- Celulares e Telefones
+    ('Telefonia Fixa e Sem Fio', 'Celulares e Telefones'),
+    ('Acessórios para Celulares', 'Celulares e Telefones'),
+    ('VoIP', 'Celulares e Telefones'),
+    ('Smartwatches e Acessórios', 'Celulares e Telefones'),
+    ('Rádio Comunicadores', 'Celulares e Telefones'),
+    ('Peças para Celular', 'Celulares e Telefones'),
+    
+    -- Construção
+    ('Aberturas', 'Construção'),
+    ('Acessórios de Construção', 'Construção'),
+    ('Encanamento', 'Construção'),
+    ('Energia', 'Construção'),
+    ('Loja das Tintas', 'Construção'),
+    ('Materiais de Obra', 'Construção'),
+    ('Mobiliário para Banheiros', 'Construção'),
+    ('Mobiliário para Cozinhas', 'Construção'),
+    ('Máquinas para Construção', 'Construção'),
+    ('Pisos e Rejuntes', 'Construção'),
+    
+    -- Eletrodomésticos
+    ('Ar e Ventilação', 'Eletrodomésticos'),
+    ('Bebedouros e Purificadores', 'Eletrodomésticos'),
+    ('Cuidado Pessoal', 'Eletrodomésticos'),
+    ('Fornos e Fogões', 'Eletrodomésticos'),
+    ('Lavadores', 'Eletrodomésticos'),
+    ('Pequenos Eletrodomésticos', 'Eletrodomésticos'),
+    ('Refrigeração', 'Eletrodomésticos'),
+    
+    -- Eletrônicos, Áudio e Vídeo
+    ('Áudio', 'Eletrônicos, Áudio e Vídeo'),
+    ('Acessórios para TV', 'Eletrônicos, Áudio e Vídeo'),
+    ('Projetores e Telas', 'Eletrônicos, Áudio e Vídeo'),
+    ('Pilhas e Carregadores', 'Eletrônicos, Áudio e Vídeo'),
+    ('Cabos', 'Eletrônicos, Áudio e Vídeo'),
+    ('Acessórios para Áudio e Vídeo', 'Eletrônicos, Áudio e Vídeo'),
+    ('Aparelhos DVD e Bluray', 'Eletrônicos, Áudio e Vídeo'),
+    ('Componentes Eletrônicos', 'Eletrônicos, Áudio e Vídeo'),
+    ('Controles Remotos', 'Eletrônicos, Áudio e Vídeo'),
+    ('Drones e Acessórios', 'Eletrônicos, Áudio e Vídeo'),
+    ('Peças para TV', 'Eletrônicos, Áudio e Vídeo'),
+    ('Bolsas e Estojos', 'Eletrônicos, Áudio e Vídeo'),
+    
+    -- Esportes e Fitness
+    ('Artes Marciais e Boxe', 'Esportes e Fitness'),
+    ('Badminton', 'Esportes e Fitness'),
+    ('Baseball e Softball', 'Esportes e Fitness'),
+    ('Basquete', 'Esportes e Fitness'),
+    ('Camping, Caça e Pesca', 'Esportes e Fitness'),
+    ('Canoas, Caiaques e Infláveis', 'Esportes e Fitness'),
+    ('Ciclismo', 'Esportes e Fitness'),
+    ('Equitação', 'Esportes e Fitness'),
+    ('Esqui e Snowboard', 'Esportes e Fitness'),
+    ('Fitness e Musculação', 'Esportes e Fitness'),
+    ('Futebol', 'Esportes e Fitness'),
+    ('Golfe', 'Esportes e Fitness'),
+    ('Handebol', 'Esportes e Fitness'),
+    ('Hockey', 'Esportes e Fitness'),
+    ('Kitesurf', 'Esportes e Fitness'),
+    ('Mergulho', 'Esportes e Fitness'),
+    ('Monitores Esportivos', 'Esportes e Fitness'),
+    ('Natação', 'Esportes e Fitness'),
+    ('Paintball', 'Esportes e Fitness'),
+    ('Patinetes e Scooters', 'Esportes e Fitness'),
+    ('Patín e Skateboard', 'Esportes e Fitness'),
+    ('Pilates e Yoga', 'Esportes e Fitness'),
+    ('Rapel, Montanhismo e Escalada', 'Esportes e Fitness'),
+    ('Suplementos e Shakers', 'Esportes e Fitness'),
+    ('Surf e Bodyboard', 'Esportes e Fitness'),
+    ('Tiro Esportivo', 'Esportes e Fitness'),
+    ('Tênis e Squash', 'Esportes e Fitness'),
+    ('Vôlei', 'Esportes e Fitness'),
+    ('Wakeboard e Esquí Acuático', 'Esportes e Fitness'),
+    
+    -- Ferramentas
+    ('Ferramentas Manuais', 'Ferramentas'),
+    ('Acessórios para Ferramentas', 'Ferramentas'),
+    ('Caixas e Organizadores', 'Ferramentas'),
+    ('Ferramentas Elétricas', 'Ferramentas'),
+    ('Ferramentas Industriais', 'Ferramentas'),
+    ('Ferramentas Pneumáticas', 'Ferramentas'),
+    ('Ferramentas para Jardim', 'Ferramentas'),
+    ('Medições e Instrumentação', 'Ferramentas'),
+    
+    -- Festas e Lembrancinhas
+    ('Artigos para Festas', 'Festas e Lembrancinhas'),
+    ('Convites', 'Festas e Lembrancinhas'),
+    ('Decoração de Festa', 'Festas e Lembrancinhas'),
+    ('Descartáveis para Festa', 'Festas e Lembrancinhas'),
+    ('Equipamento para Festas', 'Festas e Lembrancinhas'),
+    ('Espuma, Serpentinas e Confete', 'Festas e Lembrancinhas'),
+    ('Fantasias e Cosplay', 'Festas e Lembrancinhas'),
+    ('Lembrancinhas para Fiestas', 'Festas e Lembrancinhas'),
+    
+    -- Games
+    ('Acessórios para Consoles', 'Games'),
+    ('Fliperamas e Arcade', 'Games'),
+    
+    -- Indústria e Comércio
+    ('Arquitetura e Desenho', 'Indústria e Comércio'),
+    ('Embalagem e Logística', 'Indústria e Comércio'),
+    ('Equipamento Médico', 'Indústria e Comércio'),
+    ('Equipamento para Comércios', 'Indústria e Comércio'),
+    ('Equipamento para Escritórios', 'Indústria e Comércio'),
+    ('Gastronomia e Hotelaria', 'Indústria e Comércio'),
+    ('Gráfica e Impressão', 'Indústria e Comércio'),
+    ('Publicidade e Promoção', 'Indústria e Comércio'),
+    ('Segurança Laboral', 'Indústria e Comércio'),
+    ('Têxtil e Calçado', 'Indústria e Comércio'),
+    
+    -- Informática
+    ('Armazenamento', 'Informática'),
+    ('Periféricos para PC', 'Informática'),
+    ('Conectividade e Redes', 'Informática'),
+    ('Componentes para PC', 'Informática'),
+    ('Acessórios para PC Gaming', 'Informática'),
+    ('Impressão', 'Informática'),
+    ('Monitores e Acessórios', 'Informática'),
+    ('Leitores e Scanners', 'Informática'),
+    ('Estabilizadores e No Breaks', 'Informática'),
+    ('Portáteis e Acessórios', 'Informática'),
+    ('Cabos e Hubs USB', 'Informática'),
+    ('Tablets e Acessórios', 'Informática'),
+    ('Limpeza de PCs', 'Informática'),
+    ('PC de Mesa', 'Informática'),
+    ('Acessórios de Antiestática', 'Informática'),
+    ('Softwares', 'Informática'),
+    ('Palms e Handhelds', 'Informática'),
+    
+    -- Instrumentos Musicais
+    ('Baterias e Percussão', 'Instrumentos Musicais'),
+    ('Equipamento para DJs', 'Instrumentos Musicais'),
+    ('Estúdio de Gravação', 'Instrumentos Musicais'),
+    ('Instrumentos de Corda', 'Instrumentos Musicais'),
+    ('Instrumentos de Sopro', 'Instrumentos Musicais'),
+    ('Microfones e Amplificadores', 'Instrumentos Musicais'),
+    ('Partituras e Letras', 'Instrumentos Musicais'),
+    ('Pedais e Acessórios', 'Instrumentos Musicais'),
+    ('Pianos e Teclados', 'Instrumentos Musicais'),
+    
+    -- Joias e Relógios
+    ('Acessórios Para Relógios', 'Joias e Relógios'),
+    ('Artigos de Joalharia', 'Joias e Relógios'),
+    ('Joias e Bijuterias', 'Joias e Relógios'),
+    ('Relógios', 'Joias e Relógios'),
+    
+    -- Mais Categorias
+    ('Artigos para Fumadores', 'Mais Categorias'),
+    ('Criptomoedas', 'Mais Categorias'),
+    ('Equipamento para Tatuagens', 'Mais Categorias'),
+    ('Esoterismo e Ocultismo', 'Mais Categorias'),
+    
+    -- Saúde
+    ('Cuidado da Saúde', 'Saúde'),
+    ('Equipamento Médico', 'Saúde'),
+    ('Massagem', 'Saúde'),
+    ('Mobilidade', 'Saúde'),
+    ('Ortopedia', 'Saúde'),
+    ('Terapias Alternativas', 'Saúde')
+  ) AS data(nome_categoria, nome_principal)
+)
+INSERT INTO public.categorias_catalogo (nivel, nome, categoria_principal_id, ordem, ativo, categoria_completa)
+SELECT 
+  2,
+  c2.nome_categoria,
+  c1.id,
+  ROW_NUMBER() OVER (PARTITION BY c1.id ORDER BY c2.nome_categoria),
+  true,
+  c1.nome || ' > ' || c2.nome_categoria
+FROM categorias_nivel2 c2
+JOIN public.categorias_catalogo c1 ON c1.nome = c2.nome_principal AND c1.nivel = 1;
