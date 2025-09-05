@@ -732,7 +732,7 @@ const Estoque = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="composicoes">
+            <TabsContent value="composicoes" className="space-y-4 md:space-y-8">
               <ComposicoesEstoque />
             </TabsContent>
           </Tabs>
