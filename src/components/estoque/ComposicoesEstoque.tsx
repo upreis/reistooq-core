@@ -723,34 +723,44 @@ export function ComposicoesEstoque() {
             />
           </div>
 
-          {/* Controles de busca e filtros - posicionados fora do card no mobile */}
-          <div className="md:hidden flex items-center gap-2 px-4 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produtos..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-background/60 border-border/60"
-              />
+          {/* Busca e Filtros - layout mobile igual ao controle de estoque */}
+          <div className="space-y-3 md:space-y-0 md:flex md:gap-4 md:items-start">
+            {/* Container flex para busca e filtros no mobile */}
+            <div className="flex gap-2 md:flex-1">
+              {/* Busca - mais compacta no mobile */}
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar produtos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 bg-background/60 border-border/60 h-9 md:h-10 text-sm"
+                  />
+                </div>
+              </div>
+              
+              {/* Filtros Inteligentes - ao lado da busca no mobile */}
+              <div className="w-auto md:w-auto">
+                <Button
+                  variant="outline" 
+                  className="bg-background/60 border-border/60 flex-shrink-0 h-9 md:h-10 text-sm px-3 gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span className="hidden sm:inline">Filtros</span>
+                </Button>
+              </div>
+
+              {/* Botão de categorias no mobile */}
+              <Button
+                variant="outline"
+                size="icon"
+                className="md:hidden bg-background/60 border-border/60 flex-shrink-0 h-9"
+                onClick={toggleSidebar}
+              >
+                <Package className="h-4 w-4" />
+              </Button>
             </div>
-            {/* Botão de filtros no mobile */}
-            <Button
-              variant="outline" 
-              size="icon"
-              className="bg-background/60 border-border/60 flex-shrink-0"
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
-            {/* Botão de categorias no mobile */}
-            <Button
-              variant="outline"
-              size="icon"
-              className="bg-background/60 border-border/60 flex-shrink-0"
-              onClick={toggleSidebar}
-            >
-              <Package className="h-4 w-4" />
-            </Button>
           </div>
 
           {/* Header da seção - apenas para desktop */}
