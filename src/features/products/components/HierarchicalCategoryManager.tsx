@@ -186,25 +186,7 @@ export function HierarchicalCategoryManager() {
     );
   }
   
-  // Debug: listas calculadas por nível (implementação idêntica para todos os níveis)
-  const categoriasPrincipaisCompletas = getCategoriasPrincipais();
-  const principalList = getFilteredCategories(categoriasPrincipaisCompletas);
-  
-  const categoriasCompletas = activePrincipal ? getCategorias(activePrincipal.id) : [];
-  const categoriaList = activePrincipal 
-    ? getFilteredCategories(categoriasCompletas)
-    : [];
-    
-  const subcategoriasCompletas = activeCategoria ? getSubcategorias(activeCategoria.id) : [];
-  const subList = activeCategoria 
-    ? getFilteredCategories(subcategoriasCompletas)
-    : [];
-  
-  console.log('🧭 Debug detalhado:');
-  console.log('  📁 Principais totais:', categoriasPrincipaisCompletas.length, '| Filtradas:', principalList.length);
-  console.log('  📂 Categorias totais:', categoriasCompletas.length, '| Filtradas:', categoriaList.length, '| Principal ativa:', activePrincipal?.nome);
-  console.log('  📄 Subcategorias totais:', subcategoriasCompletas.length, '| Filtradas:', subList.length, '| Categoria ativa:', activeCategoria?.nome);
-  console.log('🧭 UI listas visíveis => Principais:', principalList.length, '| Categorias:', categoriaList.length, '| Subcategorias:', subList.length);
+  console.log('🧭 Estado atual:', { currentView, activePrincipal: activePrincipal?.nome, activeCategoria: activeCategoria?.nome });
   
   return (
     <div className="space-y-6">
@@ -343,7 +325,16 @@ export function HierarchicalCategoryManager() {
             {currentView === 'categoria' && `Categorias de "${activePrincipal?.nome}"`}
             {currentView === 'subcategoria' && `Subcategorias de "${activeCategoria?.nome}"`}
             <Badge variant="outline" className="text-xs h-5 px-2">
-              {(currentView === 'principal' ? principalList.length : currentView === 'categoria' ? categoriaList.length : subList.length)} itens
+              {(() => {
+                if (currentView === 'principal') {
+                  return getFilteredCategories(categoriasPrincipais).length;
+                } else if (currentView === 'categoria' && activePrincipal) {
+                  return getFilteredCategories(getCategorias(activePrincipal.id)).length;
+                } else if (currentView === 'subcategoria' && activeCategoria) {
+                  return getFilteredCategories(getSubcategorias(activeCategoria.id)).length;
+                }
+                return 0;
+              })()} itens
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -360,7 +351,7 @@ export function HierarchicalCategoryManager() {
               )}
               
               {currentView === 'categoria' && activePrincipal && (
-                categoriaList.map(categoria => 
+                getFilteredCategories(getCategorias(activePrincipal.id)).map(categoria => 
                   renderCategoryCard(
                     categoria, 
                     () => handleNavigateToCategoria(categoria)
@@ -369,7 +360,7 @@ export function HierarchicalCategoryManager() {
               )}
               
               {currentView === 'subcategoria' && activeCategoria && (
-                subList.map(subcategoria => 
+                getFilteredCategories(getSubcategorias(activeCategoria.id)).map(subcategoria => 
                   renderCategoryCard(subcategoria)
                 )
               )}
