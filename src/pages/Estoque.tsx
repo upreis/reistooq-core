@@ -527,38 +527,41 @@ const Estoque = () => {
 
               {/* Busca e Filtros - layout mobile otimizado */}
               <div className="space-y-3 md:space-y-0 md:flex md:gap-4 md:items-start">
-                {/* Busca - mais compacta no mobile */}
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar produtos..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-10 bg-background/60 border-border/60 h-9 md:h-10 text-sm"
-                    />
-                    {searchTerm && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-                        onClick={() => setSearchTerm("")}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    )}
+                {/* Container flex para busca e filtros no mobile */}
+                <div className="flex gap-2 md:flex-1">
+                  {/* Busca - mais compacta no mobile */}
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar produtos..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 pr-10 bg-background/60 border-border/60 h-9 md:h-10 text-sm"
+                      />
+                      {searchTerm && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                          onClick={() => setSearchTerm("")}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-                
-                {/* Filtros Inteligentes - versão compacta mobile */}
-                <div className="w-full md:w-auto">
-                  <EstoqueIntelligentFilters 
-                    filters={intelligentFilters}
-                    onFiltersChange={setIntelligentFilters}
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                    stats={intelligentStats}
-                  />
+                  
+                  {/* Filtros Inteligentes - ao lado da busca no mobile */}
+                  <div className="w-auto md:w-auto">
+                    <EstoqueIntelligentFilters 
+                      filters={intelligentFilters}
+                      onFiltersChange={setIntelligentFilters}
+                      searchTerm={searchTerm}
+                      onSearchChange={setSearchTerm}
+                      stats={intelligentStats}
+                    />
+                  </div>
                 </div>
               </div>
 
