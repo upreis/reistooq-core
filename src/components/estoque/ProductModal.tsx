@@ -352,10 +352,10 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                          updateCategoriaCompleta(value, "");
                        }}
                      >
-                       <SelectTrigger>
-                         <SelectValue placeholder="Ex: Eletrônicos" />
-                       </SelectTrigger>
-                        <SelectContent className="bg-background border max-h-[260px] overflow-y-auto z-[80]">
+                        <SelectTrigger onMouseDown={() => console.info('🔽 Abrindo categorias principais...')}>
+                          <SelectValue placeholder="Ex: Eletrônicos" />
+                        </SelectTrigger>
+                        <SelectContent position="popper" side="bottom" sideOffset={4} className="bg-background border shadow-lg max-h-[280px] overflow-y-auto z-[9999]">
                           {catalogLoading && (
                             <div className="p-2 text-muted-foreground text-sm">Carregando categorias...</div>
                           )}
@@ -382,10 +382,10 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                        }}
                        disabled={!selectedCategoriaPrincipal}
                      >
-                        <SelectTrigger>
+                        <SelectTrigger onMouseDown={() => console.info('🔽 Abrindo categorias do nível 2...')}>
                           <SelectValue placeholder={!selectedCategoriaPrincipal ? "Selecione uma..." : getCategorias(selectedCategoriaPrincipal).length === 0 ? "Nenhuma categoria..." : "Selecione uma..."} />
                         </SelectTrigger>
-                        <SelectContent className="bg-background border max-h-[260px] overflow-y-auto z-[80]">
+                        <SelectContent position="popper" side="bottom" sideOffset={4} className="bg-background border shadow-lg max-h-[280px] overflow-y-auto z-[9999]">
                           {!selectedCategoriaPrincipal && (
                             <div className="p-2 text-muted-foreground text-sm">Selecione uma categoria principal</div>
                           )}
