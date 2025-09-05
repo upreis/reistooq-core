@@ -723,12 +723,42 @@ export function ComposicoesEstoque() {
             />
           </div>
 
-          {/* Header da seção com pesquisa e seleção - simplificado no mobile */}
-          <Card className="border-border/40 bg-card/30 backdrop-blur-sm">
-            <CardContent className="p-3 md:p-6">
+          {/* Controles de busca e filtros - posicionados fora do card no mobile */}
+          <div className="md:hidden flex items-center gap-2 px-4 mb-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar produtos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-background/60 border-border/60"
+              />
+            </div>
+            {/* Botão de filtros no mobile */}
+            <Button
+              variant="outline" 
+              size="icon"
+              className="bg-background/60 border-border/60 flex-shrink-0"
+            >
+              <Filter className="h-4 w-4" />
+            </Button>
+            {/* Botão de categorias no mobile */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="bg-background/60 border-border/60 flex-shrink-0"
+              onClick={toggleSidebar}
+            >
+              <Package className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Header da seção - apenas para desktop */}
+          <Card className="hidden md:block border-border/40 bg-card/30 backdrop-blur-sm">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="hidden md:block">
+                  <div>
                     <h2 className="text-xl font-semibold text-foreground mb-1">Produtos de Composições</h2>
                     <p className="text-sm text-muted-foreground">
                       {filteredData?.length || 0} produtos encontrados
@@ -740,8 +770,8 @@ export function ComposicoesEstoque() {
                     </p>
                   </div>
                   
-                  {/* Controles de seleção - ocultos no mobile */}
-                  <div className="hidden md:flex items-center gap-2">
+                  {/* Controles de seleção - apenas desktop */}
+                  <div className="flex items-center gap-2">
                     <Button
                       variant={isSelectMode ? "default" : "outline"}
                       size="sm"
@@ -809,8 +839,8 @@ export function ComposicoesEstoque() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2 w-full md:w-auto">
-                  <div className="relative flex-1 md:w-80">
+                <div className="flex items-center gap-2">
+                  <div className="relative w-80">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Buscar produtos..."
@@ -819,23 +849,6 @@ export function ComposicoesEstoque() {
                       className="pl-10 bg-background/60 border-border/60"
                     />
                   </div>
-                  {/* Botão de filtros no mobile */}
-                  <Button
-                    variant="outline" 
-                    size="icon"
-                    className="md:hidden bg-background/60 border-border/60 flex-shrink-0"
-                  >
-                    <Filter className="h-4 w-4" />
-                  </Button>
-                  {/* Botão de categorias no mobile */}
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="md:hidden bg-background/60 border-border/60 flex-shrink-0"
-                    onClick={toggleSidebar}
-                  >
-                    <Package className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             </CardContent>

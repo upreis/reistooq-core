@@ -733,9 +733,7 @@ const Estoque = () => {
             </TabsContent>
             
             <TabsContent value="composicoes">
-              <Card className="p-6">
-                <ComposicoesEstoque />
-              </Card>
+              <ComposicoesEstoque />
             </TabsContent>
           </Tabs>
         </div>
