@@ -321,17 +321,6 @@ export function EstoqueActions({
         </Button>
       </div>
 
-      {/* Mobile Actions - Only New Product button */}
-      <div className="md:hidden flex justify-center p-2">
-        <Button 
-          onClick={() => setProductModalOpen(true)} 
-          size="sm"
-          className="gap-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Produto
-        </Button>
-      </div>
 
 
       {/* Modais */}
