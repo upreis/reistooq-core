@@ -186,15 +186,24 @@ export function HierarchicalCategoryManager() {
     );
   }
   
-  // Debug: listas calculadas por nível (evita lógica duplicada e facilita inspeção)
-  const principalList = getFilteredCategories(categoriasPrincipais);
+  // Debug: listas calculadas por nível (implementação idêntica para todos os níveis)
+  const categoriasPrincipaisCompletas = getCategoriasPrincipais();
+  const principalList = getFilteredCategories(categoriasPrincipaisCompletas);
+  
+  const categoriasCompletas = activePrincipal ? getCategorias(activePrincipal.id) : [];
   const categoriaList = activePrincipal 
-    ? getFilteredCategories(getCategorias(activePrincipal.id))
+    ? getFilteredCategories(categoriasCompletas)
     : [];
+    
+  const subcategoriasCompletas = activeCategoria ? getSubcategorias(activeCategoria.id) : [];
   const subList = activeCategoria 
-    ? getFilteredCategories(getSubcategorias(activeCategoria.id))
+    ? getFilteredCategories(subcategoriasCompletas)
     : [];
   
+  console.log('🧭 Debug detalhado:');
+  console.log('  📁 Principais totais:', categoriasPrincipaisCompletas.length, '| Filtradas:', principalList.length);
+  console.log('  📂 Categorias totais:', categoriasCompletas.length, '| Filtradas:', categoriaList.length, '| Principal ativa:', activePrincipal?.nome);
+  console.log('  📄 Subcategorias totais:', subcategoriasCompletas.length, '| Filtradas:', subList.length, '| Categoria ativa:', activeCategoria?.nome);
   console.log('🧭 UI listas visíveis => Principais:', principalList.length, '| Categorias:', categoriaList.length, '| Subcategorias:', subList.length);
   
   return (
