@@ -722,19 +722,21 @@ export function ComposicoesEstoque() {
         )}
 
         <div className="flex-1 min-w-0 space-y-6">
-          {/* Filtros Inteligentes */}
-          <ComposicoesFilters 
-            filters={filters}
-            onFiltersChange={setFilters}
-            stats={stats}
-          />
+          {/* Filtros Inteligentes - ocultos no mobile */}
+          <div className="hidden md:block">
+            <ComposicoesFilters 
+              filters={filters}
+              onFiltersChange={setFilters}
+              stats={stats}
+            />
+          </div>
 
-          {/* Header da seção com pesquisa e seleção */}
+          {/* Header da seção com pesquisa e seleção - simplificado no mobile */}
           <Card className="border-border/40 bg-card/30 backdrop-blur-sm">
-            <CardContent className="p-6">
+            <CardContent className="p-3 md:p-6">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div>
+                  <div className="hidden md:block">
                     <h2 className="text-xl font-semibold text-foreground mb-1">Produtos de Composições</h2>
                     <p className="text-sm text-muted-foreground">
                       {filteredData?.length || 0} produtos encontrados
@@ -746,8 +748,8 @@ export function ComposicoesEstoque() {
                     </p>
                   </div>
                   
-                  {/* Controles de seleção */}
-                  <div className="flex items-center gap-2">
+                  {/* Controles de seleção - ocultos no mobile */}
+                  <div className="hidden md:flex items-center gap-2">
                     <Button
                       variant={isSelectMode ? "default" : "outline"}
                       size="sm"
