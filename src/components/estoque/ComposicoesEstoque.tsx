@@ -681,11 +681,12 @@ export function ComposicoesEstoque() {
       </div>
 
       {/* Layout principal com sidebar e conteúdo */}
-      <div className="flex gap-6">
-        {/* Sidebar de categorias - responsivo - oculto no mobile */}
+      <div className="flex gap-6 relative">
+        {/* Sidebar de categorias - responsivo - oculto no mobile, overlay quando aberto */}
         <div className={cn(
-          "hidden md:block transition-all duration-300 flex-shrink-0",
-          sidebarCollapsed ? "w-12" : "w-72"
+          "transition-all duration-300 flex-shrink-0",
+          "hidden md:block", // Sempre oculto no mobile por padrão
+          sidebarCollapsed ? "md:w-12" : "md:w-72"
         )}>
           <div className="sticky top-6">
             <ComposicoesCategorySidebar 
@@ -697,6 +698,28 @@ export function ComposicoesEstoque() {
             />
           </div>
         </div>
+
+        {/* Sidebar mobile overlay */}
+        {!sidebarCollapsed && (
+          <div className="md:hidden fixed inset-0 z-50 bg-black/20 backdrop-blur-sm">
+            <div className="absolute left-0 top-0 h-full w-72 bg-background border-r border-border shadow-xl">
+              <div className="p-6">
+                <ComposicoesCategorySidebar 
+                  produtos={produtos || []}
+                  hierarchicalFilters={hierarchicalFilters}
+                  onHierarchicalFiltersChange={setHierarchicalFilters}
+                  isCollapsed={false}
+                  onToggleCollapse={toggleSidebar}
+                />
+              </div>
+            </div>
+            {/* Área para fechar clicando fora */}
+            <div 
+              className="absolute inset-0" 
+              onClick={toggleSidebar}
+            />
+          </div>
+        )}
 
         <div className="flex-1 min-w-0 space-y-6">
           {/* Filtros Inteligentes */}
@@ -792,14 +815,25 @@ export function ComposicoesEstoque() {
                   </div>
                 </div>
                 
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar produtos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-80 bg-background/60 border-border/60"
-                  />
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                  <div className="relative flex-1 md:w-80">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar produtos..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 bg-background/60 border-border/60"
+                    />
+                  </div>
+                  {/* Botão de filtros no mobile */}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="md:hidden bg-background/60 border-border/60 flex-shrink-0"
+                    onClick={toggleSidebar}
+                  >
+                    <Package className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </CardContent>
