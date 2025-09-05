@@ -66,11 +66,10 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   const [isUploading, setIsUploading] = useState(false);
   const [selectedCategoriaPrincipal, setSelectedCategoriaPrincipal] = useState<string>("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("");
-  const [selectedSubcategoria, setSelectedSubcategoria] = useState<string>("");
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
   const { unidades, loading: loadingUnidades, getUnidadeBasePorTipo } = useUnidadesMedida();
-  const { getCategoriasPrincipais, getCategorias, getSubcategorias } = useHierarchicalCategories();
+  const { getCategoriasPrincipais, getCategorias } = useHierarchicalCategories();
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -183,8 +182,8 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
     }
   };
 
-  // Função para atualizar a categoria completa no form
-  const updateCategoriaCompleta = (categoriaPrincipalId: string, categoriaId: string, subcategoriaId: string) => {
+  // Função para atualizar a categoria completa no form (apenas 2 níveis)
+  const updateCategoriaCompleta = (categoriaPrincipalId: string, categoriaId: string) => {
     const categorias = [];
     
     if (categoriaPrincipalId) {
@@ -195,11 +194,6 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
     if (categoriaId) {
       const categoria = getCategorias(categoriaPrincipalId).find(c => c.id === categoriaId);
       if (categoria) categorias.push(categoria.nome);
-    }
-    
-    if (subcategoriaId) {
-      const subcategoria = getSubcategorias(categoriaId).find(c => c.id === subcategoriaId);
-      if (subcategoria) categorias.push(subcategoria.nome);
     }
     
     form.setValue("categoria", categorias.join(" → "));
@@ -332,95 +326,64 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 )}
               />
 
-              {/* Categorias Hierárquicas */}
-              <div className="md:col-span-2 space-y-4">
-                <h4 className="text-sm font-medium">Categorização (Opcional)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Categoria Principal */}
-                  <div>
-                    <FormLabel>Categoria Principal</FormLabel>
-                    <Select 
-                      value={selectedCategoriaPrincipal} 
-                      onValueChange={(value) => {
-                        setSelectedCategoriaPrincipal(value);
-                        setSelectedCategoria("");
-                        setSelectedSubcategoria("");
-                        updateCategoriaCompleta(value, "", "");
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Ex: Eletrônicos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getCategoriasPrincipais().map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+               {/* Categorias Hierárquicas - Apenas 2 níveis */}
+               <div className="md:col-span-2 space-y-4">
+                 <h4 className="text-sm font-medium">Categorização (Opcional)</h4>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {/* Categoria Principal */}
+                   <div>
+                     <FormLabel>Categoria Principal</FormLabel>
+                     <Select 
+                       value={selectedCategoriaPrincipal} 
+                       onValueChange={(value) => {
+                         setSelectedCategoriaPrincipal(value);
+                         setSelectedCategoria("");
+                         updateCategoriaCompleta(value, "");
+                       }}
+                     >
+                       <SelectTrigger>
+                         <SelectValue placeholder="Ex: Eletrônicos" />
+                       </SelectTrigger>
+                       <SelectContent className="bg-background border max-h-[200px] overflow-y-auto z-50">
+                         {getCategoriasPrincipais().map((cat) => (
+                           <SelectItem key={cat.id} value={cat.id} className="hover:bg-muted">
+                             {cat.nome}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   </div>
 
-                  {/* Categoria */}
-                  <div>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select 
-                      value={selectedCategoria} 
-                      onValueChange={(value) => {
-                        setSelectedCategoria(value);
-                        setSelectedSubcategoria("");
-                        updateCategoriaCompleta(selectedCategoriaPrincipal, value, "");
-                      }}
-                      disabled={!selectedCategoriaPrincipal}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={!selectedCategoriaPrincipal ? "Selecione uma categoria principal" : getCategorias(selectedCategoriaPrincipal).length === 0 ? "Nenhuma categoria disponível" : "Ex: Smartphones"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getCategorias(selectedCategoriaPrincipal).length === 0 && (
-                          <div className="p-2 text-muted-foreground text-sm">
-                            Nenhuma categoria disponível para esta categoria principal
-                          </div>
-                        )}
-                        {getCategorias(selectedCategoriaPrincipal).map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Subcategoria */}
-                  <div>
-                    <FormLabel>Subcategoria</FormLabel>
-                    <Select 
-                      value={selectedSubcategoria} 
-                      onValueChange={(value) => {
-                        setSelectedSubcategoria(value);
-                        updateCategoriaCompleta(selectedCategoriaPrincipal, selectedCategoria, value);
-                      }}
-                      disabled={!selectedCategoria}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={!selectedCategoria ? "Selecione uma categoria" : getSubcategorias(selectedCategoria).length === 0 ? "Nenhuma subcategoria disponível" : "Ex: iPhone"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getSubcategorias(selectedCategoria).length === 0 && (
-                          <div className="p-2 text-muted-foreground text-sm">
-                            Nenhuma subcategoria disponível para esta categoria
-                          </div>
-                        )}
-                        {getSubcategorias(selectedCategoria).map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+                   {/* Categoria */}
+                   <div>
+                     <FormLabel>Categoria</FormLabel>
+                     <Select 
+                       value={selectedCategoria} 
+                       onValueChange={(value) => {
+                         setSelectedCategoria(value);
+                         updateCategoriaCompleta(selectedCategoriaPrincipal, value);
+                       }}
+                       disabled={!selectedCategoriaPrincipal}
+                     >
+                       <SelectTrigger>
+                         <SelectValue placeholder={!selectedCategoriaPrincipal ? "Selecione uma..." : getCategorias(selectedCategoriaPrincipal).length === 0 ? "Nenhuma categoria..." : "Selecione uma..."} />
+                       </SelectTrigger>
+                       <SelectContent className="bg-background border max-h-[200px] overflow-y-auto z-50">
+                         {getCategorias(selectedCategoriaPrincipal).length === 0 && (
+                           <div className="p-2 text-muted-foreground text-sm">
+                             Nenhuma categoria disponível para esta categoria principal
+                           </div>
+                         )}
+                         {getCategorias(selectedCategoriaPrincipal).map((cat) => (
+                           <SelectItem key={cat.id} value={cat.id} className="hover:bg-muted">
+                             {cat.nome}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   </div>
+                 </div>
+               </div>
 
               {/* Código de Barras */}
               <FormField
