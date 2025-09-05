@@ -457,8 +457,8 @@ const Estoque = () => {
   return (
     <EstoqueGuard>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10">
-        {/* Header moderno com melhor espaçamento */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-primary/3 via-primary/5 to-primary/3 border-b border-border/30">
+        {/* Header moderno com melhor espaçamento - oculto no mobile */}
+        <div className="hidden md:block relative overflow-hidden bg-gradient-to-r from-primary/3 via-primary/5 to-primary/3 border-b border-border/30">
           <div className="absolute inset-0 bg-grid-pattern opacity-3"></div>
           <div className="relative container mx-auto px-6 py-12">
             {/* Breadcrumb melhorado */}
@@ -471,23 +471,21 @@ const Estoque = () => {
             {/* Header com melhor hierarquia visual */}
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-10">
               <div className="space-y-3 flex-1 min-w-[300px]">
-                <h1 className="hidden md:block text-4xl font-bold tracking-tight text-foreground">
+                <h1 className="text-4xl font-bold tracking-tight text-foreground">
                   Gestão de Estoque
                 </h1>
               </div>
-              
-            
             </div>
 
-            {/* Stats Cards - oculto no mobile */}
-            <div className="hidden md:block">
+            {/* Stats Cards */}
+            <div>
               <EstoqueStats products={products} />
             </div>
           </div>
         </div>
 
         {/* Conteúdo principal - ajustado para mobile */}
-        <div className="container mx-auto px-3 md:px-6 py-4 md:py-8 max-w-none">
+        <div className="container mx-auto px-3 md:px-6 py-2 md:py-8 max-w-none">
           <Tabs defaultValue="estoque" className="w-full">
             {/* Container das tabs com botão no mobile */}
             <div className="flex items-center gap-2 mb-4 md:mb-8">
