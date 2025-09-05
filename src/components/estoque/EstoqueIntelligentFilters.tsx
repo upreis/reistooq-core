@@ -95,8 +95,8 @@ export function EstoqueIntelligentFilters({ filters, onFiltersChange, searchTerm
           className="gap-2 h-9 md:h-10 text-xs md:text-sm"
         >
           <Filter className="h-3 w-3 md:h-4 md:w-4" />
-          <span className="hidden sm:inline">Filtros Inteligentes</span>
-          <span className="sm:hidden">Filtros</span>
+          <span className="hidden md:inline">Filtros Inteligentes</span>
+          <span className="md:hidden">Filtros</span>
           {hasActiveFilters && (
             <Badge variant="secondary" className="ml-1 h-4 w-4 md:h-5 md:w-5 rounded-full p-0 text-xs">
               {[
