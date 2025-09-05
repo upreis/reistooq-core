@@ -134,14 +134,14 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
 
   useEffect(() => {
     console.info('🧭 ProductModal CATÁLOGO GLOBAL:', { loading: catalogLoading, total: categories?.length, principais: getCategoriasPrincipais()?.length });
-  }, [catalogLoading, categories, getCategoriasPrincipais]);
+  }, [catalogLoading, categories?.length]);
 
   useEffect(() => {
-    if (open) {
-      console.info('🔄 Recarregando catálogo ao abrir modal...');
+    if (open && !categories?.length) {
+      console.info('🔄 Carregando catálogo inicial...');
       refreshCategories?.();
     }
-  }, [open, refreshCategories]);
+  }, [open]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

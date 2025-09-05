@@ -158,7 +158,7 @@ export function EstoqueActions({
   return (
     <div className="flex flex-wrap items-center gap-3 p-4 bg-card border border-gray-600 rounded-lg">
       {/* Botão Novo Produto */}
-      <Button onClick={() => { refreshCategories(); setProductModalOpen(true); }} className="gap-2">
+      <Button onClick={() => setProductModalOpen(true)} className="gap-2">
         <Plus className="w-4 h-4" />
         Novo Produto
       </Button>

@@ -79,27 +79,7 @@ export const useCatalogCategories = () => {
     loadCategories();
   }, []);
   
-  // Forçar reload na montagem do componente e quando dados podem ter mudado
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (categories.length === 0) {
-        console.log('🔄 Recarregando categorias automaticamente...');
-        loadCategories();
-      }
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [categories.length]);
-
-  // Forçar refresh para buscar novos dados de nível 3
-  useEffect(() => {
-    const forceRefresh = setTimeout(() => {
-      console.log('🔄 Forçando refresh do catálogo para incluir nível 3...');
-      loadCategories();
-    }, 500);
-    
-    return () => clearTimeout(forceRefresh);
-  }, []);
+  // Carregamento único na montagem
 
   return {
     categories,
