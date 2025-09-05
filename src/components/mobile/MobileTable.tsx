@@ -71,7 +71,7 @@ export default function MobileTable({
     );
   }
 
-  const selectableItems = !!onSelectItem;
+  const selectableItems = !!onSelectItem && !isMobile; // Ocultar seleção no mobile
   const allSelected = selectableItems && selectedItems.length === data.length && data.length > 0;
   const someSelected = selectableItems && selectedItems.length > 0 && selectedItems.length < data.length;
 
