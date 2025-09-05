@@ -682,9 +682,9 @@ export function ComposicoesEstoque() {
 
       {/* Layout principal com sidebar e conteúdo */}
       <div className="flex gap-6">
-        {/* Sidebar de categorias - responsivo */}
+        {/* Sidebar de categorias - responsivo - oculto no mobile */}
         <div className={cn(
-          "transition-all duration-300 flex-shrink-0",
+          "hidden md:block transition-all duration-300 flex-shrink-0",
           sidebarCollapsed ? "w-12" : "w-72"
         )}>
           <div className="sticky top-6">
