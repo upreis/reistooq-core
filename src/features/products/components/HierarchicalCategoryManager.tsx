@@ -1,5 +1,5 @@
 // Visualizador do catálogo global de categorias (somente leitura)
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { ArrowLeft, ChevronRight, Tags, Layers, Package, Search, Filter, RefreshCw, BookOpen, Eye, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 import { useCatalogCategories, CatalogCategory } from '../hooks/useCatalogCategories';
+import { CategoryGridSkeleton } from './CategoryCardSkeleton';
+import { CategoryErrorState } from './CategoryErrorState';
+import { useKeyboardNavigation } from '@/hooks/useKeyboardNavigation';
+import { useToastFeedback } from '@/hooks/useToastFeedback';
 
 const NIVEL_LABELS = {
   1: 'Categoria Principal',
@@ -27,8 +31,12 @@ export function HierarchicalCategoryManager() {
     refreshCategories
   } = useCatalogCategories();
   
+  const { showSuccess, showError } = useToastFeedback();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState<number | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   
   // Estados para navegação hierárquica
   const [currentView, setCurrentView] = useState<'principal' | 'categoria' | 'subcategoria'>('principal');
@@ -45,35 +53,103 @@ export function HierarchicalCategoryManager() {
     subcategorias: categories.filter(c => c.nivel === 3).length
   };
 
-  // Navegação hierárquica
-  const handleNavigateToPrincipal = (principal: CatalogCategory) => {
+  // Navegação hierárquica com feedback
+  const handleNavigateToPrincipal = useCallback((principal: CatalogCategory) => {
     setActivePrincipal(principal);
     setActiveCategoria(null);
     setCurrentView('categoria');
     setSearchTerm('');
-  };
+    setFocusedIndex(-1);
+    showSuccess(`Navegando para categorias de "${principal.nome}"`);
+  }, [showSuccess]);
 
-  const handleNavigateToCategoria = (categoria: CatalogCategory) => {
+  const handleNavigateToCategoria = useCallback((categoria: CatalogCategory) => {
     setActiveCategoria(categoria);
     setCurrentView('subcategoria');
     setSearchTerm('');
-  };
+    setFocusedIndex(-1);
+    showSuccess(`Navegando para subcategorias de "${categoria.nome}"`);
+  }, [showSuccess]);
 
-  const handleBackToCategoria = () => {
+  const handleBackToCategoria = useCallback(() => {
     setActiveCategoria(null);
     setCurrentView('categoria');
     setSearchTerm('');
-  };
+    setFocusedIndex(-1);
+  }, []);
 
-  const handleBackToPrincipal = () => {
+  const handleBackToPrincipal = useCallback(() => {
     setActivePrincipal(null);
     setActiveCategoria(null);
     setCurrentView('principal');
     setSearchTerm('');
-  };
+    setFocusedIndex(-1);
+  }, []);
 
-  // Função para renderizar cards clicáveis com design moderno
-  const renderCategoryCard = (category: CatalogCategory, onClick?: () => void) => {
+  // Refresh com feedback
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshCategories();
+      showSuccess('Catálogo atualizado com sucesso');
+    } catch (error) {
+      showError('Erro ao atualizar catálogo');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refreshCategories, showSuccess, showError]);
+
+  // Get current categories for keyboard navigation
+  const getCurrentCategories = useCallback(() => {
+    if (currentView === 'principal') {
+      return getFilteredCategories(categoriasPrincipais);
+    } else if (currentView === 'categoria' && activePrincipal) {
+      return getFilteredCategories(getCategorias(activePrincipal.id));
+    } else if (currentView === 'subcategoria' && activeCategoria) {
+      return getFilteredCategories(getSubcategorias(activeCategoria.id));
+    }
+    return [];
+  }, [currentView, activePrincipal, activeCategoria, searchTerm]);
+
+  // Keyboard navigation
+  useKeyboardNavigation({
+    onArrowUp: () => {
+      const currentCategories = getCurrentCategories();
+      if (currentCategories.length > 0) {
+        setFocusedIndex(prev => prev > 0 ? prev - 1 : currentCategories.length - 1);
+      }
+    },
+    onArrowDown: () => {
+      const currentCategories = getCurrentCategories();
+      if (currentCategories.length > 0) {
+        setFocusedIndex(prev => prev < currentCategories.length - 1 ? prev + 1 : 0);
+      }
+    },
+    onEnter: () => {
+      const currentCategories = getCurrentCategories();
+      if (focusedIndex >= 0 && focusedIndex < currentCategories.length) {
+        const category = currentCategories[focusedIndex];
+        if (currentView === 'principal') {
+          handleNavigateToPrincipal(category);
+        } else if (currentView === 'categoria') {
+          handleNavigateToCategoria(category);
+        }
+      }
+    },
+    onEscape: () => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }
+  });
+
+  // Reset focused index when view changes
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [currentView, searchTerm]);
+
+  // Função para renderizar cards clicáveis com design moderno e acessibilidade
+  const renderCategoryCard = useCallback((category: CatalogCategory, onClick?: () => void, index?: number) => {
     const subcategoriesCount = category.nivel === 1 
       ? getCategorias(category.id).length 
       : category.nivel === 2 
@@ -82,33 +158,46 @@ export function HierarchicalCategoryManager() {
     
     const hasSubcategories = subcategoriesCount > 0;
     const isClickable = !!onClick;
+    const isFocused = index === focusedIndex;
 
     return (
       <Card 
         key={category.id} 
-        className={`group transition-all duration-300 ${
+        className={`group transition-all duration-300 animate-fade-in ${
           isClickable 
-            ? 'hover:shadow-xl hover:scale-[1.02] cursor-pointer border-muted hover:border-primary/50 hover:bg-primary/5' 
+            ? 'hover-scale cursor-pointer border-muted hover:border-primary/50 interactive-item' 
             : 'border-muted hover:shadow-md'
-        }`}
+        } ${isFocused ? 'ring-2 ring-primary ring-offset-2' : ''}`}
         onClick={isClickable ? onClick : undefined}
+        role={isClickable ? "button" : "article"}
+        tabIndex={isClickable ? 0 : -1}
+        aria-label={isClickable 
+          ? `Navegar para ${category.nome}${hasSubcategories ? `, ${subcategoriesCount} ${category.nivel === 1 ? 'categorias' : 'subcategorias'}` : ''}`
+          : `Categoria ${category.nome}`
+        }
+        onKeyDown={isClickable ? (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick?.();
+          }
+        } : undefined}
       >
         <CardContent className="p-5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 flex-1">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
               {/* Indicador visual da categoria */}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <div 
-                  className="w-4 h-4 rounded-full border-2 border-white shadow-lg"
-                  style={{ backgroundColor: category.cor || '#6366f1' }}
+                  className="w-4 h-4 rounded-full border-2 border-background shadow-lg transition-colors"
+                  style={{ backgroundColor: category.cor || 'hsl(var(--primary))' }}
                 />
                 {hasSubcategories && (
-                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" />
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-success rounded-full border border-background" />
                 )}
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap sm:flex-nowrap">
                   <h4 className="font-semibold text-sm truncate">{category.nome}</h4>
                   <Badge variant="outline" className="text-xs h-5 px-2 shrink-0">
                     Nível {category.nivel}
@@ -116,13 +205,13 @@ export function HierarchicalCategoryManager() {
                 </div>
                 
                 {category.descricao && (
-                  <p className="text-xs text-muted-foreground truncate mb-2">
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                     {category.descricao}
                   </p>
                 )}
                 
                 {category.categoria_completa && (
-                  <p className="text-xs text-blue-600 truncate mb-2">
+                  <p className="text-xs text-primary/80 line-clamp-1 mb-2">
                     {category.categoria_completa}
                   </p>
                 )}
@@ -139,7 +228,7 @@ export function HierarchicalCategoryManager() {
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {/* Ícone de visualização */}
               <div className="flex opacity-60 group-hover:opacity-100 transition-opacity duration-200">
                 <Eye className="h-4 w-4 text-muted-foreground" />
@@ -154,7 +243,7 @@ export function HierarchicalCategoryManager() {
         </CardContent>
       </Card>
     );
-  };
+  }, [getCategorias, getSubcategorias, focusedIndex]);
 
   // Filtrar categorias baseado na pesquisa
   const getFilteredCategories = (categoriesList: CatalogCategory[]) => {
@@ -167,22 +256,75 @@ export function HierarchicalCategoryManager() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p>Carregando catálogo de categorias...</p>
-        </div>
+      <div className="space-y-6 animate-fade-in">
+        {/* Header skeleton */}
+        <Card className="bg-gradient-to-r from-primary/5 to-primary/10">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                  <div className="h-6 w-48 bg-muted rounded animate-pulse" />
+                </div>
+                <div className="h-4 w-96 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="h-9 w-24 bg-muted rounded animate-pulse" />
+            </div>
+            
+            {/* Statistics skeleton */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="text-center p-3 bg-background/70 rounded-lg border">
+                  <div className="h-8 w-12 bg-muted rounded mx-auto mb-2 animate-pulse" />
+                  <div className="h-3 w-16 bg-muted rounded mx-auto animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Alert skeleton */}
+        <div className="h-16 bg-muted rounded-lg animate-pulse" />
+
+        {/* Controls skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="h-9 w-32 bg-muted rounded animate-pulse" />
+                <div className="h-9 w-64 bg-muted rounded animate-pulse" />
+                <div className="h-9 w-48 bg-muted rounded animate-pulse" />
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Content skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Tags className="h-5 w-5" />
+              <div className="h-6 w-48 bg-muted rounded animate-pulse" />
+              <div className="h-5 w-16 bg-muted rounded-full animate-pulse" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <CategoryGridSkeleton count={6} />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertDescription>
-          Erro ao carregar catálogo: {error}
-        </AlertDescription>
-      </Alert>
+      <div className="space-y-6">
+        <CategoryErrorState 
+          error={error} 
+          onRetry={handleRefresh}
+          isRetrying={isRefreshing}
+        />
+      </div>
     );
   }
   
@@ -191,12 +333,12 @@ export function HierarchicalCategoryManager() {
   return (
     <div className="space-y-6">
       {/* Header com estatísticas */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20 animate-fade-in">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="min-w-0 flex-1">
               <CardTitle className="flex items-center gap-2 text-xl">
-                <BookOpen className="h-6 w-6 text-blue-600" />
+                <BookOpen className="h-6 w-6 text-primary" />
                 Catálogo de Categorias
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
@@ -204,34 +346,36 @@ export function HierarchicalCategoryManager() {
               </p>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={refreshCategories}
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="hover:bg-primary/10"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Recarregar
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Atualizando...' : 'Recarregar'}
               </Button>
             </div>
           </div>
           
-          {/* Estatísticas */}
-          <div className="grid grid-cols-4 gap-4 mt-4">
-            <div className="text-center p-3 bg-white/70 rounded-lg border">
-              <div className="text-2xl font-bold text-primary">{stats.total}</div>
+          {/* Estatísticas responsivas */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+            <div className="text-center p-3 bg-background/70 rounded-lg border transition-colors hover:bg-background/90">
+              <div className="text-xl sm:text-2xl font-bold text-primary">{stats.total}</div>
               <div className="text-xs text-muted-foreground">Total</div>
             </div>
-            <div className="text-center p-3 bg-white/70 rounded-lg border">
-              <div className="text-2xl font-bold text-orange-600">{stats.principais}</div>
+            <div className="text-center p-3 bg-background/70 rounded-lg border transition-colors hover:bg-background/90">
+              <div className="text-xl sm:text-2xl font-bold text-warning">{stats.principais}</div>
               <div className="text-xs text-muted-foreground">Principais</div>
             </div>
-            <div className="text-center p-3 bg-white/70 rounded-lg border">
-              <div className="text-2xl font-bold text-green-600">{stats.categorias}</div>
+            <div className="text-center p-3 bg-background/70 rounded-lg border transition-colors hover:bg-background/90">
+              <div className="text-xl sm:text-2xl font-bold text-success">{stats.categorias}</div>
               <div className="text-xs text-muted-foreground">Categorias</div>
             </div>
-            <div className="text-center p-3 bg-white/70 rounded-lg border">
-              <div className="text-2xl font-bold text-blue-600">{stats.subcategorias}</div>
+            <div className="text-center p-3 bg-background/70 rounded-lg border transition-colors hover:bg-background/90">
+              <div className="text-xl sm:text-2xl font-bold text-primary">{stats.subcategorias}</div>
               <div className="text-xs text-muted-foreground">Subcategorias</div>
             </div>
           </div>
@@ -247,49 +391,53 @@ export function HierarchicalCategoryManager() {
       </Alert>
 
       {/* Área de controle principal */}
-      <Card>
+      <Card className="animate-fade-in">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Navegação hierárquica */}
-              {currentView !== 'principal' && (
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={currentView === 'categoria' ? handleBackToPrincipal : handleBackToCategoria}
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    {currentView === 'categoria' ? 'Voltar às Principais' : 'Voltar às Categorias'}
-                  </Button>
-                  
-                  {/* Breadcrumb */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span>{activePrincipal?.nome}</span>
-                    {activeCategoria && (
-                      <>
-                        <ChevronRight className="h-4 w-4" />
-                        <span>{activeCategoria.nome}</span>
-                      </>
-                    )}
-                  </div>
+          <div className="flex flex-col gap-4">
+            {/* Navegação hierárquica */}
+            {currentView !== 'principal' && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={currentView === 'categoria' ? handleBackToPrincipal : handleBackToCategoria}
+                  className="hover:bg-primary/10"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {currentView === 'categoria' ? 'Voltar às Principais' : 'Voltar às Categorias'}
+                </Button>
+                
+                {/* Breadcrumb responsivo */}
+                <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+                  <span className="truncate max-w-32 sm:max-w-none">{activePrincipal?.nome}</span>
+                  {activeCategoria && (
+                    <>
+                      <ChevronRight className="h-4 w-4 shrink-0" />
+                      <span className="truncate max-w-32 sm:max-w-none">{activeCategoria.nome}</span>
+                    </>
+                  )}
                 </div>
-              )}
-              
+              </div>
+            )}
+            
+            {/* Controles de pesquisa e filtro */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
               {/* Pesquisa */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
+                  ref={searchInputRef}
                   placeholder="Pesquisar categorias..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64 pr-8"
+                  className="pl-10 pr-8 focus:ring-2 focus:ring-primary"
+                  aria-label="Pesquisar categorias"
                 />
                 {searchTerm && (
                   <button
                     type="button"
                     onClick={() => setSearchTerm('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
                     aria-label="Limpar pesquisa"
                     title="Limpar pesquisa"
                   >
@@ -299,8 +447,11 @@ export function HierarchicalCategoryManager() {
               </div>
               
               {/* Filtro por nível */}
-              <Select value={filterLevel?.toString() || 'all'} onValueChange={(value) => setFilterLevel(value === 'all' ? null : parseInt(value))}>
-                <SelectTrigger className="w-48">
+              <Select 
+                value={filterLevel?.toString() || 'all'} 
+                onValueChange={(value) => setFilterLevel(value === 'all' ? null : parseInt(value))}
+              >
+                <SelectTrigger className="w-full sm:w-48 hover:bg-muted/50">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Filtrar por nível" />
                 </SelectTrigger>
@@ -317,14 +468,16 @@ export function HierarchicalCategoryManager() {
       </Card>
 
       {/* Lista de categorias */}
-      <Card>
+      <Card className="animate-fade-in">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Tags className="h-5 w-5" />
-            {currentView === 'principal' && 'Categorias Principais'}
-            {currentView === 'categoria' && `Categorias de "${activePrincipal?.nome}"`}
-            {currentView === 'subcategoria' && `Subcategorias de "${activeCategoria?.nome}"`}
-            <Badge variant="outline" className="text-xs h-5 px-2">
+          <CardTitle className="text-lg flex items-center gap-2 flex-wrap">
+            <Tags className="h-5 w-5 shrink-0" />
+            <span className="truncate">
+              {currentView === 'principal' && 'Categorias Principais'}
+              {currentView === 'categoria' && `Categorias de "${activePrincipal?.nome}"`}
+              {currentView === 'subcategoria' && `Subcategorias de "${activeCategoria?.nome}"`}
+            </span>
+            <Badge variant="outline" className="text-xs h-5 px-2 shrink-0">
               {(() => {
                 if (currentView === 'principal') {
                   return getFilteredCategories(categoriasPrincipais).length;
@@ -339,34 +492,43 @@ export function HierarchicalCategoryManager() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="pr-2">
-            <div className="grid gap-3">
+          <div className="space-y-4">
+            {/* Dica de navegação por teclado */}
+            {getCurrentCategories().length > 0 && (
+              <div className="text-xs text-muted-foreground bg-muted/30 p-2 rounded-lg">
+                💡 Dica: Use as setas ↑↓ para navegar, Enter para selecionar, Esc para focar na pesquisa
+              </div>
+            )}
+            
+            <div className="grid gap-3" role="list" aria-label="Lista de categorias">
               {currentView === 'principal' && (
-                getFilteredCategories(categoriasPrincipais).map(principal => 
+                getFilteredCategories(categoriasPrincipais).map((principal, index) => 
                   renderCategoryCard(
                     principal, 
-                    () => handleNavigateToPrincipal(principal)
+                    () => handleNavigateToPrincipal(principal),
+                    index
                   )
                 )
               )}
               
               {currentView === 'categoria' && activePrincipal && (
-                getFilteredCategories(getCategorias(activePrincipal.id)).map(categoria => 
+                getFilteredCategories(getCategorias(activePrincipal.id)).map((categoria, index) => 
                   renderCategoryCard(
                     categoria, 
-                    () => handleNavigateToCategoria(categoria)
+                    () => handleNavigateToCategoria(categoria),
+                    index
                   )
                 )
               )}
               
               {currentView === 'subcategoria' && activeCategoria && (
-                getFilteredCategories(getSubcategorias(activeCategoria.id)).map(subcategoria => 
-                  renderCategoryCard(subcategoria)
+                getFilteredCategories(getSubcategorias(activeCategoria.id)).map((subcategoria, index) => 
+                  renderCategoryCard(subcategoria, undefined, index)
                 )
               )}
             </div>
             
-            {/* Estado vazio */}
+            {/* Estado vazio melhorado */}
             {(() => {
               let currentCategories: any[] = [];
               if (currentView === 'principal') {
@@ -379,17 +541,27 @@ export function HierarchicalCategoryManager() {
               
               if (currentCategories.length === 0) {
                 return (
-                  <div className="text-center py-12">
+                  <div className="text-center py-12 animate-fade-in">
                     <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-lg font-semibold mb-2">
                       {searchTerm ? 'Nenhum resultado encontrado' : 'Nenhuma categoria disponível'}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground mb-4">
                       {searchTerm 
-                        ? 'Tente ajustar os termos da pesquisa'
+                        ? 'Tente ajustar os termos da pesquisa ou limpar os filtros'
                         : `Não há ${NIVEL_LABELS[currentView === 'principal' ? 1 : currentView === 'categoria' ? 2 : 3].toLowerCase()}s disponíveis neste nível`
                       }
                     </p>
+                    {searchTerm && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setSearchTerm('')}
+                        className="hover:bg-primary/10"
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Limpar pesquisa
+                      </Button>
+                    )}
                   </div>
                 );
               }
