@@ -586,6 +586,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                         }
                                         onClick={() => {
                                           if (texto === "Mapear Incompleto" || texto === "Sem Mapear") {
+                                            console.log('🔗 Abrindo modal de mapeamento para pedido:', {
+                                              order,
+                                              order_items: order.order_items,
+                                              skus_produtos: order.skus_produtos,
+                                              titulo_anuncio: order.titulo_anuncio
+                                            });
+                                            
                                             // Disparar evento para abrir modal de mapeamento
                                             window.dispatchEvent(new CustomEvent('openMapeamentoModal', {
                                               detail: { pedido: order }
@@ -661,6 +668,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                 }
                                 onClick={() => {
                                   if (texto === "Mapear Incompleto" || texto === "Sem Mapear") {
+                                    console.log('🔗 Abrindo modal de mapeamento para pedido (status_baixa):', {
+                                      order,
+                                      order_items: order.order_items,
+                                      skus_produtos: order.skus_produtos,
+                                      titulo_anuncio: order.titulo_anuncio
+                                    });
+                                    
                                     // Disparar evento para abrir modal de mapeamento
                                     window.dispatchEvent(new CustomEvent('openMapeamentoModal', {
                                       detail: { pedido: order }

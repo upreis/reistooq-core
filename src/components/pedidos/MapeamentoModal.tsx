@@ -38,8 +38,28 @@ export function MapeamentoModal({
   const createMapping = useCreateSkuMapping();
   const updateMapping = useUpdateSkuMapping();
 
-  // Determinar SKU do pedido
-  const skuToMap = skuPedido || pedido?.order_items?.[0]?.sku || pedido?.order_items?.[0]?.item?.sku || '';
+  // Determinar SKU do pedido - verificar múltiplas estruturas possíveis
+  const skuToMap = skuPedido || 
+    pedido?.order_items?.[0]?.sku || 
+    pedido?.order_items?.[0]?.item?.sku || 
+    pedido?.order_items?.[0]?.item?.seller_sku ||
+    pedido?.skus_produtos?.split(', ')?.[0] ||
+    pedido?.sku_produto ||
+    '';
+    
+  console.log('🔍 Debug SKU extraction:', {
+    pedido: pedido,
+    order_items: pedido?.order_items,
+    skuToMap,
+    skuPedido,
+    estruturas: {
+      'order_items[0].sku': pedido?.order_items?.[0]?.sku,
+      'order_items[0].item.sku': pedido?.order_items?.[0]?.item?.sku,
+      'order_items[0].item.seller_sku': pedido?.order_items?.[0]?.item?.seller_sku,
+      'skus_produtos': pedido?.skus_produtos,
+      'sku_produto': pedido?.sku_produto
+    }
+  });
   const isEditing = !!existingMapping;
 
   const form = useForm<SkuMapping>({
@@ -56,19 +76,25 @@ export function MapeamentoModal({
 
   // Buscar mapeamento existente quando modal abrir
   useEffect(() => {
-    if (isOpen && skuToMap) {
-      // Aqui você pode adicionar lógica para buscar mapeamento existente
-      // Por enquanto, resetamos o form
+    if (isOpen && pedido) {
+      console.log('🔄 Atualizando form com dados do pedido:', { pedido, skuToMap });
+      
+      // Reset do form sempre que o modal abrir
       form.reset({
         sku_pedido: skuToMap,
         sku_correspondente: '',
         sku_simples: '',
         quantidade: 1,
         ativo: true,
-        observacoes: `Mapeamento criado a partir do pedido ${pedido?.numero || pedido?.id}`,
+        observacoes: `Mapeamento criado a partir do pedido ${pedido?.numero || pedido?.order_number || pedido?.id}`,
       });
+      
+      // Force update do campo SKU do pedido se não foi preenchido
+      if (skuToMap) {
+        form.setValue('sku_pedido', skuToMap, { shouldValidate: true });
+      }
     }
-  }, [isOpen, skuToMap, pedido, form]);
+  }, [isOpen, pedido, skuToMap, form]);
 
   const onSubmit = async (data: SkuMapping) => {
     try {
@@ -111,15 +137,21 @@ export function MapeamentoModal({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Número:</span>
-              <span className="ml-2 font-mono">{pedido?.numero || pedido?.id}</span>
+              <span className="ml-2 font-mono">{pedido?.numero || pedido?.order_number || pedido?.id}</span>
             </div>
             <div>
               <span className="text-muted-foreground">Cliente:</span>
               <span className="ml-2">{pedido?.nome_cliente || pedido?.buyer?.nickname || '-'}</span>
             </div>
             <div className="col-span-2">
+              <span className="text-muted-foreground">SKU Detectado:</span>
+              <span className={`ml-2 font-mono ${skuToMap ? 'text-green-600' : 'text-red-500'}`}>
+                {skuToMap || 'NENHUM SKU ENCONTRADO'}
+              </span>
+            </div>
+            <div className="col-span-2">
               <span className="text-muted-foreground">Produto:</span>
-              <span className="ml-2">{pedido?.order_items?.[0]?.item?.title || 'Produto não identificado'}</span>
+              <span className="ml-2">{pedido?.order_items?.[0]?.item?.title || pedido?.titulo_anuncio || 'Produto não identificado'}</span>
             </div>
           </div>
         </div>
@@ -135,15 +167,22 @@ export function MapeamentoModal({
                     <FormLabel className="flex items-center gap-2">
                       SKU do Pedido *
                       <Badge variant="secondary" className="text-xs">Automático</Badge>
+                      {!skuToMap && <Badge variant="destructive" className="text-xs">ERRO</Badge>}
                     </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Ex: SKU001-KIT"
                         {...field}
-                        disabled={true} // SKU do pedido é sempre readonly
-                        className="bg-muted"
+                        disabled={false} // Permitir edição caso SKU não seja detectado
+                        className={skuToMap ? "bg-muted" : "border-red-500"}
+                        value={field.value || skuToMap} // Force value update
                       />
                     </FormControl>
+                    {!skuToMap && (
+                      <p className="text-sm text-destructive">
+                        ⚠️ SKU não detectado automaticamente. Digite manualmente.
+                      </p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
