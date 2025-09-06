@@ -238,13 +238,13 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== MAPEAMENTO (das imagens 2 e 3) ======
   {
-    key: 'mapeamento',
-    label: 'Status Mapeamento',
+    key: 'cpf_cnpj',
+    label: 'CPF/CNPJ',
     category: 'mapping',
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Status do mapeamento de SKUs',
+    description: 'CPF ou CNPJ do cliente',
     width: 130
   },
   {

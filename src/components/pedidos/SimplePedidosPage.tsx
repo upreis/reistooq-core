@@ -435,8 +435,8 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
     { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
 
-    // Mapeamento
-    { key: 'mapeamento', label: 'Status Mapeamento', default: true, category: 'mapping' },
+    // Mapeamento  
+    { key: 'cpf_cnpj', label: 'CPF/CNPJ', default: true, category: 'mapping' },
     { key: 'sku_estoque', label: 'SKU Estoque', default: true, category: 'mapping' },
     { key: 'sku_kit', label: 'SKU KIT', default: false, category: 'mapping' },
     { key: 'qtd_kit', label: 'Quantidade KIT', default: false, category: 'mapping' },
