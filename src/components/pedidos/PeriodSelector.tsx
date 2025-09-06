@@ -136,7 +136,7 @@ export function PeriodSelector({
         <Button
           variant="outline"
           className={cn(
-            "w-[82%] justify-between text-left font-normal h-9 px-2.5 text-sm",
+            "w-fit min-w-[180px] justify-between text-left font-normal h-9 px-2.5 text-sm",
             !startDate && !endDate && "text-muted-foreground",
             hasPendingChanges && "border-warning",
             className

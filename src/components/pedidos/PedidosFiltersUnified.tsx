@@ -305,6 +305,7 @@ export function PedidosFiltersUnified({
               onFilterChange('dataFim', endDate);
             }}
             hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
+            className="w-fit min-w-[200px]"
           />
         </div>
 
@@ -315,8 +316,8 @@ export function PedidosFiltersUnified({
             <ColumnManager 
               manager={columnManager}
               trigger={
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-1" />
+                <Button variant="outline" size="sm" className="w-fit px-3">
+                  <Settings className="h-4 w-4 mr-1.5" />
                   <span className="hidden sm:inline">Colunas ({columnManager.state?.visibleColumns?.size || 0})</span>
                   <span className="sm:hidden">Cols</span>
                 </Button>
@@ -325,8 +326,8 @@ export function PedidosFiltersUnified({
           )}
           
           {activeFiltersCount > 0 && (
-            <Button variant="outline" size="sm" onClick={onClearFilters}>
-              <X className="h-4 w-4 mr-1" />
+            <Button variant="outline" size="sm" onClick={onClearFilters} className="w-fit px-3">
+              <X className="h-4 w-4 mr-1.5" />
               <span className="hidden sm:inline">Limpar</span>
             </Button>
           )}
