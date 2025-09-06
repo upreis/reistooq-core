@@ -131,7 +131,13 @@ serve(async (req) => {
       const { data: pendData, error: pendErr } = await sb.rpc('count_mapeamentos_pendentes', {
         _account_ids: accounts,
         _from: dateFrom,
-        _to: dateTo
+        _to: dateTo,
+        _shipping_status: (filters as any)?.shipping_status ?? null,
+        _cidade: (filters as any)?.cidade ?? null,
+        _uf: (filters as any)?.uf ?? null,
+        _valor_min: (filters as any)?.valorMin ?? null,
+        _valor_max: (filters as any)?.valorMax ?? null,
+        _search: search
       });
       if (pendErr) throw pendErr;
       mapeamentoPendenteCount = pendData || 0;

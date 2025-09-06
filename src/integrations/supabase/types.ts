@@ -2732,7 +2732,19 @@ export type Database = {
         Returns: number
       }
       count_mapeamentos_pendentes: {
-        Args: { _account_ids?: string[]; _from?: string; _to?: string }
+        Args:
+          | {
+              _account_ids?: string[]
+              _cidade?: string
+              _from?: string
+              _search?: string
+              _shipping_status?: string
+              _to?: string
+              _uf?: string
+              _valor_max?: number
+              _valor_min?: number
+            }
+          | { _account_ids?: string[]; _from?: string; _to?: string }
         Returns: number
       }
       create_integration_secret_secure: {
