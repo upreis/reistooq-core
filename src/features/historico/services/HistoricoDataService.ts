@@ -55,14 +55,29 @@ export class HistoricoDataService {
       const validatedLimit = Math.min(Math.max(limit, 1), this.MAX_LIMIT);
       const offset = (page - 1) * validatedLimit;
 
-      // Usar RPC otimizada
-      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
-        _search: filters.search || null,
-        _start: filters.dataInicio || null,
-        _end: filters.dataFim || null,
-        _limit: validatedLimit,
-        _offset: offset
-      });
+      // Usar view segura com mascaramento automático
+      let query = supabase
+        .from('historico_vendas_safe')
+        .select('*')
+        .order('created_at', { ascending: sortOrder !== 'desc' });
+
+      // Aplicar filtros na query
+      if (filters.search) {
+        query = query.or(`numero_pedido.ilike.%${filters.search}%,sku_produto.ilike.%${filters.search}%,descricao.ilike.%${filters.search}%,cliente_nome.ilike.%${filters.search}%`);
+      }
+
+      if (filters.dataInicio) {
+        query = query.gte('data_pedido', filters.dataInicio);
+      }
+
+      if (filters.dataFim) {
+        query = query.lte('data_pedido', filters.dataFim);
+      }
+
+      // Aplicar paginação
+      query = query.range(offset, offset + validatedLimit - 1);
+
+      const { data, error } = await query;
 
       if (error) {
         throw new Error(`Erro ao buscar dados: ${error.message}`);
