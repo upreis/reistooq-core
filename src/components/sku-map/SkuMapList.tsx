@@ -237,27 +237,6 @@ export function SkuMapList({
 
           {/* Mobile Card Layout - Visible on smaller screens */}
           <div className="lg:hidden space-y-3">
-            {/* Mobile Selection Header */}
-            {data?.data && data.data.length > 0 && (
-              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={selectedItems.length === data.data.length}
-                    onCheckedChange={handleSelectAll}
-                  />
-                  <span className="text-sm font-medium">
-                    {selectedItems.length > 0 
-                      ? `${selectedItems.length} selecionado(s)`
-                      : "Selecionar todos"
-                    }
-                  </span>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {data.total} total
-                </span>
-              </div>
-            )}
-
             {/* Mobile Cards */}
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
@@ -287,15 +266,9 @@ export function SkuMapList({
                   <div className="space-y-3">
                     {/* Card Header */}
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={selectedItems.includes(item.id!)}
-                          onCheckedChange={(checked) => handleSelectItem(item.id!, checked as boolean)}
-                        />
-                        <div>
-                          <div className="font-medium text-sm">{item.sku_pedido}</div>
-                          <div className="text-xs text-muted-foreground">SKU do Pedido</div>
-                        </div>
+                      <div>
+                        <div className="font-medium text-sm">{item.sku_pedido}</div>
+                        <div className="text-xs text-muted-foreground">SKU do Pedido</div>
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
