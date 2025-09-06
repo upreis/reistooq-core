@@ -12,7 +12,7 @@ import { ImportWizard } from "./import/ImportWizard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload, Search, Filter } from "lucide-react";
+import { Plus, Upload, Filter } from "lucide-react";
 import { useSkuFilters } from "@/hooks/useSkuFilters";
 import { useSkuMapShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SkuMapping } from "@/types/sku-mapping.types";
@@ -79,19 +79,14 @@ export function SkuMapPage() {
           )}
           {isMobile && (
             <>
-              <Button
-                variant="outline"
-                className="flex-1"
-              >
-                <Search className="w-4 h-4" />
-              </Button>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    size="icon"
+                    className="flex-1"
                   >
-                    <Filter className="w-4 h-4" />
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filtros
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-0" align="end">
@@ -104,10 +99,10 @@ export function SkuMapPage() {
               </Popover>
               <Button 
                 onClick={() => setShowCreateForm(true)}
-                className="w-[20%] text-xs px-1"
+                className="flex-1"
               >
-                <Plus className="w-4 h-4 mr-1" />
-                Novo
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Mapeamento
               </Button>
             </>
           )}
