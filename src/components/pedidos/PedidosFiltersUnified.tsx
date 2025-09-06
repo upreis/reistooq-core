@@ -139,7 +139,7 @@ export function PedidosFiltersUnified({
       )}
 
       {/* Layout principal dos filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-7 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 xl:grid-cols-7 gap-3 items-end">
         {/* Busca - Aplicação manual */}
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
@@ -310,7 +310,7 @@ export function PedidosFiltersUnified({
         </div>
 
         {/* Botões de ação */}
-        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex gap-1 justify-end lg:justify-start items-center">
+        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex gap-1 justify-start items-center">
           {/* Botão de Colunas */}
           {columnManager && (
             <ColumnManager 
