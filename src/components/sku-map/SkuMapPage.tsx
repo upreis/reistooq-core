@@ -10,6 +10,7 @@ import { SavedFiltersManager } from "./SavedFiltersManager";
 import { BulkEditModal } from "./BulkEditModal";
 import { ImportWizard } from "./import/ImportWizard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Plus, Upload, Search, Filter } from "lucide-react";
 import { useSkuFilters } from "@/hooks/useSkuFilters";
@@ -84,12 +85,23 @@ export function SkuMapPage() {
               >
                 <Search className="w-4 h-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="icon"
-              >
-                <Filter className="w-4 h-4" />
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                  >
+                    <Filter className="w-4 h-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="end">
+                  <SkuMapFilters
+                    filters={filters}
+                    onFiltersChange={updateFilters}
+                    onReset={resetFilters}
+                  />
+                </PopoverContent>
+              </Popover>
               <Button 
                 onClick={() => setShowCreateForm(true)}
                 className="w-[20%] text-xs px-1"
@@ -111,12 +123,14 @@ export function SkuMapPage() {
       {/* Stats */}
       <SkuMapStats />
 
-      {/* Filters */}
-      <SkuMapFilters
-        filters={filters}
-        onFiltersChange={updateFilters}
-        onReset={resetFilters}
-      />
+      {/* Filters - Hidden on mobile */}
+      {!isMobile && (
+        <SkuMapFilters
+          filters={filters}
+          onFiltersChange={updateFilters}
+          onReset={resetFilters}
+        />
+      )}
 
       {/* Bulk Actions */}
       {selectedItems.length > 0 && (
