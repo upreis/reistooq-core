@@ -15,6 +15,7 @@ import { Plus, Upload } from "lucide-react";
 import { useSkuFilters } from "@/hooks/useSkuFilters";
 import { useSkuMapShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SkuMapping } from "@/types/sku-mapping.types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function SkuMapPage() {
   const { filters, updateFilters, resetFilters } = useSkuFilters();
@@ -22,6 +23,7 @@ export function SkuMapPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [editingItem, setEditingItem] = useState<SkuMapping | null>(null);
+  const isMobile = useIsMobile();
 
   const handleEdit = (item: SkuMapping) => {
     setEditingItem(item);
@@ -56,20 +58,24 @@ export function SkuMapPage() {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">De-Para de Produtos</h1>
-          <p className="text-muted-foreground">
-            Mapeie produtos entre diferentes plataformas
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowImportWizard(true)}
-          >
-            <Upload className="w-4 h-4 mr-2" />
-            Importar
-          </Button>
+        {!isMobile && (
+          <div>
+            <h1 className="text-3xl font-bold">De-Para de Produtos</h1>
+            <p className="text-muted-foreground">
+              Mapeie produtos entre diferentes plataformas
+            </p>
+          </div>
+        )}
+        <div className={`flex gap-2 ${isMobile ? 'w-full justify-end' : ''}`}>
+          {!isMobile && (
+            <Button
+              variant="outline"
+              onClick={() => setShowImportWizard(true)}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Importar
+            </Button>
+          )}
           <Button onClick={() => setShowCreateForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Novo Mapeamento
