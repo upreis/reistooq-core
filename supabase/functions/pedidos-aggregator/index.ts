@@ -159,6 +159,7 @@ serve(async (req) => {
     }
 
     // Mapear para estrutura esperada pelos cards
+    mapeamentoPendenteCount = aggregatedCounts.confirmed;
     const result = {
       total: aggregatedCounts.total,
       prontosBaixa: aggregatedCounts.paid, // Pedidos pagos = prontos para baixar
