@@ -104,11 +104,40 @@ serve(async (req) => {
       }
     }
 
-    // Buscar contadores de histórico para "baixados"
-    // Contadores adicionais via RPC para evitar problemas de permissão/RLS
+    // Buscar contadores para "mapeamento pendente" - pedidos confirmados sem mapeamento
+    let mapeamentoPendenteCount = 0;
+    try {
+      const requestBody = {
+        integration_account_id: accounts[0],
+        status: 'confirmed', // Pedidos confirmados = precisam mapear
+        limit: 1,
+        offset: 0,
+        ...filters
+      };
+
+      const response = await fetch(unifiedOrdersUrl.toString(), {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+          'apikey': Deno.env.get("SUPABASE_ANON_KEY")!,
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok && data.paging?.total) {
+          mapeamentoPendenteCount = data.paging.total;
+        }
+      }
+    } catch (error) {
+      console.warn(`[pedidos-aggregator:${cid}] Error fetching mapeamento pendente:`, error);
+    }
+
+    // Buscar contadores de histórico para "baixados" via RPC
     const sb = serviceClient();
     let baixadosCount = 0;
-    let mapeamentoPendenteCount = 0;
 
     const dateFrom = (filters as any)?.date_from ?? null;
     const dateTo = (filters as any)?.date_to ?? null;
@@ -127,30 +156,12 @@ serve(async (req) => {
       console.warn(`[pedidos-aggregator:${cid}] Error fetching baixados via RPC:`, error);
     }
 
-    try {
-      const { data: pendData, error: pendErr } = await sb.rpc('count_mapeamentos_pendentes', {
-        _account_ids: accounts,
-        _from: dateFrom,
-        _to: dateTo,
-        _shipping_status: (filters as any)?.shipping_status ?? null,
-        _cidade: (filters as any)?.cidade ?? null,
-        _uf: (filters as any)?.uf ?? null,
-        _valor_min: (filters as any)?.valorMin ?? null,
-        _valor_max: (filters as any)?.valorMax ?? null,
-        _search: search
-      });
-      if (pendErr) throw pendErr;
-      mapeamentoPendenteCount = pendData || 0;
-    } catch (error) {
-      console.warn(`[pedidos-aggregator:${cid}] Error fetching mapeamentos via RPC:`, error);
-    }
-
     // Mapear para estrutura esperada pelos cards
     const result = {
       total: aggregatedCounts.total,
       prontosBaixa: aggregatedCounts.paid, // Pedidos pagos = prontos para baixar
-      mapeamentoPendente: mapeamentoPendenteCount, // Mapeamentos incompletos
-      baixados: baixadosCount,
+      mapeamentoPendente: mapeamentoPendenteCount, // Pedidos confirmados que precisam mapear
+      baixados: baixadosCount, // Histórico de vendas (já processados)
       shipped: aggregatedCounts.shipped,
       delivered: aggregatedCounts.delivered,
       correlation_id: cid
