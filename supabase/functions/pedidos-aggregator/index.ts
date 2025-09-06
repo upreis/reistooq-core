@@ -107,12 +107,14 @@ serve(async (req) => {
     // Buscar contadores para "mapeamento pendente" - pedidos confirmados sem mapeamento
     let mapeamentoPendenteCount = 0;
     try {
+      // Ignorar shipping_status para mapeamento pendente (evita zerar indevidamente)
+      const { shipping_status, ...restFilters } = (filters as any) ?? {};
       const requestBody = {
         integration_account_id: accounts[0],
         status: 'confirmed', // Pedidos confirmados = precisam mapear
         limit: 1,
         offset: 0,
-        ...filters
+        ...restFilters
       };
 
       const response = await fetch(unifiedOrdersUrl.toString(), {
