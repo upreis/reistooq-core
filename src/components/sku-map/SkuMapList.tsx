@@ -87,7 +87,7 @@ export function SkuMapList({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">
+                <TableHead className="w-12 hidden md:table-cell">
                   <Checkbox
                     checked={selectedItems.length === (data?.data.length || 0) && data?.data.length > 0}
                     onCheckedChange={handleSelectAll}
@@ -143,7 +143,7 @@ export function SkuMapList({
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                    <TableCell className="hidden md:table-cell"><Skeleton className="h-4 w-4" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-24" /></TableCell>
@@ -156,14 +156,17 @@ export function SkuMapList({
                 ))
               ) : data?.data.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground md:hidden">
+                    Nenhum mapeamento encontrado
+                  </TableCell>
+                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground hidden md:table-cell">
                     Nenhum mapeamento encontrado
                   </TableCell>
                 </TableRow>
               ) : (
                 data?.data.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <Checkbox
                         checked={selectedItems.includes(item.id!)}
                         onCheckedChange={(checked) => handleSelectItem(item.id!, checked as boolean)}
