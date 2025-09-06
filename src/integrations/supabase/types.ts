@@ -2661,59 +2661,57 @@ export type Database = {
         Insert: {
           cpf_cnpj?: never
           created_at?: string | null
-          data_primeiro_pedido?: never
-          data_ultimo_pedido?: never
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
           email?: never
-          empresa?: never
-          endereco_bairro?: never
-          endereco_cep?: never
-          endereco_cidade?: never
-          endereco_numero?: never
-          endereco_rua?: never
-          endereco_uf?: never
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
           id?: string | null
           integration_account_id?: string | null
           nome_completo?: never
-          observacoes?: never
+          observacoes?: string | null
           organization_id?: string | null
-          status_cliente?: never
+          status_cliente?: string | null
           telefone?: never
-          ticket_medio?: never
-          total_pedidos?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
           updated_at?: string | null
-          valor_total_gasto?: never
+          valor_total_gasto?: number | null
         }
         Update: {
           cpf_cnpj?: never
           created_at?: string | null
-          data_primeiro_pedido?: never
-          data_ultimo_pedido?: never
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
           email?: never
-          empresa?: never
-          endereco_bairro?: never
-          endereco_cep?: never
-          endereco_cidade?: never
-          endereco_numero?: never
-          endereco_rua?: never
-          endereco_uf?: never
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
           id?: string | null
           integration_account_id?: string | null
           nome_completo?: never
-          observacoes?: never
+          observacoes?: string | null
           organization_id?: string | null
-          status_cliente?: never
+          status_cliente?: string | null
           telefone?: never
-          ticket_medio?: never
-          total_pedidos?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
           updated_at?: string | null
-          valor_total_gasto?: never
+          valor_total_gasto?: number | null
         }
         Relationships: []
       }
       historico_vendas_safe: {
         Row: {
-          bairro: string | null
-          cep: string | null
           cidade: string | null
           cliente_documento: string | null
           cliente_nome: string | null
@@ -2724,44 +2722,25 @@ export type Database = {
           data_pedido: string | null
           data_prevista: string | null
           descricao: string | null
-          empresa: string | null
           id: string | null
           id_unico: string | null
           integration_account_id: string | null
-          logistic_mode_principal: string | null
-          metodo_envio_combinado: string | null
-          metodo_pagamento: string | null
-          modo_envio_combinado: string | null
           ncm: string | null
           nome_completo: string | null
-          numero: string | null
           numero_ecommerce: string | null
           numero_pedido: string | null
           numero_venda: string | null
           obs: string | null
           obs_interna: string | null
           observacoes: string | null
-          origem: string | null
           pedido_id: string | null
           qtd_kit: number | null
           quantidade: number | null
-          rua: string | null
           situacao: string | null
           sku_estoque: string | null
           sku_kit: string | null
           sku_produto: string | null
-          skus_produtos: string | null
           status: string | null
-          status_baixa: string | null
-          status_envio: string | null
-          status_mapeamento: string | null
-          status_pagamento: string | null
-          substatus_estado_atual: string | null
-          tipo_entrega: string | null
-          tipo_logistico: string | null
-          tipo_metodo_envio: string | null
-          tipo_pagamento: string | null
-          titulo_produto: string | null
           total_itens: number | null
           uf: string | null
           updated_at: string | null
