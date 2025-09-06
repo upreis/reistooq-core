@@ -51,6 +51,8 @@ export interface PedidosManagerActions {
   setIntegrationAccountId: (id: string) => void;
   refetch: () => void;
   applyClientSideFilters: (orders: any[]) => any[];
+  // 🔄 PERSISTÊNCIA: Restaurar dados diretamente sem refetch
+  restorePersistedData: (orders: any[], total: number, page: number) => void;
   // 🚀 FASE 2 & 3: Novas ações
   exportData: (format: 'csv' | 'xlsx') => Promise<void>;
   saveCurrentFilters: (name: string) => void;
@@ -1040,7 +1042,22 @@ const actions: PedidosManagerActions = useMemo(() => ({
   exportData,
   saveCurrentFilters,
   loadSavedFilters,
-  getSavedFilters
+  getSavedFilters,
+  
+  // 🔄 PERSISTÊNCIA: Restaurar dados sem refetch
+  restorePersistedData: (persistedOrders: any[], persistedTotal: number, persistedPage: number) => {
+    console.log('🔄 [usePedidosManager] Restaurando dados persistidos:', {
+      orders: persistedOrders.length,
+      total: persistedTotal,
+      page: persistedPage
+    });
+    
+    setOrders(persistedOrders);
+    setTotal(persistedTotal);
+    setCurrentPage(persistedPage);
+    setFonte('banco'); // Indicar que são dados restaurados
+    setCachedAt(new Date());
+  }
 }), [applyFilters, loadOrders, applyClientSideFilters, exportData, saveCurrentFilters, loadSavedFilters, getSavedFilters]);
 
   // State object melhorado

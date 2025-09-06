@@ -39,6 +39,7 @@ import {
   translateShippingMode, 
   translateShippingMethod 
 } from '@/utils/pedidos-translations';
+import { usePersistentPedidosState } from '@/hooks/usePersistentPedidosState';
 
 // ✅ SISTEMA UNIFICADO DE FILTROS
 import { usePedidosFiltersUnified } from '@/hooks/usePedidosFiltersUnified';
@@ -94,9 +95,15 @@ type Props = {
 function SimplePedidosPage({ className }: Props) {
   const isMobile = useIsMobile();
   
+  // 🔄 PERSISTÊNCIA DE ESTADO - Manter filtros e dados ao sair/voltar da página
+  const persistentState = usePersistentPedidosState();
+  
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: async (filters) => {
+      // Limpar estado persistido ao aplicar novos filtros
+      persistentState.clearPersistedState();
+      
       actions.replaceFilters(filters);
       console.groupCollapsed('[apply/callback]');
       console.log('filtersArg', filters);
@@ -105,6 +112,10 @@ function SimplePedidosPage({ className }: Props) {
         'apply: filtros divergentes entre UI e callback'
       );
       console.groupEnd();
+      
+      // Salvar os filtros aplicados
+      persistentState.saveAppliedFilters(filters);
+      
       await actions.refetch(); // refetch imediato obrigatório no Apply
     },
     autoLoad: false,
@@ -151,8 +162,10 @@ function SimplePedidosPage({ className }: Props) {
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
   
-  // Filtro rápido (apenas client-side)
-  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered'>('all');
+  // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
+  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered'>(() => {
+    return persistentState.persistedState?.quickFilter as any || 'all';
+  });
 
   // Lista exibida considerando o filtro rápido (não altera filtros da busca)
   const displayedOrders = useMemo(() => {
@@ -194,6 +207,61 @@ function SimplePedidosPage({ className }: Props) {
 
   // ✅ MIGRAÇÃO: Usar traduções unificadas do sistema global
 
+  // 🔄 RESTAURAR ESTADO PERSISTIDO ao carregar a página
+  useEffect(() => {
+    if (persistentState.isStateLoaded && persistentState.hasValidPersistedState()) {
+      const persistedData = persistentState.persistedState!;
+      
+      console.log('🔄 Restaurando estado persistido:', {
+        filters: persistedData.filters,
+        ordersCount: persistedData.orders.length,
+        page: persistedData.currentPage
+      });
+      
+      // Restaurar filtros no manager (sem refetch automático)
+      if (persistedData.filters && Object.keys(persistedData.filters).length > 0) {
+        filtersManager.updateFilter('search', persistedData.filters.search);
+        filtersManager.updateFilter('situacao', persistedData.filters.situacao);
+        filtersManager.updateFilter('dataInicio', persistedData.filters.dataInicio);
+        filtersManager.updateFilter('dataFim', persistedData.filters.dataFim);
+        filtersManager.updateFilter('cidade', persistedData.filters.cidade);
+        filtersManager.updateFilter('uf', persistedData.filters.uf);
+        filtersManager.updateFilter('valorMin', persistedData.filters.valorMin);
+        filtersManager.updateFilter('valorMax', persistedData.filters.valorMax);
+        filtersManager.updateFilter('contasML', persistedData.filters.contasML);
+        
+        // Aplicar filtros sem refetch (os dados já estão em cache)
+        actions.replaceFilters(persistedData.filters);
+      }
+      
+      // Restaurar dados através do manager de pedidos
+      actions.restorePersistedData(persistedData.orders, persistedData.total, persistedData.currentPage);
+      
+      if (persistedData.integrationAccountId) {
+        actions.setIntegrationAccountId(persistedData.integrationAccountId);
+      }
+    }
+  }, [persistentState.isStateLoaded]);
+  
+  // 🔄 SALVAR DADOS quando eles mudarem (após busca)
+  useEffect(() => {
+    if (orders && orders.length > 0 && !loading) {
+      persistentState.saveOrdersData(orders, total, currentPage);
+    }
+  }, [orders, total, currentPage, loading]);
+  
+  // 🔄 SALVAR FILTRO RÁPIDO quando mudar
+  const handleQuickFilterChange = useCallback((newFilter: typeof quickFilter) => {
+    setQuickFilter(newFilter);
+    persistentState.saveQuickFilter(newFilter);
+  }, []);
+  
+  useEffect(() => {
+    if (quickFilter !== 'all') {
+      persistentState.saveQuickFilter(quickFilter);
+    }
+  }, [quickFilter]);
+  
   // ✅ CORREÇÃO: Processar mapeamentos sempre que houver pedidos carregados
   useEffect(() => {
     if (orders && orders.length > 0) {
