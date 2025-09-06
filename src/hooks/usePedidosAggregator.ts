@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PedidosFiltersState } from '@/hooks/usePedidosFiltersUnified';
+import { mapSituacaoToApiStatus } from '@/utils/statusMapping';
 
 interface PedidosAggregatorCounts {
   total: number;
@@ -32,7 +33,10 @@ export function usePedidosAggregator(
   const [error, setError] = useState<string | null>(null);
 
   const fetchCounts = useCallback(async () => {
-    if (!integrationAccountId) return;
+    const accountIds = (appliedFilters?.contasML && (appliedFilters as any).contasML.length > 0)
+      ? (appliedFilters as any).contasML as string[]
+      : (integrationAccountId ? [integrationAccountId] : []);
+    if (!accountIds.length) return;
 
     setLoading(true);
     setError(null);
@@ -81,11 +85,27 @@ export function usePedidosAggregator(
         apiFilters.valorMax = appliedFilters.valorMax;
       }
 
-      const requestBody = {
-        integration_account_id: integrationAccountId,
+      // Mapear situacao -> shipping_status (quando houver apenas uma)
+      if ((appliedFilters as any).situacao) {
+        const situacoes = Array.isArray((appliedFilters as any).situacao)
+          ? (appliedFilters as any).situacao
+          : [(appliedFilters as any).situacao];
+        const mapped = situacoes
+          .map((sit: string) => mapSituacaoToApiStatus(sit) || null)
+          .filter(Boolean) as string[];
+        if (mapped.length === 1) {
+          apiFilters.shipping_status = mapped[0];
+        }
+      }
+
+      const requestBody: any = {
         filters: apiFilters
       };
-
+      if (accountIds.length > 1) {
+        requestBody.integration_account_ids = accountIds;
+      } else {
+        requestBody.integration_account_id = accountIds[0];
+      }
       console.log('🔢 [Aggregator] Buscando contadores agregados:', requestBody);
 
       const { data, error } = await supabase.functions.invoke('pedidos-aggregator', {
