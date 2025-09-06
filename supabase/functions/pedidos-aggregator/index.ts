@@ -107,23 +107,49 @@ serve(async (req) => {
     // Buscar contadores de histórico para "baixados"
     const sb = serviceClient();
     let baixadosCount = 0;
+    let mapeamentoPendenteCount = 0;
     
     try {
-      const { count } = await sb
+      // Buscar pedidos baixados na tabela de histórico
+      const { count: baixados } = await sb
         .from('historico_vendas')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'concluida');
       
-      baixadosCount = count || 0;
+      baixadosCount = baixados || 0;
     } catch (error) {
       console.warn(`[pedidos-aggregator:${cid}] Error fetching baixados:`, error);
+    }
+
+    try {
+      // Buscar pedidos processados (outra fonte para baixados)
+      const { count: processados } = await sb
+        .from('pedidos_processados')
+        .select('*', { count: 'exact', head: true });
+      
+      baixadosCount = Math.max(baixadosCount, processados || 0);
+    } catch (error) {
+      console.warn(`[pedidos-aggregator:${cid}] Error fetching processados:`, error);
+    }
+
+    try {
+      // Buscar mapeamentos incompletos
+      const { count: mapeamentos } = await sb
+        .from('mapeamentos')
+        .select('*', { count: 'exact', head: true })
+        .not('sku_ecommerce', 'is', null)
+        .or('sku_estoque.is.null,sku_kit.is.null');
+      
+      mapeamentoPendenteCount = mapeamentos || 0;
+    } catch (error) {
+      console.warn(`[pedidos-aggregator:${cid}] Error fetching mapeamentos:`, error);
     }
 
     // Mapear para estrutura esperada pelos cards
     const result = {
       total: aggregatedCounts.total,
       prontosBaixa: aggregatedCounts.paid, // Pedidos pagos = prontos para baixar
-      mapeamentoPendente: aggregatedCounts.confirmed, // Pedidos confirmados = precisam mapear
+      mapeamentoPendente: mapeamentoPendenteCount, // Mapeamentos incompletos
       baixados: baixadosCount,
       shipped: aggregatedCounts.shipped,
       delivered: aggregatedCounts.delivered,
