@@ -310,8 +310,15 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       );
                     }
                     case 'cpf_cnpj': {
-                      const doc = order.cpf_cnpj || order.unified?.cpf_cnpj || order.buyer?.identification?.number;
-                      return <span className="font-mono text-sm">{doc ? maskCpfCnpj(doc) : '-'}</span>;
+                      // Buscar CPF/CNPJ de múltiplas fontes e normalizar
+                      const rawDoc = order.cpf_cnpj || 
+                                   order.unified?.cpf_cnpj || 
+                                   order.buyer?.identification?.number ||
+                                   order.raw?.buyer?.identification?.number;
+                      
+                      // Normalizar e limpar antes de mascarar
+                      const cleanDoc = rawDoc ? rawDoc.toString().trim() : '';
+                      return <span className="font-mono text-sm">{cleanDoc ? maskCpfCnpj(cleanDoc) : '-'}</span>;
                     }
                     case 'data_pedido':
                       return <span>{formatDate(order.data_pedido || order.date_created)}</span>;

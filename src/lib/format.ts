@@ -32,16 +32,25 @@ export function formatDate(d?: string | Date | null, withTime: boolean = false):
 export function maskCpfCnpj(v?: string | null): string {
   if (!v) return '-';
   
-  // Remove non-digits
-  const digits = v.replace(/\D/g, '');
+  // Normalizar: remover espaços, pontos, traços, barras e outros caracteres especiais
+  const cleanValue = v.toString().trim().replace(/\D/g, '');
   
-  if (digits.length === 11) {
+  // Verificar se tem dados suficientes
+  if (cleanValue.length < 11) return v; // Retorna original se muito curto
+  
+  if (cleanValue.length === 11) {
     // CPF: 000.000.000-00
-    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-  } else if (digits.length === 14) {
+    return cleanValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  } else if (cleanValue.length === 14) {
     // CNPJ: 00.000.000/0000-00
-    return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+    return cleanValue.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
   }
   
-  return v; // Return as is if not 11 or 14 digits
+  // Se tem mais de 14 dígitos, pegar só os primeiros 14 (assumindo CNPJ)
+  if (cleanValue.length > 14) {
+    const cnpjDigits = cleanValue.substring(0, 14);
+    return cnpjDigits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  }
+  
+  return v; // Retorna original se não conseguir formatar
 }
