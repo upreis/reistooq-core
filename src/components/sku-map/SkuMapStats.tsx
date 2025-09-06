@@ -7,9 +7,9 @@ export function SkuMapStats() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+      <div className="flex overflow-x-auto gap-3 md:grid md:grid-cols-4 md:gap-6 pb-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}>
+          <Card key={i} className="flex-shrink-0 min-w-[140px] md:min-w-0">
             <CardContent className="p-6">
               <div className="text-center space-y-2">
                 <Skeleton className="h-8 w-16 mx-auto" />
@@ -46,9 +46,9 @@ export function SkuMapStats() {
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+    <div className="flex overflow-x-auto gap-3 md:grid md:grid-cols-4 md:gap-6 pb-2">
       {statCards.map((stat) => (
-        <Card key={stat.label}>
+        <Card key={stat.label} className="flex-shrink-0 min-w-[140px] md:min-w-0">
           <CardContent className="p-6">
             <div className="text-center">
               <div className={`text-2xl font-bold ${stat.color}`}>
