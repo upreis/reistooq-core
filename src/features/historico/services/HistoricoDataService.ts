@@ -55,35 +55,34 @@ export class HistoricoDataService {
       const validatedLimit = Math.min(Math.max(limit, 1), this.MAX_LIMIT);
       const offset = (page - 1) * validatedLimit;
 
-      // ✅ SEGURANÇA: Usar view segura com mascaramento automático de dados sensíveis
-      let query = supabase
-        .from('historico_vendas_safe')
-        .select('*')
-        .order('created_at', { ascending: sortOrder !== 'desc' });
-
-      // Aplicar filtros na query
-      if (filters.search) {
-        query = query.or(`numero_pedido.ilike.%${filters.search}%,sku_produto.ilike.%${filters.search}%,descricao.ilike.%${filters.search}%,cliente_nome.ilike.%${filters.search}%`);
-      }
-
-      if (filters.dataInicio) {
-        query = query.gte('data_pedido', filters.dataInicio);
-      }
-
-      if (filters.dataFim) {
-        query = query.lte('data_pedido', filters.dataFim);
-      }
-
-      // Aplicar paginação
-      query = query.range(offset, offset + validatedLimit - 1);
-
-      const { data, error } = await query;
+      // ✅ SEGURANÇA: Usar função RPC segura que aplica mascaramento automático
+      const { data, error } = await supabase.rpc('get_masked_sales_history', {
+        _limit: validatedLimit,
+        _offset: offset
+      });
 
       if (error) {
         throw new Error(`Erro ao buscar dados: ${error.message}`);
       }
 
-      const vendas = (data || []) as any[];
+      let vendas = (data || []) as any[];
+
+      // Aplicar filtros no lado cliente (função RPC já aplica filtros básicos)
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        vendas = vendas.filter(v => 
+          v.numero_pedido?.toLowerCase().includes(searchTerm) ||
+          v.cliente_nome?.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      if (filters.dataInicio) {
+        vendas = vendas.filter(v => v.data_pedido >= filters.dataInicio);
+      }
+
+      if (filters.dataFim) {
+        vendas = vendas.filter(v => v.data_pedido <= filters.dataFim);
+      }
       
       // Aplicar filtros adicionais
       const filteredVendas = this.applyClientFilters(vendas, filters);
@@ -140,10 +139,9 @@ export class HistoricoDataService {
       return cached as any;
       }
 
-      // ✅ SEGURANÇA: Usar função RPC segura que aplica mascaramento automático
-      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
-        _search: id,
-        _limit: 1,
+      // ✅ SEGURANÇA: Usar função RPC segura
+      const { data, error } = await supabase.rpc('get_masked_sales_history', {
+        _limit: 1000,
         _offset: 0
       });
 
@@ -152,7 +150,7 @@ export class HistoricoDataService {
       }
 
       const vendas = (data || []) as any[];
-      const venda = vendas.find(v => v.id === id || v.id_unico === id) || null;
+      const venda = vendas.find(v => v.id === id) || null;
 
       if (venda) {
         this.cache.set(cacheKey, venda, 60 * 1000); // Cache curto para dados específicos
@@ -180,17 +178,13 @@ export class HistoricoDataService {
       return cached as { status: string[]; cidades: string[]; ufs: string[]; situacoes: string[]; };
       }
 
-      // ✅ SEGURANÇA: Buscar opções usando RPC segura que já aplica RLS e mascaramento
-      const [statusResult, cidadesResult, ufsResult] = await Promise.all([
-        supabase.rpc('get_historico_vendas_masked', { _limit: 1000 }),
-        supabase.rpc('get_historico_vendas_masked', { _limit: 1000 }),
-        supabase.rpc('get_historico_vendas_masked', { _limit: 1000 })
-      ]);
+      // ✅ SEGURANÇA: Buscar opções usando função RPC segura
+      const result = await supabase.rpc('get_masked_sales_history', { _limit: 1000 });
 
       const options = {
-        status: [...new Set((statusResult.data || []).map((item: any) => item.status).filter(Boolean))].sort(),
-        cidades: [...new Set((cidadesResult.data || []).map((item: any) => item.cidade).filter(Boolean))].sort(),
-        ufs: [...new Set((ufsResult.data || []).map((item: any) => item.uf).filter(Boolean))].sort(),
+        status: [...new Set((result.data || []).map((item: any) => item.status).filter(Boolean))].sort(),
+        cidades: [], // Removido temporariamente - não disponível na função simplificada
+        ufs: [], // Removido temporariamente - não disponível na função simplificada  
         situacoes: ['pendente', 'processando', 'concluida', 'cancelada', 'devolvida'] // Estático por enquanto
       };
 
