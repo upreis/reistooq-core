@@ -612,7 +612,21 @@ export function usePedidosManager(initialAccountId?: string) {
           : unifiedResult.results;
 
         // Sempre usar o total do servidor quando disponível
-        setOrders(filteredClientResults);
+        const normalizedResults = filteredClientResults.map((o: any) => ({
+          ...o,
+          cpf_cnpj:
+            o.cpf_cnpj ??
+            o.unified?.cpf_cnpj ??
+            o.documento_cliente ??
+            o.cliente_documento ??
+            o.buyer?.identification?.number ??
+            o.raw?.buyer?.identification?.number ??
+            o.payments?.[0]?.payer?.identification?.number ??
+            o.unified?.payments?.[0]?.payer?.identification?.number ??
+            o.raw?.payments?.[0]?.payer?.identification?.number ??
+            null,
+        }));
+        setOrders(normalizedResults);
         setTotal(unifiedResult.total);
         setFonte('tempo-real');
         
@@ -666,7 +680,21 @@ export function usePedidosManager(initialAccountId?: string) {
           const endIndex = startIndex + pageSize;
           const paginatedResults = filteredResults.slice(startIndex, endIndex);
           
-          setOrders(paginatedResults);
+          const normalizedPaginated = paginatedResults.map((o: any) => ({
+            ...o,
+            cpf_cnpj:
+              o.cpf_cnpj ??
+              o.unified?.cpf_cnpj ??
+              o.documento_cliente ??
+              o.cliente_documento ??
+              o.buyer?.identification?.number ??
+              o.raw?.buyer?.identification?.number ??
+              o.payments?.[0]?.payer?.identification?.number ??
+              o.unified?.payments?.[0]?.payer?.identification?.number ??
+              o.raw?.payments?.[0]?.payer?.identification?.number ??
+              null,
+          }));
+          setOrders(normalizedPaginated);
           setTotal(filteredResults.length); // Total dos resultados filtrados
           setFonte('hibrido');
           
@@ -680,7 +708,21 @@ export function usePedidosManager(initialAccountId?: string) {
           
           // Tentativa 3: banco de dados
           const dbResult = await loadFromDatabase(apiParams);
-          setOrders(dbResult.results);
+          const normalizedDbResults = (dbResult.results || []).map((o: any) => ({
+            ...o,
+            cpf_cnpj:
+              o.cpf_cnpj ??
+              o.unified?.cpf_cnpj ??
+              o.documento_cliente ??
+              o.cliente_documento ??
+              o.buyer?.identification?.number ??
+              o.raw?.buyer?.identification?.number ??
+              o.payments?.[0]?.payer?.identification?.number ??
+              o.unified?.payments?.[0]?.payer?.identification?.number ??
+              o.raw?.payments?.[0]?.payer?.identification?.number ??
+              null,
+          }));
+          setOrders(normalizedDbResults);
           setTotal(dbResult.total);
           setFonte('banco');
           

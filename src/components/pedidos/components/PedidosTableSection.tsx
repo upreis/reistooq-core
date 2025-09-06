@@ -313,8 +313,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       // Buscar CPF/CNPJ de múltiplas fontes e normalizar
                       const rawDoc = order.cpf_cnpj || 
                                    order.unified?.cpf_cnpj || 
+                                   order.documento_cliente ||
+                                   order.cliente_documento ||
                                    order.buyer?.identification?.number ||
-                                   order.raw?.buyer?.identification?.number;
+                                   order.raw?.buyer?.identification?.number ||
+                                   order.payments?.[0]?.payer?.identification?.number ||
+                                   order.unified?.payments?.[0]?.payer?.identification?.number ||
+                                   order.raw?.payments?.[0]?.payer?.identification?.number;
                       
                       // Normalizar e limpar antes de mascarar
                       const cleanDoc = rawDoc ? rawDoc.toString().trim() : '';
