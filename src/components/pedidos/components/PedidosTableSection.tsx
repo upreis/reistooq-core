@@ -309,8 +309,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         </div>
                       );
                     }
-                    case 'cpf_cnpj':
-                      return <span className="font-mono text-sm">{order.cpf_cnpj ? maskCpfCnpj(order.cpf_cnpj) : '-'}</span>;
+                    case 'cpf_cnpj': {
+                      const doc = order.cpf_cnpj || order.unified?.cpf_cnpj || order.buyer?.identification?.number;
+                      return <span className="font-mono text-sm">{doc ? maskCpfCnpj(doc) : '-'}</span>;
+                    }
                     case 'data_pedido':
                       return <span>{formatDate(order.data_pedido || order.date_created)}</span>;
                     case 'last_updated':
