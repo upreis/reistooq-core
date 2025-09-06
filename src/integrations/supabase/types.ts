@@ -2667,10 +2667,10 @@ export type Database = {
           empresa?: string | null
           endereco_bairro?: never
           endereco_cep?: never
-          endereco_cidade?: never
+          endereco_cidade?: string | null
           endereco_numero?: never
           endereco_rua?: never
-          endereco_uf?: never
+          endereco_uf?: string | null
           id?: string | null
           integration_account_id?: string | null
           nome_completo?: never
@@ -2692,10 +2692,10 @@ export type Database = {
           empresa?: string | null
           endereco_bairro?: never
           endereco_cep?: never
-          endereco_cidade?: never
+          endereco_cidade?: string | null
           endereco_numero?: never
           endereco_rua?: never
-          endereco_uf?: never
+          endereco_uf?: string | null
           id?: string | null
           integration_account_id?: string | null
           nome_completo?: never
@@ -3348,16 +3348,18 @@ export type Database = {
         Returns: undefined
       }
       sync_cliente_from_pedido: {
-        Args: {
-          p_cidade?: string
-          p_cpf_cnpj?: string
-          p_data_pedido?: string
-          p_empresa?: string
-          p_integration_account_id?: string
-          p_nome_cliente: string
-          p_uf?: string
-          p_valor_pedido?: number
-        }
+        Args:
+          | Record<PropertyKey, never>
+          | {
+              p_cidade?: string
+              p_cpf_cnpj?: string
+              p_data_pedido?: string
+              p_empresa?: string
+              p_integration_account_id?: string
+              p_nome_cliente: string
+              p_uf?: string
+              p_valor_pedido?: number
+            }
         Returns: string
       }
       tiny3_get_credentials: {
