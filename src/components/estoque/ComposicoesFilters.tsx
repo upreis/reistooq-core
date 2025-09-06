@@ -21,6 +21,7 @@ export interface ComposicoesFiltersProps {
     pending: number;
     lowStock: number;
   };
+  forceExpanded?: boolean;
 }
 
 const orderOptions = [
@@ -45,7 +46,7 @@ const priceRanges = [
   { id: '200+', name: 'R$ 200+' },
 ] as const;
 
-export function ComposicoesFilters({ filters, onFiltersChange, stats }: ComposicoesFiltersProps) {
+export function ComposicoesFilters({ filters, onFiltersChange, stats, forceExpanded = false }: ComposicoesFiltersProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const updateFilter = (key: keyof ComposicoesFilterState, value: any) => {
@@ -68,31 +69,33 @@ export function ComposicoesFilters({ filters, onFiltersChange, stats }: Composic
   return (
     <div className="space-y-4">
       {/* Botão de filtro compacto */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="gap-2"
-        >
-          <Filter className="h-4 w-4" />
-          Filtros
-          {hasActiveFilters && (
-            <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
-              {[filters.statusFilter !== 'all', filters.priceRange !== 'all', filters.orderBy !== 'recent'].filter(Boolean).length}
-            </Badge>
-          )}
-        </Button>
-        
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={resetFilters}>
-            Limpar filtros
+      {!forceExpanded && (
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Filtros
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+                {[filters.statusFilter !== 'all', filters.priceRange !== 'all', filters.orderBy !== 'recent'].filter(Boolean).length}
+              </Badge>
+            )}
           </Button>
-        )}
-      </div>
+          
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={resetFilters}>
+              Limpar filtros
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Filtros expandidos */}
-      {isExpanded && (
+      {(forceExpanded || isExpanded) && (
         <div className="grid gap-4 md:grid-cols-3">
           {/* Ordenar por */}
           <Card>

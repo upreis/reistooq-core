@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const sortOptions = [
   { id: "newest", name: "Mais Recentes", sortBy: "created_at", sortOrder: "desc" },
@@ -740,13 +741,25 @@ export function ComposicoesEstoque() {
             
             {/* Filtros - ao lado da busca no mobile */}
             <div className="w-auto md:w-auto">
-              <Button
-                variant="outline" 
-                className="bg-background/60 border-border/60 flex-shrink-0 h-9 md:h-10 text-sm px-3 gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                <span className="hidden md:inline">Filtros</span>
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline" 
+                    className="bg-background/60 border-border/60 flex-shrink-0 h-9 md:h-10 text-sm px-3 gap-2"
+                  >
+                    <Filter className="h-4 w-4" />
+                    <span className="hidden md:inline">Filtros</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="z-50 w-[340px] sm:w-[520px] bg-popover text-popover-foreground">
+                  <ComposicoesFilters 
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    stats={stats}
+                    forceExpanded
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Botão de categorias no mobile */}

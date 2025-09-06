@@ -24,6 +24,8 @@ import { OptimizedCategorySidebar } from "@/components/estoque/OptimizedCategory
 import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
 import { cn } from "@/lib/utils";
 import { TableWrapper } from "@/components/ui/table-wrapper";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface StockMovement {
   id: string;
@@ -562,13 +564,34 @@ const Estoque = () => {
                   
                   {/* Filtros - padrão simples igual à aba Composições */}
                   <div className="w-auto md:w-auto">
-                    <Button
-                      variant="outline" 
-                      className="bg-background/60 border-border/60 flex-shrink-0 h-9 md:h-10 text-sm px-3 gap-2"
-                    >
-                      <Filter className="h-4 w-4" />
-                      <span className="hidden md:inline">Filtros</span>
-                    </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline" 
+                          className="bg-background/60 border-border/60 flex-shrink-0 h-9 md:h-10 text-sm px-3 gap-2"
+                        >
+                          <Filter className="h-4 w-4" />
+                          <span className="hidden md:inline">Filtros</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="z-50 w-[340px] sm:w-[520px] bg-popover text-popover-foreground">
+                        <EstoqueFilters
+                          searchTerm={searchTerm}
+                          onSearchChange={setSearchTerm}
+                          selectedCategory={selectedCategory}
+                          onCategoryChange={setSelectedCategory}
+                          selectedStatus={selectedStatus}
+                          onStatusChange={setSelectedStatus}
+                          categories={categories}
+                          onSearch={handleSearch}
+                          onClearFilters={handleClearFilters}
+                          hasActiveFilters={hasActiveFilters}
+                          useHierarchicalCategories
+                          hierarchicalFilters={hierarchicalFilters}
+                          onHierarchicalFiltersChange={setHierarchicalFilters}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   {/* Botão de categorias no mobile */}
