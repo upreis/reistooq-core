@@ -3484,6 +3484,10 @@ export type Database = {
           role_name: string
         }[]
       }
+      validate_security_settings: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       integration_provider: "tiny" | "shopee" | "mercadolivre"
