@@ -222,9 +222,16 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     }
 
     if (appliedFilters.dataInicio) {
-      const d = appliedFilters.dataInicio instanceof Date 
+      let d = appliedFilters.dataInicio instanceof Date 
         ? appliedFilters.dataInicio 
         : new Date(appliedFilters.dataInicio);
+      
+      // ✅ CORREÇÃO: Se data veio como string ISO, criar sem timezone
+      const dataInicioStr = String(appliedFilters.dataInicio);
+      if (typeof appliedFilters.dataInicio === 'string' && dataInicioStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dataInicioStr.split('-').map(Number);
+        d = new Date(year, month - 1, day); // month é 0-indexed
+      }
       
       if (!isNaN(d.getTime())) {
         params.dataInicio = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -232,9 +239,16 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     }
 
     if (appliedFilters.dataFim) {
-      const d = appliedFilters.dataFim instanceof Date 
+      let d = appliedFilters.dataFim instanceof Date 
         ? appliedFilters.dataFim 
         : new Date(appliedFilters.dataFim);
+      
+      // ✅ CORREÇÃO: Se data veio como string ISO, criar sem timezone
+      const dataFimStr = String(appliedFilters.dataFim);
+      if (typeof appliedFilters.dataFim === 'string' && dataFimStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dataFimStr.split('-').map(Number);
+        d = new Date(year, month - 1, day); // month é 0-indexed
+      }
       
       if (!isNaN(d.getTime())) {
         params.dataFim = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

@@ -74,20 +74,28 @@ import { PAGINATION, CACHE, DEBOUNCE } from '@/lib/constants';
 function normalizeDate(value: any): Date | undefined {
   if (!value) return undefined;
   
+  console.log('🗓️ [normalizeDate] Input:', value, 'tipo:', typeof value);
+  
   // Se já é Date válida, retornar
   if (value instanceof Date) {
-    return isNaN(value.getTime()) ? undefined : value;
+    const result = isNaN(value.getTime()) ? undefined : value;
+    console.log('🗓️ [normalizeDate] Date object result:', result);
+    return result;
   }
   
   // Se é string ISO (YYYY-MM-DD), criar data sem timezone
   if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
     const [year, month, day] = value.split('-').map(Number);
-    return new Date(year, month - 1, day); // month é 0-indexed
+    const result = new Date(year, month - 1, day); // month é 0-indexed
+    console.log('🗓️ [normalizeDate] String ISO result:', result, 'from:', { year, month: month - 1, day });
+    return result;
   }
   
   // Converter para Date e validar
   const date = new Date(value);
-  return isNaN(date.getTime()) ? undefined : date;
+  const result = isNaN(date.getTime()) ? undefined : date;
+  console.log('🗓️ [normalizeDate] Generic conversion result:', result);
+  return result;
 }
 
 const DEFAULT_FILTERS: PedidosFilters = {};
@@ -178,12 +186,14 @@ export function usePedidosManager(initialAccountId?: string) {
       const d = normalizeDate(filters.dataInicio);
       if (d && !isNaN(d.getTime())) {
         params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        console.log('🗓️ [DATE] dataInicio convertida:', filters.dataInicio, '=>', params.date_from);
       }
     }
     if (filters.dataFim) {
       const d = normalizeDate(filters.dataFim);
       if (d && !isNaN(d.getTime())) {
         params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        console.log('🗓️ [DATE] dataFim convertida:', filters.dataFim, '=>', params.date_to);
       }
     }
 
