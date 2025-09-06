@@ -713,7 +713,7 @@ export function ComposicoesEstoque() {
           </div>
         )}
 
-        <div className="flex-1 min-w-0 md:space-y-6 space-y-0">
+        <div className="flex-1 min-w-0 space-y-0">
           {/* Filtros Inteligentes - ocultos no mobile */}
           <div className="hidden md:block">
             <ComposicoesFilters 
@@ -753,7 +753,7 @@ export function ComposicoesEstoque() {
             <Button
               variant="outline"
               size="icon"
-              className="md:hidden bg-background/60 border-border/60 flex-shrink-0 h-9"
+                className="md:hidden bg-background/60 border-border/60 flex-shrink-0 h-9"
               onClick={toggleSidebar}
             >
               <Package className="h-4 w-4" />

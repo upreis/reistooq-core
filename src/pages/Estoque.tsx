@@ -575,7 +575,7 @@ const Estoque = () => {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="md:hidden bg-background/60 border-border/60 flex-shrink-0"
+                    className="md:hidden bg-background/60 border-border/60 flex-shrink-0 h-9"
                     onClick={toggleSidebar}
                   >
                     <Package className="h-4 w-4" />
@@ -732,7 +732,7 @@ const Estoque = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="composicoes" className="space-y-4 md:space-y-8">
+            <TabsContent value="composicoes" className="space-y-2 md:space-y-8">
               <ComposicoesEstoque />
             </TabsContent>
           </Tabs>
