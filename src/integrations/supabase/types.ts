@@ -2661,52 +2661,52 @@ export type Database = {
         Insert: {
           cpf_cnpj?: never
           created_at?: string | null
-          data_primeiro_pedido?: string | null
-          data_ultimo_pedido?: string | null
+          data_primeiro_pedido?: never
+          data_ultimo_pedido?: never
           email?: never
-          empresa?: string | null
+          empresa?: never
           endereco_bairro?: never
           endereco_cep?: never
-          endereco_cidade?: string | null
+          endereco_cidade?: never
           endereco_numero?: never
           endereco_rua?: never
-          endereco_uf?: string | null
+          endereco_uf?: never
           id?: string | null
           integration_account_id?: string | null
           nome_completo?: never
-          observacoes?: string | null
+          observacoes?: never
           organization_id?: string | null
-          status_cliente?: string | null
+          status_cliente?: never
           telefone?: never
-          ticket_medio?: number | null
-          total_pedidos?: number | null
+          ticket_medio?: never
+          total_pedidos?: never
           updated_at?: string | null
-          valor_total_gasto?: number | null
+          valor_total_gasto?: never
         }
         Update: {
           cpf_cnpj?: never
           created_at?: string | null
-          data_primeiro_pedido?: string | null
-          data_ultimo_pedido?: string | null
+          data_primeiro_pedido?: never
+          data_ultimo_pedido?: never
           email?: never
-          empresa?: string | null
+          empresa?: never
           endereco_bairro?: never
           endereco_cep?: never
-          endereco_cidade?: string | null
+          endereco_cidade?: never
           endereco_numero?: never
           endereco_rua?: never
-          endereco_uf?: string | null
+          endereco_uf?: never
           id?: string | null
           integration_account_id?: string | null
           nome_completo?: never
-          observacoes?: string | null
+          observacoes?: never
           organization_id?: string | null
-          status_cliente?: string | null
+          status_cliente?: never
           telefone?: never
-          ticket_medio?: number | null
-          total_pedidos?: number | null
+          ticket_medio?: never
+          total_pedidos?: never
           updated_at?: string | null
-          valor_total_gasto?: number | null
+          valor_total_gasto?: never
         }
         Relationships: []
       }
