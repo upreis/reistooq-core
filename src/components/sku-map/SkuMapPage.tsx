@@ -83,7 +83,7 @@ export function SkuMapPage() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    className="flex-[0.4]"
                   >
                     <Filter className="w-4 h-4 mr-2" />
                     Filtros
@@ -99,7 +99,7 @@ export function SkuMapPage() {
               </Popover>
               <Button 
                 onClick={() => setShowCreateForm(true)}
-                className="flex-1"
+                className="flex-[0.6]"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Novo Mapeamento
