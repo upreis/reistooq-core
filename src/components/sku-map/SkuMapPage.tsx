@@ -80,7 +80,7 @@ export function SkuMapPage() {
             <>
               <Button
                 variant="outline"
-                size="icon"
+                className="flex-1"
               >
                 <Search className="w-4 h-4" />
               </Button>
@@ -90,12 +90,21 @@ export function SkuMapPage() {
               >
                 <Filter className="w-4 h-4" />
               </Button>
+              <Button 
+                onClick={() => setShowCreateForm(true)}
+                className="w-[20%] text-xs px-1"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Novo
+              </Button>
             </>
           )}
-          <Button onClick={() => setShowCreateForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Mapeamento
-          </Button>
+          {!isMobile && (
+            <Button onClick={() => setShowCreateForm(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Mapeamento
+            </Button>
+          )}
         </div>
       </div>
 
