@@ -17,15 +17,17 @@ interface PedidosStatusBarProps {
   mappingData: Map<string, any>;
   isPedidoProcessado: (order: any) => boolean;
   className?: string;
+  globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number; shipped: number; delivered: number }>;
 }
 
-export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
+export const PedidosStatusBar = memo<PedidosStatusBarProps>(({ 
   orders,
   quickFilter,
   onQuickFilterChange,
   mappingData,
   isPedidoProcessado,
-  className
+  className,
+  globalCounts
 }) => {
   // Calcular contadores em tempo real
   const counters = useMemo(() => {
@@ -85,15 +87,25 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       }
     }
 
-    return {
+    const base = {
       total: orders.length,
       prontosBaixa,
       mapeamentoPendente,
       baixados,
       shipped,
       delivered
-    };
-  }, [orders, mappingData, isPedidoProcessado]);
+    } as any;
+
+    if (globalCounts) {
+      base.total = globalCounts.total ?? base.total;
+      base.prontosBaixa = globalCounts.prontosBaixa ?? base.prontosBaixa;
+      base.mapeamentoPendente = globalCounts.mapeamentoPendente ?? base.mapeamentoPendente;
+      base.baixados = globalCounts.baixados ?? base.baixados;
+      base.shipped = globalCounts.shipped ?? base.shipped;
+      base.delivered = globalCounts.delivered ?? base.delivered;
+    }
+
+    return base;
 
   const statusChips = [
     {
