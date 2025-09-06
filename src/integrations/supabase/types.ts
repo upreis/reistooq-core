@@ -3463,7 +3463,7 @@ export type Database = {
         Returns: boolean
       }
       user_matches_announcement: {
-        Args: { _target_roles: string[]; _target_users: string[] }
+        Args: { target_roles: string[]; target_users: string[] }
         Returns: boolean
       }
       validate_invitation_token: {
