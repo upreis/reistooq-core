@@ -11,7 +11,7 @@ import { BulkEditModal } from "./BulkEditModal";
 import { ImportWizard } from "./import/ImportWizard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Upload, Search } from "lucide-react";
 import { useSkuFilters } from "@/hooks/useSkuFilters";
 import { useSkuMapShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SkuMapping } from "@/types/sku-mapping.types";
@@ -74,6 +74,14 @@ export function SkuMapPage() {
             >
               <Upload className="w-4 h-4 mr-2" />
               Importar
+            </Button>
+          )}
+          {isMobile && (
+            <Button
+              variant="outline"
+              size="icon"
+            >
+              <Search className="w-4 h-4" />
             </Button>
           )}
           <Button onClick={() => setShowCreateForm(true)}>
