@@ -305,12 +305,12 @@ export function PedidosFiltersUnified({
               onFilterChange('dataFim', endDate);
             }}
             hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
-            className="w-fit min-w-[180px]"
+            className="w-fit min-w-[220px]"
           />
         </div>
 
         {/* Botão de Colunas */}
-        <div className="lg:col-span-1 xl:col-span-1 flex items-end">
+        <div className="lg:col-span-1 xl:col-span-1 flex items-end ml-10">
           {columnManager && (
             <ColumnManager 
               manager={columnManager}
