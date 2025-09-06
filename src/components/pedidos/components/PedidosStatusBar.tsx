@@ -18,6 +18,7 @@ interface PedidosStatusBarProps {
   isPedidoProcessado: (order: any) => boolean;
   className?: string;
   globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number; shipped: number; delivered: number }>;
+  tableTotal?: number; // Total exibido na tabela (pós-filtros aplicados)
 }
 
 export const PedidosStatusBar = memo<PedidosStatusBarProps>(({ 
@@ -27,7 +28,8 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   mappingData,
   isPedidoProcessado,
   className,
-  globalCounts
+  globalCounts,
+  tableTotal
 }) => {
   // Calcular contadores em tempo real
   const counters = useMemo(() => {
@@ -128,7 +130,7 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     {
       key: 'mapear_incompleto',
       label: 'Mapeamento pendente',
-      count: counters.mapeamentoPendente,
+      count: quickFilter === 'mapear_incompleto' && typeof tableTotal === 'number' ? tableTotal : counters.mapeamentoPendente,
       icon: AlertTriangle,
       variant: 'outline' as const,
       color: 'warning'
