@@ -55,7 +55,7 @@ export class HistoricoDataService {
       const validatedLimit = Math.min(Math.max(limit, 1), this.MAX_LIMIT);
       const offset = (page - 1) * validatedLimit;
 
-      // Usar view segura com mascaramento automático
+      // ✅ SEGURANÇA: Usar view segura com mascaramento automático de dados sensíveis
       let query = supabase
         .from('historico_vendas_safe')
         .select('*')
@@ -140,6 +140,7 @@ export class HistoricoDataService {
       return cached as any;
       }
 
+      // ✅ SEGURANÇA: Usar função RPC segura que aplica mascaramento automático
       const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
         _search: id,
         _limit: 1,
@@ -179,7 +180,7 @@ export class HistoricoDataService {
       return cached as { status: string[]; cidades: string[]; ufs: string[]; situacoes: string[]; };
       }
 
-      // Buscar opções usando RPC segura que já aplica RLS
+      // ✅ SEGURANÇA: Buscar opções usando RPC segura que já aplica RLS e mascaramento
       const [statusResult, cidadesResult, ufsResult] = await Promise.all([
         supabase.rpc('get_historico_vendas_masked', { _limit: 1000 }),
         supabase.rpc('get_historico_vendas_masked', { _limit: 1000 }),
