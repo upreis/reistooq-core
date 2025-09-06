@@ -563,19 +563,39 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                    if (temMapeamentoCompleto) {
                                      variant = "success";
                                      texto = "Pronto p/ Baixar";
-                                   } else if (temMapeamentoIncompleto) {
-                                     variant = "warning";
-                                     texto = "Mapear Incompleto";
-                                   } else {
-                                     variant = "warning";
-                                     texto = "Sem Mapear";
-                                   }
+                                    } else if (temMapeamentoIncompleto) {
+                                      variant = "warning";
+                                      texto = "Mapear Incompleto";
+                                    } else {
+                                      variant = "warning";
+                                      texto = "Sem Mapear";
+                                    }
 
-                                   return (
-                                     <Badge variant={variant} className="text-xs text-center">
-                                       {texto}
-                                     </Badge>
-                                   );
+                                    return (
+                                      <Badge 
+                                        variant={variant} 
+                                        className={`text-xs text-center ${
+                                          (texto === "Mapear Incompleto" || texto === "Sem Mapear") 
+                                            ? "cursor-pointer hover:opacity-80 transition-opacity hover:shadow-md border-2 border-dashed border-amber-400" 
+                                            : ""
+                                        }`}
+                                        title={
+                                          (texto === "Mapear Incompleto" || texto === "Sem Mapear")
+                                            ? "Clique para criar mapeamento"
+                                            : undefined
+                                        }
+                                        onClick={() => {
+                                          if (texto === "Mapear Incompleto" || texto === "Sem Mapear") {
+                                            // Disparar evento para abrir modal de mapeamento
+                                            window.dispatchEvent(new CustomEvent('openMapeamentoModal', {
+                                              detail: { pedido: order }
+                                            }));
+                                          }
+                                        }}
+                                      >
+                                        {texto}
+                                      </Badge>
+                                    );
                                 })()}
                            </div>
                          ) : (
@@ -618,19 +638,39 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                            if (temMapeamentoCompleto) {
                              variant = "success";
                              texto = "Pronto p/ Baixar";
-                           } else if (temMapeamentoIncompleto) {
-                             variant = "warning";
-                             texto = "Mapear Incompleto";
-                           } else {
-                             variant = "warning";
-                             texto = "Sem Mapear";
-                           }
+                            } else if (temMapeamentoIncompleto) {
+                              variant = "warning";
+                              texto = "Mapear Incompleto";
+                            } else {
+                              variant = "warning";
+                              texto = "Sem Mapear";
+                            }
 
-                           return (
-                             <Badge variant={variant} className="text-xs text-center">
-                               {texto}
-                             </Badge>
-                           );
+                            return (
+                              <Badge 
+                                variant={variant} 
+                                className={`text-xs text-center ${
+                                  (texto === "Mapear Incompleto" || texto === "Sem Mapear") 
+                                    ? "cursor-pointer hover:opacity-80 transition-opacity hover:shadow-md border-2 border-dashed border-amber-400" 
+                                    : ""
+                                }`}
+                                title={
+                                  (texto === "Mapear Incompleto" || texto === "Sem Mapear")
+                                    ? "Clique para criar mapeamento"
+                                    : undefined
+                                }
+                                onClick={() => {
+                                  if (texto === "Mapear Incompleto" || texto === "Sem Mapear") {
+                                    // Disparar evento para abrir modal de mapeamento
+                                    window.dispatchEvent(new CustomEvent('openMapeamentoModal', {
+                                      detail: { pedido: order }
+                                    }));
+                                  }
+                                }}
+                              >
+                                {texto}
+                              </Badge>
+                            );
                         })();
                     case 'date_created':
                       return <span>{order.date_created ? formatDate(order.date_created) : '-'}</span>;

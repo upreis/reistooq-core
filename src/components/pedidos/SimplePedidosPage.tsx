@@ -57,6 +57,7 @@ import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { MapeamentoModal } from './MapeamentoModal';
 
 
 type Order = {
@@ -134,6 +135,10 @@ function SimplePedidosPage({ className }: Props) {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showBaixaModal, setShowBaixaModal] = useState(false);
+  
+  // 🔗 Estado do modal de mapeamento
+  const [showMapeamentoModal, setShowMapeamentoModal] = useState(false);
+  const [pedidoParaMapeamento, setPedidoParaMapeamento] = useState<any>(null);
   
   // 🧠 Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE
   const {
@@ -280,6 +285,21 @@ function SimplePedidosPage({ className }: Props) {
       mappingActions.processOrdersMappings(orders);
     }
   }, [orders, verificarPedidos]); // ✅ Dependência simplificada mas funcional
+  
+  // 🔗 Listener para abrir modal de mapeamento
+  useEffect(() => {
+    const handleOpenMapeamentoModal = (event: any) => {
+      const { pedido } = event.detail;
+      setPedidoParaMapeamento(pedido);
+      setShowMapeamentoModal(true);
+    };
+
+    window.addEventListener('openMapeamentoModal', handleOpenMapeamentoModal);
+    
+    return () => {
+      window.removeEventListener('openMapeamentoModal', handleOpenMapeamentoModal);
+    };
+  }, []);
   
   // Helpers financeiros: receita_por_envio (Flex) e valor_liquido_vendedor
   const getReceitaPorEnvio = (order: any): number => {
@@ -1105,6 +1125,21 @@ function SimplePedidosPage({ className }: Props) {
       />
 
 
+      {/* 🔗 Modal de Mapeamento Inline */}
+      <MapeamentoModal
+        isOpen={showMapeamentoModal}
+        onClose={() => {
+          setShowMapeamentoModal(false);
+          setPedidoParaMapeamento(null);
+        }}
+        pedido={pedidoParaMapeamento}
+        onSuccess={() => {
+          // Recarregar mapeamentos após salvar
+          if (orders && orders.length > 0) {
+            mappingActions.processOrdersMappings(orders);
+          }
+        }}
+      />
 
       {/* 🚀 SEÇÃO DE MODAIS - PASSO 7 COMPLETO */}
       <PedidosModalsSection
