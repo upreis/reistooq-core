@@ -53,68 +53,25 @@ serve(async (req) => {
 
     console.log(`[pedidos-aggregator:${cid}] Aggregating counts with filters:`, filters);
 
-    // Usar o unified-orders para buscar contadores por status
+    // Buscar todos os pedidos do período com os dados de mapeamento
     const unifiedOrdersUrl = new URL(Deno.env.get("SUPABASE_URL") + "/functions/v1/unified-orders");
     
     const accounts = integration_account_ids || (integration_account_id ? [integration_account_id] : []);
     if (!accounts.length) return fail("Missing integration account", 400, null, cid);
 
-    // Agregadores para cada status
-    const aggregatedCounts = {
-      total: 0,
-      confirmed: 0,
-      paid: 0,
-      shipped: 0,
-      delivered: 0,
-      cancelled: 0
-    };
+    console.log(`[pedidos-aggregator:${cid}] Fetching orders with mappings to count by status...`);
 
-    // Buscar contadores para cada status relevante
-    const statusesToCheck = ['confirmed', 'paid', 'shipped', 'delivered', 'cancelled'];
-    
-    for (const status of statusesToCheck) {
-      const requestBody = {
-        integration_account_id: accounts[0], // Usar primeira conta para simplificar
-        status: status,
-        limit: 1, // Só queremos o total, não os dados
-        offset: 0,
-        ...filters // Aplicar filtros (data, busca, etc.)
-      };
-
-      try {
-        const response = await fetch(unifiedOrdersUrl.toString(), {
-          method: 'POST',
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/json',
-            'apikey': Deno.env.get("SUPABASE_ANON_KEY")!,
-          },
-          body: JSON.stringify(requestBody)
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.ok && data.paging?.total) {
-            aggregatedCounts[status as keyof typeof aggregatedCounts] = data.paging.total;
-            aggregatedCounts.total += data.paging.total;
-          }
-        }
-      } catch (error) {
-        console.warn(`[pedidos-aggregator:${cid}] Error fetching ${status}:`, error);
-      }
-    }
-
-    // Buscar contadores para "mapeamento pendente" - pedidos confirmados sem mapeamento
+    let prontosBaixaCount = 0;
     let mapeamentoPendenteCount = 0;
+    let totalCount = 0;
+    
     try {
-      // Ignorar shipping_status para mapeamento pendente (evita zerar indevidamente)
-      const { shipping_status, ...restFilters } = (filters as any) ?? {};
+      // Buscar todos os pedidos do período para analisar o mapeamento
       const requestBody = {
         integration_account_id: accounts[0],
-        status: 'confirmed', // Pedidos confirmados = precisam mapear
-        limit: 1,
+        limit: 1000, // Buscar um bom número para calcular totais
         offset: 0,
-        ...restFilters
+        ...filters // Aplicar filtros (data, busca, etc.)
       };
 
       const response = await fetch(unifiedOrdersUrl.toString(), {
@@ -129,12 +86,37 @@ serve(async (req) => {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.ok && data.paging?.total) {
-          mapeamentoPendenteCount = data.paging.total;
+        if (data.ok && data.orders) {
+          const orders = data.orders;
+          totalCount = data.paging?.total || orders.length;
+
+          console.log(`[pedidos-aggregator:${cid}] Analyzing ${orders.length} orders from total ${totalCount}...`);
+
+          for (const order of orders) {
+            const mapping = order.mapping;
+            const baixado = order.isPedidoProcessado || 
+                           String(order.status_baixa || '').toLowerCase().includes('baixado');
+
+            if (baixado) continue; // Pular pedidos já baixados
+
+            // Pronto p/ Baixar: tem mapeamento completo (skuEstoque ou skuKit)
+            const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
+            
+            // Mapear Incompleto: tem mapeamento mas não completo
+            const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
+
+            if (temMapeamentoCompleto) {
+              prontosBaixaCount++;
+            } else if (temMapeamentoIncompleto) {
+              mapeamentoPendenteCount++;
+            }
+          }
+
+          console.log(`[pedidos-aggregator:${cid}] Analysis result: prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
         }
       }
     } catch (error) {
-      console.warn(`[pedidos-aggregator:${cid}] Error fetching mapeamento pendente:`, error);
+      console.warn(`[pedidos-aggregator:${cid}] Error fetching orders for analysis:`, error);
     }
 
     // Buscar contadores de histórico para "baixados" via RPC
@@ -159,14 +141,13 @@ serve(async (req) => {
     }
 
     // Mapear para estrutura esperada pelos cards
-    mapeamentoPendenteCount = aggregatedCounts.confirmed;
     const result = {
-      total: aggregatedCounts.total,
-      prontosBaixa: aggregatedCounts.paid, // Pedidos pagos = prontos para baixar
-      mapeamentoPendente: mapeamentoPendenteCount, // Pedidos confirmados que precisam mapear
+      total: totalCount,
+      prontosBaixa: prontosBaixaCount, // Pedidos com mapeamento completo
+      mapeamentoPendente: mapeamentoPendenteCount, // Pedidos com mapeamento incompleto
       baixados: baixadosCount, // Histórico de vendas (já processados)
-      shipped: aggregatedCounts.shipped,
-      delivered: aggregatedCounts.delivered,
+      shipped: 0, // TODO: implementar se necessário
+      delivered: 0, // TODO: implementar se necessário
       correlation_id: cid
     };
 
