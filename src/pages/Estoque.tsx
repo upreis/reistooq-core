@@ -522,7 +522,7 @@ const Estoque = () => {
                 </Button>
               </div>
             </div>
-            <TabsContent value="estoque" forceMount className="space-y-2 md:space-y-8">
+            <TabsContent value="estoque" className="space-y-2 md:space-y-8">
               {/* Actions - já otimizadas para mobile */}
               <EstoqueActions
                 onNewProduct={handleNewProduct}
@@ -732,7 +732,7 @@ const Estoque = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="composicoes" forceMount className="space-y-2 md:space-y-8">
+            <TabsContent value="composicoes" className="space-y-2 md:space-y-8">
               <ComposicoesEstoque />
             </TabsContent>
           </Tabs>
