@@ -310,13 +310,13 @@ export function PedidosFiltersUnified({
         </div>
 
         {/* Botões de ação */}
-        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex gap-2 justify-end lg:justify-start">
+        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex gap-1 justify-end lg:justify-start items-center">
           {/* Botão de Colunas */}
           {columnManager && (
             <ColumnManager 
               manager={columnManager}
               trigger={
-                <Button variant="outline" size="sm" className="w-fit px-3">
+                <Button variant="outline" size="sm" className="h-9 px-3">
                   <Settings className="h-4 w-4 mr-1.5" />
                   <span className="hidden sm:inline">Colunas ({columnManager.state?.visibleColumns?.size || 0})</span>
                   <span className="sm:hidden">Cols</span>
@@ -326,7 +326,7 @@ export function PedidosFiltersUnified({
           )}
           
           {activeFiltersCount > 0 && (
-            <Button variant="outline" size="sm" onClick={onClearFilters} className="w-fit px-3">
+            <Button variant="outline" size="sm" onClick={onClearFilters} className="h-9 px-3">
               <X className="h-4 w-4 mr-1.5" />
               <span className="hidden sm:inline">Limpar</span>
             </Button>
