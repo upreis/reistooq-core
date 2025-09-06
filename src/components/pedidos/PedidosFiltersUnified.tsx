@@ -292,7 +292,7 @@ export function PedidosFiltersUnified({
         </div>
 
         {/* Período - Aplicação manual */}
-        <div className="lg:col-span-2 xl:col-span-2">
+        <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Período
             <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
@@ -305,13 +305,12 @@ export function PedidosFiltersUnified({
               onFilterChange('dataFim', endDate);
             }}
             hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
-            className="w-fit min-w-[200px]"
+            className="w-fit min-w-[180px]"
           />
         </div>
 
-        {/* Botões de ação */}
-        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex gap-1 justify-start items-center">
-          {/* Botão de Colunas */}
+        {/* Botão de Colunas */}
+        <div className="lg:col-span-1 xl:col-span-1 flex items-end">
           {columnManager && (
             <ColumnManager 
               manager={columnManager}
@@ -324,7 +323,10 @@ export function PedidosFiltersUnified({
               }
             />
           )}
-          
+        </div>
+
+        {/* Botão de Limpar */}
+        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex gap-1 justify-start items-end">
           {activeFiltersCount > 0 && (
             <Button variant="outline" size="sm" onClick={onClearFilters} className="h-9 px-3">
               <X className="h-4 w-4 mr-1.5" />
