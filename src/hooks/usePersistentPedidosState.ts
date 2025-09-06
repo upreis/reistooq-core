@@ -31,6 +31,16 @@ export function usePersistentPedidosState() {
         if (saved) {
           const parsed: PersistentPedidosState = JSON.parse(saved);
           
+          // Converter datas string para Date nos filtros
+          if (parsed.filters) {
+            if (parsed.filters.dataInicio && typeof parsed.filters.dataInicio === 'string') {
+              parsed.filters.dataInicio = new Date(parsed.filters.dataInicio);
+            }
+            if (parsed.filters.dataFim && typeof parsed.filters.dataFim === 'string') {
+              parsed.filters.dataFim = new Date(parsed.filters.dataFim);
+            }
+          }
+          
           // Verificar se o cache ainda é válido (não expirou)
           const now = Date.now();
           const isExpired = now - parsed.cachedAt > CACHE_DURATION;

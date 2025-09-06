@@ -220,18 +220,27 @@ function SimplePedidosPage({ className }: Props) {
       
       // Restaurar filtros no manager (sem refetch automático)
       if (persistedData.filters && Object.keys(persistedData.filters).length > 0) {
-        filtersManager.updateFilter('search', persistedData.filters.search);
-        filtersManager.updateFilter('situacao', persistedData.filters.situacao);
-        filtersManager.updateFilter('dataInicio', persistedData.filters.dataInicio);
-        filtersManager.updateFilter('dataFim', persistedData.filters.dataFim);
-        filtersManager.updateFilter('cidade', persistedData.filters.cidade);
-        filtersManager.updateFilter('uf', persistedData.filters.uf);
-        filtersManager.updateFilter('valorMin', persistedData.filters.valorMin);
-        filtersManager.updateFilter('valorMax', persistedData.filters.valorMax);
-        filtersManager.updateFilter('contasML', persistedData.filters.contasML);
+        // Garantir que as datas sejam objetos Date válidos
+        const filters = { ...persistedData.filters };
+        if (filters.dataInicio && typeof filters.dataInicio === 'string') {
+          filters.dataInicio = new Date(filters.dataInicio);
+        }
+        if (filters.dataFim && typeof filters.dataFim === 'string') {
+          filters.dataFim = new Date(filters.dataFim);
+        }
+        
+        filtersManager.updateFilter('search', filters.search);
+        filtersManager.updateFilter('situacao', filters.situacao);
+        filtersManager.updateFilter('dataInicio', filters.dataInicio);
+        filtersManager.updateFilter('dataFim', filters.dataFim);
+        filtersManager.updateFilter('cidade', filters.cidade);
+        filtersManager.updateFilter('uf', filters.uf);
+        filtersManager.updateFilter('valorMin', filters.valorMin);
+        filtersManager.updateFilter('valorMax', filters.valorMax);
+        filtersManager.updateFilter('contasML', filters.contasML);
         
         // Aplicar filtros sem refetch (os dados já estão em cache)
-        actions.replaceFilters(persistedData.filters);
+        actions.replaceFilters(filters);
       }
       
       // Restaurar dados através do manager de pedidos

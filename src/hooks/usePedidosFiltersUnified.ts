@@ -167,6 +167,14 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
         return draftValue.getTime() !== appliedValue.getTime();
       }
       
+      // Comparar datas que podem ser strings ou Date objects
+      if ((draftValue instanceof Date || typeof draftValue === 'string') && 
+          (appliedValue instanceof Date || typeof appliedValue === 'string')) {
+        const draftTime = draftValue instanceof Date ? draftValue.getTime() : new Date(draftValue).getTime();
+        const appliedTime = appliedValue instanceof Date ? appliedValue.getTime() : new Date(appliedValue).getTime();
+        return draftTime !== appliedTime;
+      }
+      
       return draftValue !== appliedValue;
     });
   }, [draftFilters, appliedFilters]);
@@ -198,13 +206,23 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     }
 
     if (appliedFilters.dataInicio) {
-      const d = appliedFilters.dataInicio;
-      params.dataInicio = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const d = appliedFilters.dataInicio instanceof Date 
+        ? appliedFilters.dataInicio 
+        : new Date(appliedFilters.dataInicio);
+      
+      if (!isNaN(d.getTime())) {
+        params.dataInicio = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
     }
 
     if (appliedFilters.dataFim) {
-      const d = appliedFilters.dataFim;
-      params.dataFim = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const d = appliedFilters.dataFim instanceof Date 
+        ? appliedFilters.dataFim 
+        : new Date(appliedFilters.dataFim);
+      
+      if (!isNaN(d.getTime())) {
+        params.dataFim = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
     }
 
     if (appliedFilters.cidade) {
