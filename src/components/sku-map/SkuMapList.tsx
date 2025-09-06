@@ -84,8 +84,8 @@ export function SkuMapList({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Desktop Table View */}
-          <div className="hidden md:block">
+          {/* Desktop Table View - Hidden on smaller screens */}
+          <div className="hidden lg:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -235,8 +235,8 @@ export function SkuMapList({
             </Table>
           </div>
 
-          {/* Mobile Card Layout */}
-          <div className="md:hidden space-y-3">
+          {/* Mobile Card Layout - Visible on smaller screens */}
+          <div className="lg:hidden space-y-3">
             {/* Mobile Selection Header */}
             {data?.data && data.data.length > 0 && (
               <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
