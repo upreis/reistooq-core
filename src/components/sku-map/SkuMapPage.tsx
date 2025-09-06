@@ -20,6 +20,18 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 export function SkuMapPage() {
   const { filters, updateFilters, resetFilters } = useSkuFilters();
+
+  const handleStatsFilterClick = (filterType: 'all' | 'ativos' | 'pendentes' | 'completos') => {
+    if (filterType === 'all') {
+      updateFilters({ status: "todos", preenchimento: "todos" });
+    } else if (filterType === 'ativos') {
+      updateFilters({ status: 'ativos', preenchimento: "todos" });
+    } else if (filterType === 'pendentes') {
+      updateFilters({ status: "todos", preenchimento: 'pendentes' });
+    } else if (filterType === 'completos') {
+      updateFilters({ status: "todos", preenchimento: 'completos' });
+    }
+  };
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showImportWizard, setShowImportWizard] = useState(false);
@@ -116,7 +128,7 @@ export function SkuMapPage() {
       </div>
 
       {/* Stats */}
-      <SkuMapStats />
+      <SkuMapStats onFilterClick={isMobile ? handleStatsFilterClick : undefined} />
 
       {/* Filters - Hidden on mobile */}
       {!isMobile && (
