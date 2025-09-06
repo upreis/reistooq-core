@@ -105,44 +105,38 @@ serve(async (req) => {
     }
 
     // Buscar contadores de histórico para "baixados"
+    // Contadores adicionais via RPC para evitar problemas de permissão/RLS
     const sb = serviceClient();
     let baixadosCount = 0;
     let mapeamentoPendenteCount = 0;
-    
+
+    const dateFrom = (filters as any)?.date_from ?? null;
+    const dateTo = (filters as any)?.date_to ?? null;
+    const search = (filters as any)?.search ?? (filters as any)?.q ?? null;
+
     try {
-      // Buscar pedidos baixados na tabela de histórico
-      const { count: baixados } = await sb
-        .from('historico_vendas')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'concluida');
-      
-      baixadosCount = baixados || 0;
+      const { data: baixadosData, error: baixadosErr } = await sb.rpc('count_baixados', {
+        _account_ids: accounts,
+        _from: dateFrom,
+        _to: dateTo,
+        _search: search
+      });
+      if (baixadosErr) throw baixadosErr;
+      baixadosCount = baixadosData || 0;
     } catch (error) {
-      console.warn(`[pedidos-aggregator:${cid}] Error fetching baixados:`, error);
+      console.warn(`[pedidos-aggregator:${cid}] Error fetching baixados via RPC:`, error);
     }
 
     try {
-      // Buscar pedidos processados (outra fonte para baixados)
-      const { count: processados } = await sb
-        .from('pedidos_processados')
-        .select('*', { count: 'exact', head: true });
-      
-      baixadosCount = Math.max(baixadosCount, processados || 0);
+      const { data: pendData, error: pendErr } = await sb.rpc('count_mapeamentos_pendentes', {
+        _account_ids: accounts,
+        _from: dateFrom,
+        _to: dateTo
+      });
+      if (pendErr) throw pendErr;
+      mapeamentoPendenteCount = pendData || 0;
     } catch (error) {
-      console.warn(`[pedidos-aggregator:${cid}] Error fetching processados:`, error);
-    }
-
-    try {
-      // Buscar mapeamentos incompletos
-      const { count: mapeamentos } = await sb
-        .from('mapeamentos')
-        .select('*', { count: 'exact', head: true })
-        .not('sku_ecommerce', 'is', null)
-        .or('sku_estoque.is.null,sku_kit.is.null');
-      
-      mapeamentoPendenteCount = mapeamentos || 0;
-    } catch (error) {
-      console.warn(`[pedidos-aggregator:${cid}] Error fetching mapeamentos:`, error);
+      console.warn(`[pedidos-aggregator:${cid}] Error fetching mapeamentos via RPC:`, error);
     }
 
     // Mapear para estrutura esperada pelos cards

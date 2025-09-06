@@ -2722,6 +2722,19 @@ export type Database = {
         }
         Returns: number
       }
+      count_baixados: {
+        Args: {
+          _account_ids?: string[]
+          _from?: string
+          _search?: string
+          _to?: string
+        }
+        Returns: number
+      }
+      count_mapeamentos_pendentes: {
+        Args: { _account_ids?: string[]; _from?: string; _to?: string }
+        Returns: number
+      }
       create_integration_secret_secure: {
         Args: {
           access_token?: string
