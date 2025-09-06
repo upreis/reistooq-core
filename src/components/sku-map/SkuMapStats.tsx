@@ -7,7 +7,7 @@ export function SkuMapStats() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
             <CardContent className="p-6">
@@ -46,7 +46,7 @@ export function SkuMapStats() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
       {statCards.map((stat) => (
         <Card key={stat.label}>
           <CardContent className="p-6">
