@@ -713,7 +713,7 @@ export function ComposicoesEstoque() {
           </div>
         )}
 
-        <div className="flex-1 min-w-0 space-y-6">
+        <div className="flex-1 min-w-0 md:space-y-6 space-y-0">
           {/* Filtros Inteligentes - ocultos no mobile */}
           <div className="hidden md:block">
             <ComposicoesFilters 
