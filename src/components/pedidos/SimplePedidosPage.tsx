@@ -802,7 +802,6 @@ function SimplePedidosPage({ className }: Props) {
         mappingData={mappingData}
         isPedidoProcessado={isPedidoProcessado}
         globalCounts={globalCounts}
-        tableTotal={total}
       />
 
       {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
