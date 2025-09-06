@@ -136,20 +136,20 @@ export function PeriodSelector({
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-between text-left font-normal text-sm h-9 px-3",
+            "w-full justify-between text-left font-normal text-sm h-10 px-3.5",
             !startDate && !endDate && "text-muted-foreground",
             hasPendingChanges && "border-warning",
             className
           )}
         >
           <div className="flex items-center">
-            <Calendar className="mr-2 h-3.5 w-3.5" />
+            <Calendar className="mr-2 h-4 w-4" />
             <span className="truncate">{formatPeriodDisplay()}</span>
           </div>
-          <ChevronDown className="h-3.5 w-3.5 opacity-50 flex-shrink-0" />
+          <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[350px] p-0 bg-background border border-border z-50" align="start">
+      <PopoverContent className="w-[380px] p-0 bg-background border border-border z-50" align="start">
         <div className="space-y-3 p-3">
           {/* Tabs */}
           <div className="flex space-x-1 bg-muted p-1 rounded-lg">
