@@ -7,13 +7,13 @@ export function SkuMapStats() {
 
   if (isLoading) {
     return (
-      <div className="flex overflow-x-auto gap-3 md:grid md:grid-cols-4 md:gap-6 pb-2">
+      <div className="flex overflow-x-auto gap-2 md:grid md:grid-cols-4 md:gap-6 pb-2">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="flex-shrink-0 min-w-[140px] md:min-w-0">
-            <CardContent className="p-6">
-              <div className="text-center space-y-2">
-                <Skeleton className="h-8 w-16 mx-auto" />
-                <Skeleton className="h-4 w-24 mx-auto" />
+          <Card key={i} className="flex-shrink-0 min-w-[70px] md:min-w-0">
+            <CardContent className="p-3 md:p-6">
+              <div className="text-center space-y-1 md:space-y-2">
+                <Skeleton className="h-4 w-8 mx-auto md:h-8 md:w-16" />
+                <Skeleton className="h-3 w-12 mx-auto md:h-4 md:w-24" />
               </div>
             </CardContent>
           </Card>
@@ -46,15 +46,15 @@ export function SkuMapStats() {
   ];
 
   return (
-    <div className="flex overflow-x-auto gap-3 md:grid md:grid-cols-4 md:gap-6 pb-2">
+    <div className="flex overflow-x-auto gap-2 md:grid md:grid-cols-4 md:gap-6 pb-2">
       {statCards.map((stat) => (
-        <Card key={stat.label} className="flex-shrink-0 min-w-[140px] md:min-w-0">
-          <CardContent className="p-6">
+        <Card key={stat.label} className="flex-shrink-0 min-w-[70px] md:min-w-0">
+          <CardContent className="p-3 md:p-6">
             <div className="text-center">
-              <div className={`text-2xl font-bold ${stat.color}`}>
+              <div className={`text-lg font-bold md:text-2xl ${stat.color}`}>
                 {stat.value}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-xs md:text-sm text-muted-foreground">
                 {stat.label}
               </div>
             </div>
