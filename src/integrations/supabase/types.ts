@@ -368,6 +368,84 @@ export type Database = {
           },
         ]
       }
+      clientes: {
+        Row: {
+          cpf_cnpj: string | null
+          created_at: string
+          data_primeiro_pedido: string | null
+          data_ultimo_pedido: string | null
+          email: string | null
+          empresa: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
+          id: string
+          integration_account_id: string | null
+          nome_completo: string
+          observacoes: string | null
+          organization_id: string
+          status_cliente: string | null
+          telefone: string | null
+          ticket_medio: number | null
+          total_pedidos: number | null
+          updated_at: string
+          valor_total_gasto: number | null
+        }
+        Insert: {
+          cpf_cnpj?: string | null
+          created_at?: string
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: string | null
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
+          id?: string
+          integration_account_id?: string | null
+          nome_completo: string
+          observacoes?: string | null
+          organization_id: string
+          status_cliente?: string | null
+          telefone?: string | null
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string
+          valor_total_gasto?: number | null
+        }
+        Update: {
+          cpf_cnpj?: string | null
+          created_at?: string
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: string | null
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
+          id?: string
+          integration_account_id?: string | null
+          nome_completo?: string
+          observacoes?: string | null
+          organization_id?: string
+          status_cliente?: string | null
+          telefone?: string | null
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string
+          valor_total_gasto?: number | null
+        }
+        Relationships: []
+      }
       componentes_em_uso: {
         Row: {
           created_at: string | null
@@ -3151,6 +3229,19 @@ export type Database = {
       split_existing_categories: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      sync_cliente_from_pedido: {
+        Args: {
+          p_cidade?: string
+          p_cpf_cnpj?: string
+          p_data_pedido?: string
+          p_empresa?: string
+          p_integration_account_id?: string
+          p_nome_cliente: string
+          p_uf?: string
+          p_valor_pedido?: number
+        }
+        Returns: string
       }
       tiny3_get_credentials: {
         Args: { _client_id: string } | { _org_id: string }
