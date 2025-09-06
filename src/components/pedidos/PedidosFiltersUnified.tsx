@@ -291,38 +291,38 @@ export function PedidosFiltersUnified({
           </Popover>
         </div>
 
-        {/* Período - Aplicação manual */}
-        <div className="lg:col-span-1 xl:col-span-1">
+        {/* Período + Colunas - Aplicação manual */}
+        <div className="lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Período
             <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
-          <PeriodSelector
-            startDate={filters.dataInicio}
-            endDate={filters.dataFim}
-            onDateRangeChange={(startDate, endDate) => {
-              onFilterChange('dataInicio', startDate);
-              onFilterChange('dataFim', endDate);
-            }}
-            hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
-            className="w-fit min-w-[220px]"
-          />
-        </div>
-
-        {/* Botão de Colunas */}
-        <div className="lg:col-span-1 xl:col-span-1 flex items-end">
-          {columnManager && (
-            <ColumnManager 
-              manager={columnManager}
-              trigger={
-                <Button variant="outline" size="sm" className="h-9 px-3">
-                  <Settings className="h-4 w-4 mr-1.5" />
-                  <span className="hidden sm:inline">Colunas ({columnManager.state?.visibleColumns?.size || 0})</span>
-                  <span className="sm:hidden">Cols</span>
-                </Button>
-              }
+          <div className="flex items-end gap-2">
+            <PeriodSelector
+              startDate={filters.dataInicio}
+              endDate={filters.dataFim}
+              onDateRangeChange={(startDate, endDate) => {
+                onFilterChange('dataInicio', startDate);
+                onFilterChange('dataFim', endDate);
+              }}
+              hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
+              className="w-fit min-w-[240px]"
             />
-          )}
+
+            {/* Botão de Colunas (ao lado do Período) */}
+            {columnManager && (
+              <ColumnManager 
+                manager={columnManager}
+                trigger={
+                  <Button variant="outline" size="sm" className="h-9 px-3">
+                    <Settings className="h-4 w-4 mr-1.5" />
+                    <span className="hidden sm:inline">Colunas ({columnManager.state?.visibleColumns?.size || 0})</span>
+                    <span className="sm:hidden">Cols</span>
+                  </Button>
+                }
+              />
+            )}
+          </div>
         </div>
 
         {/* Botão de Limpar */}
