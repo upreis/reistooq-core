@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PedidosFiltersState } from '@/hooks/usePedidosFiltersUnified';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
+import { PeriodSelector } from './PeriodSelector';
 
 interface PedidosFiltersUnifiedProps {
   filters: PedidosFiltersState;
@@ -138,7 +139,7 @@ export function PedidosFiltersUnified({
       )}
 
       {/* Layout principal dos filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-7 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-7 gap-4 items-end">
         {/* Busca - Aplicação manual */}
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
@@ -290,67 +291,21 @@ export function PedidosFiltersUnified({
           </Popover>
         </div>
 
-        {/* Datas - Aplicação manual */}
-        <div className="lg:col-span-1 xl:col-span-1">
+        {/* Período - Aplicação manual */}
+        <div className="lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Data Início
+            Período
             <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className={cn(
-                  "w-full justify-start text-left",
-                  hasPendingChanges && filters.dataInicio !== appliedFilters.dataInicio && "border-warning"
-                )}
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                {filters.dataInicio ? format(filters.dataInicio, 'dd/MM/yy', { locale: ptBR }) : 'Início'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={filters.dataInicio}
-                onSelect={(date) => onFilterChange('dataInicio', date)}
-                locale={ptBR}
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        
-        <div className="lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Data Fim
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
-          </label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className={cn(
-                  "w-full justify-start text-left",
-                  hasPendingChanges && filters.dataFim !== appliedFilters.dataFim && "border-warning"
-                )}
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                {filters.dataFim ? format(filters.dataFim, 'dd/MM/yy', { locale: ptBR }) : 'Fim'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={filters.dataFim}
-                onSelect={(date) => onFilterChange('dataFim', date)}
-                locale={ptBR}
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
+          <PeriodSelector
+            startDate={filters.dataInicio}
+            endDate={filters.dataFim}
+            onDateRangeChange={(startDate, endDate) => {
+              onFilterChange('dataInicio', startDate);
+              onFilterChange('dataFim', endDate);
+            }}
+            hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
+          />
         </div>
 
         {/* Botões de ação */}

@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { PeriodSelector } from './PeriodSelector';
 
 export interface PedidosFiltersState {
   search?: string;
@@ -110,7 +111,7 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
       {/* ✅ REMOVIDO: Aviso de mudanças pendentes (aplicação automática) */}
       
       {/* ✅ LAYOUT RESPONSIVO MELHORADO - AJUSTADO PARA INCLUIR CONTAS ML */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-7 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-7 gap-4 items-end">
         {/* ✅ BUSCA RESPONSIVA */}
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block">Buscar</label>
@@ -248,47 +249,17 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
           </Popover>
         </div>
 
-        {/* ✅ DATAS RESPONSIVAS - CADA UMA EM COLUNA SEPARADA */}
-        <div className="lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block">Data Início</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-start text-left">
-                <Calendar className="mr-2 h-4 w-4" />
-                {filters.dataInicio ? format(filters.dataInicio, 'dd/MM/yy', { locale: ptBR }) : 'Início'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={filters.dataInicio}
-                onSelect={(date) => handleFilterChange('dataInicio', date)}
-                locale={ptBR}
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        
-        <div className="lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block">Data Fim</label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full justify-start text-left">
-                <Calendar className="mr-2 h-4 w-4" />
-                {filters.dataFim ? format(filters.dataFim, 'dd/MM/yy', { locale: ptBR }) : 'Fim'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={filters.dataFim}
-                onSelect={(date) => handleFilterChange('dataFim', date)}
-                locale={ptBR}
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
+        {/* Período */}
+        <div className="lg:col-span-2 xl:col-span-2">
+          <label className="text-sm font-medium mb-1 block">Período</label>
+          <PeriodSelector
+            startDate={filters.dataInicio}
+            endDate={filters.dataFim}
+            onDateRangeChange={(startDate, endDate) => {
+              handleFilterChange('dataInicio', startDate);
+              handleFilterChange('dataFim', endDate);
+            }}
+          />
         </div>
 
         {/* ✅ BOTÕES RESPONSIVOS */}
