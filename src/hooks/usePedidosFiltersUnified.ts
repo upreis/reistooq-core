@@ -95,43 +95,59 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
 
   // ✅ REMOVIDO: Auto-aplicação de busca - agora tudo é manual
 
-  // Atualizar filtro draft
+  // Atualizar filtro draft - MELHORADO para log de debug
   const updateDraftFilter = useCallback(<K extends keyof PedidosFiltersState>(
     key: K,
     value: PedidosFiltersState[K]
   ) => {
+    console.log('🔧 [FILTERS] Atualizando filtro:', key, '=', value);
+    
     setDraftFilters(prev => {
       const newFilters = { ...prev };
       
       if (value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
         delete newFilters[key];
+        console.log('🗑️ [FILTERS] Removendo filtro vazio:', key);
       } else {
         newFilters[key] = value;
+        console.log('✅ [FILTERS] Filtro definido:', key, '=', value);
       }
       
-      // ✅ REMOVIDO: Auto-aplicação - agora tudo é manual
-      
+      console.log('📊 [FILTERS] Estado dos filtros draft atualizado:', newFilters);
       return newFilters;
     });
-  }, [appliedFilters, onFiltersApply]);
+  }, []);
 
-  // Aplicar filtros manuais
+  // Aplicar filtros manuais - CORRIGIDO para garantir sincronização
   const applyFilters = useCallback(async () => {
-    console.groupCollapsed('[apply/unified]');
+    console.groupCollapsed('[apply/unified] INICIANDO APLICAÇÃO DE FILTROS');
     console.log('draftFilters', draftFilters);
+    console.log('appliedFilters (anterior)', appliedFilters);
     console.groupEnd();
+    
     setIsApplying(true);
     
     try {
-      // Simular delay para feedback visual
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
+      // ✅ CRÍTICO: Primeiro aplicar o estado interno, depois chamar callback
       setAppliedFilters({ ...draftFilters });
-      onFiltersApply?.({ ...draftFilters });
+      
+      // ✅ GARANTIR: Pequeno delay para garantir que o estado foi atualizado
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // ✅ CRÍTICO: Chamar callback com os filtros aplicados
+      if (onFiltersApply) {
+        console.log('🔄 [FILTERS] Executando callback onFiltersApply com filtros:', draftFilters);
+        await onFiltersApply({ ...draftFilters });
+      }
+      
+      console.log('✅ [FILTERS] Filtros aplicados com sucesso');
+    } catch (error) {
+      console.error('❌ [FILTERS] Erro ao aplicar filtros:', error);
+      throw error;
     } finally {
       setIsApplying(false);
     }
-  }, [draftFilters, onFiltersApply]);
+  }, [draftFilters, appliedFilters, onFiltersApply]);
 
   // Cancelar mudanças pendentes
   const cancelChanges = useCallback(() => {

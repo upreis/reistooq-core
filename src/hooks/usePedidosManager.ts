@@ -557,17 +557,23 @@ export function usePedidosManager(initialAccountId?: string) {
    * 🔧 Carrega pedidos com query chaveada por filtros (refetch automático)
    */
   const loadOrders = useCallback(async (forceRefresh = false) => {
+    // ✅ CRÍTICO: Usar filtros atuais, não debouncedFilters quando forceRefresh = true
+    const filtersToUse = forceRefresh ? filters : debouncedFilters;
+    
+    console.log('🚀 [LOAD ORDERS] Iniciando com filtros:', filtersToUse, 'forceRefresh:', forceRefresh);
+    
     // Construir parâmetros primeiro para suportar múltiplas contas
-    const apiParams = buildApiParams(debouncedFilters);
-    const filtersKey = stableSerializeFilters(debouncedFilters);
+    const apiParams = buildApiParams(filtersToUse);
+    const filtersKey = stableSerializeFilters(filtersToUse);
     const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
 
     console.groupCollapsed('[query/start]');
-    console.log({ cacheKey, forceRefresh, lastQuery });
+    console.log({ cacheKey, forceRefresh, lastQuery, filtersUsed: filtersToUse });
     console.groupEnd();
 
     // Se a mesma query já foi executada recentemente e está carregando, evitar duplicar
     if (!forceRefresh && lastQuery === cacheKey && loading) {
+      console.log('⚡ [LOAD ORDERS] Query duplicada detectada, pulando');
       return;
     }
     // Atualiza a última query com a chave completa (inclui paginação/conta)
@@ -590,10 +596,17 @@ export function usePedidosManager(initialAccountId?: string) {
     }
     abortControllerRef.current = new AbortController();
 
-    // 🚀 FASE 2: Verificar cache
+    // 🚀 FASE 2: Verificar cache - IGNORAR quando forceRefresh = true
     if (!forceRefresh && isCacheValid(cacheKey)) {
-      console.log('[query/skip] cache-hit');
+      console.log('[query/skip] cache-hit - usando dados em cache');
       return;
+    }
+    
+    // ✅ CRÍTICO: Quando forceRefresh = true, sempre invalidar cache
+    if (forceRefresh) {
+      console.log('🔄 [LOAD ORDERS] ForceRefresh = true, invalidando cache completamente');
+      setCachedAt(undefined);
+      setLastQuery('');
     }
 
     setLoading(true);
@@ -832,7 +845,7 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [integrationAccountId, debouncedFilters, lastQuery, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
+  }, [integrationAccountId, filters, lastQuery, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
 
   // 🚀 FASE 3: Exportação de dados
   const exportData = useCallback(async (format: 'csv' | 'xlsx') => {
@@ -1032,9 +1045,21 @@ const actions: PedidosManagerActions = useMemo(() => ({
   },
   
   refetch: () => {
-    console.groupCollapsed('[refetch] dispatch');
+    console.groupCollapsed('[refetch] dispatch - FORÇA ATUALIZAÇÃO');
     console.log('lastQuery', lastQuery);
+    console.log('filters atuais', filters);
     console.groupEnd();
+    
+    // ✅ CRÍTICO: Invalidar cache e forçar nova busca
+    setCachedAt(undefined);
+    setLastQuery(undefined);
+    
+    // ✅ CRÍTICO: Usar filtros atuais, não debounced
+    const apiParams = buildApiParams(filters);
+    const filtersKey = stableSerializeFilters(filters);
+    const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
+    
+    console.log('🚀 [REFETCH] Cache invalidado, forçando nova busca com cacheKey:', cacheKey);
     loadOrders(true);
   },
   

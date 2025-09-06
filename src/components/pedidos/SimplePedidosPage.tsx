@@ -103,12 +103,17 @@ function SimplePedidosPage({ className }: Props) {
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: async (filters) => {
+      console.log('🔄 [FILTERS APPLY] Recebido filtros para aplicação:', filters);
+      
       // Limpar estado persistido ao aplicar novos filtros
       persistentState.clearPersistedState();
       
+      // ✅ CRÍTICO: Aplicar filtros ANTES do refetch
       actions.replaceFilters(filters);
+      
       console.groupCollapsed('[apply/callback]');
       console.log('filtersArg', filters);
+      console.log('filtersManager.appliedFilters', filtersManager.appliedFilters);
       console.assert(
         JSON.stringify(filters) === JSON.stringify(filtersManager.filters),
         'apply: filtros divergentes entre UI e callback'
@@ -118,7 +123,15 @@ function SimplePedidosPage({ className }: Props) {
       // Salvar os filtros aplicados
       persistentState.saveAppliedFilters(filters);
       
-      await actions.refetch(); // refetch imediato obrigatório no Apply
+      // ✅ CRÍTICO: Force refetch para garantir dados atualizados
+      console.log('🚀 [FILTERS APPLY] Iniciando refetch obrigatório...');
+      try {
+        await actions.refetch(); // refetch imediato obrigatório no Apply
+        console.log('✅ [FILTERS APPLY] Refetch completado com sucesso');
+      } catch (error) {
+        console.error('❌ [FILTERS APPLY] Erro no refetch:', error);
+        throw error;
+      }
     },
     autoLoad: false,
     loadSavedFilters: false
@@ -127,6 +140,14 @@ function SimplePedidosPage({ className }: Props) {
   // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
   const { state, actions, totalPages } = pedidosManager;
+  
+  // ✅ CRÍTICO: Listener para mudanças de filtros aplicados 
+  useEffect(() => {
+    // Quando appliedFilters mudar e não for vazio, force refetch
+    if (filtersManager.appliedFilters && Object.keys(filtersManager.appliedFilters).length > 0) {
+      console.log('🔄 [FILTERS SYNC] Filtros aplicados mudaram, sincronizando...', filtersManager.appliedFilters);
+    }
+  }, [filtersManager.appliedFilters]);
   
   // 🔧 Sistema de colunas unificado com persistência automatica
   const columnManager = useColumnManager();
