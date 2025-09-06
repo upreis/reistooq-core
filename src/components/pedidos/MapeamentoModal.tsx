@@ -98,19 +98,39 @@ export function MapeamentoModal({
 
   const onSubmit = async (data: SkuMapping) => {
     try {
+      console.log('📝 Enviando dados do mapeamento:', data);
+      
       if (isEditing) {
         await updateMapping.mutateAsync({ id: existingMapping.id!, ...data });
         toast.success('Mapeamento atualizado com sucesso!');
       } else {
+        // Validação antes de enviar
+        if (!data.sku_pedido?.trim()) {
+          toast.error('SKU do pedido é obrigatório');
+          return;
+        }
+        
         await createMapping.mutateAsync(data);
         toast.success('Mapeamento criado com sucesso!');
       }
       
       onSuccess?.();
       onClose();
-    } catch (error) {
-      toast.error('Erro ao salvar mapeamento');
-      console.error('Erro ao salvar mapeamento:', error);
+    } catch (error: any) {
+      console.error('❌ Erro detalhado ao salvar mapeamento:', error);
+      
+      // Melhor tratamento de erros
+      let errorMessage = 'Erro ao salvar mapeamento';
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.details) {
+        errorMessage = error.details;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 

@@ -6,12 +6,31 @@ export class SkuMappingService {
 
   private static async getCurrentOrgId(): Promise<string> {
     if (this.orgId) return this.orgId;
-    const { data, error } = await supabase.rpc('get_current_org_id');
-    if (error || !data) {
-      throw new Error('Não foi possível obter a organização atual.');
+    
+    try {
+      const { data, error } = await supabase.rpc('get_current_org_id');
+      if (error || !data) {
+        console.warn('⚠️ Não foi possível obter org_id via RPC, usando user ID como fallback');
+        // Fallback: usar o user_id como org_id se a função RPC não existir
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.id) {
+          throw new Error('Usuário não autenticado');
+        }
+        this.orgId = user.id;
+        return this.orgId;
+      }
+      this.orgId = data as unknown as string;
+      return this.orgId;
+    } catch (rpcError) {
+      console.warn('⚠️ RPC get_current_org_id falhou, usando user ID:', rpcError);
+      // Fallback: usar o user_id como org_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) {
+        throw new Error('Usuário não autenticado');
+      }
+      this.orgId = user.id;
+      return this.orgId;
     }
-    this.orgId = data as unknown as string;
-    return this.orgId;
   }
   static async getSkuMappings(filters: SkuMappingFilters): Promise<SkuMappingResponse> {
     let query = supabase
@@ -67,29 +86,41 @@ export class SkuMappingService {
   }
 
   static async createSkuMapping(mapping: Omit<SkuMapping, 'id' | 'created_at' | 'updated_at'>): Promise<SkuMapping> {
-    const orgId = await this.getCurrentOrgId();
+    console.log('🔄 Criando mapeamento:', mapping);
+    
+    try {
+      const orgId = await this.getCurrentOrgId();
+      console.log('🏢 Organization ID obtido:', orgId);
 
-    const payload = {
-      sku_pedido: mapping.sku_pedido,
-      sku_correspondente: mapping.sku_correspondente,
-      sku_simples: mapping.sku_simples,
-      quantidade: mapping.quantidade ?? 1,
-      ativo: mapping.ativo ?? true,
-      observacoes: mapping.observacoes,
-      organization_id: orgId,
-    };
+      const payload = {
+        sku_pedido: mapping.sku_pedido?.trim(),
+        sku_correspondente: mapping.sku_correspondente?.trim() || mapping.sku_pedido?.trim(),
+        sku_simples: mapping.sku_simples?.trim() || mapping.sku_pedido?.trim(),
+        quantidade: mapping.quantidade ?? 1,
+        ativo: mapping.ativo ?? true,
+        observacoes: mapping.observacoes?.trim(),
+        organization_id: orgId,
+      };
 
-    const { data, error } = await supabase
-      .from('mapeamentos_depara')
-      .insert(payload)
-      .select()
-      .single();
+      console.log('📤 Payload para insert:', payload);
 
-    if (error) {
-      throw new Error(error.message);
+      const { data, error } = await supabase
+        .from('mapeamentos_depara')
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Erro do Supabase:', error);
+        throw new Error(`Erro ao criar mapeamento: ${error.message} (${error.code})`);
+      }
+
+      console.log('✅ Mapeamento criado com sucesso:', data);
+      return data;
+    } catch (error: any) {
+      console.error('❌ Erro geral ao criar mapeamento:', error);
+      throw error;
     }
-
-    return data;
   }
 
   static async updateSkuMapping(id: string, mapping: Partial<SkuMapping>): Promise<SkuMapping> {
