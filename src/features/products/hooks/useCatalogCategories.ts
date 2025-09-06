@@ -1,5 +1,5 @@
 // Hook para acessar o catálogo global de categorias (não vinculado a organização)
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface CatalogCategory {
@@ -56,24 +56,21 @@ export const useCatalogCategories = () => {
     }
   };
 
-  // Helpers para filtrar por nível
-  const getCategoriasPrincipais = () => {
+  // Helpers para filtrar por nível - memoizados para evitar re-renders
+  const getCategoriasPrincipais = useCallback(() => {
     const principais = categories.filter(cat => cat.nivel === 1);
-    console.log('🔍 Catalog getCategoriasPrincipais:', principais.length, principais.map(c => c.nome));
     return principais;
-  };
+  }, [categories]);
 
-  const getCategorias = (categoriaPrincipalId: string) => {
+  const getCategorias = useCallback((categoriaPrincipalId: string) => {
     const cats = categories.filter(cat => cat.nivel === 2 && cat.categoria_principal_id === categoriaPrincipalId);
-    console.log('🔍 Catalog getCategorias para', categoriaPrincipalId, ':', cats.length, cats.map(c => c.nome));
     return cats;
-  };
+  }, [categories]);
 
-  const getSubcategorias = (categoriaId: string) => {
+  const getSubcategorias = useCallback((categoriaId: string) => {
     const subcats = categories.filter(cat => cat.nivel === 3 && cat.categoria_id === categoriaId);
-    console.log('🔍 Catalog getSubcategorias para', categoriaId, ':', subcats.length, subcats.map(c => c.nome));
     return subcats;
-  };
+  }, [categories]);
 
   useEffect(() => {
     loadCategories();
