@@ -522,7 +522,7 @@ const Estoque = () => {
                 </Button>
               </div>
             </div>
-            <TabsContent value="estoque" className="space-y-4 md:space-y-8">
+            <TabsContent value="estoque" className="space-y-2 md:space-y-8">
               {/* Actions - já otimizadas para mobile */}
               <EstoqueActions
                 onNewProduct={handleNewProduct}
@@ -584,7 +584,7 @@ const Estoque = () => {
               </div>
 
               {/* Layout principal - mobile primeiro, desktop com sidebar */}
-              <div className="flex flex-col md:flex-row gap-3 md:gap-6 relative">
+              <div className="flex flex-col md:flex-row gap-1 md:gap-6 relative">
                 {/* Sidebar de categorias - oculta no mobile por padrão */}
                 <div className={cn(
                   "transition-all duration-300 flex-shrink-0 hidden md:block",
