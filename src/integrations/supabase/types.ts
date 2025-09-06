@@ -3373,6 +3373,10 @@ export type Database = {
         Args: { _id: string }
         Returns: Json
       }
+      security_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       seed_admin_role_for_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: undefined
