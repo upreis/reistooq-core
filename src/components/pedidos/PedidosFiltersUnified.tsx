@@ -292,7 +292,7 @@ export function PedidosFiltersUnified({
         </div>
 
         {/* Período - Aplicação manual */}
-        <div className="lg:col-span-2 xl:col-span-2">
+        <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Período
             <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
@@ -305,6 +305,7 @@ export function PedidosFiltersUnified({
               onFilterChange('dataFim', endDate);
             }}
             hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
+            className="w-full text-sm"
           />
         </div>
 

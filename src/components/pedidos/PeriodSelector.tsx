@@ -136,27 +136,27 @@ export function PeriodSelector({
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-between text-left font-normal",
+            "w-full justify-between text-left font-normal text-sm h-9 px-3",
             !startDate && !endDate && "text-muted-foreground",
             hasPendingChanges && "border-warning",
             className
           )}
         >
           <div className="flex items-center">
-            <Calendar className="mr-2 h-4 w-4" />
-            {formatPeriodDisplay()}
+            <Calendar className="mr-2 h-3.5 w-3.5" />
+            <span className="truncate">{formatPeriodDisplay()}</span>
           </div>
-          <ChevronDown className="h-4 w-4 opacity-50" />
+          <ChevronDown className="h-3.5 w-3.5 opacity-50 flex-shrink-0" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[400px] p-0 bg-background border border-border z-50" align="start">
-        <div className="space-y-4 p-4">
+      <PopoverContent className="w-[350px] p-0 bg-background border border-border z-50" align="start">
+        <div className="space-y-3 p-3">
           {/* Tabs */}
           <div className="flex space-x-1 bg-muted p-1 rounded-lg">
             <button
               onClick={() => setSelectedTab('presets')}
               className={cn(
-                "flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                "flex-1 px-2 py-1.5 text-sm font-medium rounded-md transition-colors",
                 selectedTab === 'presets' 
                   ? "bg-background text-foreground shadow-sm" 
                   : "text-muted-foreground hover:text-foreground"
@@ -167,7 +167,7 @@ export function PeriodSelector({
             <button
               onClick={() => setSelectedTab('custom')}
               className={cn(
-                "flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                "flex-1 px-2 py-1.5 text-sm font-medium rounded-md transition-colors",
                 selectedTab === 'custom' 
                   ? "bg-background text-foreground shadow-sm" 
                   : "text-muted-foreground hover:text-foreground"
@@ -180,13 +180,14 @@ export function PeriodSelector({
           {/* Presets Tab */}
           {selectedTab === 'presets' && (
             <div className="space-y-2">
-              <div className="text-sm font-medium text-foreground mb-3">Previstos para</div>
+              <div className="text-sm font-medium text-foreground mb-2">Previstos para</div>
               <div className="grid grid-cols-2 gap-2">
                 {PERIOD_PRESETS.map((preset) => (
                   <Button
                     key={preset.id}
                     variant="outline"
-                    className="justify-start text-left h-auto py-3 px-4"
+                    size="sm"
+                    className="justify-start text-left h-auto py-2 px-3 text-sm"
                     onClick={() => handlePresetSelect(preset)}
                   >
                     {preset.label}
@@ -195,31 +196,33 @@ export function PeriodSelector({
               </div>
               
               {/* Sem filtro option */}
-              <Button
-                variant="outline"
-                className="w-full justify-start text-left h-auto py-3 px-4 mt-4"
-                onClick={handleClearFilter}
-              >
-                sem filtro
-              </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start text-left h-auto py-2 px-3 mt-3 text-sm"
+                  onClick={handleClearFilter}
+                >
+                  sem filtro
+                </Button>
             </div>
           )}
 
           {/* Custom Tab */}
           {selectedTab === 'custom' && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="text-sm font-medium text-foreground">Escolha o intervalo</div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">De</label>
+                  <label className="text-sm font-medium mb-1.5 block">De</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full justify-start text-left"
+                        size="sm"
+                        className="w-full justify-start text-left text-sm"
                       >
-                        <Calendar className="mr-2 h-4 w-4" />
+                        <Calendar className="mr-2 h-3.5 w-3.5" />
                         {customStartDate ? format(customStartDate, 'dd/MM/yyyy', { locale: ptBR }) : 'Data início'}
                       </Button>
                     </PopoverTrigger>
@@ -236,14 +239,15 @@ export function PeriodSelector({
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Até</label>
+                  <label className="text-sm font-medium mb-1.5 block">Até</label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full justify-start text-left"
+                        size="sm"
+                        className="w-full justify-start text-left text-sm"
                       >
-                        <Calendar className="mr-2 h-4 w-4" />
+                        <Calendar className="mr-2 h-3.5 w-3.5" />
                         {customEndDate ? format(customEndDate, 'dd/MM/yyyy', { locale: ptBR }) : 'Data fim'}
                       </Button>
                     </PopoverTrigger>
@@ -260,9 +264,10 @@ export function PeriodSelector({
                 </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 pt-1.5">
                 <Button
                   variant="outline"
+                  size="sm"
                   className="flex-1"
                   onClick={() => setIsOpen(false)}
                 >
