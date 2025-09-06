@@ -106,6 +106,7 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     }
 
     return base;
+  }, [orders, mappingData, isPedidoProcessado, globalCounts]);
 
   const statusChips = [
     {

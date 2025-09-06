@@ -55,6 +55,7 @@ import { PedidosModalsSection } from './components/PedidosModalsSection';
 import { PedidosStatusBar } from './components/PedidosStatusBar';
 import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
+import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
@@ -166,6 +167,12 @@ function SimplePedidosPage({ className }: Props) {
   const error = state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
+  
+  // Hook para contadores agregados (totais globais para os cards)
+  const { counts: globalCounts, loading: loadingCounts } = usePedidosAggregator(
+    integrationAccountId,
+    filtersManager.appliedFilters
+  );
   
   // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
   const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered'>(() => {
@@ -794,6 +801,7 @@ function SimplePedidosPage({ className }: Props) {
         onQuickFilterChange={(filter) => setQuickFilter(filter)}
         mappingData={mappingData}
         isPedidoProcessado={isPedidoProcessado}
+        globalCounts={globalCounts}
       />
 
       {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
