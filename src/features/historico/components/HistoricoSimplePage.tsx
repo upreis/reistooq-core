@@ -22,6 +22,7 @@ import { useHistoricoSelection } from '../hooks/useHistoricoSelection';
 import { HistoricoDeleteService } from '../services/HistoricoDeleteService';
 import { HistoricoItem } from '../services/HistoricoSimpleService';
 import { criarSnapshot } from '@/services/HistoricoSnapshotService';
+import { maskCpfCnpj } from '@/lib/format';
 
 export function HistoricoSimplePage() {
   const { toast } = useToast();
@@ -487,10 +488,10 @@ export function HistoricoSimplePage() {
                   <strong>SKU Estoque:</strong> {selectedItem.sku_estoque}
                 </div>
               )}
-              {selectedItem.status_mapeamento && (
+              {selectedItem.cpf_cnpj && (
                 <div>
-                  <strong>Status Mapeamento:</strong>{' '}
-                  <Badge variant="outline">{selectedItem.status_mapeamento}</Badge>
+                  <strong>CPF/CNPJ:</strong>{' '}
+                  <span className="font-mono">{maskCpfCnpj(selectedItem.cpf_cnpj)}</span>
                 </div>
               )}
               {selectedItem.status_baixa && (

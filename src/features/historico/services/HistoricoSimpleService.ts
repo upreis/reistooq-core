@@ -33,7 +33,7 @@ export interface HistoricoItem {
   tipo_pagamento?: string;
 
   // === SEÇÃO MAPEAMENTO ===
-  status_mapeamento?: string;
+  cpf_cnpj?: string;
   sku_estoque?: string;
   sku_kit?: string;
   quantidade_kit?: number;
@@ -122,7 +122,7 @@ export class HistoricoSimpleService {
           metodo_pagamento: item.metodo_pagamento || '',
           status_pagamento: item.status_pagamento || '',
           tipo_pagamento: item.tipo_pagamento || '',
-          status_mapeamento: item.status_mapeamento || '',
+          cpf_cnpj: item.cpf_cnpj || item.cliente_documento || '',
           status_baixa: item.status_baixa || '',
           status: item.status || 'baixado',
           status_envio: item.status_envio || '',

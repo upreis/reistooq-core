@@ -44,7 +44,7 @@ const defaultColumns: ColumnConfig[] = [
   { key: 'tipo_pagamento', label: 'Tipo Pagamento', category: 'financeiras', visible: false },
 
   // === SEÇÃO MAPEAMENTO ===
-  { key: 'status_mapeamento', label: 'Status Mapeamento', category: 'mapeamento', visible: true },
+  { key: 'cpf_cnpj', label: 'CPF/CNPJ', category: 'mapeamento', visible: true },
   { key: 'sku_estoque', label: 'SKU Estoque', category: 'mapeamento', visible: true },
   { key: 'sku_kit', label: 'SKU KIT', category: 'mapeamento', visible: true },
   { key: 'quantidade_kit', label: 'Quantidade KIT', category: 'mapeamento', visible: true },

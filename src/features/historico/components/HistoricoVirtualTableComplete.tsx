@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDateTime } from '../utils/historicoFormatters';
+import { maskCpfCnpj } from '@/lib/format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Copy, MoreHorizontal, ExternalLink } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -302,13 +303,23 @@ export function HistoricoVirtualTableComplete({
 
     // MAPEAMENTO
     {
-      id: 'status_mapeamento',
-      header: 'Status Mapeamento',
-      cell: () => (
-        <Badge variant="default" className="text-xs">
-          Mapeado
-        </Badge>
-      ),
+      id: 'cpf_cnpj',
+      header: 'CPF/CNPJ',
+      cell: ({ row }) => {
+        const item = row.original;
+        // Buscar CPF/CNPJ nos mesmos campos da página pedidos
+        const cpfCnpj = item.cpf_cnpj || 
+                       item.cliente_documento || 
+                       JSON.stringify(item).match(/\b(\d{11}|\d{14})\b/)?.[1];
+        
+        return cpfCnpj ? (
+          <span className="font-mono text-xs">
+            {maskCpfCnpj(cpfCnpj)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground text-xs">-</span>
+        );
+      },
       size: 130,
     },
     {
