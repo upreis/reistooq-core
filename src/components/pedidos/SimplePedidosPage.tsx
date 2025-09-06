@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
+import { translateMLTags } from '@/lib/translations';
 import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, AlertCircle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
@@ -191,61 +192,7 @@ function SimplePedidosPage({ className }: Props) {
 
   // ✅ MIGRAÇÃO FASE 1: Funções de tradução movidas para @/utils/pedidos-translations
 
-  const translateTags = (tags: string[]): string => {
-    const translations: Record<string, string> = {
-      'immediate_payment': 'Pagamento Imediato',
-      'immediate payment': 'Pagamento Imediato',
-      'cart': 'Carrinho',
-      'mandatory_immediate_payment': 'Pagamento Imediato Obrigatório',
-      'mandatory immediate payment': 'Pagamento Imediato Obrigatório',
-      'paid': 'Pago',
-      'not_paid': 'Não Pago',
-      'not paid': 'Não Pago',
-      'pack_order': 'Pedido Pack',
-      'pack order': 'Pedido Pack',
-      'delivered': 'Entregue',
-      'not_delivered': 'Não Entregue',
-      'not delivered': 'Não Entregue',
-      'fbm': 'Enviado pelo Vendedor',
-      'fulfillment': 'Full',
-      'self_service_in': 'Auto Atendimento',
-      'self service in': 'Auto Atendimento',
-      'self_service_out': 'Retirada',
-      'self service out': 'Retirada',
-      'normal': 'Normal',
-      'me2': 'Mercado Envios 2',
-      'no_shipping': 'Sem Frete',
-      'no shipping': 'Sem Frete',
-      'free_shipping': 'Frete Grátis',
-      'free shipping': 'Frete Grátis',
-      'express_shipping': 'Frete Expresso',
-      'express shipping': 'Frete Expresso',
-      'scheduled_delivery': 'Entrega Agendada',
-      'scheduled delivery': 'Entrega Agendada',
-      'store_pickup': 'Retirada na Loja',
-      'store pickup': 'Retirada na Loja',
-      'cross_docking': 'Cross Docking',
-      'cross docking': 'Cross Docking',
-      'same_day_delivery': 'Entrega no Mesmo Dia',
-      'same day delivery': 'Entrega no Mesmo Dia',
-      'next_day_delivery': 'Entrega no Próximo Dia',
-      'next day delivery': 'Entrega no Próximo Dia'
-    };
-    
-    if (!Array.isArray(tags)) return '-';
-    
-    return tags.map(tag => {
-      if (!tag) return '';
-      
-      // Substituir underscores por espaços para melhor tradução
-      const normalizedTag = tag.replace(/_/g, ' ').toLowerCase().trim();
-      
-      // Tentar traduzir com underscore original primeiro, depois com espaços
-      return translations[tag.toLowerCase()] || 
-             translations[normalizedTag] || 
-             tag.replace(/_/g, ' '); // Se não encontrar tradução, pelo menos substitui _ por espaço
-    }).filter(Boolean).join(', ') || '-';
-  };
+  // ✅ MIGRAÇÃO: Usar traduções unificadas do sistema global
 
   // ✅ CORREÇÃO: Processar mapeamentos sempre que houver pedidos carregados
   useEffect(() => {

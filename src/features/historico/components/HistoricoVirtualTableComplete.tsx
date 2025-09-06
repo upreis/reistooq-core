@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDateTime } from '../utils/historicoFormatters';
 import { maskCpfCnpj } from '@/lib/format';
+import { translateMLTags } from '@/lib/translations';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Copy, MoreHorizontal, ExternalLink } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';

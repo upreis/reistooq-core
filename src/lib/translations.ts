@@ -89,15 +89,21 @@ const SHIPPING_MODE_TRANSLATIONS: Record<string, string> = {
   'fulfillment': 'Full'
 };
 
-// Mapeamento de traduções para métodos de envio
-const SHIPPING_METHOD_TRANSLATIONS: Record<string, string> = {
+// Mapeamento de traduções para tipos de método de envio
+const SHIPPING_METHOD_TYPE_TRANSLATIONS: Record<string, string> = {
   'standard': 'Padrão',
   'express': 'Expresso',
   'priority': 'Prioritário',
   'same_day': 'Mesmo Dia',
   'next_day': 'Próximo Dia',
   'economy': 'Econômico',
-  'custom': 'Personalizado'
+  'custom': 'Personalizado',
+  'flex': 'Flex',
+  'cross_docking': 'Cross Docking',
+  'fulfillment': 'Full',
+  'me1': 'Mercado Envios 1',
+  'me2': 'Mercado Envios 2',
+  'self_service': 'Modalidade Própria'
 };
 
 // Mapeamento de traduções para tipos logísticos
@@ -119,6 +125,47 @@ const DELIVERY_TYPE_TRANSLATIONS: Record<string, string> = {
   'same_day': 'Mesmo Dia',
   'next_day': 'Próximo Dia',
   'economy': 'Econômico'
+};
+
+// Mapeamento de traduções para tags do Mercado Livre
+const ML_TAGS_TRANSLATIONS: Record<string, string> = {
+  'immediate_payment': 'Pagamento Imediato',
+  'immediate payment': 'Pagamento Imediato',
+  'cart': 'Carrinho',
+  'mandatory_immediate_payment': 'Pagamento Imediato Obrigatório',
+  'mandatory immediate payment': 'Pagamento Imediato Obrigatório',
+  'paid': 'Pago',
+  'not_paid': 'Não Pago',
+  'not paid': 'Não Pago',
+  'pack_order': 'Pedido Pack',
+  'pack order': 'Pedido Pack',
+  'delivered': 'Entregue',
+  'not_delivered': 'Não Entregue',
+  'not delivered': 'Não Entregue',
+  'fbm': 'Enviado pelo Vendedor',
+  'fulfillment': 'Full',
+  'self_service_in': 'Auto Atendimento',
+  'self service in': 'Auto Atendimento',
+  'self_service_out': 'Retirada',
+  'self service out': 'Retirada',
+  'normal': 'Normal',
+  'me2': 'Mercado Envios 2',
+  'no_shipping': 'Sem Frete',
+  'no shipping': 'Sem Frete',
+  'free_shipping': 'Frete Grátis',
+  'free shipping': 'Frete Grátis',
+  'express_shipping': 'Frete Expresso',
+  'express shipping': 'Frete Expresso',
+  'scheduled_delivery': 'Entrega Agendada',
+  'scheduled delivery': 'Entrega Agendada',
+  'store_pickup': 'Retirada na Loja',
+  'store pickup': 'Retirada na Loja',
+  'cross_docking': 'Cross Docking',
+  'cross docking': 'Cross Docking',
+  'same_day_delivery': 'Entrega no Mesmo Dia',
+  'same day delivery': 'Entrega no Mesmo Dia',
+  'next_day_delivery': 'Entrega no Próximo Dia',
+  'next day delivery': 'Entrega no Próximo Dia'
 };
 
 // Mapeamento de traduções gerais
@@ -216,13 +263,24 @@ export function translateShippingMode(mode: string): string {
 }
 
 /**
+ * Função para traduzir tipo de método de envio
+ */
+export function translateShippingMethodType(type: string): string {
+  if (!type) return '-';
+  const normalized = normalizeText(type);
+  return SHIPPING_METHOD_TYPE_TRANSLATIONS[normalized] || 
+         SHIPPING_METHOD_TYPE_TRANSLATIONS[type.toLowerCase()] || 
+         formatText(type);
+}
+
+/**
  * Função para traduzir método de envio
  */
 export function translateShippingMethod(method: string): string {
   if (!method) return '-';
   const normalized = normalizeText(method);
-  return SHIPPING_METHOD_TRANSLATIONS[normalized] || 
-         SHIPPING_METHOD_TRANSLATIONS[method.toLowerCase()] || 
+  return SHIPPING_METHOD_TYPE_TRANSLATIONS[normalized] || 
+         SHIPPING_METHOD_TYPE_TRANSLATIONS[method.toLowerCase()] || 
          formatText(method);
 }
 
@@ -246,6 +304,25 @@ export function translateDeliveryType(type: string): string {
   return DELIVERY_TYPE_TRANSLATIONS[normalized] || 
          DELIVERY_TYPE_TRANSLATIONS[type.toLowerCase()] || 
          formatText(type);
+}
+
+/**
+ * Função para traduzir tags do Mercado Livre
+ */
+export function translateMLTags(tags: string[]): string {
+  if (!Array.isArray(tags) || tags.length === 0) return '-';
+  
+  return tags.map(tag => {
+    if (!tag) return '';
+    
+    // Substituir underscores por espaços para melhor tradução
+    const normalizedTag = normalizeText(tag);
+    
+    // Tentar traduzir com underscore original primeiro, depois com espaços
+    return ML_TAGS_TRANSLATIONS[tag.toLowerCase()] || 
+           ML_TAGS_TRANSLATIONS[normalizedTag] || 
+           formatText(tag);
+  }).filter(Boolean).join(', ') || '-';
 }
 
 /**

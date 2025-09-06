@@ -20,8 +20,10 @@ import {
   translateShippingSubstatus,
   translateShippingMode,
   translateShippingMethod,
+  translateShippingMethodType,
   translateLogisticType,
   translateDeliveryType,
+  translateMLTags,
   formatText 
 } from '@/lib/translations';
 import { cn } from '@/lib/utils';
@@ -420,7 +422,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'logistic_type':
                        return <span className="text-xs">{translateLogisticType(order.logistic_type || order.shipping_details?.logistic_type || order.shipping?.logistic?.type || order.raw?.shipping?.logistic?.type || order.unified?.logistic?.type || '-')}</span>;
                      case 'shipping_method_type':
-                       return <span className="text-xs">{formatText(order.shipping_method_type || order.shipping?.shipping_method?.type || order.raw?.shipping?.shipping_method?.type || '-')}</span>;
+                       return <span className="text-xs">{translateShippingMethodType(order.shipping_method_type || order.shipping?.shipping_method?.type || order.raw?.shipping?.shipping_method?.type || '-')}</span>;
                      case 'delivery_type':
                        return <span className="text-xs">{translateDeliveryType(order.delivery_type || order.shipping?.delivery_type || order.raw?.shipping?.delivery_type || '-')}</span>;
                      case 'substatus_detail':
@@ -640,8 +642,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{order.manufacturing_ending_date ? formatDate(order.manufacturing_ending_date) : order.raw?.manufacturing_ending_date ? formatDate(order.raw.manufacturing_ending_date) : '-'}</span>;
                     case 'comment':
                       return <div className="max-w-xs truncate" title={order.comment || order.raw?.comment}>{order.comment || order.raw?.comment || '-'}</div>;
-                    case 'tags':
-                      return <div className="max-w-xs truncate" title={(order.tags || []).join(', ')}>{Array.isArray(order.tags) && order.tags.length ? order.tags.join(', ') : '-'}</div>;
+                     case 'tags':
+                       return <div className="max-w-xs truncate" title={translateMLTags(order.tags || [])}>{translateMLTags(order.tags || [])}</div>;
                     default:
                       return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
                   }
