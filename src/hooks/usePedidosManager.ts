@@ -103,20 +103,7 @@ const DEFAULT_FILTERS: PedidosFilters = {};
 // 🔒 Serializador estável e determinístico dos filtros para uso na queryKey/cache
 function stableSerializeFilters(f: PedidosFilters): string {
   const replacer = (_key: string, value: any) => {
-    if (value instanceof Date) {
-      // 🚨 FIX 4: Normalizar datas - dataFim para fim do dia (23:59:59)
-      const date = new Date(value);
-      const key = _key.toLowerCase();
-      if (key.includes('fim') || key.includes('end') || key.includes('to')) {
-        // Fim do dia para data fim
-        date.setHours(23, 59, 59, 999);
-        return date.toISOString();
-      } else {
-        // Início do dia para data início
-        date.setHours(0, 0, 0, 0);
-        return date.toISOString();
-      }
-    }
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
     return value;
   };
   const sorted = Object.keys(f || {})
@@ -146,19 +133,15 @@ export function usePedidosManager(initialAccountId?: string) {
   const [cachedAt, setCachedAt] = useState<Date>();
   const [lastQuery, setLastQuery] = useState<string>();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  // 🚀 CONCORRÊNCIA: Controle de requests com AbortController + requestId
-  const requestIdRef = useRef<number>(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  // Evita auto-load duplicado após um loadOrders(true) explícito
-  const skipNextAutoLoadRef = useRef<boolean>(false);
+  const abortControllerRef = useRef<AbortController>();
   
   // 🚀 Paginação do servidor e flags
   const [paging, setPaging] = useState<{ total?: number; limit?: number; offset?: number }>();
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
   const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
   
-  // ✅ Filtros são usados diretamente sem debounce para aplicação imediata
+  // ✅ CRÍTICO: Usar filters diretamente para refetch automático
+  const debouncedFilters = filters; // Remover debounce para reatividade imediata
   
   // 🚀 FASE 3: Filtros salvos (localStorage)
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => {
@@ -169,8 +152,6 @@ export function usePedidosManager(initialAccountId?: string) {
       return [];
     }
   });
-  
-  // (requestIdRef já declarado acima com abortControllerRef)
 
   /**
    * 🔧 AUDITORIA: Converte filtros para parâmetros da API 
@@ -200,12 +181,10 @@ export function usePedidosManager(initialAccountId?: string) {
       }
     }
 
-    // 📅 CORRIGIDO: Datas com formato consistente e normalização para fim do dia
+    // 📅 CORRIGIDO: Datas com formato consistente 
     if (filters.dataInicio) {
       const d = normalizeDate(filters.dataInicio);
       if (d && !isNaN(d.getTime())) {
-        // Início do dia para dataInicio
-        d.setHours(0, 0, 0, 0);
         params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         console.log('🗓️ [DATE] dataInicio convertida:', filters.dataInicio, '=>', params.date_from);
       }
@@ -213,10 +192,8 @@ export function usePedidosManager(initialAccountId?: string) {
     if (filters.dataFim) {
       const d = normalizeDate(filters.dataFim);
       if (d && !isNaN(d.getTime())) {
-        // 🚨 FIX 4: Fim do dia para dataFim (23:59:59)
-        d.setHours(23, 59, 59, 999);
         params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        console.log('🗓️ [DATE] dataFim convertida para fim do dia:', filters.dataFim, '=>', params.date_to);
+        console.log('🗓️ [DATE] dataFim convertida:', filters.dataFim, '=>', params.date_to);
       }
     }
 
@@ -310,28 +287,9 @@ export function usePedidosManager(initialAccountId?: string) {
           console.log('body', singleAccountBody);
           console.log('[query/network] unified-orders body', singleAccountBody);
           console.groupEnd();
-          let data: any | null = null;
-          let error: any | null = null;
-          try {
-            ({ data, error } = await supabase.functions.invoke('unified-orders', {
-              body: singleAccountBody
-            }));
-          } catch (e: any) {
-            error = e;
-          }
-
-          // Fallback: se erro, tentar novamente sem shipping_status (alguns ambientes não suportam)
-          if (error || data?.status >= 400) {
-            const { shipping_status: _omit, ...withoutStatus } = singleAccountBody as any;
-            console.warn(`⚠️ [CONTA ${accountId}] Falha com shipping_status, tentando sem status...`);
-            try {
-              ({ data, error } = await supabase.functions.invoke('unified-orders', {
-                body: withoutStatus
-              }));
-            } catch (e: any) {
-              error = e;
-            }
-          }
+          const { data, error } = await supabase.functions.invoke('unified-orders', {
+            body: singleAccountBody
+          });
           
           if (error) {
             console.error(`❌ [CONTA ${accountId}] Erro:`, error);
@@ -408,28 +366,9 @@ export function usePedidosManager(initialAccountId?: string) {
     console.log('[query/network] unified-orders body', requestBody);
     console.groupEnd();
 
-    let data: any | null = null;
-    let error: any | null = null;
-    try {
-      ({ data, error } = await supabase.functions.invoke('unified-orders', {
-        body: requestBody
-      }));
-    } catch (e: any) {
-      error = e;
-    }
-
-    // Fallback: tentar sem shipping_status mantendo datas e demais filtros
-    if (error || !data?.ok) {
-      const { shipping_status: _omit, ...withoutStatus } = requestBody as any;
-      console.warn('⚠️ unified-orders falhou com shipping_status, tentando sem status...');
-      try {
-        ({ data, error } = await supabase.functions.invoke('unified-orders', {
-          body: withoutStatus
-        }));
-      } catch (e: any) {
-        error = e;
-      }
-    }
+    const { data, error } = await supabase.functions.invoke('unified-orders', {
+      body: requestBody
+    });
 
     if (error) throw new Error(error.message || 'unified-orders: erro na função');
     if (!data?.ok) throw new Error('Erro na resposta da API');
@@ -627,43 +566,20 @@ export function usePedidosManager(initialAccountId?: string) {
   /**
    * 🔧 Carrega pedidos com query chaveada por filtros (refetch automático)
    */
-  const loadOrders = useCallback(async (forceRefresh = false, overrideFilters?: PedidosFilters) => {
-    // ✅ CRÍTICO: Usar override ou filtros atuais
-    const filtersToUse = overrideFilters ?? filters;
+  const loadOrders = useCallback(async (forceRefresh = false) => {
+    // ✅ CRÍTICO: Usar filtros atuais, não debouncedFilters quando forceRefresh = true
+    const filtersToUse = forceRefresh ? filters : debouncedFilters;
     
-    // 🚨 FIX 3: Alinhamento chave/body - logs lado a lado
-    console.groupCollapsed('[filters]');
-    console.log('applied=', filtersToUse);
-    console.groupEnd();
+    console.log('🚀 [LOAD ORDERS] Iniciando com filtros:', filtersToUse, 'forceRefresh:', forceRefresh);
     
-    const filtersKey = stableSerializeFilters(filtersToUse);
+    // Construir parâmetros primeiro para suportar múltiplas contas
     const apiParams = buildApiParams(filtersToUse);
-    
-    console.groupCollapsed('[key]');
-    console.log('hash=', filtersKey);
-    console.groupEnd();
-    
-    console.groupCollapsed('[body]'); 
-    console.log('params=', apiParams);
-    console.groupEnd();
-    
+    const filtersKey = stableSerializeFilters(filtersToUse);
     const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
-    
-    console.groupCollapsed('[query/key]');
-    console.log(['pedidos', filtersKey, currentPage, pageSize, apiParams.integration_account_id || apiParams.integration_account_ids || integrationAccountId]);
-    console.groupEnd();
 
-    // 🚨 FIX 2: Controle de concorrência com AbortController + requestId
-    const reqId = ++requestIdRef.current;
-    
-    // Abortar request anterior antes de iniciar novo
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      console.log(`[fetch:abort] previous request aborted`);
-    }
-    abortControllerRef.current = new AbortController();
-    
-    console.log(`[fetch:start id=${reqId} hash=${filtersKey.slice(0, 20)}... page=${currentPage}]`);
+    console.groupCollapsed('[query/start]');
+    console.log({ cacheKey, forceRefresh, lastQuery, filtersUsed: filtersToUse });
+    console.groupEnd();
 
     // Se a mesma query já foi executada recentemente e está carregando, evitar duplicar
     if (!forceRefresh && lastQuery === cacheKey && loading) {
@@ -679,16 +595,16 @@ export function usePedidosManager(initialAccountId?: string) {
       (Array.isArray(apiParams.integration_account_ids) && apiParams.integration_account_ids.length > 0) ||
       integrationAccountId
     );
-    if (!hasAnyAccount) {
-      console.log('[fetch:skip] nenhuma conta selecionada ainda');
-      // Não bloquear o próximo auto-load: o setIntegrationAccountId acontecerá em seguida
-      skipNextAutoLoadRef.current = false;
-      return;
-    }
+    if (!hasAnyAccount) return;
 
     console.log('🔍 Parâmetros da API construídos:', apiParams);
+    // cacheKey já calculado acima
 
-    // 🚨 Cancelamento já feito acima com novo requestId
+    // 🚀 FASE 2: Cancelar requisições anteriores
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     // 🚀 FASE 2: Verificar cache - IGNORAR quando forceRefresh = true
     if (!forceRefresh && isCacheValid(cacheKey)) {
@@ -696,12 +612,11 @@ export function usePedidosManager(initialAccountId?: string) {
       return;
     }
     
-    // ✅ CRÍTICO: Quando forceRefresh = true, sempre invalidar cache e limpar UI antiga
+    // ✅ CRÍTICO: Quando forceRefresh = true, sempre invalidar cache
     if (forceRefresh) {
       console.log('🔄 [LOAD ORDERS] ForceRefresh = true, invalidando cache completamente');
       setCachedAt(undefined);
       setLastQuery('');
-      setOrders([]); // Sem keepPreviousData na UI
     }
 
     setLoading(true);
@@ -766,22 +681,6 @@ export function usePedidosManager(initialAccountId?: string) {
             cpf_cnpj: direct ?? extractDeep(o),
           };
         });
-        // 🚨 FIX 2: Evitar respostas fora de ordem
-        if (reqId !== requestIdRef.current) {
-          console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
-          return;
-        }
-        
-        // 🚨 FIX 1: Fallback automático se página fora de alcance
-        if (normalizedResults.length === 0 && currentPage > 1) {
-          console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
-          setCurrentPage(1);
-          // Refetch com página 1
-          loadOrders(forceRefresh, filtersToUse);
-          return;
-        }
-        
-        console.log(`[fetch:success id=${reqId}] total=${unifiedResult.total}`);
         setOrders(normalizedResults);
         setTotal(unifiedResult.total);
         setFonte('tempo-real');
@@ -876,22 +775,6 @@ export function usePedidosManager(initialAccountId?: string) {
 
             return { ...o, cpf_cnpj: direct ?? extractDeep(o) };
           });
-          // 🚨 FIX 2: Evitar respostas fora de ordem
-          if (reqId !== requestIdRef.current) {
-            console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
-            return;
-          }
-          
-          // 🚨 FIX 1: Fallback automático se página fora de alcance
-          if (paginatedResults.length === 0 && currentPage > 1) {
-            console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
-            setCurrentPage(1);
-            // Refetch com página 1
-            loadOrders(forceRefresh, filtersToUse);
-            return;
-          }
-          
-          console.log(`[fetch:success id=${reqId}] total=${filteredResults.length}`);
           setOrders(normalizedPaginated);
           setTotal(filteredResults.length); // Total dos resultados filtrados
           setFonte('hibrido');
@@ -946,22 +829,6 @@ export function usePedidosManager(initialAccountId?: string) {
 
             return { ...o, cpf_cnpj: direct ?? extractDeep(o) };
           });
-          // 🚨 FIX 2: Evitar respostas fora de ordem
-          if (reqId !== requestIdRef.current) {
-            console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
-            return;
-          }
-          
-          // 🚨 FIX 1: Fallback automático se página fora de alcance
-          if (normalizedDbResults.length === 0 && currentPage > 1) {
-            console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
-            setCurrentPage(1);
-            // Refetch com página 1
-            loadOrders(forceRefresh, filtersToUse);
-            return;
-          }
-          
-          console.log(`[fetch:success id=${reqId}] total=${dbResult.total}`);
           setOrders(normalizedDbResults);
           setTotal(dbResult.total);
           setFonte('banco');
@@ -984,14 +851,11 @@ export function usePedidosManager(initialAccountId?: string) {
       setError(error.message || 'Erro ao carregar pedidos');
       setOrders([]);
       setTotal(0);
-      // ❗ Corrigir cache fantasma após erro: invalida para evitar "cache-hit"
-      setCachedAt(undefined);
-      setLastQuery(undefined);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [filters, integrationAccountId, currentPage, pageSize, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
+  }, [integrationAccountId, filters, lastQuery, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
 
   // 🚀 FASE 3: Exportação de dados
   const exportData = useCallback(async (format: 'csv' | 'xlsx') => {
@@ -1078,9 +942,6 @@ export function usePedidosManager(initialAccountId?: string) {
     setCachedAt(undefined);
     setLastQuery(undefined);
     
-    // Evitar auto-load duplicado gerado pelo effect
-    skipNextAutoLoadRef.current = true;
-    
     // 🚀 Executar busca imediatamente
     loadOrders(true);
   }, [filters, integrationAccountId, pageSize, loadOrders]); // ✅ CORRIGIDO: Incluir loadOrders nas dependências
@@ -1136,9 +997,8 @@ const actions: PedidosManagerActions = useMemo(() => ({
       }
     });
 
-    console.groupCollapsed('[filters/set]');
-    const newHash = stableSerializeFilters(cleaned);
-    console.log('applied', cleaned, 'hash', newHash);
+    console.groupCollapsed('[filters/replace]');
+    console.log('next', cleaned);
     console.groupEnd();
 
     const prevKey = lastQuery;
@@ -1156,14 +1016,6 @@ const actions: PedidosManagerActions = useMemo(() => ({
     console.groupCollapsed('[invalidate]');
     console.log('after', { cachedAt: undefined, lastQuery: undefined });
     console.groupEnd();
-
-    // Log de paginação para auditoria
-    console.log(`[paging] before apply page=${currentPage} → after apply page=1`);
-    // Evitar auto-load duplicado gerado pelo effect
-    skipNextAutoLoadRef.current = true;
-
-    // 🚀 Buscar imediatamente usando os filtros já normalizados/limpos
-    loadOrders(true, cleaned);
   },
   
   clearFilters: () => {
@@ -1301,26 +1153,18 @@ const actions: PedidosManagerActions = useMemo(() => ({
 
   // ✅ SINCRONIZAÇÃO AUTOMÁTICA: Disparar carregamento quando filtros ou params mudam
   useEffect(() => {
-    // Removido o bloqueio estrito por integrationAccountId para suportar múltiplas contas
-
-    // Evitar chamada duplicada imediatamente após um loadOrders(true)
-    if (skipNextAutoLoadRef.current) {
-      console.log('[auto-load:skip] prevented duplicate after explicit load');
-      skipNextAutoLoadRef.current = false;
-      return;
-    }
+    if (!integrationAccountId) return;
     
-    console.log('🔄 [usePedidosManager] Carregamento automático:', { 
-      integrationAccountId: integrationAccountId ? integrationAccountId.slice(0, 8) : '(multi/none)', 
+    console.log('🔄 [usePedidosManager] Carregamento com query chaveada:', { 
+      integrationAccountId: integrationAccountId.slice(0, 8), 
       currentPage, 
-      hasFilters: Object.keys(filters).length > 0,
-      filtersDebug: filters
+      hasFilters: Object.keys(debouncedFilters).length > 0 
     });
     
     // ✅ SOLUÇÃO: Carregamento automático quando filtros mudam (query chaveada)
     loadOrders();
     
-  }, [filters, integrationAccountId, currentPage, pageSize]);
+  }, [debouncedFilters, integrationAccountId, currentPage, pageSize, loadOrders]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
