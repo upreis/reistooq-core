@@ -641,7 +641,12 @@ export function usePedidosManager(initialAccountId?: string) {
       (Array.isArray(apiParams.integration_account_ids) && apiParams.integration_account_ids.length > 0) ||
       integrationAccountId
     );
-    if (!hasAnyAccount) return;
+    if (!hasAnyAccount) {
+      console.log('[fetch:skip] nenhuma conta selecionada ainda');
+      // Não bloquear o próximo auto-load: o setIntegrationAccountId acontecerá em seguida
+      skipNextAutoLoadRef.current = false;
+      return;
+    }
 
     console.log('🔍 Parâmetros da API construídos:', apiParams);
 

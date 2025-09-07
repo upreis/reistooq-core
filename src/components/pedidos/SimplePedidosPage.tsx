@@ -730,7 +730,17 @@ function SimplePedidosPage({ className }: Props) {
   useEffect(() => {
     loadAccounts();
   }, []);
-  
+
+  // Selecionar conta ML padrão automaticamente se nenhuma estiver definida
+  useEffect(() => {
+    if (!state.integrationAccountId && Array.isArray(accounts) && accounts.length > 0) {
+      const defaultAcc = (accounts[0]?.id as string) || (accounts[0]?.account_id as string);
+      if (defaultAcc) {
+        console.log('[account/default] selecionando conta padrão:', defaultAcc);
+        actions.setIntegrationAccountId(defaultAcc);
+      }
+    }
+  }, [accounts, state.integrationAccountId, actions]);
   // ✅ Sistema de validação corrigido - mais robusto
   const validateSystem = () => {
     try {
