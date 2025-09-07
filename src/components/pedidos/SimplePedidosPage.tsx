@@ -103,14 +103,12 @@ function SimplePedidosPage({ className }: Props) {
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: async (filters) => {
-      console.groupCollapsed('[filters/apply]');
-      console.log('draft', filters);
-      console.groupEnd();
+      console.log('🔄 [FILTERS APPLY] Recebido filtros para aplicação:', filters);
       
       // Limpar estado persistido ao aplicar novos filtros
       persistentState.clearPersistedState();
       
-      // ✅ Aplicar filtros (fonte única: appliedFilters no manager) e buscar imediatamente
+      // ✅ CRÍTICO: Aplicar filtros ANTES do refetch
       actions.replaceFilters(filters);
       
       console.groupCollapsed('[apply/callback]');
@@ -124,6 +122,16 @@ function SimplePedidosPage({ className }: Props) {
       
       // Salvar os filtros aplicados
       persistentState.saveAppliedFilters(filters);
+      
+      // ✅ CRÍTICO: Force refetch para garantir dados atualizados
+      console.log('🚀 [FILTERS APPLY] Iniciando refetch obrigatório...');
+      try {
+        await actions.refetch(); // refetch imediato obrigatório no Apply
+        console.log('✅ [FILTERS APPLY] Refetch completado com sucesso');
+      } catch (error) {
+        console.error('❌ [FILTERS APPLY] Erro no refetch:', error);
+        throw error;
+      }
     },
     autoLoad: false,
     loadSavedFilters: false
@@ -730,17 +738,7 @@ function SimplePedidosPage({ className }: Props) {
   useEffect(() => {
     loadAccounts();
   }, []);
-
-  // Selecionar conta ML padrão automaticamente se nenhuma estiver definida
-  useEffect(() => {
-    if (!state.integrationAccountId && Array.isArray(accounts) && accounts.length > 0) {
-      const defaultAcc = (accounts[0]?.id as string) || (accounts[0]?.account_id as string);
-      if (defaultAcc) {
-        console.log('[account/default] selecionando conta padrão:', defaultAcc);
-        actions.setIntegrationAccountId(defaultAcc);
-      }
-    }
-  }, [accounts, state.integrationAccountId, actions]);
+  
   // ✅ Sistema de validação corrigido - mais robusto
   const validateSystem = () => {
     try {
