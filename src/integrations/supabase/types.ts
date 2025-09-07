@@ -3258,6 +3258,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_customer_access: {
+        Args: { access_type?: string; customer_id: string; details?: Json }
+        Returns: undefined
+      }
       log_secret_access: {
         Args: {
           p_account_id: string
@@ -3297,11 +3301,11 @@ export type Database = {
         Returns: string
       }
       mask_name: {
-        Args: { full_name: string }
+        Args: { input_name: string }
         Returns: string
       }
       mask_phone: {
-        Args: { txt: string }
+        Args: { input_phone: string }
         Returns: string
       }
       mask_phone_secure: {
