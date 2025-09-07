@@ -140,8 +140,7 @@ export function usePedidosManager(initialAccountId?: string) {
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
   const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
   
-  // ✅ CRÍTICO: Usar filters diretamente para refetch automático
-  const debouncedFilters = filters; // Remover debounce para reatividade imediata
+  // ✅ Filtros são usados diretamente sem debounce para aplicação imediata
   
   // 🚀 FASE 3: Filtros salvos (localStorage)
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => {
@@ -570,8 +569,8 @@ export function usePedidosManager(initialAccountId?: string) {
    * 🔧 Carrega pedidos com query chaveada por filtros (refetch automático)
    */
   const loadOrders = useCallback(async (forceRefresh = false, overrideFilters?: PedidosFilters) => {
-    // ✅ CRÍTICO: Usar filtros atuais ou override ao forçar
-    const filtersToUse = forceRefresh ? (overrideFilters ?? filters) : debouncedFilters;
+    // ✅ CRÍTICO: Usar override ou filtros atuais
+    const filtersToUse = overrideFilters ?? filters;
     
     console.groupCollapsed('[query/key]');
     const filtersKey = stableSerializeFilters(filtersToUse);
@@ -879,7 +878,7 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [integrationAccountId, filters, lastQuery, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
+  }, [integrationAccountId, currentPage, pageSize, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
 
   // 🚀 FASE 3: Exportação de dados
   const exportData = useCallback(async (format: 'csv' | 'xlsx') => {
@@ -1183,16 +1182,17 @@ const actions: PedidosManagerActions = useMemo(() => ({
   useEffect(() => {
     if (!integrationAccountId) return;
     
-    console.log('🔄 [usePedidosManager] Carregamento com query chaveada:', { 
+    console.log('🔄 [usePedidosManager] Carregamento automático:', { 
       integrationAccountId: integrationAccountId.slice(0, 8), 
       currentPage, 
-      hasFilters: Object.keys(debouncedFilters).length > 0 
+      hasFilters: Object.keys(filters).length > 0,
+      filtersDebug: filters
     });
     
     // ✅ SOLUÇÃO: Carregamento automático quando filtros mudam (query chaveada)
     loadOrders();
     
-  }, [debouncedFilters, integrationAccountId, currentPage, pageSize, loadOrders]);
+  }, [filters, integrationAccountId, currentPage, pageSize]);
 
   // 🚀 FASE 2: Cleanup ao desmontar (P1.3: Implementado AbortController cleanup)
   useEffect(() => {
