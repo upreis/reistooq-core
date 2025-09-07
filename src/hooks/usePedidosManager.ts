@@ -691,9 +691,12 @@ export function usePedidosManager(initialAccountId?: string) {
     // 🚨 Cancelamento já feito acima com novo requestId
 
     // 🚀 FASE 2: Verificar cache - IGNORAR quando forceRefresh = true
-    if (!forceRefresh && isCacheValid(cacheKey)) {
-      console.log('[query/skip] cache-hit - usando dados em cache');
+    if (!forceRefresh && isCacheValid(cacheKey) && orders.length > 0) {
+      console.log('[query/skip] cache-hit - usando dados em cache (orders em memória)');
       return;
+    }
+    if (!forceRefresh && isCacheValid(cacheKey) && orders.length === 0) {
+      console.log('[query/skip:ignored] cache-key válido, mas não há dados em memória → refetch');
     }
     
     // ✅ CRÍTICO: Quando forceRefresh = true, sempre invalidar cache e limpar UI antiga
