@@ -152,6 +152,9 @@ export function usePedidosManager(initialAccountId?: string) {
       return [];
     }
   });
+  
+  // 🔄 Request tracking para evitar respostas fora de ordem
+  const requestIdRef = useRef(0);
 
   /**
    * 🔧 AUDITORIA: Converte filtros para parâmetros da API 
@@ -566,20 +569,23 @@ export function usePedidosManager(initialAccountId?: string) {
   /**
    * 🔧 Carrega pedidos com query chaveada por filtros (refetch automático)
    */
-  const loadOrders = useCallback(async (forceRefresh = false) => {
-    // ✅ CRÍTICO: Usar filtros atuais, não debouncedFilters quando forceRefresh = true
-    const filtersToUse = forceRefresh ? filters : debouncedFilters;
+  const loadOrders = useCallback(async (forceRefresh = false, overrideFilters?: PedidosFilters) => {
+    // ✅ CRÍTICO: Usar filtros atuais ou override ao forçar
+    const filtersToUse = forceRefresh ? (overrideFilters ?? filters) : debouncedFilters;
     
-    console.log('🚀 [LOAD ORDERS] Iniciando com filtros:', filtersToUse, 'forceRefresh:', forceRefresh);
-    
-    // Construir parâmetros primeiro para suportar múltiplas contas
-    const apiParams = buildApiParams(filtersToUse);
+    console.groupCollapsed('[query/key]');
     const filtersKey = stableSerializeFilters(filtersToUse);
+    const apiParams = buildApiParams(filtersToUse);
     const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
-
-    console.groupCollapsed('[query/start]');
-    console.log({ cacheKey, forceRefresh, lastQuery, filtersUsed: filtersToUse });
+    console.log(['pedidos', filtersKey, currentPage, pageSize, apiParams.integration_account_id || apiParams.integration_account_ids || integrationAccountId]);
     console.groupEnd();
+
+    console.log('🚀 [LOAD ORDERS] Iniciando com filtros:', filtersToUse, 'forceRefresh:', forceRefresh);
+
+    // 🚀 Controle de concorrência: id de requisição
+    const reqId = (requestIdRef.current || 0) + 1;
+    requestIdRef.current = reqId;
+    console.log(`[fetch:start id=${reqId}]`);
 
     // Se a mesma query já foi executada recentemente e está carregando, evitar duplicar
     if (!forceRefresh && lastQuery === cacheKey && loading) {
@@ -598,7 +604,6 @@ export function usePedidosManager(initialAccountId?: string) {
     if (!hasAnyAccount) return;
 
     console.log('🔍 Parâmetros da API construídos:', apiParams);
-    // cacheKey já calculado acima
 
     // 🚀 FASE 2: Cancelar requisições anteriores
     if (abortControllerRef.current) {
@@ -612,11 +617,12 @@ export function usePedidosManager(initialAccountId?: string) {
       return;
     }
     
-    // ✅ CRÍTICO: Quando forceRefresh = true, sempre invalidar cache
+    // ✅ CRÍTICO: Quando forceRefresh = true, sempre invalidar cache e limpar UI antiga
     if (forceRefresh) {
       console.log('🔄 [LOAD ORDERS] ForceRefresh = true, invalidando cache completamente');
       setCachedAt(undefined);
       setLastQuery('');
+      setOrders([]); // Sem keepPreviousData na UI
     }
 
     setLoading(true);
@@ -681,6 +687,12 @@ export function usePedidosManager(initialAccountId?: string) {
             cpf_cnpj: direct ?? extractDeep(o),
           };
         });
+        // Evitar respostas fora de ordem
+        if (reqId !== requestIdRef.current) {
+          console.log(`[fetch:dropped id=${reqId}]`);
+          return;
+        }
+        console.log(`[fetch:success id=${reqId}] total=${unifiedResult.total}`);
         setOrders(normalizedResults);
         setTotal(unifiedResult.total);
         setFonte('tempo-real');
@@ -775,6 +787,12 @@ export function usePedidosManager(initialAccountId?: string) {
 
             return { ...o, cpf_cnpj: direct ?? extractDeep(o) };
           });
+          // Evitar respostas fora de ordem
+          if (reqId !== requestIdRef.current) {
+            console.log(`[fetch:dropped id=${reqId}]`);
+            return;
+          }
+          console.log(`[fetch:success id=${reqId}] total=${filteredResults.length}`);
           setOrders(normalizedPaginated);
           setTotal(filteredResults.length); // Total dos resultados filtrados
           setFonte('hibrido');
@@ -829,6 +847,12 @@ export function usePedidosManager(initialAccountId?: string) {
 
             return { ...o, cpf_cnpj: direct ?? extractDeep(o) };
           });
+          // Evitar respostas fora de ordem
+          if (reqId !== requestIdRef.current) {
+            console.log(`[fetch:dropped id=${reqId}]`);
+            return;
+          }
+          console.log(`[fetch:success id=${reqId}] total=${dbResult.total}`);
           setOrders(normalizedDbResults);
           setTotal(dbResult.total);
           setFonte('banco');
@@ -997,8 +1021,9 @@ const actions: PedidosManagerActions = useMemo(() => ({
       }
     });
 
-    console.groupCollapsed('[filters/replace]');
-    console.log('next', cleaned);
+    console.groupCollapsed('[filters/set]');
+    const newHash = stableSerializeFilters(cleaned);
+    console.log('applied', cleaned, 'hash', newHash);
     console.groupEnd();
 
     const prevKey = lastQuery;
@@ -1016,6 +1041,9 @@ const actions: PedidosManagerActions = useMemo(() => ({
     console.groupCollapsed('[invalidate]');
     console.log('after', { cachedAt: undefined, lastQuery: undefined });
     console.groupEnd();
+
+    // 🚀 Buscar imediatamente usando os filtros já normalizados/limpos
+    loadOrders(true, cleaned);
   },
   
   clearFilters: () => {

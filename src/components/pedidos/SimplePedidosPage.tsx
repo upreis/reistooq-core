@@ -103,12 +103,14 @@ function SimplePedidosPage({ className }: Props) {
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: async (filters) => {
-      console.log('🔄 [FILTERS APPLY] Recebido filtros para aplicação:', filters);
+      console.groupCollapsed('[filters/apply]');
+      console.log('draft', filters);
+      console.groupEnd();
       
       // Limpar estado persistido ao aplicar novos filtros
       persistentState.clearPersistedState();
       
-      // ✅ CRÍTICO: Aplicar filtros ANTES do refetch
+      // ✅ Aplicar filtros (fonte única: appliedFilters no manager) e buscar imediatamente
       actions.replaceFilters(filters);
       
       console.groupCollapsed('[apply/callback]');
@@ -122,16 +124,6 @@ function SimplePedidosPage({ className }: Props) {
       
       // Salvar os filtros aplicados
       persistentState.saveAppliedFilters(filters);
-      
-      // ✅ CRÍTICO: Force refetch para garantir dados atualizados
-      console.log('🚀 [FILTERS APPLY] Iniciando refetch obrigatório...');
-      try {
-        await actions.refetch(); // refetch imediato obrigatório no Apply
-        console.log('✅ [FILTERS APPLY] Refetch completado com sucesso');
-      } catch (error) {
-        console.error('❌ [FILTERS APPLY] Erro no refetch:', error);
-        throw error;
-      }
     },
     autoLoad: false,
     loadSavedFilters: false
