@@ -3050,14 +3050,24 @@ export type Database = {
       get_masked_clients: {
         Args: Record<PropertyKey, never>
         Returns: {
-          cpf_cnpj: string | null
-          created_at: string | null
-          email: string | null
+          cpf_cnpj: string
+          created_at: string
+          data_primeiro_pedido: string
+          data_ultimo_pedido: string
+          email: string
+          empresa: string
+          endereco_cidade: string
+          endereco_uf: string
           id: string
-          nome_completo: string | null
+          nome_completo: string
+          observacoes: string
           organization_id: string
-          telefone: string | null
-          updated_at: string | null
+          status_cliente: string
+          telefone: string
+          ticket_medio: number
+          total_pedidos: number
+          updated_at: string
+          valor_total_gasto: number
         }[]
       }
       get_masked_sales_history: {
