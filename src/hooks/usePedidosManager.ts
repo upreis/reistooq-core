@@ -150,6 +150,8 @@ export function usePedidosManager(initialAccountId?: string) {
   // 🚀 CONCORRÊNCIA: Controle de requests com AbortController + requestId
   const requestIdRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  // Evita auto-load duplicado após um loadOrders(true) explícito
+  const skipNextAutoLoadRef = useRef<boolean>(false);
   
   // 🚀 Paginação do servidor e flags
   const [paging, setPaging] = useState<{ total?: number; limit?: number; offset?: number }>();
@@ -1030,6 +1032,9 @@ export function usePedidosManager(initialAccountId?: string) {
     setCachedAt(undefined);
     setLastQuery(undefined);
     
+    // Evitar auto-load duplicado gerado pelo effect
+    skipNextAutoLoadRef.current = true;
+    
     // 🚀 Executar busca imediatamente
     loadOrders(true);
   }, [filters, integrationAccountId, pageSize, loadOrders]); // ✅ CORRIGIDO: Incluir loadOrders nas dependências
@@ -1105,6 +1110,11 @@ const actions: PedidosManagerActions = useMemo(() => ({
     console.groupCollapsed('[invalidate]');
     console.log('after', { cachedAt: undefined, lastQuery: undefined });
     console.groupEnd();
+
+    // Log de paginação para auditoria
+    console.log(`[paging] before apply page=${currentPage} → after apply page=1`);
+    // Evitar auto-load duplicado gerado pelo effect
+    skipNextAutoLoadRef.current = true;
 
     // 🚀 Buscar imediatamente usando os filtros já normalizados/limpos
     loadOrders(true, cleaned);
@@ -1246,6 +1256,13 @@ const actions: PedidosManagerActions = useMemo(() => ({
   // ✅ SINCRONIZAÇÃO AUTOMÁTICA: Disparar carregamento quando filtros ou params mudam
   useEffect(() => {
     if (!integrationAccountId) return;
+
+    // Evitar chamada duplicada imediatamente após um loadOrders(true)
+    if (skipNextAutoLoadRef.current) {
+      console.log('[auto-load:skip] prevented duplicate after explicit load');
+      skipNextAutoLoadRef.current = false;
+      return;
+    }
     
     console.log('🔄 [usePedidosManager] Carregamento automático:', { 
       integrationAccountId: integrationAccountId.slice(0, 8), 
