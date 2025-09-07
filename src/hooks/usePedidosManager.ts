@@ -103,20 +103,7 @@ const DEFAULT_FILTERS: PedidosFilters = {};
 // 🔒 Serializador estável e determinístico dos filtros para uso na queryKey/cache
 function stableSerializeFilters(f: PedidosFilters): string {
   const replacer = (_key: string, value: any) => {
-    if (value instanceof Date) {
-      // 🚨 FIX 4: Normalizar datas - dataFim para fim do dia (23:59:59)
-      const date = new Date(value);
-      const key = _key.toLowerCase();
-      if (key.includes('fim') || key.includes('end') || key.includes('to')) {
-        // Fim do dia para data fim
-        date.setHours(23, 59, 59, 999);
-        return date.toISOString();
-      } else {
-        // Início do dia para data início
-        date.setHours(0, 0, 0, 0);
-        return date.toISOString();
-      }
-    }
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
     return value;
   };
   const sorted = Object.keys(f || {})
@@ -146,10 +133,7 @@ export function usePedidosManager(initialAccountId?: string) {
   const [cachedAt, setCachedAt] = useState<Date>();
   const [lastQuery, setLastQuery] = useState<string>();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  // 🚀 CONCORRÊNCIA: Controle de requests com AbortController + requestId
-  const requestIdRef = useRef<number>(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const abortControllerRef = useRef<AbortController>();
   
   // 🚀 Paginação do servidor e flags
   const [paging, setPaging] = useState<{ total?: number; limit?: number; offset?: number }>();
@@ -168,7 +152,8 @@ export function usePedidosManager(initialAccountId?: string) {
     }
   });
   
-  // (requestIdRef já declarado acima com abortControllerRef)
+  // 🔄 Request tracking para evitar respostas fora de ordem
+  const requestIdRef = useRef(0);
 
   /**
    * 🔧 AUDITORIA: Converte filtros para parâmetros da API 
@@ -198,12 +183,10 @@ export function usePedidosManager(initialAccountId?: string) {
       }
     }
 
-    // 📅 CORRIGIDO: Datas com formato consistente e normalização para fim do dia
+    // 📅 CORRIGIDO: Datas com formato consistente 
     if (filters.dataInicio) {
       const d = normalizeDate(filters.dataInicio);
       if (d && !isNaN(d.getTime())) {
-        // Início do dia para dataInicio
-        d.setHours(0, 0, 0, 0);
         params.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         console.log('🗓️ [DATE] dataInicio convertida:', filters.dataInicio, '=>', params.date_from);
       }
@@ -211,10 +194,8 @@ export function usePedidosManager(initialAccountId?: string) {
     if (filters.dataFim) {
       const d = normalizeDate(filters.dataFim);
       if (d && !isNaN(d.getTime())) {
-        // 🚨 FIX 4: Fim do dia para dataFim (23:59:59)
-        d.setHours(23, 59, 59, 999);
         params.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        console.log('🗓️ [DATE] dataFim convertida para fim do dia:', filters.dataFim, '=>', params.date_to);
+        console.log('🗓️ [DATE] dataFim convertida:', filters.dataFim, '=>', params.date_to);
       }
     }
 
@@ -591,39 +572,19 @@ export function usePedidosManager(initialAccountId?: string) {
     // ✅ CRÍTICO: Usar override ou filtros atuais
     const filtersToUse = overrideFilters ?? filters;
     
-    // 🚨 FIX 3: Alinhamento chave/body - logs lado a lado
-    console.groupCollapsed('[filters]');
-    console.log('applied=', filtersToUse);
-    console.groupEnd();
-    
+    console.groupCollapsed('[query/key]');
     const filtersKey = stableSerializeFilters(filtersToUse);
     const apiParams = buildApiParams(filtersToUse);
-    
-    console.groupCollapsed('[key]');
-    console.log('hash=', filtersKey);
-    console.groupEnd();
-    
-    console.groupCollapsed('[body]'); 
-    console.log('params=', apiParams);
-    console.groupEnd();
-    
     const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
-    
-    console.groupCollapsed('[query/key]');
     console.log(['pedidos', filtersKey, currentPage, pageSize, apiParams.integration_account_id || apiParams.integration_account_ids || integrationAccountId]);
     console.groupEnd();
 
-    // 🚨 FIX 2: Controle de concorrência com AbortController + requestId
-    const reqId = ++requestIdRef.current;
-    
-    // Abortar request anterior antes de iniciar novo
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      console.log(`[fetch:abort] previous request aborted`);
-    }
-    abortControllerRef.current = new AbortController();
-    
-    console.log(`[fetch:start id=${reqId} hash=${filtersKey.slice(0, 20)}... page=${currentPage}]`);
+    console.log('🚀 [LOAD ORDERS] Iniciando com filtros:', filtersToUse, 'forceRefresh:', forceRefresh);
+
+    // 🚀 Controle de concorrência: id de requisição
+    const reqId = (requestIdRef.current || 0) + 1;
+    requestIdRef.current = reqId;
+    console.log(`[fetch:start id=${reqId}]`);
 
     // Se a mesma query já foi executada recentemente e está carregando, evitar duplicar
     if (!forceRefresh && lastQuery === cacheKey && loading) {
@@ -643,7 +604,11 @@ export function usePedidosManager(initialAccountId?: string) {
 
     console.log('🔍 Parâmetros da API construídos:', apiParams);
 
-    // 🚨 Cancelamento já feito acima com novo requestId
+    // 🚀 FASE 2: Cancelar requisições anteriores
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     // 🚀 FASE 2: Verificar cache - IGNORAR quando forceRefresh = true
     if (!forceRefresh && isCacheValid(cacheKey)) {
@@ -721,21 +686,11 @@ export function usePedidosManager(initialAccountId?: string) {
             cpf_cnpj: direct ?? extractDeep(o),
           };
         });
-        // 🚨 FIX 2: Evitar respostas fora de ordem
+        // Evitar respostas fora de ordem
         if (reqId !== requestIdRef.current) {
-          console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
+          console.log(`[fetch:dropped id=${reqId}]`);
           return;
         }
-        
-        // 🚨 FIX 1: Fallback automático se página fora de alcance
-        if (normalizedResults.length === 0 && currentPage > 1) {
-          console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
-          setCurrentPage(1);
-          // Refetch com página 1
-          loadOrders(forceRefresh, filtersToUse);
-          return;
-        }
-        
         console.log(`[fetch:success id=${reqId}] total=${unifiedResult.total}`);
         setOrders(normalizedResults);
         setTotal(unifiedResult.total);
@@ -831,21 +786,11 @@ export function usePedidosManager(initialAccountId?: string) {
 
             return { ...o, cpf_cnpj: direct ?? extractDeep(o) };
           });
-          // 🚨 FIX 2: Evitar respostas fora de ordem
+          // Evitar respostas fora de ordem
           if (reqId !== requestIdRef.current) {
-            console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
+            console.log(`[fetch:dropped id=${reqId}]`);
             return;
           }
-          
-          // 🚨 FIX 1: Fallback automático se página fora de alcance
-          if (paginatedResults.length === 0 && currentPage > 1) {
-            console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
-            setCurrentPage(1);
-            // Refetch com página 1
-            loadOrders(forceRefresh, filtersToUse);
-            return;
-          }
-          
           console.log(`[fetch:success id=${reqId}] total=${filteredResults.length}`);
           setOrders(normalizedPaginated);
           setTotal(filteredResults.length); // Total dos resultados filtrados
@@ -901,21 +846,11 @@ export function usePedidosManager(initialAccountId?: string) {
 
             return { ...o, cpf_cnpj: direct ?? extractDeep(o) };
           });
-          // 🚨 FIX 2: Evitar respostas fora de ordem
+          // Evitar respostas fora de ordem
           if (reqId !== requestIdRef.current) {
-            console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
+            console.log(`[fetch:dropped id=${reqId}]`);
             return;
           }
-          
-          // 🚨 FIX 1: Fallback automático se página fora de alcance
-          if (normalizedDbResults.length === 0 && currentPage > 1) {
-            console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
-            setCurrentPage(1);
-            // Refetch com página 1
-            loadOrders(forceRefresh, filtersToUse);
-            return;
-          }
-          
           console.log(`[fetch:success id=${reqId}] total=${dbResult.total}`);
           setOrders(normalizedDbResults);
           setTotal(dbResult.total);
@@ -943,7 +878,7 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(false);
       setIsRefreshing(false);
     }
-  }, [filters, integrationAccountId, currentPage, pageSize, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
+  }, [integrationAccountId, currentPage, pageSize, buildApiParams, loadFromUnifiedOrders, loadFromDatabase, applyClientSideFilters, getCacheKey, isCacheValid]);
 
   // 🚀 FASE 3: Exportação de dados
   const exportData = useCallback(async (format: 'csv' | 'xlsx') => {
