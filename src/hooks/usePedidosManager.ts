@@ -310,9 +310,28 @@ export function usePedidosManager(initialAccountId?: string) {
           console.log('body', singleAccountBody);
           console.log('[query/network] unified-orders body', singleAccountBody);
           console.groupEnd();
-          const { data, error } = await supabase.functions.invoke('unified-orders', {
-            body: singleAccountBody
-          });
+          let data: any | null = null;
+          let error: any | null = null;
+          try {
+            ({ data, error } = await supabase.functions.invoke('unified-orders', {
+              body: singleAccountBody
+            }));
+          } catch (e: any) {
+            error = e;
+          }
+
+          // Fallback: se erro, tentar novamente sem shipping_status (alguns ambientes não suportam)
+          if (error || data?.status >= 400) {
+            const { shipping_status: _omit, ...withoutStatus } = singleAccountBody as any;
+            console.warn(`⚠️ [CONTA ${accountId}] Falha com shipping_status, tentando sem status...`);
+            try {
+              ({ data, error } = await supabase.functions.invoke('unified-orders', {
+                body: withoutStatus
+              }));
+            } catch (e: any) {
+              error = e;
+            }
+          }
           
           if (error) {
             console.error(`❌ [CONTA ${accountId}] Erro:`, error);
@@ -389,9 +408,28 @@ export function usePedidosManager(initialAccountId?: string) {
     console.log('[query/network] unified-orders body', requestBody);
     console.groupEnd();
 
-    const { data, error } = await supabase.functions.invoke('unified-orders', {
-      body: requestBody
-    });
+    let data: any | null = null;
+    let error: any | null = null;
+    try {
+      ({ data, error } = await supabase.functions.invoke('unified-orders', {
+        body: requestBody
+      }));
+    } catch (e: any) {
+      error = e;
+    }
+
+    // Fallback: tentar sem shipping_status mantendo datas e demais filtros
+    if (error || !data?.ok) {
+      const { shipping_status: _omit, ...withoutStatus } = requestBody as any;
+      console.warn('⚠️ unified-orders falhou com shipping_status, tentando sem status...');
+      try {
+        ({ data, error } = await supabase.functions.invoke('unified-orders', {
+          body: withoutStatus
+        }));
+      } catch (e: any) {
+        error = e;
+      }
+    }
 
     if (error) throw new Error(error.message || 'unified-orders: erro na função');
     if (!data?.ok) throw new Error('Erro na resposta da API');
@@ -946,6 +984,9 @@ export function usePedidosManager(initialAccountId?: string) {
       setError(error.message || 'Erro ao carregar pedidos');
       setOrders([]);
       setTotal(0);
+      // ❗ Corrigir cache fantasma após erro: invalida para evitar "cache-hit"
+      setCachedAt(undefined);
+      setLastQuery(undefined);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -1260,7 +1301,7 @@ const actions: PedidosManagerActions = useMemo(() => ({
 
   // ✅ SINCRONIZAÇÃO AUTOMÁTICA: Disparar carregamento quando filtros ou params mudam
   useEffect(() => {
-    if (!integrationAccountId) return;
+    // Removido o bloqueio estrito por integrationAccountId para suportar múltiplas contas
 
     // Evitar chamada duplicada imediatamente após um loadOrders(true)
     if (skipNextAutoLoadRef.current) {
@@ -1270,7 +1311,7 @@ const actions: PedidosManagerActions = useMemo(() => ({
     }
     
     console.log('🔄 [usePedidosManager] Carregamento automático:', { 
-      integrationAccountId: integrationAccountId.slice(0, 8), 
+      integrationAccountId: integrationAccountId ? integrationAccountId.slice(0, 8) : '(multi/none)', 
       currentPage, 
       hasFilters: Object.keys(filters).length > 0,
       filtersDebug: filters
