@@ -189,7 +189,9 @@ serve(async (req) => {
 
     if (accErr || !account) return fail("Integration account not found", 404, accErr, cid);
     if (!account.is_active) return fail("Integration account is not active", 400, null, cid);
-    if (account.provider !== "mercadolivre") {
+    const provider = String(account.provider || '').toLowerCase();
+    const mlProviders = new Set(['mercadolivre', 'mercado_livre', 'mercadolibre', 'ml']);
+    if (!mlProviders.has(provider)) {
       return ok({ results: [], unified: [], paging: { total: 0, limit, offset }, count: 0 });
     }
 
@@ -198,7 +200,6 @@ serve(async (req) => {
       .from('integration_secrets')
       .select('access_token, refresh_token, expires_at, meta, secret_enc')
       .eq('integration_account_id', integration_account_id)
-      .eq('provider', 'mercadolivre')
       .maybeSingle();
 
     let resolvedSecrets: any = null;
