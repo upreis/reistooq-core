@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { ShoppingCart, User, Calendar, ExternalLink, Unplug, RefreshCw, Copy } from 'lucide-react';
 import { mercadoLivreService, type MLAccount } from '@/services/MercadoLivreService';
 import { supabase } from '@/integrations/supabase/client';
+import { PermissionFixButton } from './PermissionFixButton';
 import MeliOrders from '@/components/MeliOrders';
 
 
@@ -380,28 +381,34 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
               </p>
             </div>
             
-            <Button 
-              onClick={handleConnect} 
-              disabled={isConnecting || !session?.user}
-              className="w-full"
-            >
-              {isConnecting ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                  Conectando...
-                </>
-              ) : !session?.user ? (
-                <>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Faça login para conectar
-                </>
-              ) : (
-                <>
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Conectar Mercado Livre
-                </>
+            <div className="space-y-3">
+              <Button 
+                onClick={handleConnect} 
+                disabled={isConnecting || !session?.user}
+                className="w-full"
+              >
+                {isConnecting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Conectando...
+                  </>
+                ) : !session?.user ? (
+                  <>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Faça login para conectar
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Conectar Mercado Livre
+                  </>
+                )}
+              </Button>
+              
+              {session?.user && (
+                <PermissionFixButton />
               )}
-            </Button>
+            </div>
             
             {!session?.user && (
               <p className="text-xs text-muted-foreground text-center mt-2">
