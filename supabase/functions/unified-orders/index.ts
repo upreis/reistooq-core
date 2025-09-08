@@ -298,26 +298,41 @@ Deno.serve(async (req) => {
       }
     }
     
-    // ✅ 4. Fallback: tentar tokens diretos (legacy)
-    if (!accessToken && !refreshToken && (secretRow?.access_token || secretRow?.refresh_token)) {
-      console.log(`[unified-orders:${cid}] FALLBACK: Usando tokens diretos das colunas`);
-      accessToken = secretRow.access_token || '';
-      refreshToken = secretRow.refresh_token || '';
-            expiresAt = secretRow.expires_at || '';
-          }
-          // 2. secret_enc pode ser JSON direto (não base64)
-          else if (secretRow.secret_enc) {
-            console.log(`[unified-orders:${cid}] FALLBACK: Tentando secret_enc como JSON direto`);
-            const directParsed = JSON.parse(secretRow.secret_enc);
-            accessToken = directParsed.access_token || '';
-            refreshToken = directParsed.refresh_token || '';
-            expiresAt = directParsed.expires_at || '';
-          }
-        } catch (fallbackError) {
-          console.error(`[unified-orders:${cid}] FALLBACK também falhou:`, fallbackError);
-          accessToken = '';
-          refreshToken = '';
+    // ✅ 4. Fallback: tentar secret_enc (bytea format)
+    if (!accessToken && !refreshToken && secretRow?.secret_enc) {
+      try {
+        console.log(`[unified-orders:${cid}] FALLBACK: Convertendo secret_enc de bytea para string`);
+        
+        // Se secret_enc é bytea (formato \x...), converter para string
+        let secretString = secretRow.secret_enc;
+        if (typeof secretString === 'string' && secretString.startsWith('\\x')) {
+          // Remover \x e converter hex para string
+          const hexString = secretString.slice(2);
+          const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+          secretString = new TextDecoder().decode(bytes);
+          console.log(`[unified-orders:${cid}] FALLBACK: Convertido bytea para string base64`);
         }
+        
+        // Tentar descriptografar o secret_enc convertido
+        const secretJson = await decryptCompat(secretString, INTEGRATIONS_CRYPTO_KEY, decryptLegacyIfAny);
+        const secret = JSON.parse(secretJson);
+        
+        accessToken = secret?.access_token || '';
+        refreshToken = secret?.refresh_token || '';
+        expiresAt = secret?.expires_at || '';
+        console.log(`[unified-orders:${cid}] FALLBACK: Descriptografia secret_enc bem-sucedida`);
+      } catch (fallbackError) {
+        console.error(`[unified-orders:${cid}] FALLBACK: Erro ao processar secret_enc`, fallbackError);
+        
+        // Último fallback: tokens diretos das colunas
+        if (secretRow?.access_token || secretRow?.refresh_token) {
+          console.log(`[unified-orders:${cid}] ÚLTIMO FALLBACK: Usando tokens diretos das colunas`);
+          accessToken = secretRow.access_token || '';
+          refreshToken = secretRow.refresh_token || '';
+          expiresAt = secretRow.expires_at || '';
+        }
+      }
+    }
       }
     }
 
