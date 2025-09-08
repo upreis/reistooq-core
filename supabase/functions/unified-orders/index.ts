@@ -260,13 +260,15 @@ Deno.serve(async (req) => {
     // ✅ 2. Busca integration_secrets com SERVICE CLIENT (bypass RLS)
     const { data: secretRow, error: secretError } = await serviceClient
       .from('integration_secrets')
-      .select('secret_enc, provider, expires_at, access_token, refresh_token')
+      .select('simple_tokens, use_simple, secret_enc, provider, expires_at, access_token, refresh_token')
       .eq('integration_account_id', integration_account_id)
       .eq('provider', 'mercadolivre')
       .maybeSingle();
 
     console.log(`[unified-orders:${cid}] Resultado busca secrets:`, { 
       hasRow: !!secretRow, 
+      hasSimpleTokens: !!secretRow?.simple_tokens,
+      useSimple: secretRow?.use_simple,
       hasSecretEnc: !!secretRow?.secret_enc, 
       hasLegacyTokens: !!(secretRow?.access_token || secretRow?.refresh_token)
     });
@@ -275,69 +277,32 @@ Deno.serve(async (req) => {
     let refreshToken = '';
     let expiresAt = '';
     
-    if (!secretRow?.secret_enc) {
-      console.log(`[unified-orders:${cid}] DEBUG: Tokens diretos não encontrados, usando integrations-get-secret`);
-      // ✅ 3. Se não encontrou encrypted secret, chama get-secret
-      const { data: secretData, error: getSecretError } = await serviceClient.functions.invoke('integrations-get-secret', {
-        body: {
-          integration_account_id,
-          provider: 'mercadolivre'
-        },
-        headers: { 
-          'x-internal-call': 'true',
-          'x-internal-token': Deno.env.get('INTERNAL_SHARED_TOKEN') || ''
-        }
-      });
-
-      console.log(`[unified-orders:${cid}] DEBUG: get-secret response:`, {
-        hasData: !!secretData,
-        hasError: !!getSecretError,
-        secDataKeys: secretData ? Object.keys(secretData) : [],
-        error: getSecretError
-      });
-
-      if (getSecretError || !secretData?.ok) {
-        console.error(`[unified-orders:${cid}] FALHA: get-secret`, getSecretError || secretData);
-        return fail('Failed to get integration secret', 500, getSecretError || secretData, cid);
-      }
-
-      const secretPayload = secretData.secret;
-      
-      console.log(`[unified-orders:${cid}] DEBUG: Payload extracted:`, {
-        hasAccessToken: !!secretPayload?.access_token,
-        hasRefreshToken: !!secretPayload?.refresh_token,
-        hasSecretEnc: !!secretPayload?.secret_enc,
-        payloadKeys: secretPayload ? Object.keys(secretPayload) : []
-      });
-      
-      accessToken = secretPayload?.access_token || '';
-      refreshToken = secretPayload?.refresh_token || '';
-      expiresAt = secretPayload?.expires_at || '';
-    } else {
-      // ✅ 4. Decifrar usando a MESMA derivação do store-secret
+    // ✅ 3. Primeiro: tentar nova estrutura simples
+    if (secretRow?.use_simple && secretRow?.simple_tokens) {
       try {
-        const secretJson = await decryptCompat(secretRow.secret_enc, INTEGRATIONS_CRYPTO_KEY, decryptLegacyIfAny);
-        const secret = JSON.parse(secretJson);
-        
-        console.log(`[unified-orders:${cid}] DEBUG: Secret decrypted successfully:`, {
-          hasAccessToken: !!secret?.access_token,
-          hasRefreshToken: !!secret?.refresh_token,
-          secretKeys: Object.keys(secret || {})
-        });
-        
-        accessToken = secret?.access_token || '';
-        refreshToken = secret?.refresh_token || '';
-        expiresAt = secret?.expires_at || secretRow.expires_at || '';
-      } catch (decryptError) {
-        console.error(`[unified-orders:${cid}] ERRO: Falha ao decriptar secret_enc`, decryptError);
-        
-        // FALLBACK ROBUSTO: Tentar múltiplas estratégias
-        try {
-          // 1. Tokens diretos nas colunas
-          if (secretRow.access_token || secretRow.refresh_token) {
-            console.log(`[unified-orders:${cid}] FALLBACK: Usando tokens diretos das colunas`);
-            accessToken = secretRow.access_token || '';
-            refreshToken = secretRow.refresh_token || '';
+        console.log(`[unified-orders:${cid}] Usando criptografia simples`);
+        const { data: decryptedData, error: decryptError } = await serviceClient
+          .rpc('decrypt_simple', { encrypted_data: secretRow.simple_tokens });
+
+        if (decryptError) {
+          console.error(`[unified-orders:${cid}] Erro descriptografia simples:`, decryptError);
+        } else if (decryptedData) {
+          const parsedPayload = JSON.parse(decryptedData);
+          accessToken = parsedPayload.access_token || '';
+          refreshToken = parsedPayload.refresh_token || '';
+          expiresAt = parsedPayload.expires_at || '';
+          console.log(`[unified-orders:${cid}] Descriptografia simples bem-sucedida`);
+        }
+      } catch (err) {
+        console.error(`[unified-orders:${cid}] ERRO: Falha descriptografia simples`, err);
+      }
+    }
+    
+    // ✅ 4. Fallback: tentar tokens diretos (legacy)
+    if (!accessToken && !refreshToken && (secretRow?.access_token || secretRow?.refresh_token)) {
+      console.log(`[unified-orders:${cid}] FALLBACK: Usando tokens diretos das colunas`);
+      accessToken = secretRow.access_token || '';
+      refreshToken = secretRow.refresh_token || '';
             expiresAt = secretRow.expires_at || '';
           }
           // 2. secret_enc pode ser JSON direto (não base64)
