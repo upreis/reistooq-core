@@ -177,11 +177,13 @@ export function usePedidosManager(initialAccountId?: string) {
    * CORRIGIDO: Priorizar conta ML e mapear situação corretamente
    */
   const buildApiParams = useCallback((filters: PedidosFilters) => {
+    console.log('🔧 [buildApiParams] INÍCIO - Filtros recebidos:', JSON.stringify(filters, null, 2));
     const params: any = {};
 
     // ✅ SIMPLIFICADO: Usar campos diretos da API
     if (filters.search) {
       params.q = filters.search;
+      console.log('🔍 [buildApiParams] Search adicionado:', filters.search);
     }
 
     // Status mapping - converter situacao para shipping_status (mapear para valores da API)
@@ -220,34 +222,58 @@ export function usePedidosManager(initialAccountId?: string) {
       }
     }
 
-    // 🌍 Outros filtros geográficos e valores - OK
-    if (filters.cidade) params.cidade = filters.cidade;
-    if (filters.uf) params.uf = filters.uf;
-    if (filters.valorMin !== undefined) params.valorMin = filters.valorMin;
-    if (filters.valorMax !== undefined) params.valorMax = filters.valorMax;
+    // 🌍 Outros filtros geográficos e valores
+    console.log('🏙️ [GEO] Cidade:', filters.cidade, 'UF:', filters.uf);
+    console.log('💰 [VALOR] Min:', filters.valorMin, 'Max:', filters.valorMax);
+
+    if (filters.cidade) {
+      params.cidade = filters.cidade;
+      console.log('🏙️ [GEO] Cidade filtro aplicado:', filters.cidade);
+    }
+    if (filters.uf) {
+      params.uf = filters.uf;
+      console.log('🗺️ [GEO] UF filtro aplicado:', filters.uf);
+    }
+    if (filters.valorMin !== undefined) {
+      params.valorMin = filters.valorMin;
+      console.log('💰 [VALOR] Min filtro aplicado:', filters.valorMin);
+    }
+    if (filters.valorMax !== undefined) {
+      params.valorMax = filters.valorMax;
+      console.log('💰 [VALOR] Max filtro aplicado:', filters.valorMax);
+    }
 
     // 🚨 CRÍTICO: CORREÇÃO - Suportar múltiplas contas ML
     let targetAccountId = integrationAccountId;
+    console.log('🔗 [CONTAS] integrationAccountId padrão:', integrationAccountId);
+    console.log('🔗 [CONTAS] filters.contasML:', filters.contasML);
+    
     if (filters.contasML && filters.contasML.length > 0) {
       // ✅ AUDITORIA FIX: Suportar múltiplas contas ML via array
       if (filters.contasML.length === 1) {
         targetAccountId = filters.contasML[0];
+        console.log('🔗 [CONTAS] Usando conta única:', targetAccountId);
       } else {
         // Para múltiplas contas, usar array (edge function suporta)
         params.integration_account_ids = filters.contasML;
         targetAccountId = null; // Não usar single account quando temos múltiplas
+        console.log('🔗 [CONTAS] Usando múltiplas contas:', filters.contasML);
       }
     }
     
     // ✅ GARANTIR: integration_account_id OU integration_account_ids sempre presente
     if (targetAccountId) {
       params.integration_account_id = targetAccountId;
+      console.log('🔗 [CONTAS] Parâmetro final: integration_account_id =', targetAccountId);
     } else if (!params.integration_account_ids) {
       // Fallback para conta padrão se nenhuma específica foi selecionada
       params.integration_account_id = integrationAccountId;
+      console.log('🔗 [CONTAS] Fallback para conta padrão:', integrationAccountId);
+    } else {
+      console.log('🔗 [CONTAS] Usando múltiplas contas via integration_account_ids');
     }
 
-    console.log('🔧 [buildApiParams] Parâmetros finais:', params);
+    console.log('🔧 [buildApiParams] Parâmetros finais COMPLETOS:', JSON.stringify(params, null, 2));
     return params;
   }, [integrationAccountId]);
 
