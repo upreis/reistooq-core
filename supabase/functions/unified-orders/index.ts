@@ -330,10 +330,29 @@ Deno.serve(async (req) => {
         expiresAt = secret?.expires_at || secretRow.expires_at || '';
       } catch (decryptError) {
         console.error(`[unified-orders:${cid}] ERRO: Falha ao decriptar secret_enc`, decryptError);
-        // Fallback para tokens diretos se existirem
-        accessToken = secretRow.access_token || '';
-        refreshToken = secretRow.refresh_token || '';
-        expiresAt = secretRow.expires_at || '';
+        
+        // FALLBACK ROBUSTO: Tentar múltiplas estratégias
+        try {
+          // 1. Tokens diretos nas colunas
+          if (secretRow.access_token || secretRow.refresh_token) {
+            console.log(`[unified-orders:${cid}] FALLBACK: Usando tokens diretos das colunas`);
+            accessToken = secretRow.access_token || '';
+            refreshToken = secretRow.refresh_token || '';
+            expiresAt = secretRow.expires_at || '';
+          }
+          // 2. secret_enc pode ser JSON direto (não base64)
+          else if (secretRow.secret_enc) {
+            console.log(`[unified-orders:${cid}] FALLBACK: Tentando secret_enc como JSON direto`);
+            const directParsed = JSON.parse(secretRow.secret_enc);
+            accessToken = directParsed.access_token || '';
+            refreshToken = directParsed.refresh_token || '';
+            expiresAt = directParsed.expires_at || '';
+          }
+        } catch (fallbackError) {
+          console.error(`[unified-orders:${cid}] FALLBACK também falhou:`, fallbackError);
+          accessToken = '';
+          refreshToken = '';
+        }
       }
     }
 
