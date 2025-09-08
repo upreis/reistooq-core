@@ -217,13 +217,33 @@ serve(async (req) => {
     }
 
     const secrets = (secretsResponse as any).secret;
-    if (!secrets?.access_token) {
+    let resolvedSecrets = secrets;
+    if (!resolvedSecrets?.access_token) {
+      // Fallback: tentar formato legado em secret_enc
+      const { data: legacy } = await sb
+        .from('integration_secrets')
+        .select('secret_enc')
+        .eq('integration_account_id', integration_account_id)
+        .eq('provider', 'mercadolivre')
+        .maybeSingle();
+      try {
+        if (legacy?.secret_enc) {
+          if (typeof legacy.secret_enc === 'string') {
+            try { resolvedSecrets = JSON.parse(atob(legacy.secret_enc)); }
+            catch { resolvedSecrets = JSON.parse(legacy.secret_enc); }
+          } else if (typeof legacy.secret_enc === 'object') {
+            resolvedSecrets = legacy.secret_enc;
+          }
+        }
+      } catch {}
+    }
+
+    if (!resolvedSecrets?.access_token) {
       console.error(`[unified-orders:${cid}] No access token in decrypted secrets:`, secrets);
       return fail("Token de acesso não encontrado", 404, null, cid);
     }
 
-    const secretsWithAccountId = { ...secrets, account_id: integration_account_id };
-
+    const secretsWithAccountId = { ...resolvedSecrets, account_id: integration_account_id };
     // 3) Garantir token válido
     const validSecrets = await refreshIfNeeded(sb, secretsWithAccountId, cid, authHeader);
     const accessToken = validSecrets.access_token as string;

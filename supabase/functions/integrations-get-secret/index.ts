@@ -70,10 +70,10 @@ serve(async (req) => {
       return new Response(JSON.stringify({ ok: false, error: 'Permissão insuficiente' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Buscar segredos, mas NÃO retornar tokens em texto puro
+    // Buscar segredos (inclui campo legado secret_enc para fallback)
     const { data, error } = await supabase
       .from('integration_secrets')
-      .select('access_token, refresh_token, expires_at, meta')
+      .select('access_token, refresh_token, expires_at, meta, secret_enc')
       .eq('integration_account_id', b.integration_account_id)
       .eq('provider', b.provider)
       .maybeSingle();
