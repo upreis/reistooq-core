@@ -111,17 +111,21 @@ class MercadoLivreService {
         return { success: false, error: error.message || 'Falha ao iniciar OAuth' };
       }
 
-      if (!data.ok) {
-        console.error('[ML Service] OAuth start returned error:', data.error);
-        return { success: false, error: data.error };
+      // Compatível com respostas { ok, url } e { success, authorization_url }
+      const ok = (data?.ok ?? data?.success) as boolean | undefined;
+      const url = (data?.url ?? data?.authorization_url) as string | undefined;
+
+      if (!ok || !url) {
+        const errMsg = (data?.error as string | undefined) || 'Falha ao iniciar OAuth';
+        console.error('[ML Service] OAuth start returned error/invalid payload:', data);
+        return { success: false, error: errMsg };
       }
 
       console.log('[ML Service] OAuth URL generated successfully');
       return { 
         success: true, 
-        authorization_url: data.url 
+        authorization_url: url 
       };
-
     } catch (e) {
       console.error('[ML Service] OAuth start exception:', e);
       return { 
