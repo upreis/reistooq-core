@@ -246,11 +246,21 @@ serve(async (req) => {
       try {
         const enc: any = fallbackSecretEnc ?? secretRow?.secret_enc;
         let obj: any = null;
+        const tryParseJson = (s: string) => { try { return JSON.parse(s); } catch { return null; } };
         if (typeof enc === 'string') {
-          try { obj = JSON.parse(enc); } catch {
-            try { obj = JSON.parse(atob(enc)); } catch { obj = null; }
+          obj = tryParseJson(enc) || tryParseJson(atob(enc)) || null;
+        } else if (typeof enc === 'object') {
+          // Bytea -> Buffer-like
+          if (Array.isArray((enc as any).data)) {
+            try {
+              const bytes = new Uint8Array((enc as any).data as number[]);
+              const txt = new TextDecoder().decode(bytes);
+              obj = tryParseJson(txt) || tryParseJson(atob(txt)) || null;
+            } catch {}
+          } else {
+            obj = enc;
           }
-        } else if (typeof enc === 'object') { obj = enc; }
+        }
         const cands = [obj, obj?.mercadolivre, obj?.mercado_livre, obj?.ml, obj?.token, obj?.data].filter(Boolean);
         for (const c of cands) {
           if (c?.access_token) {
@@ -267,6 +277,26 @@ serve(async (req) => {
       } catch (e) {
         console.warn(`[unified-orders:${cid}] Falha ao interpretar secret_enc legado`, e);
       }
+    }
+
+    // Backfill: se tokens foram recuperados via get-secret/secret_enc e os campos em claro estão vazios, persistir
+    try {
+      if (resolvedSecrets?.access_token && (!secretRow?.access_token || !secretRow?.refresh_token)) {
+        const { error: bfErr } = await sb
+          .from('integration_secrets')
+          .update({
+            access_token: resolvedSecrets.access_token,
+            refresh_token: resolvedSecrets.refresh_token ?? null,
+            expires_at: resolvedSecrets.expires_at ?? null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('integration_account_id', integration_account_id)
+          .eq('provider', 'mercadolivre');
+        if (bfErr) console.warn(`[unified-orders:${cid}] Backfill tokens falhou`, bfErr);
+        else console.log(`[unified-orders:${cid}] Backfill tokens OK`);
+      }
+    } catch (e) {
+      console.warn(`[unified-orders:${cid}] Backfill tokens exception`, e);
     }
 
     if (!resolvedSecrets?.access_token) {
