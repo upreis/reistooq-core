@@ -298,7 +298,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
       }
       
       // 3. Test other functions availability via authenticated POST (expecting validation error)
-      const functions = ['mercadolibre-token-refresh', 'mercadolibre-orders'];
+      const functions = ['mercadolibre-token-refresh', 'unified-orders'];
       for (const func of functions) {
         const response = await fetch(`https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/${func}`, {
           method: 'POST',
