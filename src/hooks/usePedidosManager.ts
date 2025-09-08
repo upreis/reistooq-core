@@ -479,11 +479,19 @@ export function usePedidosManager(initialAccountId?: string) {
       const start = apiParams?.date_from ?? undefined; // 'YYYY-MM-DD'
       const end = apiParams?.date_to ?? undefined;     // 'YYYY-MM-DD'
 
-      // RPC: get_pedidos_masked usando parâmetros nomeados para evitar conflito
+      // Forçar assinatura v3 da RPC (desambigua sobrecarga) passando todos os parâmetros nomeados
+      const targetAccountId = apiParams?.integration_account_id ?? null;
+
       const { data, error } = await supabase.rpc('get_pedidos_masked', {
+        _integration_account_id: targetAccountId,
+        _search: q || null,
         _start: start ? new Date(start).toISOString().split('T')[0] : null,
         _end: end ? new Date(end).toISOString().split('T')[0] : null,
-        _search: q || null,
+        _cidade: apiParams?.cidade || null,
+        _uf: apiParams?.uf || null,
+        _situacao: null,
+        _valor_min: apiParams?.valorMin ?? null,
+        _valor_max: apiParams?.valorMax ?? null,
         _limit: pageSize,
         _offset: (currentPage - 1) * pageSize,
       });
@@ -491,8 +499,7 @@ export function usePedidosManager(initialAccountId?: string) {
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
 
-      // Se tiver filtro por conta específica, aplica no cliente
-      const targetAccountId = apiParams?.integration_account_id;
+      // Aplica filtro de conta (se houver)
       const filtered = targetAccountId
         ? rows.filter((r: any) => r.integration_account_id === targetAccountId)
         : rows;
