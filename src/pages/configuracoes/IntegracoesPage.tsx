@@ -4,10 +4,12 @@
 import { IntegrationsHub } from '@/features/integrations/components/IntegrationsHub/IntegrationsHub';
 import { MLDiagnosticsTest } from '@/features/integrations/components/MLDiagnosticsTest';
 import { MercadoLivreSimple } from '@/components/integrations/MercadoLivreSimple';
+import { PermissionFixer } from '@/components/integrations/PermissionFixer';
 
 export default function IntegracoesPage() {
   return (
     <div className="space-y-6">
+      <PermissionFixer />
       <MLDiagnosticsTest />
       <MercadoLivreSimple />
       <IntegrationsHub />

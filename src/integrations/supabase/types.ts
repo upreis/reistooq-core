@@ -2865,6 +2865,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      ensure_integrations_manager_for_current_user: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       fix_historico_integration_accounts: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -3125,6 +3129,14 @@ export type Database = {
               _limit?: number
               _offset?: number
               _search?: string
+              _situacao?: string
+              _start?: string
+            }
+          | {
+              _end?: string
+              _integration_account_id?: string
+              _limit?: number
+              _offset?: number
               _situacao?: string
               _start?: string
             }
