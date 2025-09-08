@@ -9,8 +9,17 @@ export async function deriveAesKey(keyMaterial: string) {
 }
 
 // Helpers básicos de (de)serialização — idêntico ao store-secret
+function normalizeB64(b64: string) {
+  if (!b64) return b64;
+  // Converter base64url para base64 e repor padding
+  let s = b64.replace(/-/g, '+').replace(/_/g, '/').trim();
+  const pad = s.length % 4;
+  if (pad) s += '='.repeat(4 - pad);
+  return s;
+}
+
 function b64ToU8(b64: string) { 
-  return Uint8Array.from(atob(b64), c => c.charCodeAt(0)); 
+  return Uint8Array.from(atob(normalizeB64(b64)), c => c.charCodeAt(0)); 
 }
 
 function u8ToB64(u8: Uint8Array) { 
@@ -26,8 +35,22 @@ export async function encryptAESGCM(plain: string, keyMaterial: string) {
 
 export async function decryptAESGCM(payloadB64: string, keyMaterial: string) {
   const key = await deriveAesKey(keyMaterial);
-  const { iv, data } = JSON.parse(atob(payloadB64));
-  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64ToU8(iv) }, key, b64ToU8(data));
+
+  // Aceitar tanto base64/base64url quanto JSON puro
+  let parsed: { iv: string; data: string };
+  const trimmed = (payloadB64 || '').trim();
+  if (trimmed.startsWith('{')) {
+    // Já é JSON serializado
+    parsed = JSON.parse(trimmed);
+  } else {
+    // Normalizar e decodificar base64 (inclui base64url e padding ausente)
+    const decoded = atob(normalizeB64(trimmed));
+    parsed = JSON.parse(decoded);
+  }
+
+  const ivU8 = b64ToU8(parsed.iv);
+  const dataU8 = b64ToU8(parsed.data);
+  const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivU8 }, key, dataU8);
   return new TextDecoder().decode(plain);
 }
 

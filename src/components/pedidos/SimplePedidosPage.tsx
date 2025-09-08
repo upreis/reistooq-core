@@ -748,27 +748,9 @@ function SimplePedidosPage({ className }: Props) {
     } catch {}
   }, [actions]);
 
-  // Carregar contas na inicialização + (opcional) desativar contas ML
+  // Carregar contas na inicialização (sem qualquer desativação automática)
   useEffect(() => {
     loadAccounts();
-
-    // One-shot: desativar todas as contas ML desta organização (a pedido do usuário)
-    // Protegido por localStorage para não rodar novamente nesta máquina
-    try {
-      const key = 'ml_cleanup_done';
-      if (localStorage.getItem(key) !== '1') {
-        supabase.functions.invoke('integrations-deactivate-ml', { body: {} })
-          .then(({ data, error }) => {
-            console.log('[integrations-deactivate-ml] result:', { data, error });
-            if (!error && data?.ok) {
-              localStorage.setItem(key, '1');
-              actions.setIntegrationAccountId('');
-              loadAccounts();
-            }
-          })
-          .catch(() => {});
-      }
-    } catch {}
   }, []);
 
 // Selecionar conta somente se existir exatamente 1 conta ativa
