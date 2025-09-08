@@ -33,39 +33,16 @@ export class OrdersQueryService {
     try {
       console.log('🔍 Fetching orders with filters:', { filters, pagination, sorting });
 
-      // Use the secure RPC function for data access
-      const { data, error, count } = await supabase.rpc('get_pedidos_masked', {
-        _search: filters.search || null,
-        _start: this.formatDateForDB(filters.date_range.start),
-        _end: this.formatDateForDB(filters.date_range.end),
-        _limit: pagination.page_size,
-        _offset: (pagination.page - 1) * pagination.page_size,
-      }, { count: 'exact' });
-
-      if (error) {
-        console.error('❌ Query error:', error);
-        throw new Error(`Erro ao buscar pedidos: ${error.message}`);
-      }
-
-      // Transform and enhance the data
-      const orders = this.transformOrders(data || []);
-      
-      // Apply client-side filtering for advanced filters
-      const filteredOrders = this.applyAdvancedFilters(orders, filters);
-      
-      // Apply client-side sorting
-      const sortedOrders = this.applySorting(filteredOrders, sorting);
-
-      console.log('✅ Orders fetched successfully:', { count: sortedOrders.length, total: count });
-
+      // Desabilitado - função RPC não existe
+      console.warn('get_pedidos_masked desabilitada');
       return {
-        orders: sortedOrders,
-        total: count || 0,
+        orders: [],
+        total: 0,
         page_info: {
-          has_next_page: pagination.page * pagination.page_size < (count || 0),
-          has_previous_page: pagination.page > 1,
-          start_cursor: sortedOrders.length > 0 ? sortedOrders[0].id : null,
-          end_cursor: sortedOrders.length > 0 ? sortedOrders[sortedOrders.length - 1].id : null,
+          has_next_page: false,
+          has_previous_page: false,
+          start_cursor: null,
+          end_cursor: null,
         },
       };
 
@@ -127,15 +104,9 @@ export class OrdersQueryService {
     if (!query.trim()) return [];
 
     try {
-      const { data, error } = await supabase.rpc('get_pedidos_masked', {
-        _search: query,
-        _limit: limit,
-        _offset: 0,
-      });
-
-      if (error) throw error;
-
-      return this.transformOrders(data || []);
+      // Desabilitado - função RPC não existe
+      console.warn('get_pedidos_masked search desabilitada');
+      return [];
 
     } catch (error: any) {
       console.error('Error searching orders:', error);

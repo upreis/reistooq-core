@@ -38,16 +38,22 @@ export async function decryptAESGCM(payloadB64: string, keyMaterial: string) {
 
   // Aceitar tanto base64/base64url quanto JSON puro
   let parsed: { iv: string; data: string };
+  let decryptPath = '';
   const trimmed = (payloadB64 || '').trim();
+  
   if (trimmed.startsWith('{')) {
     // Já é JSON serializado
     parsed = JSON.parse(trimmed);
+    decryptPath = 'direct-json';
   } else {
     // Normalizar e decodificar base64 (inclui base64url e padding ausente)
     const decoded = atob(normalizeB64(trimmed));
     parsed = JSON.parse(decoded);
+    decryptPath = 'base64-normalized';
   }
 
+  console.log(`[crypto] Decrypt path: ${decryptPath}, payload type: ${typeof trimmed.length === 'number' ? 'string' : 'unknown'}, size: ${trimmed.length}`);
+  
   const ivU8 = b64ToU8(parsed.iv);
   const dataU8 = b64ToU8(parsed.data);
   const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivU8 }, key, dataU8);

@@ -88,14 +88,9 @@ export function OMSDashboard() {
   const { data: recentOrders } = useQuery({
     queryKey: ['recent-orders'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_pedidos_masked', {
-          _limit: 5,
-          _offset: 0
-        });
-      
-      if (error) throw error;
-      return data || [];
+      // Desabilitado - função RPC não existe
+      console.warn('get_pedidos_masked desabilitada');
+      return [];
     }
   });
 

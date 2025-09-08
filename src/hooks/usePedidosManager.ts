@@ -479,17 +479,9 @@ export function usePedidosManager(initialAccountId?: string) {
       const start = apiParams?.date_from ?? undefined; // 'YYYY-MM-DD'
       const end = apiParams?.date_to ?? undefined;     // 'YYYY-MM-DD'
 
-      // RPC original simples (que sempre funcionou)
-      const { data, error } = await supabase.rpc('get_pedidos_masked', {
-        _search: q || null,
-        _start: start || null,
-        _end: end || null,
-        _limit: pageSize,
-        _offset: (currentPage - 1) * pageSize,
-      });
-
-      if (error) throw error;
-      const rows = Array.isArray(data) ? data : [];
+      // Desabilitado temporariamente para evitar loop de erros 404
+      console.warn('[DB Fallback] RPC get_pedidos_masked desabilitada (função não existe)');
+      const rows: any[] = [];
 
       // Aplica filtro de conta (se houver)
       const targetAccountId = apiParams?.integration_account_id;
