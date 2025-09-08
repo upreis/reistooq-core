@@ -3,9 +3,6 @@ import { usePedidosManager } from '@/hooks/usePedidosManager';
 import { usePedidosFiltersUnified } from '@/hooks/usePedidosFiltersUnified';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosFiltersSection } from './components/PedidosFiltersSection';
-import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 // import { PedidosDataTable } from './components/PedidosDataTable';
 
 interface SimplePedidosPageProps {
@@ -32,7 +29,7 @@ function SimplePedidosPage({ accountId }: SimplePedidosPageProps) {
       console.log('🔍 Aplicando filtros:', filterParams);
       // Converter filtros unificados para formato do manager
       const managerFilters: any = {};
-      
+
       if (filterParams.search) {
         managerFilters.searchTerm = filterParams.search;
       }
@@ -40,13 +37,20 @@ function SimplePedidosPage({ accountId }: SimplePedidosPageProps) {
         managerFilters.dateRange = { from: filterParams.dataInicio };
       }
       if (filterParams.dataFim) {
-        managerFilters.dateRange = { 
-          ...managerFilters.dateRange, 
-          to: filterParams.dataFim 
+        managerFilters.dateRange = {
+          ...managerFilters.dateRange,
+          to: filterParams.dataFim,
         };
       }
-      // TODO: Implementar outros filtros conforme necessário
-      
+      // Ajuste: a conta válida é a do filtro (ao lado de Situação)
+      if (filterParams.contasML && filterParams.contasML.length > 0) {
+        try {
+          setSelectedAccount(filterParams.contasML[0]);
+        } catch (e) {
+          console.warn('Conta ML inválida nos filtros:', e);
+        }
+      }
+
       applyFilters(managerFilters);
     },
     loadSavedFilters: true
@@ -70,37 +74,7 @@ function SimplePedidosPage({ accountId }: SimplePedidosPageProps) {
           </div>
         )}
 
-        {/* Seletor de Conta ML */}
-        <Card className="p-4">
-          <div className="flex items-center gap-4">
-            <h3 className="text-sm font-medium">Conta Mercado Livre:</h3>
-            <Select
-              value={selectedAccount || ''}
-              onValueChange={setSelectedAccount}
-            >
-              <SelectTrigger className="w-[300px]">
-                <SelectValue placeholder="Selecione uma conta" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    <div className="flex items-center gap-2">
-                      <span>{account.nickname || account.name}</span>
-                      {account.is_active && (
-                        <Badge variant="secondary" className="text-xs">Ativa</Badge>
-                      )}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {selectedAccount && (
-              <Badge variant="outline">
-                Conta selecionada: {accounts.find(a => a.id === selectedAccount)?.nickname || 'Conta'}
-              </Badge>
-            )}
-          </div>
-        </Card>
+        {/* Seletor de Conta ML removido: usar o filtro 'Contas ML' ao lado de Situação */}
 
         {/* Seção de Filtros */}
         <PedidosFiltersSection
