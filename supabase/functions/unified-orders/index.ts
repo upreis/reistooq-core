@@ -10,10 +10,12 @@ const corsHeaders = {
 
 const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY") || "";
 
-function serviceClient() {
+function serviceClient(authHeader?: string | null) {
   const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!; // sem Authorization
-  return createClient(url, key);
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(url, key, {
+    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
+  });
 }
 
 function ok(data: Record<string, unknown>, status = 200) {
@@ -74,7 +76,7 @@ async function refreshIfNeeded(sb: ReturnType<typeof serviceClient>, secrets: an
   const newExpiresAt = new Date(Date.now() + (data.expires_in ?? 0) * 1000).toISOString();
 
   // persiste de volta usando integrations-store-secret
-  const { error: upErr } = await sb.functions.invoke('integrations-store-secret', {
+  const { data: upData, error: upErr } = await sb.functions.invoke('integrations-store-secret', {
     body: {
       integration_account_id: secrets.account_id,
       provider: 'mercadolivre',
@@ -84,8 +86,8 @@ async function refreshIfNeeded(sb: ReturnType<typeof serviceClient>, secrets: an
       payload: secrets.meta ?? {}
     }
   });
-  if (upErr || !upErr?.data?.ok) {
-    console.error(`[unified-orders:${cid}] Falha ao salvar novos tokens`, upErr);
+  if (upErr || !upData?.ok) {
+    console.error(`[unified-orders:${cid}] Falha ao salvar novos tokens`, upErr, upData);
     throw new Error("Failed to save refreshed tokens");
   }
 
@@ -155,7 +157,7 @@ serve(async (req) => {
     });
     if (!integration_account_id) return fail("integration_account_id é obrigatório", 400, null, cid);
 
-    const sb = serviceClient();
+    const sb = serviceClient(authHeader);
 
     // 1) Conta
     const { data: account, error: accErr } = await sb
