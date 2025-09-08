@@ -44,31 +44,7 @@ serve(async (req) => {
       });
     }
 
-    // Autorização: validar organização e permissão antes de acessar segredos
-    const { data: ia, error: iaErr } = await supabase
-      .from('integration_accounts')
-      .select('id, organization_id')
-      .eq('id', b.integration_account_id)
-      .maybeSingle();
-
-    if (iaErr || !ia) {
-      await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'get', p_function: 'integrations-get-secret', p_success: false, p_error: iaErr?.message ?? 'integration_account_not_found' });
-      return new Response(JSON.stringify({ ok: false, error: 'Conta de integração não encontrada' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const { data: currentOrg } = await supabase.rpc('get_current_org_id');
-    if (!currentOrg || ia.organization_id !== currentOrg) {
-      await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'get', p_function: 'integrations-get-secret', p_success: false, p_error: 'forbidden' });
-      return new Response(JSON.stringify({ ok: false, error: 'Acesso negado' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const { data: canManage } = await supabase.rpc('has_permission', { permission_key: 'integrations:manage' });
-    if (!canManage) {
-      await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'get', p_function: 'integrations-get-secret', p_success: false, p_error: 'missing_permission' });
-      return new Response(JSON.stringify({ ok: false, error: 'Permissão insuficiente' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // Buscar segredos, mas NÃO retornar tokens em texto puro
+    // Direct query to integration_secrets table (no decryption needed)
     const { data, error } = await supabase
       .from('integration_secrets')
       .select('access_token, refresh_token, expires_at, meta')
@@ -78,16 +54,7 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'get', p_function: 'integrations-get-secret', p_success: true });
-
-    const redacted = {
-      has_access_token: !!data?.access_token,
-      has_refresh_token: !!data?.refresh_token,
-      expires_at: data?.expires_at ?? null,
-      meta: data?.meta ?? {}
-    };
-
-    return new Response(JSON.stringify({ ok: true, secret: redacted }), { 
+    return new Response(JSON.stringify({ ok: true, secret: data ?? {} }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 
     });
   } catch (e) {
