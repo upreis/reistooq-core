@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchUnifiedOrders } from '@/services/orders';
 
 type Order = any;
 
@@ -27,19 +27,12 @@ export default function MeliOrders({ integrationAccountId, status = 'paid', limi
       try {
         setLoading(true);
         setErr(null);
-        
-        // Usar RPC direto ao invés da edge function
-        const { data, error } = await supabase.rpc('get_pedidos_masked', {
-          _integration_account_id: integrationAccountId,
-          _situacao: status || null,
-          _start: null,
-          _end: null,
-          _limit: limit || 10,
-          _offset: 0
+        const { results } = await fetchUnifiedOrders({
+          integration_account_id: integrationAccountId,
+          status,
+          limit,
         });
-        
-        if (error) throw error;
-        setOrders(Array.isArray(data) ? data : []);
+        setOrders(Array.isArray(results) ? results : []);
       } catch (e: any) {
         setErr(e?.message ?? String(e));
       } finally {

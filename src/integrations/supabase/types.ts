@@ -3128,14 +3128,6 @@ export type Database = {
               _situacao?: string
               _start?: string
             }
-          | {
-              _end?: string
-              _integration_account_id?: string
-              _limit?: number
-              _offset?: number
-              _situacao?: string
-              _start?: string
-            }
         Returns: {
           cidade: string
           codigo_rastreamento: string

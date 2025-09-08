@@ -479,12 +479,11 @@ export function usePedidosManager(initialAccountId?: string) {
       const start = apiParams?.date_from ?? undefined; // 'YYYY-MM-DD'
       const end = apiParams?.date_to ?? undefined;     // 'YYYY-MM-DD'
 
-      // RPC simples com filtros essenciais (conta, data, situação)
+      // RPC original simples (que sempre funcionou)
       const { data, error } = await supabase.rpc('get_pedidos_masked', {
-        _integration_account_id: apiParams?.integration_account_id || null,
+        _search: q || null,
         _start: start || null,
         _end: end || null,
-        _situacao: Array.isArray(filters?.situacao) ? (filters.situacao[0] || null) : (filters?.situacao || null),
         _limit: pageSize,
         _offset: (currentPage - 1) * pageSize,
       });
@@ -492,19 +491,19 @@ export function usePedidosManager(initialAccountId?: string) {
       if (error) throw error;
       const rows = Array.isArray(data) ? data : [];
 
-      // Aplica filtro de conta (extra segurança)
+      // Aplica filtro de conta (se houver)
       const targetAccountId = apiParams?.integration_account_id;
       const filtered = targetAccountId
         ? rows.filter((r: any) => r.integration_account_id === targetAccountId)
         : rows;
 
-      console.log(`[DB Fallback] Buscando no banco: dates=${start} to ${end}, situacao=${Array.isArray(filters?.situacao) ? filters.situacao.join(',') : filters?.situacao || '-'}`);
+      console.log(`[DB Fallback] Buscando no banco: search=${q}, dates=${start} to ${end}`);
       return { results: filtered, unified: [], total: filtered.length };
     } catch (e: any) {
       console.error('[DB Fallback] Erro ao buscar no banco:', e?.message || e);
       return { results: [], unified: [], total: 0 };
     }
-  }, [currentPage, pageSize, filters]);
+  }, [currentPage, pageSize]);
 
   /**
    * 🚀 OTIMIZADO: Aplica filtros do lado cliente com memoização
@@ -764,40 +763,271 @@ export function usePedidosManager(initialAccountId?: string) {
     if (forceRefresh) setIsRefreshing(true);
 
     try {
-      // Fluxo simplificado: usar apenas o banco de dados local (sem unified-orders)
-      const dbResult = await loadFromDatabase(apiParams);
-      const normalizedDbResults = (dbResult.results || []);
+      
+      try {
+        // Tentativa 1: unified-orders com filtros
+        const unifiedResult = await loadFromUnifiedOrders(apiParams);
+        
+        // Se o servidor retornou que aplicou filtros, usar direto, senão aplicar client-side
+        const serverAppliedFiltering = (unifiedResult as any).server_filtering_applied;
+        const shouldApplyClientFilter = Boolean(filters.situacao) && !serverAppliedFiltering;
+        const filteredClientResults = shouldApplyClientFilter
+          ? applyClientSideFilters(unifiedResult.results)
+          : unifiedResult.results;
 
-      // Evitar respostas fora de ordem
-      if (reqId !== requestIdRef.current) {
-        console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
-        return;
+        // Sempre usar o total do servidor quando disponível
+        const normalizedResults = filteredClientResults.map((o: any) => {
+          // Fallback profundo: procurar CPF/CNPJ em qualquer lugar do objeto
+          const extractDeep = (root: any): string | null => {
+            const seen = new Set<any>();
+            const queue: any[] = [root];
+            const keyPriority = /(cpf|cnpj|doc|document|identif|tax)/i;
+            let steps = 0;
+            while (queue.length && steps < 800) {
+              const node = queue.shift();
+              steps++;
+              if (!node || seen.has(node)) continue;
+              seen.add(node);
+              if (typeof node === 'string' || typeof node === 'number') {
+                const digits = String(node).replace(/\D/g, '');
+                if (digits.length === 11 || digits.length === 14) return digits;
+              } else if (Array.isArray(node)) {
+                for (const child of node) queue.push(child);
+              } else if (typeof node === 'object') {
+                const entries = Object.entries(node);
+                const prioritized = entries.filter(([k]) => keyPriority.test(k));
+                const others = entries.filter(([k]) => !keyPriority.test(k));
+                for (const [, v] of [...prioritized, ...others]) queue.push(v);
+              }
+            }
+            return null;
+          };
+
+          const direct =
+            o.cpf_cnpj ??
+            o.unified?.cpf_cnpj ??
+            o.documento_cliente ??
+            o.cliente_documento ??
+            o.buyer?.identification?.number ??
+            o.raw?.buyer?.identification?.number ??
+            o.payments?.[0]?.payer?.identification?.number ??
+            o.unified?.payments?.[0]?.payer?.identification?.number ??
+            o.raw?.payments?.[0]?.payer?.identification?.number ??
+            null;
+
+          return {
+            ...o,
+            cpf_cnpj: direct ?? extractDeep(o),
+          };
+        });
+        // 🚨 FIX 2: Evitar respostas fora de ordem
+        if (reqId !== requestIdRef.current) {
+          console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
+          return;
+        }
+        
+        // 🚨 FIX 1: Fallback automático se página fora de alcance
+        if (normalizedResults.length === 0 && currentPage > 1) {
+          console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
+          setCurrentPage(1);
+          // Refetch com página 1
+          loadOrders(forceRefresh, filtersToUse);
+          return;
+        }
+        
+        console.log(`[fetch:success id=${reqId}] total=${unifiedResult.total}`);
+        setOrders(normalizedResults);
+        setTotal(unifiedResult.total);
+        setFonte('tempo-real');
+        
+        // Atualizar paginação com dados do servidor (fallback se ausente)
+        const p: any = (unifiedResult as any).paging;
+        if (p && typeof p.limit === 'number' && typeof p.offset === 'number') {
+          const totalServer = (p.total ?? p.count ?? (Number.isFinite(unifiedResult.total) ? unifiedResult.total : undefined)) as number | undefined;
+          setPaging({ total: totalServer, limit: p.limit, offset: p.offset });
+          setHasPrevPage(p.offset > 0);
+
+          // Heurística: quando o servidor não retorna total confiável, permitir avançar
+          if (typeof totalServer === 'number') {
+            let next = (p.offset + p.limit) < totalServer;
+            if (!next && p.offset === 0 && totalServer === p.limit && filteredClientResults.length === p.limit) {
+              // total == limit na primeira página e página cheia -> pode haver próxima
+              next = true;
+            }
+            setHasNextPage(next);
+          } else {
+            // Sem total: se veio página cheia, habilita próxima
+            setHasNextPage(filteredClientResults.length >= p.limit);
+          }
+        } else {
+          setPaging(undefined);
+          setHasPrevPage(currentPage > 1);
+          setHasNextPage(filteredClientResults.length >= pageSize);
+        }
+        
+        // 🚀 FASE 2: Atualizar cache
+        setCachedAt(new Date());
+        setLastQuery(cacheKey);
+        
+        // P1.2: Debug removido por segurança - não expor dados sensíveis
+        
+      } catch (unifiedError: any) {
+        // P1.2: Log minimizado para evitar exposição de dados
+        
+        try {
+          // Tentativa 2: unified-orders sem filtros (aplicar client-side)
+          const baseParams: any = {};
+          if (Array.isArray(apiParams.integration_account_ids) && apiParams.integration_account_ids.length > 0) {
+            baseParams.integration_account_ids = apiParams.integration_account_ids;
+          } else {
+            baseParams.integration_account_id = apiParams.integration_account_id || integrationAccountId;
+          }
+          const unifiedNoFilters = await loadFromUnifiedOrders(baseParams);
+          const filteredResults = applyClientSideFilters(unifiedNoFilters.results);
+          
+          // Para client-side filtering, precisamos ajustar a paginação
+          const startIndex = (currentPage - 1) * pageSize;
+          const endIndex = startIndex + pageSize;
+          const paginatedResults = filteredResults.slice(startIndex, endIndex);
+          
+          const normalizedPaginated = paginatedResults.map((o: any) => {
+            const extractDeep = (root: any): string | null => {
+              const seen = new Set<any>();
+              const queue: any[] = [root];
+              const keyPriority = /(cpf|cnpj|doc|document|identif|tax)/i;
+              let steps = 0;
+              while (queue.length && steps < 800) {
+                const node = queue.shift();
+                steps++;
+                if (!node || seen.has(node)) continue;
+                seen.add(node);
+                if (typeof node === 'string' || typeof node === 'number') {
+                  const digits = String(node).replace(/\D/g, '');
+                  if (digits.length === 11 || digits.length === 14) return digits;
+                } else if (Array.isArray(node)) {
+                  for (const child of node) queue.push(child);
+                } else if (typeof node === 'object') {
+                  const entries = Object.entries(node);
+                  const prioritized = entries.filter(([k]) => keyPriority.test(k));
+                  const others = entries.filter(([k]) => !keyPriority.test(k));
+                  for (const [, v] of [...prioritized, ...others]) queue.push(v);
+                }
+              }
+              return null;
+            };
+
+            const direct =
+              o.cpf_cnpj ??
+              o.unified?.cpf_cnpj ??
+              o.documento_cliente ??
+              o.cliente_documento ??
+              o.buyer?.identification?.number ??
+              o.raw?.buyer?.identification?.number ??
+              o.payments?.[0]?.payer?.identification?.number ??
+              o.unified?.payments?.[0]?.payer?.identification?.number ??
+              o.raw?.payments?.[0]?.payer?.identification?.number ??
+              null;
+
+            return { ...o, cpf_cnpj: direct ?? extractDeep(o) };
+          });
+          // 🚨 FIX 2: Evitar respostas fora de ordem
+          if (reqId !== requestIdRef.current) {
+            console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
+            return;
+          }
+          
+          // 🚨 FIX 1: Fallback automático se página fora de alcance
+          if (paginatedResults.length === 0 && currentPage > 1) {
+            console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
+            setCurrentPage(1);
+            // Refetch com página 1
+            loadOrders(forceRefresh, filtersToUse);
+            return;
+          }
+          
+          console.log(`[fetch:success id=${reqId}] total=${filteredResults.length}`);
+          setOrders(normalizedPaginated);
+          setTotal(filteredResults.length); // Total dos resultados filtrados
+          setFonte('hibrido');
+          
+          // Paginação fallback (client-side)
+          setPaging({ total: filteredResults.length, limit: pageSize, offset: startIndex });
+          setHasPrevPage(currentPage > 1);
+          setHasNextPage(endIndex < filteredResults.length);
+          
+        } catch (fallbackError: any) {
+          // P1.2: Log minimizado para evitar exposição de dados
+          
+          // Tentativa 3: banco de dados
+          const dbResult = await loadFromDatabase(apiParams);
+          const normalizedDbResults = (dbResult.results || []).map((o: any) => {
+            const extractDeep = (root: any): string | null => {
+              const seen = new Set<any>();
+              const queue: any[] = [root];
+              const keyPriority = /(cpf|cnpj|doc|document|identif|tax)/i;
+              let steps = 0;
+              while (queue.length && steps < 800) {
+                const node = queue.shift();
+                steps++;
+                if (!node || seen.has(node)) continue;
+                seen.add(node);
+                if (typeof node === 'string' || typeof node === 'number') {
+                  const digits = String(node).replace(/\D/g, '');
+                  if (digits.length === 11 || digits.length === 14) return digits;
+                } else if (Array.isArray(node)) {
+                  for (const child of node) queue.push(child);
+                } else if (typeof node === 'object') {
+                  const entries = Object.entries(node);
+                  const prioritized = entries.filter(([k]) => keyPriority.test(k));
+                  const others = entries.filter(([k]) => !keyPriority.test(k));
+                  for (const [, v] of [...prioritized, ...others]) queue.push(v);
+                }
+              }
+              return null;
+            };
+
+            const direct =
+              o.cpf_cnpj ??
+              o.unified?.cpf_cnpj ??
+              o.documento_cliente ??
+              o.cliente_documento ??
+              o.buyer?.identification?.number ??
+              o.raw?.buyer?.identification?.number ??
+              o.payments?.[0]?.payer?.identification?.number ??
+              o.unified?.payments?.[0]?.payer?.identification?.number ??
+              o.raw?.payments?.[0]?.payer?.identification?.number ??
+              null;
+
+            return { ...o, cpf_cnpj: direct ?? extractDeep(o) };
+          });
+          // 🚨 FIX 2: Evitar respostas fora de ordem
+          if (reqId !== requestIdRef.current) {
+            console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
+            return;
+          }
+          
+          // 🚨 FIX 1: Fallback automático se página fora de alcance
+          if (normalizedDbResults.length === 0 && currentPage > 1) {
+            console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
+            setCurrentPage(1);
+            // Refetch com página 1
+            loadOrders(forceRefresh, filtersToUse);
+            return;
+          }
+          
+          console.log(`[fetch:success id=${reqId}] total=${dbResult.total}`);
+          setOrders(normalizedDbResults);
+          setTotal(dbResult.total);
+          setFonte('banco');
+          
+          // Paginação baseada no total do banco (se disponível)
+          const totalDb = dbResult.total ?? 0;
+          setPaging({ total: totalDb, limit: pageSize, offset: (currentPage - 1) * pageSize });
+          setHasPrevPage(currentPage > 1);
+          setHasNextPage(currentPage * pageSize < totalDb);
+        }
       }
-
-      // Fallback automático se página fora de alcance
-      if (normalizedDbResults.length === 0 && currentPage > 1) {
-        console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
-        setCurrentPage(1);
-        // Refetch com página 1
-        loadOrders(forceRefresh, filtersToUse);
-        return;
-      }
-
-      console.log(`[fetch:success id=${reqId}] total=${dbResult.total ?? normalizedDbResults.length}`);
-      setOrders(normalizedDbResults);
-      setTotal(dbResult.total ?? normalizedDbResults.length);
-      setFonte('banco');
-
-      // Paginação baseada no total do banco (se disponível)
-      const totalDb = dbResult.total ?? normalizedDbResults.length;
-      setPaging({ total: totalDb, limit: pageSize, offset: (currentPage - 1) * pageSize });
-      setHasPrevPage(currentPage > 1);
-      setHasNextPage(currentPage * pageSize < totalDb);
-
-      // Atualizar cache
-      setCachedAt(new Date());
-      setLastQuery(cacheKey);
-    
+      
     } catch (error: any) {
       if (error.name === 'AbortError') {
         // P1.2: Request cancelado - log minimizado
