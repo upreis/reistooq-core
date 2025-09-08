@@ -14,7 +14,7 @@ const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-internal-call',
 };
 
 serve(async (req) => {
@@ -31,7 +31,9 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = makeClient(req.headers.get("Authorization"));
+    const authHeader = req.headers.get("Authorization");
+    const isInternal = (req.headers.get('x-internal-call') ?? '') === ENC_KEY;
+    const supabase = makeClient(authHeader);
     const b = await req.json();
     
     if (!b?.integration_account_id || !b?.provider) {
@@ -78,7 +80,13 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'get', p_function: 'integrations-get-secret', p_success: true });
+    await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: isInternal ? 'get_internal' : 'get', p_function: 'integrations-get-secret', p_success: true });
+
+    if (isInternal) {
+      return new Response(JSON.stringify({ ok: true, secret: data, internal: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
 
     const redacted = {
       has_access_token: !!data?.access_token,

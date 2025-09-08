@@ -4,9 +4,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-call",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY") || "";
 
 function serviceClient(authHeader?: string | null) {
   const url = Deno.env.get("SUPABASE_URL")!;
@@ -76,16 +78,16 @@ async function refreshIfNeeded(
   const data = JSON.parse(raw);
   const newExpiresAt = new Date(Date.now() + (data.expires_in ?? 0) * 1000).toISOString();
 
-  const { data: upData, error: upErr } = await sb.functions.invoke("integrations-store-secret", {
+  const { data: upData, error: upErr } = await sb.functions.invoke('integrations-store-secret', {
     body: {
       integration_account_id: secrets.account_id,
-      provider: "mercadolivre",
+      provider: 'mercadolivre',
       access_token: data.access_token,
       refresh_token: data.refresh_token || secrets.refresh_token,
       expires_at: newExpiresAt,
-      payload: secrets.meta ?? {},
+      payload: secrets.meta ?? {}
     },
-    headers: { Authorization: authHeader },
+    headers: { Authorization: authHeader, 'x-internal-call': ENC_KEY }
   });
   if (upErr || !upData?.ok) {
     console.error(`[unified-orders:${cid}] Falha ao salvar novos tokens`, upErr, upData);
@@ -196,7 +198,7 @@ serve(async (req) => {
       "integrations-get-secret",
       {
         body: { integration_account_id, provider: "mercadolivre" },
-        headers: { Authorization: authHeader },
+        headers: { Authorization: authHeader, 'x-internal-call': ENC_KEY },
       }
     );
 
