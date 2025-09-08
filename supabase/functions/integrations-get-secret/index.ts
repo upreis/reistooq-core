@@ -1,23 +1,43 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { decryptCompat, decryptAESGCM } from "../_shared/crypto.ts";
 
-// Standalone helpers (no _shared import)
-function makeClient(authHeader: string | null) {
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  return createClient(url, key, {
-    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
-  });
-}
-
-const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const INTERNAL_SHARED_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") ?? "";
+const INTEGRATIONS_CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-internal-call',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+function makeServiceClient() {
+  return createClient(SUPABASE_URL, SERVICE_KEY, { 
+    auth: { persistSession: false, autoRefreshToken: false } 
+  });
+}
+
+function makeUserClient(req: Request) {
+  const auth = req.headers.get("Authorization") ?? "";
+  return createClient(SUPABASE_URL, ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: auth ? { Authorization: auth } : {} },
+  });
+}
+
+function isInternalCall(req: Request) {
+  const x = req.headers.get("x-internal-call");
+  const t = req.headers.get("x-internal-token");
+  return (x === "true") && (!!INTERNAL_SHARED_TOKEN && t === INTERNAL_SHARED_TOKEN);
+}
+
+// Legacy para compatibilidade (se existia decrypt antigo)
+async function decryptLegacyIfAny(payloadB64: string, key: string) {
+  return Promise.reject("no-legacy");
+}
+
+Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -31,19 +51,22 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    const isInternal = (req.headers.get('x-internal-call') ?? '') === ENC_KEY;
-    const supabase = makeClient(authHeader);
-    const b = await req.json();
+    const isInternal = isInternalCall(req);
+    const serviceClient = makeServiceClient();
+    const userClient = makeUserClient(req);
+    const supabase = isInternal ? serviceClient : userClient;
+
+    const body = await req.json();
+    const { integration_account_id, provider } = body;
     
-    console.log('[integrations-get-secret] DEBUG: Request received', {
-      hasAuth: !!authHeader,
+    console.log(`[integrations-get-secret] DEBUG: Request received`, {
+      hasAuth: !!req.headers.get("Authorization"),
       isInternal,
-      accountId: b?.integration_account_id,
-      provider: b?.provider
+      accountId: integration_account_id,
+      provider
     });
     
-    if (!b?.integration_account_id) {
+    if (!integration_account_id) {
       return new Response(JSON.stringify({ 
         ok: false, 
         error: "integration_account_id é obrigatório" 
@@ -53,73 +76,148 @@ serve(async (req) => {
       });
     }
 
-    // Autorização: validar organização e permissão antes de acessar segredos
-    const { data: ia, error: iaErr } = await supabase
-      .from('integration_accounts')
-      .select('id, organization_id')
-      .eq('id', b.integration_account_id)
-      .maybeSingle();
+    // Para chamadas não internas, verificar organização e permissões usando userClient
+    if (!isInternal) {
+      const orgResult = await userClient.rpc('get_current_org_id');
+      if (orgResult.error || !orgResult.data) {
+        await userClient.rpc('log_secret_access', {
+          p_account_id: integration_account_id,
+          p_provider: provider,
+          p_action: 'read_failed',
+          p_function: 'integrations-get-secret',
+          p_success: false,
+          p_error: 'organization_not_found'
+        });
+        return new Response(JSON.stringify({ ok: false, error: 'Organization not found' }), {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders }
+        });
+      }
 
-    if (iaErr || !ia) {
-      await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'get', p_function: 'integrations-get-secret', p_success: false, p_error: iaErr?.message ?? 'integration_account_not_found' });
-      return new Response(JSON.stringify({ ok: false, error: 'Conta de integração não encontrada' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      // Verificar permissões
+      const permResult = await userClient.rpc('has_permission', { permission_key: 'integrations:manage' });
+      if (permResult.error || !permResult.data) {
+        await userClient.rpc('log_secret_access', {
+          p_account_id: integration_account_id,
+          p_provider: provider,
+          p_action: 'read_failed',
+          p_function: 'integrations-get-secret',
+          p_success: false,
+          p_error: 'insufficient_permissions'
+        });
+        return new Response(JSON.stringify({ ok: false, error: 'Insufficient permissions' }), {
+          status: 403,
+          headers: { "Content-Type": "application/json", ...corsHeaders }
+        });
+      }
     }
 
-    const { data: currentOrg } = await supabase.rpc('get_current_org_id');
-    if (!currentOrg || ia.organization_id !== currentOrg) {
-      await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'get', p_function: 'integrations-get-secret', p_success: false, p_error: 'forbidden' });
-      return new Response(JSON.stringify({ ok: false, error: 'Acesso negado' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    const { data: canManage } = await supabase.rpc('has_permission', { permission_key: 'integrations:manage' });
-    if (!canManage) {
-      await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'get', p_function: 'integrations-get-secret', p_success: false, p_error: 'missing_permission' });
-      return new Response(JSON.stringify({ ok: false, error: 'Permissão insuficiente' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    // Buscar segredos (inclui campo legado secret_enc para fallback)
-    // Normalização e sinônimos de provider (ex.: ML)
-    const providerRaw = (b?.provider ? String(b.provider) : '').toLowerCase();
-    const norm = providerRaw.replace(/\s|_/g, '');
-    const synonyms = providerRaw
-      ? Array.from(new Set(norm === 'mercadolivre' ? ['mercadolivre','mercado_livre','mercadolibre','ml'] : [providerRaw]))
-      : [];
-
-    let query = supabase
+    // Buscar o segredo usando serviceClient (bypass RLS) para leitura dos secrets
+    const { data: secret, error } = await serviceClient
       .from('integration_secrets')
-      .select('access_token, refresh_token, expires_at, meta, secret_enc, provider, updated_at')
-      .eq('integration_account_id', b.integration_account_id);
-
-    if (synonyms.length > 0) {
-      query = query.in('provider', synonyms as any);
-    }
-
-    const { data, error } = await query
-      .order('updated_at', { ascending: false })
-      .limit(1)
+      .select('*')
+      .eq('integration_account_id', integration_account_id)
+      .ilike('provider', provider)
       .maybeSingle();
 
-    if (error) throw error;
-
-    await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: isInternal ? 'get_internal' : 'get', p_function: 'integrations-get-secret', p_success: true });
-
-    if (isInternal) {
-      return new Response(JSON.stringify({ ok: true, secret: data, internal: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
+    if (error) {
+      console.error('[integrations-get-secret] Database error:', error);
+      const logClient = isInternal ? serviceClient : userClient;
+      await logClient.rpc('log_secret_access', {
+        p_account_id: integration_account_id,
+        p_provider: provider,
+        p_action: 'read_failed',
+        p_function: 'integrations-get-secret',
+        p_success: false,
+        p_error: error.message
+      });
+      return new Response(JSON.stringify({ ok: false, error: 'Database error' }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     }
 
-    const hasEnc = !!data?.secret_enc;
-    const redacted = {
-      has_access_token: hasEnc || !!data?.access_token,
-      has_refresh_token: hasEnc || !!data?.refresh_token,
-      has_secret_enc: hasEnc,
-      expires_at: data?.expires_at ?? null,
-      meta: data?.meta ?? {}
+    // Log do acesso
+    const logClient = isInternal ? serviceClient : userClient;
+    await logClient.rpc('log_secret_access', {
+      p_account_id: integration_account_id,
+      p_provider: provider,
+      p_action: 'read_success',
+      p_function: 'integrations-get-secret',
+      p_success: true
+    });
+
+    if (!secret) {
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        secret: null,
+        internal: isInternal 
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
+
+    // Decriptar secret_enc se existir
+    let decryptedSecret = null;
+    if (secret.secret_enc) {
+      try {
+        const secretJson = await decryptCompat(secret.secret_enc, INTEGRATIONS_CRYPTO_KEY, decryptLegacyIfAny);
+        decryptedSecret = JSON.parse(secretJson);
+        console.log('[integrations-get-secret] Secret decrypted successfully');
+      } catch (decryptError) {
+        console.error('[integrations-get-secret] Failed to decrypt secret_enc:', decryptError);
+        // Fallback para tokens diretos se existirem
+        decryptedSecret = {
+          access_token: secret.access_token,
+          refresh_token: secret.refresh_token,
+          expires_at: secret.expires_at
+        };
+      }
+    } else {
+      // Usar tokens diretos se não há secret_enc
+      decryptedSecret = {
+        access_token: secret.access_token,
+        refresh_token: secret.refresh_token,
+        expires_at: secret.expires_at
+      };
+    }
+
+    // Para chamadas internas, retornar dados completos
+    if (isInternal) {
+      return new Response(JSON.stringify({
+        ok: true,
+        secret: {
+          ...decryptedSecret,
+          secret_enc: secret.secret_enc,
+          provider: secret.provider,
+          created_at: secret.created_at,
+          updated_at: secret.updated_at
+        },
+        internal: true
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders }
+      });
+    }
+
+    // Para chamadas externas, retornar dados redacted
+    const redactedSecret = {
+      has_access_token: !!(decryptedSecret?.access_token || secret.access_token),
+      has_refresh_token: !!(decryptedSecret?.refresh_token || secret.refresh_token),
+      expires_at: decryptedSecret?.expires_at || secret.expires_at,
+      provider: secret.provider,
+      created_at: secret.created_at,
+      updated_at: secret.updated_at
     };
 
-    return new Response(JSON.stringify({ ok: true, secret: redacted }), { 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    return new Response(JSON.stringify({
+      ok: true,
+      secret: redactedSecret,
+      internal: false
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json", ...corsHeaders }
     });
   } catch (e) {
     console.error('Error in integrations-get-secret:', e);

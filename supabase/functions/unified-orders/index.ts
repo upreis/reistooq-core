@@ -1,204 +1,218 @@
-// supabase/functions/unified-orders/index.ts
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { decryptCompat, decryptAESGCM } from "../_shared/crypto.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-call",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const INTEGRATIONS_CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!; // mesma var usada pelo store-secret
+
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY") || "";
-
-// Funções de criptografia/descriptografia
-async function encryptData(data: string, key: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const keyBytes = encoder.encode(key.slice(0, 32).padEnd(32, '0'));
-  const dataBytes = encoder.encode(data);
-  
-  // Generate random IV
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    keyBytes,
-    { name: 'AES-GCM' },
-    false,
-    ['encrypt']
-  );
-  
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    cryptoKey,
-    dataBytes
-  );
-  
-  const encryptedArray = new Uint8Array(encrypted);
-  const result = new Uint8Array(iv.length + encryptedArray.length);
-  result.set(iv);
-  result.set(encryptedArray, iv.length);
-  return btoa(String.fromCharCode(...result));
-}
-
-async function decryptData(encryptedData: string, key: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-  const keyBytes = encoder.encode(key.slice(0, 32).padEnd(32, '0'));
-  
-  const data = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
-  const iv = data.slice(0, 12);
-  const encrypted = data.slice(12);
-  
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    keyBytes,
-    { name: 'AES-GCM' },
-    false,
-    ['decrypt']
-  );
-  
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
-    cryptoKey,
-    encrypted
-  );
-  
-  return decoder.decode(decrypted);
-}
-
-function serviceClient(authHeader?: string | null) {
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  return createClient(url, key, {
-    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
-  });
-}
-
-function ok(data: Record<string, unknown>, status = 200) {
+export function ok(data: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify({ ok: true, ...data }), {
     status,
-    headers: { "Content-Type": "application/json", ...corsHeaders },
+    headers: { "Content-Type": "application/json", ...corsHeaders }
   });
 }
 
-function fail(error: string, status = 400, detail?: unknown, cid?: string) {
-  const payload: Record<string, unknown> = { ok: false, error, status };
-  if (detail !== undefined) payload.detail = detail;
-  if (cid) payload.correlation_id = cid;
-  return new Response(JSON.stringify(payload), {
+export function fail(error: string, status = 400, detail?: unknown, cid?: string) {
+  const body = { ok: false, error, ...(detail && { detail }), ...(cid && { cid }) };
+  return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json", ...corsHeaders },
+    headers: { "Content-Type": "application/json", ...corsHeaders }
   });
+}
+
+// Client de serviço - bypass RLS para integration_secrets
+function makeServiceClient() {
+  return createClient(SUPABASE_URL, SERVICE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+// Client de usuário - mantém contexto para validações org/permissão
+function makeUserClient(req: Request) {
+  const auth = req.headers.get("Authorization") ?? "";
+  return createClient(SUPABASE_URL, ANON_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: auth ? { Authorization: auth } : {} },
+  });
+}
+
+// Legacy para compatibilidade (se existia decrypt antigo)
+async function decryptLegacyIfAny(payloadB64: string, key: string) {
+  // Se existia um decrypt antigo, implementar aqui; caso contrário rejeitar
+  return Promise.reject("no-legacy");
 }
 
 function getMlConfig() {
-  const clientId = Deno.env.get("ML_CLIENT_ID");
-  const clientSecret = Deno.env.get("ML_CLIENT_SECRET");
-  if (!clientId || !clientSecret) throw new Error("Missing ML_CLIENT_ID / ML_CLIENT_SECRET");
-  return { clientId, clientSecret };
+  const clientId = Deno.env.get('ML_CLIENT_ID');
+  const clientSecret = Deno.env.get('ML_CLIENT_SECRET');
+  const redirectUri = Deno.env.get('ML_REDIRECT_URI');
+  const siteId = Deno.env.get('ML_SITE_ID') || 'MLB';
+
+  if (!clientId || !clientSecret || !redirectUri) {
+    throw new Error('Missing ML secrets: ML_CLIENT_ID, ML_CLIENT_SECRET, ML_REDIRECT_URI are required');
+  }
+
+  return { clientId, clientSecret, redirectUri, siteId };
 }
 
-async function refreshIfNeeded(
-  sb: ReturnType<typeof serviceClient>,
-  secrets: any,
-  cid: string,
-  authHeader: string
-) {
-  const safetyMs = 5 * 60 * 1000; // 5min
+async function refreshIfNeeded(serviceClient: any, secrets: any, cid: string, authHeader: string) {
+  if (!secrets?.access_token || !secrets?.refresh_token) {
+    console.log(`[unified-orders:${cid}] Refresh ignorado: tokens ausentes`);
+    return secrets;
+  }
+
   const now = Date.now();
-  const exp = secrets?.expires_at ? new Date(secrets.expires_at).getTime() : 0;
-  if (secrets?.access_token && exp > now + safetyMs) return secrets;
+  const expires = secrets.expires_at ? new Date(secrets.expires_at).getTime() : 0;
+  const safetyMargin = 5 * 60 * 1000; // 5 minutos
 
-  console.log(`[unified-orders:${cid}] Access token expirado/expirando, fazendo refresh...`);
-  const { clientId, clientSecret } = getMlConfig();
-  if (!secrets?.refresh_token) throw new Error("Missing refresh_token");
-
-  const params = new URLSearchParams({
-    grant_type: "refresh_token",
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: secrets.refresh_token,
-  });
-
-  const resp = await fetch("https://api.mercadolibre.com/oauth/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
-    body: params.toString(),
-  });
-  const raw = await resp.text();
-  if (!resp.ok) {
-    console.error(`[unified-orders:${cid}] Refresh ML falhou`, resp.status, raw);
-    throw new Error(`ML refresh failed ${resp.status}: ${raw}`);
+  if (expires > now + safetyMargin) {
+    console.log(`[unified-orders:${cid}] Token ainda válido`);
+    return secrets;
   }
 
-  const data = JSON.parse(raw);
-  const newExpiresAt = new Date(Date.now() + (data.expires_in ?? 0) * 1000).toISOString();
-
-  const { data: upData, error: upErr } = await sb.functions.invoke('integrations-store-secret', {
-    body: {
-      integration_account_id: secrets.account_id,
-      provider: 'mercadolivre',
-      access_token: data.access_token,
-      refresh_token: data.refresh_token || secrets.refresh_token,
-      expires_at: newExpiresAt,
-      payload: secrets.meta ?? {}
-    },
-    headers: { Authorization: authHeader, 'x-internal-call': ENC_KEY }
-  });
-  if (upErr || !upData?.ok) {
-    console.error(`[unified-orders:${cid}] Falha ao salvar novos tokens`, upErr, upData);
-    throw new Error("Failed to save refreshed tokens");
-  }
-
-  console.log(`[unified-orders:${cid}] Refresh OK`);
-  return {
-    ...secrets,
-    access_token: data.access_token,
-    refresh_token: data.refresh_token || secrets.refresh_token,
-    expires_at: newExpiresAt,
-  };
-}
-
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    const reqHeaders =
-      req.headers.get("Access-Control-Request-Headers") ??
-      "authorization, x-client-info, apikey, content-type";
-    return new Response(null, {
-      status: 200,
-      headers: { ...corsHeaders, "Access-Control-Allow-Headers": reqHeaders },
-    });
-  }
-  if (req.method !== "POST") return fail("Method Not Allowed", 405);
-
-  const cid = crypto.randomUUID().slice(0, 8);
   try {
-    const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
-    if (!authHeader) return fail("Missing Authorization header", 401, null, cid);
+    console.log(`[unified-orders:${cid}] Token expirado/próximo, fazendo refresh...`);
+    const refreshResult = await serviceClient.functions.invoke('mercadolibre-token-refresh', {
+      body: { integration_account_id: secrets.account_id },
+      headers: { Authorization: authHeader, 'x-internal-call': 'true' }
+    });
 
-    let body: any = {};
-    try {
-      body = await req.json();
-    } catch {
-      body = {};
+    if (refreshResult.error || !refreshResult.data?.ok) {
+      console.error(`[unified-orders:${cid}] Refresh falhou:`, refreshResult.error || refreshResult.data);
+      return secrets; // Continuar com token expirado
     }
 
+    console.log(`[unified-orders:${cid}] Refresh realizado com sucesso`);
+    return {
+      ...secrets,
+      access_token: refreshResult.data.access_token,
+      refresh_token: refreshResult.data.refresh_token,
+      expires_at: refreshResult.data.expires_at
+    };
+  } catch (error) {
+    console.error(`[unified-orders:${cid}] Erro no refresh:`, error);
+    return secrets; // Continuar com token original
+  }
+}
+
+async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid: string) {
+  if (!orders?.length) return orders;
+
+  console.log(`[unified-orders:${cid}] Enriquecendo ${orders.length} pedidos com dados de envio`);
+  
+  const enrichedOrders = await Promise.all(
+    orders.map(async (order) => {
+      try {
+        if (!order.shipping?.id) return order;
+
+        const shippingResp = await fetch(
+          `https://api.mercadolibre.com/shipments/${order.shipping.id}`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+
+        if (shippingResp.ok) {
+          const shippingData = await shippingResp.json();
+          return {
+            ...order,
+            shipping: {
+              ...order.shipping,
+              ...shippingData,
+              enriched: true
+            }
+          };
+        }
+      } catch (error) {
+        console.warn(`[unified-orders:${cid}] Erro ao enriquecer shipping ${order.shipping?.id}:`, error);
+      }
+      return order;
+    })
+  );
+
+  console.log(`[unified-orders:${cid}] Enriquecimento de shipping concluído`);
+  return enrichedOrders;
+}
+
+function transformMLOrders(orders: any[], integration_account_id: string) {
+  return orders.map(order => {
+    const buyer = order.buyer || {};
+    const shipping = order.shipping || {};
+    const payments = order.payments || [];
+    const firstPayment = payments[0] || {};
+
+    return {
+      id: order.id?.toString() || '',
+      numero: order.id?.toString() || '',
+      nome_cliente: buyer.nickname || buyer.first_name || null,
+      cpf_cnpj: buyer.identification?.number || null,
+      data_pedido: order.date_created || null,
+      data_prevista: shipping.date_first_printed || order.date_closed || null,
+      situacao: order.status || null,
+      valor_total: order.total_amount || 0,
+      valor_frete: shipping.cost || 0,
+      valor_desconto: order.coupon?.amount || 0,
+      numero_ecommerce: order.pack_id?.toString() || null,
+      numero_venda: order.id?.toString() || null,
+      empresa: 'Mercado Livre',
+      cidade: shipping.receiver_address?.city?.name || null,
+      uf: shipping.receiver_address?.state?.id || null,
+      codigo_rastreamento: shipping.tracking_number || null,
+      url_rastreamento: shipping.tracking_method === 'custom' ? null : 
+        shipping.tracking_number ? `https://www.mercadolivre.com.br/gz/tracking/${shipping.tracking_number}` : null,
+      obs: order.buyer_comment || null,
+      obs_interna: null,
+      integration_account_id,
+      created_at: order.date_created || new Date().toISOString(),
+      updated_at: order.last_updated || order.date_created || new Date().toISOString()
+    };
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return fail('Method not allowed', 405);
+  }
+
+  // Criar dois clients: serviço (bypass RLS) e usuário (contexto org)
+  const userClient = makeUserClient(req);
+  const serviceClient = makeServiceClient();
+  const cid = crypto.randomUUID().slice(0, 8);
+
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return fail('Missing Authorization header', 401, null, cid);
+    }
+
+    const body = await req.json();
     const {
       integration_account_id,
       status,
       shipping_status,
       date_from,
       date_to,
-      seller_id,
-      q,
       cidade,
       uf,
       valorMin,
       valorMax,
       search,
-      limit: rawLimit = 50,
+      q,
+      limit = 25,
       offset = 0,
-    } = body || {};
+      enrich = true,
+      debug = false,
+      include_shipping = true
+    } = body;
 
     console.log(`[unified-orders:${cid}] DEBUG START - Filtros detalhados:`, {
       integration_account_id,
@@ -206,15 +220,8 @@ serve(async (req) => {
       filtros_valor: { valorMin, valorMax },
       filtros_busca: { q, search },
       filtros_data: { date_from, date_to },
-      filtros_status: { status, shipping_status },
+      filtros_status: { status, shipping_status }
     });
-
-    const limit = Math.min(rawLimit, 50);
-    if (rawLimit > 50) {
-      console.warn(
-        `[unified-orders:${cid}] Limit reduzido de ${rawLimit} para ${limit} (máximo permitido: 50)`
-      );
-    }
 
     console.log(`[unified-orders:${cid}] filters`, {
       integration_account_id,
@@ -229,407 +236,269 @@ serve(async (req) => {
       search,
       q,
       limit,
-      offset,
+      offset
     });
-    if (!integration_account_id)
-      return fail("integration_account_id é obrigatório", 400, null, cid);
 
-    const sb = serviceClient(authHeader);
-
-    // 1) Conta
-    const { data: account, error: accErr } = await sb
-      .from("integration_accounts")
-      .select("*")
-      .eq("id", integration_account_id)
-      .maybeSingle();
-
-    if (accErr || !account) return fail("Integration account not found", 404, accErr, cid);
-    if (!account.is_active) return fail("Integration account is not active", 400, null, cid);
-    const provider = String(account.provider || '').toLowerCase();
-    const mlProviders = new Set(['mercadolivre', 'mercado_livre', 'mercadolibre', 'ml']);
-    if (!mlProviders.has(provider)) {
-      return ok({ results: [], unified: [], paging: { total: 0, limit, offset }, count: 0 });
+    if (!integration_account_id) {
+      return fail('integration_account_id é obrigatório', 400, null, cid);
     }
 
-    // 2) Segredos - priorizar nova estrutura encriptada
-    const { data: secretRow, error: secErr } = await sb
-      .from('integration_secrets')
-      .select('secret_enc, expires_at, meta, access_token, refresh_token')
-      .eq('integration_account_id', integration_account_id)
-      .maybeSingle();
+    // ✅ 1. Busca account com validação de usuário (RLS ativo)
+    const { data: accountData, error: accountError } = await userClient
+      .from('integration_accounts')
+      .select('*')
+      .eq('id', integration_account_id)
+      .eq('provider', 'mercadolivre')
+      .eq('is_active', true)
+      .single();
 
-    let resolvedSecrets: any = null;
-    let fallbackSecretEnc: any = account?.secret_enc ?? null;
+    if (accountError) {
+      console.error(`[unified-orders:${cid}] FALHA: Busca account`, accountError);
+      return fail('Integration account not found', 404, accountError, cid);
+    }
+
+    // ✅ 2. Busca integration_secrets com SERVICE CLIENT (bypass RLS)
+    const { data: secretRow, error: secretError } = await serviceClient
+      .from('integration_secrets')
+      .select('secret_enc, provider, expires_at, access_token, refresh_token')
+      .eq('integration_account_id', integration_account_id)
+      .eq('provider', 'mercadolivre')
+      .maybeSingle();
 
     console.log(`[unified-orders:${cid}] Resultado busca secrets:`, { 
       hasRow: !!secretRow, 
-      hasSecretEnc: !!secretRow?.secret_enc,
-      hasLegacyTokens: !!secretRow?.access_token
+      hasSecretEnc: !!secretRow?.secret_enc, 
+      hasLegacyTokens: !!(secretRow?.access_token || secretRow?.refresh_token)
     });
 
-    // PRIORIDADE 1: Tentar descriptografar secret_enc (nova estrutura)
-    if (secretRow?.secret_enc) {
-      try {
-        console.log(`[unified-orders:${cid}] DEBUG: Descriptografando tokens da nova estrutura`);
-        const decrypted = await decryptData(secretRow.secret_enc, ENC_KEY);
-        const parsed = JSON.parse(decrypted);
-        
-        if (parsed.access_token && parsed.refresh_token) {
-          resolvedSecrets = {
-            access_token: parsed.access_token,
-            refresh_token: parsed.refresh_token,
-            expires_at: parsed.expires_at || secretRow.expires_at,
-            meta: secretRow.meta || {},
-          };
-          console.log(`[unified-orders:${cid}] SUCCESS: Tokens descriptografados da nova estrutura`);
-        }
-      } catch (decryptError) {
-        console.error(`[unified-orders:${cid}] Erro ao descriptografar nova estrutura:`, decryptError);
-      }
-    }
-
-    // PRIORIDADE 2: Fallback para tokens legados em claro (se ainda existirem)
-    if (!resolvedSecrets?.access_token && secretRow?.access_token) {
-      resolvedSecrets = {
-        access_token: secretRow.access_token,
-        refresh_token: secretRow.refresh_token,
-        expires_at: secretRow.expires_at,
-        meta: secretRow.meta || {},
-      };
-      console.log(`[unified-orders:${cid}] WARNING: Usando tokens legados em claro`);
-    }
-
-    if (!resolvedSecrets?.access_token) {
+    let accessToken = '';
+    let refreshToken = '';
+    let expiresAt = '';
+    
+    if (!secretRow?.secret_enc) {
       console.log(`[unified-orders:${cid}] DEBUG: Tokens diretos não encontrados, usando integrations-get-secret`);
-      const { data: secData, error: getErr } = await sb.functions.invoke('integrations-get-secret', {
-        body: { integration_account_id, provider: 'mercadolivre' },
-        headers: { Authorization: authHeader!, 'x-internal-call': ENC_KEY }
+      // ✅ 3. Se não encontrou encrypted secret, chama get-secret
+      const { data: secretData, error: getSecretError } = await serviceClient.functions.invoke('integrations-get-secret', {
+        body: {
+          integration_account_id,
+          provider: 'mercadolivre'
+        },
+        headers: { 
+          'x-internal-call': 'true',
+          'x-internal-token': Deno.env.get('INTERNAL_SHARED_TOKEN') || ''
+        }
       });
-      console.log(`[unified-orders:${cid}] DEBUG: get-secret response:`, { 
-        hasData: !!secData, 
-        hasError: !!getErr, 
-        secDataKeys: secData ? Object.keys(secData) : [],
-        error: getErr 
+
+      console.log(`[unified-orders:${cid}] DEBUG: get-secret response:`, {
+        hasData: !!secretData,
+        hasError: !!getSecretError,
+        secDataKeys: secretData ? Object.keys(secretData) : [],
+        error: getSecretError
       });
-      if (getErr) console.warn(`[unified-orders:${cid}] get-secret error`, getErr);
-      const payload: any = secData?.secret ?? secData ?? null;
+
+      if (getSecretError || !secretData?.ok) {
+        console.error(`[unified-orders:${cid}] FALHA: get-secret`, getSecretError || secretData);
+        return fail('Failed to get integration secret', 500, getSecretError || secretData, cid);
+      }
+
+      const secretPayload = secretData.secret;
+      
       console.log(`[unified-orders:${cid}] DEBUG: Payload extracted:`, {
-        hasAccessToken: !!payload?.access_token,
-        hasRefreshToken: !!payload?.refresh_token,
-        hasSecretEnc: !!payload?.secret_enc,
-        payloadKeys: payload ? Object.keys(payload) : []
+        hasAccessToken: !!secretPayload?.access_token,
+        hasRefreshToken: !!secretPayload?.refresh_token,
+        hasSecretEnc: !!secretPayload?.secret_enc,
+        payloadKeys: secretPayload ? Object.keys(secretPayload) : []
       });
-      if (payload?.secret_enc) fallbackSecretEnc = payload.secret_enc;
-      if (payload?.access_token) {
-        resolvedSecrets = {
-          access_token: payload.access_token,
-          refresh_token: payload.refresh_token ?? secretRow?.refresh_token ?? null,
-          expires_at: payload.expires_at ?? secretRow?.expires_at ?? null,
-          meta: payload.payload ?? payload.meta ?? secretRow?.meta ?? {},
-        };
-        console.log(`[unified-orders:${cid}] Tokens obtidos via get-secret`);
-      }
-    }
-
-    if (!resolvedSecrets?.access_token && (secretRow?.secret_enc || fallbackSecretEnc)) {
-      // Último recurso: tentar decodificar JSON/base64 simples (legado)
+      
+      accessToken = secretPayload?.access_token || '';
+      refreshToken = secretPayload?.refresh_token || '';
+      expiresAt = secretPayload?.expires_at || '';
+    } else {
+      // ✅ 4. Decifrar usando a MESMA derivação do store-secret
       try {
-        const enc: any = fallbackSecretEnc ?? secretRow?.secret_enc ?? account?.secret_enc;
-        let obj: any = null;
-        const tryParseJson = (s: string) => { try { return JSON.parse(s); } catch { return null; } };
-        if (typeof enc === 'string') {
-          obj = tryParseJson(enc) || tryParseJson(atob(enc)) || null;
-        } else if (typeof enc === 'object') {
-          // Bytea -> Buffer-like
-          if (Array.isArray((enc as any).data)) {
-            try {
-              const bytes = new Uint8Array((enc as any).data as number[]);
-              const txt = new TextDecoder().decode(bytes);
-              obj = tryParseJson(txt) || tryParseJson(atob(txt)) || null;
-            } catch {}
-          } else {
-            obj = enc;
-          }
-        }
-        const cands = [obj, obj?.mercadolivre, obj?.mercado_livre, obj?.ml, obj?.token, obj?.data].filter(Boolean);
-        for (const c of cands) {
-          if (c?.access_token) {
-            resolvedSecrets = {
-              access_token: c.access_token,
-              refresh_token: c.refresh_token ?? secretRow?.refresh_token ?? null,
-              expires_at: c.expires_at ?? secretRow?.expires_at ?? null,
-              meta: c.meta ?? secretRow?.meta ?? {},
-            };
-            console.log(`[unified-orders:${cid}] Tokens obtidos de secret_enc (legado)`);
-            break;
-          }
-        }
-      } catch (e) {
-        console.warn(`[unified-orders:${cid}] Falha ao interpretar secret_enc legado`, e);
-      }
-    }
-
-    // Backfill: se tokens foram recuperados via get-secret/secret_enc e não temos secret_enc, criar
-    try {
-      if (resolvedSecrets?.access_token && !secretRow?.secret_enc) {
-        const tokenData = {
-          access_token: resolvedSecrets.access_token,
-          refresh_token: resolvedSecrets.refresh_token,
-          expires_at: resolvedSecrets.expires_at
-        };
-        const encrypted = await encryptData(JSON.stringify(tokenData), ENC_KEY);
+        const secretJson = await decryptCompat(secretRow.secret_enc, INTEGRATIONS_CRYPTO_KEY, decryptLegacyIfAny);
+        const secret = JSON.parse(secretJson);
         
-        const { error: bfErr } = await sb
-          .from('integration_secrets')
-          .update({
-            secret_enc: encrypted,
-            expires_at: resolvedSecrets.expires_at ?? null,
-            updated_at: new Date().toISOString()
-          })
-          .eq('integration_account_id', integration_account_id)
-          .eq('provider', 'mercadolivre');
-        if (bfErr) console.warn(`[unified-orders:${cid}] Backfill encriptado falhou`, bfErr);
-        else console.log(`[unified-orders:${cid}] Backfill encriptado OK`);
+        console.log(`[unified-orders:${cid}] DEBUG: Secret decrypted successfully:`, {
+          hasAccessToken: !!secret?.access_token,
+          hasRefreshToken: !!secret?.refresh_token,
+          secretKeys: Object.keys(secret || {})
+        });
+        
+        accessToken = secret?.access_token || '';
+        refreshToken = secret?.refresh_token || '';
+        expiresAt = secret?.expires_at || secretRow.expires_at || '';
+      } catch (decryptError) {
+        console.error(`[unified-orders:${cid}] ERRO: Falha ao decriptar secret_enc`, decryptError);
+        // Fallback para tokens diretos se existirem
+        accessToken = secretRow.access_token || '';
+        refreshToken = secretRow.refresh_token || '';
+        expiresAt = secretRow.expires_at || '';
       }
-    } catch (e) {
-      console.warn(`[unified-orders:${cid}] Backfill encriptado exception`, e);
     }
 
     console.log(`[unified-orders:${cid}] DEBUG: Final token resolution check:`, {
-      hasAccessToken: !!resolvedSecrets?.access_token,
-      hasRefreshToken: !!resolvedSecrets?.refresh_token,
+      hasAccessToken: !!accessToken,
+      hasRefreshToken: !!refreshToken,
       hasSecretRow: !!secretRow,
       accountId: integration_account_id,
-      provider: provider
+      provider: 'mercadolivre'
     });
 
-    if (!resolvedSecrets?.access_token) {
-      console.error(`[unified-orders:${cid}] ERRO CRÍTICO: Token ausente mesmo após todos os fallbacks`, { 
+    if (!accessToken && !refreshToken) {
+      console.error(`[unified-orders:${cid}] ERRO CRÍTICO: Token ausente mesmo após todos os fallbacks`, {
         hasRow: !!secretRow,
-        hasDirectTokens: !!(secretRow?.access_token),
-        hasSecretEnc: !!(secretRow?.secret_enc || fallbackSecretEnc),
+        hasDirectTokens: !!(secretRow?.access_token || secretRow?.refresh_token),
+        hasSecretEnc: !!secretRow?.secret_enc,
         accountId: integration_account_id
       });
-      return fail('Segredos não encontrados para a conta - reconecte a integração', 404, null, cid);
+      return fail('No valid tokens found for this integration account', 401, null, cid);
     }
 
-    const secretsWithAccountId = { ...resolvedSecrets, account_id: integration_account_id };
-    // 3) Garantir token válido
-    const validSecrets = await refreshIfNeeded(sb, secretsWithAccountId, cid, authHeader);
-    const accessToken = validSecrets.access_token as string;
+    // ✅ 5. Refresh do token se necessário (reusa o accessToken já resolvido)
+    const refreshResult = await refreshIfNeeded(serviceClient, { access_token: accessToken, refresh_token: refreshToken, expires_at: expiresAt, account_id: integration_account_id }, cid, authHeader);
+    const finalAccessToken = refreshResult.access_token || accessToken;
 
-    // 4) Montar URL do ML
-    const sellerFromAccount = account.account_identifier ? String(account.account_identifier) : "";
-    const sellerFromSecrets = validSecrets.meta?.user_id
-      ? String(validSecrets.meta?.user_id)
-      : "";
-    const effectiveSeller = seller_id
-      ? String(seller_id)
-      : sellerFromAccount || sellerFromSecrets;
-    if (!effectiveSeller || !/^\d+$/.test(effectiveSeller)) {
-      return fail(
-        "Seller ID not found (account_identifier/payload)",
-        400,
-        { sellerFromAccount, sellerFromSecrets, seller_id },
-        cid
-      );
+    // ✅ 6. Buscar pedidos no Mercado Livre
+    const seller = accountData.account_identifier;
+    if (!seller) {
+      return fail('Seller ID not found in account_identifier', 400, null, cid);
     }
 
-    const tzOffset = Deno.env.get("ML_TZ_OFFSET") || "-03:00";
-    const toOffsetDate = (d?: string, endOfDay = false) => {
-      if (!d) return undefined;
-      if (/T/.test(d)) return d;
-      return `${d}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}${tzOffset}`;
-    };
-    let fromISO = toOffsetDate(String(date_from || ""));
-    let toISO = toOffsetDate(String(date_to || ""), true);
-    if (fromISO && toISO) {
-      const fromTime = Date.parse(fromISO);
-      const toTime = Date.parse(toISO);
-      if (!isNaN(fromTime) && !isNaN(toTime) && fromTime > toTime) {
-        const tmp = fromISO;
-        fromISO = toISO;
-        toISO = tmp;
+    const mlUrl = new URL('https://api.mercadolibre.com/orders/search');
+    mlUrl.searchParams.set('seller', seller);
+    
+    // Aplicar filtros de status
+    if (status) {
+      const allowedStatuses = ['confirmed', 'payment_required', 'payment_in_process', 'paid', 'shipped', 'delivered', 'cancelled', 'invalid'];
+      if (allowedStatuses.includes(status)) {
+        mlUrl.searchParams.set('order.status', status);
       }
     }
 
-    console.log(
-      `[unified-orders:${cid}] date filters normalized (offset ${tzOffset}):`,
-      { date_from, date_to, fromISO, toISO }
-    );
-
-    const mlUrl = new URL("https://api.mercadolibre.com/orders/search");
-    mlUrl.searchParams.set("seller", effectiveSeller);
-    const allowedStatuses = new Set([
-      "confirmed",
-      "payment_required",
-      "payment_in_process",
-      "paid",
-      "shipped",
-      "delivered",
-      "cancelled",
-      "invalid",
-    ]);
-    if (status && allowedStatuses.has(String(status))) {
-      mlUrl.searchParams.set("order.status", String(status));
+    // Aplicar filtros de data
+    if (date_from) {
+      mlUrl.searchParams.set('order.date_created.from', `${date_from}T00:00:00.000-03:00`);
     }
-    if (fromISO) mlUrl.searchParams.set("order.date_created.from", fromISO);
-    if (toISO) mlUrl.searchParams.set("order.date_created.to", toISO);
-    mlUrl.searchParams.set("limit", String(limit));
-    mlUrl.searchParams.set("offset", String(offset));
-    console.log(`[unified-orders:${cid}] url`, mlUrl.toString());
+    if (date_to) {
+      mlUrl.searchParams.set('order.date_created.to', `${date_to}T23:59:59.999-03:00`);
+    }
 
-    const mlResp = await fetch(mlUrl.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    mlUrl.searchParams.set('limit', String(Math.min(limit, 50)));
+    mlUrl.searchParams.set('offset', String(offset));
+
+    console.log(`[unified-orders:${cid}] Fetching from ML:`, mlUrl.toString());
+
+    const mlResponse = await fetch(mlUrl.toString(), {
+      headers: {
+        'Authorization': `Bearer ${finalAccessToken}`,
+        'Accept': 'application/json'
+      }
     });
-    const mlRaw = await mlResp.text();
-    if (!mlResp.ok) {
-      if (mlResp.status === 403 && mlRaw.includes("invalid_operator_user_id")) {
-        return fail(
-          "invalid_operator_user_id - reconecte com a conta ADMIN da loja no ML",
-          403,
-          mlRaw,
-          cid
-        );
-      }
-      return fail(`Mercado Livre API error: ${mlResp.status}`, mlResp.status, mlRaw, cid);
+
+    if (!mlResponse.ok) {
+      const errorText = await mlResponse.text();
+      console.error(`[unified-orders:${cid}] ML API error:`, mlResponse.status, errorText);
+      return fail(`ML API error: ${mlResponse.status}`, mlResponse.status, errorText, cid);
     }
 
-    const json = JSON.parse(mlRaw);
-    const enrichedOrders = await enrichOrdersWithShipping(json.results ?? [], accessToken, cid);
+    const mlData = await mlResponse.json();
+    let orders = mlData.results || [];
 
-    // Filtro shipping_status
-    let filteredOrders = enrichedOrders;
+    console.log(`[unified-orders:${cid}] Fetched ${orders.length} orders from ML`);
+
+    // ✅ 7. Enriquecer com dados de shipping se solicitado
+    if (include_shipping && enrich && orders.length > 0) {
+      orders = await enrichOrdersWithShipping(orders, finalAccessToken, cid);
+    }
+
+    // ✅ 8. Aplicar filtros adicionais
+    let filteredOrders = orders;
+
+    // Filtro de status de envio
     if (shipping_status) {
-      const targetStatuses = Array.isArray(shipping_status) ? shipping_status : [shipping_status];
-      filteredOrders = enrichedOrders.filter((order: any) => {
-        const s = order.shipping?.status || "";
-        return targetStatuses.some((t) => s.toLowerCase() === String(t).toLowerCase());
+      filteredOrders = filteredOrders.filter(order => {
+        const shippingStatus = order.shipping?.status;
+        if (shipping_status === 'delivered') {
+          return shippingStatus === 'delivered';
+        }
+        if (shipping_status === 'shipped') {
+          return ['shipped', 'ready_to_ship'].includes(shippingStatus);
+        }
+        return shippingStatus === shipping_status;
       });
-      console.log(
-        `[unified-orders:${cid}] Filtered by shipping_status: ${enrichedOrders.length} -> ${filteredOrders.length}`
-      );
     }
 
-    // Busca textual
-    if (search || q) {
-      const searchTerm = (search || q || "").toLowerCase();
-      filteredOrders = filteredOrders.filter((order: any) => {
-        const searchable = [
-          order.id,
-          order.buyer?.first_name,
-          order.buyer?.last_name,
+    // Filtro de busca textual
+    if (q || search) {
+      const searchTerm = (q || search).toLowerCase();
+      filteredOrders = filteredOrders.filter(order => {
+        const searchableText = [
+          order.id?.toString(),
           order.buyer?.nickname,
-          order.buyer?.identification?.number,
-          (order.order_items || []).map((it: any) => it.item?.title).join(" "),
-        ]
-          .join(" ")
-          .toLowerCase();
-        return searchable.includes(searchTerm);
+          order.buyer?.first_name,
+          order.shipping?.receiver_address?.city?.name,
+          order.shipping?.tracking_number,
+          order.pack_id?.toString()
+        ].filter(Boolean).join(' ').toLowerCase();
+        
+        return searchableText.includes(searchTerm);
       });
-      console.log(
-        `[unified-orders:${cid}] Filtered by search "${searchTerm}": ${filteredOrders.length} orders`
-      );
     }
 
-    // Valor
-    if (valorMin !== undefined || valorMax !== undefined) {
-      filteredOrders = filteredOrders.filter((order: any) => {
-        const v = Number(order.total_amount || 0);
-        if (valorMin !== undefined && v < valorMin) return false;
-        if (valorMax !== undefined && v > valorMax) return false;
-        return true;
-      });
-      console.log(
-        `[unified-orders:${cid}] Filtered by value range [${valorMin}, ${valorMax}]: ${filteredOrders.length} orders`
-      );
-    }
-
-    // Localização
+    // Filtros geográficos
     if (cidade || uf) {
-      filteredOrders = filteredOrders.filter((order: any) => {
-        const destCity = order.shipping?.destination?.shipping_address?.city?.name || "";
-        const destState = order.shipping?.destination?.shipping_address?.state?.name || "";
-        if (cidade && !destCity.toLowerCase().includes(String(cidade).toLowerCase())) return false;
-        if (uf && destState !== uf) return false;
+      filteredOrders = filteredOrders.filter(order => {
+        const orderCidade = order.shipping?.receiver_address?.city?.name?.toLowerCase();
+        const orderUf = order.shipping?.receiver_address?.state?.id?.toLowerCase();
+        
+        if (cidade && !orderCidade?.includes(cidade.toLowerCase())) return false;
+        if (uf && orderUf !== uf.toLowerCase()) return false;
+        
         return true;
       });
-      console.log(
-        `[unified-orders:${cid}] Filtered by location (cidade: ${cidade}, uf: ${uf}): ${filteredOrders.length} orders`
-      );
     }
 
-    const serverTotal = Number(json?.paging?.total ?? json?.paging?.count ?? filteredOrders.length);
-    return ok({
+    // Filtros de valor
+    if (valorMin !== undefined || valorMax !== undefined) {
+      filteredOrders = filteredOrders.filter(order => {
+        const valor = order.total_amount || 0;
+        if (valorMin !== undefined && valor < valorMin) return false;
+        if (valorMax !== undefined && valor > valorMax) return false;
+        return true;
+      });
+    }
+
+    // ✅ 9. Transformar para formato unificado
+    const unified = transformMLOrders(filteredOrders, integration_account_id);
+
+    const response = {
+      ok: true,
       results: filteredOrders,
-      unified: transformMLOrders(filteredOrders, integration_account_id),
-      paging: { ...json.paging, total: serverTotal, limit, offset },
-      total: serverTotal,
+      unified,
+      paging: {
+        total: mlData.paging?.total || filteredOrders.length,
+        limit: Math.min(limit, 50),
+        offset
+      },
       count: filteredOrders.length,
-      has_more: offset + limit < serverTotal,
-      correlation_id: cid,
-      server_filtering_applied: Boolean(shipping_status),
-    });
-  } catch (err: any) {
-    console.error(`[unified-orders:${cid}]`, err);
-    return fail(err?.message ?? "Internal server error", 500, String(err), cid);
+      url: mlUrl.toString()
+    };
+
+    if (debug) {
+      response.debug = {
+        originalCount: orders.length,
+        filteredCount: filteredOrders.length,
+        filters: { status, shipping_status, date_from, date_to, cidade, uf, valorMin, valorMax, search, q },
+        mlData: mlData.paging
+      };
+    }
+
+    console.log(`[unified-orders:${cid}] Returning ${filteredOrders.length} filtered orders`);
+    return ok(response);
+
+  } catch (error) {
+    console.error(`[unified-orders:${cid}] Fatal error:`, error);
+    return fail(`Internal server error: ${error.message}`, 500, error, cid);
   }
 });
-
-// Helpers
-async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid: string) {
-  const out: any[] = [];
-  for (const order of orders) {
-    try {
-      const enriched: any = { ...order };
-      const shipId = order?.shipping?.id;
-      if (shipId) {
-        const url = `https://api.mercadolibre.com/shipments/${shipId}`;
-        const resp = await fetch(url, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (resp.ok) {
-          const ship = await resp.json();
-          enriched.shipping = {
-            ...order.shipping,
-            status: ship.status,
-            substatus: ship.substatus,
-            destination: ship.destination,
-          };
-        }
-      }
-      out.push(enriched);
-    } catch (e) {
-      console.warn(`[unified-orders:${cid}] enrich shipping failed`, e);
-      out.push(order);
-    }
-  }
-  return out;
-}
-
-function transformMLOrders(orders: any[], integration_account_id: string) {
-  return orders.map((o: any) => ({
-    id: String(o.id),
-    numero: String(o.id),
-    nome_cliente: o?.buyer?.first_name || null,
-    cpf_cnpj: o?.buyer?.identification?.number || null,
-    data_pedido: o?.date_created || null,
-    data_prevista: null,
-    situacao: o?.status || null,
-    valor_total: Number(o?.total_amount ?? 0),
-    valor_frete: null,
-    valor_desconto: null,
-    numero_ecommerce: String(o.id),
-    numero_venda: null,
-    empresa: 'Mercado Livre',
-    cidade: o?.shipping?.destination?.shipping_address?.city?.name || null,
-    uf: o?.shipping?.destination?.shipping_address?.state?.name || null,
-    codigo_rastreamento: o?.shipping?.tracking_number || null,
-    url_rastreamento: null,
-    obs: null,
-    obs_interna: null,
-    integration_account_id,
-    created_at: o?.date_created || null,
-    updated_at: o?.last_updated || null,
-  }));
-}
