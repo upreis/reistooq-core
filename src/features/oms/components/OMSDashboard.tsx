@@ -89,7 +89,7 @@ export function OMSDashboard() {
     queryKey: ['recent-orders'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .rpc('get_pedidos_masked', {
+        .rpc('get_pedidos_masked_v2', {
           _limit: 5,
           _offset: 0
         });

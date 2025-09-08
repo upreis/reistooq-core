@@ -21,7 +21,13 @@ import {
 } from '@/components/ui/popover';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { type SavedFilter } from '@/hooks/usePedidosManager';
+// Remover import de SavedFilter e definir localmente
+interface SavedFilter {
+  id: string;
+  name: string;
+  filters: any;
+  createdAt: Date;
+}
 
 interface SavedFiltersManagerProps {
   savedFilters: SavedFilter[];
