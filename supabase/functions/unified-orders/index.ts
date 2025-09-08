@@ -43,62 +43,10 @@ function makeUserClient(req: Request) {
   });
 }
 
-// Legacy para compatibilidade (suporta formatos antigos/indevidos)
+// Legacy para compatibilidade (se existia decrypt antigo)
 async function decryptLegacyIfAny(payloadB64: string, key: string) {
-  const raw = (payloadB64 ?? '').trim();
-
-  // 1) Se já for um JSON em claro (sem base64)
-  if (raw.startsWith('{') || raw.startsWith('[')) {
-    try {
-      const obj = JSON.parse(raw);
-      // Caso seja o pacote { iv, data } sem base64 externo
-      if (obj && typeof obj === 'object' && 'iv' in obj && 'data' in obj) {
-        const repacked = btoa(JSON.stringify(obj));
-        return await decryptAESGCM(repacked, key);
-      }
-      // Caso já seja o próprio secret em claro
-      if (obj && (obj.access_token || obj.refresh_token)) {
-        return JSON.stringify(obj);
-      }
-    } catch (_) {
-      // segue para outras tentativas
-    }
-  }
-
-  // 2) Tentar normalizar base64-url e padding ausente
-  const normalizeB64 = (s: string) => {
-    let out = (s || '').replace(/-/g, '+').replace(/_/g, '/').replace(/\s+/g, '');
-    const pad = out.length % 4;
-    if (pad) out += '='.repeat(4 - pad);
-    return out;
-  };
-
-  try {
-    const normalized = normalizeB64(raw);
-    // Se já for o pacote base64 de {iv,data}
-    return await decryptAESGCM(normalized, key);
-  } catch (_) {
-    // Ignorar e tentar última alternativa
-  }
-
-  // 3) Decodificar manualmente e verificar se é JSON válido
-  try {
-    const decoded = atob(normalizeB64(raw));
-    const obj = JSON.parse(decoded);
-    if (obj && typeof obj === 'object') {
-      if ('iv' in obj && 'data' in obj) {
-        const repacked = btoa(JSON.stringify(obj));
-        return await decryptAESGCM(repacked, key);
-      }
-      if (obj.access_token || obj.refresh_token) {
-        return JSON.stringify(obj);
-      }
-    }
-  } catch (_) {
-    // Sem sucesso
-  }
-
-  throw new Error('no-legacy');
+  // Se existia um decrypt antigo, implementar aqui; caso contrário rejeitar
+  return Promise.reject("no-legacy");
 }
 
 function getMlConfig() {

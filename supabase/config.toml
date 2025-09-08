@@ -42,3 +42,6 @@ verify_jwt = true
 
 [functions.pedidos-aggregator]
 verify_jwt = true
+
+[functions.integrations-deactivate-ml]
+verify_jwt = true

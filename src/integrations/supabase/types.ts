@@ -3108,16 +3108,30 @@ export type Database = {
         Args: { p_state_value: string }
         Returns: string
       }
-      get_pedidos_masked_v2: {
-        Args: {
-          _end_date?: string
-          _integration_account_id?: string
-          _limit?: number
-          _offset?: number
-          _search?: string
-          _situacao?: string
-          _start_date?: string
-        }
+      get_pedidos_masked: {
+        Args:
+          | {
+              _cidade?: string
+              _end?: string
+              _integration_account_id?: string
+              _limit?: number
+              _offset?: number
+              _search?: string
+              _situacao?: string[]
+              _start?: string
+              _uf?: string
+              _valor_max?: number
+              _valor_min?: number
+            }
+          | {
+              _end?: string
+              _integration_account_id?: string
+              _limit?: number
+              _offset?: number
+              _search?: string
+              _situacao?: string
+              _start?: string
+            }
         Returns: {
           cidade: string
           codigo_rastreamento: string

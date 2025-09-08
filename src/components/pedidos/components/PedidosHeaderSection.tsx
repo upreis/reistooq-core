@@ -45,8 +45,8 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">{title}</h1>
-          <div className="text-muted-foreground">
-            <span>{subtitle}</span>
+          <p className="text-muted-foreground">
+            {subtitle}
             {fonte && (
               <Badge variant="outline" className="ml-2">
                 Fonte: {fonte}
@@ -57,7 +57,7 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
                 {totalCount} pedidos
               </Badge>
             )}
-          </div>
+          </p>
         </div>
 
         <div className="flex items-center gap-2">

@@ -34,10 +34,10 @@ export class OrdersQueryService {
       console.log('🔍 Fetching orders with filters:', { filters, pagination, sorting });
 
       // Use the secure RPC function for data access
-      const { data, error, count } = await supabase.rpc('get_pedidos_masked_v2', {
+      const { data, error, count } = await supabase.rpc('get_pedidos_masked', {
         _search: filters.search || null,
-        _start_date: this.formatDateForDB(filters.date_range.start),
-        _end_date: this.formatDateForDB(filters.date_range.end),
+        _start: this.formatDateForDB(filters.date_range.start),
+        _end: this.formatDateForDB(filters.date_range.end),
         _limit: pagination.page_size,
         _offset: (pagination.page - 1) * pagination.page_size,
       }, { count: 'exact' });
@@ -127,7 +127,7 @@ export class OrdersQueryService {
     if (!query.trim()) return [];
 
     try {
-      const { data, error } = await supabase.rpc('get_pedidos_masked_v2', {
+      const { data, error } = await supabase.rpc('get_pedidos_masked', {
         _search: query,
         _limit: limit,
         _offset: 0,
