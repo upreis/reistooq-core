@@ -473,12 +473,36 @@ export function usePedidosManager(initialAccountId?: string) {
    * Fallback para banco de dados
    */
   const loadFromDatabase = useCallback(async (apiParams: any) => {
-    // P1.2: Fallback para DB - log removido por segurança
-    
-    // Aqui você pode implementar a busca no banco se necessário
-    // Por enquanto retorna vazio para usar o fallback client-side
-    return { results: [], unified: [], total: 0 };
-  }, []);
+    // 🔁 Fallback real: buscar pedidos no banco com RPC segura
+    try {
+      const q = apiParams?.q ?? undefined;
+      const start = apiParams?.date_from ?? undefined; // 'YYYY-MM-DD'
+      const end = apiParams?.date_to ?? undefined;     // 'YYYY-MM-DD'
+
+      // RPC: get_pedidos_masked(_start, _end, _search, _limit, _offset)
+      const { data, error } = await supabase.rpc('get_pedidos_masked', {
+        _start: start ?? null,
+        _end: end ?? null,
+        _search: q ?? null,
+        _limit: pageSize,
+        _offset: (currentPage - 1) * pageSize,
+      });
+
+      if (error) throw error;
+      const rows = Array.isArray(data) ? data : [];
+
+      // Se tiver filtro por conta específica, aplica no cliente
+      const targetAccountId = apiParams?.integration_account_id;
+      const filtered = targetAccountId
+        ? rows.filter((r: any) => r.integration_account_id === targetAccountId)
+        : rows;
+
+      return { results: filtered, unified: [], total: filtered.length };
+    } catch (e: any) {
+      console.warn('[DB Fallback] Erro ao buscar no banco:', e?.message || e);
+      return { results: [], unified: [], total: 0 };
+    }
+  }, [currentPage, pageSize]);
 
   /**
    * 🚀 OTIMIZADO: Aplica filtros do lado cliente com memoização
