@@ -15,6 +15,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function b64ToBytes(b64: string) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -151,6 +158,10 @@ serve(async (req) => {
 
     console.log('[store-secret] Data encrypted successfully');
 
+    // Converter simple_tokens (base64) em bytes para preencher secret_enc (bytea)
+    const secretBytes = b64ToBytes(encryptedData as string);
+
+
     // Salvar na tabela integration_secrets
     const { data: result, error: upsertError } = await supabase
       .from('integration_secrets')
@@ -160,10 +171,11 @@ serve(async (req) => {
         organization_id: organizationId,
         simple_tokens: encryptedData,
         use_simple: true,
+        secret_enc: secretBytes, // satisfaz trigger de NOT NULL/criptografia
         expires_at: payload.expires_at,
         meta: {
           last_updated: new Date().toISOString(),
-          encryption_method: 'simple'
+          encryption_method: 'simple+bytea'
         }
       }, { 
         onConflict: 'integration_account_id,provider',
