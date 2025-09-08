@@ -3105,24 +3105,36 @@ export type Database = {
         Returns: string
       }
       get_pedidos_masked: {
-        Args: {
-          _cidade?: string
-          _end?: string
-          _integration_account_id?: string
-          _limit?: number
-          _offset?: number
-          _search?: string
-          _situacao?: string[]
-          _start?: string
-          _uf?: string
-          _valor_max?: number
-          _valor_min?: number
-        }
+        Args:
+          | {
+              _cidade?: string
+              _end?: string
+              _integration_account_id?: string
+              _limit?: number
+              _offset?: number
+              _search?: string
+              _situacao?: string[]
+              _start?: string
+              _uf?: string
+              _valor_max?: number
+              _valor_min?: number
+            }
+          | {
+              _end?: string
+              _integration_account_id?: string
+              _limit?: number
+              _offset?: number
+              _search?: string
+              _situacao?: string
+              _start?: string
+            }
         Returns: {
           cidade: string
+          codigo_rastreamento: string
           cpf_cnpj: string
           created_at: string
           data_pedido: string
+          data_prevista: string
           empresa: string
           id: string
           integration_account_id: string
@@ -3131,9 +3143,11 @@ export type Database = {
           numero_ecommerce: string
           numero_venda: string
           obs: string
+          obs_interna: string
           situacao: string
           uf: string
           updated_at: string
+          url_rastreamento: string
           valor_desconto: number
           valor_frete: number
           valor_total: number
