@@ -61,45 +61,13 @@ export const get = (obj: any, path: string) =>
 export const show = (v: any) => (v ?? '—');
 
 export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
-  // Blindagem: validar integration_account_id
-  if (!params.integration_account_id?.trim()) {
-    throw new Error('integration_account_id é obrigatório para buscar pedidos');
-  }
-
-  console.info('[Orders] Buscando pedidos unified-orders:', { 
-    account_id: params.integration_account_id,
-    status: params.status 
-  });
-
-  const { data, error } = await supabase.functions.invoke('unified-orders', { body: params });
-  if (error) throw new Error(error.message || 'unified-orders: erro na função');
-  if (!data?.ok) throw new Error('unified-orders: resposta inesperada');
-  return data; // { ok, url, paging, results, raw? }
+  // Redirecionar para RPC direto ao invés da edge function
+  throw new Error('fetchUnifiedOrders desabilitada - use RPC get_pedidos_masked diretamente');
 }
 
 export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
-  const isAudit =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('audit') === '1';
-
-  const { data, error } = await supabase.functions.invoke('unified-orders', {
-    body: { ...params, enrich: true, debug: isAudit, audit: isAudit, include_shipping: true }
-  });
-  
-  if (error) throw error;
-  if (!data?.ok) throw new Error('unified-orders: resposta inesperada');
-  
-  const results: RawML[] = data?.results ?? [];
-  const unified: Unified[] = data?.unified ?? [];
-  
-  // Merge por índice: cada linha = { raw, unified }
-  const rows: Row[] = results.map((r, i) => ({
-    raw: r,
-    unified: unified[i] ?? null
-  }));
-
-  const total = data?.paging?.total ?? data?.count ?? rows.length;
-  return { rows, total, debug: data?.debug };
+  // Redirecionar para RPC direto ao invés da edge function
+  throw new Error('fetchPedidosRealtime desabilitada - use RPC get_pedidos_masked diretamente');
 }
 
 // Backward compatibility (mantido)

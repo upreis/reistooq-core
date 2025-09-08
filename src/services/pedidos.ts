@@ -479,21 +479,24 @@ export function usePedidosHybrid({
 
   const fetchFromUnifiedOrders = async () => {
     try {
-      const { results } = await fetchUnifiedOrders({
-        integration_account_id: integrationAccountId,
-        status: 'paid',
-        limit: pageSize,
-        offset: (page - 1) * pageSize,
-        include_shipping: true, // 👈 pede UF/Cidade/CEP/Tracking
+      // Usar RPC direto para evitar 404 na edge function
+      const { data, error } = await supabase.rpc('get_pedidos_masked', {
+        _integration_account_id: integrationAccountId,
+        _start: dataInicio || null,
+        _end: dataFim || null,
+        _situacao: situacao || null,
+        _limit: pageSize,
+        _offset: (page - 1) * pageSize
       });
 
-      const mappedOrders = mapMlToUi(Array.isArray(results) ? results : []);
-      const withAccount = mappedOrders.map(o => ({ ...o, integration_account_id: integrationAccountId }));
-      setRows(withAccount);
-      setTotal(withAccount.length);
-      setFonte('tempo-real');
+      if (error) throw error;
+      
+      const mappedOrders = Array.isArray(data) ? data : [];
+      setRows(mappedOrders);
+      setTotal(mappedOrders.length);
+      setFonte('banco');
     } catch (err: any) {
-      setError(err.message || 'Erro ao buscar pedidos em tempo real');
+      setError(err.message || 'Erro ao buscar pedidos');
       setRows([]);
       setTotal(0);
       setFonte('banco');
