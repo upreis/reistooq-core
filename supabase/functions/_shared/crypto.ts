@@ -33,30 +33,83 @@ export async function encryptAESGCM(plain: string, keyMaterial: string) {
   return btoa(JSON.stringify({ iv: u8ToB64(iv), data: u8ToB64(new Uint8Array(cipher)) }));
 }
 
-export async function decryptAESGCM(payloadB64: string, keyMaterial: string) {
+export async function decryptAESGCM(payload: any, keyMaterial: string) {
   const key = await deriveAesKey(keyMaterial);
 
-  // Aceitar tanto base64/base64url quanto JSON puro
-  let parsed: { iv: string; data: string };
-  let decryptPath = '';
-  const trimmed = (payloadB64 || '').trim();
-  
-  if (trimmed.startsWith('{')) {
-    // Já é JSON serializado
-    parsed = JSON.parse(trimmed);
-    decryptPath = 'direct-json';
-  } else {
-    // Normalizar e decodificar base64 (inclui base64url e padding ausente)
-    const decoded = atob(normalizeB64(trimmed));
-    parsed = JSON.parse(decoded);
-    decryptPath = 'base64-normalized';
+  // Aceitar múltiplos formatos de entrada:
+  // - Objeto { iv, data }
+  // - JSON direto (string)
+  // - JSON com aspas (string contendo "{...}")
+  // - base64/base64url de um JSON
+  let parsed: { iv: string; data: string } | null = null;
+  let decryptPath = 'unknown';
+
+  const tryJsonParseEnvelope = (str: string) => {
+    try {
+      const j = JSON.parse(str);
+      if (j && typeof j === 'object' && 'iv' in j && 'data' in j) {
+        parsed = j as any;
+        decryptPath = decryptPath === 'unknown' ? 'direct-json' : decryptPath;
+        return true;
+      }
+      if (typeof j === 'string') {
+        const inner = j.trim();
+        if (inner.startsWith('{')) {
+          try {
+            const j2 = JSON.parse(inner);
+            if (j2 && typeof j2 === 'object' && 'iv' in j2 && 'data' in j2) {
+              parsed = j2 as any;
+              decryptPath = 'json-quoted';
+              return true;
+            }
+          } catch { /* ignore */ }
+        }
+      }
+    } catch { /* ignore */ }
+    return false;
+  };
+
+  try {
+    if (payload && typeof payload === 'object') {
+      // Já veio como objeto
+      parsed = payload as any;
+      decryptPath = 'object';
+    } else {
+      let s = String(payload ?? '').trim();
+
+      // Tentar JSON direto (inclui caso com aspas)
+      if (!parsed && (s.startsWith('{') || s.startsWith('"'))) {
+        tryJsonParseEnvelope(s);
+      }
+
+      if (!parsed) {
+        // Tentar base64/base64url => JSON
+        const decoded = atob(normalizeB64(s));
+        if (!tryJsonParseEnvelope(decoded)) {
+          // Alguns sistemas duplamente codificam o JSON em string
+          try {
+            const maybe = JSON.parse(decoded);
+            if (typeof maybe === 'string') {
+              tryJsonParseEnvelope(maybe);
+              if (parsed) decryptPath = 'base64-json-quoted';
+            }
+          } catch { /* ignore */ }
+        }
+        if (!parsed) decryptPath = 'base64-normalized';
+      }
+    }
+  } catch (e) {
+    console.warn('[crypto] decrypt input parse failed:', e);
   }
 
-  console.log(`[crypto] Decrypt path: ${decryptPath}, payload type: ${typeof trimmed.length === 'number' ? 'string' : 'unknown'}, size: ${trimmed.length}`);
-  
+  if (!parsed || !parsed.iv || !parsed.data) {
+    throw new Error('Invalid encrypted payload format (expected {iv,data})');
+  }
+
   const ivU8 = b64ToU8(parsed.iv);
   const dataU8 = b64ToU8(parsed.data);
   const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivU8 }, key, dataU8);
+  console.log(`[crypto] Decrypt path: ${decryptPath}, ivLen=${parsed.iv.length}, dataLen=${parsed.data.length}`);
   return new TextDecoder().decode(plain);
 }
 
