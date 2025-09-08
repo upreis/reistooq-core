@@ -36,6 +36,13 @@ serve(async (req) => {
     const supabase = makeClient(authHeader);
     const b = await req.json();
     
+    console.log('[integrations-get-secret] DEBUG: Request received', {
+      hasAuth: !!authHeader,
+      isInternal,
+      accountId: b?.integration_account_id,
+      provider: b?.provider
+    });
+    
     if (!b?.integration_account_id) {
       return new Response(JSON.stringify({ 
         ok: false, 

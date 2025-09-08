@@ -144,7 +144,7 @@ serve(async (req) => {
       offset = 0,
     } = body || {};
 
-    console.log(`[unified-orders:${cid}] Filtros detalhados:`, {
+    console.log(`[unified-orders:${cid}] DEBUG START - Filtros detalhados:`, {
       integration_account_id,
       filtros_geograficos: { cidade, uf },
       filtros_valor: { valorMin, valorMax },
@@ -222,13 +222,25 @@ serve(async (req) => {
     }
 
     if (!resolvedSecrets?.access_token) {
-      console.log(`[unified-orders:${cid}] Fallback → integrations-get-secret`);
+      console.log(`[unified-orders:${cid}] DEBUG: Tokens diretos não encontrados, usando integrations-get-secret`);
       const { data: secData, error: getErr } = await sb.functions.invoke('integrations-get-secret', {
         body: { integration_account_id, provider: 'mercadolivre' },
         headers: { Authorization: authHeader!, 'x-internal-call': ENC_KEY }
       });
+      console.log(`[unified-orders:${cid}] DEBUG: get-secret response:`, { 
+        hasData: !!secData, 
+        hasError: !!getErr, 
+        secDataKeys: secData ? Object.keys(secData) : [],
+        error: getErr 
+      });
       if (getErr) console.warn(`[unified-orders:${cid}] get-secret error`, getErr);
       const payload: any = secData?.secret ?? secData ?? null;
+      console.log(`[unified-orders:${cid}] DEBUG: Payload extracted:`, {
+        hasAccessToken: !!payload?.access_token,
+        hasRefreshToken: !!payload?.refresh_token,
+        hasSecretEnc: !!payload?.secret_enc,
+        payloadKeys: payload ? Object.keys(payload) : []
+      });
       if (payload?.secret_enc) fallbackSecretEnc = payload.secret_enc;
       if (payload?.access_token) {
         resolvedSecrets = {
@@ -299,8 +311,21 @@ serve(async (req) => {
       console.warn(`[unified-orders:${cid}] Backfill tokens exception`, e);
     }
 
+    console.log(`[unified-orders:${cid}] DEBUG: Final token resolution check:`, {
+      hasAccessToken: !!resolvedSecrets?.access_token,
+      hasRefreshToken: !!resolvedSecrets?.refresh_token,
+      hasSecretRow: !!secretRow,
+      accountId: integration_account_id,
+      provider: provider
+    });
+
     if (!resolvedSecrets?.access_token) {
-      console.error(`[unified-orders:${cid}] Token ausente mesmo após fallbacks`, { hasRow: !!secretRow });
+      console.error(`[unified-orders:${cid}] ERRO CRÍTICO: Token ausente mesmo após todos os fallbacks`, { 
+        hasRow: !!secretRow,
+        hasDirectTokens: !!(secretRow?.access_token),
+        hasSecretEnc: !!(secretRow?.secret_enc || fallbackSecretEnc),
+        accountId: integration_account_id
+      });
       return fail('Segredos não encontrados para a conta - reconecte a integração', 404, null, cid);
     }
 

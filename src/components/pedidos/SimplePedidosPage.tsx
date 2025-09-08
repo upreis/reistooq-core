@@ -673,15 +673,37 @@ function SimplePedidosPage({ className }: Props) {
     return translated.charAt(0).toUpperCase() + translated.slice(1);
   };
 
-  // Helper para testar contas
+  // Helper para testar contas - COM DEBUG DETALHADO
   const testAccount = async (accId: string) => {
+    console.log(`🔍 DEBUG: Testando conta ${accId}...`);
     try {
       const { data, error } = await supabase.functions.invoke('unified-orders', {
         body: { integration_account_id: accId, limit: 1 }
       });
-      if (error) return false;
-      return !!data?.ok;
-    } catch {
+      
+      console.log(`🔍 DEBUG: unified-orders response para ${accId}:`, {
+        hasData: !!data,
+        hasError: !!error,
+        dataOk: data?.ok,
+        errorMsg: error?.message,
+        dataError: data?.error,
+        status: data?.status
+      });
+      
+      if (error) {
+        console.error(`🔍 DEBUG: Erro na conta ${accId}:`, error);
+        return false;
+      }
+      
+      if (!data?.ok) {
+        console.warn(`🔍 DEBUG: Resposta não-ok para ${accId}:`, data);
+        return false;
+      }
+      
+      console.log(`✅ DEBUG: Conta ${accId} funcionando!`);
+      return true;
+    } catch (e) {
+      console.error(`🔍 DEBUG: Exceção na conta ${accId}:`, e);
       return false;
     }
   };

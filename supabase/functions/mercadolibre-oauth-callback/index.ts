@@ -192,46 +192,52 @@ serve(async (req) => {
       );
     }
 
-    // Salvar tokens usando upsert para evitar conflitos
+    // Salvar tokens usando o edge function integrations-store-secret para criptografia correta
     const expiresAt = new Date(Date.now() + tokenData.expires_in * 1000);
     
-    // Primeiro tentar atualizar, depois inserir se não existir
-    const { data: existingSecret } = await serviceClient
-      .from('integration_secrets')
-      .select('id')
-      .eq('integration_account_id', account.id)
-      .eq('provider', 'mercadolivre')
-      .maybeSingle();
+    console.log('[ML OAuth Callback] Storing tokens via integrations-store-secret...');
+    
+    // Chamar edge function para salvar tokens criptografados
+    const storeResp = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/integrations-store-secret`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        'x-internal-call': ENC_KEY
+      },
+      body: JSON.stringify({
+        integration_account_id: account.id,
+        provider: 'mercadolivre',
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        expires_at: expiresAt.toISOString(),
+        payload: { 
+          user_id: user.id, 
+          scope: tokenData.scope || null,
+          token_type: tokenData.token_type || 'bearer'
+        }
+      })
+    });
 
-    let storeErr;
-    if (existingSecret) {
-      // Atualizar secret existente
-      const { error } = await serviceClient
-        .from('integration_secrets')
-        .update({
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_at: expiresAt.toISOString(),
-          meta: { user_id: user.id, scope: tokenData.scope || null },
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingSecret.id);
-      storeErr = error;
-    } else {
-      // Criar novo secret
-      const { error } = await serviceClient
-        .from('integration_secrets')
-        .insert({
-          integration_account_id: account.id,
-          provider: 'mercadolivre',
-          organization_id: organizationId, // Corrigido: usar organizationId
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_at: expiresAt.toISOString(),
-          meta: { user_id: user.id, scope: tokenData.scope || null }
-        });
-      storeErr = error;
+    if (!storeResp.ok) {
+      const storeError = await storeResp.text();
+      console.error('[ML OAuth Callback] Failed to store secrets via edge function:', storeError);
+      return new Response(
+        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to store tokens securely'},'*');window.close();</script>",
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+      );
     }
+
+    const storeResult = await storeResp.json();
+    if (!storeResult.ok) {
+      console.error('[ML OAuth Callback] Store secret returned error:', storeResult.error);
+      return new Response(
+        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to store tokens securely'},'*');window.close();</script>",
+        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
+      );
+    }
+
+    let storeErr = null;
 
     if (storeErr) {
       console.error("Failed to store secrets:", storeErr);

@@ -133,25 +133,30 @@ export class OrderService {
 
     const validParams = validation.data;
 
-    // Use unified orders edge function with RPC fallback
-    return this.tryEdgeFunctionWithFallback(
-      'unified-orders',
-      validParams,
-      async () => {
-        // RPC fallback - only internal orders for now
-        const { data, error, count } = await supabase
-        .rpc('get_pedidos_masked', {
-          _start: validParams.startDate || null,
-          _end: validParams.endDate || null,
-          _search: validParams.search || null,
-          _limit: validParams.limit,
-          _offset: validParams.offset,
-        }, { count: 'exact' });
+    // REMOVIDO FALLBACK - APENAS API MERCADO LIVRE EM TEMPO REAL
+    console.log('🔄 OrderService: Chamando unified-orders APENAS (sem fallback DB)');
+    
+    const { data, error } = await supabase.functions.invoke('unified-orders', {
+      body: validParams,
+      headers: { 'Content-Type': 'application/json' }
+    });
 
-        if (error) throw error;
-        return { data: data || [], count: count || 0 };
-      }
-    );
+    if (error) {
+      console.error('❌ unified-orders falhou:', error);
+      throw new Error(`Erro na API Mercado Livre: ${error.message || 'Falha na comunicação'}`);
+    }
+
+    if (!data?.ok) {
+      console.error('❌ unified-orders resposta inválida:', data);
+      throw new Error(`API Mercado Livre: ${data?.error || 'Resposta inesperada'}`);
+    }
+
+    console.log('✅ unified-orders sucesso:', { 
+      resultCount: data?.unified?.length || 0,
+      total: data?.paging?.total || 0 
+    });
+
+    return { data: data?.unified || [], count: data?.paging?.total || 0 };
   }
 
   /**
