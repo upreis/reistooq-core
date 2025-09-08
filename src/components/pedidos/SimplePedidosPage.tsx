@@ -103,19 +103,12 @@ function SimplePedidosPage({ className }: Props) {
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: async (filters) => {
-      console.groupCollapsed('[filters/apply]');
-      console.log('draft', filters);
-      console.groupEnd();
-      
       // Limpar estado persistido ao aplicar novos filtros
       persistentState.clearPersistedState();
       
-      // ✅ Aplicar filtros (fonte única: appliedFilters no manager) e buscar imediatamente
       actions.replaceFilters(filters);
-      
       console.groupCollapsed('[apply/callback]');
       console.log('filtersArg', filters);
-      console.log('filtersManager.appliedFilters', filtersManager.appliedFilters);
       console.assert(
         JSON.stringify(filters) === JSON.stringify(filtersManager.filters),
         'apply: filtros divergentes entre UI e callback'
@@ -124,6 +117,8 @@ function SimplePedidosPage({ className }: Props) {
       
       // Salvar os filtros aplicados
       persistentState.saveAppliedFilters(filters);
+      
+      await actions.refetch(); // refetch imediato obrigatório no Apply
     },
     autoLoad: false,
     loadSavedFilters: false
@@ -132,14 +127,6 @@ function SimplePedidosPage({ className }: Props) {
   // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
   const { state, actions, totalPages } = pedidosManager;
-  
-  // ✅ CRÍTICO: Listener para mudanças de filtros aplicados 
-  useEffect(() => {
-    // Quando appliedFilters mudar e não for vazio, force refetch
-    if (filtersManager.appliedFilters && Object.keys(filtersManager.appliedFilters).length > 0) {
-      console.log('🔄 [FILTERS SYNC] Filtros aplicados mudaram, sincronizando...', filtersManager.appliedFilters);
-    }
-  }, [filtersManager.appliedFilters]);
   
   // 🔧 Sistema de colunas unificado com persistência automatica
   const columnManager = useColumnManager();
@@ -730,17 +717,7 @@ function SimplePedidosPage({ className }: Props) {
   useEffect(() => {
     loadAccounts();
   }, []);
-
-  // Selecionar conta ML padrão automaticamente se nenhuma estiver definida
-  useEffect(() => {
-    if (!state.integrationAccountId && Array.isArray(accounts) && accounts.length > 0) {
-      const defaultAcc = (accounts[0]?.id as string) || (accounts[0]?.account_id as string);
-      if (defaultAcc) {
-        console.log('[account/default] selecionando conta padrão:', defaultAcc);
-        actions.setIntegrationAccountId(defaultAcc);
-      }
-    }
-  }, [accounts, state.integrationAccountId, actions]);
+  
   // ✅ Sistema de validação corrigido - mais robusto
   const validateSystem = () => {
     try {

@@ -24,7 +24,7 @@ interface PedidosFiltersUnifiedProps {
   filters: PedidosFiltersState;
   appliedFilters: PedidosFiltersState;
   onFilterChange: <K extends keyof PedidosFiltersState>(key: K, value: PedidosFiltersState[K]) => void;
-  onApplyFilters: () => Promise<void>; // ✅ CORRIGIDO: Deve ser async
+  onApplyFilters: () => void;
   onCancelChanges: () => void;
   onClearFilters: () => void;
   hasPendingChanges: boolean;
@@ -112,19 +112,11 @@ export function PedidosFiltersUnified({
               </Button>
               <Button 
                 size="sm" 
-                onClick={async () => {
-                  console.groupCollapsed('[apply/click] from=modal - SYNC CALL');
+                onClick={() => {
+                  console.groupCollapsed('[apply/click] from=modal');
                   console.log('draftFilters', filters);
-                  console.log('appliedFilters (antes)', appliedFilters);
                   console.groupEnd();
-                  
-                  try {
-                    console.log('🚀 [FILTERS UI] Chamando onApplyFilters...');
-                    await onApplyFilters();
-                    console.log('✅ [FILTERS UI] onApplyFilters completado com sucesso');
-                  } catch (error) {
-                    console.error('❌ [FILTERS UI] Erro em onApplyFilters:', error);
-                  }
+                  onApplyFilters();
                 }}
                 disabled={isApplying}
                 className="min-w-[100px]"
