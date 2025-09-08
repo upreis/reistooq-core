@@ -71,7 +71,9 @@ export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
     status: params.status 
   });
 
-  const { data, error } = await supabase.functions.invoke('unified-orders', { body: params });
+  const { data, error } = await supabase.functions.invoke('unified-orders', { 
+    body: { ...params, enrich: true, include_shipping: true, debug: false } 
+  });
   if (error) throw new Error(error.message || 'unified-orders: erro na função');
   if (!data?.ok) throw new Error('unified-orders: resposta inesperada');
   return data; // { ok, url, paging, results, raw? }

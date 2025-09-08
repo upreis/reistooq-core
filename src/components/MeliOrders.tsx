@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchUnifiedOrders } from '@/services/orders';
+import { fetchPedidosRealtime } from '@/services/orders';
+import { useToast } from '@/hooks/use-toast';
 
 type Order = any;
 
@@ -13,6 +14,7 @@ export default function MeliOrders({ integrationAccountId, status = 'paid', limi
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Blindagem: não buscar se integrationAccountId estiver vazio
@@ -27,14 +29,24 @@ export default function MeliOrders({ integrationAccountId, status = 'paid', limi
       try {
         setLoading(true);
         setErr(null);
-        const { results } = await fetchUnifiedOrders({
+        const { rows } = await fetchPedidosRealtime({
           integration_account_id: integrationAccountId,
           status,
           limit,
         });
-        setOrders(Array.isArray(results) ? results : []);
+        setOrders(rows.map(r => r.unified).filter(Boolean));
       } catch (e: any) {
-        setErr(e?.message ?? String(e));
+        const errorMsg = e?.message ?? String(e);
+        setErr(errorMsg);
+        
+        // Toast específico para token ausente
+        if (errorMsg.includes('Token ausente') || errorMsg.includes('Token missing')) {
+          toast({
+            title: "Conta desconectada",
+            description: "Conecte sua conta do Mercado Livre para buscar pedidos",
+            variant: "destructive"
+          });
+        }
       } finally {
         setLoading(false);
       }
