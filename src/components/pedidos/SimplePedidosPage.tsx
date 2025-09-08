@@ -1,6 +1,11 @@
 import { memo, useEffect, useState } from 'react';
 import { usePedidosManager } from '@/hooks/usePedidosManager';
+import { usePedidosFiltersUnified } from '@/hooks/usePedidosFiltersUnified';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
+import { PedidosFiltersSection } from './components/PedidosFiltersSection';
+import { Card } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 // import { PedidosDataTable } from './components/PedidosDataTable';
 
 interface SimplePedidosPageProps {
@@ -21,32 +26,38 @@ function SimplePedidosPage({ accountId }: SimplePedidosPageProps) {
     applyFilters
   } = manager;
 
+  // Sistema de filtros unificado
+  const filters = usePedidosFiltersUnified({
+    onFiltersApply: (filterParams) => {
+      console.log('🔍 Aplicando filtros:', filterParams);
+      // Converter filtros unificados para formato do manager
+      const managerFilters: any = {};
+      
+      if (filterParams.search) {
+        managerFilters.searchTerm = filterParams.search;
+      }
+      if (filterParams.dataInicio) {
+        managerFilters.dateRange = { from: filterParams.dataInicio };
+      }
+      if (filterParams.dataFim) {
+        managerFilters.dateRange = { 
+          ...managerFilters.dateRange, 
+          to: filterParams.dataFim 
+        };
+      }
+      // TODO: Implementar outros filtros conforme necessário
+      
+      applyFilters(managerFilters);
+    },
+    loadSavedFilters: true
+  });
+
   // Auto-selecionar conta quando especificada
   useEffect(() => {
     if (accountId && accountId !== selectedAccount) {
       setSelectedAccount(accountId);
     }
   }, [accountId, selectedAccount, setSelectedAccount]);
-
-  // Handlers
-  const handleFiltersApply = (filters: any) => {
-    const newFilters: any = {};
-    
-    if (filters.dateRange?.from) {
-      newFilters.dateRange = { from: filters.dateRange.from };
-    }
-    if (filters.dateRange?.to) {
-      newFilters.dateRange = { ...newFilters.dateRange, to: filters.dateRange.to };
-    }
-    if (filters.shippingStatus) {
-      newFilters.shippingStatus = filters.shippingStatus;
-    }
-    if (filters.searchTerm) {
-      newFilters.searchTerm = filters.searchTerm;
-    }
-    
-    applyFilters(newFilters);
-  };
 
   const totalPages = Math.max(1, Math.ceil(pedidos.length / 25));
 
@@ -59,12 +70,66 @@ function SimplePedidosPage({ accountId }: SimplePedidosPageProps) {
           </div>
         )}
 
+        {/* Seletor de Conta ML */}
+        <Card className="p-4">
+          <div className="flex items-center gap-4">
+            <h3 className="text-sm font-medium">Conta Mercado Livre:</h3>
+            <Select
+              value={selectedAccount || ''}
+              onValueChange={setSelectedAccount}
+            >
+              <SelectTrigger className="w-[300px]">
+                <SelectValue placeholder="Selecione uma conta" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{account.nickname || account.name}</span>
+                      {account.is_active && (
+                        <Badge variant="secondary" className="text-xs">Ativa</Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedAccount && (
+              <Badge variant="outline">
+                Conta selecionada: {accounts.find(a => a.id === selectedAccount)?.nickname || 'Conta'}
+              </Badge>
+            )}
+          </div>
+        </Card>
+
+        {/* Seção de Filtros */}
+        <PedidosFiltersSection
+          filters={filters.filters}
+          appliedFilters={filters.appliedFilters}
+          onFiltersChange={(newFilters) => {
+            Object.keys(newFilters).forEach(key => {
+              filters.updateFilter(key as any, newFilters[key]);
+            });
+          }}
+          onClearFilters={filters.clearFilters}
+          hasPendingChanges={filters.hasPendingChanges}
+          loading={loading}
+          contasML={accounts.map(acc => ({
+            id: acc.id,
+            name: acc.name,
+            nickname: acc.nickname,
+            active: acc.is_active
+          }))}
+        />
+
         <PedidosHeaderSection
           title="Pedidos"
           subtitle="Gerencie seus pedidos do Mercado Livre"
           totalCount={pedidos.length}
           loading={loading}
           onRefresh={refresh}
+          onApplyFilters={filters.applyFilters}
+          hasPendingChanges={filters.hasPendingChanges}
         />
 
         <div className="border rounded-lg">
