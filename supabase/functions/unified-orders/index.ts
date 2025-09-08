@@ -10,6 +10,62 @@ const corsHeaders = {
 
 const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY") || "";
 
+// Funções de criptografia/descriptografia
+async function encryptData(data: string, key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyBytes = encoder.encode(key.slice(0, 32).padEnd(32, '0'));
+  const dataBytes = encoder.encode(data);
+  
+  // Generate random IV
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBytes,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt']
+  );
+  
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    cryptoKey,
+    dataBytes
+  );
+  
+  const encryptedArray = new Uint8Array(encrypted);
+  const result = new Uint8Array(iv.length + encryptedArray.length);
+  result.set(iv);
+  result.set(encryptedArray, iv.length);
+  return btoa(String.fromCharCode(...result));
+}
+
+async function decryptData(encryptedData: string, key: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  const keyBytes = encoder.encode(key.slice(0, 32).padEnd(32, '0'));
+  
+  const data = Uint8Array.from(atob(encryptedData), c => c.charCodeAt(0));
+  const iv = data.slice(0, 12);
+  const encrypted = data.slice(12);
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyBytes,
+    { name: 'AES-GCM' },
+    false,
+    ['decrypt']
+  );
+  
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    cryptoKey,
+    encrypted
+  );
+  
+  return decoder.decode(decrypted);
+}
+
 function serviceClient(authHeader?: string | null) {
   const url = Deno.env.get("SUPABASE_URL")!;
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -195,10 +251,10 @@ serve(async (req) => {
       return ok({ results: [], unified: [], paging: { total: 0, limit, offset }, count: 0 });
     }
 
-    // 2) Segredos - leitura com fallback legado via edge integrations-get-secret
+    // 2) Segredos - priorizar nova estrutura encriptada
     const { data: secretRow, error: secErr } = await sb
       .from('integration_secrets')
-      .select('access_token, refresh_token, expires_at, meta, secret_enc')
+      .select('secret_enc, expires_at, meta, access_token, refresh_token')
       .eq('integration_account_id', integration_account_id)
       .maybeSingle();
 
@@ -207,18 +263,40 @@ serve(async (req) => {
 
     console.log(`[unified-orders:${cid}] Resultado busca secrets:`, { 
       hasRow: !!secretRow, 
-      hasAccessToken: !!secretRow?.access_token, 
-      hasSecretEnc: !!secretRow?.secret_enc 
+      hasSecretEnc: !!secretRow?.secret_enc,
+      hasLegacyTokens: !!secretRow?.access_token
     });
 
-    if (secretRow?.access_token) {
+    // PRIORIDADE 1: Tentar descriptografar secret_enc (nova estrutura)
+    if (secretRow?.secret_enc) {
+      try {
+        console.log(`[unified-orders:${cid}] DEBUG: Descriptografando tokens da nova estrutura`);
+        const decrypted = await decryptData(secretRow.secret_enc, ENC_KEY);
+        const parsed = JSON.parse(decrypted);
+        
+        if (parsed.access_token && parsed.refresh_token) {
+          resolvedSecrets = {
+            access_token: parsed.access_token,
+            refresh_token: parsed.refresh_token,
+            expires_at: parsed.expires_at || secretRow.expires_at,
+            meta: secretRow.meta || {},
+          };
+          console.log(`[unified-orders:${cid}] SUCCESS: Tokens descriptografados da nova estrutura`);
+        }
+      } catch (decryptError) {
+        console.error(`[unified-orders:${cid}] Erro ao descriptografar nova estrutura:`, decryptError);
+      }
+    }
+
+    // PRIORIDADE 2: Fallback para tokens legados em claro (se ainda existirem)
+    if (!resolvedSecrets?.access_token && secretRow?.access_token) {
       resolvedSecrets = {
         access_token: secretRow.access_token,
         refresh_token: secretRow.refresh_token,
         expires_at: secretRow.expires_at,
         meta: secretRow.meta || {},
       };
-      console.log(`[unified-orders:${cid}] Usando tokens diretos da tabela`);
+      console.log(`[unified-orders:${cid}] WARNING: Usando tokens legados em claro`);
     }
 
     if (!resolvedSecrets?.access_token) {
@@ -291,24 +369,30 @@ serve(async (req) => {
       }
     }
 
-    // Backfill: se tokens foram recuperados via get-secret/secret_enc e os campos em claro estão vazios, persistir
+    // Backfill: se tokens foram recuperados via get-secret/secret_enc e não temos secret_enc, criar
     try {
-      if (resolvedSecrets?.access_token && (!secretRow?.access_token || !secretRow?.refresh_token)) {
+      if (resolvedSecrets?.access_token && !secretRow?.secret_enc) {
+        const tokenData = {
+          access_token: resolvedSecrets.access_token,
+          refresh_token: resolvedSecrets.refresh_token,
+          expires_at: resolvedSecrets.expires_at
+        };
+        const encrypted = await encryptData(JSON.stringify(tokenData), ENC_KEY);
+        
         const { error: bfErr } = await sb
           .from('integration_secrets')
           .update({
-            access_token: resolvedSecrets.access_token,
-            refresh_token: resolvedSecrets.refresh_token ?? null,
+            secret_enc: encrypted,
             expires_at: resolvedSecrets.expires_at ?? null,
             updated_at: new Date().toISOString()
           })
           .eq('integration_account_id', integration_account_id)
           .eq('provider', 'mercadolivre');
-        if (bfErr) console.warn(`[unified-orders:${cid}] Backfill tokens falhou`, bfErr);
-        else console.log(`[unified-orders:${cid}] Backfill tokens OK`);
+        if (bfErr) console.warn(`[unified-orders:${cid}] Backfill encriptado falhou`, bfErr);
+        else console.log(`[unified-orders:${cid}] Backfill encriptado OK`);
       }
     } catch (e) {
-      console.warn(`[unified-orders:${cid}] Backfill tokens exception`, e);
+      console.warn(`[unified-orders:${cid}] Backfill encriptado exception`, e);
     }
 
     console.log(`[unified-orders:${cid}] DEBUG: Final token resolution check:`, {
