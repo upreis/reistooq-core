@@ -1052,7 +1052,9 @@ export type Database = {
           provider: string
           refresh_token: string | null
           secret_enc: string
+          simple_tokens: string | null
           updated_at: string
+          use_simple: boolean | null
         }
         Insert: {
           access_count?: number | null
@@ -1068,7 +1070,9 @@ export type Database = {
           provider: string
           refresh_token?: string | null
           secret_enc: string
+          simple_tokens?: string | null
           updated_at?: string
+          use_simple?: boolean | null
         }
         Update: {
           access_count?: number | null
@@ -1084,7 +1088,9 @@ export type Database = {
           provider?: string
           refresh_token?: string | null
           secret_enc?: string
+          simple_tokens?: string | null
           updated_at?: string
+          use_simple?: boolean | null
         }
         Relationships: [
           {
@@ -2861,6 +2867,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      decrypt_simple: {
+        Args: { encrypted_data: string }
+        Returns: string
+      }
+      encrypt_simple: {
+        Args: { data: string }
+        Returns: string
+      }
       ensure_current_org: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -3108,30 +3122,16 @@ export type Database = {
         Args: { p_state_value: string }
         Returns: string
       }
-      get_pedidos_masked: {
-        Args:
-          | {
-              _cidade?: string
-              _end?: string
-              _integration_account_id?: string
-              _limit?: number
-              _offset?: number
-              _search?: string
-              _situacao?: string[]
-              _start?: string
-              _uf?: string
-              _valor_max?: number
-              _valor_min?: number
-            }
-          | {
-              _end?: string
-              _integration_account_id?: string
-              _limit?: number
-              _offset?: number
-              _search?: string
-              _situacao?: string
-              _start?: string
-            }
+      get_pedidos_masked_v2: {
+        Args: {
+          _end_date?: string
+          _integration_account_id?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _situacao?: string
+          _start_date?: string
+        }
         Returns: {
           cidade: string
           codigo_rastreamento: string
