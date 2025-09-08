@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encryptAESGCM } from "../_shared/crypto.ts";
 
-// Standalone helpers (no _shared import)
+// Standalone helpers
 function makeClient(authHeader: string | null) {
   const url = Deno.env.get("SUPABASE_URL")!;
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -141,41 +142,40 @@ serve(async (req) => {
       payload: payload.payload || {}
     };
 
-    // Criptografar usando função PostgreSQL
-    const { data: encryptedData, error: encryptError } = await supabase
-      .rpc('encrypt_simple', { data: JSON.stringify(secretData) });
-
-    if (encryptError || !encryptedData) {
-      console.error('[store-secret] Encryption failed:', encryptError);
+    // ✅ NOVO: Criptografar usando AES-GCM (mesmo algoritmo do unified-orders)
+    const appEncKey = Deno.env.get("APP_ENCRYPTION_KEY");
+    if (!appEncKey) {
+      console.error('[store-secret] APP_ENCRYPTION_KEY not found');
       return new Response(JSON.stringify({ 
         ok: false, 
-        error: "Falha ao criptografar dados" 
+        error: "Chave de criptografia não configurada" 
       }), { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
 
-    console.log('[store-secret] Data encrypted successfully');
+    const encryptedData = await encryptAESGCM(JSON.stringify(secretData), appEncKey);
+    console.log('[store-secret] Data encrypted with AES-GCM successfully');
 
-    // Converter simple_tokens (base64) em bytes para preencher secret_enc (bytea)
-    const secretBytes = b64ToBytes(encryptedData as string);
+    // ✅ NOVO: Salvar secret_enc como string base64 (não bytes)
+    // Isso garante compatibilidade total com unified-orders
 
 
-    // Salvar na tabela integration_secrets
+    // ✅ NOVO: Salvar na tabela integration_secrets com formato padronizado
     const { data: result, error: upsertError } = await supabase
       .from('integration_secrets')
       .upsert({
         integration_account_id: payload.integration_account_id,
         provider: payload.provider,
         organization_id: organizationId,
-        simple_tokens: encryptedData,
+        simple_tokens: encryptedData, // base64 string
         use_simple: true,
-        secret_enc: secretBytes, // satisfaz trigger de NOT NULL/criptografia
+        secret_enc: encryptedData, // MESMO valor como string (não bytes)
         expires_at: payload.expires_at,
         meta: {
           last_updated: new Date().toISOString(),
-          encryption_method: 'simple+bytea'
+          encryption_method: 'aes-gcm-unified'
         }
       }, { 
         onConflict: 'integration_account_id,provider',
@@ -194,10 +194,10 @@ serve(async (req) => {
       });
     }
 
-    console.log('[store-secret] Success:', { 
+    console.log('[integrations-store-secret] SUCCESS: Tokens persisted', { 
       accountId: payload.integration_account_id, 
       provider: payload.provider, 
-      recordId: result?.[0]?.id 
+      id: result?.[0]?.id 
     });
 
     // Log de auditoria
