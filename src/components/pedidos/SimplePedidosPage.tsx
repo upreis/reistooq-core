@@ -739,14 +739,32 @@ function SimplePedidosPage({ className }: Props) {
     // Lógica de baixa de estoque aqui
   };
 
-  // Definir conta via URL (?acc= ou ?integration_account_id=)
+  // Definir conta via URL (?acc= ou ?integration_account_id=) — somente após carregar contas e validando
   useEffect(() => {
     try {
       const sp = new URLSearchParams(window.location.search);
       const acc = sp.get('acc') || sp.get('integration_account_id');
-      if (acc) actions.setIntegrationAccountId(acc);
+      if (!acc) return;
+      if (!Array.isArray(accounts) || accounts.length === 0) return; // aguarda contas
+
+      const exists = accounts.some((a) => (a.id || a.account_id) === acc);
+      const target = exists ? acc : (accounts[0]?.id as string) || (accounts[0]?.account_id as string);
+      if (!target) return;
+
+      console.log('[account/url] selecionando conta via URL (validada):', target);
+      actions.setIntegrationAccountId(target);
+      // Atualiza persistência para evitar reuso de ID inválido
+      try {
+        const saved = localStorage.getItem('pedidos:lastSearch');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          parsed.integrationAccountId = target;
+          localStorage.setItem('pedidos:lastSearch', JSON.stringify(parsed));
+        }
+      } catch {}
     } catch {}
-  }, [actions]);
+  }, [actions, accounts]);
+
 
   // Carregar contas na inicialização (sem qualquer desativação automática)
   useEffect(() => {
@@ -764,15 +782,32 @@ useEffect(() => {
   }
 }, [accounts, state.integrationAccountId, actions]);
 
-// Se a conta selecionada não estiver mais ativa, limpar seleção para evitar chamadas inválidas
+// Se a conta selecionada não estiver mais ativa, substituir por uma válida (ou limpar)
 useEffect(() => {
   if (
     state.integrationAccountId &&
-    Array.isArray(accounts) &&
-    !accounts.some((a) => (a.id || a.account_id) === state.integrationAccountId)
+    Array.isArray(accounts)
   ) {
-    console.log('[account/reset] conta selecionada não está ativa, limpando seleção');
-    actions.setIntegrationAccountId('');
+    const isValid = accounts.some((a) => (a.id || a.account_id) === state.integrationAccountId);
+    if (!isValid) {
+      const fallback = (accounts[0]?.id as string) || (accounts[0]?.account_id as string) || '';
+      if (fallback) {
+        console.log('[account/reset] conta inválida, substituindo por primeira ativa:', fallback);
+        actions.setIntegrationAccountId(fallback);
+        try {
+          const saved = localStorage.getItem('pedidos:lastSearch');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            parsed.integrationAccountId = fallback;
+            localStorage.setItem('pedidos:lastSearch', JSON.stringify(parsed));
+          }
+        } catch {}
+      } else {
+        console.log('[account/reset] nenhuma conta ativa encontrada, limpando seleção');
+        actions.setIntegrationAccountId('');
+        try { localStorage.removeItem('pedidos:lastSearch'); } catch {}
+      }
+    }
   }
 }, [accounts, state.integrationAccountId, actions]);
   const validateSystem = () => {
