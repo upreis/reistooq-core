@@ -204,6 +204,12 @@ serve(async (req) => {
 
     let resolvedSecrets: any = null;
 
+    console.log(`[unified-orders:${cid}] Resultado busca secrets:`, { 
+      hasRow: !!secretRow, 
+      hasAccessToken: !!secretRow?.access_token, 
+      hasSecretEnc: !!secretRow?.secret_enc 
+    });
+
     if (secretRow?.access_token) {
       resolvedSecrets = {
         access_token: secretRow.access_token,

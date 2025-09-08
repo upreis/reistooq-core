@@ -479,11 +479,11 @@ export function usePedidosManager(initialAccountId?: string) {
       const start = apiParams?.date_from ?? undefined; // 'YYYY-MM-DD'
       const end = apiParams?.date_to ?? undefined;     // 'YYYY-MM-DD'
 
-      // RPC: get_pedidos_masked(_start, _end, _search, _limit, _offset)
+      // RPC: get_pedidos_masked usando parâmetros nomeados para evitar conflito
       const { data, error } = await supabase.rpc('get_pedidos_masked', {
-        _start: start ?? null,
-        _end: end ?? null,
-        _search: q ?? null,
+        _start: start ? new Date(start).toISOString().split('T')[0] : null,
+        _end: end ? new Date(end).toISOString().split('T')[0] : null,
+        _search: q || null,
         _limit: pageSize,
         _offset: (currentPage - 1) * pageSize,
       });
@@ -497,9 +497,10 @@ export function usePedidosManager(initialAccountId?: string) {
         ? rows.filter((r: any) => r.integration_account_id === targetAccountId)
         : rows;
 
+      console.log(`[DB Fallback] Buscando no banco: search=${q}, dates=${start} to ${end}`);
       return { results: filtered, unified: [], total: filtered.length };
     } catch (e: any) {
-      console.warn('[DB Fallback] Erro ao buscar no banco:', e?.message || e);
+      console.error('[DB Fallback] Erro ao buscar no banco:', e?.message || e);
       return { results: [], unified: [], total: 0 };
     }
   }, [currentPage, pageSize]);
