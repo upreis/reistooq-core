@@ -73,17 +73,18 @@ async function refreshIfNeeded(sb: ReturnType<typeof serviceClient>, secrets: an
   const data = JSON.parse(raw);
   const newExpiresAt = new Date(Date.now() + (data.expires_in ?? 0) * 1000).toISOString();
 
-  // persiste de volta
-  const { error: upErr } = await sb.from('integration_secrets').upsert({
-    integration_account_id: secrets.account_id,
-    provider: 'mercadolivre',
-    access_token: data.access_token,
-    refresh_token: data.refresh_token || secrets.refresh_token,
-    expires_at: newExpiresAt,
-    meta: secrets.meta ?? {},
-    updated_at: new Date().toISOString()
-  }, { onConflict: 'integration_account_id,provider' });
-  if (upErr) {
+  // persiste de volta usando integrations-store-secret
+  const { error: upErr } = await sb.functions.invoke('integrations-store-secret', {
+    body: {
+      integration_account_id: secrets.account_id,
+      provider: 'mercadolivre',
+      access_token: data.access_token,
+      refresh_token: data.refresh_token || secrets.refresh_token,
+      expires_at: newExpiresAt,
+      payload: secrets.meta ?? {}
+    }
+  });
+  if (upErr || !upErr?.data?.ok) {
     console.error(`[unified-orders:${cid}] Falha ao salvar novos tokens`, upErr);
     throw new Error("Failed to save refreshed tokens");
   }
@@ -169,15 +170,24 @@ serve(async (req) => {
       return ok({ results: [], unified: [], paging: { total: 0, limit, offset }, count: 0 });
     }
 
-    // 2) Segredos
-    const { data: secrets, error: secErr } = await sb
-      .from('integration_secrets')
-      .select('access_token, refresh_token, expires_at, meta')
-      .eq('integration_account_id', integration_account_id)
-      .eq('provider', 'mercadolivre')
-      .maybeSingle();
+    // 2) Segredos - usar integrations-get-secret para descriptografar
+    const { data: secretsResponse, error: secErr } = await sb.functions.invoke('integrations-get-secret', {
+      body: {
+        integration_account_id,
+        provider: 'mercadolivre'
+      }
+    });
 
-    if (secErr || !secrets?.access_token) return fail("Segredos não encontrados", 404, secErr, cid);
+    if (secErr || !secretsResponse?.ok) {
+      console.error(`[unified-orders:${cid}] Failed to get secrets:`, secErr, secretsResponse);
+      return fail("Segredos não encontrados", 404, secErr || secretsResponse?.error, cid);
+    }
+
+    const secrets = secretsResponse.secret;
+    if (!secrets?.access_token) {
+      console.error(`[unified-orders:${cid}] No access token in decrypted secrets:`, secrets);
+      return fail("Token de acesso não encontrado", 404, null, cid);
+    }
 
     // anexa account_id para o refresh salvar
     const secretsWithAccountId = { ...secrets, account_id: integration_account_id };
