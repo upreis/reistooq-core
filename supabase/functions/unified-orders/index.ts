@@ -193,7 +193,7 @@ serve(async (req) => {
       return ok({ results: [], unified: [], paging: { total: 0, limit, offset }, count: 0 });
     }
 
-    // 2) Segredos - leitura direta com fallback legado (espelha comportamento antigo)
+    // 2) Segredos - leitura direta simplificada
     const { data: secretRow, error: secErr } = await sb
       .from('integration_secrets')
       .select('access_token, refresh_token, expires_at, meta, secret_enc')
@@ -201,60 +201,35 @@ serve(async (req) => {
       .eq('provider', 'mercadolivre')
       .maybeSingle();
 
-    if (secErr) {
-      console.error(`[unified-orders:${cid}] Erro ao buscar segredos`, secErr);
-      return fail('Erro ao buscar segredos', 500, secErr, cid);
+    if (secErr || !secretRow) {
+      console.error(`[unified-orders:${cid}] Erro ao buscar segredos`, secErr || 'Nenhum registro encontrado');
+      return fail('Segredos não encontrados', 404, secErr, cid);
     }
 
-    let resolvedSecrets: any = secretRow || null;
-
-    // Fallback para formato legado em secret_enc
-    if (!resolvedSecrets?.access_token) {
-      try {
-        const enc = secretRow?.secret_enc as unknown;
-        if (enc) {
-          let obj: any = null;
-          if (typeof enc === 'string') {
-            try { obj = JSON.parse(enc); }
-            catch {
-              try { obj = JSON.parse(atob(enc)); }
-              catch { obj = null; }
-            }
-          } else if (typeof enc === 'object') {
-            obj = enc;
-          }
-
-          if (obj) {
-            const candidates = [
-              obj,
-              obj?.mercadolivre,
-              obj?.mercado_livre,
-              obj?.ml,
-              obj?.token,
-              obj?.data,
-            ].filter(Boolean);
-
-            for (const c of candidates) {
-              if (c?.access_token) {
-                resolvedSecrets = {
-                  access_token: c.access_token,
-                  refresh_token: c.refresh_token ?? secretRow?.refresh_token ?? null,
-                  expires_at: c.expires_at ?? secretRow?.expires_at ?? null,
-                  meta: c.meta ?? secretRow?.meta ?? {},
-                };
-                break;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.warn(`[unified-orders:${cid}] Falha ao interpretar secret_enc legado`, e);
-      }
+    // Prioridade: access_token direto, senão secret_enc 
+    let resolvedSecrets: any = null;
+    
+    if (secretRow.access_token) {
+      // Caso 1: tokens já descriptografados na tabela
+      resolvedSecrets = {
+        access_token: secretRow.access_token,
+        refresh_token: secretRow.refresh_token,
+        expires_at: secretRow.expires_at,
+        meta: secretRow.meta || {},
+      };
+      console.log(`[unified-orders:${cid}] Usando tokens diretos da tabela`);
+    } else if (secretRow.secret_enc) {
+      // Caso 2: dados em secret_enc (legado)
+      console.log(`[unified-orders:${cid}] Tentando decodificar secret_enc...`);
+      return fail("Token criptografado não suportado - reconecte a integração", 404, null, cid);
     }
 
     if (!resolvedSecrets?.access_token) {
-      console.error(`[unified-orders:${cid}] No access token in decrypted secrets:`, resolvedSecrets);
-      return fail("Token de acesso não encontrado", 404, null, cid);
+      console.error(`[unified-orders:${cid}] Nenhum access_token encontrado:`, { 
+        has_direct: !!secretRow.access_token, 
+        has_secret_enc: !!secretRow.secret_enc 
+      });
+      return fail("Token de acesso não encontrado - reconecte a integração", 404, null, cid);
     }
 
     const secretsWithAccountId = { ...resolvedSecrets, account_id: integration_account_id };
