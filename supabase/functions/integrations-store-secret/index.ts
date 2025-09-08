@@ -44,7 +44,31 @@ serve(async (req) => {
       });
     }
 
-    // Direct upsert to integration_secrets table (no encryption, RLS protection)
+    // Autorização: validar organização e permissão antes de gravar segredos
+    const { data: ia, error: iaErr } = await supabase
+      .from('integration_accounts')
+      .select('id, organization_id')
+      .eq('id', b.integration_account_id)
+      .maybeSingle();
+
+    if (iaErr || !ia) {
+      await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'set', p_function: 'integrations-store-secret', p_success: false, p_error: iaErr?.message ?? 'integration_account_not_found' });
+      return new Response(JSON.stringify({ ok: false, error: 'Conta de integração não encontrada' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { data: currentOrg } = await supabase.rpc('get_current_org_id');
+    if (!currentOrg || ia.organization_id !== currentOrg) {
+      await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'set', p_function: 'integrations-store-secret', p_success: false, p_error: 'forbidden' });
+      return new Response(JSON.stringify({ ok: false, error: 'Acesso negado' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const { data: canManage } = await supabase.rpc('has_permission', { permission_key: 'integrations:manage' });
+    if (!canManage) {
+      await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'set', p_function: 'integrations-store-secret', p_success: false, p_error: 'missing_permission' });
+      return new Response(JSON.stringify({ ok: false, error: 'Permissão insuficiente' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    // Upsert controlado (por enquanto sem criptografia de campo)
     const { data, error } = await supabase.from('integration_secrets').upsert({
       integration_account_id: b.integration_account_id,
       provider: b.provider,
@@ -59,6 +83,8 @@ serve(async (req) => {
     });
 
     if (error) throw error;
+
+    await supabase.rpc('log_secret_access', { p_account_id: b.integration_account_id, p_provider: b.provider, p_action: 'set', p_function: 'integrations-store-secret', p_success: true });
 
     return new Response(JSON.stringify({ ok: true, id: data?.[0]?.id }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" } 

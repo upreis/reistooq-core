@@ -53,106 +53,101 @@ serve(async (req) => {
 
     console.log(`[pedidos-aggregator:${cid}] Aggregating counts with filters:`, filters);
 
-    // Usar o unified-orders para buscar contadores por status
+    // Buscar todos os pedidos do período com os dados de mapeamento
     const unifiedOrdersUrl = new URL(Deno.env.get("SUPABASE_URL") + "/functions/v1/unified-orders");
     
     const accounts = integration_account_ids || (integration_account_id ? [integration_account_id] : []);
     if (!accounts.length) return fail("Missing integration account", 400, null, cid);
 
-    // Agregadores para cada status
-    const aggregatedCounts = {
-      total: 0,
-      confirmed: 0,
-      paid: 0,
-      shipped: 0,
-      delivered: 0,
-      cancelled: 0
-    };
+    console.log(`[pedidos-aggregator:${cid}] Fetching orders with mappings to count by status...`);
 
-    // Buscar contadores para cada status relevante
-    const statusesToCheck = ['confirmed', 'paid', 'shipped', 'delivered', 'cancelled'];
+    let prontosBaixaCount = 0;
+    let mapeamentoPendenteCount = 0;
+    let totalCount = 0;
     
-    for (const status of statusesToCheck) {
+    try {
+      // Buscar todos os pedidos do período para analisar o mapeamento
       const requestBody = {
-        integration_account_id: accounts[0], // Usar primeira conta para simplificar
-        status: status,
-        limit: 1, // Só queremos o total, não os dados
+        integration_account_id: accounts[0],
+        limit: 1000, // Buscar um bom número para calcular totais
         offset: 0,
         ...filters // Aplicar filtros (data, busca, etc.)
       };
 
-      try {
-        const response = await fetch(unifiedOrdersUrl.toString(), {
-          method: 'POST',
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/json',
-            'apikey': Deno.env.get("SUPABASE_ANON_KEY")!,
-          },
-          body: JSON.stringify(requestBody)
-        });
+      const response = await fetch(unifiedOrdersUrl.toString(), {
+        method: 'POST',
+        headers: {
+          'Authorization': authHeader,
+          'Content-Type': 'application/json',
+          'apikey': Deno.env.get("SUPABASE_ANON_KEY")!,
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.ok && data.paging?.total) {
-            aggregatedCounts[status as keyof typeof aggregatedCounts] = data.paging.total;
-            aggregatedCounts.total += data.paging.total;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.ok && data.orders) {
+          const orders = data.orders;
+          totalCount = data.paging?.total || orders.length;
+
+          console.log(`[pedidos-aggregator:${cid}] Analyzing ${orders.length} orders from total ${totalCount}...`);
+
+          for (const order of orders) {
+            const mapping = order.mapping;
+            const baixado = order.isPedidoProcessado || 
+                           String(order.status_baixa || '').toLowerCase().includes('baixado');
+
+            if (baixado) continue; // Pular pedidos já baixados
+
+            // Pronto p/ Baixar: tem mapeamento completo (skuEstoque ou skuKit)
+            const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
+            
+            // Mapear Incompleto: tem mapeamento mas não completo
+            const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
+
+            if (temMapeamentoCompleto) {
+              prontosBaixaCount++;
+            } else if (temMapeamentoIncompleto) {
+              mapeamentoPendenteCount++;
+            }
           }
+
+          console.log(`[pedidos-aggregator:${cid}] Analysis result: prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
         }
-      } catch (error) {
-        console.warn(`[pedidos-aggregator:${cid}] Error fetching ${status}:`, error);
       }
+    } catch (error) {
+      console.warn(`[pedidos-aggregator:${cid}] Error fetching orders for analysis:`, error);
     }
 
-    // Buscar contadores de histórico para "baixados"
+    // Buscar contadores de histórico para "baixados" via RPC
     const sb = serviceClient();
     let baixadosCount = 0;
-    let mapeamentoPendenteCount = 0;
-    
-    try {
-      // Buscar pedidos baixados na tabela de histórico
-      const { count: baixados } = await sb
-        .from('historico_vendas')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'concluida');
-      
-      baixadosCount = baixados || 0;
-    } catch (error) {
-      console.warn(`[pedidos-aggregator:${cid}] Error fetching baixados:`, error);
-    }
+
+    const dateFrom = (filters as any)?.date_from ?? null;
+    const dateTo = (filters as any)?.date_to ?? null;
+    const search = (filters as any)?.search ?? (filters as any)?.q ?? null;
 
     try {
-      // Buscar pedidos processados (outra fonte para baixados)
-      const { count: processados } = await sb
-        .from('pedidos_processados')
-        .select('*', { count: 'exact', head: true });
-      
-      baixadosCount = Math.max(baixadosCount, processados || 0);
+      const { data: baixadosData, error: baixadosErr } = await sb.rpc('count_baixados', {
+        _account_ids: accounts,
+        _from: dateFrom,
+        _to: dateTo,
+        _search: search
+      });
+      if (baixadosErr) throw baixadosErr;
+      baixadosCount = baixadosData || 0;
     } catch (error) {
-      console.warn(`[pedidos-aggregator:${cid}] Error fetching processados:`, error);
-    }
-
-    try {
-      // Buscar mapeamentos incompletos
-      const { count: mapeamentos } = await sb
-        .from('mapeamentos')
-        .select('*', { count: 'exact', head: true })
-        .not('sku_ecommerce', 'is', null)
-        .or('sku_estoque.is.null,sku_kit.is.null');
-      
-      mapeamentoPendenteCount = mapeamentos || 0;
-    } catch (error) {
-      console.warn(`[pedidos-aggregator:${cid}] Error fetching mapeamentos:`, error);
+      console.warn(`[pedidos-aggregator:${cid}] Error fetching baixados via RPC:`, error);
     }
 
     // Mapear para estrutura esperada pelos cards
     const result = {
-      total: aggregatedCounts.total,
-      prontosBaixa: aggregatedCounts.paid, // Pedidos pagos = prontos para baixar
-      mapeamentoPendente: mapeamentoPendenteCount, // Mapeamentos incompletos
-      baixados: baixadosCount,
-      shipped: aggregatedCounts.shipped,
-      delivered: aggregatedCounts.delivered,
+      total: totalCount,
+      prontosBaixa: prontosBaixaCount, // Pedidos com mapeamento completo
+      mapeamentoPendente: mapeamentoPendenteCount, // Pedidos com mapeamento incompleto
+      baixados: baixadosCount, // Histórico de vendas (já processados)
+      shipped: 0, // TODO: implementar se necessário
+      delivered: 0, // TODO: implementar se necessário
       correlation_id: cid
     };
 
