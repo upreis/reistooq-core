@@ -88,9 +88,11 @@ serve(async (req) => {
       });
     }
 
+    const hasEnc = !!data?.secret_enc;
     const redacted = {
-      has_access_token: !!data?.access_token,
-      has_refresh_token: !!data?.refresh_token,
+      has_access_token: hasEnc || !!data?.access_token,
+      has_refresh_token: hasEnc || !!data?.refresh_token,
+      has_secret_enc: hasEnc,
       expires_at: data?.expires_at ?? null,
       meta: data?.meta ?? {}
     };

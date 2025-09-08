@@ -203,6 +203,7 @@ serve(async (req) => {
       .maybeSingle();
 
     let resolvedSecrets: any = null;
+    let fallbackSecretEnc: any = null;
 
     console.log(`[unified-orders:${cid}] Resultado busca secrets:`, { 
       hasRow: !!secretRow, 
@@ -228,6 +229,7 @@ serve(async (req) => {
       });
       if (getErr) console.warn(`[unified-orders:${cid}] get-secret error`, getErr);
       const payload: any = secData?.secret ?? secData ?? null;
+      fallbackSecretEnc = payload?.secret_enc ?? null;
       if (payload?.access_token) {
         resolvedSecrets = {
           access_token: payload.access_token,
@@ -239,10 +241,10 @@ serve(async (req) => {
       }
     }
 
-    if (!resolvedSecrets?.access_token && secretRow?.secret_enc) {
+    if (!resolvedSecrets?.access_token && (secretRow?.secret_enc || fallbackSecretEnc)) {
       // Último recurso: tentar decodificar JSON/base64 simples (legado)
       try {
-        const enc: any = secretRow.secret_enc;
+        const enc: any = fallbackSecretEnc ?? secretRow?.secret_enc;
         let obj: any = null;
         if (typeof enc === 'string') {
           try { obj = JSON.parse(enc); } catch {
