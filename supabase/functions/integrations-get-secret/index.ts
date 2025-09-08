@@ -36,10 +36,10 @@ serve(async (req) => {
     const supabase = makeClient(authHeader);
     const b = await req.json();
     
-    if (!b?.integration_account_id || !b?.provider) {
+    if (!b?.integration_account_id) {
       return new Response(JSON.stringify({ 
         ok: false, 
-        error: "integration_account_id e provider são obrigatórios" 
+        error: "integration_account_id é obrigatório" 
       }), { 
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -71,11 +71,25 @@ serve(async (req) => {
     }
 
     // Buscar segredos (inclui campo legado secret_enc para fallback)
-    const { data, error } = await supabase
+    // Normalização e sinônimos de provider (ex.: ML)
+    const providerRaw = (b?.provider ? String(b.provider) : '').toLowerCase();
+    const norm = providerRaw.replace(/\s|_/g, '');
+    const synonyms = providerRaw
+      ? Array.from(new Set(norm === 'mercadolivre' ? ['mercadolivre','mercado_livre','mercadolibre','ml'] : [providerRaw]))
+      : [];
+
+    let query = supabase
       .from('integration_secrets')
-      .select('access_token, refresh_token, expires_at, meta, secret_enc')
-      .eq('integration_account_id', b.integration_account_id)
-      .eq('provider', b.provider)
+      .select('access_token, refresh_token, expires_at, meta, secret_enc, provider, updated_at')
+      .eq('integration_account_id', b.integration_account_id);
+
+    if (synonyms.length > 0) {
+      query = query.in('provider', synonyms as any);
+    }
+
+    const { data, error } = await query
+      .order('updated_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) throw error;
