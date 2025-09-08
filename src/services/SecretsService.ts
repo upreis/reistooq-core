@@ -18,7 +18,7 @@ export interface GetSecretRequest {
 
 /**
  * Service for handling integration secrets
- * Uses direct table access via service role (no encryption, protected by RLS)
+ * Uses Edge Functions with strict permission checks; tokens never returned to the browser
  */
 export class SecretsService {
   /**
@@ -71,9 +71,9 @@ export class SecretsService {
   static async hasSecret(integration_account_id: string, provider: string): Promise<boolean> {
     try {
       const secret = await this.getSecret({ integration_account_id, provider });
-      return !!(secret?.access_token || secret?.client_secret);
+      return !!(secret?.has_access_token || secret?.has_refresh_token);
     } catch (error) {
-      // If secret doesn't exist or fails to decrypt, return false
+      // If secret doesn't exist or not authorized, return false
       return false;
     }
   }
@@ -87,22 +87,15 @@ export class SecretsService {
     expires_at?: string;
   }) {
     try {
-      // Get existing secret first to preserve client credentials
-      const existingSecret = await this.getSecret({ integration_account_id, provider });
-      
-      // Update with new tokens while preserving existing data
-      const updatedPayload: SecretPayload = {
+      // Atualiza apenas os tokens informados (sem expor segredos existentes)
+      const payload: SecretPayload = {
         integration_account_id,
         provider,
-        client_id: existingSecret?.client_id,
-        client_secret: existingSecret?.client_secret,
-        access_token: tokens.access_token ?? existingSecret?.access_token,
-        refresh_token: tokens.refresh_token ?? existingSecret?.refresh_token,
-        expires_at: tokens.expires_at ?? existingSecret?.expires_at,
-        payload: existingSecret?.payload || {}
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: tokens.expires_at
       };
-
-      return await this.saveSecret(updatedPayload);
+      return await this.saveSecret(payload);
     } catch (error) {
       console.error('Error updating tokens:', error);
       throw error;

@@ -339,8 +339,23 @@ export class HistoricoFileService {
     return typeMap[field] || 'string';
   }
 
-  // Import validation with comprehensive error checking
+  // ⚠️ SEGURANÇA: Importação foi desabilitada diretamente na tabela por motivos de segurança
+  // Todas as importações devem ser feitas através de processos seguros supervisionados
   static async validateImportData(data: any[], preview = false): Promise<ImportResult> {
+    // Bloquear importações diretas para proteção de dados
+    console.warn('🔒 Importação direta bloqueada por segurança. Use processos supervisionados.');
+    return {
+      success: false,
+      processed: 0,
+      errors: [{
+        row: 1,
+        field: 'security',
+        value: 'blocked',
+        message: 'Importação direta foi desabilitada por motivos de segurança. Entre em contato com o administrador.',
+        type: 'critical'
+      }],
+      warnings: []
+    };
     const errors: ImportError[] = [];
     const warnings: ImportWarning[] = [];
     let processed = 0;
