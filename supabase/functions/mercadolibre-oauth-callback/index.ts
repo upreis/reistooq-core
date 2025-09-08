@@ -202,8 +202,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        'x-internal-call': ENC_KEY
+        'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
       },
       body: JSON.stringify({
         integration_account_id: account.id,
@@ -211,6 +210,7 @@ serve(async (req) => {
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
         expires_at: expiresAt.toISOString(),
+        internal_call: true,
         payload: { 
           user_id: user.id, 
           scope: tokenData.scope || null,
