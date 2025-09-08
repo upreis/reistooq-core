@@ -479,19 +479,11 @@ export function usePedidosManager(initialAccountId?: string) {
       const start = apiParams?.date_from ?? undefined; // 'YYYY-MM-DD'
       const end = apiParams?.date_to ?? undefined;     // 'YYYY-MM-DD'
 
-      // Forçar assinatura v3 da RPC (desambigua sobrecarga) passando todos os parâmetros nomeados
-      const targetAccountId = apiParams?.integration_account_id ?? null;
-
+      // RPC original simples (que sempre funcionou)
       const { data, error } = await supabase.rpc('get_pedidos_masked', {
-        _integration_account_id: targetAccountId,
         _search: q || null,
-        _start: start ? new Date(start).toISOString().split('T')[0] : null,
-        _end: end ? new Date(end).toISOString().split('T')[0] : null,
-        _cidade: apiParams?.cidade || null,
-        _uf: apiParams?.uf || null,
-        _situacao: null,
-        _valor_min: apiParams?.valorMin ?? null,
-        _valor_max: apiParams?.valorMax ?? null,
+        _start: start || null,
+        _end: end || null,
         _limit: pageSize,
         _offset: (currentPage - 1) * pageSize,
       });
@@ -500,6 +492,7 @@ export function usePedidosManager(initialAccountId?: string) {
       const rows = Array.isArray(data) ? data : [];
 
       // Aplica filtro de conta (se houver)
+      const targetAccountId = apiParams?.integration_account_id;
       const filtered = targetAccountId
         ? rows.filter((r: any) => r.integration_account_id === targetAccountId)
         : rows;
