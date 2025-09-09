@@ -110,6 +110,13 @@ Deno.serve(async (req: Request) => {
     // Criptografar com padrão único AES-GCM
     const encryptedSecret = await encryptAESGCM(JSON.stringify(filteredSecretData));
 
+    // Também armazenar formato simples para compatibilidade (desbloqueia leitura imediata)
+    const { data: simpleEnc, error: simpleErr } = await makeServiceClient()
+      .rpc('encrypt_simple', { data: JSON.stringify(filteredSecretData) });
+    if (simpleErr) {
+      console.warn('[store-secret] encrypt_simple falhou, prosseguindo apenas com secret_enc:', simpleErr.message);
+    }
+
     // Salvar no banco usando serviceClient (bypass RLS)
     const { error: upsertError } = await serviceClient
       .from('integration_secrets')
@@ -118,6 +125,8 @@ Deno.serve(async (req: Request) => {
         provider,
         organization_id,
         secret_enc: encryptedSecret,
+        simple_tokens: simpleEnc ?? null,
+        use_simple: !!simpleEnc,
         expires_at: expires_at || null,
         updated_at: new Date().toISOString()
       }, {
