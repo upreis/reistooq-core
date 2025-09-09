@@ -72,51 +72,23 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   // Debug dos dados quando orders mudam
   useEffect(() => {
     if (orders.length > 0) {
+      const sampleOrder = orders[0];
       console.log('[DEBUG] Orders updated:', {
         total: orders.length,
         sampleOrder: {
-          numero: orders[0]?.numero,
-          order_number: orders[0]?.order_number,
-          id: orders[0]?.id,
-          pack_id: orders[0]?.pack_id,
-          
-          // ===== DEBUG NOME COMPLETO CLIENTE =====
-          nome_completo: orders[0]?.nome_completo,
-          // Buyer info completo
-          buyer_full: orders[0]?.buyer,
-          buyer_first_name: orders[0]?.buyer?.first_name,
-          buyer_last_name: orders[0]?.buyer?.last_name,
-          buyer_nickname: orders[0]?.buyer?.nickname,
-          
-          // Shipping receiver info
-          shipping_destination_receiver_name: orders[0]?.shipping?.destination?.receiver_name,
-          shipping_receiver_name: orders[0]?.shipping?.receiver_address?.receiver_name,
-          
-          // Unified info
-          unified_full: orders[0]?.unified,
-          unified_receiver_name: orders[0]?.unified?.receiver_name,
-          unified_buyer_name: orders[0]?.unified?.buyer_name,
-          
-          // ===== DEBUG DADOS DE ENDEREÇO =====
-          shipping_full: orders[0]?.shipping,
-          shipping_receiver_address: orders[0]?.shipping?.receiver_address,
-          shipping_destination: orders[0]?.shipping?.destination,
-          endereco_campos: {
-            endereco_rua: orders[0]?.endereco_rua,
-            endereco_numero: orders[0]?.endereco_numero,
-            endereco_bairro: orders[0]?.endereco_bairro,
-            endereco_cep: orders[0]?.endereco_cep,
-            endereco_cidade: orders[0]?.endereco_cidade,
-            endereco_uf: orders[0]?.endereco_uf,
-            rua: orders[0]?.rua,
-            numero: orders[0]?.numero,
-            bairro: orders[0]?.bairro,
-            cep: orders[0]?.cep,
-            cidade: orders[0]?.cidade,
-            uf: orders[0]?.uf
-          },
-          
-          allFields: Object.keys(orders[0])
+          numero: sampleOrder?.numero,
+          id: sampleOrder?.id,
+          nome_cliente: sampleOrder?.nome_cliente || sampleOrder?.unified?.nome_cliente,
+          cidade: sampleOrder?.cidade || sampleOrder?.unified?.cidade,
+          uf: sampleOrder?.uf || sampleOrder?.unified?.uf,
+          valor_total: sampleOrder?.valor_total || sampleOrder?.unified?.valor_total,
+          has_unified: !!sampleOrder?.unified,
+          has_raw: !!sampleOrder?.raw,
+          structure: {
+            isUnified: typeof sampleOrder?.unified === 'object',
+            hasRaw: typeof sampleOrder?.raw === 'object',
+            directFields: Object.keys(sampleOrder || {}).slice(0, 10)
+          }
         }
       });
     }
@@ -150,7 +122,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   }, []);
 
   const getValorLiquidoVendedor = useCallback((order: any) => {
-    const total = order.valor_total || order.total_amount || 0;
+    const total = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
     const fee = order.order_items?.[0]?.sale_fee || order.marketplace_fee || 0;
     return total - fee;
   }, []);
@@ -293,7 +265,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'empresa':
                       return <span>{order.empresa || order.integration_account_id || order.account_name || order.seller?.nickname || order.seller?.name || '-'}</span>;
                     case 'nome_cliente':
-                      return <div className="max-w-xs truncate" title={order.nome_cliente || order.buyer?.nickname}>{order.nome_cliente || order.buyer?.nickname || '-'}</div>;
+                      return <div className="max-w-xs truncate" title={order.nome_cliente || order.unified?.nome_cliente || order.buyer?.nickname}>
+                        {order.nome_cliente || order.unified?.nome_cliente || order.buyer?.nickname || '-'}
+                      </div>;
                     case 'nome_completo': {
                       const fullName = (
                         order.nome_completo ||
@@ -380,8 +354,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       
                       return <span className="font-mono text-sm">{finalDoc ? maskCpfCnpj(finalDoc) : '-'}</span>;
                     }
-                    case 'data_pedido':
-                      return <span>{formatDate(order.data_pedido || order.date_created)}</span>;
+                     case 'data_pedido':
+                       return <span>{formatDate(order.data_pedido || order.unified?.data_pedido || order.date_created)}</span>;
                     case 'last_updated':
                       return <span>{order.last_updated ? formatDate(order.last_updated) : '-'}</span>;
                     case 'skus_produtos':
@@ -390,8 +364,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <span>{quantidadeItens}</span>;
                     case 'titulo_anuncio':
                       return <div className="max-w-xs truncate" title={order.order_items?.[0]?.item?.title || order.titulo_anuncio}>{order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-'}</div>;
-                    case 'valor_total':
-                      return <span>{formatMoney(order.valor_total || order.total_amount || 0)}</span>;
+                     case 'valor_total':
+                       return <span>{formatMoney(order.valor_total || order.unified?.valor_total || order.total_amount || 0)}</span>;
                     case 'paid_amount':
                       return <span>{formatMoney(order.paid_amount || 0)}</span>;
                     case 'frete_pago_cliente':
@@ -431,45 +405,47 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span className="text-xs">{translateShippingMode(order.shipping_mode || order.forma_entrega || order.shipping?.mode || order.raw?.shipping?.mode) || '-'}</span>;
                      case 'shipping_method':
                        return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.shipping?.shipping_method?.name || order.raw?.shipping?.shipping_method?.name || order.shipping?.method?.name) || '-'}</span>;
-                    case 'cidade':
-                    case 'endereco_cidade':
-                      return <span>{
-                        order.endereco_cidade || 
-                        order.cidade || 
-                        order.shipping?.destination?.shipping_address?.city?.name ||
-                        order.shipping?.destination?.shipping_address?.city ||
-                        order.shipping?.receiver_address?.city?.name || 
-                        order.shipping?.receiver_address?.city || 
-                        order.unified?.shipping?.receiver_address?.city?.name ||
-                        order.unified?.shipping?.receiver_address?.city ||
-                        order.raw?.shipping?.receiver_address?.city?.name ||
-                        order.raw?.shipping?.receiver_address?.city ||
-                        order.raw?.shipping?.destination?.receiver_address?.city?.name ||
-                        order.raw?.shipping?.destination?.receiver_address?.city ||
-                        '-'
-                      }</span>;
-                    case 'uf':
-                    case 'endereco_uf':
-                      return <span>{
-                        order.endereco_uf || 
-                        order.uf || 
-                        order.shipping?.destination?.shipping_address?.state?.name ||
-                        order.shipping?.destination?.shipping_address?.state?.id ||
-                        order.shipping?.destination?.shipping_address?.state ||
-                        order.shipping?.receiver_address?.state?.id || 
-                        order.shipping?.receiver_address?.state?.name || 
-                        order.shipping?.receiver_address?.state || 
-                        order.unified?.shipping?.receiver_address?.state?.id ||
-                        order.unified?.shipping?.receiver_address?.state?.name ||
-                        order.unified?.shipping?.receiver_address?.state ||
-                        order.raw?.shipping?.receiver_address?.state?.id ||
-                        order.raw?.shipping?.receiver_address?.state?.name ||
-                        order.raw?.shipping?.receiver_address?.state ||
-                        order.raw?.shipping?.destination?.receiver_address?.state?.id ||
-                        order.raw?.shipping?.destination?.receiver_address?.state?.name ||
-                        order.raw?.shipping?.destination?.receiver_address?.state ||
-                        '-'
-                      }</span>;
+                     case 'cidade':
+                     case 'endereco_cidade':
+                       return <span>{
+                         order.cidade || 
+                         order.unified?.cidade ||
+                         order.endereco_cidade || 
+                         order.shipping?.destination?.shipping_address?.city?.name ||
+                         order.shipping?.destination?.shipping_address?.city ||
+                         order.shipping?.receiver_address?.city?.name || 
+                         order.shipping?.receiver_address?.city || 
+                         order.unified?.shipping?.receiver_address?.city?.name ||
+                         order.unified?.shipping?.receiver_address?.city ||
+                         order.raw?.shipping?.receiver_address?.city?.name ||
+                         order.raw?.shipping?.receiver_address?.city ||
+                         order.raw?.shipping?.destination?.receiver_address?.city?.name ||
+                         order.raw?.shipping?.destination?.receiver_address?.city ||
+                         '-'
+                       }</span>;
+                     case 'uf':
+                     case 'endereco_uf':
+                       return <span>{
+                         order.uf || 
+                         order.unified?.uf ||
+                         order.endereco_uf || 
+                         order.shipping?.destination?.shipping_address?.state?.name ||
+                         order.shipping?.destination?.shipping_address?.state?.id ||
+                         order.shipping?.destination?.shipping_address?.state ||
+                         order.shipping?.receiver_address?.state?.id || 
+                         order.shipping?.receiver_address?.state?.name || 
+                         order.shipping?.receiver_address?.state || 
+                         order.unified?.shipping?.receiver_address?.state?.id ||
+                         order.unified?.shipping?.receiver_address?.state?.name ||
+                         order.unified?.shipping?.receiver_address?.state ||
+                         order.raw?.shipping?.receiver_address?.state?.id ||
+                         order.raw?.shipping?.receiver_address?.state?.name ||
+                         order.raw?.shipping?.receiver_address?.state ||
+                         order.raw?.shipping?.destination?.receiver_address?.state?.id ||
+                         order.raw?.shipping?.destination?.receiver_address?.state?.name ||
+                         order.raw?.shipping?.destination?.receiver_address?.state ||
+                         '-'
+                       }</span>;
                     case 'endereco_rua':
                       return <span>{
                         order.endereco_rua ||
@@ -699,7 +675,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'tags':
                        return <div className="max-w-xs truncate" title={translateMLTags(order.tags || [])}>{translateMLTags(order.tags || [])}</div>;
                     default:
-                      return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
+                       return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
                   }
                 };
 
