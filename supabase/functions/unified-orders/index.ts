@@ -199,13 +199,21 @@ Deno.serve(async (req) => {
     const keyFingerprint = (await sha256hex(CRYPTO_KEY)).slice(0, 12);
     
     console.log(`[unified-orders:${cid}] keyFp ${keyFingerprint}`);
-    console.log(`[unified-orders:${cid}] Resultado busca secrets:`, { 
-      hasRow: !!secretRow, 
+    console.log(`[unified-orders:${cid}] 🔍 SECRET SEARCH DEBUG:`, {
+      secretError: secretError?.message,
+      hasRow: !!secretRow,
+      secretRowType: typeof secretRow,
+      secretRowKeys: secretRow ? Object.keys(secretRow) : null,
       hasSimpleTokens: !!secretRow?.simple_tokens,
+      simpleTokensType: typeof secretRow?.simple_tokens,
+      simpleTokensLength: secretRow?.simple_tokens ? secretRow.simple_tokens.length : 0,
       useSimple: secretRow?.use_simple,
-      hasSecretEnc: !!secretRow?.secret_enc, 
+      hasSecretEnc: !!secretRow?.secret_enc,
+      secretEncType: typeof secretRow?.secret_enc,
+      secretEncLength: secretRow?.secret_enc ? (typeof secretRow.secret_enc === 'string' ? secretRow.secret_enc.length : 'non-string') : 0,
       hasLegacyTokens: !!(secretRow?.access_token || secretRow?.refresh_token),
-      keyFp: keyFingerprint
+      keyFp: keyFingerprint,
+      accountId: integration_account_id
     });
 
     let accessToken = '';
@@ -215,27 +223,54 @@ Deno.serve(async (req) => {
     // ✅ 3. Primeiro: tentar nova estrutura simples
     if (secretRow?.use_simple && secretRow?.simple_tokens) {
       try {
-        console.log(`[unified-orders:${cid}] Usando criptografia simples`);
+        console.log(`[unified-orders:${cid}] 🔓 Tentando criptografia simples - dados:`, {
+          simpleTokensType: typeof secretRow.simple_tokens,
+          simpleTokensLength: secretRow.simple_tokens.length,
+          simpleTokensPreview: secretRow.simple_tokens.substring(0, 50) + '...'
+        });
         const { data: decryptedData, error: decryptError } = await serviceClient
           .rpc('decrypt_simple', { encrypted_data: secretRow.simple_tokens });
 
+        console.log(`[unified-orders:${cid}] 🔓 Resultado decrypt_simple:`, {
+          hasError: !!decryptError,
+          errorMsg: decryptError?.message,
+          hasData: !!decryptedData,
+          dataType: typeof decryptedData,
+          dataLength: decryptedData ? decryptedData.length : 0
+        });
+
         if (decryptError) {
-          console.error(`[unified-orders:${cid}] Erro descriptografia simples:`, decryptError);
+          console.error(`[unified-orders:${cid}] ❌ Erro descriptografia simples:`, decryptError);
         } else if (decryptedData) {
-          const parsedPayload = JSON.parse(decryptedData);
-          accessToken = parsedPayload.access_token || '';
-          refreshToken = parsedPayload.refresh_token || '';
-          expiresAt = parsedPayload.expires_at || '';
-          console.log(`[unified-orders:${cid}] Descriptografia simples bem-sucedida`);
+          try {
+            const parsedPayload = JSON.parse(decryptedData);
+            accessToken = parsedPayload.access_token || '';
+            refreshToken = parsedPayload.refresh_token || '';
+            expiresAt = parsedPayload.expires_at || '';
+            console.log(`[unified-orders:${cid}] ✅ Descriptografia simples bem-sucedida - tokens extraídos:`, {
+              hasAccessToken: !!accessToken,
+              hasRefreshToken: !!refreshToken,
+              hasExpiresAt: !!expiresAt,
+              accessTokenLength: accessToken.length,
+              refreshTokenLength: refreshToken.length
+            });
+          } catch (parseErr) {
+            console.error(`[unified-orders:${cid}] ❌ Erro parsing JSON após decrypt_simple:`, parseErr);
+          }
         }
       } catch (err) {
-        console.error(`[unified-orders:${cid}] ERRO: Falha descriptografia simples`, err);
+        console.error(`[unified-orders:${cid}] ❌ ERRO: Falha descriptografia simples`, err);
       }
     }
     
     // ✅ 4. SISTEMA BLINDADO: 4 Fallbacks sequenciais de decriptação
     if (!accessToken && !refreshToken && secretRow?.secret_enc) {
-      console.log(`[unified-orders:${cid}] Iniciando sistema blindado de decriptação`);
+      console.log(`[unified-orders:${cid}] 🔓 Iniciando sistema blindado de decriptação - dados:`, {
+        secretEncType: typeof secretRow.secret_enc,
+        secretEncConstructor: secretRow.secret_enc?.constructor?.name,
+        secretEncLength: secretRow.secret_enc ? (typeof secretRow.secret_enc === 'string' ? secretRow.secret_enc.length : 'non-string') : 0,
+        secretEncPreview: typeof secretRow.secret_enc === 'string' ? secretRow.secret_enc.substring(0, 100) + '...' : 'not-string'
+      });
       
       let decrypted = null;
       let fallbackUsed = '';
@@ -244,14 +279,15 @@ Deno.serve(async (req) => {
       try {
         let raw = secretRow.secret_enc as any;
         if (typeof raw === 'string' && raw.startsWith('\\x')) {
-          console.log(`[unified-orders:${cid}] Tentando FALLBACK 1: Bytea PostgreSQL`);
+          console.log(`[unified-orders:${cid}] 🔓 Tentando FALLBACK 1: Bytea PostgreSQL`);
           const hexString = raw.slice(2);
           const bytes = new Uint8Array(hexString.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
           const b64String = new TextDecoder().decode(bytes);
           decrypted = await decryptAESGCM(b64String);
           fallbackUsed = 'bytea';
+          console.log(`[unified-orders:${cid}] ✅ FALLBACK 1 bem-sucedido`);
         }
-      } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 1 (bytea) falhou:`, e.message); }
+      } catch (e) { console.warn(`[unified-orders:${cid}] ❌ Fallback 1 (bytea) falhou:`, e.message); }
 
       // FALLBACK 2: Buffer objects (Node.js)
       if (!decrypted) {
@@ -306,12 +342,23 @@ Deno.serve(async (req) => {
           accessToken = secretData.access_token || '';
           refreshToken = secretData.refresh_token || '';
           expiresAt = secretData.expires_at || '';
-          console.log(`[unified-orders:${cid}] ✅ Decriptação bem-sucedida via ${fallbackUsed.toUpperCase()}`);
+          console.log(`[unified-orders:${cid}] ✅ Decriptação bem-sucedida via ${fallbackUsed.toUpperCase()} - tokens extraídos:`, {
+            hasAccessToken: !!accessToken,
+            hasRefreshToken: !!refreshToken,
+            hasExpiresAt: !!expiresAt,
+            accessTokenLength: accessToken.length,
+            refreshTokenLength: refreshToken.length,
+            fallbackUsed
+          });
         } catch (e) {
-          console.error(`[unified-orders:${cid}] JSON inválido após decriptação:`, e.message);
+          console.error(`[unified-orders:${cid}] ❌ JSON inválido após decriptação via ${fallbackUsed}:`, e.message);
         }
       } else {
-        console.error(`[unified-orders:${cid}] ❌ TODOS os 4 fallbacks falharam!`);
+        console.error(`[unified-orders:${cid}] ❌ TODOS os 4 fallbacks falharam! - estado:`, {
+          decrypted: decrypted ? `"${decrypted.substring(0, 50)}..."` : 'null/empty',
+          decryptedLength: decrypted ? decrypted.length : 0,
+          fallbackUsed: fallbackUsed || 'none'
+        });
       }
     }
 
