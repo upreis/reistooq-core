@@ -202,16 +202,20 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-        'x-internal-call': 'true',
-        'x-internal-token': Deno.env.get("INTERNAL_SHARED_TOKEN") || ''
+        'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
       },
       body: JSON.stringify({
         integration_account_id: account.id,
         provider: 'mercadolivre',
         access_token: tokenData.access_token,
         refresh_token: tokenData.refresh_token,
-        expires_at: expiresAt.toISOString()
+        expires_at: expiresAt.toISOString(),
+        internal_call: true,
+        payload: { 
+          user_id: user.id, 
+          scope: tokenData.scope || null,
+          token_type: tokenData.token_type || 'bearer'
+        }
       })
     });
 

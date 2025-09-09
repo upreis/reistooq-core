@@ -1,15 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { decryptAESGCM } from "../_shared/crypto.ts";
+import { decryptCompat, decryptAESGCM } from "../_shared/crypto.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY");
-
-// Fail-fast se envs obrigatórias estão ausentes
-const required = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY", "APP_ENCRYPTION_KEY"];
-const missing = required.filter(k => !Deno.env.get(k));
-if (missing.length) throw new Error("Missing envs: " + missing.join(","));
+const INTEGRATIONS_CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!; // mesma var usada pelo store-secret
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -303,46 +298,60 @@ Deno.serve(async (req) => {
       }
     }
     
-    // ✅ 4. Tentar secret_enc com novo padrão AES-GCM
+    // ✅ 4. Fallback: tentar secret_enc (bytea format)
     if (!accessToken && !refreshToken && secretRow?.secret_enc) {
       try {
-        console.log(`[unified-orders:${cid}] Tentando decrypt AES-GCM padrão`);
+        console.log(`[unified-orders:${cid}] FALLBACK: Convertendo secret_enc de bytea para string`);
         
-        // Converter bytea para string se necessário
+        // Se secret_enc é bytea (formato \x...), converter para string
         let secretString = secretRow.secret_enc;
         if (typeof secretString === 'string' && secretString.startsWith('\\x')) {
+          // Remover \x e converter hex para string
           const hexString = secretString.slice(2);
           const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
           secretString = new TextDecoder().decode(bytes);
+          console.log(`[unified-orders:${cid}] FALLBACK: Convertido bytea para string base64`);
         }
         
-        const secretJson = await decryptAESGCM(secretString, CRYPTO_KEY!);
+        // Tentar descriptografar o secret_enc convertido
+        const secretJson = await decryptCompat(secretString, INTEGRATIONS_CRYPTO_KEY, decryptLegacyIfAny);
         const secret = JSON.parse(secretJson);
         
         accessToken = secret?.access_token || '';
         refreshToken = secret?.refresh_token || '';
         expiresAt = secret?.expires_at || '';
-        console.log(`[unified-orders:${cid}] Decrypt AES-GCM bem-sucedido`);
-      } catch (decryptError) {
-        console.warn(`[unified-orders:${cid}] Decrypt failed - reconnect_required`, { accountId: integration_account_id });
-        // Sinalizar ao front que precisa reconectar
-        return fail('reconnect_required', 401, null, cid);
+        console.log(`[unified-orders:${cid}] FALLBACK: Descriptografia secret_enc bem-sucedida`);
+      } catch (fallbackError) {
+        console.error(`[unified-orders:${cid}] FALLBACK: Erro ao processar secret_enc`, fallbackError);
+        
+        // Último fallback: tokens diretos das colunas
+        if (secretRow?.access_token || secretRow?.refresh_token) {
+          console.log(`[unified-orders:${cid}] ÚLTIMO FALLBACK: Usando tokens diretos das colunas`);
+          accessToken = secretRow.access_token || '';
+          refreshToken = secretRow.refresh_token || '';
+          expiresAt = secretRow.expires_at || '';
+        }
       }
     }
-    console.log(`[unified-orders:${cid}] Final token status:`, {
+      }
+    }
+
+    console.log(`[unified-orders:${cid}] DEBUG: Final token resolution check:`, {
       hasAccessToken: !!accessToken,
       hasRefreshToken: !!refreshToken,
       hasSecretRow: !!secretRow,
-      accountId: integration_account_id
+      accountId: integration_account_id,
+      provider: 'mercadolivre'
     });
 
     if (!accessToken && !refreshToken) {
-      console.warn(`[unified-orders:${cid}] No tokens available - reconnect required`, {
+      console.error(`[unified-orders:${cid}] ERRO CRÍTICO: Token ausente mesmo após todos os fallbacks`, {
         hasRow: !!secretRow,
+        hasDirectTokens: !!(secretRow?.access_token || secretRow?.refresh_token),
         hasSecretEnc: !!secretRow?.secret_enc,
         accountId: integration_account_id
       });
-      return fail('no_tokens', 401, null, cid);
+      return fail('No valid tokens found for this integration account', 401, null, cid);
     }
 
     // ✅ 5. Refresh do token se necessário (reusa o accessToken já resolvido)
