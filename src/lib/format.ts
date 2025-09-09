@@ -1,3 +1,5 @@
+import { formatInTimeZone } from 'date-fns-tz';
+
 export function formatMoney(n?: number | null): string {
   if (n == null || isNaN(n)) return 'R$ 0,00';
   return new Intl.NumberFormat('pt-BR', {
@@ -12,21 +14,33 @@ export function formatDate(d?: string | Date | null, withTime: boolean = false):
   const date = typeof d === 'string' ? new Date(d) : d;
   if (isNaN(date.getTime())) return '-';
   
+  const timeZone = 'America/Sao_Paulo';
+  
   if (withTime) {
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date);
+    return formatInTimeZone(date, timeZone, 'dd/MM/yyyy HH:mm');
   }
   
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(date);
+  return formatInTimeZone(date, timeZone, 'dd/MM/yyyy');
+}
+
+export function formatTimestamp(d?: string | Date | null): string {
+  if (!d) return '-';
+  
+  const date = typeof d === 'string' ? new Date(d) : d;
+  if (isNaN(date.getTime())) return '-';
+  
+  const timeZone = 'America/Sao_Paulo';
+  return formatInTimeZone(date, timeZone, 'dd/MM/yyyy HH:mm:ss');
+}
+
+export function formatTimeOnly(d?: string | Date | null): string {
+  if (!d) return '-';
+  
+  const date = typeof d === 'string' ? new Date(d) : d;
+  if (isNaN(date.getTime())) return '-';
+  
+  const timeZone = 'America/Sao_Paulo';
+  return formatInTimeZone(date, timeZone, 'HH:mm:ss');
 }
 
 export function maskCpfCnpj(v?: string | null): string {

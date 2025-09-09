@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import { formatDate } from '@/lib/format';
 
 import { 
   ShoppingCart, 
@@ -275,7 +276,7 @@ export function MercadoLivreManager({ onAccountsUpdate, onUpdate }: MercadoLivre
 
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="h-3 w-3" />
-                    Conectada em {new Date(account.created_at).toLocaleDateString('pt-BR')}
+                    Conectada em {formatDate(account.created_at, true)}
                   </div>
                 </div>
               ))}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -123,8 +124,8 @@ export function EstoqueActions({
         'Preço de Venda': product.preco_venda || 0,
         'Código de Barras': product.codigo_barras || '',
         'Ativo': product.ativo ? 'Sim' : 'Não',
-        'Data Criação': product.created_at ? new Date(product.created_at).toLocaleDateString('pt-BR') : '',
-        'Data Atualização': product.updated_at ? new Date(product.updated_at).toLocaleDateString('pt-BR') : ''
+        'Data Criação': product.created_at ? formatDate(product.created_at, true) : '',
+        'Data Atualização': product.updated_at ? formatDate(product.updated_at, true) : ''
       }));
 
       // Criar workbook e worksheet
