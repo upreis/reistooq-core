@@ -1,130 +1,139 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { decryptAESGCM, encryptAESGCM } from "../_shared/crypto.ts";
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS"
-};
-function makeClient(authHeader) {
-  const url = Deno.env.get("SUPABASE_URL");
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"); // service-role para bypass de RLS
-  return createClient(url, key, {
-    global: authHeader ? {
-      headers: {
-        Authorization: authHeader
-      }
-    } : undefined
-  });
-}
-const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY") || "";
-function ok(data, status = 200) {
-  return new Response(JSON.stringify({
-    ok: true,
-    ...data
-  }), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      ...corsHeaders
-    }
-  });
-}
-function fail(error, status = 400, extra) {
-  return new Response(JSON.stringify({
-    ok: false,
-    error,
-    error_detail: extra ?? null
-  }), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      ...corsHeaders
-    }
-  });
-}
-function getMlConfig() {
-  const clientId = Deno.env.get("ML_CLIENT_ID");
-  const clientSecret = Deno.env.get("ML_CLIENT_SECRET");
-  if (!clientId || !clientSecret) throw new Error("Missing ML secrets: ML_CLIENT_ID / ML_CLIENT_SECRET");
-  return {
-    clientId,
-    clientSecret
-  };
-}
-serve(async (req)=>{
-  if (req.method === "OPTIONS") return new Response(null, {
-    headers: corsHeaders
-  });
-  if (req.method !== "POST") return fail("Method Not Allowed", 405);
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { corsHeaders, fail, ok, getMlConfig, makeClient } from "../_shared/client.ts";
+import { decryptAESGCM, CRYPTO_KEY } from "../_shared/crypto.ts";
+
+// ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return fail('Method not allowed', 405);
+  }
+
   try {
-    if (!ENC_KEY) return fail("Encryption key not configured (APP_ENCRYPTION_KEY)", 500);
-    const supabase = makeClient(req.headers.get("Authorization"));
     const { integration_account_id } = await req.json();
-    if (!integration_account_id) return fail("integration_account_id é obrigatório", 400);
-    // 1) Lê refresh_token atual
+    if (!integration_account_id) {
+      return fail('integration_account_id required', 400);
+    }
+
+    console.log(`[ML Token Refresh] Iniciando refresh para account: ${integration_account_id}`);
+
+    const supabase = makeClient(req.headers.get("Authorization"));
+
+    // ✅ 1. SISTEMA BLINDADO: Buscar secrets com validação obrigatória
     const { data: secrets, error: secretsError } = await supabase
       .from('integration_secrets')
-      .select('refresh_token, meta, secret_enc')
+      .select('access_token, refresh_token, secret_enc, expires_at, meta')
       .eq('integration_account_id', integration_account_id)
       .eq('provider', 'mercadolivre')
       .maybeSingle();
+
+    if (secretsError) {
+      console.error('[ML Token Refresh] Erro ao buscar secrets:', secretsError);
+      return fail('Failed to fetch secrets', 500, secretsError);
+    }
+
+    if (!secrets) {
+      console.error('[ML Token Refresh] Nenhum secret encontrado para a conta');
+      return fail('No secrets found for account', 404);
+    }
+
     let refreshToken = secrets.refresh_token as string | null;
 
-    // ✅ CORRIGIDO: Fallback robusto com múltiplos métodos de decriptação
+    // ✅ 2. SISTEMA BLINDADO: 4 Fallbacks sequenciais de decriptação
     if ((!refreshToken || refreshToken.length === 0) && secrets?.secret_enc) {
+      console.log('[ML Token Refresh] Access token/refresh_token vazios, iniciando sistema blindado...');
+      
+      let decrypted = null;
+      let fallbackUsed = '';
+      
+      // FALLBACK 1: Bytea PostgreSQL (\x format)
       try {
-        let raw: any = secrets.secret_enc;
-        
-        // Método 1: Handle bytea format (PostgreSQL)
+        let raw = secrets.secret_enc as any;
         if (typeof raw === 'string' && raw.startsWith('\\x')) {
-          const hex = raw.slice(2);
-          const bytes = new Uint8Array(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
-          raw = new TextDecoder().decode(bytes);
+          console.log('[ML Token Refresh] Tentando FALLBACK 1: Bytea PostgreSQL');
+          const hexString = raw.slice(2);
+          const bytes = new Uint8Array(hexString.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
+          const b64String = new TextDecoder().decode(bytes);
+          decrypted = await decryptAESGCM(b64String);
+          fallbackUsed = 'bytea';
         }
-        
-        // Método 2: Handle Buffer objects
-        if (raw && typeof raw === 'object' && raw.type === 'Buffer' && Array.isArray(raw.data)) {
-          raw = new TextDecoder().decode(Uint8Array.from(raw.data));
+      } catch (e) { console.warn('[ML Token Refresh] Fallback 1 (bytea) falhou:', e.message); }
+
+      // FALLBACK 2: Buffer objects (Node.js) 
+      if (!decrypted) {
+        try {
+          let raw = secrets.secret_enc as any;
+          if (raw && typeof raw === 'object' && (raw as any).type === 'Buffer' && Array.isArray((raw as any).data)) {
+            console.log('[ML Token Refresh] Tentando FALLBACK 2: Buffer Node.js');
+            const b64String = new TextDecoder().decode(Uint8Array.from((raw as any).data));
+            decrypted = await decryptAESGCM(b64String);
+            fallbackUsed = 'buffer';
+          }
+        } catch (e) { console.warn('[ML Token Refresh] Fallback 2 (buffer) falhou:', e.message); }
+      }
+
+      // FALLBACK 3: Uint8Array direct
+      if (!decrypted) {
+        try {
+          let raw = secrets.secret_enc as any;
+          if (raw instanceof Uint8Array || (raw && typeof raw === 'object' && typeof (raw as ArrayBuffer).byteLength === 'number')) {
+            console.log('[ML Token Refresh] Tentando FALLBACK 3: Uint8Array');
+            const b64String = raw instanceof Uint8Array ? 
+              new TextDecoder().decode(raw) : 
+              new TextDecoder().decode(new Uint8Array(raw as ArrayBuffer));
+            decrypted = await decryptAESGCM(b64String);
+            fallbackUsed = 'uint8array';
+          }
+        } catch (e) { console.warn('[ML Token Refresh] Fallback 3 (uint8array) falhou:', e.message); }
+      }
+
+      // FALLBACK 4: String simples + validação de integridade
+      if (!decrypted) {
+        try {
+          let raw = secrets.secret_enc as any;
+          const payload = typeof raw === 'string' ? raw.trim() : String(raw || '').trim();
+          if (payload) {
+            console.log('[ML Token Refresh] Tentando FALLBACK 4: String simples');
+            // Validação de integridade: deve parecer com base64
+            if (payload.match(/^[A-Za-z0-9+/]+=*$/)) {
+              decrypted = await decryptAESGCM(payload);
+              fallbackUsed = 'string';
+            } else {
+              console.warn('[ML Token Refresh] Payload não parece base64 válido, ignorando');
+            }
+          }
+        } catch (e) { console.warn('[ML Token Refresh] Fallback 4 (string) falhou:', e.message); }
+      }
+
+      // Processar resultado da decriptação
+      if (decrypted && decrypted.trim()) {
+        try {
+          const secret = JSON.parse(decrypted);
+          refreshToken = secret.refresh_token || refreshToken;
+          console.log(`[ML Token Refresh] ✅ Decriptação bem-sucedida via ${fallbackUsed.toUpperCase()}`);
+        } catch (e) {
+          console.error('[ML Token Refresh] JSON inválido após decriptação:', e.message);
+          return fail("Invalid JSON after decryption", 500, { decryption_error: e.message });
         }
-        
-        // Método 3: Handle Uint8Array
-        if (raw instanceof Uint8Array) {
-          raw = new TextDecoder().decode(raw);
-        }
-        
-        // Validação antes da decriptação
-        const payload = typeof raw === 'string' ? raw.trim() : String(raw ?? '').trim();
-        if (!payload || payload.length === 0) {
-          console.warn('[ML Token Refresh] Payload vazio após processamento');
-          return fail("Secret data corrupted", 500);
-        }
-        
-        // Tentar decriptar com validação de integridade
-        const secretJson = await decryptAESGCM(payload, ENC_KEY);
-        if (!secretJson || secretJson.trim().length === 0) {
-          console.warn('[ML Token Refresh] Decriptação resultou em string vazia');
-          return fail("Failed to decrypt tokens", 500);
-        }
-        
-        const secret = JSON.parse(secretJson);
-        refreshToken = secret.refresh_token || refreshToken;
-        
-        if (refreshToken) {
-          console.log('[ML Token Refresh] ✅ Refresh token recuperado via decriptação');
-        }
-      } catch (e) {
-        console.error('[ML Token Refresh] ❌ Falha crítica na decriptação:', e.message);
-        return fail("Token decryption failed - reconnect required", 500, { decryption_error: e.message });
+      } else {
+        console.error('[ML Token Refresh] ❌ TODOS os 4 fallbacks falharam!');
+        return fail("All decryption fallbacks failed - reconnect required", 500, { 
+          error_type: 'decryption_failed',
+          fallbacks_tried: 4
+        });
       }
     }
 
-    // ✅ VALIDAÇÃO DE SECRETS OBRIGATÓRIA (Sistema Blindado)
+    // ✅ 3. VALIDAÇÃO DE SECRETS OBRIGATÓRIA (Sistema Blindado)
     if (!refreshToken) {
       console.error('[ML Token Refresh] ❌ CRITICO: Refresh token não encontrado após todos os fallbacks');
       
       // Verificar se secrets estão configurados (sistema blindado exige)
-      if (!Deno.env.get('APP_ENCRYPTION_KEY') || Deno.env.get('APP_ENCRYPTION_KEY')!.length < 32) {
+      if (!CRYPTO_KEY || CRYPTO_KEY.length < 32) {
         console.error('[ML Token Refresh] ❌ CRITICO: APP_ENCRYPTION_KEY ausente ou inválido');
         return fail("APP_ENCRYPTION_KEY not configured", 500, { 
           error_type: 'config_missing',
@@ -156,14 +165,18 @@ serve(async (req)=>{
       });
     }
 
+    // ✅ 4. Fazer refresh no Mercado Livre
     const { clientId, clientSecret } = getMlConfig();
-    // 2) Chama refresh no ML
+    
     const params = new URLSearchParams({
       grant_type: "refresh_token",
       client_id: clientId,
       client_secret: clientSecret,
       refresh_token: refreshToken
     });
+
+    console.log('[ML Token Refresh] Enviando request para ML API...');
+    
     const resp = await fetch("https://api.mercadolibre.com/oauth/token", {
       method: "POST",
       headers: {
@@ -172,19 +185,30 @@ serve(async (req)=>{
       },
       body: params.toString()
     });
+
     const raw = await resp.text();
+    
     if (!resp.ok) {
       console.error("[ML Token Refresh] HTTP", resp.status, raw);
+      
       // invalid_grant -> refresh vencido: forçará reconectar no app
-      const msg = raw.includes("invalid_grant") ? "Refresh token inválido/expirado — reconecte a conta" : "Falha ao renovar token de acesso";
+      const msg = raw.includes("invalid_grant") ? 
+        "Refresh token inválido/expirado — reconecte a conta" : 
+        "Falha ao renovar token de acesso";
+        
       return fail(msg, resp.status, {
         http_status: resp.status,
-        body: raw
+        body: raw,
+        error_type: raw.includes("invalid_grant") ? 'reconnect_required' : 'refresh_failed'
       });
     }
+
     const json = JSON.parse(raw);
     const newExpiresAt = new Date(Date.now() + (json.expires_in ?? 0) * 1000).toISOString();
-    // 3) Atualiza tokens em texto puro
+
+    console.log('[ML Token Refresh] ✅ Refresh bem-sucedido, atualizando tokens...');
+
+    // ✅ 5. Atualizar tokens no banco
     const { error: upErr } = await supabase.from('integration_secrets').upsert({
       integration_account_id,
       provider: 'mercadolivre',
@@ -194,15 +218,26 @@ serve(async (req)=>{
       meta: secrets.meta ?? {},
       updated_at: new Date().toISOString()
     }, { onConflict: 'integration_account_id,provider' });
-    if (upErr) return fail("Falha ao salvar novos tokens", 500, upErr);
+
+    if (upErr) {
+      console.error('[ML Token Refresh] Erro ao salvar tokens:', upErr);
+      return fail("Falha ao salvar novos tokens", 500, upErr);
+    }
+
+    console.log('[ML Token Refresh] ✅ Tokens salvos com sucesso');
+
     return ok({
       success: true,
       access_token: json.access_token,
       expires_at: newExpiresAt,
       token_type: json.token_type || "Bearer"
     });
+
   } catch (e) {
     console.error("[ML Token Refresh] Unexpected error:", e);
-    return fail(String(e?.message ?? e), 500);
+    return fail(String(e?.message ?? e), 500, {
+      error_type: 'unexpected_error',
+      message: e?.message || 'Unknown error'
+    });
   }
 });

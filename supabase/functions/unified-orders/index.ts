@@ -1,101 +1,39 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { decryptAESGCM, decryptAESGCMLegacy } from "../_shared/crypto.ts";
-import { SUPABASE_URL, SERVICE_KEY, ANON_KEY, CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
+import { serve } from "https://deno.land/std@0.193.0/http/server.ts";
+import { makeClient, makeUserClient, makeServiceClient, corsHeaders, ok, fail, getMlConfig } from "../_shared/client.ts";
+import { decryptAESGCM, sha256hex, CRYPTO_KEY } from "../_shared/crypto.ts";
 
-export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-};
+// ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
-export function ok(data: Record<string, unknown>, status = 200) {
-  return new Response(JSON.stringify({ ok: true, ...data }), {
-    status,
-    headers: { "Content-Type": "application/json", ...corsHeaders }
-  });
-}
-
-export function fail(error: string, status = 400, detail?: unknown, cid?: string) {
-  const body = { ok: false, error, ...(detail && { detail }), ...(cid && { cid }) };
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json", ...corsHeaders }
-  });
-}
-
-// Client de serviço - bypass RLS para integration_secrets
-function makeServiceClient() {
-  return createClient(SUPABASE_URL, SERVICE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
-// Client de usuário - mantém contexto para validações org/permissão
-function makeUserClient(req: Request) {
-  const auth = req.headers.get("Authorization") ?? "";
-  return createClient(SUPABASE_URL, ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: auth ? { Authorization: auth } : {} },
-  });
-}
-
-// Legacy para compatibilidade (se existia decrypt antigo)
-async function decryptLegacyIfAny(payloadB64: string, key: string) {
-  // Se existia um decrypt antigo, implementar aqui; caso contrário rejeitar
-  return Promise.reject("no-legacy");
-}
-
-function getMlConfig() {
-  const clientId = Deno.env.get('ML_CLIENT_ID');
-  const clientSecret = Deno.env.get('ML_CLIENT_SECRET');
-  const redirectUri = Deno.env.get('ML_REDIRECT_URI');
-  const siteId = Deno.env.get('ML_SITE_ID') || 'MLB';
-
-  if (!clientId || !clientSecret || !redirectUri) {
-    throw new Error('Missing ML secrets: ML_CLIENT_ID, ML_CLIENT_SECRET, ML_REDIRECT_URI are required');
-  }
-
-  return { clientId, clientSecret, redirectUri, siteId };
-}
-
-async function refreshIfNeeded(serviceClient: any, secrets: any, cid: string, authHeader: string) {
-  if (!secrets?.access_token || !secrets?.refresh_token) {
-    console.log(`[unified-orders:${cid}] Refresh ignorado: tokens ausentes`);
-    return secrets;
-  }
-
+// Função para refresh preventivo de tokens
+async function refreshIfNeeded(supabase: any, tokens: any, cid: string, authHeader: string | null) {
+  const { access_token, refresh_token, expires_at, account_id } = tokens;
+  
+  if (!expires_at) return { access_token };
+  
+  const expiryTime = new Date(expires_at).getTime();
   const now = Date.now();
-  const expires = secrets.expires_at ? new Date(secrets.expires_at).getTime() : 0;
-  const safetyMargin = 5 * 60 * 1000; // 5 minutos
-
-  if (expires > now + safetyMargin) {
-    console.log(`[unified-orders:${cid}] Token ainda válido`);
-    return secrets;
-  }
-
-  try {
-    console.log(`[unified-orders:${cid}] Token expirado/próximo, fazendo refresh...`);
-    const refreshResult = await serviceClient.functions.invoke('mercadolibre-token-refresh', {
-      body: { integration_account_id: secrets.account_id },
-      headers: { Authorization: authHeader, 'x-internal-call': 'true' }
-    });
-
-    if (refreshResult.error || !refreshResult.data?.ok) {
-      console.error(`[unified-orders:${cid}] Refresh falhou:`, refreshResult.error || refreshResult.data);
-      return secrets; // Continuar com token expirado
+  const timeToExpiry = expiryTime - now;
+  
+  // Se expira em menos de 5 minutos, fazer refresh preventivo
+  if (timeToExpiry < 5 * 60 * 1000) {
+    console.log(`[unified-orders:${cid}] ⚠️ Token expira em ${Math.round(timeToExpiry/1000/60)} min - refresh preventivo`);
+    
+    try {
+      const { data: refreshData } = await supabase.functions.invoke('mercadolibre-token-refresh', {
+        body: { integration_account_id: account_id },
+        headers: authHeader ? { Authorization: authHeader } : {}
+      });
+      
+      if (refreshData?.success && refreshData?.access_token) {
+        console.log(`[unified-orders:${cid}] ✅ Refresh preventivo bem-sucedido`);
+        return { access_token: refreshData.access_token };
+      }
+    } catch (e) {
+      console.warn(`[unified-orders:${cid}] ⚠️ Erro no refresh preventivo:`, e.message);
     }
-
-    console.log(`[unified-orders:${cid}] Refresh realizado com sucesso`);
-    return {
-      ...secrets,
-      access_token: refreshResult.data.access_token,
-      refresh_token: refreshResult.data.refresh_token,
-      expires_at: refreshResult.data.expires_at
-    };
-  } catch (error) {
-    console.error(`[unified-orders:${cid}] Erro no refresh:`, error);
-    return secrets; // Continuar com token original
   }
+  
+  return { access_token };
 }
 
 async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid: string) {
@@ -194,35 +132,6 @@ Deno.serve(async (req) => {
     const {
       integration_account_id,
       status,
-      shipping_status,
-      date_from,
-      date_to,
-      cidade,
-      uf,
-      valorMin,
-      valorMax,
-      search,
-      q,
-      limit = 25,
-      offset = 0,
-      enrich = true,
-      debug = false,
-      include_shipping = true
-    } = body;
-
-    console.log(`[unified-orders:${cid}] DEBUG START - Filtros detalhados:`, {
-      integration_account_id,
-      filtros_geograficos: { cidade, uf },
-      filtros_valor: { valorMin, valorMax },
-      filtros_busca: { q, search },
-      filtros_data: { date_from, date_to },
-      filtros_status: { status, shipping_status }
-    });
-
-    console.log(`[unified-orders:${cid}] filters`, {
-      integration_account_id,
-      status,
-      shipping_status,
       date_from,
       date_to,
       cidade,
@@ -233,6 +142,30 @@ Deno.serve(async (req) => {
       q,
       limit,
       offset
+    } = body;
+
+    console.log(`[unified-orders:${cid}] DEBUG START - Filtros detalhados:`, {
+      integration_account_id,
+      filtros_geograficos: { cidade, uf },
+      filtros_valor: { valorMin, valorMax },
+      filtros_busca: { q, search },
+      filtros_data: { date_from, date_to },
+      filtros_status: { status }
+    });
+
+    console.log(`[unified-orders:${cid}] filters`, {
+      integration_account_id,
+      status,
+      date_from,
+      date_to,
+      cidade,
+      uf,
+      valorMin,
+      valorMax,
+      search,
+      q,
+      limit: limit || 25,
+      offset: offset || 0
     });
 
     if (!integration_account_id) {
@@ -253,7 +186,7 @@ Deno.serve(async (req) => {
       return fail('Integration account not found', 404, accountError, cid);
     }
 
-    // ✅ 2. Busca integration_secrets com SERVICE CLIENT (bypass RLS)
+    // ✅ 2. SISTEMA BLINDADO: Busca integration_secrets com SERVICE CLIENT (bypass RLS)
     const { data: secretRow, error: secretError } = await serviceClient
       .from('integration_secrets')
       .select('simple_tokens, use_simple, secret_enc, provider, expires_at, access_token, refresh_token')
@@ -264,6 +197,7 @@ Deno.serve(async (req) => {
     // Log com fingerprint da chave para debug
     const keyFingerprint = (await sha256hex(CRYPTO_KEY)).slice(0, 12);
     
+    console.log(`[unified-orders:${cid}] keyFp ${keyFingerprint}`);
     console.log(`[unified-orders:${cid}] Resultado busca secrets:`, { 
       hasRow: !!secretRow, 
       hasSimpleTokens: !!secretRow?.simple_tokens,
@@ -352,141 +286,123 @@ Deno.serve(async (req) => {
           let raw = secretRow.secret_enc as any;
           const payload = typeof raw === 'string' ? raw.trim() : String(raw || '').trim();
           if (payload) {
-          try { payload = String(raw ?? '').trim(); } catch { payload = ''; }
-        }
-
-        try {
-          // Normalização final do payload como string limpa
-          if (payload.startsWith('"') && payload.endsWith('"')) {
-            payload = payload.slice(1, -1);
-          }
-          if (payload.startsWith("'") && payload.endsWith("'")) {
-            payload = payload.slice(1, -1);
-          }
-          payload = payload.replace(/\n|\r/g, '').trim();
-
-          // 1) Tentativa nova: usando config compartilhada
-          const secretJson = await decryptAESGCM(payload);
-          const secret = JSON.parse(secretJson);
-          accessToken = secret?.access_token || '';
-          refreshToken = secret?.refresh_token || '';
-          expiresAt = secret?.expires_at || '';
-          console.log(`[unified-orders:${cid}] Decrypt AES-GCM bem-sucedido (novo padrão)`);
-        } catch (e1) {
-          try {
-            // 2) Fallback A: usando método legacy
-            const secretJson2 = await decryptAESGCMLegacy(payload, CRYPTO_KEY);
-            const secret2 = JSON.parse(secretJson2);
-            accessToken = secret2?.access_token || '';
-            refreshToken = secret2?.refresh_token || '';
-            expiresAt = secret2?.expires_at || '';
-            console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via legacy method`);
-          } catch (e2) {
-            try {
-              // 3) Fallback B: caso secret_enc tenha sido salvo como JSON puro (sem base64)
-              const altPayload = btoa(payload);
-              const secretJson3 = await decryptAESGCMLegacy(altPayload, CRYPTO_KEY);
-              const secret3 = JSON.parse(secretJson3);
-              accessToken = secret3?.access_token || '';
-              refreshToken = secret3?.refresh_token || '';
-              expiresAt = secret3?.expires_at || '';
-              console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via fallback JSON→b64`);
-            } catch (e3) {
-              try {
-                // 4) Fallback C: payload já é JSON objeto {iv,data}
-                const maybeObj = JSON.parse(payload);
-                if (maybeObj?.iv && maybeObj?.data) {
-                  const altPayload2 = btoa(JSON.stringify({ iv: maybeObj.iv, data: maybeObj.data }));
-                  const secretJson4 = await decryptAESGCMLegacy(altPayload2, CRYPTO_KEY);
-                  const secret4 = JSON.parse(secretJson4);
-                  accessToken = secret4?.access_token || '';
-                  refreshToken = secret4?.refresh_token || '';
-                  expiresAt = secret4?.expires_at || '';
-                  console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via fallback objeto→b64`);
-                } else {
-                  throw new Error('invalid-iv-data');
-                }
-              } catch (e4) {
-                console.warn(`[unified-orders:${cid}] Decrypt failed - reconnect_required`, {
-                  accountId: integration_account_id,
-                  payloadLen: payload?.length ?? 0,
-                  keyFp: keyFingerprint
-                });
-                return fail('reconnect_required', 401, null, cid);
-              }
+            console.log(`[unified-orders:${cid}] Tentando FALLBACK 4: String simples`);
+            // Validação de integridade: deve parecer com base64
+            if (payload.match(/^[A-Za-z0-9+/]+=*$/)) {
+              decrypted = await decryptAESGCM(payload);
+              fallbackUsed = 'string';
+            } else {
+              console.warn(`[unified-orders:${cid}] Payload não parece base64 válido, ignorando`);
             }
           }
+        } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 4 (string) falhou:`, e.message); }
+      }
+
+      // Processar resultado da decriptação
+      if (decrypted && decrypted.trim()) {
+        try {
+          const secretData = JSON.parse(decrypted);
+          accessToken = secretData.access_token || '';
+          refreshToken = secretData.refresh_token || '';
+          expiresAt = secretData.expires_at || '';
+          console.log(`[unified-orders:${cid}] ✅ Decriptação bem-sucedida via ${fallbackUsed.toUpperCase()}`);
+        } catch (e) {
+          console.error(`[unified-orders:${cid}] JSON inválido após decriptação:`, e.message);
         }
-      } catch (error) {
-        console.error(`[unified-orders:${cid}] Erro na descriptografia AES-GCM:`, error);
-        console.warn(`[unified-orders:${cid}] Decrypt failed - reconnect_required`, { accountId: integration_account_id });
-        return fail('reconnect_required', 401, null, cid);
+      } else {
+        console.error(`[unified-orders:${cid}] ❌ TODOS os 4 fallbacks falharam!`);
       }
     }
-    
-    console.log(`[unified-orders:${cid}] Final token status:`, {
-      hasAccessToken: !!accessToken,
-      hasRefreshToken: !!refreshToken,
-      hasSecretRow: !!secretRow,
-      accountId: integration_account_id
-    });
 
+    // ✅ 5. VALIDAÇÃO DE SECRETS OBRIGATÓRIA (Sistema Blindado)
     if (!accessToken && !refreshToken) {
-      console.warn(`[unified-orders:${cid}] No tokens available - reconnect required`, {
-        hasRow: !!secretRow,
-        hasSecretEnc: !!secretRow?.secret_enc,
-        accountId: integration_account_id
-      });
-      return fail('no_tokens', 401, null, cid);
+      // Validação crítica de secrets antes de prosseguir
+      const keyFingerprint = (await sha256hex(CRYPTO_KEY)).slice(0, 12);
+      console.error(`[unified-orders:${cid}] 🔒 NO_TOKENS detectado - keyFp: ${keyFingerprint}`);
+      
+      // Verificar se secrets estão configurados (sistema blindado exige)
+      if (!CRYPTO_KEY || CRYPTO_KEY.length < 32) {
+        console.error(`[unified-orders:${cid}] ❌ CRITICO: APP_ENCRYPTION_KEY ausente ou inválido`);
+        return fail("APP_ENCRYPTION_KEY not configured", 500, { 
+          error_type: 'config_missing',
+          required_secret: 'APP_ENCRYPTION_KEY'
+        }, cid);
+      }
+
+      try {
+        const { clientId, clientSecret } = getMlConfig();
+        if (!clientId || !clientSecret) {
+          console.error(`[unified-orders:${cid}] ❌ CRITICO: ML_CLIENT_ID ou ML_CLIENT_SECRET ausentes`);
+          return fail("ML secrets not configured", 500, { 
+            error_type: 'config_missing',
+            required_secrets: ['ML_CLIENT_ID', 'ML_CLIENT_SECRET']
+          }, cid);
+        }
+      } catch (e) {
+        console.error(`[unified-orders:${cid}] ❌ CRITICO: Erro ao verificar ML secrets:`, e.message);
+        return fail("ML configuration error", 500, { 
+          error_type: 'config_error',
+          message: e.message
+        }, cid);
+      }
+
+      return fail("no_tokens", 401, { 
+        error_type: 'no_tokens',
+        message: 'Conta requer reconexão OAuth - todos os fallbacks de decriptação falharam',
+        account_id: integration_account_id,
+        payloadLen: secretRow?.secret_enc ? (typeof secretRow.secret_enc === 'string' ? secretRow.secret_enc.length : 'unknown') : 'null',
+        keyFp: keyFingerprint
+      }, cid);
     }
 
-    // ✅ 5. Refresh do token se necessário (reusa o accessToken já resolvido)
-    const refreshResult = await refreshIfNeeded(serviceClient, { access_token: accessToken, refresh_token: refreshToken, expires_at: expiresAt, account_id: integration_account_id }, cid, authHeader);
+    // ✅ 6. VERIFICAÇÃO DE EXPIRAÇÃO (Sistema Blindado)
+    const refreshResult = await refreshIfNeeded(serviceClient, { 
+      access_token: accessToken, 
+      refresh_token: refreshToken, 
+      expires_at: expiresAt, 
+      account_id: integration_account_id 
+    }, cid, authHeader);
     const finalAccessToken = refreshResult.access_token || accessToken;
 
-    // ✅ 6. Buscar pedidos no Mercado Livre
+    // ✅ 7. Buscar pedidos no Mercado Livre
     const seller = accountData.account_identifier;
     if (!seller) {
       return fail('Seller ID not found in account_identifier', 400, null, cid);
     }
 
+    console.log(`[unified-orders:${cid}] Buscando pedidos ML para seller ${seller}`);
+
+    // Construir URL com filtros corretos para ML API
     const mlUrl = new URL('https://api.mercadolibre.com/orders/search');
     mlUrl.searchParams.set('seller', seller);
-    
-    // ✅ CORRIGIDO: Usar 'status' ao invés de 'shipping_status' para ML API
+    mlUrl.searchParams.set('sort', 'date_desc');
+    mlUrl.searchParams.set('limit', String(limit || 25));
+    mlUrl.searchParams.set('offset', String(offset || 0));
+
+    // Filtros de status - usar 'status' para ML API (não shipping_status)
     if (status) {
-      const allowedStatuses = ['confirmed', 'payment_required', 'payment_in_process', 'paid', 'shipped', 'delivered', 'cancelled', 'invalid'];
-      if (allowedStatuses.includes(status)) {
-        mlUrl.searchParams.set('order.status', status);
+      mlUrl.searchParams.set('order.status', status);
+    }
+
+    // Filtros de data - ML exige formato ISO completo
+    if (date_from) {
+      try {
+        const dateFromISO = new Date(date_from + 'T00:00:00.000Z').toISOString();
+        mlUrl.searchParams.set('order.date_created.from', dateFromISO);
+      } catch (e) {
+        console.warn(`[unified-orders:${cid}] Data from inválida: ${date_from}`, e);
       }
     }
-    
-    // 🚨 REMOVIDO: shipping_status não é parâmetro válido para orders/search do ML
-    // O filtro de shipping será aplicado client-side após buscar os pedidos
-
-    // ✅ CORRIGIDO: Datas com conversão para ISO completo obrigatório
-    if (date_from) {
-      // Se já vier no formato ISO, usar direto; senão converter
-      const fromDate = date_from.includes('T') ? new Date(date_from) : new Date(`${date_from}T00:00:00.000Z`);
-      mlUrl.searchParams.set('order.date_created.from', fromDate.toISOString());
-      console.log(`[unified-orders:${cid}] Data FROM convertida:`, date_from, '=>', fromDate.toISOString());
-    }
     if (date_to) {
-      // Se já vier no formato ISO, usar direto; senão converter para fim do dia
-      const toDate = date_to.includes('T') ? new Date(date_to) : new Date(`${date_to}T23:59:59.999Z`);
-      mlUrl.searchParams.set('order.date_created.to', toDate.toISOString());
-      console.log(`[unified-orders:${cid}] Data TO convertida:`, date_to, '=>', toDate.toISOString());
-    }
-    // Fallback seguro: se nenhum range foi informado, ampliar janela para 90 dias
-    if (!date_from && !date_to) {
-      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-      mlUrl.searchParams.set('order.date_created.from', ninetyDaysAgo);
+      try {
+        const dateToISO = new Date(date_to + 'T23:59:59.999Z').toISOString();
+        mlUrl.searchParams.set('order.date_created.to', dateToISO);
+      } catch (e) {
+        console.warn(`[unified-orders:${cid}] Data to inválida: ${date_to}`, e);
+      }
     }
 
-    mlUrl.searchParams.set('limit', String(Math.min(limit, 50)));
-    mlUrl.searchParams.set('offset', String(offset));
-
-    console.log(`[unified-orders:${cid}] Fetching from ML:`, mlUrl.toString());
+    console.log(`[unified-orders:${cid}] ML API URL:`, mlUrl.toString());
 
     const mlResponse = await fetch(mlUrl.toString(), {
       headers: {
@@ -497,66 +413,23 @@ Deno.serve(async (req) => {
 
     if (!mlResponse.ok) {
       const errorText = await mlResponse.text();
-      console.error(`[unified-orders:${cid}] ML API error:`, mlResponse.status, errorText);
-      return fail(`ML API error: ${mlResponse.status}`, mlResponse.status, errorText, cid);
+      console.error(`[unified-orders:${cid}] ML API Error ${mlResponse.status}:`, errorText);
+      return fail(`ML API Error: ${mlResponse.status}`, mlResponse.status, { 
+        error: errorText,
+        url: mlUrl.toString()
+      }, cid);
     }
 
     const mlData = await mlResponse.json();
-    let orders = mlData.results || [];
+    const orders = mlData.results || [];
 
-    console.log(`[unified-orders:${cid}] Fetched ${orders.length} orders from ML`);
+    console.log(`[unified-orders:${cid}] ML retornou ${orders.length} pedidos`);
 
-    // ✅ 7. Enriquecer com dados de shipping se solicitado
-    if (include_shipping && enrich && orders.length > 0) {
-      orders = await enrichOrdersWithShipping(orders, finalAccessToken, cid);
-    }
+    // Enriquecer com dados de shipping se necessário
+    const enrichedOrders = await enrichOrdersWithShipping(orders, finalAccessToken, cid);
 
-    // ✅ 8. Aplicar filtros adicionais
-    let filteredOrders = orders;
-
-    // Filtro de status de envio
-    if (shipping_status) {
-      filteredOrders = filteredOrders.filter(order => {
-        const shippingStatus = order.shipping?.status;
-        if (shipping_status === 'delivered') {
-          return shippingStatus === 'delivered';
-        }
-        if (shipping_status === 'shipped') {
-          return ['shipped', 'ready_to_ship'].includes(shippingStatus);
-        }
-        return shippingStatus === shipping_status;
-      });
-    }
-
-    // Filtro de busca textual
-    if (q || search) {
-      const searchTerm = (q || search).toLowerCase();
-      filteredOrders = filteredOrders.filter(order => {
-        const searchableText = [
-          order.id?.toString(),
-          order.buyer?.nickname,
-          order.buyer?.first_name,
-          order.shipping?.receiver_address?.city?.name,
-          order.shipping?.tracking_number,
-          order.pack_id?.toString()
-        ].filter(Boolean).join(' ').toLowerCase();
-        
-        return searchableText.includes(searchTerm);
-      });
-    }
-
-    // Filtros geográficos
-    if (cidade || uf) {
-      filteredOrders = filteredOrders.filter(order => {
-        const orderCidade = order.shipping?.receiver_address?.city?.name?.toLowerCase();
-        const orderUf = order.shipping?.receiver_address?.state?.id?.toLowerCase();
-        
-        if (cidade && !orderCidade?.includes(cidade.toLowerCase())) return false;
-        if (uf && orderUf !== uf.toLowerCase()) return false;
-        
-        return true;
-      });
-    }
+    // Aplicar filtros locais que ML não suporta
+    let filteredOrders = enrichedOrders;
 
     // Filtros de valor
     if (valorMin !== undefined || valorMax !== undefined) {
@@ -568,36 +441,49 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ✅ 9. Transformar para formato unificado
-    const unified = transformMLOrders(filteredOrders, integration_account_id);
-
-    const response = {
-      ok: true,
-      results: filteredOrders,
-      unified,
-      paging: {
-        total: mlData.paging?.total || filteredOrders.length,
-        limit: Math.min(limit, 50),
-        offset
-      },
-      count: filteredOrders.length,
-      url: mlUrl.toString()
-    };
-
-    if (debug) {
-      response.debug = {
-        originalCount: orders.length,
-        filteredCount: filteredOrders.length,
-        filters: { status, shipping_status, date_from, date_to, cidade, uf, valorMin, valorMax, search, q },
-        mlData: mlData.paging
-      };
+    // Filtros geográficos
+    if (cidade || uf) {
+      filteredOrders = filteredOrders.filter(order => {
+        const orderCidade = order.shipping?.receiver_address?.city?.name || '';
+        const orderUf = order.shipping?.receiver_address?.state?.id || '';
+        
+        if (cidade && !orderCidade.toLowerCase().includes(cidade.toLowerCase())) return false;
+        if (uf && orderUf.toLowerCase() !== uf.toLowerCase()) return false;
+        return true;
+      });
     }
 
-    console.log(`[unified-orders:${cid}] Returning ${filteredOrders.length} filtered orders`);
-    return ok(response);
+    // Filtros de busca
+    if (search || q) {
+      const searchTerm = (search || q || '').toLowerCase();
+      filteredOrders = filteredOrders.filter(order => {
+        const buyer = order.buyer || {};
+        const searchableText = [
+          order.id?.toString(),
+          buyer.nickname,
+          buyer.first_name,
+          buyer.identification?.number
+        ].filter(Boolean).join(' ').toLowerCase();
+        
+        return searchableText.includes(searchTerm);
+      });
+    }
+
+    console.log(`[unified-orders:${cid}] Após filtros locais: ${filteredOrders.length} pedidos`);
+
+    // Transformar para formato unificado
+    const transformedOrders = transformMLOrders(filteredOrders, integration_account_id);
+
+    return ok({
+      pedidos: transformedOrders,
+      total: transformedOrders.length,
+      provider: 'mercadolivre',
+      account_id: integration_account_id,
+      seller_id: seller
+    }, cid);
 
   } catch (error) {
-    console.error(`[unified-orders:${cid}] Fatal error:`, error);
-    return fail(`Internal server error: ${error.message}`, 500, error, cid);
+    console.error(`[unified-orders:${cid}] Unexpected error:`, error);
+    return fail(String(error?.message ?? error), 500, null, cid);
   }
 });

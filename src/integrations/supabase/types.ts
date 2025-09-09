@@ -965,6 +965,7 @@ export type Database = {
           organization_id: string | null
           provider: Database["public"]["Enums"]["integration_provider"]
           public_auth: Json | null
+          token_status: string | null
           updated_at: string
         }
         Insert: {
@@ -977,6 +978,7 @@ export type Database = {
           organization_id?: string | null
           provider: Database["public"]["Enums"]["integration_provider"]
           public_auth?: Json | null
+          token_status?: string | null
           updated_at?: string
         }
         Update: {
@@ -989,6 +991,7 @@ export type Database = {
           organization_id?: string | null
           provider?: Database["public"]["Enums"]["integration_provider"]
           public_auth?: Json | null
+          token_status?: string | null
           updated_at?: string
         }
         Relationships: [
