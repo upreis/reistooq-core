@@ -86,18 +86,21 @@ serve(async (req) => {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.ok && data.orders) {
-          const orders = data.orders;
-          totalCount = data.paging?.total || orders.length;
+        if (data?.ok) {
+          const orders = data.orders || data.results || data.pedidos || [];
+          totalCount = data.paging?.total ?? data.total ?? orders.length;
 
           console.log(`[pedidos-aggregator:${cid}] Analyzing ${orders.length} orders from total ${totalCount}...`);
 
           for (const order of orders) {
-            const mapping = order.mapping;
-            const baixado = order.isPedidoProcessado || 
-                           String(order.status_baixa || '').toLowerCase().includes('baixado');
+            const mapping = (order as any).mapping;
+            const baixado = (order as any).isPedidoProcessado || 
+                           String((order as any).status_baixa || '').toLowerCase().includes('baixado');
 
             if (baixado) continue; // Pular pedidos já baixados
+
+            // Se não houver info de mapeamento neste payload, não contamos
+            if (!mapping) continue;
 
             // Pronto p/ Baixar: tem mapeamento completo (skuEstoque ou skuKit)
             const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
