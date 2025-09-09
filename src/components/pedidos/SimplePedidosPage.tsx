@@ -812,28 +812,7 @@ useEffect(() => {
 }, [accounts, state.integrationAccountId, actions]);
   const validateSystem = () => {
     try {
-      // Verificar e limpar localStorage com IDs inválidos
-      const badIds = ['4d22ffe5-0b02-4cd2-ab42-b3f168307425', '5740f717-1771-4298-b8c9-464ffb8d8dce'];
-      const validId = 'a9491ae8-6bf9-4f5f-a956-1f5ce2c596cd';
-      
-      // Limpar completamente qualquer cache com IDs inválidos
-      for (const key of Object.keys(localStorage)) {
-        try {
-          const value = localStorage.getItem(key);
-          if (value && badIds.some(badId => value.includes(badId))) {
-            console.log(`🧹 Limpando localStorage key "${key}" com ID inválido`);
-            localStorage.removeItem(key);
-          }
-        } catch {}
-      }
-      
-      // Forçar ID válido se ainda estiver incorreto
-      if (badIds.includes(state.integrationAccountId)) {
-        console.log('🔄 Forçando ID válido:', validId);
-        actions.setIntegrationAccountId(validId);
-      }
-
-      // Validações básicas do sistema
+      // Validações básicas do sistema (removido hardcoded IDs)
       const hasOrders = orders && orders.length > 0;
       
       if (!hasOrders) {
