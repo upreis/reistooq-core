@@ -357,7 +357,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'data_pedido':
                        return <span>{formatDate(order.data_pedido || order.unified?.data_pedido || order.date_created)}</span>;
                     case 'last_updated':
-                      return <span>{order.last_updated ? formatDate(order.last_updated) : '-'}</span>;
+                      return <span>{formatDate(order.last_updated || order.updated_at || order.date_last_updated || order.unified?.updated_at) || '-'}</span>;
                     case 'skus_produtos':
                       return <div className="max-w-xs truncate" title={skus.join(', ')}>{skus.length ? skus.join(', ') : '-'}</div>;
                     case 'quantidade_itens':
@@ -367,7 +367,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'valor_total':
                        return <span>{formatMoney(order.valor_total || order.unified?.valor_total || order.total_amount || 0)}</span>;
                     case 'paid_amount':
-                      return <span>{formatMoney(order.paid_amount || 0)}</span>;
+                      return <span>{formatMoney(order.paid_amount || order.unified?.paid_amount || order.payments?.[0]?.transaction_amount || order.total_paid_amount || order.valor_total || 0)}</span>;
                     case 'frete_pago_cliente':
                       return <span>{formatMoney(order.frete_pago_cliente || order.payments?.[0]?.shipping_cost || order.shipping?.costs?.receiver?.cost || order.valor_frete || 0)}</span>;
                     case 'receita_flex':
@@ -382,7 +382,14 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         return <span>{fee > 0 ? formatMoney(fee) : '-'}</span>;
                       }
                     case 'valor_liquido_vendedor':
-                      return <span>{formatMoney((order as any).valor_liquido_vendedor || 0)}</span>;
+                      {
+                        // Calcular valor líquido: valor total - taxa marketplace - custo envio
+                        const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
+                        const taxaMarketplace = order.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || 0;
+                        const custoEnvio = order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0;
+                        const valorLiquido = valorTotal - taxaMarketplace - custoEnvio;
+                        return <span>{formatMoney(order.valor_liquido_vendedor || valorLiquido || 0)}</span>;
+                      }
                      case 'payment_method':
                        return <span className="text-xs">{translatePaymentMethod(order.payments?.[0]?.payment_method_id || order.payment_method || order.raw?.payments?.[0]?.payment_method_id || '-')}</span>;
                      case 'payment_status':
@@ -662,18 +669,22 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                               </Badge>
                             );
                         })();
-                    case 'date_created':
-                      return <span>{order.date_created ? formatDate(order.date_created) : '-'}</span>;
-                    case 'pack_id':
-                      return <span className="font-mono text-xs">{order.pack_id || '-'}</span>;
-                    case 'pickup_id':
-                      return <span className="font-mono text-xs">{order.pickup_id || order.shipping?.pickup_id || order.raw?.shipping?.pickup_id || '-'}</span>;
-                    case 'manufacturing_ending_date':
-                      return <span>{order.manufacturing_ending_date ? formatDate(order.manufacturing_ending_date) : order.raw?.manufacturing_ending_date ? formatDate(order.raw.manufacturing_ending_date) : '-'}</span>;
-                    case 'comment':
-                      return <div className="max-w-xs truncate" title={order.comment || order.raw?.comment}>{order.comment || order.raw?.comment || '-'}</div>;
+                     case 'date_created':
+                       return <span>{formatDate(order.date_created || order.unified?.date_created || order.created_at) || '-'}</span>;
+                     case 'pack_id':
+                       return <span className="font-mono text-xs">{order.pack_id || order.unified?.pack_id || order.raw?.pack_id || '-'}</span>;
+                     case 'pickup_id':
+                       return <span className="font-mono text-xs">{order.pickup_id || order.shipping?.pickup_id || order.unified?.pickup_id || order.raw?.shipping?.pickup_id || '-'}</span>;
+                     case 'manufacturing_ending_date':
+                       return <span>{formatDate(order.manufacturing_ending_date || order.unified?.manufacturing_ending_date || order.raw?.manufacturing_ending_date) || '-'}</span>;
+                     case 'comment':
+                       return <div className="max-w-xs truncate" title={order.comment || order.unified?.comment || order.obs || order.raw?.comment}>{order.comment || order.unified?.comment || order.obs || order.raw?.comment || '-'}</div>;
                      case 'tags':
-                       return <div className="max-w-xs truncate" title={translateMLTags(order.tags || [])}>{translateMLTags(order.tags || [])}</div>;
+                       {
+                         const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
+                         const translatedTags = translateMLTags(tags);
+                         return <div className="max-w-xs truncate" title={translatedTags}>{translatedTags || '-'}</div>;
+                       }
                     default:
                        return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
                   }
