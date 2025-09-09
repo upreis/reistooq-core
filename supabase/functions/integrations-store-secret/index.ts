@@ -1,16 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { encryptAESGCM } from "../_shared/crypto.ts";
+import { SUPABASE_URL, SERVICE_KEY, ANON_KEY, CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY");
 const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") ?? "";
-
-// Fail-fast se envs obrigatórias estão ausentes
-const required = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY", "APP_ENCRYPTION_KEY"];
-const missing = required.filter(k => !Deno.env.get(k));
-if (missing.length) throw new Error("Missing envs: " + missing.join(","));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -116,7 +108,7 @@ Deno.serve(async (req: Request) => {
     );
 
     // Criptografar com padrão único AES-GCM
-    const encryptedSecret = await encryptAESGCM(JSON.stringify(filteredSecretData), CRYPTO_KEY!);
+    const encryptedSecret = await encryptAESGCM(JSON.stringify(filteredSecretData));
 
     // Salvar no banco usando serviceClient (bypass RLS)
     const { error: upsertError } = await serviceClient
@@ -140,7 +132,16 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Log da operação (sem conteúdo sensível)
+    // Log da operação (sem conteúdo sensível) + fingerprint da chave
+    const keyFingerprint = (await sha256hex(CRYPTO_KEY)).slice(0, 12);
+    
+    console.log(`[store-secret] persisted`, {
+      integration_account_id,
+      provider,
+      keyFp: keyFingerprint,
+      updated_at: new Date().toISOString()
+    });
+
     await serviceClient.rpc('log_secret_access', {
       p_account_id: integration_account_id,
       p_provider: provider,

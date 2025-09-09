@@ -1,15 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { decryptAESGCM } from "../_shared/crypto.ts";
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const CRYPTO_KEY = (Deno.env.get("APP_ENCRYPTION_KEY") || "").trim();
-
-// Fail-fast se envs obrigatórias estão ausentes
-const required = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY", "APP_ENCRYPTION_KEY"];
-const missing = required.filter(k => !Deno.env.get(k));
-if (missing.length) throw new Error("Missing envs: " + missing.join(","));
+import { decryptAESGCM, decryptAESGCMLegacy } from "../_shared/crypto.ts";
+import { SUPABASE_URL, SERVICE_KEY, ANON_KEY, CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -270,12 +261,16 @@ Deno.serve(async (req) => {
       .eq('provider', 'mercadolivre')
       .maybeSingle();
 
+    // Log com fingerprint da chave para debug
+    const keyFingerprint = (await sha256hex(CRYPTO_KEY)).slice(0, 12);
+    
     console.log(`[unified-orders:${cid}] Resultado busca secrets:`, { 
       hasRow: !!secretRow, 
       hasSimpleTokens: !!secretRow?.simple_tokens,
       useSimple: secretRow?.use_simple,
       hasSecretEnc: !!secretRow?.secret_enc, 
-      hasLegacyTokens: !!(secretRow?.access_token || secretRow?.refresh_token)
+      hasLegacyTokens: !!(secretRow?.access_token || secretRow?.refresh_token),
+      keyFp: keyFingerprint
     });
 
     let accessToken = '';
@@ -346,44 +341,55 @@ Deno.serve(async (req) => {
           }
           payload = payload.replace(/\n|\r/g, '').trim();
 
-          // 1) Tentativa padrão: payload já é base64 do JSON {iv,data}
-          const secretJson = await decryptAESGCM(payload, CRYPTO_KEY!);
+          // 1) Tentativa nova: usando config compartilhada
+          const secretJson = await decryptAESGCM(payload);
           const secret = JSON.parse(secretJson);
           accessToken = secret?.access_token || '';
           refreshToken = secret?.refresh_token || '';
           expiresAt = secret?.expires_at || '';
-          console.log(`[unified-orders:${cid}] Decrypt AES-GCM bem-sucedido (payload base64)`);
+          console.log(`[unified-orders:${cid}] Decrypt AES-GCM bem-sucedido (novo padrão)`);
         } catch (e1) {
           try {
-            // 2) Fallback A: caso secret_enc tenha sido salvo como JSON puro (sem base64)
-            const altPayload = btoa(payload);
-            const secretJson2 = await decryptAESGCM(altPayload, CRYPTO_KEY!);
+            // 2) Fallback A: usando método legacy
+            const secretJson2 = await decryptAESGCMLegacy(payload, CRYPTO_KEY);
             const secret2 = JSON.parse(secretJson2);
             accessToken = secret2?.access_token || '';
             refreshToken = secret2?.refresh_token || '';
             expiresAt = secret2?.expires_at || '';
-            console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via fallback JSON→b64`);
+            console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via legacy method`);
           } catch (e2) {
             try {
-              // 3) Fallback B: payload já é JSON objeto {iv,data}
-              const maybeObj = JSON.parse(payload);
-              if (maybeObj?.iv && maybeObj?.data) {
-                const altPayload2 = btoa(JSON.stringify({ iv: maybeObj.iv, data: maybeObj.data }));
-                const secretJson3 = await decryptAESGCM(altPayload2, CRYPTO_KEY!);
-                const secret3 = JSON.parse(secretJson3);
-                accessToken = secret3?.access_token || '';
-                refreshToken = secret3?.refresh_token || '';
-                expiresAt = secret3?.expires_at || '';
-                console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via fallback objeto→b64`);
-              } else {
-                throw new Error('invalid-iv-data');
-              }
+              // 3) Fallback B: caso secret_enc tenha sido salvo como JSON puro (sem base64)
+              const altPayload = btoa(payload);
+              const secretJson3 = await decryptAESGCMLegacy(altPayload, CRYPTO_KEY);
+              const secret3 = JSON.parse(secretJson3);
+              accessToken = secret3?.access_token || '';
+              refreshToken = secret3?.refresh_token || '';
+              expiresAt = secret3?.expires_at || '';
+              console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via fallback JSON→b64`);
             } catch (e3) {
-              console.warn(`[unified-orders:${cid}] Decrypt failed - reconnect_required`, {
-                accountId: integration_account_id,
-                payloadLen: payload?.length ?? 0,
-              });
-              return fail('reconnect_required', 401, null, cid);
+              try {
+                // 4) Fallback C: payload já é JSON objeto {iv,data}
+                const maybeObj = JSON.parse(payload);
+                if (maybeObj?.iv && maybeObj?.data) {
+                  const altPayload2 = btoa(JSON.stringify({ iv: maybeObj.iv, data: maybeObj.data }));
+                  const secretJson4 = await decryptAESGCMLegacy(altPayload2, CRYPTO_KEY);
+                  const secret4 = JSON.parse(secretJson4);
+                  accessToken = secret4?.access_token || '';
+                  refreshToken = secret4?.refresh_token || '';
+                  expiresAt = secret4?.expires_at || '';
+                  console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via fallback objeto→b64`);
+                } else {
+                  throw new Error('invalid-iv-data');
+                }
+              } catch (e4) {
+                console.warn(`[unified-orders:${cid}] Decrypt failed - reconnect_required`, {
+                  accountId: integration_account_id,
+                  payloadLen: payload?.length ?? 0,
+                  keyFp: keyFingerprint
+                });
+                return fail('reconnect_required', 401, null, cid);
+              }
             }
           }
         }
