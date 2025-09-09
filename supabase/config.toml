@@ -20,13 +20,13 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.mercadolibre-token-refresh]
-verify_jwt = true
+verify_jwt = false
 
 [functions.mercadolibre-orders]
 verify_jwt = true
 
 [functions.unified-orders]
-verify_jwt = true
+verify_jwt = false
 
 [functions.ml-token-refresh-cron]
 verify_jwt = true
