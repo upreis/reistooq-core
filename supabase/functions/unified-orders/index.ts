@@ -316,18 +316,38 @@ Deno.serve(async (req) => {
           secretString = new TextDecoder().decode(bytes);
         }
         
-        const secretJson = await decryptAESGCM(secretString, CRYPTO_KEY!);
-        const secret = JSON.parse(secretJson);
-        
-        accessToken = secret?.access_token || '';
-        refreshToken = secret?.refresh_token || '';
-        expiresAt = secret?.expires_at || '';
-        console.log(`[unified-orders:${cid}] Decrypt AES-GCM bem-sucedido`);
-      } catch (decryptError) {
-        console.warn(`[unified-orders:${cid}] Decrypt failed - reconnect_required`, { accountId: integration_account_id });
-        // Sinalizar ao front que precisa reconectar
-        return fail('reconnect_required', 401, null, cid);
-      }
+        // Normaliza para string
+        let payload = secretString as string;
+        if (typeof secretString !== 'string') {
+          try { payload = JSON.stringify(secretString); } catch (_) { /* noop */ }
+        }
+        payload = (payload || '').trim();
+
+        try {
+          // 1) Tentativa padrão (payload já em base64 do JSON {iv,data})
+          const secretJson = await decryptAESGCM(payload, CRYPTO_KEY!);
+          const secret = JSON.parse(secretJson);
+          accessToken = secret?.access_token || '';
+          refreshToken = secret?.refresh_token || '';
+          expiresAt = secret?.expires_at || '';
+          console.log(`[unified-orders:${cid}] Decrypt AES-GCM bem-sucedido`);
+        } catch (e1) {
+          try {
+            // 2) Fallback: caso tenha sido salvo como JSON puro (sem base64)
+            // empacotamos com btoa para atender o contrato do decryptAESGCM
+            const altPayload = btoa(payload);
+            const secretJson2 = await decryptAESGCM(altPayload, CRYPTO_KEY!);
+            const secret2 = JSON.parse(secretJson2);
+            accessToken = secret2?.access_token || '';
+            refreshToken = secret2?.refresh_token || '';
+            expiresAt = secret2?.expires_at || '';
+            console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via fallback JSON→b64`);
+          } catch (e2) {
+            console.warn(`[unified-orders:${cid}] Decrypt failed - reconnect_required`, { accountId: integration_account_id });
+            // Sinalizar ao front que precisa reconectar
+            return fail('reconnect_required', 401, null, cid);
+          }
+        }
     }
     console.log(`[unified-orders:${cid}] Final token status:`, {
       hasAccessToken: !!accessToken,
