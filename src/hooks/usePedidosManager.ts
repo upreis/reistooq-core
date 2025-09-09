@@ -367,6 +367,7 @@ export function usePedidosManager(initialAccountId?: string) {
             limit: pageSize,
             offset: (currentPage - 1) * pageSize,
             ...(shipping_status ? { shipping_status } : {}),
+            ...(rest.status ? { status: rest.status } : {}),
             ...(rest.q ? { q: rest.q, search: rest.q } : {}),
             ...(rest.cidade ? { cidade: rest.cidade } : {}),
             ...(rest.uf ? { uf: rest.uf } : {}),
@@ -538,6 +539,7 @@ export function usePedidosManager(initialAccountId?: string) {
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
       ...(shipping_status ? { shipping_status } : {}),
+      ...(rest.status ? { status: rest.status } : {}),
       ...(rest.q ? { q: rest.q, search: rest.q } : {}),
       ...(rest.cidade ? { cidade: rest.cidade } : {}),
       ...(rest.uf ? { uf: rest.uf } : {}),
@@ -981,13 +983,10 @@ export function usePedidosManager(initialAccountId?: string) {
           return;
         }
         
-        // 🚨 FIX 1: Fallback automático se página fora de alcance
+        // Se página sem resultados, manter página atual e exibir vazio
         if (normalizedResults.length === 0 && currentPage > 1) {
-          console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
-          setCurrentPage(1);
-          // Refetch com página 1
-          loadOrders(forceRefresh, filtersToUse);
-          return;
+          console.log(`[paging] page=${currentPage} sem resultados`);
+          // Não forçar retorno para página 1
         }
         
         console.log(`[fetch:success id=${reqId}] total=${unifiedResult.total}`);
@@ -1126,13 +1125,10 @@ export function usePedidosManager(initialAccountId?: string) {
             return;
           }
           
-          // 🚨 FIX 1: Fallback automático se página fora de alcance
+          // Se página sem resultados no fallback client-side, manter página atual
           if (paginatedResults.length === 0 && currentPage > 1) {
-            console.log(`[paging/fallback] page=${currentPage} & empty → page=1`);
-            setCurrentPage(1);
-            // Refetch com página 1
-            loadOrders(forceRefresh, filtersToUse);
-            return;
+            console.log(`[paging] page=${currentPage} sem resultados (fallback client-side)`);
+            // Não forçar retorno para página 1
           }
           
           console.log(`[fetch:success id=${reqId}] total=${filteredResults.length}`);
