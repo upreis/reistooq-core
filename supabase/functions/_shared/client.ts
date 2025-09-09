@@ -8,6 +8,23 @@ export function makeClient(authHeader: string | null) {
   });
 }
 
+// Client com contexto do usuário (RLS ativo)
+export function makeUserClient(req: Request) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const authHeader = req.headers.get('Authorization') ?? '';
+  return createClient(url, anon, {
+    global: { headers: { Authorization: authHeader } },
+  });
+}
+
+// Client de serviço (bypass RLS)
+export function makeServiceClient() {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(url, serviceKey);
+}
+
 export const ENC_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!;
 
 // CORS headers must be defined before being used
@@ -17,14 +34,14 @@ export const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-export function ok(data: any) {
-  return new Response(JSON.stringify({ ok: true, ...data }), {
+export function ok(data: any, cid?: string) {
+  return new Response(JSON.stringify({ ok: true, cid, ...data }), {
     headers: { "Content-Type": "application/json", ...corsHeaders }
   });
 }
 
-export function fail(error: string, status = 400) {
-  return new Response(JSON.stringify({ ok: false, error }), {
+export function fail(error: string, status = 400, details?: any, cid?: string) {
+  return new Response(JSON.stringify({ ok: false, error, details, cid }), {
     status,
     headers: { "Content-Type": "application/json", ...corsHeaders }
   });
