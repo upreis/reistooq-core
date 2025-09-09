@@ -298,36 +298,60 @@ Deno.serve(async (req) => {
       }
     }
     
-    // ✅ 4. Tentar secret_enc com novo padrão AES-GCM
+    // ✅ 4. SISTEMA BLINDADO: 4 Fallbacks sequenciais de decriptação
     if (!accessToken && !refreshToken && secretRow?.secret_enc) {
+      console.log(`[unified-orders:${cid}] Iniciando sistema blindado de decriptação`);
+      
+      let decrypted = null;
+      let fallbackUsed = '';
+      
+      // FALLBACK 1: Bytea PostgreSQL (\x format)
       try {
-        console.log(`[unified-orders:${cid}] Tentando decrypt AES-GCM padrão`);
-        
-        // Normalização robusta: bytea/Buffer/Uint8Array/hex-string → string base64
         let raw = secretRow.secret_enc as any;
-
-        // 1) Se vier como string com prefixo bytea (\\x....) -> hex → bytes → string
         if (typeof raw === 'string' && raw.startsWith('\\x')) {
+          console.log(`[unified-orders:${cid}] Tentando FALLBACK 1: Bytea PostgreSQL`);
           const hexString = raw.slice(2);
           const bytes = new Uint8Array(hexString.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
-          raw = new TextDecoder().decode(bytes);
+          const b64String = new TextDecoder().decode(bytes);
+          decrypted = await decryptAESGCM(b64String);
+          fallbackUsed = 'bytea';
         }
+      } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 1 (bytea) falhou:`, e.message); }
 
-        // 2) Se vier como Buffer (node-like) -> bytes → string
-        if (raw && typeof raw === 'object' && (raw as any).type === 'Buffer' && Array.isArray((raw as any).data)) {
-          raw = new TextDecoder().decode(Uint8Array.from((raw as any).data));
-        }
+      // FALLBACK 2: Buffer objects (Node.js)
+      if (!decrypted) {
+        try {
+          let raw = secretRow.secret_enc as any;
+          if (raw && typeof raw === 'object' && (raw as any).type === 'Buffer' && Array.isArray((raw as any).data)) {
+            console.log(`[unified-orders:${cid}] Tentando FALLBACK 2: Buffer Node.js`);
+            const b64String = new TextDecoder().decode(Uint8Array.from((raw as any).data));
+            decrypted = await decryptAESGCM(b64String);
+            fallbackUsed = 'buffer';
+          }
+        } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 2 (buffer) falhou:`, e.message); }
+      }
 
-        // 3) Se vier como ArrayBuffer/Uint8Array -> string
-        if (raw instanceof Uint8Array) {
-          raw = new TextDecoder().decode(raw);
-        } else if (raw && typeof raw === 'object' && typeof (raw as ArrayBuffer).byteLength === 'number') {
-          try { raw = new TextDecoder().decode(new Uint8Array(raw as ArrayBuffer)); } catch { /* noop */ }
-        }
+      // FALLBACK 3: Uint8Array direct
+      if (!decrypted) {
+        try {
+          let raw = secretRow.secret_enc as any;
+          if (raw instanceof Uint8Array || (raw && typeof raw === 'object' && typeof (raw as ArrayBuffer).byteLength === 'number')) {
+            console.log(`[unified-orders:${cid}] Tentando FALLBACK 3: Uint8Array`);
+            const b64String = raw instanceof Uint8Array ? 
+              new TextDecoder().decode(raw) : 
+              new TextDecoder().decode(new Uint8Array(raw as ArrayBuffer));
+            decrypted = await decryptAESGCM(b64String);
+            fallbackUsed = 'uint8array';
+          }
+        } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 3 (uint8array) falhou:`, e.message); }
+      }
 
-        // 4) Garantir string final
-        let payload = typeof raw === 'string' ? raw.trim() : '';
-        if (!payload) {
+      // FALLBACK 4: String simples + validação de integridade
+      if (!decrypted) {
+        try {
+          let raw = secretRow.secret_enc as any;
+          const payload = typeof raw === 'string' ? raw.trim() : String(raw || '').trim();
+          if (payload) {
           try { payload = String(raw ?? '').trim(); } catch { payload = ''; }
         }
 

@@ -27,14 +27,19 @@ serve(async (req) => {
   try {
     const supabase = makeClient(req.headers.get("Authorization"));
 
-    // Find tokens expiring within 30 minutes (provider = mercadolivre)
-    const threshold = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    // ✅ SISTEMA BLINDADO: Refresh preventivo 5-10 minutos antes da expiração
+    const threshold5min = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const threshold10min = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    // Buscar tokens que expiram entre 5-10 minutos (prevenção ativa)
     const { data: expiringSoon, error: queryError } = await supabase
       .from('integration_secrets')
-      .select('integration_account_id, expires_at, provider')
+      .select('integration_account_id, expires_at, provider, access_token, refresh_token')
       .eq('provider', 'mercadolivre')
       .not('expires_at', 'is', null)
-      .lte('expires_at', threshold);
+      .gte('expires_at', threshold10min)  // Não muito cedo
+      .lte('expires_at', threshold5min);  // Não muito tarde
+
+    console.log(`[ML Token Refresh Cron] Encontrados ${expiringSoon?.length || 0} tokens para refresh preventivo`);
 
     if (queryError) {
       console.error('[ML Token Refresh Cron] Failed to query expiring tokens:', queryError);

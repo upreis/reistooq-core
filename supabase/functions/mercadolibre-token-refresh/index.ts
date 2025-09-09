@@ -119,7 +119,43 @@ serve(async (req)=>{
       }
     }
 
-    if (!refreshToken) return fail("Refresh token não encontrado", 404, secretsError);
+    // ✅ VALIDAÇÃO DE SECRETS OBRIGATÓRIA (Sistema Blindado)
+    if (!refreshToken) {
+      console.error('[ML Token Refresh] ❌ CRITICO: Refresh token não encontrado após todos os fallbacks');
+      
+      // Verificar se secrets estão configurados (sistema blindado exige)
+      if (!Deno.env.get('APP_ENCRYPTION_KEY') || Deno.env.get('APP_ENCRYPTION_KEY')!.length < 32) {
+        console.error('[ML Token Refresh] ❌ CRITICO: APP_ENCRYPTION_KEY ausente ou inválido');
+        return fail("APP_ENCRYPTION_KEY not configured", 500, { 
+          error_type: 'config_missing',
+          required_secret: 'APP_ENCRYPTION_KEY'
+        });
+      }
+
+      try {
+        const { clientId, clientSecret } = getMlConfig();
+        if (!clientId || !clientSecret) {
+          console.error('[ML Token Refresh] ❌ CRITICO: ML_CLIENT_ID ou ML_CLIENT_SECRET ausentes');
+          return fail("ML secrets not configured", 500, { 
+            error_type: 'config_missing',
+            required_secrets: ['ML_CLIENT_ID', 'ML_CLIENT_SECRET']
+          });
+        }
+      } catch (e) {
+        console.error('[ML Token Refresh] ❌ CRITICO: Erro ao verificar ML secrets:', e.message);
+        return fail("ML configuration error", 500, { 
+          error_type: 'config_error',
+          message: e.message
+        });
+      }
+
+      return fail("Refresh token não encontrado", 404, { 
+        error_type: 'no_refresh_token',
+        message: 'Conta requer reconexão OAuth',
+        account_id: integration_account_id
+      });
+    }
+
     const { clientId, clientSecret } = getMlConfig();
     // 2) Chama refresh no ML
     const params = new URLSearchParams({
