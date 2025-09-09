@@ -308,23 +308,36 @@ Deno.serve(async (req) => {
       try {
         console.log(`[unified-orders:${cid}] Tentando decrypt AES-GCM padrão`);
         
-        // Converter bytea para string se necessário
-        let secretString = secretRow.secret_enc;
-        if (typeof secretString === 'string' && secretString.startsWith('\\x')) {
-          const hexString = secretString.slice(2);
-          const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-          secretString = new TextDecoder().decode(bytes);
+        // Normalização robusta: bytea/Buffer/Uint8Array/hex-string → string base64
+        let raw = secretRow.secret_enc as any;
+
+        // 1) Se vier como string com prefixo bytea (\\x....) -> hex → bytes → string
+        if (typeof raw === 'string' && raw.startsWith('\\x')) {
+          const hexString = raw.slice(2);
+          const bytes = new Uint8Array(hexString.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)));
+          raw = new TextDecoder().decode(bytes);
         }
-        
-        // Normaliza para string
-        let payload = secretString as string;
-        if (typeof secretString !== 'string') {
-          try { payload = JSON.stringify(secretString); } catch (_) { /* noop */ }
+
+        // 2) Se vier como Buffer (node-like) -> bytes → string
+        if (raw && typeof raw === 'object' && (raw as any).type === 'Buffer' && Array.isArray((raw as any).data)) {
+          raw = new TextDecoder().decode(Uint8Array.from((raw as any).data));
         }
-        payload = (payload || '').trim();
+
+        // 3) Se vier como ArrayBuffer/Uint8Array -> string
+        if (raw instanceof Uint8Array) {
+          raw = new TextDecoder().decode(raw);
+        } else if (raw && typeof raw === 'object' && typeof (raw as ArrayBuffer).byteLength === 'number') {
+          try { raw = new TextDecoder().decode(new Uint8Array(raw as ArrayBuffer)); } catch { /* noop */ }
+        }
+
+        // 4) Garantir string final
+        let payload = typeof raw === 'string' ? raw.trim() : '';
+        if (!payload) {
+          try { payload = String(raw ?? '').trim(); } catch { payload = ''; }
+        }
 
         try {
-          // 1) Tentativa padrão (payload já em base64 do JSON {iv,data})
+          // 1) Tentativa padrão: payload já é base64 do JSON {iv,data}
           const secretJson = await decryptAESGCM(payload, CRYPTO_KEY!);
           const secret = JSON.parse(secretJson);
           accessToken = secret?.access_token || '';
@@ -333,8 +346,7 @@ Deno.serve(async (req) => {
           console.log(`[unified-orders:${cid}] Decrypt AES-GCM bem-sucedido`);
         } catch (e1) {
           try {
-            // 2) Fallback: caso tenha sido salvo como JSON puro (sem base64)
-            // empacotamos com btoa para atender o contrato do decryptAESGCM
+            // 2) Fallback: caso secret_enc tenha sido salvo como JSON puro (sem base64)
             const altPayload = btoa(payload);
             const secretJson2 = await decryptAESGCM(altPayload, CRYPTO_KEY!);
             const secret2 = JSON.parse(secretJson2);
@@ -344,7 +356,6 @@ Deno.serve(async (req) => {
             console.log(`[unified-orders:${cid}] Decrypt AES-GCM OK via fallback JSON→b64`);
           } catch (e2) {
             console.warn(`[unified-orders:${cid}] Decrypt failed - reconnect_required`, { accountId: integration_account_id });
-            // Sinalizar ao front que precisa reconectar
             return fail('reconnect_required', 401, null, cid);
           }
         }

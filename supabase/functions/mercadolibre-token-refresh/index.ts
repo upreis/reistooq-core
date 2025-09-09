@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { decryptAESGCM, encryptAESGCM } from "../_shared/crypto.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -64,14 +65,37 @@ serve(async (req)=>{
     // 1) Lê refresh_token atual
     const { data: secrets, error: secretsError } = await supabase
       .from('integration_secrets')
-      .select('refresh_token, meta')
+      .select('refresh_token, meta, secret_enc')
       .eq('integration_account_id', integration_account_id)
       .eq('provider', 'mercadolivre')
       .maybeSingle();
-      
-    if (secretsError || !secrets?.refresh_token) return fail("Refresh token não encontrado", 404, secretsError);
-    const refreshToken = secrets.refresh_token;
-    if (!refreshToken) return fail("Refresh token não encontrado", 400);
+    let refreshToken = secrets.refresh_token as string | null;
+
+    // Fallback: se tokens não estão em colunas planas, tenta descriptografar secret_enc
+    if ((!refreshToken || refreshToken.length === 0) && secrets?.secret_enc) {
+      try {
+        let raw: any = secrets.secret_enc;
+        if (typeof raw === 'string' && raw.startsWith('\\x')) {
+          const hex = raw.slice(2);
+          const bytes = new Uint8Array(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
+          raw = new TextDecoder().decode(bytes);
+        }
+        if (raw && typeof raw === 'object' && raw.type === 'Buffer' && Array.isArray(raw.data)) {
+          raw = new TextDecoder().decode(Uint8Array.from(raw.data));
+        }
+        if (raw instanceof Uint8Array) {
+          raw = new TextDecoder().decode(raw);
+        }
+        const payload = typeof raw === 'string' ? raw.trim() : String(raw ?? '').trim();
+        const secretJson = await decryptAESGCM(payload, ENC_KEY);
+        const secret = JSON.parse(secretJson || '{}');
+        refreshToken = secret.refresh_token || refreshToken;
+      } catch (e) {
+        console.warn('[ML Token Refresh] Falha ao descriptografar secret_enc para obter refresh_token');
+      }
+    }
+
+    if (!refreshToken) return fail("Refresh token não encontrado", 404, secretsError);
     const { clientId, clientSecret } = getMlConfig();
     // 2) Chama refresh no ML
     const params = new URLSearchParams({
