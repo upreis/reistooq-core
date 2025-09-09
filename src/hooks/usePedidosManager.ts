@@ -180,11 +180,13 @@ export function usePedidosManager(initialAccountId?: string) {
     let active = true;
     (async () => {
       try {
+        // Por enquanto, não carregar contas para evitar mostrar contas de outros usuários
         const { data, error } = await supabase
           .from('integration_accounts')
           .select('id')
           .eq('provider', 'mercadolivre')
           .eq('is_active', true)
+          .limit(0) // Temporariamente não carregar contas existentes
           .order('updated_at', { ascending: false });
         if (error) {
           console.warn('[ML Accounts] Erro ao carregar contas:', error.message);
