@@ -28,6 +28,32 @@ import {
 } from '@/lib/translations';
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
+
+// Helper function para extrair receita por envio
+function getReceitaPorEnvio(order: any): number {
+  const logisticType = String(
+    order?.shipping?.logistic?.type || 
+    order?.unified?.shipping?.logistic?.type ||
+    order?.logistic_type || 
+    order?.unified?.logistic_type ||
+    ''
+  ).toLowerCase();
+  
+  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
+  
+  const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || order?.unified?.shipping?.bonus_total || 0);
+  if (bonus > 0) return bonus;
+  
+  const costs = order?.shipping?.costs || order?.unified?.shipping?.costs;
+  if (costs?.senders && Array.isArray(costs.senders)) {
+    return costs.senders.reduce((acc: number, s: any) => {
+      const compensation = Number(s?.compensation || 0);
+      return acc + compensation;
+    }, 0);
+  }
+  
+  return 0;
+}
 import { buildIdUnico } from '@/utils/idUnico';
 
 interface PedidosTableSectionProps {
@@ -245,9 +271,17 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                 const isProcessed = isPedidoProcessado(order);
                 const mapping = mappingData.get(order.id);
 
-                // Extrair SKUs e quantidade total
-                const skus = (order.order_items?.map((item: any) => item.sku || item.item?.sku || item.item?.seller_sku).filter(Boolean)) || [];
-                const quantidadeItens = order.order_items?.reduce((acc: number, item: any) => acc + (item.quantity || 1), 0) || 1;
+                // Extrair SKUs e quantidade total priorizando API structure
+                const orderItems = order.order_items || order.unified?.order_items || order.raw?.order_items || [];
+                const skus = orderItems.map((item: any) => 
+                  item.sku || 
+                  item.item?.sku || 
+                  item.item?.seller_sku || 
+                  item.seller_sku ||
+                  item.item?.id?.toString()
+                ).filter(Boolean);
+                const quantidadeItens = orderItems.reduce((acc: number, item: any) => 
+                  acc + (item.quantity || item.quantidade || 1), 0) || 1;
 
                 const renderCell = (key: string) => {
                   switch (key) {
@@ -358,20 +392,33 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span>{formatDate(order.data_pedido || order.unified?.data_pedido || order.date_created)}</span>;
                     case 'last_updated':
                       return <span>{formatDate(order.last_updated || order.updated_at || order.date_last_updated || order.unified?.updated_at) || '-'}</span>;
-                    case 'skus_produtos':
-                      return <div className="max-w-xs truncate" title={skus.join(', ')}>{skus.length ? skus.join(', ') : '-'}</div>;
-                    case 'quantidade_itens':
-                      return <span>{quantidadeItens}</span>;
-                    case 'titulo_anuncio':
-                      return <div className="max-w-xs truncate" title={order.order_items?.[0]?.item?.title || order.titulo_anuncio}>{order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-'}</div>;
+                     case 'skus_produtos':
+                       return <div className="max-w-xs truncate" title={skus.join(', ')}>{skus.length ? skus.join(', ') : '-'}</div>;
+                     case 'quantidade_itens':
+                       return <span>{quantidadeItens}</span>;
+                     case 'titulo_anuncio':
+                       const titulo = order.titulo_anuncio || 
+                                    order.order_items?.[0]?.item?.title || 
+                                    order.unified?.titulo_anuncio ||
+                                    order.raw?.order_items?.[0]?.item?.title ||
+                                    order.unified?.order_items?.[0]?.item?.title;
+                       return <div className="max-w-xs truncate" title={titulo}>{titulo || '-'}</div>;
                      case 'valor_total':
                        return <span>{formatMoney(order.valor_total || order.unified?.valor_total || order.total_amount || 0)}</span>;
                     case 'paid_amount':
                       return <span>{formatMoney(order.paid_amount || order.unified?.paid_amount || order.payments?.[0]?.transaction_amount || order.total_paid_amount || order.valor_total || 0)}</span>;
-                    case 'frete_pago_cliente':
-                      return <span>{formatMoney(order.frete_pago_cliente || order.payments?.[0]?.shipping_cost || order.shipping?.costs?.receiver?.cost || order.valor_frete || 0)}</span>;
-                    case 'receita_flex':
-                      return <span>{formatMoney(order.receita_flex || getReceitaPorEnvio(order))}</span>;
+                     case 'frete_pago_cliente':
+                       const fretePagoCliente = order.frete_pago_cliente || 
+                                              order.unified?.frete_pago_cliente ||
+                                              order.payments?.[0]?.shipping_cost || 
+                                              order.shipping?.costs?.receiver?.cost || 
+                                              order.valor_frete || 0;
+                       return <span>{formatMoney(fretePagoCliente)}</span>;
+                     case 'receita_flex':
+                       const receitaFlex = order.receita_flex || 
+                                         order.unified?.receita_flex ||
+                                         getReceitaPorEnvio(order);
+                       return <span>{formatMoney(receitaFlex)}</span>;
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
                     case 'coupon_amount':
