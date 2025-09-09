@@ -157,6 +157,8 @@ export function usePedidosManager(initialAccountId?: string) {
   const [paging, setPaging] = useState<{ total?: number; limit?: number; offset?: number }>();
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
   const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
+  // ✅ Contas ML disponíveis para seleção/agrupamento
+  const [availableMlAccounts, setAvailableMlAccounts] = useState<string[]>([]);
   
   // ✅ Filtros são usados diretamente sem debounce para aplicação imediata
   
@@ -171,6 +173,38 @@ export function usePedidosManager(initialAccountId?: string) {
   });
   
   // (requestIdRef já declarado acima com abortControllerRef)
+
+  // 🔍 Carregar contas ML ativas e definir padrão (multi-conta)
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('integration_accounts')
+          .select('id')
+          .eq('provider', 'mercadolivre')
+          .eq('is_active', true)
+          .order('updated_at', { ascending: false });
+        if (error) {
+          console.warn('[ML Accounts] Erro ao carregar contas:', error.message);
+          return;
+        }
+        const ids = (data || []).map((d: any) => d.id).filter(Boolean);
+        if (!active) return;
+        setAvailableMlAccounts(ids);
+        // Se usuário não escolheu contas explicitamente, usar todas por padrão
+        setFiltersState(prev => {
+          if (prev?.contasML && prev.contasML.length > 0) return prev;
+          return ids.length > 0 ? { ...prev, contasML: ids } : prev;
+        });
+        // Garantir uma conta padrão para caminhos single-account
+        setIntegrationAccountId(prev => prev || ids[0] || prev);
+      } catch (e: any) {
+        console.warn('[ML Accounts] Exceção ao carregar contas:', e?.message || e);
+      }
+    })();
+    return () => { active = false; };
+  }, []);
 
   /**
    * 🔧 AUDITORIA: Converte filtros para parâmetros da API 
@@ -259,6 +293,15 @@ export function usePedidosManager(initialAccountId?: string) {
         targetAccountId = null; // Não usar single account quando temos múltiplas
         console.log('🔗 [CONTAS] Usando múltiplas contas:', filters.contasML);
       }
+    } else if (availableMlAccounts.length > 1) {
+      // ✅ Sem seleção explícita: usar TODAS as contas ativas por padrão
+      params.integration_account_ids = availableMlAccounts;
+      targetAccountId = null;
+      console.log('🔗 [CONTAS] Padrão multi-conta (todas ativas):', availableMlAccounts);
+    } else if (!targetAccountId && availableMlAccounts.length === 1) {
+      // ✅ Apenas uma conta disponível: usar como padrão
+      targetAccountId = availableMlAccounts[0];
+      console.log('🔗 [CONTAS] Padrão conta única disponível:', targetAccountId);
     }
     
     // ✅ GARANTIR: integration_account_id OU integration_account_ids sempre presente
@@ -275,7 +318,7 @@ export function usePedidosManager(initialAccountId?: string) {
 
     console.log('🔧 [buildApiParams] Parâmetros finais COMPLETOS:', JSON.stringify(params, null, 2));
     return params;
-  }, [integrationAccountId]);
+   }, [integrationAccountId, availableMlAccounts]);
 
   /**
    * Prioriza parâmetros da URL quando disponíveis
