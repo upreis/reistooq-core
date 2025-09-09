@@ -223,10 +223,13 @@ Deno.serve(async (req) => {
     // ✅ 3. Primeiro: tentar nova estrutura simples
     if (secretRow?.use_simple && secretRow?.simple_tokens) {
       try {
+        const isSimpleStr = typeof secretRow.simple_tokens === 'string';
+        const simpleTokensLength = isSimpleStr ? (secretRow.simple_tokens as string).length : 0;
+        const simpleTokensPreview = isSimpleStr ? (secretRow.simple_tokens as string).substring(0, 50) + '...' : 'not-string';
         console.log(`[unified-orders:${cid}] 🔓 Tentando criptografia simples - dados:`, {
           simpleTokensType: typeof secretRow.simple_tokens,
-          simpleTokensLength: secretRow.simple_tokens.length,
-          simpleTokensPreview: secretRow.simple_tokens.substring(0, 50) + '...'
+          simpleTokensLength,
+          simpleTokensPreview
         });
         const { data: decryptedData, error: decryptError } = await serviceClient
           .rpc('decrypt_simple', { encrypted_data: secretRow.simple_tokens });
