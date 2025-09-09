@@ -69,7 +69,7 @@ serve(async (req) => {
       // Buscar todos os pedidos do período para analisar o mapeamento
       const requestBody = {
         integration_account_id: accounts[0],
-        limit: 1000, // Buscar um bom número para calcular totais
+        limit: 50, // Respeitando limite máximo da API do ML (≤ 51)
         offset: 0,
         ...filters // Aplicar filtros (data, busca, etc.)
       };

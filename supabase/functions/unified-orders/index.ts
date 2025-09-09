@@ -427,7 +427,9 @@ Deno.serve(async (req) => {
     const mlUrl = new URL('https://api.mercadolibre.com/orders/search');
     mlUrl.searchParams.set('seller', seller);
     mlUrl.searchParams.set('sort', 'date_desc');
-    mlUrl.searchParams.set('limit', String(limit || 25));
+    // Garantir que o limite não exceda o máximo permitido pelo ML (≤ 51)
+    const safeLimit = Math.min(limit || 25, 50);
+    mlUrl.searchParams.set('limit', String(safeLimit));
     mlUrl.searchParams.set('offset', String(offset || 0));
 
     // Filtros de status - usar 'status' para ML API (não shipping_status)
