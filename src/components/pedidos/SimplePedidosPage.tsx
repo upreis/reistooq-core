@@ -1,6 +1,8 @@
 /**
- * 🛡️ PÁGINA PEDIDOS REFATORADA - FASES 1, 2 E 3 COMPLETAS
- * Sistema blindado com arquitetura unificada + Performance + UX
+ * 🛡️ SISTEMA BLINDADO ATIVO - PEDIDOS PÁGINA PROTEGIDA
+ * PROTEÇÃO: Pedidos ↔ Estoque ↔ Histórico ↔ De-Para
+ * VALIDAÇÕES: SKU Kit + Total Itens + Anti-Duplicação + RLS
+ * FLUXOS: SimplePedidosPage → BaixaEstoqueModal → baixar_estoque_direto → hv_insert
  */
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';

@@ -1,3 +1,4 @@
+// 🛡️ SISTEMA BLINDADO - HOOK DE BAIXA DE ESTOQUE PROTEGIDO
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { salvarSnapshotBaixa } from '@/utils/snapshot';
 import { Pedido } from '@/types/pedido';
@@ -38,7 +39,8 @@ async function validarFluxoCompletoLocal(pedidos: Pedido[]): Promise<boolean> {
     
     if (existeHistorico) {
       console.error('❌ Pedido já foi processado anteriormente (histórico encontrado):', {
-        id_unico: idUnico
+        id_unico: idUnico,
+        numero: pedido.numero || pedido.id
       });
       return false;
     }

@@ -1,3 +1,4 @@
+// 🛡️ SISTEMA BLINDADO - MODAL DE BAIXA DE ESTOQUE PROTEGIDO
 import { useState, useMemo, useEffect } from 'react';
 import { Pedido } from '@/types/pedido';
 import { useProcessarBaixaEstoque } from '@/hooks/useEstoqueBaixa';
