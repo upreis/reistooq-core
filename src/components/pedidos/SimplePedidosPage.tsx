@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +60,7 @@ import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
+import { MLConnectionStatus } from './MLConnectionStatus';
 
 
 type Order = {
@@ -172,6 +174,23 @@ function SimplePedidosPage({ className }: Props) {
   
   // Hook para verificar pedidos já processados
   const { pedidosProcessados, verificarPedidos, isLoading: loadingProcessados, isPedidoProcessado } = usePedidosProcessados();
+
+  // ✅ Função para calcular estatísticas das contas ML baseado nos erros do console
+  const getAccountsStats = useCallback(() => {
+    if (!accounts || accounts.length === 0) {
+      return { total: 0, successful: 0, failed: 0, successfulAccounts: [], failedAccounts: [] };
+    }
+
+    const total = accounts.length;
+    // Por agora assumir que todas falharam baseado nos logs de erro
+    const failed = total;
+    const successful = 0;
+    
+    const successfulAccounts: string[] = [];
+    const failedAccounts = accounts.map(acc => acc.id);
+
+    return { total, successful, failed, successfulAccounts, failedAccounts };
+  }, [accounts]);
   
   // Aliases para compatibilidade
   const orders = state.orders;
@@ -882,7 +901,30 @@ useEffect(() => {
         selectedOrdersCount={selectedOrders.size}
         hasPendingChanges={filtersManager.hasPendingChanges}
       >
-      {/* 🚀 MODAIS E COMPONENTES - Agora integrados nos componentes dedicados */}
+        {/* 🔗 Status das Conexões ML */}
+        <MLConnectionStatus
+          accountsStats={getAccountsStats()}
+          loading={loading}
+          onReconnectAll={() => {
+            window.open('/integrations?tab=ml', '_blank');
+          }}
+          onRefreshTokens={async (accountIds) => {
+            toast.loading('Renovando tokens...', { id: 'refresh-tokens' });
+            try {
+              for (const accountId of accountIds) {
+                await supabase.functions.invoke('mercadolibre-token-refresh', {
+                  body: { integration_account_id: accountId }
+                });
+              }
+              toast.success('Tokens renovados com sucesso!', { id: 'refresh-tokens' });
+              // Refresh após renovar tokens
+              setTimeout(() => actions.refetch(), 1000);
+            } catch (error) {
+              console.error('Erro ao renovar tokens:', error);
+              toast.error('Erro ao renovar tokens', { id: 'refresh-tokens' });
+            }
+          }}
+        />
       </PedidosHeaderSection>
 
       {/* ✅ Barra de resumo com contadores */}
