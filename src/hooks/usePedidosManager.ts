@@ -463,8 +463,8 @@ export function usePedidosManager(initialAccountId?: string) {
           }
           
           if (data?.ok) {
-            const accountResults = data.results || [];
-            const accountUnified = data.unified || [];
+            const accountResults = (data.results && data.results.length ? data.results : (data.pedidos || []));
+            const accountUnified = (data.unified && data.unified.length ? data.unified : (data.pedidos || []));
             
             // Marcar resultados com a conta de origem
             accountResults.forEach((result: any) => {
@@ -585,9 +585,9 @@ export function usePedidosManager(initialAccountId?: string) {
     if (!data?.ok) throw new Error('Erro na resposta da API');
 
     return {
-      results: data.results || [],
-      unified: data.unified || [],
-      total: data.paging?.total || data.paging?.count || data.results?.length || 0,
+      results: (data.results && data.results.length ? data.results : (data.pedidos || [])),
+      unified: (data.unified && data.unified.length ? data.unified : (data.pedidos || [])),
+      total: data.paging?.total || data.paging?.count || data.total || (Array.isArray(data.results) ? data.results.length : Array.isArray(data.pedidos) ? data.pedidos.length : 0),
       paging: data.paging || undefined,
       serverStatusApplied: Boolean(requestBody.shipping_status)
     };

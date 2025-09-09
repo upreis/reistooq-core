@@ -91,16 +91,21 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
   if (error) throw error;
   if (!data?.ok) throw new Error('unified-orders: resposta inesperada');
   
-  const results: RawML[] = data?.results ?? [];
-  const unified: Unified[] = data?.unified ?? [];
-  
+  // Suportar tanto o formato antigo (results/unified) quanto o novo (pedidos)
+  const resultsRaw: RawML[] = Array.isArray(data?.results) ? data.results : [];
+  const unifiedRaw: Unified[] = Array.isArray(data?.unified) ? data.unified : [];
+  const pedidos: Unified[] = Array.isArray(data?.pedidos) ? data.pedidos : [];
+
+  const results: RawML[] = resultsRaw.length ? resultsRaw : pedidos;
+  const unified: Unified[] = unifiedRaw.length ? unifiedRaw : pedidos;
+
   // Merge por índice: cada linha = { raw, unified }
   const rows: Row[] = results.map((r, i) => ({
-    raw: r,
+    raw: resultsRaw.length ? r : null, // quando vier apenas 'pedidos', não há RAW
     unified: unified[i] ?? null
   }));
 
-  const total = data?.paging?.total ?? data?.count ?? rows.length;
+  const total = data?.paging?.total ?? data?.paging?.count ?? data?.total ?? (Array.isArray(results) ? results.length : rows.length);
   return { rows, total, debug: data?.debug };
 }
 
