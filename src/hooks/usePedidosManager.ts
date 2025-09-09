@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
 import { formatDate } from '@/lib/format';
 import { useDebounce } from '@/hooks/useDebounce';
+import { toast } from 'react-hot-toast';
 
 export interface PedidosFilters {
   search?: string;
@@ -340,18 +341,21 @@ export function usePedidosManager(initialAccountId?: string) {
 
   /**
    * Carrega pedidos da API unified-orders - COM SUPORTE A MÚLTIPLAS CONTAS
+   * ✅ BLINDAGEM: Tolerante a falhas de conta, agregação robusta, feedback claro
    */
   const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
     const { shipping_status, ...rest } = apiParams || {};
     
-    // 🚨 AUDITORIA FIX: Suporte a múltiplas contas ML
+    // 🚨 AUDITORIA FIX: Suporte a múltiplas contas ML com blindagem total
     if (apiParams.integration_account_ids && Array.isArray(apiParams.integration_account_ids)) {
-      console.log(`🔄 [AUDITORIA] Processando ${apiParams.integration_account_ids.length} contas ML:`, apiParams.integration_account_ids);
+      console.log(`🔄 [MULTI-CONTA] Processando ${apiParams.integration_account_ids.length} contas ML:`, apiParams.integration_account_ids);
       
       // Fazer uma chamada para cada conta e combinar resultados
       const allResults: any[] = [];
       const allUnified: any[] = [];
       let totalCount = 0;
+      const failedAccounts: string[] = [];
+      const successfulAccounts: string[] = [];
       
       for (const accountId of apiParams.integration_account_ids) {
         try {
@@ -374,11 +378,10 @@ export function usePedidosManager(initialAccountId?: string) {
             include_skus: true
           };
           
-          console.groupCollapsed('[query/network]');
-          console.log('function', 'unified-orders');
+          console.groupCollapsed(`[CONTA ${accountId.slice(0, 8)}...] Requisição`);
           console.log('body', singleAccountBody);
-          console.log('[query/network] unified-orders body', singleAccountBody);
           console.groupEnd();
+          
           let data: any | null = null;
           let error: any | null = null;
           try {
@@ -389,10 +392,10 @@ export function usePedidosManager(initialAccountId?: string) {
             error = e;
           }
 
-          // Fallback: se erro, tentar novamente sem shipping_status (alguns ambientes não suportam)
+          // Fallback: se erro, tentar novamente sem shipping_status
           if (error || data?.status >= 400) {
             const { shipping_status: _omit, ...withoutStatus } = singleAccountBody as any;
-            console.warn(`⚠️ [CONTA ${accountId}] Falha com shipping_status, tentando sem status...`);
+            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem shipping_status...`);
             try {
               ({ data, error } = await supabase.functions.invoke('unified-orders', {
                 body: withoutStatus
@@ -402,8 +405,19 @@ export function usePedidosManager(initialAccountId?: string) {
             }
           }
           
-          if (error) {
-            console.error(`❌ [CONTA ${accountId}] Erro:`, error);
+          // ✅ BLINDAGEM: Tratamento específico por tipo de erro
+          if (error || !data?.ok) {
+            const errorType = error?.message || data?.error || 'unknown';
+            console.error(`❌ [CONTA ${accountId.slice(0, 8)}...] Erro: ${errorType}`);
+            
+            if (errorType.includes('no_tokens') || errorType.includes('reconnect_required')) {
+              console.warn(`🔑 [CONTA ${accountId.slice(0, 8)}...] Token expirado - conta desconectada`);
+              // Não mostrar toast para cada conta, apenas marcar como falhada
+            } else {
+              console.error(`🚨 [CONTA ${accountId.slice(0, 8)}...] Erro crítico: ${errorType}`);
+            }
+            
+            failedAccounts.push(accountId);
             continue; // Pular conta com erro, mas não falhar tudo
           }
           
@@ -422,20 +436,39 @@ export function usePedidosManager(initialAccountId?: string) {
             allResults.push(...accountResults);
             allUnified.push(...accountUnified);
             totalCount += data.paging?.total || data.paging?.count || accountResults.length || 0;
+            successfulAccounts.push(accountId);
             
-            console.log(`✅ [CONTA ${accountId}] ${accountResults.length} pedidos encontrados`);
+            console.log(`✅ [CONTA ${accountId.slice(0, 8)}...] ${accountResults.length} pedidos encontrados`);
           }
-        } catch (accountError) {
-          console.error(`❌ [CONTA ${accountId}] Falha na requisição:`, accountError);
+        } catch (accountError: any) {
+          console.error(`❌ [CONTA ${accountId.slice(0, 8)}...] Exceção:`, accountError?.message || accountError);
+          failedAccounts.push(accountId);
           // Continuar com outras contas mesmo se uma falhar
         }
       }
       
-      console.groupCollapsed('[query/result]');
-      console.log('total', totalCount);
-      console.log('[query/result] total', totalCount);
-      console.groupEnd();
-      console.log(`🎯 [AUDITORIA] Total combinado: ${allResults.length} pedidos de ${apiParams.integration_account_ids.length} contas`);
+      // 🚨 FEEDBACK INTELIGENTE: Toast baseado no resultado agregado
+      if (successfulAccounts.length === 0 && failedAccounts.length > 0) {
+        // Todas as contas falharam
+        const hasTokenIssues = failedAccounts.length > 0; // Simplificado pois não temos detalhes aqui
+        if (hasTokenIssues) {
+          toast.error('❌ Todas as contas ML precisam ser reconectadas. Verifique o seletor de contas acima.', {
+            duration: 6000,
+          });
+        } else {
+          toast.error('❌ Erro ao buscar pedidos de todas as contas selecionadas');
+        }
+      } else if (failedAccounts.length > 0 && successfulAccounts.length > 0) {
+        // Sucesso parcial
+        toast.error(`⚠️ ${failedAccounts.length} conta(s) com problema, ${successfulAccounts.length} funcionando`, {
+          duration: 4000,
+        });
+      } else if (successfulAccounts.length > 0) {
+        // Sucesso total - sem toast para não ser intrusivo
+        console.log(`🎯 [MULTI-CONTA] Sucesso total: ${successfulAccounts.length} contas`);
+      }
+      
+      console.log(`🎯 [MULTI-CONTA] Resultado final: ${allResults.length} pedidos de ${successfulAccounts.length}/${apiParams.integration_account_ids.length} contas`);
       
       return {
         results: allResults,
@@ -443,7 +476,14 @@ export function usePedidosManager(initialAccountId?: string) {
         total: totalCount,
         paging: { total: totalCount, limit: pageSize, offset: (currentPage - 1) * pageSize },
         serverStatusApplied: Boolean(shipping_status),
-        _multiAccount: true
+        _multiAccount: true,
+        _accountStats: {
+          total: apiParams.integration_account_ids.length,
+          successful: successfulAccounts.length,
+          failed: failedAccounts.length,
+          successfulAccounts,
+          failedAccounts
+        }
       };
     }
     

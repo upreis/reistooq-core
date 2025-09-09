@@ -59,6 +59,8 @@ import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
+import { ContasMLSelector } from './ContasMLSelector';
+import { MLConnectionStatus } from './MLConnectionStatus';
 
 
 type Order = {
@@ -909,6 +911,28 @@ useEffect(() => {
           actions.refetch();
         }}
       />
+
+      {/* ✅ SELETOR DE CONTAS ML - Sistema Multi-Conta */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium">Contas do Mercado Livre</h3>
+          <MLConnectionStatus 
+            accountsStats={(state.orders[0] as any)?._accountStats}
+            loading={loading}
+            onReconnectAll={() => window.open('/auth/mercadolivre', '_blank')}
+          />
+        </div>
+        
+        <ContasMLSelector
+          selectedAccounts={filtersManager.filters.contasML || []}
+          onAccountsChange={(contasML) => {
+            filtersManager.updateFilter('contasML', contasML);
+            // Auto-aplicar quando mudar contas (ação crítica)
+            setTimeout(() => filtersManager.applyFilters(), 100);
+          }}
+          disabled={loading}
+        />
+      </div>
 
       {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
       <PedidosFiltersUnified
