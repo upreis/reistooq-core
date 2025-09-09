@@ -429,20 +429,29 @@ Deno.serve(async (req) => {
     const mlUrl = new URL('https://api.mercadolibre.com/orders/search');
     mlUrl.searchParams.set('seller', seller);
     
-    // Aplicar filtros de status
+    // ✅ CORRIGIDO: Usar 'status' ao invés de 'shipping_status' para ML API
     if (status) {
       const allowedStatuses = ['confirmed', 'payment_required', 'payment_in_process', 'paid', 'shipped', 'delivered', 'cancelled', 'invalid'];
       if (allowedStatuses.includes(status)) {
         mlUrl.searchParams.set('order.status', status);
       }
     }
+    
+    // 🚨 REMOVIDO: shipping_status não é parâmetro válido para orders/search do ML
+    // O filtro de shipping será aplicado client-side após buscar os pedidos
 
-    // Aplicar filtros de data
+    // ✅ CORRIGIDO: Datas com conversão para ISO completo obrigatório
     if (date_from) {
-      mlUrl.searchParams.set('order.date_created.from', new Date(`${date_from}T00:00:00.000Z`).toISOString());
+      // Se já vier no formato ISO, usar direto; senão converter
+      const fromDate = date_from.includes('T') ? new Date(date_from) : new Date(`${date_from}T00:00:00.000Z`);
+      mlUrl.searchParams.set('order.date_created.from', fromDate.toISOString());
+      console.log(`[unified-orders:${cid}] Data FROM convertida:`, date_from, '=>', fromDate.toISOString());
     }
     if (date_to) {
-      mlUrl.searchParams.set('order.date_created.to', new Date(`${date_to}T23:59:59.999Z`).toISOString());
+      // Se já vier no formato ISO, usar direto; senão converter para fim do dia
+      const toDate = date_to.includes('T') ? new Date(date_to) : new Date(`${date_to}T23:59:59.999Z`);
+      mlUrl.searchParams.set('order.date_created.to', toDate.toISOString());
+      console.log(`[unified-orders:${cid}] Data TO convertida:`, date_to, '=>', toDate.toISOString());
     }
     // Fallback seguro: se nenhum range foi informado, ampliar janela para 90 dias
     if (!date_from && !date_to) {

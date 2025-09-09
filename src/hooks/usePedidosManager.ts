@@ -180,13 +180,12 @@ export function usePedidosManager(initialAccountId?: string) {
     let active = true;
     (async () => {
       try {
-        // Por enquanto, não carregar contas para evitar mostrar contas de outros usuários
+        // ✅ CORRIGIDO: Carregar contas ML ativas corretamente (sem limit(0))
         const { data, error } = await supabase
           .from('integration_accounts')
-          .select('id')
+          .select('id, name, account_identifier')
           .eq('provider', 'mercadolivre')
           .eq('is_active', true)
-          .limit(0) // Temporariamente não carregar contas existentes
           .order('updated_at', { ascending: false });
         if (error) {
           console.warn('[ML Accounts] Erro ao carregar contas:', error.message);
@@ -223,7 +222,7 @@ export function usePedidosManager(initialAccountId?: string) {
       console.log('🔍 [buildApiParams] Search adicionado:', filters.search);
     }
 
-    // Status mapping - converter situacao para shipping_status (mapear para valores da API)
+    // ✅ CORRIGIDO: Usar 'status' ao invés de 'shipping_status' para ML API
     if (filters.situacao) {
       const situacoes = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
       const mapped = situacoes
@@ -231,11 +230,12 @@ export function usePedidosManager(initialAccountId?: string) {
         .filter(Boolean) as string[];
 
       if (mapped.length === 1) {
-        params.shipping_status = mapped[0];
+        params.status = mapped[0]; // ✅ Mudou de shipping_status para status
+        console.log('📊 [STATUS] Filtro aplicado:', mapped[0]);
       } else if (mapped.length > 1) {
-        // Edge function pode não suportar array; aplicaremos filtro client-side
-        // Então não enviamos shipping_status para o servidor
-        // params._multi_shipping_status = mapped; // opcional para debug
+        // ✅ Para múltiplos status, aplicar filtro client-side
+        params._client_side_statuses = mapped;
+        console.log('📊 [STATUS] Múltiplos status (client-side):', mapped);
       }
     }
 

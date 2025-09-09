@@ -71,27 +71,51 @@ serve(async (req)=>{
       .maybeSingle();
     let refreshToken = secrets.refresh_token as string | null;
 
-    // Fallback: se tokens não estão em colunas planas, tenta descriptografar secret_enc
+    // ✅ CORRIGIDO: Fallback robusto com múltiplos métodos de decriptação
     if ((!refreshToken || refreshToken.length === 0) && secrets?.secret_enc) {
       try {
         let raw: any = secrets.secret_enc;
+        
+        // Método 1: Handle bytea format (PostgreSQL)
         if (typeof raw === 'string' && raw.startsWith('\\x')) {
           const hex = raw.slice(2);
           const bytes = new Uint8Array(hex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
           raw = new TextDecoder().decode(bytes);
         }
+        
+        // Método 2: Handle Buffer objects
         if (raw && typeof raw === 'object' && raw.type === 'Buffer' && Array.isArray(raw.data)) {
           raw = new TextDecoder().decode(Uint8Array.from(raw.data));
         }
+        
+        // Método 3: Handle Uint8Array
         if (raw instanceof Uint8Array) {
           raw = new TextDecoder().decode(raw);
         }
+        
+        // Validação antes da decriptação
         const payload = typeof raw === 'string' ? raw.trim() : String(raw ?? '').trim();
+        if (!payload || payload.length === 0) {
+          console.warn('[ML Token Refresh] Payload vazio após processamento');
+          return fail("Secret data corrupted", 500);
+        }
+        
+        // Tentar decriptar com validação de integridade
         const secretJson = await decryptAESGCM(payload, ENC_KEY);
-        const secret = JSON.parse(secretJson || '{}');
+        if (!secretJson || secretJson.trim().length === 0) {
+          console.warn('[ML Token Refresh] Decriptação resultou em string vazia');
+          return fail("Failed to decrypt tokens", 500);
+        }
+        
+        const secret = JSON.parse(secretJson);
         refreshToken = secret.refresh_token || refreshToken;
+        
+        if (refreshToken) {
+          console.log('[ML Token Refresh] ✅ Refresh token recuperado via decriptação');
+        }
       } catch (e) {
-        console.warn('[ML Token Refresh] Falha ao descriptografar secret_enc para obter refresh_token');
+        console.error('[ML Token Refresh] ❌ Falha crítica na decriptação:', e.message);
+        return fail("Token decryption failed - reconnect required", 500, { decryption_error: e.message });
       }
     }
 
