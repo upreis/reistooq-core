@@ -225,8 +225,9 @@ serve(async (req) => {
     }
 
     const storeResult = await storeResp.json();
-    if (!storeResult.ok) {
-      console.error('[ML OAuth Callback] Store secret returned error:', storeResult.error);
+    const storeOk = storeResult?.ok === true || storeResult?.success === true;
+    if (!storeOk) {
+      console.error('[ML OAuth Callback] Store secret returned error:', storeResult);
       return new Response(
         "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to store tokens securely'},'*');window.close();</script>",
         { headers: { ...corsHeaders, "Content-Type": "text/html" } }

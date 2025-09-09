@@ -150,6 +150,7 @@ Deno.serve(async (req: Request) => {
     });
 
     return new Response(JSON.stringify({ 
+      ok: true,
       success: true, 
       message: 'Secret stored successfully',
       account_id: integration_account_id,
