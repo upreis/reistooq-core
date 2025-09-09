@@ -399,10 +399,15 @@ Deno.serve(async (req) => {
 
     // Aplicar filtros de data
     if (date_from) {
-      mlUrl.searchParams.set('order.date_created.from', `${date_from}T00:00:00.000-03:00`);
+      mlUrl.searchParams.set('order.date_created.from', new Date(`${date_from}T00:00:00.000Z`).toISOString());
     }
     if (date_to) {
-      mlUrl.searchParams.set('order.date_created.to', `${date_to}T23:59:59.999-03:00`);
+      mlUrl.searchParams.set('order.date_created.to', new Date(`${date_to}T23:59:59.999Z`).toISOString());
+    }
+    // Fallback seguro: se nenhum range foi informado, ampliar janela para 90 dias
+    if (!date_from && !date_to) {
+      const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+      mlUrl.searchParams.set('order.date_created.from', ninetyDaysAgo);
     }
 
     mlUrl.searchParams.set('limit', String(Math.min(limit, 50)));
