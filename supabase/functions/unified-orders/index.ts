@@ -688,8 +688,12 @@ Deno.serve(async (req) => {
     const transformedOrders = transformMLOrders(filteredOrders, integration_account_id);
 
     return ok({
+      // Compatibilidade: retornar tanto 'results' (raw ML enriquecido) quanto 'pedidos' (formato unificado)
+      results: enrichedOrders,
       pedidos: transformedOrders,
-      total: transformedOrders.length,
+      paging: mlData?.paging ?? { total: transformedOrders.length, limit: safeLimit, offset: offset || 0 },
+      total: (mlData?.paging?.total ?? transformedOrders.length),
+      url: mlUrl.toString(),
       provider: 'mercadolivre',
       account_id: integration_account_id,
       seller_id: seller
