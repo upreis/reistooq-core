@@ -1264,7 +1264,10 @@ useEffect(() => {
         visibleDefinitions={columnManager.visibleDefinitions}
         currentPage={currentPage}
         totalPages={totalPages}
-        onPageChange={(page) => actions.setPage(page)}
+        onPageChange={(page) => {
+          console.log('📄 [SimplePedidosPage] onPageChange chamado com página:', page, 'currentPage atual:', currentPage, 'totalPages:', totalPages);
+          actions.setPage(page);
+        }}
         isPedidoProcessado={isPedidoProcessado}
       />
 

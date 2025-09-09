@@ -1417,8 +1417,13 @@ const actions: PedidosManagerActions = useMemo(() => ({
   applyFilters, // 🔄 Nova ação
   
   setPage: (page: number) => {
-    console.log('📄 Mudando para página:', page);
+    console.log('📄 [setPage] Mudando para página:', page, 'atual:', currentPage);
     setCurrentPage(page);
+    // ✅ FORÇAR REFETCH quando página muda
+    const cacheKey = getCacheKey({ currentPage: page, pageSize, integrationAccountId });
+    setCachedAt(undefined);
+    setLastQuery(undefined);
+    console.log('📄 [setPage] Cache invalidado para forçar nova busca na página', page);
   },
   
   setPageSize: (size: number) => {
@@ -1578,8 +1583,12 @@ const actions: PedidosManagerActions = useMemo(() => ({
     filters, // ✅ CORRIGIDO: Retornar filters direto
     state,
     actions,
-    // Computed values
-    totalPages: Math.ceil(total / pageSize),
+    // Computed values  
+    totalPages: (() => {
+      const calculated = Math.ceil(total / pageSize);
+      console.log('📄 [usePedidosManager] Calculando totalPages:', calculated, 'total:', total, 'pageSize:', pageSize);
+      return calculated;
+    })(),
     hasActiveFilters: Object.keys(filters).some(key => {
       const value = filters[key as keyof PedidosFilters];
       return value !== undefined && value !== '' && value !== null && 

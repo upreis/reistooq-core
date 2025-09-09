@@ -779,10 +779,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
           </table>
         </div>
 
-        {/* Paginação - Debug info */}
         <div className="border-t p-4 bg-muted/5">
           <div className="text-xs text-muted-foreground mb-2 bg-yellow-100 p-2 rounded">
-            DEBUG: currentPage={currentPage}, totalPages={totalPages}, total={total}, hasPrev={state?.hasPrevPage ? 'yes' : 'no'}, hasNext={state?.hasNextPage ? 'yes' : 'no'}
+            DEBUG: currentPage={currentPage}, totalPages={totalPages}, total={total}, pageSize={state?.pageSize}, 
+            hasPrev={state?.hasPrevPage ? 'yes' : 'no'}, hasNext={state?.hasNextPage ? 'yes' : 'no'}, 
+            ordersLength={orders.length}
           </div>
 
           <div className="flex items-center justify-between">
@@ -795,7 +796,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
-                      onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                      onClick={() => {
+                        console.log('📄 [Pagination] Clicou em Anterior, indo para página:', Math.max(1, currentPage - 1));
+                        onPageChange(Math.max(1, currentPage - 1));
+                      }}
                       className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
                     />
                   </PaginationItem>
@@ -805,11 +809,14 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       {/* Primeira página */}
                       {currentPage > 3 && (
                         <>
-                          <PaginationItem>
-                            <PaginationLink
-                              onClick={() => onPageChange(1)}
-                              className="cursor-pointer hover:bg-accent"
-                            >
+                           <PaginationItem>
+                             <PaginationLink
+                               onClick={() => {
+                                 console.log('📄 [Pagination] Clicou na página 1');
+                                 onPageChange(1);
+                               }}
+                               className="cursor-pointer hover:bg-accent"
+                             >
                               1
                             </PaginationLink>
                           </PaginationItem>
@@ -870,7 +877,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
 
                   <PaginationItem>
                     <PaginationNext
-                      onClick={() => onPageChange(currentPage + 1)}
+                      onClick={() => {
+                        console.log('📄 [Pagination] Clicou em Próximo, indo para página:', currentPage + 1);
+                        onPageChange(currentPage + 1);
+                      }}
                       className={(orders.length === 0 && !state?.hasNextPage && currentPage >= totalPages) ? 'pointer-events-none opacity-50' : 'cursor-pointer hover:bg-accent'}
                     />
                   </PaginationItem>
