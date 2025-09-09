@@ -359,7 +359,13 @@ Deno.serve(async (req) => {
             return fail('reconnect_required', 401, null, cid);
           }
         }
+      } catch (error) {
+        console.error(`[unified-orders:${cid}] Erro na descriptografia AES-GCM:`, error);
+        console.warn(`[unified-orders:${cid}] Decrypt failed - reconnect_required`, { accountId: integration_account_id });
+        return fail('reconnect_required', 401, null, cid);
+      }
     }
+    
     console.log(`[unified-orders:${cid}] Final token status:`, {
       hasAccessToken: !!accessToken,
       hasRefreshToken: !!refreshToken,
