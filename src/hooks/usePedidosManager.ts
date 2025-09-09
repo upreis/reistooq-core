@@ -358,6 +358,7 @@ export function usePedidosManager(initialAccountId?: string) {
       let totalCount = 0;
       const failedAccounts: string[] = [];
       const successfulAccounts: string[] = [];
+      const accountErrors: Array<{accountId: string, error: string, status: string}> = [];
       
       for (const accountId of apiParams.integration_account_ids) {
         try {
@@ -394,8 +395,46 @@ export function usePedidosManager(initialAccountId?: string) {
             error = e;
           }
 
-          // Fallback: se erro, tentar novamente sem shipping_status
+          // 🚨 AJUSTE 1: Captura detalhada de erro com toast específico
           if (error || data?.status >= 400) {
+            const errorDetail = error?.message || data?.error || data?.detail || 'Erro desconhecido';
+            const statusCode = data?.status || error?.status || 'unknown';
+            
+            console.error(`❌ [CONTA ${accountId.slice(0, 8)}...] Erro:`, errorDetail);
+            
+            // Toast específico baseado no tipo de erro
+            if (errorDetail.includes('reconnect_required') || errorDetail.includes('no_tokens')) {
+              toast.error(`Conta ${singleAccountBody.integration_account_id?.slice(0, 8)} precisa ser reconectada`);
+            } else if (errorDetail.includes('ML API error')) {
+              toast.error(`Erro na API do Mercado Livre para conta ${singleAccountBody.integration_account_id?.slice(0, 8)}`);
+            } else {
+              toast.error(`Erro ao buscar pedidos da conta ${singleAccountBody.integration_account_id?.slice(0, 8)}`);
+            }
+
+            // Fallback: se erro, tentar novamente sem shipping_status
+            const { shipping_status: _omit, ...withoutStatus } = singleAccountBody as any;
+            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem shipping_status...`);
+            try {
+              ({ data, error } = await supabase.functions.invoke('unified-orders', {
+                body: withoutStatus
+              }));
+            } catch (e: any) {
+              error = e;
+            }
+          }
+
+          // 🚨 AJUSTE 2: Erro crítico após fallback com log detalhado
+          if (error || data?.status >= 400) {
+            const finalError = error?.message || data?.error || data?.detail || 'Erro desconhecido';
+            console.error(`🚨 [CONTA ${accountId.slice(0, 8)}...] Erro crítico:`, finalError);
+            
+            failedAccounts.push(accountId);
+            accountErrors.push({
+              accountId,
+              error: finalError,
+              status: data?.status || error?.status || 'unknown'
+            });
+            continue;
             const { shipping_status: _omit, ...withoutStatus } = singleAccountBody as any;
             console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem shipping_status...`);
             try {
@@ -738,6 +777,45 @@ export function usePedidosManager(initialAccountId?: string) {
   }, [filters]); // Dependência otimizada - usar filters diretamente
 
   /**
+   * 🚨 AJUSTE 3: Função para forçar refresh de tokens das contas ML
+   */
+  const refreshMLTokens = useCallback(async (accountIds: string[]) => {
+    const promises = accountIds.map(async (accountId) => {
+      try {
+        console.log(`🔄 [REFRESH] Atualizando token da conta ${accountId.slice(0, 8)}...`);
+        
+        const { data, error } = await supabase.functions.invoke('mercadolibre-token-refresh', {
+          body: { integration_account_id: accountId }
+        });
+        
+        if (error || !data?.ok) {
+          console.error(`❌ [REFRESH] Falha ao atualizar token ${accountId.slice(0, 8)}:`, error?.message || data?.error);
+          return { accountId, success: false, error: error?.message || data?.error };
+        }
+        
+        console.log(`✅ [REFRESH] Token atualizado com sucesso para ${accountId.slice(0, 8)}`);
+        return { accountId, success: true };
+      } catch (e: any) {
+        console.error(`❌ [REFRESH] Exceção ao atualizar token ${accountId.slice(0, 8)}:`, e?.message);
+        return { accountId, success: false, error: e?.message };
+      }
+    });
+    
+    const results = await Promise.all(promises);
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+    
+    if (successful > 0) {
+      toast.success(`✅ ${successful} conta(s) reconectada(s) com sucesso!`);
+    }
+    if (failed > 0) {
+      toast.error(`❌ ${failed} conta(s) falharam na reconexão`);
+    }
+    
+    return results;
+  }, []);
+
+  /**
    * 🚀 FASE 2: Cache inteligente - CORRIGIDO para invalidar na troca de conta
    */
   const getCacheKey = useCallback((apiParams: any) => {
@@ -949,7 +1027,42 @@ export function usePedidosManager(initialAccountId?: string) {
         // P1.2: Debug removido por segurança - não expor dados sensíveis
         
       } catch (unifiedError: any) {
-        // P1.2: Log minimizado para evitar exposição de dados
+        console.error('❌ [loadOrders] Erro na unified-orders:', unifiedError?.message);
+        
+        // 🚨 AJUSTE 3: Auto-refresh de tokens quando há erro de autenticação
+        const isTokenError = unifiedError?.message?.includes('reconnect_required') || 
+                            unifiedError?.message?.includes('no_tokens') ||
+                            unifiedError?.message?.includes('401');
+        
+        if (isTokenError && (apiParams.integration_account_ids || apiParams.integration_account_id)) {
+          const accountsToRefresh = apiParams.integration_account_ids || [apiParams.integration_account_id];
+          
+          toast('🔄 Detectado problema de token, tentando reconectar automaticamente...');
+          
+          try {
+            const refreshResults = await refreshMLTokens(accountsToRefresh);
+            const successfulRefresh = refreshResults.filter(r => r.success);
+            
+            if (successfulRefresh.length > 0) {
+              toast.success('✅ Tokens atualizados! Tentando buscar pedidos novamente...');
+              
+              // Tentar novamente após refresh
+              const retryResult = await loadFromUnifiedOrders(apiParams);
+              const retryFiltered = applyClientSideFilters(retryResult.results);
+              
+              setOrders(retryFiltered);
+              setTotal(retryResult.total || retryFiltered.length);
+              setFonte('tempo-real');
+              setCachedAt(new Date());
+              setLastQuery(cacheKey);
+              
+              return; // Sucesso após refresh!
+            }
+          } catch (refreshError: any) {
+            console.error('❌ [loadOrders] Falha no auto-refresh:', refreshError?.message);
+            toast.error('❌ Falha na reconexão automática. Reconecte manualmente nas configurações.');
+          }
+        }
         
         try {
           // Tentativa 2: unified-orders sem filtros (aplicar client-side)
@@ -1371,8 +1484,11 @@ const actions: PedidosManagerActions = useMemo(() => ({
     setCurrentPage(persistedPage);
     setFonte('banco'); // Indicar que são dados restaurados
     setCachedAt(new Date());
-  }
-}), [applyFilters, loadOrders, applyClientSideFilters, exportData, saveCurrentFilters, loadSavedFilters, getSavedFilters]);
+  },
+  
+  // 🚨 AJUSTE 3: Expor função de refresh de tokens
+  refreshMLTokens
+}), [applyFilters, loadOrders, applyClientSideFilters, exportData, saveCurrentFilters, loadSavedFilters, getSavedFilters, refreshMLTokens]);
 
   // State object melhorado
   const state: PedidosManagerState = {

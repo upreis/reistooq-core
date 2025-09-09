@@ -14,9 +14,10 @@ interface MLConnectionStatusProps {
   };
   loading?: boolean;
   onReconnectAll?: () => void;
+  onRefreshTokens?: (accountIds: string[]) => void;
 }
 
-export function MLConnectionStatus({ accountsStats, loading, onReconnectAll }: MLConnectionStatusProps) {
+export function MLConnectionStatus({ accountsStats, loading, onReconnectAll, onRefreshTokens }: MLConnectionStatusProps) {
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -70,6 +71,17 @@ export function MLConnectionStatus({ accountsStats, loading, onReconnectAll }: M
             Reconectar Contas
           </Button>
         )}
+        {onRefreshTokens && accountsStats && accountsStats.failedAccounts && accountsStats.failedAccounts.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onRefreshTokens(accountsStats.failedAccounts)}
+            className="flex items-center gap-1 ml-2"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Refresh Tokens
+          </Button>
+        )}
       </div>
     );
   }
@@ -97,6 +109,17 @@ export function MLConnectionStatus({ accountsStats, loading, onReconnectAll }: M
           >
             <ExternalLink className="h-3 w-3" />
             Corrigir
+          </Button>
+        )}
+        {onRefreshTokens && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onRefreshTokens(accountsStats?.failedAccounts || [])}
+            className="flex items-center gap-1 ml-2"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Refresh
           </Button>
         )}
       </div>
