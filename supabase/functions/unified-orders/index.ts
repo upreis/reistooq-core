@@ -40,37 +40,123 @@ async function refreshIfNeeded(supabase: any, tokens: any, cid: string, authHead
 async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid: string) {
   if (!orders?.length) return orders;
 
-  console.log(`[unified-orders:${cid}] Enriquecendo ${orders.length} pedidos com dados de envio`);
+  console.log(`[unified-orders:${cid}] Enriquecendo ${orders.length} pedidos com dados completos`);
   
   const enrichedOrders = await Promise.all(
     orders.map(async (order) => {
       try {
-        if (!order.shipping?.id) return order;
+        let enrichedOrder = { ...order };
 
-        const shippingResp = await fetch(
-          `https://api.mercadolibre.com/shipments/${order.shipping.id}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-
-        if (shippingResp.ok) {
-          const shippingData = await shippingResp.json();
-          return {
-            ...order,
-            shipping: {
-              ...order.shipping,
-              ...shippingData,
-              enriched: true
+        // 1. Enriquecer com dados detalhados da order
+        try {
+          const orderResp = await fetch(
+            `https://api.mercadolibre.com/orders/${order.id}`,
+            { 
+              headers: { 
+                Authorization: `Bearer ${accessToken}`,
+                'x-format-new': 'true'  // Header recomendado pela documentação
+              } 
             }
-          };
+          );
+
+          if (orderResp.ok) {
+            const orderData = await orderResp.json();
+            enrichedOrder = {
+              ...enrichedOrder,
+              ...orderData,
+              detailed_order: orderData,
+              enriched: true
+            };
+          }
+        } catch (error) {
+          console.warn(`[unified-orders:${cid}] Erro ao buscar order ${order.id}:`, error);
         }
+
+        // 2. Enriquecer com dados de shipment
+        if (order.shipping?.id) {
+          try {
+            const shippingResp = await fetch(
+              `https://api.mercadolibre.com/shipments/${order.shipping.id}`,
+              { 
+                headers: { 
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'  // Header obrigatório para shipments
+                } 
+              }
+            );
+
+            if (shippingResp.ok) {
+              const shippingData = await shippingResp.json();
+              enrichedOrder.shipping = {
+                ...enrichedOrder.shipping,
+                ...shippingData,
+                detailed_shipping: shippingData,
+                shipping_enriched: true
+              };
+            }
+          } catch (error) {
+            console.warn(`[unified-orders:${cid}] Erro ao enriquecer shipping ${order.shipping?.id}:`, error);
+          }
+        }
+
+        // 3. Enriquecer com dados de pack (se existir)
+        if (order.pack_id) {
+          try {
+            const packResp = await fetch(
+              `https://api.mercadolibre.com/packs/${order.pack_id}`,
+              { headers: { Authorization: `Bearer ${accessToken}` } }
+            );
+
+            if (packResp.ok) {
+              const packData = await packResp.json();
+              enrichedOrder.pack_data = packData;
+            }
+          } catch (error) {
+            console.warn(`[unified-orders:${cid}] Erro ao buscar pack ${order.pack_id}:`, error);
+          }
+        }
+
+        // 4. Enriquecer com dados dos produtos (order_items)
+        if (order.order_items?.length) {
+          try {
+            const itemsWithDetails = await Promise.all(
+              order.order_items.map(async (item: any) => {
+                if (item.item?.id) {
+                  try {
+                    const itemResp = await fetch(
+                      `https://api.mercadolibre.com/items/${item.item.id}`,
+                      { headers: { Authorization: `Bearer ${accessToken}` } }
+                    );
+
+                    if (itemResp.ok) {
+                      const itemData = await itemResp.json();
+                      return {
+                        ...item,
+                        item_details: itemData
+                      };
+                    }
+                  } catch (error) {
+                    console.warn(`[unified-orders:${cid}] Erro ao buscar item ${item.item.id}:`, error);
+                  }
+                }
+                return item;
+              })
+            );
+            enrichedOrder.order_items = itemsWithDetails;
+          } catch (error) {
+            console.warn(`[unified-orders:${cid}] Erro ao enriquecer items:`, error);
+          }
+        }
+
+        return enrichedOrder;
       } catch (error) {
-        console.warn(`[unified-orders:${cid}] Erro ao enriquecer shipping ${order.shipping?.id}:`, error);
+        console.warn(`[unified-orders:${cid}] Erro geral no enriquecimento da order ${order.id}:`, error);
+        return order;
       }
-      return order;
     })
   );
 
-  console.log(`[unified-orders:${cid}] Enriquecimento de shipping concluído`);
+  console.log(`[unified-orders:${cid}] Enriquecimento completo concluído`);
   return enrichedOrders;
 }
 
@@ -80,23 +166,43 @@ function transformMLOrders(orders: any[], integration_account_id: string) {
     const shipping = order.shipping || {};
     const payments = order.payments || [];
     const firstPayment = payments[0] || {};
+    const detailedOrder = order.detailed_order || order;
+    const detailedShipping = shipping.detailed_shipping || shipping;
+    const orderItems = order.order_items || [];
 
+    // Cálculos de quantidades e valores
+    const totalQuantity = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    const productTitles = orderItems.map((item: any) => 
+      item.item_details?.title || item.item?.title || item.title
+    ).filter(Boolean).join(', ');
+    const skus = orderItems.map((item: any) => 
+      item.item_details?.seller_custom_field || item.item?.seller_custom_field || item.seller_sku
+    ).filter(Boolean).join(', ');
+
+    // Valores de frete e receitas
+    const fretePagoCliente = shipping.cost || 0;
+    const receitaFlex = shipping.seller_cost_benefit || 0;
+    const custoEnvioSeller = shipping.base_cost || 0;
+    
+    // Informações de endereço mais detalhadas
+    const address = detailedShipping.receiver_address || shipping.receiver_address || {};
+    
     return {
       id: order.id?.toString() || '',
       numero: order.id?.toString() || '',
-      nome_cliente: buyer.nickname || buyer.first_name || null,
+      nome_cliente: buyer.nickname || buyer.first_name || `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() || null,
       cpf_cnpj: buyer.identification?.number || null,
       data_pedido: order.date_created || null,
       data_prevista: shipping.date_first_printed || order.date_closed || null,
       situacao: order.status || null,
       valor_total: order.total_amount || 0,
-      valor_frete: shipping.cost || 0,
+      valor_frete: fretePagoCliente,
       valor_desconto: order.coupon?.amount || 0,
       numero_ecommerce: order.pack_id?.toString() || null,
       numero_venda: order.id?.toString() || null,
       empresa: 'Mercado Livre',
-      cidade: shipping.receiver_address?.city?.name || null,
-      uf: shipping.receiver_address?.state?.id || null,
+      cidade: address.city?.name || null,
+      uf: address.state?.id || null,
       codigo_rastreamento: shipping.tracking_number || null,
       url_rastreamento: shipping.tracking_method === 'custom' ? null : 
         shipping.tracking_number ? `https://www.mercadolivre.com.br/gz/tracking/${shipping.tracking_number}` : null,
@@ -104,7 +210,61 @@ function transformMLOrders(orders: any[], integration_account_id: string) {
       obs_interna: null,
       integration_account_id,
       created_at: order.date_created || new Date().toISOString(),
-      updated_at: order.last_updated || order.date_created || new Date().toISOString()
+      updated_at: order.last_updated || order.date_created || new Date().toISOString(),
+      
+      // ✅ Novos campos enriquecidos
+      // Dados básicos do pedido
+      last_updated: order.last_updated || order.date_created,
+      paid_amount: firstPayment.total_paid_amount || order.paid_amount || 0,
+      valor_liquido_vendedor: (order.total_amount || 0) - (shipping.cost || 0) - (order.marketplace_fee || 0),
+      date_created: order.date_created,
+      pack_id: order.pack_id?.toString() || null,
+      pickup_id: shipping.pickup_id || null,
+      manufacturing_ending_date: order.manufacturing_ending_date || null,
+      comment: order.buyer_comment || null,
+      tags: order.tags || [],
+      
+      // Informações dos produtos
+      skus_produtos: skus || 'Sem SKU',
+      quantidade_total: totalQuantity,
+      titulo_produto: productTitles || 'Produto sem título',
+      
+      // Valores financeiros detalhados
+      frete_pago_cliente: fretePagoCliente,
+      receita_flex: receitaFlex,
+      desconto_cupom: order.coupon?.amount || 0,
+      taxa_marketplace: order.marketplace_fee || 0,
+      custo_envio_seller: custoEnvioSeller,
+      
+      // Informações de pagamento
+      metodo_pagamento: firstPayment.payment_method_id || 'N/A',
+      status_pagamento: firstPayment.status || 'N/A',
+      tipo_pagamento: firstPayment.payment_type_id || 'N/A',
+      
+      // Informações de envio detalhadas
+      status_envio: shipping.status || 'N/A',
+      logistic_mode: shipping.logistic_type || 'N/A',
+      tipo_logistico: shipping.mode || 'N/A',
+      tipo_metodo_envio: shipping.shipping_method_id || 'N/A',
+      tipo_entrega: shipping.delivery_type || 'N/A',
+      substatus: shipping.substatus || 'N/A',
+      modo_envio_combinado: shipping.mode || 'N/A',
+      metodo_envio_combinado: shipping.shipping_method_id || 'N/A',
+      
+      // Endereço completo
+      rua: address.street_name || null,
+      numero: address.street_number || null,
+      bairro: address.neighborhood?.name || null,
+      cep: address.zip_code || null,
+      
+      // Dados completos para fallback
+      raw: order,
+      unified: {
+        order_items: orderItems,
+        shipping: detailedShipping,
+        buyer: buyer,
+        payments: payments
+      }
     };
   });
 }
