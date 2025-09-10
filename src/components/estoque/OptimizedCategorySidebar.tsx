@@ -285,6 +285,7 @@ export function OptimizedCategorySidebar({
               <span className="truncate">{category.nome}</span>
             </div>
           </Button>
+        ) : (
           <Button
             variant="ghost"
             size="sm"

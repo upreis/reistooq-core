@@ -303,6 +303,15 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       item.item_details?.seller_custom_field || item.item?.seller_custom_field || item.seller_sku
     ).filter(Boolean).join(', ');
 
+    // Debug das colunas problemáticas
+    console.log(`[unified-orders:${cid}] 🐛 Debug colunas para pedido ${order.id}:`, {
+      pickup_id: shipping.pickup_id,
+      manufacturing_ending_date: order.manufacturing_ending_date,
+      comment: order.buyer_comment || order.comment,
+      tags: order.tags,
+      pack_id: order.pack_id
+    });
+
     // Valores de frete e receitas
     const fretePagoCliente = shipping.cost || 0;
     const receitaFlex = shipping.seller_cost_benefit || 0;
@@ -356,10 +365,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       valor_liquido_vendedor: (order.total_amount || 0) - (shipping.cost || 0) - (order.marketplace_fee || 0),
       date_created: order.date_created,
       pack_id: order.pack_id?.toString() || null,
-      pickup_id: shipping.pickup_id || null,
+      pickup_id: shipping.pickup_id || shipping.id || null,
       manufacturing_ending_date: order.manufacturing_ending_date || null,
-      comment: order.buyer_comment || null,
-      tags: order.tags || [],
+      comment: order.buyer_comment || order.comment || orderItems.find((item: any) => item.comment)?.comment || null,
+      tags: Array.isArray(order.tags) ? order.tags.join(', ') : (order.tags || null),
       pack_status: order.pack_status ?? order.pack_data?.status ?? null,
       pack_status_detail: order.pack_status_detail ?? order.pack_data?.status_detail ?? order.pack_data?.status?.detail ?? null,
       
@@ -414,8 +423,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
 
       // 🆕 NOVOS CAMPOS DA DOCUMENTAÇÃO DE PACKS - Análise posterior
       
-      // 🔹 TAGS DO PEDIDO
-      tags: (order.tags || []).join(', ') || null,
+      // 🔹 TAGS DO PEDIDO (removido para evitar duplicação - já mapeado acima)
       conditions: orderItems.map((item: any) => item.item?.condition).filter(Boolean).join(', ') || null,
       global_prices: orderItems.map((item: any) => item.global_price).filter((p) => p != null).join(', ') || null,
       net_weights: orderItems.map((item: any) => item.item?.net_weight).filter((w) => w != null).join(', ') || null,
