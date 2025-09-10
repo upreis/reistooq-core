@@ -160,7 +160,7 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
   return enrichedOrders;
 }
 
-function transformMLOrders(orders: any[], integration_account_id: string) {
+function transformMLOrders(orders: any[], integration_account_id: string, accountName?: string) {
   return orders.map(order => {
     const buyer = order.buyer || {};
     const shipping = order.shipping || {};
@@ -200,7 +200,7 @@ function transformMLOrders(orders: any[], integration_account_id: string) {
       valor_desconto: order.coupon?.amount || 0,
       numero_ecommerce: order.pack_id?.toString() || null,
       numero_venda: order.id?.toString() || null,
-      empresa: 'Mercado Livre',
+      empresa: accountName || 'Mercado Livre',
       cidade: address.city?.name || null,
       uf: address.state?.id || null,
       codigo_rastreamento: shipping.tracking_number || null,
@@ -685,7 +685,7 @@ Deno.serve(async (req) => {
     console.log(`[unified-orders:${cid}] Após filtros locais: ${filteredOrders.length} pedidos`);
 
     // Transformar para formato unificado
-    const transformedOrders = transformMLOrders(filteredOrders, integration_account_id);
+    const transformedOrders = transformMLOrders(filteredOrders, integration_account_id, accountData?.name);
 
     return ok({
       // Compatibilidade: retornar tanto 'results' (raw ML enriquecido) quanto 'pedidos' (formato unificado)
