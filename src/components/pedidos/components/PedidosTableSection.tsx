@@ -405,27 +405,27 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         return <span>{formatMoney(order.valor_liquido_vendedor || valorLiquido || 0)}</span>;
                       }
                      case 'payment_method':
-                       return <span className="text-xs">{translatePaymentMethod(order.payments?.[0]?.payment_method_id || order.payment_method || order.raw?.payments?.[0]?.payment_method_id || '-')}</span>;
+                       return <span className="text-xs">{translatePaymentMethod(order.payments?.[0]?.payment_method_id || order.payment_method || order.raw?.payments?.[0]?.payment_method_id || order.metodo_pagamento || '-')}</span>;
                      case 'payment_status':
-                       return <span className="text-xs">{translatePaymentStatus(order.payment_status || order.payments?.[0]?.status || '-')}</span>;
+                       return <span className="text-xs">{translatePaymentStatus(order.payment_status || order.payments?.[0]?.status || order.raw?.payments?.[0]?.status || order.status_pagamento || '-')}</span>;
                      case 'payment_type':
-                       return <span className="text-xs">{translatePaymentType(order.payment_type || order.payments?.[0]?.payment_type || '-')}</span>;
+                       return <span className="text-xs">{translatePaymentType(order.payment_type || order.payments?.[0]?.payment_type || order.raw?.payments?.[0]?.payment_type_id || order.tipo_pagamento || '-')}</span>;
                     case 'shipping_status':
-                      return <span className="text-xs">{translateShippingStatus(order.shipping_status || order.shipping?.status) || '-'}</span>;
+                      return <span className="text-xs">{translateShippingStatus(order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.status_envio || '-')}</span>;
                      case 'logistic_mode':
-                       return <span className="text-xs">{formatText(order.logistic_mode || order.unified?.logistic?.mode || order.shipping?.logistic?.mode || order.raw?.shipping?.logistic?.mode || '-')}</span>;
+                       return <span className="text-xs">{formatText(order.logistic_mode || order.logistic_mode_principal || order.shipping?.logistic?.mode || order.raw?.shipping?.logistic?.mode || order.unified?.logistic?.mode || '-')}</span>;
                      case 'logistic_type':
-                       return <span className="text-xs">{translateLogisticType(order.logistic_type || order.shipping_details?.logistic_type || order.shipping?.logistic?.type || order.raw?.shipping?.logistic?.type || order.unified?.logistic?.type || '-')}</span>;
+                       return <span className="text-xs">{translateLogisticType(order.logistic_type || order.tipo_logistico || order.shipping?.logistic?.type || order.raw?.shipping?.logistic?.type || order.unified?.logistic?.type || '-')}</span>;
                      case 'shipping_method_type':
-                       return <span className="text-xs">{translateShippingMethodType(order.shipping_method_type || order.shipping?.shipping_method?.type || order.raw?.shipping?.shipping_method?.type || '-')}</span>;
+                       return <span className="text-xs">{translateShippingMethodType(order.shipping_method_type || order.tipo_metodo_envio || order.shipping?.shipping_method?.type || order.raw?.shipping?.shipping_method?.type || '-')}</span>;
                      case 'delivery_type':
-                       return <span className="text-xs">{translateDeliveryType(order.delivery_type || order.shipping?.delivery_type || order.raw?.shipping?.delivery_type || '-')}</span>;
+                       return <span className="text-xs">{translateDeliveryType(order.delivery_type || order.tipo_entrega || order.shipping?.delivery_type || order.raw?.shipping?.delivery_type || '-')}</span>;
                      case 'substatus_detail':
-                       return <span className="text-xs">{translateShippingSubstatus(order.substatus_detail || order.shipping?.substatus || order.raw?.shipping?.substatus || order.shipping?.status_detail || order.status_detail) || '-'}</span>;
+                       return <span className="text-xs">{translateShippingSubstatus(order.substatus_detail || order.substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.shipping?.status_detail || order.status_detail || '-')}</span>;
                      case 'shipping_mode':
-                       return <span className="text-xs">{translateShippingMode(order.shipping_mode || order.forma_entrega || order.shipping?.mode || order.raw?.shipping?.mode) || '-'}</span>;
+                       return <span className="text-xs">{translateShippingMode(order.shipping_mode || order.modo_envio_combinado || order.shipping?.mode || order.raw?.shipping?.mode || '-')}</span>;
                      case 'shipping_method':
-                       return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.shipping?.shipping_method?.name || order.raw?.shipping?.shipping_method?.name || order.shipping?.method?.name) || '-'}</span>;
+                       return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.metodo_envio_combinado || order.shipping?.shipping_method?.name || order.raw?.shipping?.shipping_method?.name || order.shipping?.method?.name || '-')}</span>;
                      case 'cidade':
                      case 'endereco_cidade':
                        return <span>{
@@ -688,7 +688,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'pack_id':
                        return <span className="font-mono text-xs">{order.pack_id || order.unified?.pack_id || order.raw?.pack_id || '-'}</span>;
                      case 'pickup_id':
-                       return <span className="font-mono text-xs">{order.pickup_id || order.shipping?.pickup_id || order.unified?.pickup_id || order.raw?.shipping?.pickup_id || '-'}</span>;
+                       return <span className="font-mono text-xs">{order.pickup_id || order.shipping?.pickup_id || order.raw?.shipping?.pickup_id || order.raw?.pickup_id || order.unified?.pickup_id || '-'}</span>;
                      case 'manufacturing_ending_date':
                        return <span>{formatDate(order.manufacturing_ending_date || order.unified?.manufacturing_ending_date || order.raw?.manufacturing_ending_date) || '-'}</span>;
                      case 'comment':

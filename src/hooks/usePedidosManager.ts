@@ -901,17 +901,22 @@ export function usePedidosManager(initialAccountId?: string) {
         
     // Se o servidor retornou que aplicou filtros, usar direto, senão aplicar client-side
     const serverAppliedFiltering = (unifiedResult as any).server_filtering_applied;
-    // Preferir a lista unificada normalizada do backend quando disponível
+    // CORREÇÃO: Preservar dados RAW mesmo ao usar dados UNIFIED
     const baseList = (unifiedResult as any).unified && (unifiedResult as any).unified.length
       ? (unifiedResult as any).unified
       : (unifiedResult as any).results;
+    const rawList = (unifiedResult as any).results || [];
+    
     const shouldApplyClientFilter = Boolean(filters.situacao) && !serverAppliedFiltering;
     const filteredClientResults = shouldApplyClientFilter
       ? applyClientSideFilters(baseList)
       : baseList;
 
-    // Sempre usar o total do servidor quando disponível
-    const normalizedResults = filteredClientResults.map((o: any) => {
+    // CRÍTICO: Combinar dados unified + raw para preservar todas as informações
+    const normalizedResults = filteredClientResults.map((o: any, index: number) => {
+      // Buscar correspondente nos dados RAW para preservar informações completas
+      const rawData = rawList.find((r: any) => r.id === o.id) || rawList[index] || {};
+      
       // Fallback profundo: procurar CPF/CNPJ em qualquer lugar do objeto
       const extractDeep = (root: any): string | null => {
         const seen = new Set<any>();
@@ -944,15 +949,22 @@ export function usePedidosManager(initialAccountId?: string) {
         o.documento_cliente ??
         o.cliente_documento ??
         o.buyer?.identification?.number ??
-        o.raw?.buyer?.identification?.number ??
+        rawData.buyer?.identification?.number ??
         o.payments?.[0]?.payer?.identification?.number ??
         o.unified?.payments?.[0]?.payer?.identification?.number ??
-        o.raw?.payments?.[0]?.payer?.identification?.number ??
+        rawData.payments?.[0]?.payer?.identification?.number ??
         null;
 
       return {
         ...o,
-        cpf_cnpj: direct ?? extractDeep(o),
+        // Preservar dados RAW para compatibilidade com colunas avançadas
+        raw: rawData,
+        // Garantir que campos importantes tenham fallback para RAW
+        payments: o.payments || rawData.payments,
+        shipping: o.shipping || rawData.shipping,
+        order_items: o.order_items || rawData.order_items,
+        tags: o.tags || rawData.tags,
+        cpf_cnpj: direct ?? extractDeep(o) ?? extractDeep(rawData),
       };
     });
         // 🚨 FIX 2: Evitar respostas fora de ordem
@@ -1028,10 +1040,24 @@ export function usePedidosManager(initialAccountId?: string) {
               const retryBase = (retryResult as any).unified && (retryResult as any).unified.length
                 ? (retryResult as any).unified
                 : (retryResult as any).results;
+              const retryRaw = (retryResult as any).results || [];
               const retryFiltered = applyClientSideFilters(retryBase);
               
-              setOrders(retryFiltered);
-              setTotal(retryResult.total || retryFiltered.length);
+              // Combinar unified + raw nos dados de retry também
+              const retryNormalized = retryFiltered.map((o: any, index: number) => {
+                const rawData = retryRaw.find((r: any) => r.id === o.id) || retryRaw[index] || {};
+                return {
+                  ...o,
+                  raw: rawData,
+                  payments: o.payments || rawData.payments,
+                  shipping: o.shipping || rawData.shipping,
+                  order_items: o.order_items || rawData.order_items,
+                  tags: o.tags || rawData.tags,
+                };
+              });
+              
+              setOrders(retryNormalized);
+              setTotal(retryResult.total || retryNormalized.length);
               setFonte('tempo-real');
               setCachedAt(new Date());
               setLastQuery(cacheKey);
