@@ -237,19 +237,19 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       custo_envio_seller: custoEnvioSeller,
       
       // Informações de pagamento
-      metodo_pagamento: firstPayment.payment_method_id || 'N/A',
-      status_pagamento: firstPayment.status || 'N/A',
-      tipo_pagamento: firstPayment.payment_type_id || 'N/A',
+      metodo_pagamento: firstPayment.payment_method_id || null,
+      status_pagamento: firstPayment.status || null,
+      tipo_pagamento: firstPayment.payment_type_id || null,
       
       // Informações de envio detalhadas
-      status_envio: shipping.status || 'N/A',
-      logistic_mode: shipping.logistic_type || 'N/A',
-      tipo_logistico: shipping.mode || 'N/A',
-      tipo_metodo_envio: shipping.shipping_method_id || 'N/A',
-      tipo_entrega: shipping.delivery_type || 'N/A',
-      substatus: shipping.substatus || 'N/A',
-      modo_envio_combinado: shipping.mode || 'N/A',
-      metodo_envio_combinado: shipping.shipping_method_id || 'N/A',
+      status_envio: shipping.status || null,
+      logistic_mode: detailedShipping?.logistic?.mode || shipping?.logistic?.mode || shipping?.mode || null,
+      tipo_logistico: detailedShipping?.logistic?.type || shipping?.logistic?.type || shipping?.logistic_type || null,
+      tipo_metodo_envio: detailedShipping?.shipping_method?.type || shipping?.shipping_method?.type || null,
+      tipo_entrega: shipping?.delivery_type || null,
+      substatus: shipping?.substatus || detailedShipping?.status_detail || null,
+      modo_envio_combinado: shipping?.mode || null,
+      metodo_envio_combinado: detailedShipping?.shipping_method?.name || shipping?.shipping_method?.name || null,
       
       // Endereço completo
       rua: address.street_name || null,
