@@ -519,17 +519,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
 
-  // ====== PACK DATA (Novos campos da documentação ML) ======
-  {
-    key: 'pack_status',
-    label: 'Status Pack',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status do pack ML',
-    width: 120
-  },
+  // 🔹 TAGS SIMPLES (mantida)
   {
     key: 'pack_buyer_id',
     label: 'Pack Buyer ID',

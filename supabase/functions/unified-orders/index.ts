@@ -130,23 +130,8 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
-        // 3. Enriquecer com dados de pack (se existir)
-        if (order.pack_id) {
-          try {
-            const packResp = await fetch(
-              `https://api.mercadolibre.com/packs/${order.pack_id}`,
-              { headers: { Authorization: `Bearer ${accessToken}` } }
-            );
-
-            if (packResp.ok) {
-              const packData = await packResp.json();
-              enrichedOrder.pack_data = packData;
-              console.log(`[unified-orders:${cid}] ➕ pack anexado ao order ${order.id}`);
-            }
-          } catch (error) {
-            console.warn(`[unified-orders:${cid}] Erro ao buscar pack ${order.pack_id}:`, error);
-          }
-        }
+        // 3. Remover consultas desnecessárias - dados de pack e usuários removidos
+        // Mantemos apenas o enriquecimento básico dos dados
 
         // 4. Enriquecer com dados dos produtos (order_items)
         if (order.order_items?.length) {
@@ -313,60 +298,8 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
 
       // 🆕 NOVOS CAMPOS DA DOCUMENTAÇÃO DE PACKS - Análise posterior
       
-      // === PACK DATA ===
-      pack_status: packData.status || null,  // "released", "error", "pending_cancel", "cancelled"
-      pack_status_detail: packData.status_detail || null,
-      pack_buyer_id: packData.buyer?.id || null,
-      pack_date_created: packData.date_created || null,
-      pack_last_updated: packData.last_updated || null,
-      pack_orders_count: packData.orders?.length || 0,
-      pack_orders_ids: packData.orders?.map((o: any) => o.id).join(', ') || null,
-      
-      // === ORDER CONTEXT ===
-      buying_mode: order.buying_mode || null,  // "buy_equals_pay"
-      mediations_count: order.mediations?.length || 0,
-      context_channel: context.channel || null,  // "marketplace"
-      context_site: context.site || null,  // "MLB"
-      context_flows: context.flows?.join(', ') || null,  // "catalog"
-      
-      // === SELLER/BUYER DETAILS ===
-      seller_id: seller.id || null,
-      seller_user_type: seller.user_type || null,
-      seller_tags: seller.tags?.join(', ') || null,
-      seller_status: seller.status || null,
-      seller_buy_restrictions: seller.buy_restrictions?.join(', ') || null,
-      
-      buyer_id: buyer.id || null,
-      buyer_user_type: buyer.user_type || null,
-      buyer_tags: buyer.tags?.join(', ') || null,
-      buyer_status: buyer.status || null,
-      buyer_buy_restrictions: buyer.buy_restrictions?.join(', ') || null,
-      
-      // === STOCK MULTI-ORIGEM ===
-      store_ids: storeIds || null,
-      network_node_ids: networkNodeIds || null,
-      user_product_ids: orderItems.map((item: any) => item.item?.user_product_id).filter(Boolean).join(', ') || null,
-      release_dates: orderItems.map((item: any) => item.item?.release_date).filter(Boolean).join(', ') || null,
-      
-      // === DADOS FINANCEIROS AVANÇADOS ===
-      marketplace_fees_total: marketplaceFees,
-      transaction_amount_refunded_total: refundedAmount,
-      overpaid_amount_total: overpaidAmount,
-      installment_amounts: payments.map((p: any) => p.installment_amount).filter(Boolean).join(', ') || null,
-      deferred_periods: payments.map((p: any) => p.deferred_period).filter(Boolean).join(', ') || null,
-      issuer_ids: payments.map((p: any) => p.issuer_id).filter(Boolean).join(', ') || null,
-      available_actions: payments.flatMap((p: any) => p.available_actions || []).join(', ') || null,
-      authorization_codes: payments.map((p: any) => p.authorization_code).filter(Boolean).join(', ') || null,
-      
-      // === TAGS E FEEDBACK ===
-      order_tags: orderTags || null,
-      feedback_seller: feedback.seller || null,
-      feedback_buyer: feedback.buyer || null,
-      
-      // === PRODUTOS DETALHADOS ===
-      variation_ids: orderItems.map((item: any) => item.item?.variation_id).filter(Boolean).join(', ') || null,
-      category_ids: orderItems.map((item: any) => item.item?.category_id).filter(Boolean).join(', ') || null,
-      warranties: orderItems.map((item: any) => item.item?.warranty).filter(Boolean).join(' | ') || null,
+      // 🔹 TAGS DO PEDIDO
+      tags: (order.tags || []).join(', ') || null,
       conditions: orderItems.map((item: any) => item.item?.condition).filter(Boolean).join(', ') || null,
       global_prices: orderItems.map((item: any) => item.global_price).filter((p) => p != null).join(', ') || null,
       net_weights: orderItems.map((item: any) => item.item?.net_weight).filter((w) => w != null).join(', ') || null,
