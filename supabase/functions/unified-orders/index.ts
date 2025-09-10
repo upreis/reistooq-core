@@ -87,6 +87,37 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 
             if (shippingResp.ok) {
               const shippingData = await shippingResp.json();
+
+              // 2.a Endpoints adicionais: custos e SLA (executar em paralelo)
+              try {
+                const [costsResp, slaResp] = await Promise.all([
+                  fetch(`https://api.mercadolibre.com/shipments/${order.shipping.id}/costs`, {
+                    headers: {
+                      Authorization: `Bearer ${accessToken}`,
+                      'x-format-new': 'true'
+                    }
+                  }),
+                  fetch(`https://api.mercadolibre.com/shipments/${order.shipping.id}/sla`, {
+                    headers: {
+                      Authorization: `Bearer ${accessToken}`
+                    }
+                  })
+                ]);
+
+                if (costsResp?.ok) {
+                  const costsData = await costsResp.json();
+                  (shippingData as any).costs = costsData;
+                  console.log(`[unified-orders:${cid}] ➕ costs anexado ao shipment ${order.shipping.id}`);
+                }
+                if (slaResp?.ok) {
+                  const slaData = await slaResp.json();
+                  (shippingData as any).sla = slaData;
+                  console.log(`[unified-orders:${cid}] ➕ sla anexado ao shipment ${order.shipping.id}`);
+                }
+              } catch (extraErr) {
+                console.warn(`[unified-orders:${cid}] Aviso ao buscar costs/sla do shipment ${order.shipping.id}:`, extraErr);
+              }
+
               enrichedOrder.shipping = {
                 ...enrichedOrder.shipping,
                 ...shippingData,
@@ -248,8 +279,13 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       tipo_metodo_envio: detailedShipping?.shipping_method?.type || shipping?.shipping_method?.type || null,
       tipo_entrega: shipping?.delivery_type || null,
       substatus: shipping?.substatus || detailedShipping?.status_detail || null,
-      modo_envio_combinado: shipping?.mode || null,
-      metodo_envio_combinado: detailedShipping?.shipping_method?.name || shipping?.shipping_method?.name || null,
+      // "Combinados": reutilizamos as colunas para retornar custos (costs) e SLA conforme solicitado
+      modo_envio_combinado: (detailedShipping?.costs
+        ? `gross:${detailedShipping.costs?.gross_amount ?? ''}; receiver:${detailedShipping.costs?.receiver?.cost ?? ''}; sender:${Array.isArray(detailedShipping.costs?.senders) && detailedShipping.costs.senders[0]?.cost != null ? detailedShipping.costs.senders[0].cost : ''}`
+        : (detailedShipping?.logistic?.mode || shipping?.mode || null)),
+      metodo_envio_combinado: (detailedShipping?.sla
+        ? `${detailedShipping?.shipping_method?.name || shipping?.shipping_method?.name || '—'} | SLA:${detailedShipping.sla?.status ?? ''}${detailedShipping.sla?.expected_date ? ' até ' + detailedShipping.sla.expected_date : ''}`
+        : (detailedShipping?.shipping_method?.name || shipping?.shipping_method?.name || null)),
       
       // Endereço completo
       rua: address.street_name || null,
