@@ -26,7 +26,7 @@ export async function listarHistoricoVendas({ page = 1, pageSize = 20 } = {}) {
   const estimatedTotal = hasMore ? from + rows.length + 1 : from + rows.length;
 
   console.log('[historico-leitura]', { 
-    source: 'rpc:get_historico_vendas_masked',
+    source: 'rpc:get_historico_vendas_browse',
     page,
     pageSize,
     returned: rows.length,
