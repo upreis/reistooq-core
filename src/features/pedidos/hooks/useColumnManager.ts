@@ -23,6 +23,14 @@ const getInitialState = (): ColumnState => {
 
 // 💾 Carregar preferências com prioridade para última consulta
 const loadStoredPreferences = (): Partial<ColumnState> => {
+  // 🚨 COLUNAS REMOVIDAS - filtrar estas do cache
+  const removedColumns = new Set([
+    'marketplace_fee_detail', 'payment_issuer', 'refund_data', 'installments', 'installment_amount',
+    'product_categories', 'product_attributes', 'product_variations', 'product_warranty', 'manufacturing_days'
+  ]);
+  
+  const validColumnKeys = new Set(COLUMN_DEFINITIONS.map(col => col.key));
+  
   try {
     // 🚨 INTEGRADO: Tentar carregar da última consulta primeiro
     const lastSearch = localStorage.getItem('pedidos:lastSearch');
@@ -35,7 +43,7 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
           ? new Set(Object.keys(parsed.visibleColumns).filter(key => parsed.visibleColumns[key]) as string[])
           : new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns.map(String) : []);
         
-        // 🔁 Remapear chaves legadas para as atuais
+        // 🔁 Remapear chaves legadas e filtrar colunas removidas
         const aliasMap: Record<string, string> = {
           cidade: 'endereco_cidade',
           uf: 'endereco_uf',
@@ -45,7 +53,12 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
           numero: 'endereco_numero'
         };
         const remapped = new Set<string>();
-        (visibleSet as Set<string>).forEach((k) => remapped.add(aliasMap[k as string] ?? (k as string)));
+        (visibleSet as Set<string>).forEach((k) => {
+          const mappedKey = aliasMap[k as string] ?? (k as string);
+          if (validColumnKeys.has(mappedKey) && !removedColumns.has(mappedKey)) {
+            remapped.add(mappedKey);
+          }
+        });
         
         return {
           visibleColumns: remapped,
@@ -66,7 +79,7 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
     if (!parsed || typeof parsed !== 'object') return {};
     
     const rawSet = new Set(Array.isArray(parsed.visibleColumns) ? parsed.visibleColumns.map(String) : []);
-    // 🔁 Remapear chaves legadas
+    // 🔁 Remapear chaves legadas e filtrar colunas removidas
     const aliasMap: Record<string, string> = {
       cidade: 'endereco_cidade',
       uf: 'endereco_uf',
@@ -76,13 +89,21 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
       numero: 'endereco_numero'
     };
     const remapped = new Set<string>();
-    (rawSet as Set<string>).forEach((k) => remapped.add(aliasMap[k as string] ?? (k as string)));
+    (rawSet as Set<string>).forEach((k) => {
+      const mappedKey = aliasMap[k as string] ?? (k as string);
+      if (validColumnKeys.has(mappedKey) && !removedColumns.has(mappedKey)) {
+        remapped.add(mappedKey);
+      }
+    });
+    
+    // Filtrar ordem das colunas também
+    const filteredOrder = Array.isArray(parsed.columnOrder) 
+      ? parsed.columnOrder.filter((key: string) => validColumnKeys.has(key) && !removedColumns.has(key))
+      : COLUMN_DEFINITIONS.map(col => col.key);
     
     return {
       visibleColumns: remapped,
-      columnOrder: Array.isArray(parsed.columnOrder) 
-        ? parsed.columnOrder 
-        : COLUMN_DEFINITIONS.map(col => col.key),
+      columnOrder: filteredOrder,
       activeProfile: typeof parsed.activeProfile === 'string' 
         ? parsed.activeProfile 
         : null,
@@ -93,6 +114,7 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
   } catch (error) {
     console.warn('Erro ao carregar preferências de colunas:', error);
     localStorage.removeItem(STORAGE_KEY); // Limpar dados corrompidos
+    localStorage.removeItem('pedidos:lastSearch'); // Limpar última pesquisa também
     return {};
   }
 };
