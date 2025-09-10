@@ -159,11 +159,6 @@ function SimplePedidosPage({ className }: Props) {
     });
   }, [visibleColumns, columnManager.visibleDefinitions]);
   
-  // Função para resetar colunas (debug)
-  const handleResetColumns = useCallback(() => {
-    resetColumnCache();
-    window.location.reload();
-  }, []);
   
   // Estados locais para funcionalidades específicas
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -959,7 +954,6 @@ useEffect(() => {
         columnManager={columnManager}
         activeFiltersCount={filtersManager.activeFiltersCount}
         contasML={accounts}
-        onResetColumns={handleResetColumns}
       />
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}

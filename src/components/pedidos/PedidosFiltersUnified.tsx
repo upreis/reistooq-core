@@ -33,7 +33,6 @@ interface PedidosFiltersUnifiedProps {
   activeFiltersCount: number;
   contasML?: Array<{ id: string; name: string; nickname?: string; active?: boolean; }>;
   columnManager?: any;
-  onResetColumns?: () => void;
 }
 
 const SITUACOES = [
@@ -65,8 +64,7 @@ export function PedidosFiltersUnified({
   isApplying,
   activeFiltersCount,
   contasML = [],
-  columnManager,
-  onResetColumns
+  columnManager
 }: PedidosFiltersUnifiedProps) {
   const [situacaoOpen, setSituacaoOpen] = useState(false);
   const [contasMLOpen, setContasMLOpen] = useState(false);
@@ -331,19 +329,6 @@ export function PedidosFiltersUnified({
                   </Button>
                 }
               />
-            )}
-            
-            {/* Botão de Debug (temporário) */}
-            {onResetColumns && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-9 px-3 border-orange-300 text-orange-600 hover:bg-orange-50" 
-                onClick={onResetColumns}
-                title="Resetar configurações de colunas"
-              >
-                🔄 Reset Colunas
-              </Button>
             )}
           </div>
         </div>
