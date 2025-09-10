@@ -135,7 +135,12 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           try {
             const packResp = await fetch(
               `https://api.mercadolibre.com/packs/${order.pack_id}`,
-              { headers: { Authorization: `Bearer ${accessToken}` } }
+              { 
+                headers: { 
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                } 
+              }
             );
 
             if (packResp.ok) {
@@ -145,6 +150,52 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             }
           } catch (error) {
             console.warn(`[unified-orders:${cid}] Erro ao buscar pack ${order.pack_id}:`, error);
+          }
+        }
+
+        // 4. Enriquecer com dados específicos do usuário vendedor
+        if (enrichedOrder.seller?.id) {
+          try {
+            const sellerResp = await fetch(
+              `https://api.mercadolibre.com/users/${enrichedOrder.seller.id}`,
+              { 
+                headers: { 
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                } 
+              }
+            );
+
+            if (sellerResp.ok) {
+              const sellerData = await sellerResp.json();
+              enrichedOrder.seller_details = sellerData;
+              console.log(`[unified-orders:${cid}] ➕ dados vendedor anexados ao order ${order.id}`);
+            }
+          } catch (error) {
+            console.warn(`[unified-orders:${cid}] Erro ao buscar vendedor ${enrichedOrder.seller.id}:`, error);
+          }
+        }
+
+        // 5. Enriquecer com dados específicos do usuário comprador
+        if (enrichedOrder.buyer?.id) {
+          try {
+            const buyerResp = await fetch(
+              `https://api.mercadolibre.com/users/${enrichedOrder.buyer.id}`,
+              { 
+                headers: { 
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                } 
+              }
+            );
+
+            if (buyerResp.ok) {
+              const buyerData = await buyerResp.json();
+              enrichedOrder.buyer_details = buyerData;
+              console.log(`[unified-orders:${cid}] ➕ dados comprador anexados ao order ${order.id}`);
+            }
+          } catch (error) {
+            console.warn(`[unified-orders:${cid}] Erro ao buscar comprador ${enrichedOrder.buyer.id}:`, error);
           }
         }
 
@@ -314,13 +365,13 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       // 🆕 NOVOS CAMPOS DA DOCUMENTAÇÃO DE PACKS - Análise posterior
       
       // === PACK DATA ===
-      pack_status: packData.status || null,  // "released", "error", "pending_cancel", "cancelled"
-      pack_status_detail: packData.status_detail || null,
-      pack_buyer_id: packData.buyer?.id || null,
-      pack_date_created: packData.date_created || null,
-      pack_last_updated: packData.last_updated || null,
-      pack_orders_count: packData.orders?.length || 0,
-      pack_orders_ids: packData.orders?.map((o: any) => o.id).join(', ') || null,
+      pack_status: order.pack_data?.status || null,  // "released", "error", "pending_cancel", "cancelled"
+      pack_status_detail: order.pack_data?.status_detail || null,
+      pack_buyer_id: order.pack_data?.buyer?.id || null,
+      pack_date_created: order.pack_data?.date_created || null,
+      pack_last_updated: order.pack_data?.last_updated || null,
+      pack_orders_count: order.pack_data?.orders?.length || 0,
+      pack_orders_ids: order.pack_data?.orders?.map((o: any) => o.id).join(', ') || null,
       
       // === ORDER CONTEXT ===
       buying_mode: order.buying_mode || null,  // "buy_equals_pay"
@@ -331,15 +382,15 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       
       // === SELLER/BUYER DETAILS ===
       seller_id: seller.id || null,
-      seller_user_type: seller.user_type || null,
-      seller_tags: seller.tags?.join(', ') || null,
-      seller_status: seller.status || null,
+      seller_user_type: order.seller_details?.user_type || seller.user_type || null,
+      seller_tags: order.seller_details?.tags?.join(', ') || seller.tags?.join(', ') || null,
+      seller_status: order.seller_details?.status || seller.status || null,
       seller_buy_restrictions: seller.buy_restrictions?.join(', ') || null,
       
       buyer_id: buyer.id || null,
-      buyer_user_type: buyer.user_type || null,
-      buyer_tags: buyer.tags?.join(', ') || null,
-      buyer_status: buyer.status || null,
+      buyer_user_type: order.buyer_details?.user_type || buyer.user_type || null,
+      buyer_tags: order.buyer_details?.tags?.join(', ') || buyer.tags?.join(', ') || null,
+      buyer_status: order.buyer_details?.status || buyer.status || null,
       buyer_buy_restrictions: buyer.buy_restrictions?.join(', ') || null,
       
       // === STOCK MULTI-ORIGEM ===
