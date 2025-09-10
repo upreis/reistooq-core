@@ -9,16 +9,6 @@ import { ColumnDefinition, ColumnProfile } from '../../pedidos/types/columns.typ
 export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // ====== BÁSICAS ======
   {
-    key: 'id',
-    label: 'ID',
-    category: 'basic',
-    priority: 'essential',
-    visible: false,
-    default: false,
-    description: 'ID interno do registro',
-    width: 100
-  },
-  {
     key: 'id_unico',
     label: 'ID-Único',
     category: 'basic',
@@ -51,24 +41,26 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'nome_cliente',
+    key: 'cliente_nome',
     label: 'Nome do Cliente',
     category: 'basic',
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Nome do comprador',
-    width: 150
+    description: 'Nome do cliente',
+    width: 180,
+    sortable: true
   },
   {
     key: 'nome_completo',
     label: 'Nome Completo',
     category: 'basic',
-    priority: 'essential',
+    priority: 'important',
     visible: true,
     default: true,
-    description: 'Nome completo do destinatário',
-    width: 150
+    description: 'Nome completo do cliente',
+    width: 200,
+    sortable: true
   },
   {
     key: 'data_pedido',
@@ -77,19 +69,19 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Data de criação do pedido',
-    width: 110,
+    description: 'Data em que o pedido foi criado',
+    width: 120,
     sortable: true
   },
   {
-    key: 'ultima_atualizacao',
+    key: 'updated_at',
     label: 'Última Atualização',
     category: 'basic',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data da última atualização',
-    width: 130,
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Data da última atualização do pedido',
+    width: 140,
     sortable: true
   },
 
@@ -101,18 +93,8 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Lista de SKUs dos produtos',
-    width: 180
-  },
-  {
-    key: 'sku_produto',
-    label: 'SKU Principal',
-    category: 'products',
-    priority: 'important',
-    visible: true,
-    default: false,
-    description: 'SKU principal do produto',
-    width: 120
+    description: 'SKUs dos produtos no pedido',
+    width: 150
   },
   {
     key: 'quantidade_total',
@@ -121,19 +103,8 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Quantidade de itens vendidos',
-    width: 100,
-    sortable: true
-  },
-  {
-    key: 'quantidade_itens',
-    label: 'Quantidade Total',
-    category: 'products',
-    priority: 'essential',
-    visible: true,
-    default: true,
-    description: 'Quantidade total considerando kits',
-    width: 110,
+    description: 'Quantidade total de itens',
+    width: 120,
     sortable: true
   },
   {
@@ -143,17 +114,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'important',
     visible: true,
     default: true,
-    description: 'Título do produto/anúncio',
-    width: 200
-  },
-  {
-    key: 'descricao',
-    label: 'Descrição',
-    category: 'products',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Descrição do produto',
+    description: 'Título/nome do produto',
     width: 200
   },
 
@@ -166,18 +127,18 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Valor total do pedido',
-    width: 100,
+    width: 120,
     sortable: true
   },
   {
     key: 'valor_pago',
     label: 'Valor Pago',
     category: 'financial',
-    priority: 'essential',
+    priority: 'important',
     visible: true,
     default: true,
     description: 'Valor efetivamente pago',
-    width: 100,
+    width: 120,
     sortable: true
   },
   {
@@ -188,17 +149,17 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Valor do frete pago pelo cliente',
-    width: 120,
+    width: 140,
     sortable: true
   },
   {
-    key: 'receita_flex',
+    key: 'receita_flex_bonus',
     label: 'Receita Flex (Bônus)',
     category: 'financial',
-    priority: 'important',
+    priority: 'optional',
     visible: true,
     default: true,
-    description: 'Receita adicional do Mercado Envios Flex',
+    description: 'Receita de bônus flex',
     width: 140,
     sortable: true
   },
@@ -207,9 +168,9 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Desconto Cupom',
     category: 'financial',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Valor de desconto por cupom',
+    visible: true,
+    default: true,
+    description: 'Valor do desconto aplicado por cupom',
     width: 120,
     sortable: true
   },
@@ -217,11 +178,11 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     key: 'taxa_marketplace',
     label: 'Taxa Marketplace',
     category: 'financial',
-    priority: 'important',
+    priority: 'optional',
     visible: true,
     default: true,
     description: 'Taxa cobrada pelo marketplace',
-    width: 120,
+    width: 130,
     sortable: true
   },
   {
@@ -232,36 +193,36 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Valor líquido recebido pelo vendedor',
-    width: 150,
+    width: 160,
     sortable: true
   },
   {
     key: 'metodo_pagamento',
     label: 'Método Pagamento',
     category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
+    priority: 'important',
+    visible: true,
+    default: true,
     description: 'Método de pagamento utilizado',
-    width: 130
+    width: 140
   },
   {
     key: 'status_pagamento',
     label: 'Status Pagamento',
     category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status do pagamento',
-    width: 120
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Status atual do pagamento',
+    width: 130
   },
   {
     key: 'tipo_pagamento',
     label: 'Tipo Pagamento',
     category: 'financial',
     priority: 'optional',
-    visible: false,
-    default: false,
+    visible: true,
+    default: true,
     description: 'Tipo de pagamento',
     width: 120
   },
@@ -270,43 +231,10 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Custo Envio Seller',
     category: 'financial',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Custo de envio pago pelo vendedor',
-    width: 130,
-    sortable: true
-  },
-  {
-    key: 'valor_unitario',
-    label: 'Valor Unitário',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Valor unitário do produto',
-    width: 120,
-    sortable: true
-  },
-  {
-    key: 'valor_frete',
-    label: 'Valor Frete',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Valor do frete',
-    width: 120,
-    sortable: true
-  },
-  {
-    key: 'valor_desconto',
-    label: 'Valor Desconto',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Valor total de desconto',
-    width: 120,
+    visible: true,
+    default: true,
+    description: 'Custo de envio para o vendedor',
+    width: 140,
     sortable: true
   },
 
@@ -315,7 +243,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     key: 'cpf_cnpj',
     label: 'CPF/CNPJ',
     category: 'mapping',
-    priority: 'essential',
+    priority: 'important',
     visible: true,
     default: true,
     description: 'CPF ou CNPJ do cliente',
@@ -328,7 +256,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'SKU correspondente no estoque',
+    description: 'SKU mapeado para controle de estoque',
     width: 120
   },
   {
@@ -336,20 +264,20 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'SKU KIT',
     category: 'mapping',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'SKU do kit',
+    visible: true,
+    default: true,
+    description: 'SKU do kit (se aplicável)',
     width: 100
   },
   {
-    key: 'quantidade_kit',
+    key: 'qtd_kit',
     label: 'Quantidade KIT',
     category: 'mapping',
     priority: 'optional',
-    visible: false,
-    default: false,
+    visible: true,
+    default: true,
     description: 'Quantidade do kit',
-    width: 100,
+    width: 120,
     sortable: true
   },
   {
@@ -359,7 +287,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'important',
     visible: true,
     default: true,
-    description: 'Total de itens (qtd vendida x quantidade KIT)',
+    description: 'Total de itens no pedido',
     width: 110,
     sortable: true
   },
@@ -373,27 +301,17 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Status da baixa de estoque',
     width: 120
   },
-  {
-    key: 'status_mapeamento',
-    label: 'Status Mapeamento',
-    category: 'mapping',
-    priority: 'important',
-    visible: true,
-    default: false,
-    description: 'Status do mapeamento do produto',
-    width: 130
-  },
 
-  // ====== ENVIO/SHIPPING ======
+  // ====== ENVIO ======
   {
     key: 'situacao',
     label: 'Situação do Pedido',
-    category: 'basic',
+    category: 'shipping',
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Situação geral do pedido',
-    width: 110
+    description: 'Situação atual do pedido',
+    width: 140
   },
   {
     key: 'status_envio',
@@ -402,27 +320,27 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Status específico do envio',
+    description: 'Status atual do envio',
     width: 120
   },
   {
     key: 'logistic_mode_principal',
     label: 'Logistic Mode (Principal)',
     category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
+    priority: 'important',
+    visible: true,
+    default: true,
     description: 'Modo logístico principal',
-    width: 150
+    width: 160
   },
   {
     key: 'tipo_logistico',
     label: 'Tipo Logístico',
     category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Tipo de logística',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Tipo de logística utilizada',
     width: 120
   },
   {
@@ -430,384 +348,163 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Tipo Método Envio',
     category: 'shipping',
     priority: 'optional',
-    visible: false,
-    default: false,
+    visible: true,
+    default: true,
     description: 'Tipo do método de envio',
-    width: 160
+    width: 140
   },
   {
     key: 'substatus_estado_atual',
     label: 'Substatus (Estado Atual)',
     category: 'shipping',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Sub-status detalhado atual',
-    width: 160
+    visible: true,
+    default: true,
+    description: 'Substatus do estado atual',
+    width: 170
   },
   {
     key: 'modo_envio_combinado',
     label: 'Modo de Envio (Combinado)',
     category: 'shipping',
     priority: 'optional',
-    visible: false,
-    default: false,
+    visible: true,
+    default: true,
     description: 'Modo de envio combinado',
-    width: 170
+    width: 180
   },
   {
     key: 'metodo_envio_combinado',
     label: 'Método de Envio (Combinado)',
     category: 'shipping',
     priority: 'optional',
-    visible: false,
-    default: false,
+    visible: true,
+    default: true,
     description: 'Método de envio combinado',
-    width: 180
+    width: 190
   },
-  {
-    key: 'delivery_type',
-    label: 'Tipo de Entrega',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Tipo de entrega',
-    width: 120
-  },
-  {
-    key: 'substatus_detail',
-    label: 'Substatus Detail',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Detalhes do substatus',
-    width: 140
-  },
-  {
-    key: 'shipping_method',
-    label: 'Shipping Method',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Método de envio específico',
-    width: 140
-  },
-  {
-    key: 'shipping_mode',
-    label: 'Shipping Mode',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Modo de envio específico',
-    width: 140
-  },
-
-  // ====== ENDEREÇO ======
   {
     key: 'rua',
     label: 'Rua',
     category: 'shipping',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Rua do destinatário',
-    width: 160
+    visible: true,
+    default: true,
+    description: 'Endereço - Rua',
+    width: 150
   },
   {
     key: 'numero',
     label: 'Número',
     category: 'shipping',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Número do endereço',
-    width: 90
+    visible: true,
+    default: true,
+    description: 'Endereço - Número',
+    width: 80
   },
   {
     key: 'bairro',
     label: 'Bairro',
     category: 'shipping',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Bairro do destinatário',
-    width: 140
+    visible: true,
+    default: true,
+    description: 'Endereço - Bairro',
+    width: 120
   },
   {
     key: 'cep',
     label: 'CEP',
     category: 'shipping',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'CEP do destinatário',
-    width: 110,
-    sortable: true
+    visible: true,
+    default: true,
+    description: 'Código postal',
+    width: 100
   },
   {
     key: 'cidade',
     label: 'Cidade',
     category: 'shipping',
-    priority: 'important',
+    priority: 'optional',
     visible: true,
     default: true,
-    description: 'Cidade do destinatário',
-    width: 140
+    description: 'Cidade de entrega',
+    width: 120
   },
   {
     key: 'uf',
     label: 'UF',
     category: 'shipping',
-    priority: 'important',
+    priority: 'optional',
     visible: true,
     default: true,
-    description: 'Estado (UF) do destinatário',
-    width: 70
+    description: 'Estado/UF de entrega',
+    width: 60
   },
 
-  // ====== METADADOS ML ======
+  // ====== MERCADO LIVRE ======
   {
     key: 'date_created',
     label: 'Data Criação ML',
-    category: 'meta',
+    category: 'ml',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data de criação no ML',
-    width: 120,
+    visible: true,
+    default: true,
+    description: 'Data de criação no Mercado Livre',
+    width: 130,
     sortable: true
   },
   {
     key: 'pack_id',
     label: 'Pack ID',
-    category: 'meta',
+    category: 'ml',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'ID do pacote',
+    visible: true,
+    default: true,
+    description: 'ID do pacote ML',
     width: 100
   },
   {
     key: 'pickup_id',
     label: 'Pickup ID',
-    category: 'meta',
+    category: 'ml',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'ID de retirada',
+    visible: true,
+    default: true,
+    description: 'ID do pickup ML',
     width: 100
-  },
-  {
-    key: 'pack_status',
-    label: 'Pack Status',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status do pack',
-    width: 120
-  },
-  {
-    key: 'pack_status_detail',
-    label: 'Pack Status Detail',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Detalhes do status do pack',
-    width: 140
   },
   {
     key: 'tags',
     label: 'Tags',
-    category: 'meta',
+    category: 'ml',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Tags do ML',
-    width: 120
-  },
-
-  // ====== SISTEMA ======
-  {
-    key: 'status',
-    label: 'Status',
-    category: 'basic',
-    priority: 'important',
     visible: true,
     default: true,
-    description: 'Status do registro',
-    width: 100
-  },
-  {
-    key: 'created_at',
-    label: 'Criado em',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data de criação do registro',
-    width: 130,
-    sortable: true
-  },
-  {
-    key: 'updated_at',
-    label: 'Atualizado em',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data de atualização do registro',
-    width: 130,
-    sortable: true
-  },
-  {
-    key: 'ultima_atualizacao',
-    label: 'Última Atualização',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Última atualização do pedido original',
-    width: 150,
-    sortable: true
-  },
-  {
-    key: 'integration_account_id',
-    label: 'Account ID',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'ID da conta de integração',
+    description: 'Tags do pedido',
     width: 120
   },
   {
-    key: 'created_by',
-    label: 'Criado por',
-    category: 'meta',
+    key: 'pack_status',
+    label: 'Pack Status',
+    category: 'ml',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Usuário que criou o registro',
-    width: 120
-  },
-
-  // ====== CAMPOS EXTRAS/OBSERVAÇÕES ======
-  {
-    key: 'numero_ecommerce',
-    label: 'Número E-commerce',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Número do pedido no e-commerce',
-    width: 140
+    visible: true,
+    default: true,
+    description: 'Status do pacote',
+    width: 110
   },
   {
-    key: 'numero_venda',
-    label: 'Número Venda',
-    category: 'meta',
+    key: 'pack_status_detail',
+    label: 'Pack Status Detail',
+    category: 'ml',
     priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Número da venda',
-    width: 120
-  },
-  {
-    key: 'data_prevista',
-    label: 'Data Prevista',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data prevista de entrega',
-    width: 120,
-    sortable: true
-  },
-  {
-    key: 'obs',
-    label: 'Observações',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Observações do pedido',
-    width: 200
-  },
-  {
-    key: 'obs_interna',
-    label: 'Obs. Interna',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Observações internas',
-    width: 200
-  },
-  {
-    key: 'codigo_rastreamento',
-    label: 'Código Rastreamento',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Código de rastreamento da entrega',
-    width: 160
-  },
-  {
-    key: 'url_rastreamento',
-    label: 'URL Rastreamento',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'URL para rastreamento da entrega',
-    width: 160
-  },
-  {
-    key: 'codigo_barras',
-    label: 'Código de Barras',
-    category: 'products',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Código de barras do produto',
-    width: 130
-  },
-  {
-    key: 'ncm',
-    label: 'NCM',
-    category: 'products',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Código NCM do produto',
-    width: 100
-  },
-  {
-    key: 'observacoes',
-    label: 'Observações Gerais',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Observações gerais',
-    width: 200
-  },
-  {
-    key: 'pedido_id',
-    label: 'Pedido ID',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'ID do pedido original',
-    width: 120
+    visible: true,
+    default: true,
+    description: 'Detalhe do status do pacote',
+    width: 150
   }
 ];
 
