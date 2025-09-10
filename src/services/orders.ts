@@ -61,7 +61,6 @@ export const get = (obj: any, path: string) =>
 export const show = (v: any) => (v ?? '—');
 
 export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
-  // Blindagem: validar integration_account_id
   if (!params.integration_account_id?.trim()) {
     throw new Error('integration_account_id é obrigatório para buscar pedidos');
   }
@@ -71,9 +70,28 @@ export async function fetchUnifiedOrders(params: UnifiedOrdersParams) {
     status: params.status 
   });
 
-  const { data, error } = await supabase.functions.invoke('unified-orders', { 
-    body: { ...params, enrich: true, include_shipping: true, debug: false } 
-  });
+  const invoke = async () => {
+    return await supabase.functions.invoke('unified-orders', { 
+      body: { ...params, enrich: true, include_shipping: true, debug: false } 
+    });
+  };
+
+  // 1ª tentativa
+  let { data, error } = await invoke();
+
+  // Se token expirado (401), tenta refresh automático e repete 1 vez
+  if (error && (error.status === 401 || /401/.test(String(error.message || '')))) {
+    try {
+      console.warn('[Orders] 401 na unified-orders, tentando refresh de token e repetindo...');
+      const { error: refreshErr } = await supabase.functions.invoke('mercadolibre-token-refresh', {
+        body: { integration_account_id: params.integration_account_id }
+      });
+      if (!refreshErr) {
+        ({ data, error } = await invoke());
+      }
+    } catch (_) { /* noop */ }
+  }
+
   if (error) throw new Error(error.message || 'unified-orders: erro na função');
   if (!data?.ok) throw new Error('unified-orders: resposta inesperada');
   return data; // { ok, url, paging, results, raw? }
@@ -84,9 +102,26 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('audit') === '1';
 
-  const { data, error } = await supabase.functions.invoke('unified-orders', {
-    body: { ...params, enrich: true, debug: isAudit, audit: isAudit, include_shipping: true }
-  });
+  const invoke = async () =>
+    supabase.functions.invoke('unified-orders', {
+      body: { ...params, enrich: true, debug: isAudit, audit: isAudit, include_shipping: true }
+    });
+
+  // 1ª tentativa
+  let { data, error } = await invoke();
+
+  // Refresh e retry se 401
+  if (error && (error.status === 401 || /401/.test(String(error.message || '')))) {
+    try {
+      console.warn('[Orders] 401 na unified-orders (realtime), tentando refresh e repetindo...');
+      const { error: refreshErr } = await supabase.functions.invoke('mercadolibre-token-refresh', {
+        body: { integration_account_id: params.integration_account_id }
+      });
+      if (!refreshErr) {
+        ({ data, error } = await invoke());
+      }
+    } catch (_) { /* noop */ }
+  }
   
   if (error) throw error;
   if (!data?.ok) throw new Error('unified-orders: resposta inesperada');
@@ -99,9 +134,8 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
   const results: RawML[] = resultsRaw.length ? resultsRaw : pedidos;
   const unified: Unified[] = unifiedRaw.length ? unifiedRaw : pedidos;
 
-  // Merge por índice: cada linha = { raw, unified }
   const rows: Row[] = results.map((r, i) => ({
-    raw: resultsRaw.length ? r : null, // quando vier apenas 'pedidos', não há RAW
+    raw: resultsRaw.length ? r : null,
     unified: unified[i] ?? null
   }));
 
