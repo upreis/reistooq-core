@@ -899,58 +899,62 @@ export function usePedidosManager(initialAccountId?: string) {
         // Tentativa 1: unified-orders com filtros
         const unifiedResult = await loadFromUnifiedOrders(apiParams);
         
-        // Se o servidor retornou que aplicou filtros, usar direto, senão aplicar client-side
-        const serverAppliedFiltering = (unifiedResult as any).server_filtering_applied;
-        const shouldApplyClientFilter = Boolean(filters.situacao) && !serverAppliedFiltering;
-        const filteredClientResults = shouldApplyClientFilter
-          ? applyClientSideFilters(unifiedResult.results)
-          : unifiedResult.results;
+    // Se o servidor retornou que aplicou filtros, usar direto, senão aplicar client-side
+    const serverAppliedFiltering = (unifiedResult as any).server_filtering_applied;
+    // Preferir a lista unificada normalizada do backend quando disponível
+    const baseList = (unifiedResult as any).unified && (unifiedResult as any).unified.length
+      ? (unifiedResult as any).unified
+      : (unifiedResult as any).results;
+    const shouldApplyClientFilter = Boolean(filters.situacao) && !serverAppliedFiltering;
+    const filteredClientResults = shouldApplyClientFilter
+      ? applyClientSideFilters(baseList)
+      : baseList;
 
-        // Sempre usar o total do servidor quando disponível
-        const normalizedResults = filteredClientResults.map((o: any) => {
-          // Fallback profundo: procurar CPF/CNPJ em qualquer lugar do objeto
-          const extractDeep = (root: any): string | null => {
-            const seen = new Set<any>();
-            const queue: any[] = [root];
-            const keyPriority = /(cpf|cnpj|doc|document|identif|tax)/i;
-            let steps = 0;
-            while (queue.length && steps < 800) {
-              const node = queue.shift();
-              steps++;
-              if (!node || seen.has(node)) continue;
-              seen.add(node);
-              if (typeof node === 'string' || typeof node === 'number') {
-                const digits = String(node).replace(/\D/g, '');
-                if (digits.length === 11 || digits.length === 14) return digits;
-              } else if (Array.isArray(node)) {
-                for (const child of node) queue.push(child);
-              } else if (typeof node === 'object') {
-                const entries = Object.entries(node);
-                const prioritized = entries.filter(([k]) => keyPriority.test(k));
-                const others = entries.filter(([k]) => !keyPriority.test(k));
-                for (const [, v] of [...prioritized, ...others]) queue.push(v);
-              }
-            }
-            return null;
-          };
+    // Sempre usar o total do servidor quando disponível
+    const normalizedResults = filteredClientResults.map((o: any) => {
+      // Fallback profundo: procurar CPF/CNPJ em qualquer lugar do objeto
+      const extractDeep = (root: any): string | null => {
+        const seen = new Set<any>();
+        const queue: any[] = [root];
+        const keyPriority = /(cpf|cnpj|doc|document|identif|tax)/i;
+        let steps = 0;
+        while (queue.length && steps < 800) {
+          const node = queue.shift();
+          steps++;
+          if (!node || seen.has(node)) continue;
+          seen.add(node);
+          if (typeof node === 'string' || typeof node === 'number') {
+            const digits = String(node).replace(/\D/g, '');
+            if (digits.length === 11 || digits.length === 14) return digits;
+          } else if (Array.isArray(node)) {
+            for (const child of node) queue.push(child);
+          } else if (typeof node === 'object') {
+            const entries = Object.entries(node);
+            const prioritized = entries.filter(([k]) => keyPriority.test(k));
+            const others = entries.filter(([k]) => !keyPriority.test(k));
+            for (const [, v] of [...prioritized, ...others]) queue.push(v);
+          }
+        }
+        return null;
+      };
 
-          const direct =
-            o.cpf_cnpj ??
-            o.unified?.cpf_cnpj ??
-            o.documento_cliente ??
-            o.cliente_documento ??
-            o.buyer?.identification?.number ??
-            o.raw?.buyer?.identification?.number ??
-            o.payments?.[0]?.payer?.identification?.number ??
-            o.unified?.payments?.[0]?.payer?.identification?.number ??
-            o.raw?.payments?.[0]?.payer?.identification?.number ??
-            null;
+      const direct =
+        o.cpf_cnpj ??
+        o.unified?.cpf_cnpj ??
+        o.documento_cliente ??
+        o.cliente_documento ??
+        o.buyer?.identification?.number ??
+        o.raw?.buyer?.identification?.number ??
+        o.payments?.[0]?.payer?.identification?.number ??
+        o.unified?.payments?.[0]?.payer?.identification?.number ??
+        o.raw?.payments?.[0]?.payer?.identification?.number ??
+        null;
 
-          return {
-            ...o,
-            cpf_cnpj: direct ?? extractDeep(o),
-          };
-        });
+      return {
+        ...o,
+        cpf_cnpj: direct ?? extractDeep(o),
+      };
+    });
         // 🚨 FIX 2: Evitar respostas fora de ordem
         if (reqId !== requestIdRef.current) {
           console.log(`[fetch:dropped id=${reqId}] - request overtaken`);
@@ -1021,7 +1025,10 @@ export function usePedidosManager(initialAccountId?: string) {
               
               // Tentar novamente após refresh
               const retryResult = await loadFromUnifiedOrders(apiParams);
-              const retryFiltered = applyClientSideFilters(retryResult.results);
+              const retryBase = (retryResult as any).unified && (retryResult as any).unified.length
+                ? (retryResult as any).unified
+                : (retryResult as any).results;
+              const retryFiltered = applyClientSideFilters(retryBase);
               
               setOrders(retryFiltered);
               setTotal(retryResult.total || retryFiltered.length);
