@@ -130,8 +130,30 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
-        // 3. Remover consultas desnecessárias - dados de pack e usuários removidos
-        // Mantemos apenas o enriquecimento básico dos dados
+        // 3. Enriquecer dados de pack (status)
+        if (order.pack_id) {
+          try {
+            const packResp = await fetch(
+              `https://api.mercadolibre.com/packs/${order.pack_id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                }
+              }
+            );
+            if (packResp.ok) {
+              const packData = await packResp.json();
+              (enrichedOrder as any).pack_data = packData;
+              const pStatus = (packData?.status?.status) ?? packData?.status ?? null;
+              const pDetail = (packData?.status?.detail) ?? packData?.status_detail ?? null;
+              (enrichedOrder as any).pack_status = pStatus ?? null;
+              (enrichedOrder as any).pack_status_detail = pDetail ?? null;
+            }
+          } catch (err) {
+            console.warn(`[unified-orders:${cid}] Aviso ao buscar pack ${order.pack_id}:`, (err as any)?.message || err);
+          }
+        }
 
         // 4. Enriquecer com dados dos produtos (order_items)
         if (order.order_items?.length) {
@@ -257,6 +279,8 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       manufacturing_ending_date: order.manufacturing_ending_date || null,
       comment: order.buyer_comment || null,
       tags: order.tags || [],
+      pack_status: order.pack_status ?? order.pack_data?.status ?? null,
+      pack_status_detail: order.pack_status_detail ?? order.pack_data?.status_detail ?? order.pack_data?.status?.detail ?? null,
       
       // Informações dos produtos
       skus_produtos: skus || 'Sem SKU',
