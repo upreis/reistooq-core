@@ -51,7 +51,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'cliente_nome',
+    key: 'nome_cliente',
     label: 'Nome do Cliente',
     category: 'basic',
     priority: 'essential',
@@ -82,7 +82,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'last_updated',
+    key: 'ultima_atualizacao',
     label: 'Última Atualização',
     category: 'basic',
     priority: 'optional',
@@ -115,8 +115,8 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'quantidade_itens',
-    label: 'Quantidade Items',
+    key: 'quantidade_total',
+    label: 'Quantidade Total',
     category: 'products',
     priority: 'essential',
     visible: true,
@@ -126,7 +126,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'quantidade_total',
+    key: 'quantidade_itens',
     label: 'Quantidade Total',
     category: 'products',
     priority: 'essential',
@@ -192,7 +192,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'receita_flex_bonus',
+    key: 'receita_flex',
     label: 'Receita Flex (Bônus)',
     category: 'financial',
     priority: 'important',
@@ -342,7 +342,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 100
   },
   {
-    key: 'qtd_kit',
+    key: 'quantidade_kit',
     label: 'Quantidade KIT',
     category: 'mapping',
     priority: 'optional',
