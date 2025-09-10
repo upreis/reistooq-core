@@ -2941,18 +2941,75 @@ export type Database = {
               _start?: string
             }
         Returns: {
-          cidade: string
-          cliente_nome: string
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          cliente_documento: string | null
+          cliente_nome: string | null
+          codigo_barras: string | null
+          codigo_rastreamento: string | null
+          cpf_cnpj: string | null
           created_at: string
+          created_by: string | null
+          custo_envio_seller: number | null
           data_pedido: string
-          descricao: string
+          data_prevista: string | null
+          desconto_cupom: number | null
+          descricao: string | null
+          empresa: string | null
+          frete_pago_cliente: number | null
           id: string
           id_unico: string
+          integration_account_id: string | null
+          logistic_mode_principal: string | null
+          meta: Json | null
+          metodo_envio_combinado: string | null
+          metodo_pagamento: string | null
+          modo_envio_combinado: string | null
+          ncm: string | null
+          nome_completo: string | null
+          numero: string | null
+          numero_ecommerce: string | null
           numero_pedido: string
+          numero_venda: string | null
+          obs: string | null
+          obs_interna: string | null
+          observacoes: string | null
+          origem: string | null
+          pedido_id: string | null
+          qtd_kit: number | null
           quantidade: number
+          quantidade_kit: number | null
+          quantidade_total: number | null
+          raw: Json | null
+          receita_flex_bonus: number | null
+          rua: string | null
+          situacao: string | null
+          sku_estoque: string | null
+          sku_kit: string | null
           sku_produto: string
+          skus_produtos: string | null
           status: string
-          uf: string
+          status_baixa: string | null
+          status_envio: string | null
+          status_mapeamento: string | null
+          status_pagamento: string | null
+          substatus_estado_atual: string | null
+          taxa_marketplace: number | null
+          tipo_entrega: string | null
+          tipo_logistico: string | null
+          tipo_metodo_envio: string | null
+          tipo_pagamento: string | null
+          titulo_produto: string | null
+          total_itens: number | null
+          uf: string | null
+          ultima_atualizacao: string | null
+          updated_at: string
+          url_rastreamento: string | null
+          valor_desconto: number | null
+          valor_frete: number | null
+          valor_liquido_vendedor: number | null
+          valor_pago: number | null
           valor_total: number
           valor_unitario: number
         }[]
