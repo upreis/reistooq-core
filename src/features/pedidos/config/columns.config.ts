@@ -517,6 +517,330 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: false,
     description: 'Tags do ML',
     width: 120
+  },
+
+  // ====== PACK DATA (Novos campos da documentação ML) ======
+  {
+    key: 'pack_status',
+    label: 'Status Pack',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Status do pack ML',
+    width: 120
+  },
+  {
+    key: 'pack_buyer_id',
+    label: 'Pack Buyer ID',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'ID do comprador do pack',
+    width: 120
+  },
+  {
+    key: 'pack_date_created',
+    label: 'Pack Data Criação',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Data de criação do pack',
+    width: 140
+  },
+  {
+    key: 'pack_last_updated',
+    label: 'Pack Última Atualização',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Última atualização do pack',
+    width: 160
+  },
+  {
+    key: 'pack_order_ids',
+    label: 'Pack Order IDs',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'IDs dos pedidos no pack',
+    width: 140
+  },
+
+  // ====== CONTEXT & CHANNEL ======
+  {
+    key: 'buying_mode',
+    label: 'Modo de Compra',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Modo de compra do pedido',
+    width: 120
+  },
+  {
+    key: 'channel',
+    label: 'Canal',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Canal do pedido',
+    width: 100
+  },
+  {
+    key: 'context_channel',
+    label: 'Context Channel',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Canal do contexto',
+    width: 120
+  },
+  {
+    key: 'context_flow',
+    label: 'Context Flow',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Fluxo do contexto',
+    width: 120
+  },
+
+  // ====== SELLER/BUYER DETAILS ======
+  {
+    key: 'seller_user_type',
+    label: 'Tipo Usuário Vendedor',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Tipo de usuário do vendedor',
+    width: 160
+  },
+  {
+    key: 'seller_tags',
+    label: 'Tags Vendedor',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Tags do vendedor',
+    width: 120
+  },
+  {
+    key: 'seller_status',
+    label: 'Status Vendedor',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Status do vendedor',
+    width: 120
+  },
+  {
+    key: 'buyer_user_type',
+    label: 'Tipo Usuário Comprador',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Tipo de usuário do comprador',
+    width: 170
+  },
+  {
+    key: 'buyer_tags',
+    label: 'Tags Comprador',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Tags do comprador',
+    width: 120
+  },
+  {
+    key: 'buyer_status',
+    label: 'Status Comprador',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Status do comprador',
+    width: 130
+  },
+
+  // ====== MULTI-ORIGEM STOCK ======
+  {
+    key: 'stock_warehouses',
+    label: 'Armazéns Stock',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Armazéns de origem do stock',
+    width: 140
+  },
+  {
+    key: 'stock_fulfillment',
+    label: 'Stock Fulfillment',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Tipo de fulfillment do stock',
+    width: 140
+  },
+
+  // ====== ADVANCED FINANCIALS ======
+  {
+    key: 'marketplace_fee_detail',
+    label: 'Detalhes Taxa Marketplace',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Detalhamento das taxas do marketplace',
+    width: 180
+  },
+  {
+    key: 'payment_issuer',
+    label: 'Emissor Pagamento',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Emissor do pagamento',
+    width: 130
+  },
+  {
+    key: 'refund_data',
+    label: 'Dados Reembolso',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Informações de reembolso',
+    width: 140
+  },
+  {
+    key: 'installments',
+    label: 'Parcelas',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Número de parcelas',
+    width: 100
+  },
+  {
+    key: 'installment_amount',
+    label: 'Valor Parcela',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Valor de cada parcela',
+    width: 110
+  },
+
+  // ====== TAGS & FEEDBACK ======
+  {
+    key: 'order_tags',
+    label: 'Order Tags',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Tags específicas do pedido',
+    width: 120
+  },
+  {
+    key: 'feedback_purchase',
+    label: 'Feedback Compra',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Feedback da compra',
+    width: 130
+  },
+  {
+    key: 'feedback_sale',
+    label: 'Feedback Venda',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Feedback da venda',
+    width: 120
+  },
+  {
+    key: 'mediations',
+    label: 'Mediações',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Mediações do pedido',
+    width: 120
+  },
+
+  // ====== DETAILED PRODUCTS ======
+  {
+    key: 'product_categories',
+    label: 'Categorias Produto',
+    category: 'products',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Categorias dos produtos',
+    width: 150
+  },
+  {
+    key: 'product_attributes',
+    label: 'Atributos Produto',
+    category: 'products',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Atributos dos produtos',
+    width: 150
+  },
+  {
+    key: 'product_variations',
+    label: 'Variações Produto',
+    category: 'products',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Variações dos produtos',
+    width: 150
+  },
+  {
+    key: 'product_warranty',
+    label: 'Garantia Produto',
+    category: 'products',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Informações de garantia',
+    width: 140
+  },
+  {
+    key: 'manufacturing_days',
+    label: 'Dias Fabricação',
+    category: 'products',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Dias para fabricação',
+    width: 130
   }
 ];
 
