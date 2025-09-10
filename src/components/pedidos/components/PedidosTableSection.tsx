@@ -114,30 +114,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
             isUnified: typeof sampleOrder?.unified === 'object',
             hasRaw: typeof sampleOrder?.raw === 'object',
             directFields: Object.keys(sampleOrder || {}).slice(0, 10)
-          },
-          shipping_debug: {
-            shipping_method_type:
-              sampleOrder?.shipping_method_type ||
-              sampleOrder?.tipo_metodo_envio ||
-              sampleOrder?.shipping?.shipping_method?.type ||
-              sampleOrder?.unified?.shipping?.shipping_method?.type ||
-              sampleOrder?.shipping_details?.shipping_method?.type ||
-              sampleOrder?.raw?.shipping?.shipping_method?.type ||
-              null,
-            shipping_method_name:
-              sampleOrder?.shipping_method ||
-              sampleOrder?.shipping?.shipping_method?.name ||
-              sampleOrder?.unified?.shipping?.shipping_method?.name ||
-              sampleOrder?.raw?.shipping?.shipping_method?.name ||
-              null,
-            delivery_type:
-              sampleOrder?.delivery_type ||
-              sampleOrder?.tipo_entrega ||
-              sampleOrder?.shipping?.delivery_type ||
-              sampleOrder?.unified?.shipping?.delivery_type ||
-              sampleOrder?.shipping_details?.delivery_type ||
-              sampleOrder?.raw?.shipping?.delivery_type ||
-              null
           }
         }
       });
