@@ -592,8 +592,11 @@ Deno.serve(async (req) => {
     mlUrl.searchParams.set('limit', String(safeLimit));
     mlUrl.searchParams.set('offset', String(offset || 0));
 
-    // Filtros de status - usar 'status' para ML API (não shipping_status)
-    if (status) {
+    // Mapeamento de status - não enviar status customizados para ML API
+    // Filtros de status locais serão aplicados após buscar os dados
+    const validMLStatuses = ['confirmed', 'payment_required', 'payment_in_process', 'paid', 'shipped', 'delivered', 'not_delivered', 'cancelled'];
+    
+    if (status && validMLStatuses.includes(status)) {
       mlUrl.searchParams.set('order.status', status);
     }
 
@@ -643,6 +646,35 @@ Deno.serve(async (req) => {
 
     // Aplicar filtros locais que ML não suporta
     let filteredOrders = enrichedOrders;
+
+    // Filtros de status (para status customizados que ML não suporta)
+    if (status && !['confirmed', 'payment_required', 'payment_in_process', 'paid', 'shipped', 'delivered', 'not_delivered', 'cancelled'].includes(status)) {
+      filteredOrders = filteredOrders.filter(order => {
+        const orderStatus = order.status;
+        const shippingStatus = order.shipping?.status;
+        
+        // Mapeamento de status customizados
+        switch (status) {
+          case 'Pendente':
+          case 'Aguardando':
+            return ['confirmed', 'payment_required', 'payment_in_process'].includes(orderStatus);
+          case 'Pago':
+          case 'Aprovado':
+            return orderStatus === 'paid';
+          case 'Entregue':
+            return orderStatus === 'delivered' || shippingStatus === 'delivered';
+          case 'Cancelado':
+            return orderStatus === 'cancelled';
+          case 'Enviado':
+            return orderStatus === 'shipped' || shippingStatus === 'shipped';
+          case 'Devolvido':
+          case 'Reembolsado':
+            return shippingStatus === 'not_delivered' || orderStatus === 'cancelled';
+          default:
+            return orderStatus === status || shippingStatus === status;
+        }
+      });
+    }
 
     // Filtros de valor
     if (valorMin !== undefined || valorMax !== undefined) {
