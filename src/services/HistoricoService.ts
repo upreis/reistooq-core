@@ -7,23 +7,32 @@ export async function listarHistoricoVendas({ page = 1, pageSize = 20 } = {}) {
 
   console.log('[historico-query-start]', { page, pageSize, from, to });
 
-  const { data, error, count } = await supabase
-    .from('historico_vendas')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, to);
+  const { data, error } = await supabase
+    .rpc('get_historico_vendas_masked', {
+      _limit: pageSize,
+      _offset: from,
+      _search: null,
+      _start: null,
+      _end: null
+    });
 
   if (error) {
     console.error('[historico-error]', error);
     throw error;
   }
 
+  const rows = data ?? [];
+  const hasMore = rows.length === pageSize;
+  const estimatedTotal = hasMore ? from + rows.length + 1 : from + rows.length;
+
   console.log('[historico-leitura]', { 
-    query: 'select * from historico_vendas order by created_at desc', 
-    count, 
-    totalEntries: data?.length || 0,
-    primeirasLinhas: data?.slice(0, 2)
+    source: 'rpc:get_historico_vendas_masked',
+    page,
+    pageSize,
+    returned: rows.length,
+    estimatedTotal,
+    sample: rows.slice(0, 2)
   });
 
-  return { data: data ?? [], total: count ?? 0 };
+  return { data: rows, total: estimatedTotal };
 }
