@@ -50,6 +50,10 @@ export const STATUS_MAPPING: Record<string, string> = {
   'expirado': 'expired',
   'invalid': 'invalid',
   'inválido': 'invalid',
+  
+  // Status para melhor correspondência no filtro
+  'a combinar': 'to_combine',
+  'to_combine': 'to_combine',
 };
 
 // Mapeamento reverso: API Status -> Label PT (Status do Envio)
@@ -57,7 +61,7 @@ export const STATUS_LABELS: Record<string, string> = {
   'confirmed': 'Pendente',
   'payment_required': 'Pendente',
   'payment_in_process': 'Processando',
-  'paid': 'Pronto para Envio',
+  'paid': 'Pago',
   'shipped': 'Enviado',
   'delivered': 'Entregue',
   'cancelled': 'Cancelado',

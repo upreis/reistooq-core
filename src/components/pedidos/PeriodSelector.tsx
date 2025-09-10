@@ -112,6 +112,7 @@ export function PeriodSelector({
 
   const handlePresetSelect = (preset: PeriodPreset) => {
     const { start, end } = preset.getValue();
+    console.log('🗓️ [PeriodSelector] Preset selecionado:', preset.label, { start, end });
     onDateRangeChange(start, end);
     setIsOpen(false);
   };

@@ -34,12 +34,13 @@ interface PedidosFiltersProps {
 
 const SITUACOES = [
   'Pendente',
+  'Processando', 
+  'Pago',
   'Pronto para Envio',
   'Enviado',
   'Entregue',
   'Não Entregue',
   'Cancelado',
-  'Processando',
   'A Combinar'
 ];
 
