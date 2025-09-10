@@ -519,10 +519,27 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
 
-
-
-
-
+  // ====== PACK INFORMATION ======
+  {
+    key: 'pack_status',
+    label: 'Pack Status',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Status do pack',
+    width: 120
+  },
+  {
+    key: 'pack_status_detail',
+    label: 'Pack Status Detail',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Detalhes do status do pack',
+    width: 140
+  },
   // ====== ADVANCED FINANCIALS ======
   {
     key: 'marketplace_fee_detail',
