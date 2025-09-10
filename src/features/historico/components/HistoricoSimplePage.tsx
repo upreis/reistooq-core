@@ -39,11 +39,11 @@ export function HistoricoSimplePage() {
         const parsed = JSON.parse(savedColumns);
         console.log('💾 Configuração encontrada no localStorage:', parsed.length, 'colunas');
         
-        // Verificar se tem todas as novas colunas (deve ter pelo menos 80+ colunas)
-        const hasAllNewColumns = parsed.length >= 80 && 
+        // Verificar se tem exatamente as 46 colunas corretas
+        const hasCorrectColumns = parsed.length === 46 && 
           defaultColumns.every(dc => parsed.some((pc: any) => pc.key === dc.key));
         
-        if (hasAllNewColumns && Array.isArray(parsed)) {
+        if (hasCorrectColumns && Array.isArray(parsed)) {
           console.log('✅ Configuração válida carregada');
           // Mesclar colunas salvas com novas colunas padrão
           const mergedColumns = defaultColumns.map(defaultCol => {
@@ -329,20 +329,6 @@ export function HistoricoSimplePage() {
               columns={columns}
               onColumnsChange={handleColumnsChange}
             />
-            
-            {/* Botão temporário para resetar colunas */}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-orange-300 text-orange-600 hover:bg-orange-50" 
-              onClick={() => {
-                localStorage.removeItem('historico-columns-config');
-                window.location.reload();
-              }}
-              title="Resetar configurações de colunas"
-            >
-              🔄 Reset Colunas
-            </Button>
             
             <Button
               variant={isSelectMode ? "default" : "outline"}
