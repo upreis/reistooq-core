@@ -82,7 +82,7 @@ const SidebarSingleItem = memo(({
 
   // For solo items (no children), use Tooltip when collapsed
   return !isMobile && isCollapsed ? (
-    <Tooltip delayDuration={150}>
+    <Tooltip>
       <TooltipTrigger asChild>
         {link}
       </TooltipTrigger>
@@ -225,7 +225,7 @@ const SidebarContent = memo(({
     .filter((section) => section.items.length > 0);
 
   return (
-    <TooltipProvider delayDuration={150} disableHoverableContent>
+    <TooltipProvider>
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="p-4 border-b border-[hsl(var(--border))]">
