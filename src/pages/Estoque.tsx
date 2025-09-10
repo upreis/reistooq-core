@@ -86,7 +86,8 @@ const Estoque = () => {
       let allProducts = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        limit: 1000
+        limit: 1000,
+        ativo: selectedStatus === "inactive" ? false : (selectedStatus === "all" ? 'all' : true),
       });
 
       // Aplicar filtros hierárquicos
