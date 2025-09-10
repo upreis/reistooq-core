@@ -535,8 +535,6 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'date_created', label: 'Data Criação ML', default: false, category: 'meta' },
     { key: 'pack_id', label: 'Pack ID', default: false, category: 'meta' },
     { key: 'pickup_id', label: 'Pickup ID', default: false, category: 'meta' },
-    { key: 'manufacturing_ending_date', label: 'Data Fim Fabricação', default: false, category: 'meta' },
-    { key: 'comment', label: 'Comentário ML', default: false, category: 'meta' },
     { key: 'tags', label: 'Tags', default: false, category: 'meta' },
 
     // Envio (combinado)

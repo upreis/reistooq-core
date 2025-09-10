@@ -51,8 +51,6 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'last_updated', label: 'Última Atualização ML', visible: false, category: 'ml' },
   { key: 'pack_id', label: 'Pack ID', visible: false, category: 'ml' },
   { key: 'pickup_id', label: 'Pickup ID', visible: false, category: 'ml' },
-  { key: 'manufacturing_ending_date', label: 'Data Fim Fabricação', visible: false, category: 'ml' },
-  { key: 'comment', label: 'Comentário ML', visible: false, category: 'ml' },
   { key: 'status_detail', label: 'Status Detalhe', visible: false, category: 'ml' },
   { key: 'tags', label: 'Tags ML', visible: false, category: 'ml' },
   { key: 'buyer_id', label: 'ID Comprador', visible: false, category: 'ml' },

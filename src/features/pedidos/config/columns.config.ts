@@ -478,27 +478,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 100
   },
   {
-    key: 'manufacturing_ending_date',
-    label: 'Data Fim Fabricação',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data limite de fabricação',
-    width: 150,
-    sortable: true
-  },
-  {
-    key: 'comment',
-    label: 'Comentário ML',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Comentários do pedido',
-    width: 150
-  },
-  {
     key: 'tags',
     label: 'Tags',
     category: 'meta',
