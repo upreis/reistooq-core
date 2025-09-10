@@ -155,11 +155,77 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
-        // 4. Enriquecer com dados dos produtos (order_items)
+        // 4. Enriquecer com informações de cancelamento (cancel_detail)
+        if (order.status === 'cancelled' && order.id) {
+          try {
+            const cancelResp = await fetch(
+              `https://api.mercadolibre.com/orders/${order.id}/cancel_detail`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                }
+              }
+            );
+            if (cancelResp.ok) {
+              const cancelData = await cancelResp.json();
+              (enrichedOrder as any).cancel_detail = cancelData;
+            }
+          } catch (err) {
+            console.warn(`[unified-orders:${cid}] Aviso ao buscar cancel_detail ${order.id}:`, (err as any)?.message || err);
+          }
+        }
+
+        // 5. Enriquecer com descontos aplicados
+        if (order.id) {
+          try {
+            const discountsResp = await fetch(
+              `https://api.mercadolibre.com/orders/${order.id}/discounts`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                }
+              }
+            );
+            if (discountsResp.ok) {
+              const discountsData = await discountsResp.json();
+              (enrichedOrder as any).discounts = discountsData;
+            }
+          } catch (err) {
+            console.warn(`[unified-orders:${cid}] Aviso ao buscar discounts ${order.id}:`, (err as any)?.message || err);
+          }
+        }
+
+        // 6. Enriquecer com mediações
+        if (order.id) {
+          try {
+            const mediationsResp = await fetch(
+              `https://api.mercadolibre.com/orders/${order.id}/mediations`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                }
+              }
+            );
+            if (mediationsResp.ok) {
+              const mediationsData = await mediationsResp.json();
+              (enrichedOrder as any).mediations = mediationsData;
+            }
+          } catch (err) {
+            console.warn(`[unified-orders:${cid}] Aviso ao buscar mediations ${order.id}:`, (err as any)?.message || err);
+          }
+        }
+
+        // 7. Enriquecer com dados dos produtos detalhados (order_items + product info)
         if (order.order_items?.length) {
           try {
             const itemsWithDetails = await Promise.all(
               order.order_items.map(async (item: any) => {
+                let enhancedItem = { ...item };
+                
+                // Buscar detalhes do item/listing
                 if (item.item?.id) {
                   try {
                     const itemResp = await fetch(
@@ -169,16 +235,31 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 
                     if (itemResp.ok) {
                       const itemData = await itemResp.json();
-                      return {
-                        ...item,
-                        item_details: itemData
-                      };
+                      enhancedItem.item_details = itemData;
                     }
                   } catch (error) {
                     console.warn(`[unified-orders:${cid}] Erro ao buscar item ${item.item.id}:`, error);
                   }
                 }
-                return item;
+
+                // Buscar informações do produto através do product_id
+                if (item.item?.product_id) {
+                  try {
+                    const productResp = await fetch(
+                      `https://api.mercadolibre.com/products/${item.item.product_id}`,
+                      { headers: { Authorization: `Bearer ${accessToken}` } }
+                    );
+
+                    if (productResp.ok) {
+                      const productData = await productResp.json();
+                      enhancedItem.product_details = productData;
+                    }
+                  } catch (error) {
+                    console.warn(`[unified-orders:${cid}] Erro ao buscar product ${item.item.product_id}:`, error);
+                  }
+                }
+
+                return enhancedItem;
               })
             );
             enrichedOrder.order_items = itemsWithDetails;
@@ -282,6 +363,17 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       pack_status: order.pack_status ?? order.pack_data?.status ?? null,
       pack_status_detail: order.pack_status_detail ?? order.pack_data?.status_detail ?? order.pack_data?.status?.detail ?? null,
       
+      // Informações de cancelamento
+      cancel_reason: order.cancel_detail?.reason || null,
+      cancel_responsible: order.cancel_detail?.responsible || null,
+      cancel_date: order.cancel_detail?.cancel_date || null,
+      
+      // Descontos aplicados
+      discounts_applied: order.discounts?.length ? order.discounts.map((d: any) => `${d.type}:${d.amount}`).join(', ') : null,
+      
+      // Mediações
+      mediations_tags: order.mediations?.length ? order.mediations.map((m: any) => m.mediation_tags).flat().join(', ') : null,
+      
       // Informações dos produtos
       skus_produtos: skus || 'Sem SKU',
       quantidade_total: totalQuantity,
@@ -330,6 +422,12 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       manufacturing_days_total: orderItems.map((item: any) => item.manufacturing_days).filter((d) => d != null).reduce((a, b) => a + b, 0) || null,
       sale_fees_total: orderItems.map((item: any) => item.sale_fee || 0).reduce((a, b) => a + b, 0),
       listing_type_ids: orderItems.map((item: any) => item.listing_type_id).filter(Boolean).join(', ') || null,
+      
+      // 🆕 Dados de produtos detalhados
+      product_names: orderItems.map((item: any) => item.product_details?.name).filter(Boolean).join(', ') || null,
+      product_brands: orderItems.map((item: any) => item.product_details?.brand).filter(Boolean).join(', ') || null,
+      product_models: orderItems.map((item: any) => item.product_details?.model).filter(Boolean).join(', ') || null,
+      product_gtin: orderItems.map((item: any) => item.product_details?.gtin).filter(Boolean).join(', ') || null,
       
       // Dados completos para fallback
       raw: order,
