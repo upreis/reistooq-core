@@ -26,8 +26,8 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Conta do Mercado Livre',
-    width: 100
+    description: 'Nome da conta/empresa dona do pedido',
+    width: 120
   },
   {
     key: 'numero',

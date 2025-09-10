@@ -55,6 +55,7 @@ export async function listPedidos({
       integration_account_id,
       created_at,
       updated_at,
+      integration_accounts!inner(name),
       itens_pedidos (
         sku,
         descricao,
@@ -100,6 +101,8 @@ export async function listPedidos({
 
       return {
         ...pedido,
+        // Override empresa with integration account name if available
+        empresa: pedido.integration_accounts?.name || pedido.empresa || 'Sistema',
         id_unico: idUnicoCalculado,
         itens,
         total_itens: totalItens > 0 ? totalItens : 1,

@@ -83,7 +83,8 @@ export class OrdersQueryService {
           obs_interna,
           integration_account_id,
           created_at,
-          updated_at
+          updated_at,
+          integration_accounts!inner(name)
         `)
         .in('id', orderIds);
 
@@ -139,6 +140,8 @@ export class OrdersQueryService {
   private transformOrders(rawOrders: any[]): OrderAdvanced[] {
     return rawOrders.map(order => ({
       ...order,
+      // Override empresa with integration account name if available
+      empresa: order.integration_accounts?.name || order.empresa || 'Sistema',
       // Enhanced fields with defaults
       priority: this.calculatePriority(order),
       tags: this.extractTags(order),

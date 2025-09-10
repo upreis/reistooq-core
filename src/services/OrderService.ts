@@ -197,12 +197,19 @@ export class OrderService {
             obs_interna,
             integration_account_id,
             created_at,
-            updated_at
+            updated_at,
+            integration_accounts!inner(name)
           `)
           .eq('id', id)
           .maybeSingle();
 
         if (error) throw error;
+        
+        // Transform empresa field to use integration account name
+        if (data) {
+          data.empresa = data.integration_accounts?.name || data.empresa || 'Sistema';
+        }
+        
         return data;
       }
     );
