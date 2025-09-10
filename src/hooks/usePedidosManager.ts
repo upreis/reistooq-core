@@ -965,6 +965,24 @@ export function usePedidosManager(initialAccountId?: string) {
         order_items: o.order_items || rawData.order_items,
         tags: o.tags || rawData.tags,
         cpf_cnpj: direct ?? extractDeep(o) ?? extractDeep(rawData),
+        // 🔧 Flatten para colunas "Tipo Método Envio" e "Tipo Entrega"
+        shipping_method_type:
+          o.shipping_method_type ||
+          o.tipo_metodo_envio ||
+          o.shipping_method?.type ||
+          (o.shipping && o.shipping.shipping_method?.type) ||
+          (o.unified && o.unified.shipping?.shipping_method?.type) ||
+          (rawData && rawData.shipping?.shipping_method?.type) ||
+          (o.shipping_details && o.shipping_details.shipping_method?.type) ||
+          undefined,
+        delivery_type:
+          o.delivery_type ||
+          o.tipo_entrega ||
+          (o.shipping && o.shipping.delivery_type) ||
+          (o.unified && o.unified.shipping?.delivery_type) ||
+          (o.shipping_details && o.shipping_details.delivery_type) ||
+          (rawData && rawData.shipping?.delivery_type) ||
+          undefined,
       };
     });
         // 🚨 FIX 2: Evitar respostas fora de ordem
