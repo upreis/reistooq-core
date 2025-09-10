@@ -544,7 +544,7 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'logistic_mode', label: 'Logistic Mode (Principal)', default: false, category: 'shipping' },
     { key: 'logistic_type', label: 'Tipo Logístico', default: false, category: 'shipping' },
     { key: 'shipping_method_type', label: 'Tipo Método Envio', default: false, category: 'shipping' },
-    { key: 'delivery_type', label: 'Tipo Entrega', default: false, category: 'shipping' },
+    
     { key: 'substatus_detail', label: 'Substatus (Estado Atual)', default: false, category: 'shipping' },
     { key: 'shipping_mode', label: 'Modo de Envio (Combinado)', default: false, category: 'shipping' },
     { key: 'shipping_method', label: 'Método de Envio (Combinado)', default: false, category: 'shipping' },

@@ -438,14 +438,6 @@ export function HistoricoVirtualTableComplete({
       size: 140,
     },
     {
-      id: 'tipo_entrega',
-      header: 'Tipo Entrega',
-      cell: () => (
-        <span className="text-muted-foreground">—</span>
-      ),
-      size: 110,
-    },
-    {
       id: 'substatus',
       header: 'Substatus (Estado Atual)',
       cell: () => (

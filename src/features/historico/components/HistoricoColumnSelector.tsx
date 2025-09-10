@@ -57,7 +57,7 @@ const defaultColumns: ColumnConfig[] = [
   { key: 'logistic_mode_principal', label: 'Logistic Mode (Principal)', category: 'envio', visible: true },
   { key: 'tipo_logistico', label: 'Tipo Logístico', category: 'envio', visible: true },
   { key: 'tipo_metodo_envio', label: 'Tipo Método Envio', category: 'envio', visible: true },
-  { key: 'tipo_entrega', label: 'Tipo Entrega', category: 'envio', visible: true },
+  
   { key: 'substatus_estado_atual', label: 'Substatus (Estado Atual)', category: 'envio', visible: true },
   { key: 'modo_envio_combinado', label: 'Modo de Envio (Combinado)', category: 'envio', visible: true },
   { key: 'metodo_envio_combinado', label: 'Método de Envio (Combinado)', category: 'envio', visible: true },

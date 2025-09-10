@@ -352,16 +352,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 160
   },
   {
-    key: 'delivery_type',
-    label: 'Tipo Entrega',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Tipo de entrega',
-    width: 120
-  },
-  {
     key: 'substatus_detail',
     label: 'Substatus (Estado Atual)',
     category: 'shipping',

@@ -97,7 +97,7 @@ export class HistoricoFileService {
         logistic_mode: 'Logistic Mode (Principal)',
         tipo_logistico: 'Tipo Logístico',
         tipo_metodo_envio: 'Tipo Método Envio',
-        tipo_entrega: 'Tipo Entrega',
+        
         substatus_estado_atual: 'Substatus (Estado Atual)',
         modo_envio_combinado: 'Modo de Envio (Combinado)',
         metodo_envio_combinado: 'Método de Envio (Combinado)',
