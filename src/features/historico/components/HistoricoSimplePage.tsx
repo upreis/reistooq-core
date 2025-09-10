@@ -31,33 +31,46 @@ export function HistoricoSimplePage() {
   // Persistência de colunas no localStorage com atualização forçada
   const [columns, setColumns] = useState<ColumnConfig[]>(() => {
     try {
+      console.log('🔧 [HISTORICO COLUMNS] Inicializando configuração...');
+      console.log('📊 Total de colunas disponíveis:', defaultColumns.length);
+      
       const savedColumns = localStorage.getItem('historico-columns-config');
       if (savedColumns) {
         const parsed = JSON.parse(savedColumns);
+        console.log('💾 Configuração encontrada no localStorage:', parsed.length, 'colunas');
         
-        // Verificar se as colunas salvas têm todas as novas colunas
-        const defaultKeys = defaultColumns.map(col => col.key);
-        const savedKeys = parsed.map((col: ColumnConfig) => col.key);
-        const hasAllNewColumns = defaultKeys.every(key => savedKeys.includes(key));
+        // Verificar se tem todas as novas colunas (deve ter pelo menos 80+ colunas)
+        const hasAllNewColumns = parsed.length >= 80 && 
+          defaultColumns.every(dc => parsed.some((pc: any) => pc.key === dc.key));
         
-        // Se não tem todas as novas colunas, usar as padrão
-        if (!hasAllNewColumns || !Array.isArray(parsed)) {
-          localStorage.setItem('historico-columns-config', JSON.stringify(defaultColumns));
-          return defaultColumns;
+        if (hasAllNewColumns && Array.isArray(parsed)) {
+          console.log('✅ Configuração válida carregada');
+          // Mesclar colunas salvas com novas colunas padrão
+          const mergedColumns = defaultColumns.map(defaultCol => {
+            const savedCol = parsed.find((col: ColumnConfig) => col.key === defaultCol.key);
+            return savedCol || defaultCol;
+          });
+          return mergedColumns;
+        } else {
+          console.warn('🔄 Configuração incompleta detectada, usando padrão');
+          console.log('Diferença:', {
+            saved: parsed.length,
+            expected: defaultColumns.length,
+            missing: defaultColumns.filter(dc => !parsed.some((pc: any) => pc.key === dc.key)).map(c => c.key)
+          });
         }
-        
-        // Mesclar colunas salvas com novas colunas padrão
-        const mergedColumns = defaultColumns.map(defaultCol => {
-          const savedCol = parsed.find((col: ColumnConfig) => col.key === defaultCol.key);
-          return savedCol || defaultCol;
-        });
-        
-        return mergedColumns;
       }
+      
+      // Limpar cache antigo e usar configuração padrão
+      localStorage.removeItem('historico-columns-config');
+      localStorage.setItem('historico-columns-config', JSON.stringify(defaultColumns));
+      console.log('✅ Usando configuração padrão:', defaultColumns.length, 'colunas');
+      return defaultColumns;
     } catch (error) {
-      console.error('Erro ao carregar configuração de colunas:', error);
+      console.error('❌ Erro ao carregar colunas:', error);
+      localStorage.removeItem('historico-columns-config');
+      return defaultColumns;
     }
-    return defaultColumns;
   });
   
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -316,6 +329,20 @@ export function HistoricoSimplePage() {
               columns={columns}
               onColumnsChange={handleColumnsChange}
             />
+            
+            {/* Botão temporário para resetar colunas */}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-orange-300 text-orange-600 hover:bg-orange-50" 
+              onClick={() => {
+                localStorage.removeItem('historico-columns-config');
+                window.location.reload();
+              }}
+              title="Resetar configurações de colunas"
+            >
+              🔄 Reset Colunas
+            </Button>
             
             <Button
               variant={isSelectMode ? "default" : "outline"}

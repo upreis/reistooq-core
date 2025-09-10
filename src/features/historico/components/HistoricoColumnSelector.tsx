@@ -1,4 +1,4 @@
-// Seletor de colunas para histórico - baseado nas colunas de pedidos
+// Seletor de colunas para histórico - usando configuração unificada
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -6,83 +6,47 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Eye, EyeOff } from 'lucide-react';
+import { HISTORICO_COLUMN_DEFINITIONS, getHistoricoDefaultVisibleColumns } from '../config/columns.config';
+import type { ColumnDefinition } from '../../pedidos/types/columns.types';
 
 interface ColumnConfig {
   key: string;
   label: string;
-  category: 'basicas' | 'produtos' | 'financeiras' | 'mapeamento' | 'envio';
+  category: 'basic' | 'products' | 'financial' | 'mapping' | 'shipping' | 'meta' | 'ml';
   visible: boolean;
   width?: number;
 }
 
-const defaultColumns: ColumnConfig[] = [
-  // === SEÇÃO BÁSICAS ===
-  { key: 'id_unico', label: 'ID Único', category: 'basicas', visible: true },
-  { key: 'empresa', label: 'Empresa', category: 'basicas', visible: true },
-  { key: 'numero_pedido', label: 'Número do Pedido', category: 'basicas', visible: true },
-  { key: 'cliente_nome', label: 'Cliente Nome', category: 'basicas', visible: true },
-  { key: 'nome_completo', label: 'Nome Completo', category: 'basicas', visible: false },
-  { key: 'data_pedido', label: 'Data do Pedido', category: 'basicas', visible: true },
-  { key: 'ultima_atualizacao', label: 'Última Atualização', category: 'basicas', visible: false },
+// 🔄 Converter da configuração unificada para o formato do HistoricoColumnSelector
+const convertToColumnConfig = (definition: ColumnDefinition): ColumnConfig => ({
+  key: definition.key,
+  label: definition.label,
+  category: definition.category,
+  visible: definition.default,
+  width: definition.width
+});
 
-  // === SEÇÃO PRODUTOS ===
-  { key: 'sku_produto', label: 'SKU Produto', category: 'produtos', visible: true },
-  { key: 'quantidade_total', label: 'Quantidade Total', category: 'produtos', visible: true },
-  { key: 'titulo_produto', label: 'Título do Produto', category: 'produtos', visible: true },
-
-  // === SEÇÃO FINANCEIRAS ===
-  { key: 'valor_total', label: 'Valor Total', category: 'financeiras', visible: true },
-  { key: 'valor_pago', label: 'Valor Pago', category: 'financeiras', visible: false },
-  { key: 'frete_pago_cliente', label: 'Frete Pago Cliente', category: 'financeiras', visible: false },
-  { key: 'receita_flex_bonus', label: 'Receita Flex (Bônus)', category: 'financeiras', visible: false },
-  { key: 'custo_envio_seller', label: 'Custo Envio Seller', category: 'financeiras', visible: false },
-  { key: 'desconto_cupom', label: 'Desconto Cupom', category: 'financeiras', visible: false },
-  { key: 'taxa_marketplace', label: 'Taxa Marketplace', category: 'financeiras', visible: false },
-  { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', category: 'financeiras', visible: false },
-  { key: 'metodo_pagamento', label: 'Método Pagamento', category: 'financeiras', visible: false },
-  { key: 'status_pagamento', label: 'Status do Pagamento', category: 'envio', visible: true },
-  { key: 'tipo_pagamento', label: 'Tipo Pagamento', category: 'financeiras', visible: false },
-
-  // === SEÇÃO MAPEAMENTO ===
-  { key: 'cpf_cnpj', label: 'CPF/CNPJ', category: 'mapeamento', visible: true },
-  { key: 'sku_estoque', label: 'SKU Estoque', category: 'mapeamento', visible: true },
-  { key: 'sku_kit', label: 'SKU KIT', category: 'mapeamento', visible: true },
-  { key: 'quantidade_kit', label: 'Quantidade KIT', category: 'mapeamento', visible: true },
-  { key: 'total_itens', label: 'Total de Itens', category: 'mapeamento', visible: true },
-  { key: 'status_baixa', label: 'Status da Baixa', category: 'mapeamento', visible: true },
-
-  // === SEÇÃO ENVIO ===
-  { key: 'status', label: 'Status (Pagamento)', category: 'envio', visible: false },
-  { key: 'status_envio', label: 'Status do Envio', category: 'envio', visible: true },
-  { key: 'logistic_mode_principal', label: 'Logistic Mode (Principal)', category: 'envio', visible: true },
-  { key: 'tipo_logistico', label: 'Tipo Logístico', category: 'envio', visible: true },
-  { key: 'tipo_metodo_envio', label: 'Tipo Método Envio', category: 'envio', visible: true },
-  
-  { key: 'substatus_estado_atual', label: 'Substatus (Estado Atual)', category: 'envio', visible: true },
-  { key: 'modo_envio_combinado', label: 'Modo de Envio (Combinado)', category: 'envio', visible: true },
-  { key: 'metodo_envio_combinado', label: 'Método de Envio (Combinado)', category: 'envio', visible: true },
-  { key: 'rua', label: 'Rua', category: 'envio', visible: true },
-  { key: 'numero', label: 'Número', category: 'envio', visible: true },
-  { key: 'bairro', label: 'Bairro', category: 'envio', visible: true },
-  { key: 'cep', label: 'CEP', category: 'envio', visible: true },
-  { key: 'cidade', label: 'Cidade', category: 'envio', visible: true },
-  { key: 'uf', label: 'UF', category: 'envio', visible: true },
-];
+// ✅ USAR TODAS AS COLUNAS DA CONFIGURAÇÃO UNIFICADA
+const defaultColumns: ColumnConfig[] = HISTORICO_COLUMN_DEFINITIONS.map(convertToColumnConfig);
 
 const categoryLabels = {
-  basicas: 'Básicas',
-  produtos: 'Produtos', 
-  financeiras: 'Financeiras',
-  mapeamento: 'Mapeamento',
-  envio: 'Envio'
+  basic: 'Básicas',
+  products: 'Produtos', 
+  financial: 'Financeiras',
+  mapping: 'Mapeamento',
+  shipping: 'Envio',
+  meta: 'Metadados',
+  ml: 'Mercado Livre'
 };
 
 const categoryColors = {
-  basicas: 'bg-blue-500',
-  produtos: 'bg-green-500',
-  financeiras: 'bg-purple-500',
-  mapeamento: 'bg-orange-500',
-  envio: 'bg-teal-500'
+  basic: 'bg-blue-500',
+  products: 'bg-green-500',
+  financial: 'bg-purple-500',
+  mapping: 'bg-orange-500',
+  shipping: 'bg-teal-500',
+  meta: 'bg-gray-500',
+  ml: 'bg-yellow-500'
 };
 
 interface HistoricoColumnSelectorProps {
