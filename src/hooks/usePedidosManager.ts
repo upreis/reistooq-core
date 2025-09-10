@@ -75,12 +75,12 @@ import { PAGINATION, CACHE, DEBOUNCE } from '@/lib/constants';
 function normalizeDate(value: any): Date | undefined {
   if (!value) return undefined;
   
-  console.log('🗓️ [normalizeDate] Input:', value, 'tipo:', typeof value);
+  
   
   // Se já é Date válida, retornar
   if (value instanceof Date) {
     const result = isNaN(value.getTime()) ? undefined : value;
-    console.log('🗓️ [normalizeDate] Date object result:', result);
+    
     return result;
   }
   
@@ -88,14 +88,14 @@ function normalizeDate(value: any): Date | undefined {
   if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
     const [year, month, day] = value.split('-').map(Number);
     const result = new Date(year, month - 1, day); // month é 0-indexed
-    console.log('🗓️ [normalizeDate] String ISO result:', result, 'from:', { year, month: month - 1, day });
+    
     return result;
   }
   
   // Converter para Date e validar
   const date = new Date(value);
   const result = isNaN(date.getTime()) ? undefined : date;
-  console.log('🗓️ [normalizeDate] Generic conversion result:', result);
+  
   return result;
 }
 
@@ -213,7 +213,7 @@ export function usePedidosManager(initialAccountId?: string) {
    * CORRIGIDO: Priorizar conta ML e mapear situação corretamente
    */
   const buildApiParams = useCallback((filters: PedidosFilters) => {
-    console.log('🔧 [buildApiParams] INÍCIO - Filtros recebidos:', JSON.stringify(filters, null, 2));
+    
     const params: any = {};
 
     // ✅ SIMPLIFICADO: Usar campos diretos da API
@@ -319,7 +319,7 @@ export function usePedidosManager(initialAccountId?: string) {
       console.log('🔗 [CONTAS] Usando múltiplas contas via integration_account_ids');
     }
 
-    console.log('🔧 [buildApiParams] Parâmetros finais COMPLETOS:', JSON.stringify(params, null, 2));
+    
     return params;
    }, [integrationAccountId, availableMlAccounts]);
 
@@ -555,9 +555,6 @@ export function usePedidosManager(initialAccountId?: string) {
     } as any;
     
     console.groupCollapsed('[query/network]');
-    console.log('function', 'unified-orders');
-    console.log('body', requestBody);
-    console.log('[query/network] unified-orders body', requestBody);
     console.groupEnd();
 
     let data: any | null = null;
@@ -839,27 +836,9 @@ export function usePedidosManager(initialAccountId?: string) {
     // ✅ CRÍTICO: Usar override ou filtros atuais
     const filtersToUse = overrideFilters ?? filters;
     
-    // 🚨 FIX 3: Alinhamento chave/body - logs lado a lado
-    console.groupCollapsed('[filters]');
-    console.log('applied=', filtersToUse);
-    console.groupEnd();
-    
     const filtersKey = stableSerializeFilters(filtersToUse);
     const apiParams = buildApiParams(filtersToUse);
-    
-    console.groupCollapsed('[key]');
-    console.log('hash=', filtersKey);
-    console.groupEnd();
-    
-    console.groupCollapsed('[body]'); 
-    console.log('params=', apiParams);
-    console.groupEnd();
-    
     const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
-    
-    console.groupCollapsed('[query/key]');
-    console.log(['pedidos', filtersKey, currentPage, pageSize, apiParams.integration_account_id || apiParams.integration_account_ids || integrationAccountId]);
-    console.groupEnd();
 
     // 🚨 FIX 2: Controle de concorrência com AbortController + requestId
     const reqId = ++requestIdRef.current;
@@ -867,15 +846,14 @@ export function usePedidosManager(initialAccountId?: string) {
     // Abortar request anterior antes de iniciar novo
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      console.log(`[fetch:abort] previous request aborted`);
+      
     }
     abortControllerRef.current = new AbortController();
     
-    console.log(`[fetch:start id=${reqId} hash=${filtersKey.slice(0, 20)}... page=${currentPage}]`);
+    
 
     // Se a mesma query já foi executada recentemente e está carregando, evitar duplicar
     if (!forceRefresh && lastQuery === cacheKey && loading) {
-      console.log('⚡ [LOAD ORDERS] Query duplicada detectada, pulando');
       return;
     }
     // Atualiza a última query com a chave completa (inclui paginação/conta)
@@ -894,7 +872,7 @@ export function usePedidosManager(initialAccountId?: string) {
       return;
     }
 
-    console.log('🔍 Parâmetros da API construídos:', apiParams);
+    
 
     // 🚨 Cancelamento já feito acima com novo requestId
 
@@ -1584,11 +1562,7 @@ const actions: PedidosManagerActions = useMemo(() => ({
     state,
     actions,
     // Computed values  
-    totalPages: (() => {
-      const calculated = Math.ceil(total / pageSize);
-      console.log('📄 [usePedidosManager] Calculando totalPages:', calculated, 'total:', total, 'pageSize:', pageSize);
-      return calculated;
-    })(),
+    totalPages: Math.ceil(total / pageSize),
     hasActiveFilters: Object.keys(filters).some(key => {
       const value = filters[key as keyof PedidosFilters];
       return value !== undefined && value !== '' && value !== null && 

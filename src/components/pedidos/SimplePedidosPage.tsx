@@ -170,7 +170,7 @@ function SimplePedidosPage({ className }: Props) {
     autoProcess: true,
     debounceMs: 800, // ✅ Debounce maior para evitar múltiplas execuções
     onMappingUpdate: (mappings) => {
-      console.log('📊 [SimplePedidosPage] Mapeamentos atualizados:', mappings.size, 'pedidos');
+      // Callback silencioso para performance
     }
   });
   
@@ -320,7 +320,7 @@ function SimplePedidosPage({ className }: Props) {
   // ✅ CORREÇÃO: Processar mapeamentos sempre que houver pedidos carregados
   useEffect(() => {
     if (orders && orders.length > 0) {
-      console.log('🔄 [SimplePedidosPage] Processando mapeamentos para', orders.length, 'pedidos');
+      
       verificarPedidos(orders);
       // ✅ Usar a função correta que processa diretamente
       mappingActions.processOrdersMappings(orders);
