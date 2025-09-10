@@ -13,6 +13,11 @@ const STORAGE_KEY = 'pedidos-column-preferences';
 const getInitialState = (): ColumnState => {
   const defaultColumns = getDefaultVisibleColumns();
   
+  console.log('🔧 [INITIAL STATE] Configurando estado inicial das colunas:', {
+    defaultColumns: defaultColumns.map(col => col.key),
+    totalDefinitions: COLUMN_DEFINITIONS.length
+  });
+  
   return {
     visibleColumns: new Set(defaultColumns.map(col => col.key)),
     columnOrder: COLUMN_DEFINITIONS.map(col => col.key),
@@ -34,10 +39,13 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
   try {
     // 🚨 INTEGRADO: Tentar carregar da última consulta primeiro
     const lastSearch = localStorage.getItem('pedidos:lastSearch');
-    if (lastSearch) {
-      const parsed = JSON.parse(lastSearch);
-      if (parsed.visibleColumns && Object.keys(parsed.visibleColumns).length > 0) {
-        console.log('💾 Restaurando colunas da última consulta:', parsed.visibleColumns);
+      if (lastSearch) {
+        const parsed = JSON.parse(lastSearch);
+        if (parsed.visibleColumns && Object.keys(parsed.visibleColumns).length > 0) {
+          console.log('💾 [COLUMNS DEBUG] Restaurando colunas da última consulta:', {
+            saved: parsed.visibleColumns,
+            availableDefinitions: COLUMN_DEFINITIONS.map(col => col.key)
+          });
         // Converter objeto para Set se necessário
         const visibleSet = typeof parsed.visibleColumns === 'object' && parsed.visibleColumns.constructor === Object
           ? new Set(Object.keys(parsed.visibleColumns).filter(key => parsed.visibleColumns[key]) as string[])
@@ -154,11 +162,36 @@ const savePreferences = (state: ColumnState) => {
   }
 };
 
+// 🔄 Função para limpar cache e forçar reset
+export const resetColumnCache = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    console.log('🔄 Cache de colunas limpo');
+  } catch (error) {
+    console.warn('❌ Erro ao limpar cache de colunas:', error);
+  }
+};
+
 export const useColumnManager = (): UseColumnManagerReturn => {
   // Inicializar estado combinando padrões com preferências salvas
   const [state, setState] = useState<ColumnState>(() => {
     const initial = getInitialState();
     const stored = loadStoredPreferences();
+    
+    console.log('🔧 [COLUMNS INIT] Inicializando sistema de colunas:', {
+      initial: Array.from(initial.visibleColumns),
+      stored: stored.visibleColumns ? Array.from(stored.visibleColumns) : 'none',
+      totalDefinitions: COLUMN_DEFINITIONS.length
+    });
+    
+    // Verificar se o cache está inconsistente
+    const storedCount = stored.visibleColumns ? stored.visibleColumns.size : 0;
+    const initialCount = initial.visibleColumns.size;
+    
+    if (storedCount === 0 || storedCount < initialCount / 2) {
+      console.warn('🔧 [COLUMNS RESET] Cache inconsistente detectado, forçando reset para padrão');
+      return initial;
+    }
     
     return {
       ...initial,

@@ -48,7 +48,7 @@ import { usePersistentPedidosState } from '@/hooks/usePersistentPedidosState';
 import { usePedidosFiltersUnified } from '@/hooks/usePedidosFiltersUnified';
 import { PedidosFiltersUnified } from './PedidosFiltersUnified';
 
-import { useColumnManager } from '@/features/pedidos/hooks/useColumnManager';
+import { useColumnManager, resetColumnCache } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 import { PedidosTableSection } from './components/PedidosTableSection';
 import { PedidosDashboardSection } from './components/PedidosDashboardSection';
@@ -148,6 +148,22 @@ function SimplePedidosPage({ className }: Props) {
   // 🔧 Sistema de colunas unificado com persistência automatica
   const columnManager = useColumnManager();
   const visibleColumns = columnManager.state.visibleColumns;
+  
+  // Debug do sistema de colunas
+  useEffect(() => {
+    console.log('🔧 [COLUMNS DEBUG]', {
+      visibleColumns: Array.from(visibleColumns),
+      visibleDefinitions: columnManager.visibleDefinitions.map(col => ({ key: col.key, label: col.label })),
+      totalDefinitions: columnManager.definitions.length,
+      hasVisibleDefs: columnManager.visibleDefinitions.length > 0
+    });
+  }, [visibleColumns, columnManager.visibleDefinitions]);
+  
+  // Função para resetar colunas (debug)
+  const handleResetColumns = useCallback(() => {
+    resetColumnCache();
+    window.location.reload();
+  }, []);
   
   // Estados locais para funcionalidades específicas
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -943,6 +959,7 @@ useEffect(() => {
         columnManager={columnManager}
         activeFiltersCount={filtersManager.activeFiltersCount}
         contasML={accounts}
+        onResetColumns={handleResetColumns}
       />
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
