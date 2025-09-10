@@ -212,6 +212,9 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       // CORREÇÃO: Campos de logística - usar dados diretos
       shipping_mode: shippingMode,
       forma_entrega: deliveryType,
+      // ✅ Expor diretamente as colunas solicitadas
+      shipping_method_type: order.shipping_method_type || ship?.shipping_method?.type || ship?.shipping_method_type || order.shipping?.shipping_method?.type || null,
+      delivery_type: order.delivery_type || ship?.delivery_type || deliveryType || null,
       status_detail: statusDetail,
       is_fulfillment: isFullfillment,
       logistic_mode: order.shipping?.logistic?.mode || null,
