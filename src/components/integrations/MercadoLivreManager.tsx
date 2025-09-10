@@ -169,8 +169,57 @@ export function MercadoLivreManager({ onAccountsUpdate, onUpdate }: MercadoLivre
     }
   };
 
+  // Verificação automática de tokens expirados
+  const checkAndRefreshExpiredTokens = async () => {
+    try {
+      const { data: accounts } = await supabase
+        .from('integration_accounts')
+        .select(`
+          id,
+          integration_secrets!inner(expires_at, provider)
+        `)
+        .eq('provider', 'mercadolivre')
+        .eq('is_active', true);
+
+      if (!accounts) return;
+
+      const now = new Date();
+      const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+
+      for (const account of accounts) {
+        const secret = account.integration_secrets[0];
+        if (secret?.expires_at) {
+          const expiresAt = new Date(secret.expires_at);
+          
+          // Se expira em menos de 1 hora, faz refresh automático
+          if (expiresAt <= oneHourFromNow) {
+            console.log(`[ML Manager] Token expirando para conta ${account.id}, fazendo refresh automático...`);
+            try {
+              await supabase.functions.invoke('mercadolibre-token-refresh', {
+                body: { integration_account_id: account.id }
+              });
+              console.log(`[ML Manager] ✅ Token renovado automaticamente para conta ${account.id}`);
+            } catch (error) {
+              console.error(`[ML Manager] ❌ Falha no refresh automático para conta ${account.id}:`, error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[ML Manager] Erro na verificação automática de tokens:', error);
+    }
+  };
+
   useEffect(() => {
     loadAccounts();
+    
+    // Verificação inicial
+    checkAndRefreshExpiredTokens();
+    
+    // Verificação periódica a cada 30 minutos
+    const interval = setInterval(checkAndRefreshExpiredTokens, 30 * 60 * 1000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

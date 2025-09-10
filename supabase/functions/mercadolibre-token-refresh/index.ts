@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // ✅ 1. SISTEMA BLINDADO: Buscar secrets com validação obrigatória
     const { data: secrets, error: secretsError } = await supabase
       .from('integration_secrets')
-      .select('access_token, refresh_token, secret_enc, expires_at, meta')
+      .select('access_token, refresh_token, secret_enc, expires_at, meta, simple_tokens, use_simple')
       .eq('integration_account_id', integration_account_id)
       .eq('provider', 'mercadolivre')
       .maybeSingle();
@@ -43,8 +43,30 @@ Deno.serve(async (req) => {
     }
 
     let refreshToken = secrets.refresh_token as string | null;
+    let accessToken = secrets.access_token as string | null;
 
-    // ✅ 2. SISTEMA BLINDADO: 4 Fallbacks sequenciais de decriptação
+    // ✅ 2. SISTEMA BLINDADO: Verificar simple_tokens primeiro (novo formato)
+    if (secrets?.simple_tokens && secrets?.use_simple) {
+      console.log('[ML Token Refresh] Usando simple_tokens (formato novo)');
+      try {
+        // Simple tokens são base64 encoded com prefixo SALT2024::
+        let simpleTokensStr = secrets.simple_tokens as string;
+        if (simpleTokensStr.startsWith('SALT2024::')) {
+          const base64Data = simpleTokensStr.slice(10); // Remove SALT2024::
+          const jsonStr = atob(base64Data);
+          const tokens = JSON.parse(jsonStr);
+          
+          refreshToken = tokens.refresh_token || refreshToken;
+          accessToken = tokens.access_token || accessToken;
+          
+          console.log('[ML Token Refresh] ✅ Simple tokens extraídos com sucesso');
+        }
+      } catch (e) {
+        console.warn('[ML Token Refresh] Falha ao processar simple_tokens:', e.message);
+      }
+    }
+
+    // ✅ 3. SISTEMA BLINDADO: 4 Fallbacks sequenciais de decriptação (formato antigo)
     if ((!refreshToken || refreshToken.length === 0) && secrets?.secret_enc) {
       console.log('[ML Token Refresh] Access token/refresh_token vazios, iniciando sistema blindado...');
       
@@ -129,7 +151,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ✅ 3. VALIDAÇÃO DE SECRETS OBRIGATÓRIA (Sistema Blindado)
+    // ✅ 4. VALIDAÇÃO DE SECRETS OBRIGATÓRIA (Sistema Blindado)
     if (!refreshToken) {
       console.error('[ML Token Refresh] ❌ CRITICO: Refresh token não encontrado após todos os fallbacks');
       
@@ -166,7 +188,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ✅ 4. Fazer refresh no Mercado Livre
+    // ✅ 5. Fazer refresh no Mercado Livre
     const { clientId, clientSecret } = getMlConfig();
     
     const params = new URLSearchParams({
@@ -209,16 +231,33 @@ Deno.serve(async (req) => {
 
     console.log('[ML Token Refresh] ✅ Refresh bem-sucedido, atualizando tokens...');
 
-    // ✅ 5. Atualizar tokens no banco
-    const { error: upErr } = await supabase.from('integration_secrets').upsert({
-      integration_account_id,
-      provider: 'mercadolivre',
+    // ✅ 6. Atualizar tokens no banco (manter compatibilidade com ambos os formatos)
+    const newTokens = {
       access_token: json.access_token,
       refresh_token: json.refresh_token ?? refreshToken,
-      expires_at: newExpiresAt,
+      expires_at: newExpiresAt
+    };
+
+    // Atualizar simple_tokens se estiver usando o novo formato
+    let updateData: any = {
+      integration_account_id,
+      provider: 'mercadolivre',
+      access_token: newTokens.access_token,
+      refresh_token: newTokens.refresh_token,
+      expires_at: newTokens.expires_at,
       meta: secrets.meta ?? {},
       updated_at: new Date().toISOString()
-    }, { onConflict: 'integration_account_id,provider' });
+    };
+
+    if (secrets?.use_simple) {
+      const simpleTokensData = btoa(JSON.stringify(newTokens));
+      updateData.simple_tokens = `SALT2024::${simpleTokensData}`;
+      updateData.use_simple = true;
+    }
+
+    const { error: upErr } = await supabase.from('integration_secrets').upsert(updateData, { 
+      onConflict: 'integration_account_id,provider' 
+    });
 
     if (upErr) {
       console.error('[ML Token Refresh] Erro ao salvar tokens:', upErr);

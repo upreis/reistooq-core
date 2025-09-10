@@ -27,17 +27,35 @@ serve(async (req) => {
   try {
     const supabase = makeClient(req.headers.get("Authorization"));
 
-    // ✅ SISTEMA BLINDADO: Refresh preventivo 5-10 minutos antes da expiração
-    const threshold5min = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-    const threshold10min = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    // Buscar tokens que expiram entre 5-10 minutos (prevenção ativa)
+    // ✅ SISTEMA BLINDADO: Refresh preventivo - tokens que expiram em até 1 hora
+    const threshold1hour = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    
+    // Buscar contas ativas do Mercado Livre com tokens que podem precisar de refresh
+    const { data: activeAccounts, error: accountsError } = await supabase
+      .from('integration_accounts')
+      .select('id')
+      .eq('provider', 'mercadolivre')
+      .eq('is_active', true);
+
+    if (accountsError) {
+      console.error('[ML Token Refresh Cron] Failed to query active accounts:', accountsError);
+      return new Response(JSON.stringify({ success: false, error: 'Failed to query accounts' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
+    const accountIds = activeAccounts?.map(acc => acc.id) || [];
+    console.log(`[ML Token Refresh Cron] Checking ${accountIds.length} active ML accounts`);
+
+    // Buscar tokens que expiram em até 1 hora
     const { data: expiringSoon, error: queryError } = await supabase
       .from('integration_secrets')
-      .select('integration_account_id, expires_at, provider, access_token, refresh_token')
+      .select('integration_account_id, expires_at, provider, simple_tokens, use_simple')
       .eq('provider', 'mercadolivre')
+      .in('integration_account_id', accountIds)
       .not('expires_at', 'is', null)
-      .gte('expires_at', threshold10min)  // Não muito cedo
-      .lte('expires_at', threshold5min);  // Não muito tarde
+      .lte('expires_at', threshold1hour);
 
     console.log(`[ML Token Refresh Cron] Encontrados ${expiringSoon?.length || 0} tokens para refresh preventivo`);
 
