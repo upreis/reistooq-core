@@ -75,12 +75,12 @@ import { PAGINATION, CACHE, DEBOUNCE } from '@/lib/constants';
 function normalizeDate(value: any): Date | undefined {
   if (!value) return undefined;
   
-  
+  console.log('🗓️ [normalizeDate] Input:', value, 'tipo:', typeof value);
   
   // Se já é Date válida, retornar
   if (value instanceof Date) {
     const result = isNaN(value.getTime()) ? undefined : value;
-    
+    console.log('🗓️ [normalizeDate] Date object result:', result);
     return result;
   }
   
@@ -88,14 +88,14 @@ function normalizeDate(value: any): Date | undefined {
   if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
     const [year, month, day] = value.split('-').map(Number);
     const result = new Date(year, month - 1, day); // month é 0-indexed
-    
+    console.log('🗓️ [normalizeDate] String ISO result:', result, 'from:', { year, month: month - 1, day });
     return result;
   }
   
   // Converter para Date e validar
   const date = new Date(value);
   const result = isNaN(date.getTime()) ? undefined : date;
-  
+  console.log('🗓️ [normalizeDate] Generic conversion result:', result);
   return result;
 }
 
