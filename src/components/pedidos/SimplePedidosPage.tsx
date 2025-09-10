@@ -1101,62 +1101,14 @@ useEffect(() => {
             {/* Controle de Colunas */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Colunas</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configurar
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Selecionar Colunas</h4>
-                      <Button size="sm" variant="ghost" onClick={resetToDefault}>
-                        Padrão
+                  <ColumnManager
+                    trigger={
+                      <Button variant="outline" className="w-full">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Configurar
                       </Button>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto">
-                       {['basic', 'products', 'financial', 'status', 'mapping', 'ml', 'shipping', 'address', 'buyer', 'ids'].map((category) => {
-                         const categoryColumns = allColumns.filter(col => col.category === category);
-                         const categoryLabels = {
-                           basic: 'Básicas',
-                           products: 'Produtos',
-                           financial: 'Financeiras', 
-                           status: 'Status',
-                           mapping: 'Mapeamento',
-                           ml: 'Mercado Livre',
-                            shipping: 'Envio',
-                            address: 'Endereço',
-                            buyer: 'Comprador',
-                            ids: 'Identificação'
-                         } as const;
-                         
-                         if (categoryColumns.length === 0) return null;
-                        
-                        return (
-                          <div key={category} className="space-y-2">
-                            <h5 className="text-sm font-medium text-muted-foreground border-b pb-1">
-                              {categoryLabels[category as keyof typeof categoryLabels]}
-                            </h5>
-                            <div className="grid grid-cols-1 gap-1 ml-2">
-                              {categoryColumns.map((col) => (
-                                <label key={col.key} className="flex items-center space-x-2 text-sm">
-                                  <Checkbox
-                                    checked={visibleColumns.has(col.key)}
-                                    onCheckedChange={() => toggleColumn(col.key)}
-                                  />
-                                  <span>{col.label}</span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                    }
+                  />
             </div>
           </div>
 
