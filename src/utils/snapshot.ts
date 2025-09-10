@@ -65,24 +65,23 @@ export async function salvarSnapshotBaixa(
       fotografia_completa: true
     });
 
-    // 💾 Inserir fotografia completa no histórico de vendas
-    const { data, error } = await supabase
-      .from('historico_vendas')
-      .insert(dadosBaixa)
-      .select();
+    // 💾 Inserir fotografia completa no histórico de vendas via RPC segura (bypassa RLS)
+    const { data, error } = await supabase.rpc('hv_insert', {
+      p: dadosBaixa as any
+    });
 
     if (error) {
-      console.error('❌ Erro ao salvar fotografia da baixa:', error);
+      console.error('❌ Erro ao salvar fotografia da baixa (hv_insert):', error);
       throw new Error(`Falha ao salvar histórico: ${error.message}`);
     }
 
-    console.log('✅ Fotografia completa salva no histórico:', {
-      id: data?.[0]?.id,
-      id_unico: data?.[0]?.id_unico,
+    console.log('✅ Fotografia completa salva no histórico (hv_insert):', {
+      id: data,
+      id_unico: dadosBaixa.id_unico,
       todos_campos_capturados: '42+ campos preservados'
     });
     
-    return data?.[0];
+    return data;
 
   } catch (error) {
     console.error('❌ Erro no salvarSnapshotBaixa:', error);
