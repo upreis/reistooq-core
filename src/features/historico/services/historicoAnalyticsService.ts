@@ -22,7 +22,7 @@ export class HistoricoAnalyticsService {
       console.log('📊 Calculando analytics do histórico...');
 
       // Buscar dados base
-      const { data: vendasData, error } = await supabase.rpc('get_historico_vendas_masked', {
+      const { data: vendasData, error } = await supabase.rpc('get_historico_vendas_safe', {
         _start: dataInicio || null,
         _end: dataFim || null,
         _limit: 10000, // Limite alto para analytics

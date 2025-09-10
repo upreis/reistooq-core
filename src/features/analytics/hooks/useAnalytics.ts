@@ -59,7 +59,7 @@ export const useAnalytics = (timeRange: string = '30d') => {
 
       // Carregar dados reais de histórico de vendas
       const { data: salesData } = await supabase
-        .rpc('get_historico_vendas_masked', {
+        .rpc('get_historico_vendas_safe', {
           _start: startDate.toISOString().split('T')[0],
           _end: null,
           _search: null,
@@ -84,7 +84,7 @@ export const useAnalytics = (timeRange: string = '30d') => {
       previousStartDate.setDate(previousStartDate.getDate() + days);
 
       const { data: previousSalesData } = await supabase
-        .rpc('get_historico_vendas_masked', {
+        .rpc('get_historico_vendas_safe', {
           _start: previousStartDate.toISOString().split('T')[0],
           _end: startDate.toISOString().split('T')[0],
           _search: null,

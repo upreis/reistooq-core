@@ -28,7 +28,7 @@ export class HistoricoQueryService {
       console.log('🔍 Buscando histórico de vendas...', { filters, page, limit: validatedLimit, sortBy, sortOrder });
 
       // Use RPC segura que aplica RLS e mascara dados sensíveis
-      const { data, error, count } = await supabase.rpc('get_historico_vendas_masked', {
+      const { data, error, count } = await supabase.rpc('get_historico_vendas_safe', {
         _search: filters.search || null,
         _start: filters.dataInicio || null,
         _end: filters.dataFim || null,
@@ -141,7 +141,7 @@ export class HistoricoQueryService {
 
   static async getHistoricoById(id: string): Promise<HistoricoVendaPublic | null> {
     try {
-      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
         _search: id,
         _limit: 1,
         _offset: 0
@@ -163,7 +163,7 @@ export class HistoricoQueryService {
 
   static async getStatusOptions(): Promise<string[]> {
     try {
-      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
         _search: null,
         _limit: 1000,
         _offset: 0
@@ -186,7 +186,7 @@ export class HistoricoQueryService {
 
   static async getCidadesOptions(): Promise<string[]> {
     try {
-      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
         _search: null,
         _limit: 1000,
         _offset: 0
@@ -209,7 +209,7 @@ export class HistoricoQueryService {
 
   static async getUfOptions(): Promise<string[]> {
     try {
-      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
         _search: null,
         _limit: 1000,
         _offset: 0

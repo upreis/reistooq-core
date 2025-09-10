@@ -26,7 +26,7 @@ export function HistoricoGuard({ children, fallbackComponent: FallbackComponent 
       }
 
       // Tentar acessar a função RPC para verificar permissões
-      const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
+      const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
         _limit: 1,
         _offset: 0
       });
@@ -127,7 +127,7 @@ export function useHistoricoGuard() {
           return;
         }
 
-        const { error } = await supabase.rpc('get_historico_vendas_masked', {
+        const { error } = await supabase.rpc('get_historico_vendas_safe', {
           _limit: 1,
           _offset: 0
         });
