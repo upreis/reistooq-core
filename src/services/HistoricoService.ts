@@ -8,7 +8,7 @@ export async function listarHistoricoVendas({ page = 1, pageSize = 20 } = {}) {
   console.log('[historico-query-start]', { page, pageSize, from, to });
 
   const { data, error } = await supabase
-    .rpc('get_historico_vendas_list', {
+    .rpc('get_historico_vendas_browse', {
       _limit: pageSize,
       _offset: from,
       _search: null,

@@ -2924,6 +2924,43 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_historico_vendas_browse: {
+        Args: {
+          _end?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _start?: string
+        }
+        Returns: {
+          cidade: string
+          cliente_nome: string
+          created_at: string
+          custo_envio_seller: number
+          data_pedido: string
+          desconto_cupom: number
+          descricao: string
+          frete_pago_cliente: number
+          id: string
+          id_unico: string
+          metodo_pagamento: string
+          numero_pedido: string
+          quantidade: number
+          quantidade_total: number
+          receita_flex_bonus: number
+          sku_estoque: string
+          sku_kit: string
+          sku_produto: string
+          status: string
+          status_pagamento: string
+          taxa_marketplace: number
+          uf: string
+          updated_at: string
+          valor_liquido_vendedor: number
+          valor_pago: number
+          valor_total: number
+        }[]
+      }
       get_historico_vendas_list: {
         Args: {
           _end?: string
