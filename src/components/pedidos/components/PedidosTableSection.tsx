@@ -417,9 +417,25 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'logistic_type':
                        return <span className="text-xs">{translateLogisticType(order.logistic_type || order.tipo_logistico || order.shipping?.logistic?.type || order.raw?.shipping?.logistic?.type || order.unified?.logistic?.type || '-')}</span>;
                      case 'shipping_method_type':
-                       return <span className="text-xs">{translateShippingMethodType(order.shipping_method_type || order.tipo_metodo_envio || order.shipping?.shipping_method?.type || order.raw?.shipping?.shipping_method?.type || '-')}</span>;
-                     case 'delivery_type':
-                       return <span className="text-xs">{translateDeliveryType(order.delivery_type || order.tipo_entrega || order.shipping?.delivery_type || order.raw?.shipping?.delivery_type || '-')}</span>;
+                        return <span className="text-xs">{translateShippingMethodType(
+                          order.shipping_method_type ||
+                          order.tipo_metodo_envio ||
+                          order.shipping?.shipping_method?.type ||
+                          order.unified?.shipping?.shipping_method?.type ||
+                          order.shipping_details?.shipping_method?.type ||
+                          order.raw?.shipping?.shipping_method?.type ||
+                          '-'
+                        )}</span>;
+                      case 'delivery_type':
+                        return <span className="text-xs">{translateDeliveryType(
+                          order.delivery_type ||
+                          order.tipo_entrega ||
+                          order.shipping?.delivery_type ||
+                          order.unified?.shipping?.delivery_type ||
+                          order.shipping_details?.delivery_type ||
+                          order.raw?.shipping?.delivery_type ||
+                          '-'
+                        )}</span>;
                      case 'substatus_detail':
                        return <span className="text-xs">{translateShippingSubstatus(order.substatus_detail || order.substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.shipping?.status_detail || order.status_detail || '-')}</span>;
                      case 'shipping_mode':
