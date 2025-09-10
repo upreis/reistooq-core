@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { useSidebarState } from '../hooks/useSidebarState';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { SidebarItemWithChildren } from './SidebarItemWithChildren';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { /* Tooltip, TooltipContent, TooltipTrigger, */ TooltipProvider } from '@/components/ui/tooltip';
 import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
 import { useUserPermissions } from '@/hooks/useUserPermissions';

@@ -230,71 +230,61 @@ export function OptimizedCategorySidebar({
     return (
       <div key={categoryKey} className="space-y-1">
         {isCollapsed ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  if (level === 0) selectCategory('principal', category.nome);
-                  else if (level === 1) selectCategory('categoria', category.nome, parentIds[0]);
-                  else selectCategory('subcategoria', category.nome, parentIds[1], parentIds[0]);
-                }}
-                className={cn(
-                  "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
-                  "px-2",
-                  isSelected 
-                    ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
-                    : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
-                  level === 0 && "font-medium",
-                  level === 1 && "text-sm ml-2",
-                  level === 2 && "text-xs ml-4"
-                )}
-              >
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  {/* Ícone de expansão */}
-                  {hasChildren && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleCategory(categoryKey);
-                      }}
-                      className="flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-primary/20 rounded transition-colors cursor-pointer"
-                    >
-                      {isExpanded ? (
-                        <ChevronDown className="h-3 w-3 text-primary" />
-                      ) : (
-                        <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                      )}
-                    </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (level === 0) selectCategory('principal', category.nome);
+              else if (level === 1) selectCategory('categoria', category.nome, parentIds[0]);
+              else selectCategory('subcategoria', category.nome, parentIds[1], parentIds[0]);
+            }}
+            className={cn(
+              "w-full justify-start h-auto py-2 transition-all relative group border-l-2",
+              "px-2",
+              isSelected 
+                ? "border-l-brand bg-brand text-brand-active-foreground font-medium" 
+                : "border-l-transparent text-foreground hover:border-l-brand/50 hover:bg-brand-hover hover:text-foreground",
+              level === 0 && "font-medium",
+              level === 1 && "text-sm ml-2",
+              level === 2 && "text-xs ml-4"
+            )}
+            title={category.nome}
+          >
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {hasChildren && (
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleCategory(categoryKey);
+                  }}
+                  className="flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-primary/20 rounded transition-colors cursor-pointer"
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="h-3 w-3 text-primary" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3 text-muted-foreground" />
                   )}
-                  
-                  {/* Ícone da categoria */}
-                  <div className="flex-shrink-0">
-                    {level === 0 ? (
-                      isSelected ? (
-                        <FolderOpen className="h-4 w-4 text-current" />
-                      ) : (
-                        <Folder className="h-4 w-4 text-current" />
-                      )
-                    ) : level === 1 ? (
-                      <Package className="h-3 w-3 text-current" />
-                    ) : (
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        isSelected ? "bg-current" : "bg-current opacity-60"
-                      )} />
-                    )}
-                  </div>
                 </div>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="ml-2">
-              <p className="text-sm font-medium">{category.nome}</p>
-              <p className="text-xs text-muted-foreground">{category.productCount} produtos</p>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
+              )}
+              <div className="flex-shrink-0">
+                {level === 0 ? (
+                  isSelected ? (
+                    <FolderOpen className="h-4 w-4 text-current" />
+                  ) : (
+                    <Folder className="h-4 w-4 text-current" />
+                  )
+                ) : level === 1 ? (
+                  <Package className="h-3 w-3 text-current" />
+                ) : (
+                  <div className={cn(
+                    "w-2 h-2 rounded-full",
+                    isSelected ? "bg-current" : "bg-current opacity-60"
+                  )} />
+                )}
+              </div>
+              <span className="truncate">{category.nome}</span>
+            </div>
+          </Button>
           <Button
             variant="ghost"
             size="sm"

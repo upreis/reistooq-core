@@ -25,12 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
 import { useColumnManager } from '../hooks/useColumnManager';
 import { CATEGORY_LABELS } from '../config/columns.config';
 import { ColumnDefinition } from '../types/columns.types';
@@ -135,8 +129,7 @@ export function ColumnManager(props: ColumnManagerProps) {
   const totalCount = definitions.length;
 
   return (
-    <TooltipProvider>
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           {trigger ?? (
             <Button variant="outline" size="sm" className="gap-2">
@@ -188,47 +181,35 @@ export function ColumnManager(props: ColumnManagerProps) {
 
             {/* Ações Rápidas */}
             <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={actions.resetToEssentials}
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    Essenciais
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Mostrar apenas colunas essenciais</TooltipContent>
-              </Tooltip>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={actions.resetToEssentials}
+                title="Mostrar apenas colunas essenciais"
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                Essenciais
+              </Button>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={actions.resetToDefault}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Padrão
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Restaurar configuração padrão</TooltipContent>
-              </Tooltip>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={actions.resetToDefault}
+                title="Restaurar configuração padrão"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Padrão
+              </Button>
 
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => actions.setVisibleColumns(definitions.map(d => d.key))}
-                  >
-                    <EyeOff className="h-4 w-4 mr-1" />
-                    Todas
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Mostrar todas as colunas</TooltipContent>
-              </Tooltip>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => actions.setVisibleColumns(definitions.map(d => d.key))}
+                title="Mostrar todas as colunas"
+              >
+                <EyeOff className="h-4 w-4 mr-1" />
+                Todas
+              </Button>
             </div>
 
             <Separator />
@@ -338,6 +319,5 @@ export function ColumnManager(props: ColumnManagerProps) {
           </div>
         </SheetContent>
       </Sheet>
-    </TooltipProvider>
   );
 }
