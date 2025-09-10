@@ -59,7 +59,7 @@ export const useAnalytics = (timeRange: string = '30d') => {
 
       // Carregar dados reais de histórico de vendas
       const { data: salesData } = await supabase
-        .rpc('get_historico_vendas_safe', {
+        .rpc('get_historico_vendas_masked', {
           _start: startDate.toISOString().split('T')[0],
           _end: null,
           _search: null,
@@ -73,8 +73,9 @@ export const useAnalytics = (timeRange: string = '30d') => {
         .select('quantidade_atual, estoque_minimo, nome, sku_interno, preco_custo, valor_total:preco_venda');
 
       // Calcular métricas reais
-      const totalSales = salesData?.reduce((sum, item) => sum + Number(item.valor_total || 0), 0) || 0;
-      const totalOrders = salesData?.length || 0;
+      const vendasArray = (salesData as any[]) || [];
+      const totalSales = vendasArray.reduce((sum, item: any) => sum + Number(item.valor_total || 0), 0) || 0;
+      const totalOrders = vendasArray.length || 0;
       const activeProducts = productsData?.filter(p => p.quantidade_atual > 0).length || 0;
       const lowStockProducts = productsData?.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual >= 0).length || 0;
 
@@ -84,7 +85,7 @@ export const useAnalytics = (timeRange: string = '30d') => {
       previousStartDate.setDate(previousStartDate.getDate() + days);
 
       const { data: previousSalesData } = await supabase
-        .rpc('get_historico_vendas_safe', {
+        .rpc('get_historico_vendas_masked', {
           _start: previousStartDate.toISOString().split('T')[0],
           _end: startDate.toISOString().split('T')[0],
           _search: null,
@@ -92,8 +93,9 @@ export const useAnalytics = (timeRange: string = '30d') => {
           _offset: 0
         });
 
-      const previousTotalSales = previousSalesData?.reduce((sum, item) => sum + Number(item.valor_total || 0), 0) || 1;
-      const previousTotalOrders = previousSalesData?.length || 1;
+      const prevArray = (previousSalesData as any[]) || [];
+      const previousTotalSales = prevArray.reduce((sum, item: any) => sum + Number(item.valor_total || 0), 0) || 1;
+      const previousTotalOrders = prevArray.length || 1;
 
       const salesGrowth = previousTotalSales > 0 ? ((totalSales - previousTotalSales) / previousTotalSales) * 100 : 0;
       const ordersGrowth = previousTotalOrders > 0 ? ((totalOrders - previousTotalOrders) / previousTotalOrders) * 100 : 0;
@@ -113,8 +115,7 @@ export const useAnalytics = (timeRange: string = '30d') => {
       const trend: SalesTrendPoint[] = [];
       const salesByDate = new Map<string, { sales: number; orders: number }>();
 
-      // Agrupar vendas por data
-      salesData?.forEach(sale => {
+      vendasArray.forEach((sale: any) => {
         const date = sale.data_pedido || sale.created_at?.split('T')[0];
         if (date) {
           const existing = salesByDate.get(date) || { sales: 0, orders: 0 };

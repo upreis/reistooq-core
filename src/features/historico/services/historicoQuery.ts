@@ -35,7 +35,7 @@ export async function fetchHistorico(params: FetchHistoricoParams): Promise<Fetc
 
     // Use only the secure RPC function - no more fallbacks to unsafe views
     const offset = (page - 1) * pageSize;
-    const { data, error } = await supabase.rpc('get_historico_vendas_safe', {
+    const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
       _search: search || null,
       _start: from || null,
       _end: to || null,
@@ -61,11 +61,13 @@ export async function fetchHistorico(params: FetchHistoricoParams): Promise<Fetc
       throw error;
     }
 
-    console.log('✅ Histórico carregado via RPC:', { rows: data?.length });
+    const rows = (data as any[]) || [];
+
+    console.log('✅ Histórico carregado via RPC:', { rows: rows.length });
 
     return {
-      rows: data || [],
-      total: data?.length || 0
+      rows,
+      total: rows.length
     };
 
   } catch (error: any) {
