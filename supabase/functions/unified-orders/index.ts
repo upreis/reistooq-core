@@ -141,6 +141,7 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             if (packResp.ok) {
               const packData = await packResp.json();
               enrichedOrder.pack_data = packData;
+              console.log(`[unified-orders:${cid}] ➕ pack anexado ao order ${order.id}`);
             }
           } catch (error) {
             console.warn(`[unified-orders:${cid}] Erro ao buscar pack ${order.pack_id}:`, error);
@@ -194,12 +195,16 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 function transformMLOrders(orders: any[], integration_account_id: string, accountName?: string) {
   return orders.map(order => {
     const buyer = order.buyer || {};
+    const seller = order.seller || {};
     const shipping = order.shipping || {};
     const payments = order.payments || [];
     const firstPayment = payments[0] || {};
     const detailedOrder = order.detailed_order || order;
     const detailedShipping = shipping.detailed_shipping || shipping;
     const orderItems = order.order_items || [];
+    const packData = order.pack_data || {};
+    const context = order.context || {};
+    const feedback = order.feedback || {};
 
     // Cálculos de quantidades e valores
     const totalQuantity = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
@@ -217,6 +222,19 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     
     // Informações de endereço mais detalhadas
     const address = detailedShipping.receiver_address || shipping.receiver_address || {};
+    
+    // Extrair dados de stock multi-origem
+    const stockData = orderItems.flatMap((item: any) => item.stock || []);
+    const storeIds = stockData.map((s: any) => s.store_id).filter(Boolean).join(', ');
+    const networkNodeIds = stockData.map((s: any) => s.network_node_id).filter(Boolean).join(', ');
+    
+    // Tags do pedido
+    const orderTags = (order.tags || []).join(', ');
+    
+    // Dados financeiros detalhados
+    const marketplaceFees = payments.map((p: any) => p.marketplace_fee || 0).reduce((a, b) => a + b, 0);
+    const refundedAmount = payments.map((p: any) => p.transaction_amount_refunded || 0).reduce((a, b) => a + b, 0);
+    const overpaidAmount = payments.map((p: any) => p.overpaid_amount || 0).reduce((a, b) => a + b, 0);
     
     return {
       id: order.id?.toString() || '',
@@ -243,7 +261,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       created_at: order.date_created || new Date().toISOString(),
       updated_at: order.last_updated || order.date_created || new Date().toISOString(),
       
-      // ✅ Novos campos enriquecidos
+      // ✅ Campos existentes enriquecidos
       // Dados básicos do pedido
       last_updated: order.last_updated || order.date_created,
       paid_amount: firstPayment.total_paid_amount || order.paid_amount || 0,
@@ -292,6 +310,69 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       numero: address.street_number || null,
       bairro: address.neighborhood?.name || null,
       cep: address.zip_code || null,
+
+      // 🆕 NOVOS CAMPOS DA DOCUMENTAÇÃO DE PACKS - Análise posterior
+      
+      // === PACK DATA ===
+      pack_status: packData.status || null,  // "released", "error", "pending_cancel", "cancelled"
+      pack_status_detail: packData.status_detail || null,
+      pack_buyer_id: packData.buyer?.id || null,
+      pack_date_created: packData.date_created || null,
+      pack_last_updated: packData.last_updated || null,
+      pack_orders_count: packData.orders?.length || 0,
+      pack_orders_ids: packData.orders?.map((o: any) => o.id).join(', ') || null,
+      
+      // === ORDER CONTEXT ===
+      buying_mode: order.buying_mode || null,  // "buy_equals_pay"
+      mediations_count: order.mediations?.length || 0,
+      context_channel: context.channel || null,  // "marketplace"
+      context_site: context.site || null,  // "MLB"
+      context_flows: context.flows?.join(', ') || null,  // "catalog"
+      
+      // === SELLER/BUYER DETAILS ===
+      seller_id: seller.id || null,
+      seller_user_type: seller.user_type || null,
+      seller_tags: seller.tags?.join(', ') || null,
+      seller_status: seller.status || null,
+      seller_buy_restrictions: seller.buy_restrictions?.join(', ') || null,
+      
+      buyer_id: buyer.id || null,
+      buyer_user_type: buyer.user_type || null,
+      buyer_tags: buyer.tags?.join(', ') || null,
+      buyer_status: buyer.status || null,
+      buyer_buy_restrictions: buyer.buy_restrictions?.join(', ') || null,
+      
+      // === STOCK MULTI-ORIGEM ===
+      store_ids: storeIds || null,
+      network_node_ids: networkNodeIds || null,
+      user_product_ids: orderItems.map((item: any) => item.item?.user_product_id).filter(Boolean).join(', ') || null,
+      release_dates: orderItems.map((item: any) => item.item?.release_date).filter(Boolean).join(', ') || null,
+      
+      // === DADOS FINANCEIROS AVANÇADOS ===
+      marketplace_fees_total: marketplaceFees,
+      transaction_amount_refunded_total: refundedAmount,
+      overpaid_amount_total: overpaidAmount,
+      installment_amounts: payments.map((p: any) => p.installment_amount).filter(Boolean).join(', ') || null,
+      deferred_periods: payments.map((p: any) => p.deferred_period).filter(Boolean).join(', ') || null,
+      issuer_ids: payments.map((p: any) => p.issuer_id).filter(Boolean).join(', ') || null,
+      available_actions: payments.flatMap((p: any) => p.available_actions || []).join(', ') || null,
+      authorization_codes: payments.map((p: any) => p.authorization_code).filter(Boolean).join(', ') || null,
+      
+      // === TAGS E FEEDBACK ===
+      order_tags: orderTags || null,
+      feedback_seller: feedback.seller || null,
+      feedback_buyer: feedback.buyer || null,
+      
+      // === PRODUTOS DETALHADOS ===
+      variation_ids: orderItems.map((item: any) => item.item?.variation_id).filter(Boolean).join(', ') || null,
+      category_ids: orderItems.map((item: any) => item.item?.category_id).filter(Boolean).join(', ') || null,
+      warranties: orderItems.map((item: any) => item.item?.warranty).filter(Boolean).join(' | ') || null,
+      conditions: orderItems.map((item: any) => item.item?.condition).filter(Boolean).join(', ') || null,
+      global_prices: orderItems.map((item: any) => item.global_price).filter((p) => p != null).join(', ') || null,
+      net_weights: orderItems.map((item: any) => item.item?.net_weight).filter((w) => w != null).join(', ') || null,
+      manufacturing_days_total: orderItems.map((item: any) => item.manufacturing_days).filter((d) => d != null).reduce((a, b) => a + b, 0) || null,
+      sale_fees_total: orderItems.map((item: any) => item.sale_fee || 0).reduce((a, b) => a + b, 0),
+      listing_type_ids: orderItems.map((item: any) => item.listing_type_id).filter(Boolean).join(', ') || null,
       
       // Dados completos para fallback
       raw: order,
@@ -299,7 +380,11 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
         order_items: orderItems,
         shipping: detailedShipping,
         buyer: buyer,
-        payments: payments
+        seller: seller,
+        payments: payments,
+        pack_data: packData,
+        context: context,
+        feedback: feedback
       }
     };
   });
