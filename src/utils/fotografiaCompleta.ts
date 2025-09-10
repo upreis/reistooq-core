@@ -10,6 +10,7 @@ import { mapApiStatusToLabel, getStatusBadgeVariant } from '@/utils/statusMappin
 import { buildIdUnico } from '@/utils/idUnico';
 
 // Interface que representa EXATAMENTE os dados como aparecem na UI
+// EXPANDIDA para incluir TODAS as colunas da configuração de pedidos
 export interface FotografiaPedido {
   // ===== CAMPOS BÁSICOS =====
   id_unico: string;
@@ -20,10 +21,12 @@ export interface FotografiaPedido {
   cpf_cnpj: string;
   data_pedido: string;
   ultima_atualizacao: string;
+  last_updated: string;
   
   // ===== PRODUTOS =====
   skus_produtos: string;
   quantidade_total: number;
+  quantidade_itens: number;
   titulo_produto: string;
   descricao: string;
   
@@ -68,6 +71,20 @@ export interface FotografiaPedido {
   cep: string;
   cidade: string;
   uf: string;
+  
+  // ===== SHIPPING/LOGÍSTICA ADICIONAL =====
+  delivery_type: string;
+  substatus_detail: string;
+  shipping_method: string;
+  shipping_mode: string;
+  
+  // ===== MERCADO LIVRE ESPECÍFICO =====
+  date_created: string;
+  pack_id: string;
+  pickup_id: string;
+  pack_status: string;
+  pack_status_detail: string;
+  tags: string[];
   
   // ===== METADADOS =====
   integration_account_id: string;
@@ -252,10 +269,12 @@ export function fotografarPedidoCompleto(
     cpf_cnpj: order.cpf_cnpj || '-',
     data_pedido: formatDate(order.data_pedido || order.date_created),
     ultima_atualizacao: order.last_updated ? formatDate(order.last_updated) : '-',
+    last_updated: order.last_updated ? formatDate(order.last_updated) : new Date().toISOString(),
     
     // PRODUTOS
     skus_produtos: skus.length > 0 ? skus.join(', ') : '-',
     quantidade_total: quantidadeItens,
+    quantidade_itens: quantidadeItens,
     titulo_produto: order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-',
     descricao: order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-',
     
@@ -468,11 +487,39 @@ export function fotografarPedidoCompleto(
         order.shipping?.destination?.shipping_address?.state?.name ||
         order.shipping?.receiver_address?.state?.name ||
         order.shipping_details?.receiver_address?.state?.name ||
-        order.raw?.shipping?.receiver_address?.state?.name ||
-        order.receiver_address_state || '-',
-    
-    // METADADOS
-    integration_account_id: order.integration_account_id || integrationAccountId || '',
+         order.raw?.shipping?.receiver_address?.state?.name ||
+         order.receiver_address_state || '-',
+     
+     // SHIPPING/LOGÍSTICA ADICIONAL
+     delivery_type: order.delivery_type || 
+                   order.shipping?.delivery_type || 
+                   order.raw?.shipping?.delivery_type || '-',
+     
+     substatus_detail: order.shipping?.substatus?.detail || 
+                      order.substatus_detail || 
+                      order.raw?.shipping?.substatus?.detail || '-',
+     
+     shipping_method: order.shipping?.method?.combined || 
+                     order.shipping_method || 
+                     order.raw?.shipping?.method?.combined || '-',
+     
+     shipping_mode: order.shipping?.mode?.combined || 
+                   order.shipping_mode || 
+                   order.raw?.shipping?.mode?.combined || '-',
+     
+     // MERCADO LIVRE ESPECÍFICO
+     date_created: order.date_created || 
+                  order.created_at || 
+                  new Date().toISOString(),
+     
+     pack_id: order.pack_id || '-',
+     pickup_id: order.pickup_id || '-',
+     pack_status: order.pack?.status || '-',
+     pack_status_detail: order.pack?.status_detail || '-',
+     tags: order.tags || [],
+     
+     // METADADOS
+     integration_account_id: order.integration_account_id || integrationAccountId || '',
     numero_ecommerce: order.numero_ecommerce || '-',
     numero_venda: order.numero_venda || '-',
     codigo_rastreamento: order.codigo_rastreamento || '-',
@@ -526,10 +573,12 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     id_unico: fotografia.id_unico,
     numero_pedido: fotografia.numero_pedido,
     sku_produto: fotografia.skus_produtos.split(',')[0]?.trim() || 'BAIXA_ESTOQUE',
+    skus_produtos: fotografia.skus_produtos,
     descricao: fotografia.titulo_produto,
     titulo_produto: fotografia.titulo_produto, // Mapeamento correto para a coluna titulo_produto
     quantidade: fotografia.quantidade_total,
     quantidade_total: fotografia.quantidade_total, // Mapeamento correto para a coluna quantidade_total
+    quantidade_itens: fotografia.quantidade_itens,
     valor_unitario: fotografia.quantidade_total > 0 ? 
       Number(fotografia.valor_total) / fotografia.quantidade_total : 0,
     valor_total: Number(fotografia.valor_total),
@@ -544,6 +593,10 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     empresa: fotografia.empresa,
     cidade: fotografia.cidade,
     uf: fotografia.uf,
+    rua: fotografia.rua,
+    numero: fotografia.numero,
+    bairro: fotografia.bairro,
+    cep: fotografia.cep,
     
     // Valores financeiros
     valor_frete: Number(fotografia.frete_pago_cliente),
@@ -585,15 +638,24 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     modo_envio_combinado: fotografia.modo_envio_combinado,
     metodo_envio_combinado: fotografia.metodo_envio_combinado,
     
-    // Endereço
-    rua: fotografia.rua,
-    numero: fotografia.numero,
-    bairro: fotografia.bairro,
-    cep: fotografia.cep,
+    // Shipping/Logística adicional
+    delivery_type: fotografia.delivery_type,
+    substatus_detail: fotografia.substatus_detail,
+    shipping_method: fotografia.shipping_method,
+    shipping_mode: fotografia.shipping_mode,
+    
+    // Mercado Livre específico
+    date_created: parseDateTime(fotografia.date_created),
+    pack_id: fotografia.pack_id,
+    pickup_id: fotografia.pickup_id,
+    pack_status: fotografia.pack_status,
+    pack_status_detail: fotografia.pack_status_detail,
+    tags: fotografia.tags,
     
     // Metadados (datas normalizadas)
     data_pedido: dataPedidoISO,
     ultima_atualizacao: ultimaAtualizacaoISO,
+    last_updated: parseDateTime(fotografia.last_updated),
     integration_account_id: fotografia.integration_account_id,
     numero_ecommerce: fotografia.numero_ecommerce,
     numero_venda: fotografia.numero_venda,
@@ -607,7 +669,8 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     meta: {
       fotografia_completa: true,
       timestamp: new Date().toISOString(),
-      versao: '2.0'
+      versao: '3.0',
+      campos_capturados: 60
     },
     
     // Campo de auditoria (será preenchido pelo snapshot.ts)

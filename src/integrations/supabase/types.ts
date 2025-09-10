@@ -724,6 +724,8 @@ export type Database = {
           custo_envio_seller: number | null
           data_pedido: string
           data_prevista: string | null
+          date_created: string | null
+          delivery_type: string | null
           desconto_cupom: number | null
           descricao: string | null
           empresa: string | null
@@ -731,6 +733,7 @@ export type Database = {
           id: string
           id_unico: string
           integration_account_id: string | null
+          last_updated: string | null
           logistic_mode_principal: string | null
           meta: Json | null
           metodo_envio_combinado: string | null
@@ -746,14 +749,21 @@ export type Database = {
           obs_interna: string | null
           observacoes: string | null
           origem: string | null
+          pack_id: string | null
+          pack_status: string | null
+          pack_status_detail: string | null
           pedido_id: string | null
+          pickup_id: string | null
           qtd_kit: number | null
           quantidade: number
+          quantidade_itens: number | null
           quantidade_kit: number | null
           quantidade_total: number | null
           raw: Json | null
           receita_flex_bonus: number | null
           rua: string | null
+          shipping_method: string | null
+          shipping_mode: string | null
           situacao: string | null
           sku_estoque: string | null
           sku_kit: string | null
@@ -764,7 +774,9 @@ export type Database = {
           status_envio: string | null
           status_mapeamento: string | null
           status_pagamento: string | null
+          substatus_detail: string | null
           substatus_estado_atual: string | null
+          tags: string[] | null
           taxa_marketplace: number | null
           tipo_entrega: string | null
           tipo_logistico: string | null
@@ -797,6 +809,8 @@ export type Database = {
           custo_envio_seller?: number | null
           data_pedido: string
           data_prevista?: string | null
+          date_created?: string | null
+          delivery_type?: string | null
           desconto_cupom?: number | null
           descricao?: string | null
           empresa?: string | null
@@ -804,6 +818,7 @@ export type Database = {
           id?: string
           id_unico: string
           integration_account_id?: string | null
+          last_updated?: string | null
           logistic_mode_principal?: string | null
           meta?: Json | null
           metodo_envio_combinado?: string | null
@@ -819,14 +834,21 @@ export type Database = {
           obs_interna?: string | null
           observacoes?: string | null
           origem?: string | null
+          pack_id?: string | null
+          pack_status?: string | null
+          pack_status_detail?: string | null
           pedido_id?: string | null
+          pickup_id?: string | null
           qtd_kit?: number | null
           quantidade?: number
+          quantidade_itens?: number | null
           quantidade_kit?: number | null
           quantidade_total?: number | null
           raw?: Json | null
           receita_flex_bonus?: number | null
           rua?: string | null
+          shipping_method?: string | null
+          shipping_mode?: string | null
           situacao?: string | null
           sku_estoque?: string | null
           sku_kit?: string | null
@@ -837,7 +859,9 @@ export type Database = {
           status_envio?: string | null
           status_mapeamento?: string | null
           status_pagamento?: string | null
+          substatus_detail?: string | null
           substatus_estado_atual?: string | null
+          tags?: string[] | null
           taxa_marketplace?: number | null
           tipo_entrega?: string | null
           tipo_logistico?: string | null
@@ -870,6 +894,8 @@ export type Database = {
           custo_envio_seller?: number | null
           data_pedido?: string
           data_prevista?: string | null
+          date_created?: string | null
+          delivery_type?: string | null
           desconto_cupom?: number | null
           descricao?: string | null
           empresa?: string | null
@@ -877,6 +903,7 @@ export type Database = {
           id?: string
           id_unico?: string
           integration_account_id?: string | null
+          last_updated?: string | null
           logistic_mode_principal?: string | null
           meta?: Json | null
           metodo_envio_combinado?: string | null
@@ -892,14 +919,21 @@ export type Database = {
           obs_interna?: string | null
           observacoes?: string | null
           origem?: string | null
+          pack_id?: string | null
+          pack_status?: string | null
+          pack_status_detail?: string | null
           pedido_id?: string | null
+          pickup_id?: string | null
           qtd_kit?: number | null
           quantidade?: number
+          quantidade_itens?: number | null
           quantidade_kit?: number | null
           quantidade_total?: number | null
           raw?: Json | null
           receita_flex_bonus?: number | null
           rua?: string | null
+          shipping_method?: string | null
+          shipping_mode?: string | null
           situacao?: string | null
           sku_estoque?: string | null
           sku_kit?: string | null
@@ -910,7 +944,9 @@ export type Database = {
           status_envio?: string | null
           status_mapeamento?: string | null
           status_pagamento?: string | null
+          substatus_detail?: string | null
           substatus_estado_atual?: string | null
+          tags?: string[] | null
           taxa_marketplace?: number | null
           tipo_entrega?: string | null
           tipo_logistico?: string | null
@@ -2933,32 +2969,84 @@ export type Database = {
           _start?: string
         }
         Returns: {
+          bairro: string
+          cep: string
           cidade: string
           cliente_nome: string
+          codigo_barras: string
+          codigo_rastreamento: string
+          cpf_cnpj: string
           created_at: string
+          created_by: string
           custo_envio_seller: number
           data_pedido: string
+          data_prevista: string
+          date_created: string
+          delivery_type: string
           desconto_cupom: number
           descricao: string
+          empresa: string
           frete_pago_cliente: number
           id: string
           id_unico: string
+          integration_account_id: string
+          last_updated: string
+          logistic_mode_principal: string
+          meta: Json
+          metodo_envio_combinado: string
           metodo_pagamento: string
+          modo_envio_combinado: string
+          ncm: string
+          nome_completo: string
+          numero: string
+          numero_ecommerce: string
           numero_pedido: string
+          numero_venda: string
+          obs: string
+          obs_interna: string
+          observacoes: string
+          pack_id: string
+          pack_status: string
+          pack_status_detail: string
+          pedido_id: string
+          pickup_id: string
+          qtd_kit: number
           quantidade: number
+          quantidade_itens: number
           quantidade_total: number
           receita_flex_bonus: number
+          rua: string
+          shipping_method: string
+          shipping_mode: string
+          situacao: string
           sku_estoque: string
           sku_kit: string
           sku_produto: string
+          skus_produtos: string
           status: string
+          status_baixa: string
+          status_envio: string
+          status_mapeamento: string
           status_pagamento: string
+          substatus_detail: string
+          substatus_estado_atual: string
+          tags: string[]
           taxa_marketplace: number
+          tipo_logistico: string
+          tipo_metodo_envio: string
+          tipo_pagamento: string
+          titulo_produto: string
+          total_itens: number
           uf: string
+          ultima_atualizacao: string
           updated_at: string
+          url_rastreamento: string
+          valor_desconto: number
+          valor_frete: number
           valor_liquido_vendedor: number
           valor_pago: number
           valor_total: number
+          valor_unitario: number
         }[]
       }
       get_historico_vendas_list: {
@@ -2983,6 +3071,8 @@ export type Database = {
           custo_envio_seller: number | null
           data_pedido: string
           data_prevista: string | null
+          date_created: string | null
+          delivery_type: string | null
           desconto_cupom: number | null
           descricao: string | null
           empresa: string | null
@@ -2990,6 +3080,7 @@ export type Database = {
           id: string
           id_unico: string
           integration_account_id: string | null
+          last_updated: string | null
           logistic_mode_principal: string | null
           meta: Json | null
           metodo_envio_combinado: string | null
@@ -3005,14 +3096,21 @@ export type Database = {
           obs_interna: string | null
           observacoes: string | null
           origem: string | null
+          pack_id: string | null
+          pack_status: string | null
+          pack_status_detail: string | null
           pedido_id: string | null
+          pickup_id: string | null
           qtd_kit: number | null
           quantidade: number
+          quantidade_itens: number | null
           quantidade_kit: number | null
           quantidade_total: number | null
           raw: Json | null
           receita_flex_bonus: number | null
           rua: string | null
+          shipping_method: string | null
+          shipping_mode: string | null
           situacao: string | null
           sku_estoque: string | null
           sku_kit: string | null
@@ -3023,7 +3121,9 @@ export type Database = {
           status_envio: string | null
           status_mapeamento: string | null
           status_pagamento: string | null
+          substatus_detail: string | null
           substatus_estado_atual: string | null
+          tags: string[] | null
           taxa_marketplace: number | null
           tipo_entrega: string | null
           tipo_logistico: string | null
