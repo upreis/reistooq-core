@@ -330,30 +330,22 @@ export function ComposicoesCategorySidebar({
 
   if (isCollapsed) {
     return (
-      <TooltipProvider>
-        <div className="w-12 flex flex-col gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onToggleCollapse}
-                className="w-full h-10 p-0"
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="ml-2">
-              <p>Expandir categorias</p>
-            </TooltipContent>
-          </Tooltip>
-          <ScrollArea className="flex-1 overflow-x-visible pr-3">
-            <div className="space-y-1">
-              {filteredCategories.map(category => renderCategoryItem(category))}
-            </div>
-          </ScrollArea>
-        </div>
-      </TooltipProvider>
+      <div className="w-12 flex flex-col gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onToggleCollapse}
+          className="w-full h-10 p-0"
+          title="Expandir categorias"
+        >
+          <Grid3X3 className="h-4 w-4" />
+        </Button>
+        <ScrollArea className="flex-1 overflow-x-visible pr-3">
+          <div className="space-y-1">
+            {filteredCategories.map(category => renderCategoryItem(category))}
+          </div>
+        </ScrollArea>
+      </div>
     );
   }
 

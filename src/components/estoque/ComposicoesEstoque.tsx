@@ -370,21 +370,10 @@ export function ComposicoesEstoque() {
               {composicoes && composicoes.length > 0 && (
                 <div className="flex items-center gap-2">
                   {componenteLimitante ? (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center gap-2 text-orange-600 cursor-help p-2 rounded-md bg-orange-50">
-                            <AlertTriangle className="h-4 w-4" />
-                            <span className="text-sm font-medium">{estoqueDisponivel}</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            Limitado por {componenteLimitante.nome}: {componenteLimitante.estoque} disponível, precisa {componenteLimitante.necessario}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <div className="flex items-center gap-2 text-orange-600 cursor-help p-2 rounded-md bg-orange-50" title={`Limitado por ${componenteLimitante.nome}: ${componenteLimitante.estoque} disponível, precisa ${componenteLimitante.necessario}`}>
+                      <AlertTriangle className="h-4 w-4" />
+                      <span className="text-sm font-medium">{estoqueDisponivel}</span>
+                    </div>
                   ) : (
                     <div className="flex items-center gap-2 text-green-600 p-2 rounded-md bg-green-50">
                       <CheckCircle className="h-4 w-4" />

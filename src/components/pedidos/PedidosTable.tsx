@@ -59,18 +59,9 @@ function TruncatedCell({ content, maxLength = 50 }: { content?: string | null; m
   }
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="cursor-help">
-            {content.substring(0, maxLength)}...
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p className="max-w-xs whitespace-pre-wrap">{content}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span className="cursor-help" title={content}>
+      {content.substring(0, maxLength)}...
+    </span>
   );
 }
 

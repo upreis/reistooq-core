@@ -80,16 +80,9 @@ const SidebarSingleItem = memo(({
     </NavLink>
   );
 
-  // For solo items (no children), use Tooltip when collapsed
+  // For solo items (no children), no Tooltip to avoid runtime issues
   return !isMobile && isCollapsed ? (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        {link}
-      </TooltipTrigger>
-      <TooltipContent side="right" sideOffset={12}>
-        {item.label}
-      </TooltipContent>
-    </Tooltip>
+    <div title={item.label}>{link}</div>
   ) : (
     link
   );
