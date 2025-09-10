@@ -424,6 +424,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           order.unified?.shipping?.shipping_method?.type ||
                           order.shipping_details?.shipping_method?.type ||
                           order.raw?.shipping?.shipping_method?.type ||
+                          // Fallback para quando a API não traz 'type': usar o 'name'
+                          order.metodo_envio_combinado ||
+                          order.unified?.shipping?.shipping_method?.name ||
+                          order.shipping?.shipping_method?.name ||
+                          order.raw?.shipping?.shipping_method?.name ||
                           '-'
                         )}</span>;
                       case 'delivery_type':
