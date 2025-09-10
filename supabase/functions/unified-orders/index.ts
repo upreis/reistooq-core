@@ -368,7 +368,11 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       pickup_id: shipping.pickup_id || shipping.id || null,
       manufacturing_ending_date: order.manufacturing_ending_date || null,
       comment: order.buyer_comment || order.comment || orderItems.find((item: any) => item.comment)?.comment || null,
-      tags: Array.isArray(order.tags) ? order.tags.join(', ') : (order.tags || null),
+      tags: Array.isArray(order.tags)
+        ? order.tags
+        : (typeof order.tags === 'string'
+            ? order.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
+            : []),
       pack_status: order.pack_status ?? order.pack_data?.status ?? null,
       pack_status_detail: order.pack_status_detail ?? order.pack_data?.status_detail ?? order.pack_data?.status?.detail ?? null,
       
