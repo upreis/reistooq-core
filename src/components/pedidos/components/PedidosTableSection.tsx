@@ -199,38 +199,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
         </Card>
       )}
 
-      {/* Indicadores */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <div className="flex items-center gap-4">
-          <span>Fonte: {state.fonte} | Total: {total} pedidos</span>
-          {state.isRefreshing && <span className="ml-2 animate-pulse">• Atualizando...</span>}
-          
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            onClick={() => {
-              console.log('[DEBUG] === ATUALIZAÇÃO (sem limpar sessão) ===');
-              console.log('[DEBUG] Total de pedidos:', orders.length);
-              if (orders.length > 0) {
-                console.log('[DEBUG] Sample order data:', {
-                  id: orders[0].id,
-                  shipping_mode: orders[0].shipping_mode,
-                  forma_entrega: orders[0].forma_entrega,
-                  is_fulfillment: orders[0].is_fulfillment,
-                  status_detail: orders[0].status_detail,
-                  shipping_destination_receiver_name: orders[0]?.shipping?.destination?.receiver_name,
-                  available_fields: Object.keys(orders[0])
-                });
-              }
-              // Apenas refaz a busca sem limpar storage para evitar logout
-              actions.refetch();
-            }}
-            className="text-xs h-6 px-2"
-          >
-            🔄 Debug & Recarregar
-          </Button>
-        </div>
-        
         {(filters.situacao || filters.dataInicio || filters.dataFim) && (
           <div className="flex items-center gap-1">
             <Badge variant="secondary" className="text-xs">
@@ -238,7 +206,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
             </Badge>
           </div>
         )}
-      </div>
 
       {/* Tabela Principal */}
       <Card>

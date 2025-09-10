@@ -62,7 +62,7 @@ import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
-import { MLConnectionStatus } from './MLConnectionStatus';
+
 
 
 type Order = {
@@ -903,30 +903,6 @@ useEffect(() => {
         selectedOrdersCount={selectedOrders.size}
         hasPendingChanges={filtersManager.hasPendingChanges}
       >
-        {/* 🔗 Status das Conexões ML */}
-        <MLConnectionStatus
-          accountsStats={getAccountsStats()}
-          loading={loading}
-          onReconnectAll={() => {
-            window.open('/integrations?tab=ml', '_blank');
-          }}
-          onRefreshTokens={async (accountIds) => {
-            toast.loading('Renovando tokens...', { id: 'refresh-tokens' });
-            try {
-              for (const accountId of accountIds) {
-                await supabase.functions.invoke('mercadolibre-token-refresh', {
-                  body: { integration_account_id: accountId }
-                });
-              }
-              toast.success('Tokens renovados com sucesso!', { id: 'refresh-tokens' });
-              // Refresh após renovar tokens
-              setTimeout(() => actions.refetch(), 1000);
-            } catch (error) {
-              console.error('Erro ao renovar tokens:', error);
-              toast.error('Erro ao renovar tokens', { id: 'refresh-tokens' });
-            }
-          }}
-        />
       </PedidosHeaderSection>
 
       {/* ✅ Barra de resumo com contadores */}
@@ -1184,56 +1160,6 @@ useEffect(() => {
             </div>
           </div>
 
-      {/* Indicadores */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <div className="flex items-center gap-4">
-          <span>Fonte: {state.fonte} | Total: {total} pedidos</span>
-          {state.isRefreshing && <span className="ml-2 animate-pulse">• Atualizando...</span>}
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            onClick={() => {
-              console.log('[DEBUG] === FORÇANDO ATUALIZAÇÃO COMPLETA ===');
-              console.log('[DEBUG] Total de pedidos:', orders.length);
-              
-              // Debug: Sample das primeiras orders
-              if (orders.length > 0) {
-                console.log('[DEBUG] Sample order data:', {
-                  id: orders[0].id,
-                  shipping_mode: orders[0].shipping_mode,
-                  forma_entrega: orders[0].forma_entrega,
-                  is_fulfillment: orders[0].is_fulfillment,
-                  status_detail: orders[0].status_detail,
-                  available_fields: Object.keys(orders[0])
-                });
-              }
-              
-              // Limpar todos os caches
-              localStorage.clear();
-              sessionStorage.clear();
-              
-              // Recarregar dados
-              actions.clearFilters();
-              actions.refetch();
-              
-              setTimeout(() => {
-                console.log('[DEBUG] Página recarregando para garantir dados frescos...');
-                window.location.reload();
-              }, 1000);
-            }}
-            className="text-xs h-6 px-2"
-          >
-            🔄 Debug & Recarregar
-          </Button>
-        </div>
-        {(filtersManager.appliedFilters.situacao || filtersManager.appliedFilters.dataInicio || filtersManager.appliedFilters.dataFim) && (
-          <div className="flex items-center gap-1">
-            <Badge variant="secondary" className="text-xs">
-              Filtros ativos
-            </Badge>
-          </div>
-        )}
-      </div>
         </div>
       </Card>
 

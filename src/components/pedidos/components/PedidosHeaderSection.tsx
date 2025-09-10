@@ -47,11 +47,6 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
           <h1 className="text-3xl font-bold">{title}</h1>
           <p className="text-muted-foreground">
             {subtitle}
-            {fonte && (
-              <Badge variant="outline" className="ml-2">
-                Fonte: {fonte}
-              </Badge>
-            )}
             {totalCount !== undefined && (
               <Badge variant="secondary" className="ml-2">
                 {totalCount} pedidos
