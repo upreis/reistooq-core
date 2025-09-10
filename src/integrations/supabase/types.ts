@@ -3007,82 +3007,84 @@ export type Database = {
       }
       get_historico_vendas_safe: {
         Args: {
-          _end?: string
+          _date_from?: string
+          _date_to?: string
+          _integration_account_id?: string
           _limit?: number
           _offset?: number
           _search?: string
-          _start?: string
+          _status?: string
         }
         Returns: {
-          bairro: string | null
-          cep: string | null
-          cidade: string | null
-          cliente_documento: string | null
-          cliente_nome: string | null
-          codigo_barras: string | null
-          codigo_rastreamento: string | null
-          cpf_cnpj: string | null
+          bairro: string
+          cep: string
+          cidade: string
+          cliente_documento: string
+          cliente_nome: string
+          codigo_barras: string
+          codigo_rastreamento: string
+          cpf_cnpj: string
           created_at: string
-          created_by: string | null
-          custo_envio_seller: number | null
+          created_by: string
+          custo_envio_seller: number
           data_pedido: string
-          data_prevista: string | null
-          desconto_cupom: number | null
-          descricao: string | null
-          empresa: string | null
-          frete_pago_cliente: number | null
+          data_prevista: string
+          desconto_cupom: number
+          descricao: string
+          empresa: string
+          frete_pago_cliente: number
           id: string
           id_unico: string
-          integration_account_id: string | null
-          logistic_mode_principal: string | null
-          meta: Json | null
-          metodo_envio_combinado: string | null
-          metodo_pagamento: string | null
-          modo_envio_combinado: string | null
-          ncm: string | null
-          nome_completo: string | null
-          numero: string | null
-          numero_ecommerce: string | null
+          integration_account_id: string
+          logistic_mode_principal: string
+          meta: Json
+          metodo_envio_combinado: string
+          metodo_pagamento: string
+          modo_envio_combinado: string
+          ncm: string
+          nome_completo: string
+          numero: string
+          numero_ecommerce: string
           numero_pedido: string
-          numero_venda: string | null
-          obs: string | null
-          obs_interna: string | null
-          observacoes: string | null
-          origem: string | null
-          pedido_id: string | null
-          qtd_kit: number | null
+          numero_venda: string
+          obs: string
+          obs_interna: string
+          observacoes: string
+          origem: string
+          pedido_id: string
+          qtd_kit: number
           quantidade: number
-          quantidade_kit: number | null
-          quantidade_total: number | null
-          raw: Json | null
-          receita_flex_bonus: number | null
-          rua: string | null
-          situacao: string | null
-          sku_estoque: string | null
-          sku_kit: string | null
+          quantidade_kit: number
+          quantidade_total: number
+          raw: Json
+          receita_flex_bonus: number
+          rua: string
+          situacao: string
+          sku_estoque: string
+          sku_kit: string
           sku_produto: string
-          skus_produtos: string | null
+          skus_produtos: string[]
           status: string
-          status_baixa: string | null
-          status_envio: string | null
-          status_mapeamento: string | null
-          status_pagamento: string | null
-          substatus_estado_atual: string | null
-          taxa_marketplace: number | null
-          tipo_entrega: string | null
-          tipo_logistico: string | null
-          tipo_metodo_envio: string | null
-          tipo_pagamento: string | null
-          titulo_produto: string | null
-          total_itens: number | null
-          uf: string | null
-          ultima_atualizacao: string | null
+          status_baixa: string
+          status_envio: string
+          status_mapeamento: string
+          status_pagamento: string
+          substatus_estado_atual: string
+          taxa_marketplace: number
+          tipo_entrega: string
+          tipo_logistico: string
+          tipo_metodo_envio: string
+          tipo_pagamento: string
+          titulo_produto: string
+          total_itens: number
+          uf: string
+          ultima_atualizacao: string
           updated_at: string
-          url_rastreamento: string | null
-          valor_desconto: number | null
-          valor_frete: number | null
-          valor_liquido_vendedor: number | null
-          valor_pago: number | null
+          url_rastreamento: string
+          valor_desconto: number
+          valor_frete: number
+          valor_liquido_vendedor: number
+          valor_pago: number
           valor_total: number
           valor_unitario: number
         }[]
