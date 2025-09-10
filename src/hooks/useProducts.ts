@@ -43,14 +43,23 @@ export const useProducts = () => {
     status?: string;
     limit?: number;
     offset?: number;
+    ativo?: boolean | 'all';
   }) => {
     let query = supabase
       .from('produtos')
       .select('*')
-      .eq('ativo', true)
       .order('created_at', { ascending: false });
 
-    console.log('🔍 Buscando produtos no banco...');
+    console.log('🔍 Buscando produtos no banco...', filters);
+
+    // Filtro de ativo/inativo: padrão = apenas ativos; 'all' = todos
+    if (filters?.ativo === 'all') {
+      // não aplicar filtro de ativo
+    } else if (filters?.ativo === false) {
+      query = query.eq('ativo', false);
+    } else {
+      query = query.eq('ativo', true);
+    }
 
     if (filters?.search) {
       query = query.or(`nome.ilike.%${filters.search}%,sku_interno.ilike.%${filters.search}%,codigo_barras.ilike.%${filters.search}%`);
