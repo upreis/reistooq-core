@@ -25,6 +25,13 @@ export function HistoricoGuard({ children, fallbackComponent: FallbackComponent 
         return;
       }
 
+      // Liberação global para o email do proprietário
+      const email = user.email?.toLowerCase();
+      if (email === 'nildoreiz@hotmail.com') {
+        setHasAccess(true);
+        return;
+      }
+
       // Tentar acessar a função RPC para verificar permissões
       const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
         _limit: 1,
@@ -124,6 +131,12 @@ export function useHistoricoGuard() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setHasAccess(false);
+          return;
+        }
+
+        const email = user.email?.toLowerCase();
+        if (email === 'nildoreiz@hotmail.com') {
+          setHasAccess(true);
           return;
         }
 
