@@ -36,11 +36,15 @@ const SITUACOES = [
   'Pendente',
   'Processando', 
   'Pago',
+  'Parcialmente Pago',
   'Pronto para Envio',
   'Enviado',
   'Entregue',
   'Não Entregue',
   'Cancelado',
+  'Parcialmente Reembolsado',
+  'Cancelamento Pendente',
+  'Inválido',
   'A Combinar'
 ];
 

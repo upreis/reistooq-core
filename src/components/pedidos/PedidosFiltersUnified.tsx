@@ -37,12 +37,17 @@ interface PedidosFiltersUnifiedProps {
 
 const SITUACOES = [
   'Pendente',
+  'Processando',
+  'Pago',
+  'Parcialmente Pago',
   'Pronto para Envio', 
   'Enviado',
   'Entregue',
   'Não Entregue',
   'Cancelado',
-  'Processando',
+  'Parcialmente Reembolsado',
+  'Cancelamento Pendente',
+  'Inválido',
   'A Combinar'
 ];
 

@@ -8,6 +8,8 @@ export const STATUS_MAPPING: Record<string, string> = {
   // Status principais do Mercado Livre
   'pago': 'paid',
   'paid': 'paid',
+  'parcialmente pago': 'partially_paid',
+  'partially_paid': 'partially_paid',
   'enviado': 'shipped',
   'a caminho': 'shipped',
   'shipped': 'shipped',
@@ -20,10 +22,14 @@ export const STATUS_MAPPING: Record<string, string> = {
   'payment_required': 'payment_required',
   'cancelado': 'cancelled',
   'cancelled': 'cancelled',
+  'cancelamento pendente': 'pending_cancel',
+  'pending_cancel': 'pending_cancel',
   'devolvido': 'returned',
   'returned': 'returned',
   'reembolsado': 'refunded',
   'refunded': 'refunded',
+  'parcialmente reembolsado': 'partially_refunded',
+  'partially_refunded': 'partially_refunded',
   'entregue': 'delivered',
   'delivered': 'delivered',
   'não entregue': 'not_delivered',
@@ -37,6 +43,8 @@ export const STATUS_MAPPING: Record<string, string> = {
   'handling': 'handling',
   'aberto': 'active',
   'active': 'active',
+  'inválido': 'invalid',
+  'invalid': 'invalid',
   
   // Status adicionais
   'processando': 'payment_in_process',
@@ -48,8 +56,6 @@ export const STATUS_MAPPING: Record<string, string> = {
   'completed': 'delivered',
   'expired': 'expired',
   'expirado': 'expired',
-  'invalid': 'invalid',
-  'inválido': 'invalid',
   
   // Status para melhor correspondência no filtro
   'a combinar': 'to_combine',
@@ -62,10 +68,12 @@ export const STATUS_LABELS: Record<string, string> = {
   'payment_required': 'Pendente',
   'payment_in_process': 'Processando',
   'paid': 'Pago',
+  'partially_paid': 'Parcialmente Pago',
   'shipped': 'Enviado',
   'delivered': 'Entregue',
   'cancelled': 'Cancelado',
-  'invalid': 'Cancelado',
+  'pending_cancel': 'Cancelamento Pendente',
+  'invalid': 'Inválido',
   'expired': 'Cancelado',
   'pending': 'Pendente',
   'ready_to_ship': 'Pronto para Envio',
@@ -73,6 +81,7 @@ export const STATUS_LABELS: Record<string, string> = {
   'not_delivered': 'Não Entregue',
   'returned': 'Não Entregue',
   'refunded': 'Cancelado',
+  'partially_refunded': 'Parcialmente Reembolsado',
   'active': 'Pendente',
   'to_combine': 'A Combinar',
   
