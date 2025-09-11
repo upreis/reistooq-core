@@ -13,14 +13,14 @@ import { toast } from 'react-hot-toast';
 
 export interface PedidosFilters {
   search?: string;
-  situacao?: string | string[];
+  statusEnvio?: string | string[];
   dataInicio?: Date;
   dataFim?: Date;
   cidade?: string;
   uf?: string;
   valorMin?: number;
   valorMax?: number;
-  contasML?: string[];  // ✅ NOVO: Filtro de contas ML
+  contasML?: string[];
 }
 
 export interface PedidosManagerState {
@@ -218,20 +218,16 @@ export function usePedidosManager(initialAccountId?: string) {
       console.log('🔍 [buildApiParams] Search adicionado:', filters.search);
     }
 
-    // ✅ CORRIGIDO: Usar 'status' ao invés de 'shipping_status' para ML API
-    if (filters.situacao) {
-      const situacoes = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
-      const mapped = situacoes
-        .map((sit) => mapSituacaoToApiStatus(sit) || null)
-        .filter(Boolean) as string[];
+    // Status do Envio (shipping_status)
+    if (filters.statusEnvio) {
+      const statusList = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
 
-      if (mapped.length === 1) {
-        params.status = mapped[0]; // ✅ Mudou de shipping_status para status
-        console.log('📊 [STATUS] Filtro aplicado:', mapped[0]);
-      } else if (mapped.length > 1) {
-        // ✅ Para múltiplos status, aplicar filtro client-side
-        params._client_side_statuses = mapped;
-        console.log('📊 [STATUS] Múltiplos status (client-side):', mapped);
+      if (statusList.length === 1) {
+        params.shipping_status = statusList[0];
+        console.log('📊 [STATUS ENVIO] Filtro aplicado:', statusList[0]);
+      } else if (statusList.length > 1) {
+        params._client_side_shipping_statuses = statusList;
+        console.log('📊 [STATUS ENVIO] Múltiplos status (client-side):', statusList);
       }
     }
 
@@ -639,9 +635,9 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // 🚨 CORRIGIDO: Filtro de status incluindo status de mapeamento/estoque
-      if (filters.situacao) {
-        const selectedStatuses = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
+      // Filtro de status de envio
+      if (filters.statusEnvio) {
+        const selectedStatuses = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
         
         // Verificar se é um filtro especial de status de estoque/mapeamento
         const specialStatuses = ['pronto_baixar', 'mapear_incompleto', 'baixado'];
@@ -907,7 +903,7 @@ export function usePedidosManager(initialAccountId?: string) {
       : (unifiedResult as any).results;
     const rawList = (unifiedResult as any).results || [];
     
-    const shouldApplyClientFilter = Boolean(filters.situacao) && !serverAppliedFiltering;
+    const shouldApplyClientFilter = Boolean(filters.statusEnvio) && !serverAppliedFiltering;
     const filteredClientResults = shouldApplyClientFilter
       ? applyClientSideFilters(baseList)
       : baseList;
