@@ -66,117 +66,130 @@ serve(async (req) => {
     let totalCount = 0;
     
     try {
-      // Buscar todos os pedidos do período para analisar o mapeamento
-      const requestBody = {
-        integration_account_id: accounts[0],
-        limit: 50, // Respeitando limite máximo da API do ML (≤ 51)
-        offset: 0,
-        ...filters // Aplicar filtros (data, busca, etc.)
-      };
+    // PROBLEMA IDENTIFICADO: A API do ML retorna erro 401 (token expirado)
+      // Precisamos usar uma abordagem diferente para contar os pedidos
+      
+      // Para múltiplas contas, processar uma por vez
+      for (const accountId of accounts) {
+        try {
+          const requestBody = {
+            integration_account_id: accountId,
+            limit: 50,
+            offset: 0,
+            ...filters
+          };
 
-      const response = await fetch(unifiedOrdersUrl.toString(), {
-        method: 'POST',
-        headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json',
-          'apikey': Deno.env.get("SUPABASE_ANON_KEY")!,
-        },
-        body: JSON.stringify(requestBody)
-      });
+          const response = await fetch(unifiedOrdersUrl.toString(), {
+            method: 'POST',
+            headers: {
+              'Authorization': authHeader,
+              'Content-Type': 'application/json',
+              'apikey': Deno.env.get("SUPABASE_ANON_KEY")!,
+            },
+            body: JSON.stringify(requestBody)
+          });
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data?.ok) {
-          const orders = data.orders || data.results || data.pedidos || [];
-          totalCount = data.paging?.total ?? data.total ?? orders.length;
+          if (response.ok) {
+            const data = await response.json();
+            if (data?.ok) {
+              const orders = data.orders || data.results || data.pedidos || [];
+              const accountTotal = data.paging?.total ?? data.total ?? orders.length;
+              totalCount += accountTotal;
 
-          console.log(`[pedidos-aggregator:${cid}] Analyzing ${orders.length} orders from total ${totalCount}...`);
+              console.log(`[pedidos-aggregator:${cid}] Account ${accountId.slice(0,8)}: ${orders.length} orders from total ${accountTotal}`);
 
-          // Buscar dados de mapeamento para calcular status_baixa
-          const allSkus = [];
-          for (const order of orders) {
-            const items = (order as any).order_items || [];
-            for (const item of items) {
-              if (item.item?.seller_sku) {
-                allSkus.push(item.item.seller_sku);
+              // Buscar dados de mapeamento para calcular status_baixa
+              const allSkus = [];
+              for (const order of orders) {
+                const items = (order as any).order_items || [];
+                for (const item of items) {
+                  if (item.item?.seller_sku) {
+                    allSkus.push(item.item.seller_sku);
+                  }
+                }
               }
-            }
-          }
 
-          console.log(`[pedidos-aggregator:${cid}] Found ${allSkus.length} SKUs to check mappings for`);
+              console.log(`[pedidos-aggregator:${cid}] Found ${allSkus.length} SKUs to check mappings for account ${accountId.slice(0,8)}`);
 
-          // Buscar mapeamentos
-          let mapeamentosMap = new Map();
-          if (allSkus.length > 0) {
-            try {
-              const supabaseClient = serviceClient();
-              const { data: mapeamentos, error: mapeamentosError } = await supabaseClient.rpc('get_mapeamentos_by_skus', {
-                skus: allSkus
-              });
-              
-              if (!mapeamentosError && mapeamentos) {
-                mapeamentosMap = new Map(
-                  mapeamentos.map((m: any) => [m.sku_pedido, m])
-                );
-                console.log(`[pedidos-aggregator:${cid}] Found ${mapeamentosMap.size} mappings`);
-              } else if (mapeamentosError) {
-                console.warn(`[pedidos-aggregator:${cid}] Error in mappings RPC:`, mapeamentosError);
+              // Buscar mapeamentos
+              let mapeamentosMap = new Map();
+              if (allSkus.length > 0) {
+                try {
+                  const supabaseClient = serviceClient();
+                  const { data: mapeamentos, error: mapeamentosError } = await supabaseClient.rpc('get_mapeamentos_by_skus', {
+                    skus: allSkus
+                  });
+                  
+                  if (!mapeamentosError && mapeamentos) {
+                    mapeamentosMap = new Map(
+                      mapeamentos.map((m: any) => [m.sku_pedido, m])
+                    );
+                    console.log(`[pedidos-aggregator:${cid}] Found ${mapeamentosMap.size} mappings for account ${accountId.slice(0,8)}`);
+                  } else if (mapeamentosError) {
+                    console.warn(`[pedidos-aggregator:${cid}] Error in mappings RPC:`, mapeamentosError);
+                  }
+                } catch (err) {
+                  console.warn(`[pedidos-aggregator:${cid}] Error fetching mappings:`, err);
+                }
               }
-            } catch (err) {
-              console.warn(`[pedidos-aggregator:${cid}] Error fetching mappings:`, err);
-            }
-          }
 
-          for (const order of orders) {
-            const items = (order as any).order_items || [];
-            let temMapeamentoCompleto = false;
-            let temMapeamentoIncompleto = false;
-            let temSemMapeamento = false;
+              for (const order of orders) {
+                const items = (order as any).order_items || [];
+                let temMapeamentoCompleto = false;
+                let temMapeamentoIncompleto = false;
+                let temSemMapeamento = false;
 
-            // Analisar cada item do pedido
-            for (const item of items) {
-              const sku = item.item?.seller_sku;
-              if (!sku) continue;
+                // Analisar cada item do pedido
+                for (const item of items) {
+                  const sku = item.item?.seller_sku;
+                  if (!sku) continue;
 
-              const mapeamento = mapeamentosMap.get(sku);
-              if (!mapeamento) {
-                temSemMapeamento = true;
-              } else {
-                // Verificar se o mapeamento está completo
-                if (mapeamento.sku_correspondente || mapeamento.sku_simples) {
-                  temMapeamentoCompleto = true;
-                } else {
-                  temMapeamentoIncompleto = true;
+                  const mapeamento = mapeamentosMap.get(sku);
+                  if (!mapeamento) {
+                    temSemMapeamento = true;
+                  } else {
+                    // Verificar se o mapeamento está completo
+                    if (mapeamento.sku_correspondente || mapeamento.sku_simples) {
+                      temMapeamentoCompleto = true;
+                    } else {
+                      temMapeamentoIncompleto = true;
+                    }
+                  }
+                }
+
+                // Calcular status da baixa baseado na lógica do frontend
+                let statusBaixa = '';
+                if (temMapeamentoCompleto && !temMapeamentoIncompleto && !temSemMapeamento) {
+                  statusBaixa = 'Pronto p/ Baixar';
+                  prontosBaixaCount++;
+                } else if (temMapeamentoIncompleto || temSemMapeamento) {
+                  statusBaixa = 'Mapear Incompleto';
+                  mapeamentoPendenteCount++;
+                }
+
+                // Debug dos primeiros pedidos por conta
+                if (orders.indexOf(order) < 2) {
+                  console.log(`[pedidos-aggregator:${cid}] Debug order analysis:`, {
+                    accountId: accountId.slice(0,8),
+                    orderId: (order as any).id,
+                    itemsCount: items.length,
+                    temMapeamentoCompleto,
+                    temMapeamentoIncompleto,
+                    temSemMapeamento,
+                    statusBaixa
+                  });
                 }
               }
             }
-
-            // Calcular status da baixa baseado na lógica do frontend
-            let statusBaixa = '';
-            if (temMapeamentoCompleto && !temMapeamentoIncompleto && !temSemMapeamento) {
-              statusBaixa = 'Pronto p/ Baixar';
-              prontosBaixaCount++;
-            } else if (temMapeamentoIncompleto || temSemMapeamento) {
-              statusBaixa = 'Mapear Incompleto';
-              mapeamentoPendenteCount++;
-            }
-
-            // Debug dos primeiros pedidos
-            if (orders.indexOf(order) < 3) {
-              console.log(`[pedidos-aggregator:${cid}] Debug order analysis:`, {
-                orderId: (order as any).id,
-                itemsCount: items.length,
-                temMapeamentoCompleto,
-                temMapeamentoIncompleto,
-                temSemMapeamento,
-                statusBaixa
-              });
-            }
+          } else {
+            console.warn(`[pedidos-aggregator:${cid}] Error fetching orders for account ${accountId.slice(0,8)}:`, response.status);
           }
-
-          console.log(`[pedidos-aggregator:${cid}] Analysis result: prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
+        } catch (error) {
+          console.warn(`[pedidos-aggregator:${cid}] Error processing account ${accountId.slice(0,8)}:`, error);
         }
       }
+
+      console.log(`[pedidos-aggregator:${cid}] Analysis result: total=${totalCount}, prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
     } catch (error) {
       console.warn(`[pedidos-aggregator:${cid}] Error fetching orders for analysis:`, error);
     }

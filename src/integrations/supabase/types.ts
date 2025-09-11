@@ -2840,12 +2840,19 @@ export type Database = {
         Returns: number
       }
       count_baixados: {
-        Args: {
-          _account_ids?: string[]
-          _from?: string
-          _search?: string
-          _to?: string
-        }
+        Args:
+          | {
+              _account_ids?: string[]
+              _from?: string
+              _search?: string
+              _to?: string
+            }
+          | {
+              _account_ids?: string[]
+              _from?: string
+              _search?: string
+              _to?: string
+            }
         Returns: number
       }
       count_mapeamentos_pendentes: {
@@ -3306,7 +3313,6 @@ export type Database = {
       get_mapeamentos_by_skus: {
         Args: { skus: string[] }
         Returns: {
-          ativo: boolean
           quantidade: number
           sku_correspondente: string
           sku_pedido: string
