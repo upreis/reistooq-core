@@ -162,19 +162,11 @@ export class SimpleBaixaService {
         desconto_cupom: valorDescontoReal,
         taxa_marketplace: taxasReal,
         valor_liquido_vendedor: (() => {
-          // ✅ PRIORIZAR CAMPOS DIRETOS DA API ML
-          // 1. Compensation do vendedor (valor líquido já calculado pelo ML)
-          const sellerCompensation = (shipping as any)?.costs?.senders?.[0]?.compensation || 0;
-          if (sellerCompensation > 0) return sellerCompensation;
-          
-          // 2. Transaction amount - marketplace fee (se disponível nos payments)
-          const marketplaceFee = Number((primeiroPagamento as any)?.marketplace_fee || 0);
-          if (primeiroPagamento?.transaction_amount && marketplaceFee > 0) {
-            return Math.max(0, primeiroPagamento.transaction_amount - marketplaceFee);
-          }
-          
-          // 3. Fallback: Valor total - Taxa marketplace
-          return Math.max(0, valorTotalReal - taxasReal);
+          // Valor líquido = Valor total - Taxa marketplace - Custo envio para vendedor
+          const valorTotal = valorTotalReal;
+          const taxaMarketplace = taxasReal;
+          const custoEnvioVendedor = Number((pedido as any).custo_envio_seller || (shipping as any)?.seller_cost || 0);
+          return Math.max(0, valorTotal - taxaMarketplace - custoEnvioVendedor);
         })(),
         metodo_pagamento: metodoPagamentoDetalhado,
         status_pagamento: statusPagamentoDetalhado,
