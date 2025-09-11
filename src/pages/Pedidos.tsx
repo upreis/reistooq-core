@@ -2,13 +2,13 @@
 import React from 'react';
 import { PedidosGuard } from '@/core/pedidos/guards/PedidosGuard';
 import SimplePedidosPage from '@/components/pedidos/SimplePedidosPage';
+import { resetColumnCache } from '@/features/pedidos/hooks/useColumnManager';
 
 export default function Pedidos() {
   console.log('🔍 [DEBUG] Página Pedidos renderizando...');
   
   // Limpar cache de colunas para garantir que as novas apareçam
   React.useEffect(() => {
-    const { resetColumnCache } = require('@/features/pedidos/hooks/useColumnManager');
     resetColumnCache();
     console.log('🔄 Cache de colunas limpo para incluir novas colunas de devolução');
   }, []);
