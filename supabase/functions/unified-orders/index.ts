@@ -53,16 +53,25 @@ async function testPostPurchaseAccess(orderId: string, accessToken: string, cid:
       }
     });
     
-    console.log(`[unified-orders:${cid}] 🧪 Claims API Status: ${claimsResp.status} ${claimsResp.statusText}`);
+    console.log(`[unified-orders:${cid}] 🧪 Claims API Status: ${claimsResp.status} ${claimsResp.statusText}, Headers:`, Object.fromEntries(claimsResp.headers.entries()));
     
     if (claimsResp.ok) {
       const claimsData = await claimsResp.json();
       console.log(`[unified-orders:${cid}] 🧪 Claims API SUCCESS:`, JSON.stringify(claimsData, null, 2));
     } else {
       const errorText = await claimsResp.text();
-      console.error(`[unified-orders:${cid}] 🧪 Claims API ERROR:`, {
+      console.error(`[unified-orders:${cid}] 🧪 ❌ Claims API FALHOU:`, {
         status: claimsResp.status,
-        error: errorText
+        statusText: claimsResp.statusText,
+        error: errorText,
+        url: claimsUrl,
+        possiveisCausas: [
+          'Token sem permissão para post-purchase',
+          'Aplicação não configurada para Claims API',
+          'Order não existe ou não é do vendedor',
+          'API endpoint incorreto',
+          'Headers incorretos'
+        ]
       });
     }
   } catch (error) {
@@ -119,6 +128,54 @@ async function testPostPurchaseAccess(orderId: string, accessToken: string, cid:
     }
   } catch (error) {
     console.error(`[unified-orders:${cid}] 🧪 Claims Gerais EXCEPTION:`, error);
+  }
+  
+  // 🧪 TESTE CRÍTICO: Tentar diferentes endpoints e métodos para descobrir o que funciona
+  console.log(`[unified-orders:${cid}] 🧪 🔍 INVESTIGAÇÃO PROFUNDA - Testando múltiplas abordagens...`);
+  
+  const investigationTests = [
+    {
+      name: 'Test A: Claims básico sem parâmetros',
+      url: 'https://api.mercadolibre.com/post-purchase/v1/claims/search',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    },
+    {
+      name: 'Test B: Claims com limite',
+      url: 'https://api.mercadolibre.com/post-purchase/v1/claims/search?limit=5',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'x-format-new': 'true' }
+    },
+    {
+      name: 'Test C: Claims com status',
+      url: 'https://api.mercadolibre.com/post-purchase/v1/claims/search?status=opened&limit=1',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'x-format-new': 'true' }
+    },
+    {
+      name: 'Test D: Endpoint alternativo v2',
+      url: 'https://api.mercadolibre.com/post-purchase/v2/claims/search',
+      headers: { 'Authorization': `Bearer ${accessToken}`, 'x-format-new': 'true' }
+    }
+  ];
+  
+  for (const test of investigationTests) {
+    try {
+      console.log(`[unified-orders:${cid}] 🧪 ${test.name}: ${test.url}`);
+      const response = await fetch(test.url, { headers: test.headers });
+      const responseText = await response.text();
+      
+      console.log(`[unified-orders:${cid}] 🧪 ${test.name} - Status: ${response.status}, Response: ${responseText.substring(0, 200)}...`);
+      
+      if (response.ok) {
+        console.log(`[unified-orders:${cid}] 🎉 ${test.name} FUNCIONOU!!! Analisando resposta...`);
+        try {
+          const data = JSON.parse(responseText);
+          console.log(`[unified-orders:${cid}] 🎉 ${test.name} - Dados estruturados:`, JSON.stringify(data, null, 2));
+        } catch (e) {
+          console.log(`[unified-orders:${cid}] ⚠️ ${test.name} - Response não é JSON válido`);
+        }
+      }
+    } catch (error) {
+      console.log(`[unified-orders:${cid}] 💥 ${test.name} - Exception:`, error);
+    }
   }
 }
 
