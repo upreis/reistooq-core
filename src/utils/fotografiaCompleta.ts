@@ -172,22 +172,32 @@ function translateShippingStatus(status: string): string {
  * Calcula valor líquido do vendedor
  */
 function getValorLiquidoVendedor(order: any): number {
-  // ✅ CORREÇÃO: Valor líquido = total_amount - sale_fee - shipping costs do vendedor
-  const valorTotal = order.valor_total || order.total_amount || 0;
+  // ✅ PRIORIDADE 1: Usar campos diretos da API do ML
   
-  // Taxa do marketplace (sale_fee por item)
+  // 1. Compensation do vendedor nos shipping costs (valor líquido já calculado pelo ML)
+  const sellerCompensation = order.shipping?.costs?.senders?.[0]?.compensation || 
+                            order.raw?.shipping?.costs?.senders?.[0]?.compensation || 0;
+  if (sellerCompensation > 0) return sellerCompensation;
+  
+  // 2. Transaction amount - marketplace fee direto dos payments
+  const payments = order.payments || order.raw?.payments || [];
+  if (Array.isArray(payments) && payments.length > 0) {
+    const payment = payments[0];
+    const transactionAmount = Number(payment?.transaction_amount || 0);
+    const marketplaceFee = Number(payment?.marketplace_fee || 0);
+    
+    if (transactionAmount > 0) {
+      return Math.max(0, transactionAmount - marketplaceFee);
+    }
+  }
+  
+  // 3. Fallback: Calcular manualmente apenas se não houver dados diretos da API
+  const valorTotal = order.valor_total || order.total_amount || 0;
   const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
                          order.raw?.order_items?.[0]?.sale_fee || 
-                         order.marketplace_fee || 
-                         order.fees?.[0]?.value || 
-                         order.raw?.fees?.[0]?.value || 0;
+                         order.marketplace_fee || 0;
   
-  // Custo de envio que o vendedor paga (não confundir com frete pago pelo cliente)
-  const custoEnvioVendedor = order.custo_envio_seller || 
-                            order.shipping?.costs?.senders?.[0]?.cost || 0;
-  
-  // ✅ VALOR LÍQUIDO CORRETO = Total - Taxa ML - Custos do vendedor
-  return Math.max(0, valorTotal - taxaMarketplace - custoEnvioVendedor);
+  return Math.max(0, valorTotal - taxaMarketplace);
 }
 
 /**
