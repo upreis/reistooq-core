@@ -109,7 +109,8 @@ serve(async (req) => {
           let mapeamentosMap = new Map();
           if (allSkus.length > 0) {
             try {
-              const { data: mapeamentos, error: mapeamentosError } = await sb.rpc('get_mapeamentos_by_skus', {
+              const supabaseClient = serviceClient();
+              const { data: mapeamentos, error: mapeamentosError } = await supabaseClient.rpc('get_mapeamentos_by_skus', {
                 skus: allSkus
               });
               
@@ -118,6 +119,8 @@ serve(async (req) => {
                   mapeamentos.map((m: any) => [m.sku_pedido, m])
                 );
                 console.log(`[pedidos-aggregator:${cid}] Found ${mapeamentosMap.size} mappings`);
+              } else if (mapeamentosError) {
+                console.warn(`[pedidos-aggregator:${cid}] Error in mappings RPC:`, mapeamentosError);
               }
             } catch (err) {
               console.warn(`[pedidos-aggregator:${cid}] Error fetching mappings:`, err);
