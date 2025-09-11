@@ -278,7 +278,7 @@ function SimplePedidosPage({ className }: Props) {
         }
         
         filtersManager.updateFilter('search', filters.search);
-        filtersManager.updateFilter('situacao', filters.situacao);
+        filtersManager.updateFilter('statusEnvio', filters.statusEnvio);
         filtersManager.updateFilter('dataInicio', filters.dataInicio);
         filtersManager.updateFilter('dataFim', filters.dataFim);
         filtersManager.updateFilter('cidade', filters.cidade);
@@ -952,8 +952,8 @@ useEffect(() => {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
                     <span>
-                      {Array.isArray(filtersManager.filters.situacao) && filtersManager.filters.situacao.length > 0
-                        ? `${filtersManager.filters.situacao.length} selecionado(s)`
+                       {Array.isArray(filtersManager.filters.statusEnvio) && filtersManager.filters.statusEnvio.length > 0
+                        ? `${filtersManager.filters.statusEnvio.length} selecionado(s)`
                         : 'Selecionar status'}
                     </span>
                     <Settings className="h-4 w-4" />
@@ -963,8 +963,8 @@ useEffect(() => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium">Status do Envio</h4>
-                      {Array.isArray(filtersManager.filters.situacao) && filtersManager.filters.situacao.length > 0 && (
-                        <Button size="sm" variant="ghost" onClick={() => filtersManager.updateFilter('situacao', undefined)}>
+                      {Array.isArray(filtersManager.filters.statusEnvio) && filtersManager.filters.statusEnvio.length > 0 && (
+                        <Button size="sm" variant="ghost" onClick={() => filtersManager.updateFilter('statusEnvio', undefined)}>
                           Limpar
                         </Button>
                       )}
@@ -980,9 +980,9 @@ useEffect(() => {
                         { value: 'cancelled', label: 'Cancelado', color: 'bg-gray-400' },
                         { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
                       ].map((status) => {
-                        const current = Array.isArray(filtersManager.filters.situacao)
-                          ? filtersManager.filters.situacao
-                          : (filtersManager.filters.situacao ? [filtersManager.filters.situacao] : []);
+                        const current = Array.isArray(filtersManager.filters.statusEnvio)
+                          ? filtersManager.filters.statusEnvio
+                          : (filtersManager.filters.statusEnvio ? [filtersManager.filters.statusEnvio] : []);
                         const isSelected = current.includes(status.value);
                         return (
                           <label key={status.value} className="flex items-center space-x-2 text-sm cursor-pointer">
@@ -990,10 +990,10 @@ useEffect(() => {
                               checked={isSelected}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  filtersManager.updateFilter('situacao', [...current, status.value]);
+                                  filtersManager.updateFilter('statusEnvio', [...current, status.value]);
                                 } else {
                                   const next = current.filter((s) => s !== status.value);
-                                  filtersManager.updateFilter('situacao', next.length > 0 ? next : undefined);
+                                  filtersManager.updateFilter('statusEnvio', next.length > 0 ? next : undefined);
                                 }
                               }}
                             />
