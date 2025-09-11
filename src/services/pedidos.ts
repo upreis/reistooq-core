@@ -381,65 +381,6 @@ function mapMlStatus(mlStatus: string): string {
   }
 }
 
-// Função para mapear status de envio para valores padronizados
-function mapShippingStatusToValue(status: string): string {
-  if (!status) return 'pending';
-  
-  const normalizedStatus = status.toLowerCase().trim();
-  
-  // Mapeamento direto dos valores do ML
-  switch (normalizedStatus) {
-    case 'pending':
-    case 'pendente':
-      return 'pending';
-    case 'ready_to_ship':
-    case 'pronto para envio':
-    case 'ready_to_print':
-    case 'pronto para imprimir':
-      return 'ready_to_ship';
-    case 'shipped':
-    case 'enviado':
-    case 'printed':
-    case 'impresso':
-      return 'shipped';
-    case 'delivered':
-    case 'entregue':
-      return 'delivered';
-    case 'not_delivered':
-    case 'não entregue':
-      return 'not_delivered';
-    case 'cancelled':
-    case 'cancelado':
-      return 'cancelled';
-    case 'to_be_agreed':
-    case 'a combinar':
-      return 'to_be_agreed';
-    case 'handling':
-    case 'processando':
-      return 'handling';
-    case 'delayed':
-    case 'atrasado':
-      return 'delayed';
-    case 'lost_in_transit':
-    case 'perdido':
-      return 'lost_in_transit';
-    case 'damaged':
-    case 'danificado':
-      return 'damaged';
-    case 'dimensions_exceed':
-    case 'medidas não correspondem':
-      return 'dimensions_exceed';
-    default:
-      // Para status não mapeados, tentar inferir baseado em palavras-chave
-      if (normalizedStatus.includes('cancel')) return 'cancelled';
-      if (normalizedStatus.includes('deliver')) return 'delivered';
-      if (normalizedStatus.includes('ship')) return 'shipped';
-      if (normalizedStatus.includes('ready')) return 'ready_to_ship';
-      if (normalizedStatus.includes('pend')) return 'pending';
-      return 'pending'; // fallback
-  }
-}
-
 export type FontePedidos = 'banco' | 'tempo-real';
 
 export interface PedidosHybridResult {
@@ -520,36 +461,22 @@ export function usePedidosHybrid({
       if (bancoResult.data && bancoResult.data.length > 0) {
         let filteredData = bancoResult.data;
         
-        // Aplicar filtro de status de envio com mapeamento correto
+        // Aplicar filtro de status de envio
         if (statusEnvio && Array.isArray(statusEnvio) && statusEnvio.length > 0) {
           filteredData = filteredData.filter(order => {
-            // Obter o status de envio de múltiplas fontes
             const shippingStatus = (order as any).shipping_status || 
                                    (order as any).shipping?.status || 
                                    (order as any).raw?.shipping?.status || 
-                                   (order as any).status_envio ||
-                                   (order as any).unified?.shipping?.status ||
-                                   (order as any).situacao;
-            
-            // Mapear valores do status para comparação
-            const normalizedStatus = mapShippingStatusToValue(shippingStatus);
-            console.log(`🔍 Pedido ${order.id}: status original="${shippingStatus}", normalizado="${normalizedStatus}", filtros=`, statusEnvio);
-            
-            return statusEnvio.includes(normalizedStatus);
+                                   (order as any).status_envio;
+            return statusEnvio.includes(shippingStatus);
           });
         } else if (statusEnvio && typeof statusEnvio === 'string') {
           filteredData = filteredData.filter(order => {
             const shippingStatus = (order as any).shipping_status || 
                                    (order as any).shipping?.status || 
                                    (order as any).raw?.shipping?.status || 
-                                   (order as any).status_envio ||
-                                   (order as any).unified?.shipping?.status ||
-                                   (order as any).situacao;
-            
-            const normalizedStatus = mapShippingStatusToValue(shippingStatus);
-            console.log(`🔍 Pedido ${order.id}: status original="${shippingStatus}", normalizado="${normalizedStatus}", filtro="${statusEnvio}"`);
-            
-            return normalizedStatus === statusEnvio;
+                                   (order as any).status_envio;
+            return shippingStatus === statusEnvio;
           });
         }
         

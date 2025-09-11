@@ -35,26 +35,22 @@ interface PedidosFiltersUnifiedProps {
   columnManager?: any;
 }
 
-// Mapeamento correto baseado no que está sendo usado no sistema
-const SHIPPING_STATUS_OPTIONS = [
-  { value: 'pending', label: 'Pendente' },
-  { value: 'ready_to_ship', label: 'Pronto para Envio' },
-  { value: 'shipped', label: 'Enviado' },
-  { value: 'delivered', label: 'Entregue' },
-  { value: 'not_delivered', label: 'Não Entregue' },
-  { value: 'cancelled', label: 'Cancelado' },
-  { value: 'to_be_agreed', label: 'A Combinar' },
-  { value: 'handling', label: 'Processando' },
-  { value: 'ready_to_print', label: 'Pronto para Imprimir' },
-  { value: 'printed', label: 'Impresso' },
-  { value: 'delayed', label: 'Atrasado' },
-  { value: 'lost_in_transit', label: 'Perdido' },
-  { value: 'damaged', label: 'Danificado' },
-  { value: 'dimensions_exceed', label: 'Medidas Não Correspondem' }
+const STATUS_ENVIO = [
+  'Pendente',
+  'Pronto para Envio',
+  'Enviado',
+  'Entregue',
+  'Não Entregue',
+  'Cancelado',
+  'A Combinar',
+  'Processando',
+  'Pronto para Imprimir',
+  'Impresso',
+  'Atrasado',
+  'Perdido',
+  'Danificado',
+  'Medidas Não Correspondem'
 ];
-
-// Para compatibilidade, manter a lista simples também
-const STATUS_ENVIO = SHIPPING_STATUS_OPTIONS.map(option => option.label);
 
 const UFS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
@@ -80,12 +76,12 @@ export function PedidosFiltersUnified({
   const [contasMLOpen, setContasMLOpen] = useState(false);
 
   // Handlers para seleção múltipla
-  const handleStatusEnvioChange = (statusValue: string, checked: boolean) => {
+  const handleStatusEnvioChange = (status: string, checked: boolean) => {
     const current = filters.statusEnvio || [];
     if (checked) {
-      onFilterChange('statusEnvio', [...current, statusValue]);
+      onFilterChange('statusEnvio', [...current, status]);
     } else {
-      const newList = current.filter(s => s !== statusValue);
+      const newList = current.filter(s => s !== status);
       onFilterChange('statusEnvio', newList.length > 0 ? newList : undefined);
     }
   };
@@ -198,7 +194,7 @@ export function PedidosFiltersUnified({
                 {selectedStatusEnvio.length === 0
                   ? "Todos os status"
                   : selectedStatusEnvio.length === 1
-                  ? SHIPPING_STATUS_OPTIONS.find(opt => opt.value === selectedStatusEnvio[0])?.label || selectedStatusEnvio[0]
+                  ? selectedStatusEnvio[0]
                   : `${selectedStatusEnvio.length} selecionados`
                 }
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -207,15 +203,15 @@ export function PedidosFiltersUnified({
             <PopoverContent className="w-full p-0 bg-background border border-border z-50">
               <div className="p-2 space-y-2">
                 <div className="text-sm font-medium px-2 py-1">Selecione os status:</div>
-                {SHIPPING_STATUS_OPTIONS.map((option) => (
-                  <div key={option.value} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
+                {STATUS_ENVIO.map((status) => (
+                  <div key={status} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
                     <Checkbox
-                      id={`status-${option.value}`}
-                      checked={selectedStatusEnvio.includes(option.value)}
-                      onCheckedChange={(checked) => handleStatusEnvioChange(option.value, checked as boolean)}
+                      id={`status-${status}`}
+                      checked={selectedStatusEnvio.includes(status)}
+                      onCheckedChange={(checked) => handleStatusEnvioChange(status, checked as boolean)}
                     />
-                    <label htmlFor={`status-${option.value}`} className="text-sm cursor-pointer flex-1">
-                      {option.label}
+                    <label htmlFor={`status-${status}`} className="text-sm cursor-pointer flex-1">
+                      {status}
                     </label>
                   </div>
                 ))}
@@ -366,9 +362,7 @@ export function PedidosFiltersUnified({
           )}
           {(appliedFilters.statusEnvio?.length || 0) > 0 && (
             <Badge variant="secondary" className="gap-1">
-              Status do Envio: {appliedFilters.statusEnvio!.length === 1 
-                ? SHIPPING_STATUS_OPTIONS.find(opt => opt.value === appliedFilters.statusEnvio![0])?.label || appliedFilters.statusEnvio![0]
-                : `${appliedFilters.statusEnvio!.length} selecionados`}
+              Status do Envio: {appliedFilters.statusEnvio!.length === 1 ? appliedFilters.statusEnvio![0] : `${appliedFilters.statusEnvio!.length} selecionados`}
               <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('statusEnvio', undefined)} />
             </Badge>
           )}
