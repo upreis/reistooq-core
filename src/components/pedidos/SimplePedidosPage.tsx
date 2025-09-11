@@ -972,12 +972,12 @@ useEffect(() => {
                     <div className="grid grid-cols-1 gap-2">
                       {[
                         { value: 'pending', label: 'Pendente', color: 'bg-yellow-400' },
-                        { value: 'ready_to_ship', label: 'Pronto para Envio', color: 'bg-blue-400' },
-                        { value: 'shipped', label: 'Enviado', color: 'bg-purple-400' },
+                        { value: 'handling', label: 'Preparando', color: 'bg-cyan-400' },
+                        { value: 'ready_to_ship', label: 'Pronto para Enviar', color: 'bg-blue-400' },
+                        { value: 'shipped', label: 'A Caminho', color: 'bg-purple-400' },
                         { value: 'delivered', label: 'Entregue', color: 'bg-green-400' },
                         { value: 'not_delivered', label: 'Não Entregue', color: 'bg-red-400' },
                         { value: 'cancelled', label: 'Cancelado', color: 'bg-gray-400' },
-                        { value: 'handling', label: 'Processando', color: 'bg-cyan-400' },
                         { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
                       ].map((status) => {
                         const current = Array.isArray(filtersManager.filters.situacao)
