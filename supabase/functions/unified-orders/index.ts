@@ -37,11 +37,101 @@ async function refreshIfNeeded(supabase: any, tokens: any, cid: string, authHead
   return { access_token };
 }
 
+// 🧪 Função de diagnóstico para testar acesso às APIs de post-purchase
+async function testPostPurchaseAccess(orderId: string, accessToken: string, cid: string) {
+  console.log(`[unified-orders:${cid}] 🧪 DIAGNÓSTICO: Testando acesso às APIs de post-purchase para order ${orderId}`);
+  
+  // Teste 1: API de Claims Search
+  try {
+    const claimsUrl = `https://api.mercadolivre.com/post-purchase/v1/claims/search?resource=order&resource_id=${orderId}`;
+    console.log(`[unified-orders:${cid}] 🧪 Testando Claims API: ${claimsUrl}`);
+    
+    const claimsResp = await fetch(claimsUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'x-format-new': 'true'
+      }
+    });
+    
+    console.log(`[unified-orders:${cid}] 🧪 Claims API Status: ${claimsResp.status} ${claimsResp.statusText}`);
+    
+    if (claimsResp.ok) {
+      const claimsData = await claimsResp.json();
+      console.log(`[unified-orders:${cid}] 🧪 Claims API SUCCESS:`, JSON.stringify(claimsData, null, 2));
+    } else {
+      const errorText = await claimsResp.text();
+      console.error(`[unified-orders:${cid}] 🧪 Claims API ERROR:`, {
+        status: claimsResp.status,
+        error: errorText
+      });
+    }
+  } catch (error) {
+    console.error(`[unified-orders:${cid}] 🧪 Claims API EXCEPTION:`, error);
+  }
+  
+  // Teste 2: Verificar se o usuário tem permissões de post-purchase
+  try {
+    const userUrl = `https://api.mercadolibre.com/users/me`;
+    console.log(`[unified-orders:${cid}] 🧪 Testando User Info API: ${userUrl}`);
+    
+    const userResp = await fetch(userUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    });
+    
+    if (userResp.ok) {
+      const userData = await userResp.json();
+      console.log(`[unified-orders:${cid}] 🧪 User Info:`, {
+        id: userData.id,
+        nickname: userData.nickname,
+        site_id: userData.site_id,
+        seller_status: userData.seller_status
+      });
+    }
+  } catch (error) {
+    console.error(`[unified-orders:${cid}] 🧪 User API EXCEPTION:`, error);
+  }
+  
+  // Teste 3: Verificar lista geral de claims do usuário (sem filtro por order)
+  try {
+    const generalClaimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?limit=1`;
+    console.log(`[unified-orders:${cid}] 🧪 Testando Claims Gerais: ${generalClaimsUrl}`);
+    
+    const generalClaimsResp = await fetch(generalClaimsUrl, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'x-format-new': 'true'
+      }
+    });
+    
+    console.log(`[unified-orders:${cid}] 🧪 Claims Gerais Status: ${generalClaimsResp.status} ${generalClaimsResp.statusText}`);
+    
+    if (generalClaimsResp.ok) {
+      const generalClaimsData = await generalClaimsResp.json();
+      console.log(`[unified-orders:${cid}] 🧪 Claims Gerais SUCCESS:`, JSON.stringify(generalClaimsData, null, 2));
+    } else {
+      const errorText = await generalClaimsResp.text();
+      console.error(`[unified-orders:${cid}] 🧪 Claims Gerais ERROR:`, {
+        status: generalClaimsResp.status,
+        error: errorText
+      });
+    }
+  } catch (error) {
+    console.error(`[unified-orders:${cid}] 🧪 Claims Gerais EXCEPTION:`, error);
+  }
+}
+
 async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid: string) {
   if (!orders?.length) return orders;
 
   console.log(`[unified-orders:${cid}] Enriquecendo ${orders.length} pedidos com dados completos`);
   
+  // 🧪 DIAGNÓSTICO: Testar acesso às APIs de post-purchase
+  if (orders.length > 0) {
+    const testOrder = orders[0];
+    await testPostPurchaseAccess(testOrder.id, accessToken, cid);
+  }
   const enrichedOrders = await Promise.all(
     orders.map(async (order) => {
       try {
