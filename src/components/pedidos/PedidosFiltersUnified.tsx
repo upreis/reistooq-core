@@ -35,10 +35,9 @@ interface PedidosFiltersUnifiedProps {
   columnManager?: any;
 }
 
-// ✅ NOVO FILTRO DE STATUS DO ENVIO - USANDO TEXTOS TRADUZIDOS DIRETOS
-const SHIPPING_STATUS_OPTIONS = [
+const STATUS_ENVIO = [
   'Pendente',
-  'Pronto para Envio', 
+  'Pronto para Envio',
   'Enviado',
   'Entregue',
   'Não Entregue',
@@ -73,17 +72,16 @@ export function PedidosFiltersUnified({
   contasML = [],
   columnManager
 }: PedidosFiltersUnifiedProps) {
+  const [situacaoOpen, setSituacaoOpen] = useState(false);
   const [contasMLOpen, setContasMLOpen] = useState(false);
-  // ✅ NOVO: Estado para o filtro de status de envio
-  const [shippingStatusOpen, setShippingStatusOpen] = useState(false);
 
-  // ✅ NOVO: Handler para o filtro de status de envio
-  const handleShippingStatusChange = (statusText: string, checked: boolean) => {
+  // Handlers para seleção múltipla
+  const handleStatusEnvioChange = (status: string, checked: boolean) => {
     const current = filters.statusEnvio || [];
     if (checked) {
-      onFilterChange('statusEnvio', [...current, statusText]);
+      onFilterChange('statusEnvio', [...current, status]);
     } else {
-      const newList = current.filter(s => s !== statusText);
+      const newList = current.filter(s => s !== status);
       onFilterChange('statusEnvio', newList.length > 0 ? newList : undefined);
     }
   };
@@ -98,9 +96,7 @@ export function PedidosFiltersUnified({
     }
   };
 
-  
-  // ✅ NOVO: Status selecionados para o filtro de envio
-  const selectedShippingStatus = filters.statusEnvio || [];
+  const selectedStatusEnvio = filters.statusEnvio || [];
   const selectedContasML = filters.contasML || [];
 
   return (
@@ -178,6 +174,64 @@ export function PedidosFiltersUnified({
           </div>
         </div>
 
+        {/* Status do Envio - Aplicação manual */}
+        <div className="lg:col-span-1 xl:col-span-1">
+          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
+            Status do Envio
+            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
+          </label>
+          <Popover open={situacaoOpen} onOpenChange={setSituacaoOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={situacaoOpen}
+                className={cn(
+                  "w-full justify-between",
+                  hasPendingChanges && JSON.stringify(filters.statusEnvio || []) !== JSON.stringify(appliedFilters.statusEnvio || []) && "border-warning"
+                )}
+              >
+                {selectedStatusEnvio.length === 0
+                  ? "Todos os status"
+                  : selectedStatusEnvio.length === 1
+                  ? selectedStatusEnvio[0]
+                  : `${selectedStatusEnvio.length} selecionados`
+                }
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full p-0 bg-background border border-border z-50">
+              <div className="p-2 space-y-2">
+                <div className="text-sm font-medium px-2 py-1">Selecione os status:</div>
+                {STATUS_ENVIO.map((status) => (
+                  <div key={status} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
+                    <Checkbox
+                      id={`status-${status}`}
+                      checked={selectedStatusEnvio.includes(status)}
+                      onCheckedChange={(checked) => handleStatusEnvioChange(status, checked as boolean)}
+                    />
+                    <label htmlFor={`status-${status}`} className="text-sm cursor-pointer flex-1">
+                      {status}
+                    </label>
+                  </div>
+                ))}
+                {selectedStatusEnvio.length > 0 && (
+                  <div className="border-t pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onFilterChange('statusEnvio', undefined)}
+                      className="w-full"
+                    >
+                      Limpar seleção
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
         {/* Contas ML - Aplicação manual */}
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
@@ -251,96 +305,38 @@ export function PedidosFiltersUnified({
           </Popover>
         </div>
 
-        {/* Período - Aplicação manual */}
-        <div className="lg:col-span-1 xl:col-span-1">
+        {/* Período + Colunas - Aplicação manual */}
+        <div className="lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Período
             <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
-          <PeriodSelector
-            startDate={filters.dataInicio}
-            endDate={filters.dataFim}
-            onDateRangeChange={(startDate, endDate) => {
-              onFilterChange('dataInicio', startDate);
-              onFilterChange('dataFim', endDate);
-            }}
-            hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
-            className="w-full min-w-[200px]"
-          />
-        </div>
-
-        {/* ✅ NOVO FILTRO: Status do Envio - Aplicação manual */}
-        <div className="lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Status do Envio
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
-          </label>
-          <Popover open={shippingStatusOpen} onOpenChange={setShippingStatusOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={shippingStatusOpen}
-                className={cn(
-                  "w-full justify-between",
-                  hasPendingChanges && JSON.stringify(filters.statusEnvio || []) !== JSON.stringify(appliedFilters.statusEnvio || []) && "border-warning"
-                )}
-              >
-                {selectedShippingStatus.length === 0
-                  ? "Todos os status"
-                  : selectedShippingStatus.length === 1
-                  ? selectedShippingStatus[0]
-                  : `${selectedShippingStatus.length} selecionados`
-                }
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0 bg-background border border-border z-50">
-              <div className="p-2 space-y-2 max-h-64 overflow-y-auto">
-                <div className="text-sm font-medium px-2 py-1">Selecione os status:</div>
-                {SHIPPING_STATUS_OPTIONS.map((status) => (
-                  <div key={status} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
-                    <Checkbox
-                      id={`shipping-status-${status}`}
-                      checked={selectedShippingStatus.includes(status)}
-                      onCheckedChange={(checked) => handleShippingStatusChange(status, checked as boolean)}
-                    />
-                    <label htmlFor={`shipping-status-${status}`} className="text-sm cursor-pointer flex-1">
-                      {status}
-                    </label>
-                  </div>
-                ))}
-                {selectedShippingStatus.length > 0 && (
-                  <div className="border-t pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onFilterChange('statusEnvio', undefined)}
-                      className="w-full"
-                    >
-                      Limpar seleção
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* Botão de Colunas */}
-        <div className="lg:col-span-1 xl:col-span-1 flex justify-start items-end">
-          {columnManager && (
-            <ColumnManager 
-              manager={columnManager}
-              trigger={
-                <Button variant="outline" size="sm" className="h-9 px-3">
-                  <Settings className="h-4 w-4 mr-1.5" />
-                  <span className="hidden sm:inline">Colunas ({columnManager.state?.visibleColumns?.size || 0})</span>
-                  <span className="sm:hidden">Cols</span>
-                </Button>
-              }
+          <div className="flex items-end gap-2">
+            <PeriodSelector
+              startDate={filters.dataInicio}
+              endDate={filters.dataFim}
+              onDateRangeChange={(startDate, endDate) => {
+                onFilterChange('dataInicio', startDate);
+                onFilterChange('dataFim', endDate);
+              }}
+              hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
+              className="w-fit min-w-[240px]"
             />
-          )}
+
+            {/* Botão de Colunas (ao lado do Período) */}
+            {columnManager && (
+              <ColumnManager 
+                manager={columnManager}
+                trigger={
+                  <Button variant="outline" size="sm" className="h-9 px-3">
+                    <Settings className="h-4 w-4 mr-1.5" />
+                    <span className="hidden sm:inline">Colunas ({columnManager.state?.visibleColumns?.size || 0})</span>
+                    <span className="sm:hidden">Cols</span>
+                  </Button>
+                }
+              />
+            )}
+          </div>
         </div>
 
         {/* Botão de Limpar */}
@@ -366,10 +362,7 @@ export function PedidosFiltersUnified({
           )}
           {(appliedFilters.statusEnvio?.length || 0) > 0 && (
             <Badge variant="secondary" className="gap-1">
-              Status do Envio: {appliedFilters.statusEnvio!.length === 1 
-                ? appliedFilters.statusEnvio![0]
-                : `${appliedFilters.statusEnvio!.length} selecionados`
-              }
+              Status do Envio: {appliedFilters.statusEnvio!.length === 1 ? appliedFilters.statusEnvio![0] : `${appliedFilters.statusEnvio!.length} selecionados`}
               <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('statusEnvio', undefined)} />
             </Badge>
           )}
