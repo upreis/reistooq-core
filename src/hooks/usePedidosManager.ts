@@ -223,10 +223,10 @@ export function usePedidosManager(initialAccountId?: string) {
       const statusList = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
 
       if (statusList.length === 1) {
-        params.shipping_status = statusList[0];
+        params.statusEnvio = statusList[0];
         console.log('📊 [STATUS ENVIO] Filtro aplicado:', statusList[0]);
       } else if (statusList.length > 1) {
-        params._client_side_shipping_statuses = statusList;
+        params._client_side_status_envio = statusList;
         console.log('📊 [STATUS ENVIO] Múltiplos status (client-side):', statusList);
       }
     }
@@ -338,7 +338,7 @@ export function usePedidosManager(initialAccountId?: string) {
    * ✅ BLINDAGEM: Tolerante a falhas de conta, agregação robusta, feedback claro
    */
   const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
-    const { shipping_status, ...rest } = apiParams || {};
+    const { statusEnvio, ...rest } = apiParams || {};
     
     // 🚨 AUDITORIA FIX: Suporte a múltiplas contas ML com blindagem total
     if (apiParams.integration_account_ids && Array.isArray(apiParams.integration_account_ids)) {
@@ -358,7 +358,7 @@ export function usePedidosManager(initialAccountId?: string) {
             integration_account_id: accountId,
             limit: pageSize,
             offset: (currentPage - 1) * pageSize,
-            ...(shipping_status ? { shipping_status } : {}),
+            ...(statusEnvio ? { statusEnvio } : {}),
             ...(rest.status ? { status: rest.status } : {}),
             ...(rest.q ? { q: rest.q, search: rest.q } : {}),
             ...(rest.cidade ? { cidade: rest.cidade } : {}),
@@ -404,9 +404,9 @@ export function usePedidosManager(initialAccountId?: string) {
               toast.error(`Erro ao buscar pedidos da conta ${singleAccountBody.integration_account_id?.slice(0, 8)}`);
             }
 
-            // Fallback: se erro, tentar novamente sem shipping_status
-            const { shipping_status: _omit, ...withoutStatus } = singleAccountBody as any;
-            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem shipping_status...`);
+            // Fallback: se erro, tentar novamente sem statusEnvio
+            const { statusEnvio: _omit, ...withoutStatus } = singleAccountBody as any;
+            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem statusEnvio...`);
             try {
               ({ data, error } = await supabase.functions.invoke('unified-orders', {
                 body: withoutStatus
@@ -428,8 +428,8 @@ export function usePedidosManager(initialAccountId?: string) {
               status: data?.status || error?.status || 'unknown'
             });
             continue;
-            const { shipping_status: _omit, ...withoutStatus } = singleAccountBody as any;
-            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem shipping_status...`);
+            const { statusEnvio: _omit, ...withoutStatus } = singleAccountBody as any;
+            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem statusEnvio...`);
             try {
               ({ data, error } = await supabase.functions.invoke('unified-orders', {
                 body: withoutStatus
@@ -509,7 +509,7 @@ export function usePedidosManager(initialAccountId?: string) {
         unified: allUnified,
         total: totalCount,
         paging: { total: totalCount, limit: pageSize, offset: (currentPage - 1) * pageSize },
-        serverStatusApplied: Boolean(shipping_status),
+        serverStatusApplied: Boolean(statusEnvio),
         _multiAccount: true,
         _accountStats: {
           total: apiParams.integration_account_ids.length,
@@ -530,7 +530,7 @@ export function usePedidosManager(initialAccountId?: string) {
       integration_account_id: apiParams.integration_account_id || integrationAccountId,
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
-      ...(shipping_status ? { shipping_status } : {}),
+      ...(statusEnvio ? { statusEnvio } : {}),
       ...(rest.status ? { status: rest.status } : {}),
       ...(rest.q ? { q: rest.q, search: rest.q } : {}),
       ...(rest.cidade ? { cidade: rest.cidade } : {}),
@@ -559,10 +559,10 @@ export function usePedidosManager(initialAccountId?: string) {
       error = e;
     }
 
-    // Fallback: tentar sem shipping_status mantendo datas e demais filtros
+    // Fallback: tentar sem statusEnvio mantendo datas e demais filtros
     if (error || !data?.ok) {
-      const { shipping_status: _omit, ...withoutStatus } = requestBody as any;
-      console.warn('⚠️ unified-orders falhou com shipping_status, tentando sem status...');
+      const { statusEnvio: _omit, ...withoutStatus } = requestBody as any;
+      console.warn('⚠️ unified-orders falhou com statusEnvio, tentando sem status...');
       try {
         ({ data, error } = await supabase.functions.invoke('unified-orders', {
           body: withoutStatus
@@ -580,7 +580,7 @@ export function usePedidosManager(initialAccountId?: string) {
       unified: (data.unified && data.unified.length ? data.unified : (data.pedidos || [])),
       total: data.paging?.total || data.paging?.count || data.total || (Array.isArray(data.results) ? data.results.length : Array.isArray(data.pedidos) ? data.pedidos.length : 0),
       paging: data.paging || undefined,
-      serverStatusApplied: Boolean(requestBody.shipping_status)
+      serverStatusApplied: Boolean(statusEnvio)
     };
   }, [integrationAccountId, currentPage, pageSize, getUrlParams]);
 
