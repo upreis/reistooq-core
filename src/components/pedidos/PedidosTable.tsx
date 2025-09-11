@@ -406,47 +406,6 @@ export function PedidosTable({
                             const items = get(row.raw, 'order_items');
                             return Array.isArray(items) ? items.length : show(get(row.unified, 'total_itens'));
                           
-                          
-                          // ====== DEVOLUÇÕES MERCADO LIVRE ======
-                          case 'return_status':
-                            return show(get(row.unified, 'return_status') ?? get(row.raw, 'return_status'));
-                          case 'return_status_money':
-                            return show(get(row.unified, 'return_status_money') ?? get(row.raw, 'return_status_money'));
-                          case 'has_return':
-                            const hasReturn = get(row.unified, 'has_return') ?? get(row.raw, 'has_return');
-                            return (
-                              <Badge variant={hasReturn ? "default" : "outline"}>
-                                {hasReturn ? "Sim" : "Não"}
-                              </Badge>
-                            );
-                          case 'has_claim':
-                            const hasClaim = get(row.unified, 'has_claim') ?? get(row.raw, 'has_claim');
-                            return (
-                              <Badge variant={hasClaim ? "default" : "outline"}>
-                                {hasClaim ? "Sim" : "Não"}
-                              </Badge>
-                            );
-                          case 'return_shipment_status':
-                            return show(get(row.unified, 'return_shipment_status') ?? get(row.raw, 'return_shipment_status'));
-                          case 'return_tracking_number':
-                            return show(get(row.unified, 'return_tracking_number') ?? get(row.raw, 'return_tracking_number'));
-                          case 'return_refund_at':
-                            return show(get(row.unified, 'return_refund_at') ?? get(row.raw, 'return_refund_at'));
-                          case 'return_date_closed':
-                            return formatDate(get(row.unified, 'return_date_closed') ?? get(row.raw, 'return_date_closed'));
-                          case 'return_date_created':
-                            return formatDate(get(row.unified, 'return_date_created') ?? get(row.raw, 'return_date_created'));
-                          case 'return_subtype':
-                            return show(get(row.unified, 'return_subtype') ?? get(row.raw, 'return_subtype'));
-                          case 'return_product_condition':
-                            return show(get(row.unified, 'return_product_condition') ?? get(row.raw, 'return_product_condition'));
-                          case 'return_product_destination':
-                            return show(get(row.unified, 'return_product_destination') ?? get(row.raw, 'return_product_destination'));
-                          case 'return_seller_status':
-                            return show(get(row.unified, 'return_seller_status') ?? get(row.raw, 'return_seller_status'));
-                          case 'return_benefited':
-                            return show(get(row.unified, 'return_benefited') ?? get(row.raw, 'return_benefited'));
-                          
                           default:
                             return '—';
                         }

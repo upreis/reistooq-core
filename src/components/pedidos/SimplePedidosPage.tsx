@@ -260,64 +260,6 @@ function SimplePedidosPage({ className }: Props) {
     });
   }, [orders, quickFilter, mappingData, isPedidoProcessado]);
 
-  // 🧪 DIAGNÓSTICO FRONTEND: Verificar se edge function está sendo chamada
-  useEffect(() => {
-    console.log('🧪 [FRONTEND] SimplePedidosPage montado, verificando chamadas API');
-    console.log('🧪 [FRONTEND] Estado dos pedidos:', {
-      loading,
-      error,
-      ordersCount: orders?.length || 0,
-      filtros: filtersManager.appliedFilters
-    });
-  }, []);
-
-  // 🔍 AUDIT: Debug dos dados recebidos
-  useEffect(() => {
-    console.log('🧪 [FRONTEND] useEffect - orders mudou:', {
-      hasOrders: !!orders,
-      ordersLength: orders?.length || 0,
-      loading,
-      error: error || 'Sem erro'
-    });
-    
-    if (orders && orders.length > 0) {
-      console.log('🔍 [AUDIT] Pedidos carregados:', {
-        total: orders.length,
-        primeiro_pedido: {
-          id: orders[0]?.id,
-          estrutura: Object.keys(orders[0] || {}),
-          campos_return: Object.keys(orders[0] || {}).filter(k => k.startsWith('return_')),
-          has_return: orders[0]?.has_return,
-          has_claim: orders[0]?.has_claim,
-          return_status: orders[0]?.return_status,
-          return_status_money: orders[0]?.return_status_money,
-          unified_data: orders[0]?.unified ? Object.keys(orders[0].unified).filter(k => k.startsWith('return_')) : 'sem unified'
-        }
-      });
-    }
-  }, [orders, loading, error]);
-
-  useEffect(() => {
-    if (displayedOrders && displayedOrders.length > 0) {
-      console.log('🔍 [AUDIT] DisplayedOrders processados:', {
-        total: displayedOrders.length,
-        primeiro_com_devolucao: displayedOrders.find(o => o.has_return || o.return_status),
-        count_com_return: displayedOrders.filter(o => o.has_return).length,
-        count_com_claim: displayedOrders.filter(o => o.has_claim).length
-      });
-    }
-  }, [displayedOrders]);
-
-  // Debug das colunas visíveis
-  useEffect(() => {
-    const colunasArray = Array.from(visibleColumns);
-    console.log('🔍 [AUDIT] Colunas visíveis sendo passadas para tabela:', {
-      total: colunasArray.length,
-      colunas_devolucao: colunasArray.filter(col => col.startsWith('return_') || col.includes('claim')),
-      todas_colunas: colunasArray
-    });
-  }, [visibleColumns]);
-
   // ✅ MIGRAÇÃO FASE 1: Funções de tradução movidas para @/utils/pedidos-translations
 
   // ✅ MIGRAÇÃO: Usar traduções unificadas do sistema global

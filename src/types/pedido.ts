@@ -148,22 +148,6 @@ export interface Pedido {
   // Campos mantidos para compatibilidade
   integration_account_id: string | null;
   created_at: string;
-  
-  // Novos campos de devoluções ML
-  return_status?: string | null;
-  return_shipment_status?: string | null;
-  return_tracking_number?: string | null;
-  return_refund_at?: string | null;
-  return_date_closed?: string | null;
-  return_date_created?: string | null;
-  return_status_money?: string | null;
-  return_subtype?: string | null;
-  return_product_condition?: string | null;
-  return_product_destination?: string | null;
-  return_seller_status?: string | null;
-  return_benefited?: string | null;
-  has_return?: boolean;
-  has_claim?: boolean;
   updated_at: string;
   
   // Campos específicos do Mercado Livre (novos)

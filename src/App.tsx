@@ -167,11 +167,11 @@ function App() {
                          <CategoryManager />
                        </PermissionRoute>
                      } />
-                     <Route path="/pedidos" element={
-                       <PermissionRoute requiredAny={['orders:read', 'pedidos:view', 'estoque:view']}>
-                         <Pedidos />
-                       </PermissionRoute>
-                     } />
+                    <Route path="/pedidos" element={
+                      <PermissionRoute requiredPermissions={['orders:read']}>
+                        <Pedidos />
+                      </PermissionRoute>
+                    } />
                     <Route path="/scanner" element={
                       <PermissionRoute requiredPermissions={['scanner:use']}>
                         <Scanner />

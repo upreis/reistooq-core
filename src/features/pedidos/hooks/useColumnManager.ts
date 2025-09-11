@@ -208,32 +208,13 @@ export const useColumnManager = (): UseColumnManagerReturn => {
     setState(prev => {
       const currentOrderSet = new Set(prev.columnOrder);
       const newDefs = COLUMN_DEFINITIONS.filter(def => !currentOrderSet.has(def.key));
-      
-      // FORÇAR colunas de devolução sempre visíveis
-      const forceVisible = ['return_status', 'return_status_money', 'has_return', 'has_claim'];
-      const newVisible = new Set(prev.visibleColumns);
-      
-      // Adicionar colunas forçadas
-      forceVisible.forEach(key => {
-        if (COLUMN_DEFINITIONS.some(def => def.key === key)) {
-          newVisible.add(key);
-        }
-      });
-      
-      if (newDefs.length === 0 && forceVisible.every(key => prev.visibleColumns.has(key))) {
-        return prev;
-      }
+      if (newDefs.length === 0) return prev;
 
       const newOrder = [...prev.columnOrder, ...newDefs.map(d => d.key)];
 
+      const newVisible = new Set(prev.visibleColumns);
       newDefs.forEach(def => {
         if (def.default) newVisible.add(def.key);
-      });
-
-      console.log('🔧 [COLUMNS FORCE] Forçando colunas de devolução:', {
-        forceVisible,
-        newVisible: Array.from(newVisible),
-        added: forceVisible.filter(key => !prev.visibleColumns.has(key))
       });
 
       return {
