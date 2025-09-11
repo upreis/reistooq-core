@@ -43,7 +43,7 @@ async function testPostPurchaseAccess(orderId: string, accessToken: string, cid:
   
   // Teste 1: API de Claims Search
   try {
-    const claimsUrl = `https://api.mercadolivre.com/post-purchase/v1/claims/search?resource=order&resource_id=${orderId}`;
+    const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?order_id=${orderId}`;
     console.log(`[unified-orders:${cid}] 🧪 Testando Claims API: ${claimsUrl}`);
     
     const claimsResp = await fetch(claimsUrl, {
@@ -290,8 +290,8 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
         // 6. Enriquecer com dados de devoluções (claims/returns) - CORRIGIDO URL API
         if (order.id) {
           try {
-            // Buscar claims associadas ao pedido (URL corrigida)
-            const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?resource=order&resource_id=${order.id}`;
+            // Buscar claims associadas ao pedido (URL CORRIGIDA conforme documentação oficial)
+            const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?order_id=${order.id}`;
             console.log(`[unified-orders:${cid}] 🔍 Buscando claims para pedido ${order.id} na URL: ${claimsUrl}`);
             console.log(`[unified-orders:${cid}] 🔑 Token disponível: ${accessToken ? 'SIM' : 'NÃO'}, Length: ${accessToken?.length || 0}`);
             
@@ -307,41 +307,55 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             if (claimsResp.ok) {
               const claimsData = await claimsResp.json();
               (enrichedOrder as any).claims = claimsData;
-              console.log(`[unified-orders:${cid}] 🔍 Claims encontrados para pedido ${order.id}:`, {
-                total_claims: claimsData?.results?.length || claimsData?.data?.length || 0,
-                claims_structure: Object.keys(claimsData || {}),
-                claims_data: JSON.stringify(claimsData, null, 2)
-              });
+              console.log(`[unified-orders:${cid}] 🔍 Claims encontrados para pedido ${order.id}: {
+  total_claims: ${claimsData?.paging?.total || 0},
+  data_length: ${claimsData?.data?.length || 0},
+  claims_structure: ${JSON.stringify(Object.keys(claimsData || {}))},
+  first_claim: ${claimsData?.data?.[0] ? JSON.stringify(claimsData.data[0], null, 2) : 'null'}
+}`);
               
               // Para cada claim, buscar dados de devolução se existir
-              const claimsList = claimsData?.results || claimsData?.data || [];
+              const claimsList = claimsData?.data || []; // API usa "data", não "results"
               if (claimsList.length > 0) {
+                console.log(`[unified-orders:${cid}] 🔍 Processando ${claimsList.length} claims encontrados para pedido ${order.id}`);
+                
                 const returnPromises = claimsList.map(async (claim: any) => {
                   try {
-                    // Sempre tentar buscar devoluções (remover condição restritiva)
-                      const returnResp = await fetch(
-                        `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
-                        {
-                          headers: {
-                            Authorization: `Bearer ${accessToken}`,
-                            'x-format-new': 'true'
-                          }
+                    console.log(`[unified-orders:${cid}] 🔍 Processando claim ${claim.id} (type: ${claim.type}, status: ${claim.status}, related_entities: ${JSON.stringify(claim.related_entities || [])})`);
+                    
+                    // Verificar se o claim tem devoluções relacionadas
+                    const hasReturns = claim.related_entities && claim.related_entities.includes('return');
+                    console.log(`[unified-orders:${cid}] 🔍 Claim ${claim.id} tem devoluções? ${hasReturns}`);
+                    
+                    // Sempre tentar buscar devoluções para qualquer claim
+                    const returnResp = await fetch(
+                      `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
+                      {
+                        headers: {
+                          Authorization: `Bearer ${accessToken}`,
+                          'x-format-new': 'true'
                         }
-                      );
+                      }
+                    );
+                    
+                    console.log(`[unified-orders:${cid}] 📡 Return API response para claim ${claim.id}: Status ${returnResp.status}`);
                       
                       if (returnResp.ok) {
                         const returnData = await returnResp.json();
+                        console.log(`[unified-orders:${cid}] 📦 Return data recebido para claim ${claim.id}:`, JSON.stringify(returnData, null, 2));
                         
                         // Verificar se realmente tem dados válidos
                         if (returnData && (returnData.id || returnData.status || returnData.shipments)) {
                           claim.return_data = returnData;
                           
-                          console.log(`[unified-orders:${cid}] 🔄 Devolução encontrada para claim ${claim.id}:`, {
+                          console.log(`[unified-orders:${cid}] ✅ Devolução VÁLIDA encontrada para claim ${claim.id}:`, {
                             return_id: returnData.id,
                             status: returnData.status,
                             status_money: returnData.status_money,
                             subtype: returnData.subtype,
-                            shipments: returnData.shipments?.length || 0
+                            shipments: returnData.shipments?.length || 0,
+                            date_created: returnData.date_created,
+                            orders: returnData.orders?.length || 0
                           });
                         
                         // Buscar reviews da devolução se disponível
@@ -369,11 +383,17 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
                         } else {
                           console.log(`[unified-orders:${cid}] ℹ️ Return ${returnData.id} não tem reviews ou não está relacionado`);
                         }
-                        }
-                      } else if (returnResp.status !== 404) {
-                        // Log apenas se não for 404 (esperado quando não há devolução)
-                        console.warn(`[unified-orders:${cid}] Resposta não OK para devolução da claim ${claim.id}:`, returnResp.status);
-                      }
+                         } else {
+                           console.log(`[unified-orders:${cid}] ⚠️ Return data recebido mas sem dados válidos para claim ${claim.id}:`, returnData);
+                         }
+                       } else {
+                         const errorText = await returnResp.text();
+                         if (returnResp.status === 404) {
+                           console.log(`[unified-orders:${cid}] ℹ️ Nenhuma devolução encontrada para claim ${claim.id} (404 - esperado)`);
+                         } else {
+                           console.warn(`[unified-orders:${cid}] ❌ Erro ao buscar devolução para claim ${claim.id}: Status ${returnResp.status}, Response: ${errorText}`);
+                         }
+                       }
                   } catch (returnErr) {
                     console.warn(`[unified-orders:${cid}] Aviso ao buscar devolução da claim ${claim.id}:`, returnErr);
                   }
