@@ -2749,38 +2749,93 @@ export type Database = {
       }
     }
     Views: {
+      clientes_safe: {
+        Row: {
+          cpf_cnpj: string | null
+          created_at: string | null
+          data_primeiro_pedido: string | null
+          data_ultimo_pedido: string | null
+          email: string | null
+          empresa: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
+          id: string | null
+          nome_completo: string | null
+          observacoes: string | null
+          organization_id: string | null
+          status_cliente: string | null
+          telefone: string | null
+          ticket_medio: number | null
+          total_pedidos: number | null
+          updated_at: string | null
+          valor_total_gasto: number | null
+        }
+        Insert: {
+          cpf_cnpj?: never
+          created_at?: string | null
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: never
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
+          id?: string | null
+          nome_completo?: never
+          observacoes?: string | null
+          organization_id?: string | null
+          status_cliente?: string | null
+          telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
+        }
+        Update: {
+          cpf_cnpj?: never
+          created_at?: string | null
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: never
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: string | null
+          endereco_cidade?: string | null
+          endereco_numero?: string | null
+          endereco_rua?: string | null
+          endereco_uf?: string | null
+          id?: string | null
+          nome_completo?: never
+          observacoes?: string | null
+          organization_id?: string | null
+          status_cliente?: string | null
+          telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
+        }
+        Relationships: []
+      }
       historico_vendas_safe: {
         Row: {
-          cidade: string | null
-          codigo_barras: string | null
-          codigo_rastreamento: string | null
           created_at: string | null
           data_pedido: string | null
-          data_prevista: string | null
           descricao: string | null
           id: string | null
           id_unico: string | null
-          ncm: string | null
-          numero_ecommerce: string | null
           numero_pedido: string | null
-          numero_venda: string | null
-          obs: string | null
-          obs_interna: string | null
-          observacoes: string | null
-          pedido_id: string | null
-          qtd_kit: number | null
           quantidade: number | null
-          situacao: string | null
-          sku_estoque: string | null
-          sku_kit: string | null
           sku_produto: string | null
           status: string | null
-          total_itens: number | null
-          uf: string | null
           updated_at: string | null
-          url_rastreamento: string | null
-          valor_desconto: number | null
-          valor_frete: number | null
           valor_total: number | null
           valor_unitario: number | null
         }
@@ -3615,6 +3670,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_security_access: {
+        Args: {
+          p_action: string
+          p_resource_id: string
+          p_resource_type: string
+          p_sensitive_data?: boolean
+        }
+        Returns: undefined
+      }
       mark_oauth_state_used: {
         Args: { p_state_value: string }
         Returns: boolean
@@ -3643,7 +3707,7 @@ export type Database = {
         Returns: string
       }
       mask_email: {
-        Args: { email_address: string }
+        Args: { email_addr: string }
         Returns: string
       }
       mask_name: {
