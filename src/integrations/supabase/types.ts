@@ -3722,6 +3722,15 @@ export type Database = {
         Args: { phone_input: string }
         Returns: string
       }
+      refresh_ml_token: {
+        Args: {
+          p_account_id: string
+          p_expires_at: string
+          p_new_access_token: string
+          p_new_refresh_token: string
+        }
+        Returns: Json
+      }
       revoke_invitation: {
         Args: { _id: string }
         Returns: Json
