@@ -219,8 +219,7 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
               if (claimsData?.results?.length > 0) {
                 const returnPromises = claimsData.results.map(async (claim: any) => {
                   try {
-                    // Verificar se tem devolução associada
-                    if (claim.related_entities?.includes('return')) {
+                    // Sempre tentar buscar devoluções (remover condição restritiva)
                       const returnResp = await fetch(
                         `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
                         {
@@ -233,10 +232,21 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
                       
                       if (returnResp.ok) {
                         const returnData = await returnResp.json();
-                        claim.return_data = returnData;
                         
-                        // Buscar reviews da devolução se existir
-                        if (returnData.id && returnData.related_entities?.includes('reviews')) {
+                        // Verificar se realmente tem dados válidos
+                        if (returnData && (returnData.id || returnData.status || returnData.shipments)) {
+                          claim.return_data = returnData;
+                          
+                          console.log(`[unified-orders:${cid}] 🔄 Devolução encontrada para claim ${claim.id}:`, {
+                            return_id: returnData.id,
+                            status: returnData.status,
+                            status_money: returnData.status_money,
+                            subtype: returnData.subtype,
+                            shipments: returnData.shipments?.length || 0
+                          });
+                        
+                        // Buscar reviews da devolução se disponível
+                        if (returnData.id) {
                           try {
                             const reviewsResp = await fetch(
                               `https://api.mercadolivre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
@@ -250,13 +260,17 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
                             if (reviewsResp.ok) {
                               const reviewsData = await reviewsResp.json();
                               returnData.reviews = reviewsData;
+                              console.log(`[unified-orders:${cid}] 📝 Reviews de devolução carregadas para return ${returnData.id}`);
                             }
                           } catch (reviewErr) {
                             console.warn(`[unified-orders:${cid}] Aviso ao buscar reviews da devolução ${returnData.id}:`, reviewErr);
                           }
                         }
+                        }
+                      } else if (returnResp.status !== 404) {
+                        // Log apenas se não for 404 (esperado quando não há devolução)
+                        console.warn(`[unified-orders:${cid}] Resposta não OK para devolução da claim ${claim.id}:`, returnResp.status);
                       }
-                    }
                   } catch (returnErr) {
                     console.warn(`[unified-orders:${cid}] Aviso ao buscar devolução da claim ${claim.id}:`, returnErr);
                   }
@@ -461,74 +475,60 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       mediations_tags: order.mediations?.length ? order.mediations.map((m: any) => m.mediation_tags).flat().join(', ') : null,
       
       // ✅ NOVOS CAMPOS DE DEVOLUÇÃO ML
-      // Extração de dados das claims e returns
-      has_claim: order.claims?.results?.length > 0 || false,
-      has_return: order.claims?.results?.some((claim: any) => claim.return_data) || false,
-      
-      // Dados principais da devolução (pegar a primeira devolução se houver múltiplas)
-      return_status: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        return firstReturn?.status || null;
+      // Extração de dados das claims e returns com debug melhorado
+      has_claim: (() => {
+        const hasClaim = order.claims?.results?.length > 0 || false;
+        if (hasClaim) {
+          console.log(`[unified-orders:${cid}] 📝 Pedido ${order.id} tem ${order.claims.results.length} claim(s)`);
+        }
+        return hasClaim;
       })(),
       
-      return_shipment_status: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        return firstReturn?.shipments?.[0]?.status || null;
+      has_return: (() => {
+        const hasReturn = order.claims?.results?.some((claim: any) => claim.return_data) || false;
+        if (hasReturn) {
+          const returnClaims = order.claims.results.filter((claim: any) => claim.return_data);
+          console.log(`[unified-orders:${cid}] 🔄 Pedido ${order.id} tem ${returnClaims.length} devolução(ões)`);
+        }
+        return hasReturn;
       })(),
       
-      return_tracking_number: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        return firstReturn?.shipments?.[0]?.tracking_number || null;
-      })(),
-      
-      return_refund_at: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        return firstReturn?.refund_at || null;
-      })(),
-      
-      return_date_closed: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        return firstReturn?.date_closed || null;
-      })(),
-      
-      return_date_created: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        return firstReturn?.date_created || null;
-      })(),
-      
-      return_status_money: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        return firstReturn?.status_money || null;
-      })(),
-      
-      return_subtype: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        return firstReturn?.subtype || null;
-      })(),
-      
-      // Dados de revisão da devolução
-      return_product_condition: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+      // Helper function para obter dados da primeira devolução
+      ...(() => {
+        const firstClaim = order.claims?.results?.find((claim: any) => claim.return_data);
+        const firstReturn = firstClaim?.return_data;
         const firstReview = firstReturn?.reviews?.reviews?.[0]?.resource_reviews?.[0];
-        return firstReview?.product_condition || null;
-      })(),
-      
-      return_product_destination: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        const firstReview = firstReturn?.reviews?.reviews?.[0]?.resource_reviews?.[0];
-        return firstReview?.product_destination || null;
-      })(),
-      
-      return_seller_status: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        const firstReview = firstReturn?.reviews?.reviews?.[0]?.resource_reviews?.[0];
-        return firstReview?.seller_status || null;
-      })(),
-      
-      return_benefited: (() => {
-        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
-        const firstReview = firstReturn?.reviews?.reviews?.[0]?.resource_reviews?.[0];
-        return firstReview?.benefited || null;
+        
+        if (firstReturn) {
+          console.log(`[unified-orders:${cid}] 🔍 Mapeando dados de devolução para pedido ${order.id}:`, {
+            return_id: firstReturn.id,
+            status: firstReturn.status,
+            status_money: firstReturn.status_money,
+            subtype: firstReturn.subtype,
+            has_shipments: firstReturn.shipments?.length > 0,
+            has_reviews: !!firstReview
+          });
+        }
+        
+        return {
+          // Dados principais da devolução
+          return_status: firstReturn?.status || null,
+          return_status_money: firstReturn?.status_money || null,
+          return_subtype: firstReturn?.subtype || null,
+          return_refund_at: firstReturn?.refund_at || null,
+          return_date_closed: firstReturn?.date_closed || null,
+          return_date_created: firstReturn?.date_created || null,
+          
+          // Dados de envio da devolução
+          return_shipment_status: firstReturn?.shipments?.[0]?.status || null,
+          return_tracking_number: firstReturn?.shipments?.[0]?.tracking_number || null,
+          
+          // Dados de revisão da devolução
+          return_product_condition: firstReview?.product_condition || null,
+          return_product_destination: firstReview?.product_destination || null,
+          return_seller_status: firstReview?.seller_status || null,
+          return_benefited: firstReview?.benefited || null
+        };
       })(),
       
       // Informações dos produtos
