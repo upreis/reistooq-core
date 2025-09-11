@@ -27,8 +27,8 @@ serve(async (req) => {
   try {
     const supabase = makeClient(req.headers.get("Authorization"));
 
-    // ✅ SISTEMA BLINDADO: Refresh preventivo - tokens que expiram em até 1 hora
-    const threshold1hour = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    // ✅ SISTEMA BLINDADO: Refresh preventivo - tokens que expiram em até 4 horas (Documentação ML: tokens duram 6h)
+    const threshold4hours = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
     
     // Buscar contas ativas do Mercado Livre com tokens que podem precisar de refresh
     const { data: activeAccounts, error: accountsError } = await supabase
@@ -55,7 +55,7 @@ serve(async (req) => {
       .eq('provider', 'mercadolivre')
       .in('integration_account_id', accountIds)
       .not('expires_at', 'is', null)
-      .lte('expires_at', threshold1hour);
+      .lte('expires_at', threshold4hours);
 
     console.log(`[ML Token Refresh Cron] Encontrados ${expiringSoon?.length || 0} tokens para refresh preventivo`);
 

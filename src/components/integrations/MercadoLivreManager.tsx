@@ -216,8 +216,8 @@ export function MercadoLivreManager({ onAccountsUpdate, onUpdate }: MercadoLivre
     // Verificação inicial
     checkAndRefreshExpiredTokens();
     
-    // Verificação periódica a cada 30 minutos
-    const interval = setInterval(checkAndRefreshExpiredTokens, 30 * 60 * 1000);
+    // Verificação periódica a cada 1 hora (backup para o cron automático)
+    const interval = setInterval(checkAndRefreshExpiredTokens, 60 * 60 * 1000);
     
     return () => clearInterval(interval);
   }, []);
