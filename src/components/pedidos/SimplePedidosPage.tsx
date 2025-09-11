@@ -260,8 +260,26 @@ function SimplePedidosPage({ className }: Props) {
     });
   }, [orders, quickFilter, mappingData, isPedidoProcessado]);
 
+  // 🧪 DIAGNÓSTICO FRONTEND: Verificar se edge function está sendo chamada
+  useEffect(() => {
+    console.log('🧪 [FRONTEND] SimplePedidosPage montado, verificando chamadas API');
+    console.log('🧪 [FRONTEND] Estado dos pedidos:', {
+      loading,
+      error,
+      ordersCount: orders?.length || 0,
+      filtros: filtersManager.appliedFilters
+    });
+  }, []);
+
   // 🔍 AUDIT: Debug dos dados recebidos
   useEffect(() => {
+    console.log('🧪 [FRONTEND] useEffect - orders mudou:', {
+      hasOrders: !!orders,
+      ordersLength: orders?.length || 0,
+      loading,
+      error: error || 'Sem erro'
+    });
+    
     if (orders && orders.length > 0) {
       console.log('🔍 [AUDIT] Pedidos carregados:', {
         total: orders.length,
@@ -277,7 +295,7 @@ function SimplePedidosPage({ className }: Props) {
         }
       });
     }
-  }, [orders]);
+  }, [orders, loading, error]);
 
   useEffect(() => {
     if (displayedOrders && displayedOrders.length > 0) {
