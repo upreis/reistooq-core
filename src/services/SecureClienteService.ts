@@ -3,33 +3,28 @@ import { Cliente, ClientesFilters, ClientesStats } from "@/types/cliente";
 
 export class SecureClienteService {
   /**
-   * Fetches customers using the secure RPC function with automatic data masking
+   * Fetches customers using the secure function with automatic data masking
    * based on user permissions
    */
   static async getClientes(filters: ClientesFilters = {}) {
     try {
-      // ✅ SEGURANÇA: Usar função RPC segura que aplica mascaramento automático
-      const { data, error } = await supabase.rpc('get_masked_clients');
+      // ✅ SEGURANÇA: Usar função RPC segura com busca e mascaramento automático
+      const searchTerm = filters.search || '';
+      const limit = 50; // Default limit
+      
+      const { data, error } = await supabase.rpc('search_customers_secure', {
+        search_term: searchTerm,
+        limit_count: limit
+      });
 
       if (error) {
+        console.error('❌ Erro na busca segura de clientes:', error);
         return { data: [], error, count: 0 };
       }
 
-      let clientes = (data || []) as any[];
+      const clientes = (data || []) as Cliente[];
 
-      // Apply client-side filters
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        clientes = clientes.filter(c => 
-          c.nome_completo?.toLowerCase().includes(searchTerm) ||
-          c.cpf_cnpj?.toLowerCase().includes(searchTerm) ||
-          c.email?.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      // Note: Other filters removed since they're not available in the simplified secure function
-
-      return { data: clientes as Cliente[], error: null, count: clientes.length };
+      return { data: clientes, error: null, count: clientes.length };
     } catch (error) {
       console.error('❌ Erro ao buscar clientes:', error);
       return { data: [], error, count: 0 };
@@ -37,25 +32,30 @@ export class SecureClienteService {
   }
 
   /**
-   * Fetches customer statistics using direct client access (for stats only)
+   * Fetches customer statistics using the secure view
    */
   static async getClientesStats(): Promise<{ data: ClientesStats | null; error: any }> {
     try {
-      // For stats, we can use simplified mock data or aggregate from the secure function
-      const { data, error } = await supabase.rpc('get_masked_clients');
+      // Use the secure view for statistics
+      const { data, error } = await supabase
+        .from('clientes_safe')
+        .select('*');
 
       if (error) {
+        console.error('❌ Erro na busca de estatísticas:', error);
         return { data: null, error };
       }
 
       const clientes = data || [];
+      
+      // Calculate stats from secure view data
       const stats: ClientesStats = {
         total: clientes.length,
-        ativos: clientes.length, // Simplified - all returned clients are considered active
-        vip: 0, // Not available in simplified secure function
-        premium: 0, // Not available in simplified secure function
-        ticket_medio: 0, // Not available in simplified secure function
-        ltv_medio: 0 // Not available in simplified secure function
+        ativos: clientes.filter(c => c.status_cliente === 'Ativo').length,
+        vip: clientes.filter(c => c.status_cliente === 'VIP').length,
+        premium: clientes.filter(c => c.status_cliente === 'Premium').length,
+        ticket_medio: clientes.reduce((acc, c) => acc + (Number(c.ticket_medio) || 0), 0) / clientes.length || 0,
+        ltv_medio: clientes.reduce((acc, c) => acc + (Number(c.valor_total_gasto) || 0), 0) / clientes.length || 0
       };
 
       return { data: stats, error: null };
@@ -70,13 +70,18 @@ export class SecureClienteService {
    */
   static async getClienteById(id: string) {
     try {
-      const { data, error } = await supabase.rpc('get_masked_clients');
+      // Use the secure function that logs access and applies masking
+      const { data, error } = await supabase.rpc('get_customer_secure', {
+        customer_id: id
+      });
 
       if (error) {
+        console.error('❌ Erro na busca segura de cliente:', error);
         return { data: null, error };
       }
 
-      const cliente = (data || []).find((c: any) => c.id === id) || null;
+      // The function returns an array, get the first item
+      const cliente = (data && data.length > 0) ? data[0] : null;
       return { data: cliente as Cliente | null, error: null };
     } catch (error) {
       console.error('❌ Erro ao buscar cliente:', error);

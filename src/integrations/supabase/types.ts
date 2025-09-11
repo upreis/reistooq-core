@@ -550,6 +550,42 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_data_access_log: {
+        Row: {
+          action: string
+          created_at: string
+          customer_id: string | null
+          id: string
+          ip_address: unknown | null
+          organization_id: string
+          sensitive_data_accessed: boolean
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          organization_id?: string
+          sensitive_data_accessed?: boolean
+          user_agent?: string | null
+          user_id?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          ip_address?: unknown | null
+          organization_id?: string
+          sensitive_data_accessed?: boolean
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       data_subject_requests: {
         Row: {
           id: string
@@ -2754,7 +2790,84 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      clientes_safe: {
+        Row: {
+          cpf_cnpj: string | null
+          created_at: string | null
+          data_primeiro_pedido: string | null
+          data_ultimo_pedido: string | null
+          email: string | null
+          empresa: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
+          id: string | null
+          integration_account_id: string | null
+          nome_completo: string | null
+          observacoes: string | null
+          organization_id: string | null
+          status_cliente: string | null
+          telefone: string | null
+          ticket_medio: number | null
+          total_pedidos: number | null
+          updated_at: string | null
+          valor_total_gasto: number | null
+        }
+        Insert: {
+          cpf_cnpj?: never
+          created_at?: string | null
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: never
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: never
+          endereco_cidade?: string | null
+          endereco_numero?: never
+          endereco_rua?: never
+          endereco_uf?: string | null
+          id?: string | null
+          integration_account_id?: string | null
+          nome_completo?: never
+          observacoes?: string | null
+          organization_id?: string | null
+          status_cliente?: string | null
+          telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
+        }
+        Update: {
+          cpf_cnpj?: never
+          created_at?: string | null
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: never
+          empresa?: string | null
+          endereco_bairro?: string | null
+          endereco_cep?: never
+          endereco_cidade?: string | null
+          endereco_numero?: never
+          endereco_rua?: never
+          endereco_uf?: string | null
+          id?: string | null
+          integration_account_id?: string | null
+          nome_completo?: never
+          observacoes?: string | null
+          organization_id?: string | null
+          status_cliente?: string | null
+          telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_invitation_secure: {
@@ -2959,6 +3072,34 @@ export type Database = {
       get_current_org_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_customer_secure: {
+        Args: { customer_id: string }
+        Returns: {
+          cpf_cnpj: string
+          created_at: string
+          data_primeiro_pedido: string
+          data_ultimo_pedido: string
+          email: string
+          empresa: string
+          endereco_bairro: string
+          endereco_cep: string
+          endereco_cidade: string
+          endereco_numero: string
+          endereco_rua: string
+          endereco_uf: string
+          id: string
+          integration_account_id: string
+          nome_completo: string
+          observacoes: string
+          organization_id: string
+          status_cliente: string
+          telefone: string
+          ticket_medio: number
+          total_pedidos: number
+          updated_at: string
+          valor_total_gasto: number
+        }[]
       }
       get_historico_vendas_browse: {
         Args: {
@@ -3483,7 +3624,13 @@ export type Database = {
         Returns: undefined
       }
       log_customer_access: {
-        Args: { access_type?: string; customer_id: string; details?: Json }
+        Args:
+          | { access_type?: string; customer_id: string; details?: Json }
+          | {
+              p_action: string
+              p_customer_id: string
+              p_sensitive_accessed?: boolean
+            }
         Returns: undefined
       }
       log_secret_access: {
@@ -3543,6 +3690,34 @@ export type Database = {
       revoke_invitation: {
         Args: { _id: string }
         Returns: Json
+      }
+      search_customers_secure: {
+        Args: { limit_count?: number; search_term?: string }
+        Returns: {
+          cpf_cnpj: string
+          created_at: string
+          data_primeiro_pedido: string
+          data_ultimo_pedido: string
+          email: string
+          empresa: string
+          endereco_bairro: string
+          endereco_cep: string
+          endereco_cidade: string
+          endereco_numero: string
+          endereco_rua: string
+          endereco_uf: string
+          id: string
+          integration_account_id: string
+          nome_completo: string
+          observacoes: string
+          organization_id: string
+          status_cliente: string
+          telefone: string
+          ticket_medio: number
+          total_pedidos: number
+          updated_at: string
+          valor_total_gasto: number
+        }[]
       }
       security_summary: {
         Args: Record<PropertyKey, never>
