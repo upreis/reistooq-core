@@ -445,47 +445,34 @@ function SimplePedidosPage({ className }: Props) {
   const getValorLiquidoVendedor = (order: any): number => {
     if (typeof order?.valor_liquido_vendedor === 'number') return order.valor_liquido_vendedor;
 
-    // ✅ CORREÇÃO: Calcular valor líquido corretamente
-    // Valor líquido = Valor total do pedido - Taxa marketplace - Custos do vendedor
+    // ✅ USANDO CAMPOS DIRETOS DA API DO ML
+    // 1. Verificar se há campo direto de compensação do vendedor nos shipping costs
+    const sellerCompensation = order?.shipping?.costs?.senders?.[0]?.compensation || 
+                               order?.raw?.shipping?.costs?.senders?.[0]?.compensation || 0;
     
-    // 1. Obter valor total do pedido
+    if (sellerCompensation > 0) {
+      return sellerCompensation;
+    }
+    
+    // 2. Verificar se há valor líquido nos payments (transaction_amount - marketplace_fee)
+    const payments = order?.payments || order?.raw?.payments || [];
+    if (Array.isArray(payments) && payments.length > 0) {
+      const payment = payments[0];
+      const transactionAmount = Number(payment?.transaction_amount || 0);
+      const marketplaceFee = Number(payment?.marketplace_fee || 0);
+      
+      if (transactionAmount > 0) {
+        return Math.max(0, transactionAmount - marketplaceFee);
+      }
+    }
+    
+    // 3. Fallback para cálculo manual usando API fields
     const valorTotal = Number(order?.total_amount ?? order?.valor_total ?? 0);
+    const taxaMarketplace = Number(order?.order_items?.[0]?.sale_fee ?? 
+                                  order?.raw?.order_items?.[0]?.sale_fee ?? 
+                                  order?.marketplace_fee ?? 0);
     
-    // 2. Obter taxa do marketplace (sale_fee)
-    const taxaMarketplace = (() => {
-      const itemsArrays = [
-        order?.order_items,
-        order?.raw?.order_items,
-        order?.unified?.order_items,
-      ].filter(Boolean);
-      
-      let totalFee = 0;
-      for (const arr of itemsArrays) {
-        if (Array.isArray(arr) && arr.length) {
-          totalFee = arr.reduce((acc: number, item: any) => {
-            const fee = Number(item?.sale_fee ?? 0);
-            return acc + (Number.isFinite(fee) && fee > 0 ? fee : 0);
-          }, 0);
-          if (totalFee > 0) break;
-        }
-      }
-      
-      // Fallback para marketplace_fee ou fees
-      if (!totalFee) {
-        totalFee = Number(order?.marketplace_fee ?? 0) || 
-                  Number(order?.fees?.[0]?.value ?? 0) ||
-                  Number(order?.raw?.fees?.[0]?.value ?? 0);
-      }
-      
-      return totalFee;
-    })();
-    
-    // 3. Custo de envio do vendedor (não confundir com frete pago pelo cliente)
-    const custoEnvioVendedor = Number(order?.custo_envio_seller ?? 
-                                     order?.shipping?.costs?.senders?.[0]?.cost ?? 0);
-    
-    // 4. Valor líquido = Total - Taxa ML - Custos vendedor
-    return Math.max(0, valorTotal - taxaMarketplace - custoEnvioVendedor);
+    return Math.max(0, valorTotal - taxaMarketplace);
   };
 
   // Configuração de colunas (reposta após ajuste)
