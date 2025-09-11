@@ -93,26 +93,15 @@ serve(async (req) => {
           console.log(`[pedidos-aggregator:${cid}] Analyzing ${orders.length} orders from total ${totalCount}...`);
 
           for (const order of orders) {
-            const mapping = (order as any).mapping;
-            const baixado = (order as any).isPedidoProcessado || 
-                           String((order as any).status_baixa || '').toLowerCase().includes('baixado');
-
-            if (baixado) continue; // Pular pedidos já baixados
-
-            // Se não houver info de mapeamento neste payload, não contamos
-            if (!mapping) continue;
-
-            // Pronto p/ Baixar: tem mapeamento completo (skuEstoque ou skuKit)
-            const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
+            const statusBaixa = (order as any).status_baixa || (order as any).unified?.status_baixa || '';
             
-            // Mapear Incompleto: tem mapeamento mas não completo
-            const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
-
-            if (temMapeamentoCompleto) {
+            // Contar baseado na coluna "Status da Baixa"
+            if (statusBaixa === 'Pronto p/ Baixar') {
               prontosBaixaCount++;
-            } else if (temMapeamentoIncompleto) {
+            } else if (statusBaixa === 'Mapear Incompleto') {
               mapeamentoPendenteCount++;
             }
+            // Baixados são contados separadamente via RPC
           }
 
           console.log(`[pedidos-aggregator:${cid}] Analysis result: prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);

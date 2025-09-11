@@ -14,8 +14,6 @@ interface PedidosStatusBarProps {
   orders: any[];
   quickFilter: string;
   onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado') => void;
-  mappingData: Map<string, any>;
-  isPedidoProcessado: (order: any) => boolean;
   className?: string;
   globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number }>;
 }
@@ -24,8 +22,6 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   orders,
   quickFilter,
   onQuickFilterChange,
-  mappingData,
-  isPedidoProcessado,
   className,
   globalCounts
 }) => {
@@ -56,22 +52,14 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     let baixados = 0;
 
     for (const order of orders) {
-      const id = order?.id || order?.numero || order?.unified?.id;
-      const mapping = mappingData?.get?.(id);
-      const isProcessado = isPedidoProcessado(order);
+      const statusBaixa = order?.status_baixa || order?.unified?.status_baixa || '';
       
-      // Pronto para baixa: tem mapeamento completo e não foi baixado
-      if (mapping && (mapping.skuEstoque || mapping.skuKit) && !isProcessado) {
+      // Usar a coluna "Status da Baixa" como referência
+      if (statusBaixa === 'Pronto p/ Baixar') {
         prontosBaixa++;
-      }
-      
-      // Mapeamento pendente: tem mapeamento incompleto e não foi baixado
-      if (mapping && mapping.temMapeamento && !(mapping.skuEstoque || mapping.skuKit) && !isProcessado) {
+      } else if (statusBaixa === 'Mapear Incompleto') {
         mapeamentoPendente++;
-      }
-      
-      // Baixados: processados ou com status de baixa
-      if (isProcessado || String(order?.status_baixa || '').toLowerCase().includes('baixado')) {
+      } else if (statusBaixa === 'Baixado' || statusBaixa === 'Processado') {
         baixados++;
       }
     }
@@ -82,7 +70,7 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       mapeamentoPendente,
       baixados
     };
-  }, [orders, mappingData, isPedidoProcessado, globalCounts]);
+  }, [orders, globalCounts]);
 
   const statusChips = [
     {

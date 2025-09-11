@@ -884,8 +884,6 @@ useEffect(() => {
         orders={orders}
         quickFilter={quickFilter}
         onQuickFilterChange={(filter) => setQuickFilter(filter)}
-        mappingData={mappingData}
-        isPedidoProcessado={isPedidoProcessado}
         globalCounts={globalCounts}
       />
 
