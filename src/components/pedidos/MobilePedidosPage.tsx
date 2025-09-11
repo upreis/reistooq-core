@@ -253,14 +253,9 @@ export function MobilePedidosPage({
                   <SelectContent>
                     <SelectItem value="">Todas</SelectItem>
                     <SelectItem value="paid">Pago</SelectItem>
-                    <SelectItem value="partially_paid">Parcialmente Pago</SelectItem>
                     <SelectItem value="ready_to_ship">Pronto para Envio</SelectItem>
                     <SelectItem value="shipped">Enviado</SelectItem>
                     <SelectItem value="delivered">Entregue</SelectItem>
-                    <SelectItem value="cancelled">Cancelado</SelectItem>
-                    <SelectItem value="pending_cancel">Cancelamento Pendente</SelectItem>
-                    <SelectItem value="partially_refunded">Parcialmente Reembolsado</SelectItem>
-                    <SelectItem value="invalid">Inválido</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

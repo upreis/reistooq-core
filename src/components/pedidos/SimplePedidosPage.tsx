@@ -981,17 +981,12 @@ useEffect(() => {
                     <div className="grid grid-cols-1 gap-2">
                       {[
                         { value: 'pending', label: 'Pendente', color: 'bg-yellow-400' },
-                        { value: 'payment_in_process', label: 'Processando', color: 'bg-cyan-400' },
-                        { value: 'paid', label: 'Pago', color: 'bg-emerald-400' },
-                        { value: 'partially_paid', label: 'Parcialmente Pago', color: 'bg-emerald-300' },
                         { value: 'ready_to_ship', label: 'Pronto para Envio', color: 'bg-blue-400' },
                         { value: 'shipped', label: 'Enviado', color: 'bg-purple-400' },
                         { value: 'delivered', label: 'Entregue', color: 'bg-green-400' },
                         { value: 'not_delivered', label: 'Não Entregue', color: 'bg-red-400' },
                         { value: 'cancelled', label: 'Cancelado', color: 'bg-gray-400' },
-                        { value: 'pending_cancel', label: 'Cancelamento Pendente', color: 'bg-gray-300' },
-                        { value: 'partially_refunded', label: 'Parcialmente Reembolsado', color: 'bg-orange-300' },
-                        { value: 'invalid', label: 'Inválido', color: 'bg-red-600' },
+                        { value: 'handling', label: 'Processando', color: 'bg-cyan-400' },
                         { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
                       ].map((status) => {
                         const current = Array.isArray(filtersManager.filters.situacao)

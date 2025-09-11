@@ -12,8 +12,6 @@ export const ML_STATUS_MAP: Record<string, StatusMapping> = {
   'payment_in_process': { portuguese: 'Processando Pagamento' },
   'paid': { portuguese: 'Pago' },
   'partially_paid': { portuguese: 'Parcialmente Pago' },
-  'partially_refunded': { portuguese: 'Parcialmente Reembolsado' },
-  'pending_cancel': { portuguese: 'Cancelamento Pendente' },
   'shipped': { portuguese: 'Enviado' },
   'delivered': { portuguese: 'Entregue' },
   'cancelled': { portuguese: 'Cancelado' },
