@@ -64,29 +64,56 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
         if (saved) {
           const parsed = JSON.parse(saved);
           
-          // Converter datas string para Date
-          if (parsed.dataInicio && typeof parsed.dataInicio === 'string') {
-            parsed.dataInicio = new Date(parsed.dataInicio);
+          // Converter datas string para Date com melhor validação
+          if (parsed.dataInicio) {
+            const startDate = typeof parsed.dataInicio === 'string' 
+              ? new Date(parsed.dataInicio) 
+              : parsed.dataInicio;
+            if (startDate && !isNaN(startDate.getTime())) {
+              parsed.dataInicio = startDate;
+            } else {
+              delete parsed.dataInicio;
+            }
           }
-          if (parsed.dataFim && typeof parsed.dataFim === 'string') {
-            parsed.dataFim = new Date(parsed.dataFim);
+          
+          if (parsed.dataFim) {
+            const endDate = typeof parsed.dataFim === 'string' 
+              ? new Date(parsed.dataFim) 
+              : parsed.dataFim;
+            if (endDate && !isNaN(endDate.getTime())) {
+              parsed.dataFim = endDate;
+            } else {
+              delete parsed.dataFim;
+            }
           }
           
           // ✅ IMPORTANTE: Apenas carregar no draft, NÃO aplicar automaticamente
           setDraftFilters(parsed);
-          console.log('📥 Filtros salvos carregados (não aplicados):', parsed);
+          console.log('📥 Filtros salvos carregados (com validação de datas):', parsed);
         }
       } catch (error) {
         console.warn('Erro ao carregar filtros salvos:', error);
+        // Limpar dados corrompidos
+        localStorage.removeItem(STORAGE_KEY);
       }
     }
   }, [loadSavedFilters]);
 
-  // Salvar filtros aplicados
+  // Salvar filtros aplicados com melhor gestão de datas
   useEffect(() => {
     if (Object.keys(appliedFilters).length > 0) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(appliedFilters));
+        // Serializar datas para JSON de forma consistente
+        const filtersToSave = { ...appliedFilters };
+        if (filtersToSave.dataInicio) {
+          filtersToSave.dataInicio = filtersToSave.dataInicio.toISOString() as any;
+        }
+        if (filtersToSave.dataFim) {
+          filtersToSave.dataFim = filtersToSave.dataFim.toISOString() as any;
+        }
+        
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtersToSave));
+        console.log('💾 Filtros salvos com persistência aprimorada:', filtersToSave);
       } catch (error) {
         console.warn('Erro ao salvar filtros:', error);
       }

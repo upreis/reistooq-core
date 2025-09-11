@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PedidosFiltersState } from '@/hooks/usePedidosFiltersUnified';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
-import { PeriodSelector } from './PeriodSelector';
+import { EnhancedPeriodFilter } from './EnhancedPeriodFilter';
 
 interface PedidosFiltersUnifiedProps {
   filters: PedidosFiltersState;
@@ -312,7 +312,7 @@ export function PedidosFiltersUnified({
             <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <div className="flex items-end gap-2">
-            <PeriodSelector
+            <EnhancedPeriodFilter
               startDate={filters.dataInicio}
               endDate={filters.dataFim}
               onDateRangeChange={(startDate, endDate) => {
@@ -320,7 +320,8 @@ export function PedidosFiltersUnified({
                 onFilterChange('dataFim', endDate);
               }}
               hasPendingChanges={hasPendingChanges && (filters.dataInicio !== appliedFilters.dataInicio || filters.dataFim !== appliedFilters.dataFim)}
-              className="w-fit min-w-[240px]"
+              className="min-w-[200px]"
+              placeholder="Selecionar período"
             />
 
             {/* Botão de Colunas (ao lado do Período) */}
