@@ -45,6 +45,7 @@ export default async function handler(req: Request): Promise<Response> {
       'sku_estoque',
       'sku_kit',
       'qtd_kit',
+      'quantidade_kit',
       'total_itens',
       'cpf_cnpj',
       'empresa',
@@ -60,6 +61,13 @@ export default async function handler(req: Request): Promise<Response> {
       'codigo_rastreamento',
       'url_rastreamento',
       'integration_account_id',
+      // ✅ Adicionando campos faltantes do histórico
+      'receita_flex_bonus',
+      'tipo_metodo_envio',
+      'metodo_envio_combinado',
+      'pack_status',
+      'pack_status_detail',
+      'pack_id',
     ]);
 
     const payload: Record<string, any> = {};

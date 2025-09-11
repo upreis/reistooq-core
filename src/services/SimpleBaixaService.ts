@@ -157,8 +157,8 @@ export class SimpleBaixaService {
         valor_total: valorTotalReal,
         valor_pago: pedido.paid_amount || primeiroPagamento?.total_paid_amount || valorTotalReal,
         frete_pago_cliente: valorFreteReal,
-        receita_flex_bonus: 0, // ❌ NÃO DISPONÍVEL: Campo específico do negócio, não vem do ML
-        custo_envio_seller: primeiroPagamento?.overpaid_amount || 0, // Tentativa de aproveitar campo similar
+        receita_flex_bonus: Number((pedido as any).receita_flex_bonus || (shipping as any)?.bonus || 0),
+        custo_envio_seller: Number((pedido as any).custo_envio_seller || (shipping as any)?.seller_cost || primeiroPagamento?.overpaid_amount || 0),
         desconto_cupom: valorDescontoReal,
         taxa_marketplace: taxasReal,
         valor_liquido_vendedor: primeiroPagamento?.transaction_amount || (valorTotalReal - taxasReal),
@@ -170,8 +170,15 @@ export class SimpleBaixaService {
         status_mapeamento: pedido.status_estoque || (pedido.total_itens > 0 ? 'mapeado' : 'pendente'),
         sku_estoque: pedido.sku_estoque || skuCompleto,
         sku_kit: pedido.sku_kit || '',
-        quantidade_kit: pedido.qtd_kit || 0,
+        qtd_kit: Number(pedido.qtd_kit || (pedido as any).quantidade_kit || 0),
         total_itens: pedido.total_itens || quantidadeReal,
+        
+        // ✅ Campos específicos do ML que estavam faltando
+        tipo_metodo_envio: (pedido as any).tipo_metodo_envio || (shipping as any)?.shipping_method?.name || null,
+        metodo_envio_combinado: (pedido as any).metodo_envio_combinado || (shipping as any)?.shipping_method?.name || null,
+        pack_id: (pedido as any).pack_id || null,
+        pack_status: (pedido as any).pack_status || (shipping as any)?.pack_status || null,
+        pack_status_detail: (pedido as any).pack_status_detail || (shipping as any)?.pack_status_detail || null,
         status_baixa: pedido.status_estoque || 'processado',
         
         // ===== SEÇÃO ENVIO (✅ CONSEGUI ENRIQUECER COM ENDEREÇO) =====
@@ -179,11 +186,9 @@ export class SimpleBaixaService {
         status_envio: statusEnvioDetalhado,
         logistic_mode_principal: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
         tipo_logistico: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna  
-        tipo_metodo_envio: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
         tipo_entrega: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
         substatus_estado_atual: statusEnvioDetalhado,
         modo_envio_combinado: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
-        metodo_envio_combinado: '', // ❌ NÃO DISPONÍVEL: Campo específico de logística interna
         rua: rua,
         numero: numero,
         bairro: bairro,
