@@ -9,7 +9,7 @@ import { DEBOUNCE } from '@/lib/constants';
 
 export interface PedidosFiltersState {
   search?: string;
-  statusEnvio?: string[];
+  situacao?: string[];
   dataInicio?: Date;
   dataFim?: Date;
   cidade?: string;
@@ -28,7 +28,7 @@ export enum FilterStrategy {
 // ✅ CONFIGURAÇÃO CONSISTENTE: Todos os filtros são manuais
 const FILTER_CONFIG = {
   search: { strategy: FilterStrategy.MANUAL },
-  statusEnvio: { strategy: FilterStrategy.MANUAL },
+  situacao: { strategy: FilterStrategy.MANUAL },
   contasML: { strategy: FilterStrategy.MANUAL },
   dataInicio: { strategy: FilterStrategy.MANUAL },
   dataFim: { strategy: FilterStrategy.MANUAL },
@@ -217,8 +217,8 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
       params.search = appliedFilters.search;
     }
 
-    if (appliedFilters.statusEnvio && appliedFilters.statusEnvio.length > 0) {
-      params.statusEnvio = appliedFilters.statusEnvio;
+    if (appliedFilters.situacao && appliedFilters.situacao.length > 0) {
+      params.situacao = appliedFilters.situacao;
     }
 
     if (appliedFilters.dataInicio) {
