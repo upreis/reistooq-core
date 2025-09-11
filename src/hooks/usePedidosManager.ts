@@ -424,8 +424,21 @@ export function usePedidosManager(initialAccountId?: string) {
               toast.error(`Erro ao buscar pedidos da conta ${singleAccountBody.integration_account_id?.slice(0, 8)}`);
             }
 
-            // Fallback: se erro, tentar novamente sem statusEnvio
-            const { statusEnvio: _omit, ...withoutStatus } = singleAccountBody as any;
+            // ✅ CORREÇÃO: Fallback único sem duplicação
+            if (String(errorDetail).includes('401') || String(errorDetail).includes('Unauthorized')) {
+              console.warn(`🔑 [CONTA ${accountId.slice(0, 8)}...] Token expirado - conta precisa ser reconectada`);
+              
+              failedAccounts.push(accountId);
+              accountErrors.push({
+                accountId,
+                error: 'Token expirado - reconecte a conta',
+                status: '401'
+              });
+              continue; // Pular conta sem token válido
+            }
+
+            // Fallback: tentar sem statusEnvio apenas para outros erros
+            const { shipping_status: _omitStatus, ...withoutStatus } = singleAccountBody as any;
             console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem statusEnvio...`);
             try {
               ({ data, error } = await supabase.functions.invoke('unified-orders', {
@@ -434,45 +447,31 @@ export function usePedidosManager(initialAccountId?: string) {
             } catch (e: any) {
               error = e;
             }
-          }
 
-          // 🚨 AJUSTE 2: Erro crítico após fallback com log detalhado
-          if (error || data?.status >= 400) {
-            const finalError = error?.message || data?.error || data?.detail || 'Erro desconhecido';
-            console.error(`🚨 [CONTA ${accountId.slice(0, 8)}...] Erro crítico:`, finalError);
-            
-            failedAccounts.push(accountId);
-            accountErrors.push({
-              accountId,
-              error: finalError,
-              status: data?.status || error?.status || 'unknown'
-            });
-            continue;
-            const { statusEnvio: _omit, ...withoutStatus } = singleAccountBody as any;
-            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem statusEnvio...`);
-            try {
-              ({ data, error } = await supabase.functions.invoke('unified-orders', {
-                body: withoutStatus
-              }));
-            } catch (e: any) {
-              error = e;
+            // ✅ FINAL: Se ainda há erro após fallback
+            if (error || data?.status >= 400) {
+              const finalError = error?.message || data?.error || data?.detail || 'Erro desconhecido';
+              console.error(`🚨 [CONTA ${accountId.slice(0, 8)}...] Erro crítico:`, finalError);
+              
+              failedAccounts.push(accountId);
+              accountErrors.push({
+                accountId,
+                error: finalError,
+                status: data?.status || error?.status || 'unknown'
+              });
+              continue;
             }
           }
           
-          // ✅ BLINDAGEM: Tratamento específico por tipo de erro
-          if (error || !data?.ok) {
+          // ✅ VERIFICAÇÃO FINAL: Sucesso após fallback
+          if (!error && data?.ok) {
+            console.log(`✅ [CONTA ${accountId.slice(0, 8)}...] Dados recebidos com sucesso`);
+          } else {
             const errorType = error?.message || data?.error || 'unknown';
-            console.error(`❌ [CONTA ${accountId.slice(0, 8)}...] Erro: ${errorType}`);
-            
-            if (errorType.includes('no_tokens') || errorType.includes('reconnect_required')) {
-              console.warn(`🔑 [CONTA ${accountId.slice(0, 8)}...] Token expirado - conta desconectada`);
-              // Não mostrar toast para cada conta, apenas marcar como falhada
-            } else {
-              console.error(`🚨 [CONTA ${accountId.slice(0, 8)}...] Erro crítico: ${errorType}`);
-            }
+            console.error(`❌ [CONTA ${accountId.slice(0, 8)}...] Erro final: ${errorType}`);
             
             failedAccounts.push(accountId);
-            continue; // Pular conta com erro, mas não falhar tudo
+            continue; // Pular conta com erro
           }
           
           if (data?.ok) {
