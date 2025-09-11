@@ -131,9 +131,9 @@ export function SavedFiltersManager({
                                 Busca: {filter.filters.search}
                               </Badge>
                             )}
-                            {filter.filters.statusEnvio && (
+                            {filter.filters.situacao && (
                               <Badge variant="secondary" className="text-xs">
-                                Status: {Array.isArray(filter.filters.statusEnvio) ? filter.filters.statusEnvio.join(', ') : filter.filters.statusEnvio}
+                                Status: {filter.filters.situacao}
                               </Badge>
                             )}
                             {filter.filters.uf && (

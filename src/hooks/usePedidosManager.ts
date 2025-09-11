@@ -13,14 +13,14 @@ import { toast } from 'react-hot-toast';
 
 export interface PedidosFilters {
   search?: string;
-  statusEnvio?: string | string[];
+  situacao?: string | string[];
   dataInicio?: Date;
   dataFim?: Date;
   cidade?: string;
   uf?: string;
   valorMin?: number;
   valorMax?: number;
-  contasML?: string[];
+  contasML?: string[];  // ✅ NOVO: Filtro de contas ML
 }
 
 export interface PedidosManagerState {
@@ -218,36 +218,20 @@ export function usePedidosManager(initialAccountId?: string) {
       console.log('🔍 [buildApiParams] Search adicionado:', filters.search);
     }
 
-    // Status do Envio (traduzido para valores da UI)
-    if (filters.statusEnvio) {
-      const statusList = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
-      
-      // Converter valores traduzidos para valores da API
-      const statusMapping: Record<string, string> = {
-        'Pendente': 'pending',
-        'Pronto para Envio': 'ready_to_ship',
-        'Enviado': 'shipped',
-        'Entregue': 'delivered',
-        'Não Entregue': 'not_delivered',
-        'Cancelado': 'cancelled',
-        'A Combinar': 'to_be_agreed',
-        'Processando': 'handling',
-        'Pronto para Imprimir': 'ready_to_print',
-        'Impresso': 'printed',
-        'Atrasado': 'stale',
-        'Perdido': 'lost',
-        'Danificado': 'damaged',
-        'Medidas Não Correspondem': 'measures_not_correspond'
-      };
+    // ✅ CORRIGIDO: Usar 'status' ao invés de 'shipping_status' para ML API
+    if (filters.situacao) {
+      const situacoes = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
+      const mapped = situacoes
+        .map((sit) => mapSituacaoToApiStatus(sit) || null)
+        .filter(Boolean) as string[];
 
-      const apiStatusList = statusList.map(status => statusMapping[status] || status).filter(Boolean);
-
-      if (apiStatusList.length === 1) {
-        params.shipping_status = apiStatusList[0];
-        console.log('📊 [STATUS ENVIO] Filtro aplicado:', apiStatusList[0]);
-      } else if (apiStatusList.length > 1) {
-        params._client_side_shipping_statuses = apiStatusList;
-        console.log('📊 [STATUS ENVIO] Múltiplos status (client-side):', apiStatusList);
+      if (mapped.length === 1) {
+        params.status = mapped[0]; // ✅ Mudou de shipping_status para status
+        console.log('📊 [STATUS] Filtro aplicado:', mapped[0]);
+      } else if (mapped.length > 1) {
+        // ✅ Para múltiplos status, aplicar filtro client-side
+        params._client_side_statuses = mapped;
+        console.log('📊 [STATUS] Múltiplos status (client-side):', mapped);
       }
     }
 
@@ -358,7 +342,7 @@ export function usePedidosManager(initialAccountId?: string) {
    * ✅ BLINDAGEM: Tolerante a falhas de conta, agregação robusta, feedback claro
    */
   const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
-    const { statusEnvio, ...rest } = apiParams || {};
+    const { shipping_status, ...rest } = apiParams || {};
     
     // 🚨 AUDITORIA FIX: Suporte a múltiplas contas ML com blindagem total
     if (apiParams.integration_account_ids && Array.isArray(apiParams.integration_account_ids)) {
@@ -378,7 +362,7 @@ export function usePedidosManager(initialAccountId?: string) {
             integration_account_id: accountId,
             limit: pageSize,
             offset: (currentPage - 1) * pageSize,
-            ...(rest.shipping_status ? { shipping_status: rest.shipping_status } : {}),
+            ...(shipping_status ? { shipping_status } : {}),
             ...(rest.status ? { status: rest.status } : {}),
             ...(rest.q ? { q: rest.q, search: rest.q } : {}),
             ...(rest.cidade ? { cidade: rest.cidade } : {}),
@@ -424,9 +408,9 @@ export function usePedidosManager(initialAccountId?: string) {
               toast.error(`Erro ao buscar pedidos da conta ${singleAccountBody.integration_account_id?.slice(0, 8)}`);
             }
 
-            // Fallback: se erro, tentar novamente sem statusEnvio
-            const { statusEnvio: _omit, ...withoutStatus } = singleAccountBody as any;
-            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem statusEnvio...`);
+            // Fallback: se erro, tentar novamente sem shipping_status
+            const { shipping_status: _omit, ...withoutStatus } = singleAccountBody as any;
+            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem shipping_status...`);
             try {
               ({ data, error } = await supabase.functions.invoke('unified-orders', {
                 body: withoutStatus
@@ -448,8 +432,8 @@ export function usePedidosManager(initialAccountId?: string) {
               status: data?.status || error?.status || 'unknown'
             });
             continue;
-            const { statusEnvio: _omit, ...withoutStatus } = singleAccountBody as any;
-            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem statusEnvio...`);
+            const { shipping_status: _omit, ...withoutStatus } = singleAccountBody as any;
+            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem shipping_status...`);
             try {
               ({ data, error } = await supabase.functions.invoke('unified-orders', {
                 body: withoutStatus
@@ -529,7 +513,7 @@ export function usePedidosManager(initialAccountId?: string) {
         unified: allUnified,
         total: totalCount,
         paging: { total: totalCount, limit: pageSize, offset: (currentPage - 1) * pageSize },
-        serverStatusApplied: Boolean(statusEnvio),
+        serverStatusApplied: Boolean(shipping_status),
         _multiAccount: true,
         _accountStats: {
           total: apiParams.integration_account_ids.length,
@@ -550,7 +534,7 @@ export function usePedidosManager(initialAccountId?: string) {
       integration_account_id: apiParams.integration_account_id || integrationAccountId,
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
-      ...(rest.shipping_status ? { shipping_status: rest.shipping_status } : {}),
+      ...(shipping_status ? { shipping_status } : {}),
       ...(rest.status ? { status: rest.status } : {}),
       ...(rest.q ? { q: rest.q, search: rest.q } : {}),
       ...(rest.cidade ? { cidade: rest.cidade } : {}),
@@ -579,10 +563,10 @@ export function usePedidosManager(initialAccountId?: string) {
       error = e;
     }
 
-    // Fallback: tentar sem statusEnvio mantendo datas e demais filtros
+    // Fallback: tentar sem shipping_status mantendo datas e demais filtros
     if (error || !data?.ok) {
-      const { statusEnvio: _omit, ...withoutStatus } = requestBody as any;
-      console.warn('⚠️ unified-orders falhou com statusEnvio, tentando sem status...');
+      const { shipping_status: _omit, ...withoutStatus } = requestBody as any;
+      console.warn('⚠️ unified-orders falhou com shipping_status, tentando sem status...');
       try {
         ({ data, error } = await supabase.functions.invoke('unified-orders', {
           body: withoutStatus
@@ -600,7 +584,7 @@ export function usePedidosManager(initialAccountId?: string) {
       unified: (data.unified && data.unified.length ? data.unified : (data.pedidos || [])),
       total: data.paging?.total || data.paging?.count || data.total || (Array.isArray(data.results) ? data.results.length : Array.isArray(data.pedidos) ? data.pedidos.length : 0),
       paging: data.paging || undefined,
-      serverStatusApplied: Boolean(rest.shipping_status)
+      serverStatusApplied: Boolean(requestBody.shipping_status)
     };
   }, [integrationAccountId, currentPage, pageSize, getUrlParams]);
 
@@ -655,9 +639,9 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de status de envio
-      if (filters.statusEnvio) {
-        const selectedStatuses = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
+      // 🚨 CORRIGIDO: Filtro de status incluindo status de mapeamento/estoque
+      if (filters.situacao) {
+        const selectedStatuses = Array.isArray(filters.situacao) ? filters.situacao : [filters.situacao];
         
         // Verificar se é um filtro especial de status de estoque/mapeamento
         const specialStatuses = ['pronto_baixar', 'mapear_incompleto', 'baixado'];
@@ -694,42 +678,23 @@ export function usePedidosManager(initialAccountId?: string) {
             return false;
           }
         } else {
-          // Para status normais de envio, comparar com valores traduzidos
-          const translateShippingStatus = (status: string): string => {
-            const translations: Record<string, string> = {
-              'pending': 'Pendente',
-              'ready_to_ship': 'Pronto para Envio',
-              'shipped': 'Enviado',
-              'delivered': 'Entregue',
-              'not_delivered': 'Não Entregue',
-              'cancelled': 'Cancelado',
-              'to_be_agreed': 'A Combinar',
-              'handling': 'Processando',
-              'ready_to_print': 'Pronto para Imprimir',
-              'printed': 'Impresso',
-              'stale': 'Atrasado',
-              'delayed': 'Atrasado',
-              'lost': 'Perdido',
-              'damaged': 'Danificado',
-              'measures_not_correspond': 'Medidas Não Correspondem'
-            };
-            return translations[status?.toLowerCase()] || status || '-';
-          };
-
-          // Obter o status de envio do pedido e traduzi-lo
-          const rawStatus = order.shipping_status ||
-                           order.shipping?.status ||
-                           order.raw?.shipping?.status ||
-                           order.status_envio;
+          // Para status normais, usar lógica original
+          const orderStatuses = [
+            order.shipping_status,
+            order.shipping?.status,
+            order.raw?.shipping?.status,
+            order.situacao,
+            order.status
+          ].filter(Boolean);
           
-          const translatedStatus = translateShippingStatus(rawStatus);
-          
-          // Verificar se o status traduzido está nos filtros selecionados
-          const statusMatches = selectedStatuses.includes(translatedStatus);
+          // Usar função utilitária para verificação avançada
+          const statusMatches = orderStatuses.some(orderStatus => 
+            statusMatchesFilter(orderStatus, selectedStatuses)
+          );
           
           if (!statusMatches) {
             if (process.env.NODE_ENV === 'development') {
-              console.log('🚫 Pedido filtrado por status de envio:', order.id, 'status traduzido:', translatedStatus, 'filtros:', selectedStatuses);
+              console.log('🚫 Pedido filtrado por status:', order.id, 'status encontrados:', orderStatuses, 'filtros:', selectedStatuses);
             }
             return false;
           }
@@ -942,7 +907,7 @@ export function usePedidosManager(initialAccountId?: string) {
       : (unifiedResult as any).results;
     const rawList = (unifiedResult as any).results || [];
     
-    const shouldApplyClientFilter = Boolean(filters.statusEnvio) && !serverAppliedFiltering;
+    const shouldApplyClientFilter = Boolean(filters.situacao) && !serverAppliedFiltering;
     const filteredClientResults = shouldApplyClientFilter
       ? applyClientSideFilters(baseList)
       : baseList;

@@ -70,8 +70,8 @@ export function usePedidosFilters() {
       params.search = filters.search;
     }
 
-    if (filters.statusEnvio && filters.statusEnvio.length > 0) {
-      params.statusEnvio = filters.statusEnvio;
+    if (filters.situacao && filters.situacao.length > 0) {
+      params.situacao = filters.situacao; // ✅ Array de situações
     }
 
     if (filters.dataInicio) {

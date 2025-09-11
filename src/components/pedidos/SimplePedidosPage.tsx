@@ -278,7 +278,7 @@ function SimplePedidosPage({ className }: Props) {
         }
         
         filtersManager.updateFilter('search', filters.search);
-        filtersManager.updateFilter('statusEnvio', filters.statusEnvio);
+        filtersManager.updateFilter('situacao', filters.situacao);
         filtersManager.updateFilter('dataInicio', filters.dataInicio);
         filtersManager.updateFilter('dataFim', filters.dataFim);
         filtersManager.updateFilter('cidade', filters.cidade);
@@ -952,8 +952,8 @@ useEffect(() => {
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between">
                     <span>
-                       {Array.isArray(filtersManager.filters.statusEnvio) && filtersManager.filters.statusEnvio.length > 0
-                        ? `${filtersManager.filters.statusEnvio.length} selecionado(s)`
+                      {Array.isArray(filtersManager.filters.situacao) && filtersManager.filters.situacao.length > 0
+                        ? `${filtersManager.filters.situacao.length} selecionado(s)`
                         : 'Selecionar status'}
                     </span>
                     <Settings className="h-4 w-4" />
@@ -963,8 +963,8 @@ useEffect(() => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium">Status do Envio</h4>
-                      {Array.isArray(filtersManager.filters.statusEnvio) && filtersManager.filters.statusEnvio.length > 0 && (
-                        <Button size="sm" variant="ghost" onClick={() => filtersManager.updateFilter('statusEnvio', undefined)}>
+                      {Array.isArray(filtersManager.filters.situacao) && filtersManager.filters.situacao.length > 0 && (
+                        <Button size="sm" variant="ghost" onClick={() => filtersManager.updateFilter('situacao', undefined)}>
                           Limpar
                         </Button>
                       )}
@@ -972,17 +972,17 @@ useEffect(() => {
                     <div className="grid grid-cols-1 gap-2">
                       {[
                         { value: 'pending', label: 'Pendente', color: 'bg-yellow-400' },
-                        { value: 'handling', label: 'Preparando', color: 'bg-cyan-400' },
-                        { value: 'ready_to_ship', label: 'Pronto para Enviar', color: 'bg-blue-400' },
-                        { value: 'shipped', label: 'A Caminho', color: 'bg-purple-400' },
+                        { value: 'ready_to_ship', label: 'Pronto para Envio', color: 'bg-blue-400' },
+                        { value: 'shipped', label: 'Enviado', color: 'bg-purple-400' },
                         { value: 'delivered', label: 'Entregue', color: 'bg-green-400' },
                         { value: 'not_delivered', label: 'Não Entregue', color: 'bg-red-400' },
                         { value: 'cancelled', label: 'Cancelado', color: 'bg-gray-400' },
+                        { value: 'handling', label: 'Processando', color: 'bg-cyan-400' },
                         { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
                       ].map((status) => {
-                        const current = Array.isArray(filtersManager.filters.statusEnvio)
-                          ? filtersManager.filters.statusEnvio
-                          : (filtersManager.filters.statusEnvio ? [filtersManager.filters.statusEnvio] : []);
+                        const current = Array.isArray(filtersManager.filters.situacao)
+                          ? filtersManager.filters.situacao
+                          : (filtersManager.filters.situacao ? [filtersManager.filters.situacao] : []);
                         const isSelected = current.includes(status.value);
                         return (
                           <label key={status.value} className="flex items-center space-x-2 text-sm cursor-pointer">
@@ -990,10 +990,10 @@ useEffect(() => {
                               checked={isSelected}
                               onCheckedChange={(checked) => {
                                 if (checked) {
-                                  filtersManager.updateFilter('statusEnvio', [...current, status.value]);
+                                  filtersManager.updateFilter('situacao', [...current, status.value]);
                                 } else {
                                   const next = current.filter((s) => s !== status.value);
-                                  filtersManager.updateFilter('statusEnvio', next.length > 0 ? next : undefined);
+                                  filtersManager.updateFilter('situacao', next.length > 0 ? next : undefined);
                                 }
                               }}
                             />
