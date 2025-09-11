@@ -69,7 +69,7 @@ export default function StatusDebugPanel({ orders, onStatusSelect, currentFilter
           <CardContent className="space-y-3">
             <Alert>
               <AlertDescription className="text-xs">
-                <strong>Problema:</strong> Filtro está buscando "Não Entregue" mas todos os pedidos são "ready_to_ship"
+                <strong>✅ Corrigido:</strong> Agora usando os status reais da API (campo 'situacao')
               </AlertDescription>
             </Alert>
 

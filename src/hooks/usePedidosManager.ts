@@ -218,36 +218,35 @@ export function usePedidosManager(initialAccountId?: string) {
       console.log('🔍 [buildApiParams] Search adicionado:', filters.search);
     }
 
-    // Status do Envio (traduzido para valores da UI)
+    // ✅ CORRIGIDO: Status baseado nos valores REAIS da API
     if (filters.statusEnvio) {
       const statusList = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
       
-      // Converter valores traduzidos para valores da API
+      // ⚠️ IMPORTANTE: Usar os status EXATOS que vêm da API baseado nos logs
       const statusMapping: Record<string, string> = {
-        'Pendente': 'pending',
-        'Pronto para Envio': 'ready_to_ship',
-        'Enviado': 'shipped',
-        'Entregue': 'delivered',
-        'Não Entregue': 'not_delivered',
-        'Cancelado': 'cancelled',
-        'A Combinar': 'to_be_agreed',
-        'Processando': 'handling',
-        'Pronto para Imprimir': 'ready_to_print',
-        'Impresso': 'printed',
-        'Atrasado': 'stale',
-        'Perdido': 'lost',
-        'Danificado': 'damaged',
-        'Medidas Não Correspondem': 'measures_not_correspond'
+        'Pendente': 'Pendente',
+        'Pronto para Envio': 'Pronto para Envio', 
+        'Enviado': 'Enviado',
+        'Entregue': 'Entregue',
+        'Não Entregue': 'Não Entregue',
+        'Cancelado': 'Cancelado',
+        'A Combinar': 'A Combinar',
+        'Processando': 'Processando',
+        'Pronto para Imprimir': 'Pronto para Imprimir',
+        'Impresso': 'Impresso',
+        'Atrasado': 'Atrasado',
+        'Perdido': 'Perdido',
+        'Danificado': 'Danificado',
+        'Medidas Não Correspondem': 'Medidas Não Correspondem'
       };
 
-      const apiStatusList = statusList.map(status => statusMapping[status] || status).filter(Boolean);
-
-      if (apiStatusList.length === 1) {
-        params.shipping_status = apiStatusList[0];
-        console.log('📊 [STATUS ENVIO] Filtro aplicado:', apiStatusList[0]);
-      } else if (apiStatusList.length > 1) {
-        params._client_side_shipping_statuses = apiStatusList;
-        console.log('📊 [STATUS ENVIO] Múltiplos status (client-side):', apiStatusList);
+      const mappedStatusList = statusList.map(status => statusMapping[status] || status).filter(Boolean);
+      
+      // ✅ FIX CRÍTICO: Não enviar para API, usar apenas client-side
+      if (mappedStatusList.length > 0) {
+        params._client_side_shipping_statuses = mappedStatusList;
+        console.log('📊 [STATUS ENVIO] Client-side filtros:', mappedStatusList);
+        // ⚠️ NÃO enviar shipping_status para API para evitar filtros incorretos
       }
     }
 
@@ -693,57 +692,37 @@ export function usePedidosManager(initialAccountId?: string) {
             return false;
           }
         } else {
-          // Para status normais de envio, comparar com valores traduzidos
-          const translateShippingStatus = (status: string): string => {
-            const translations: Record<string, string> = {
-              'pending': 'Pendente',
-              'ready_to_ship': 'Pronto para Envio',
-              'shipped': 'Enviado',
-              'delivered': 'Entregue',
-              'not_delivered': 'Não Entregue',
-              'cancelled': 'Cancelado',
-              'to_be_agreed': 'A Combinar',
-              'handling': 'Processando',
-              'ready_to_print': 'Pronto para Imprimir',
-              'printed': 'Impresso',
-              'stale': 'Atrasado',
-              'delayed': 'Atrasado',
-              'lost': 'Perdido',
-              'damaged': 'Danificado',
-              'measures_not_correspond': 'Medidas Não Correspondem'
-            };
-            return translations[status?.toLowerCase()] || status || '-';
-          };
-
-          // Obter o status de envio do pedido e traduzi-lo
-          const rawStatus = order.shipping_status ||
-                           order.shipping?.status ||
-                           order.raw?.shipping?.status ||
-                           order.status_envio;
-          
-          const translatedStatus = translateShippingStatus(rawStatus);
+          // ✅ CORRIGIDO: Usar status reais que vêm da API
+          const realStatus = order.situacao || 
+                            order.shipping_status ||
+                            order.shipping?.status ||
+                            order.raw?.shipping?.status ||
+                            order.status_envio ||
+                            order.status;
           
           // 🔍 DEBUG: Log dos status reais para auditoria
           if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
             console.log('📊 Status Debug:', {
               orderId: order.id,
-              rawStatus,
-              translatedStatus,
+              realStatus,
+              selectedStatuses,
               sources: {
+                situacao: order.situacao,
                 shipping_status: order.shipping_status,
                 'shipping.status': order.shipping?.status,
                 'raw.shipping.status': order.raw?.shipping?.status,
-                status_envio: order.status_envio
+                status_envio: order.status_envio,
+                status: order.status
               }
             });
           }
           
-          // Verificar se o status traduzido está nos filtros selecionados
-          const statusMatches = selectedStatuses.includes(translatedStatus);
+          // Verificar se o status real está nos filtros selecionados
+          const statusMatches = selectedStatuses.includes(realStatus);
           
           if (!statusMatches) {
             if (process.env.NODE_ENV === 'development') {
-              console.log('🚫 Pedido filtrado por status de envio:', order.id, 'status traduzido:', translatedStatus, 'filtros:', selectedStatuses);
+              console.log('🚫 Pedido filtrado por status:', order.id, 'status real:', realStatus, 'filtros:', selectedStatuses);
             }
             return false;
           }
