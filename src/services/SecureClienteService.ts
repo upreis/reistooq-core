@@ -36,10 +36,10 @@ export class SecureClienteService {
    */
   static async getClientesStats(): Promise<{ data: ClientesStats | null; error: any }> {
     try {
-      // Use the secure view for statistics
+      // Buscar somente colunas não sensíveis via tabela com RLS
       const { data, error } = await supabase
-        .from('clientes_safe')
-        .select('*');
+        .from('clientes')
+        .select('status_cliente,ticket_medio,valor_total_gasto');
 
       if (error) {
         console.error('❌ Erro na busca de estatísticas:', error);
