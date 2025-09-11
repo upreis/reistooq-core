@@ -260,6 +260,36 @@ function SimplePedidosPage({ className }: Props) {
     });
   }, [orders, quickFilter, mappingData, isPedidoProcessado]);
 
+  // 🔍 AUDIT: Debug dos dados recebidos
+  useEffect(() => {
+    if (orders && orders.length > 0) {
+      console.log('🔍 [AUDIT] Pedidos carregados:', {
+        total: orders.length,
+        primeiro_pedido: {
+          id: orders[0]?.id,
+          estrutura: Object.keys(orders[0] || {}),
+          campos_return: Object.keys(orders[0] || {}).filter(k => k.startsWith('return_')),
+          has_return: orders[0]?.has_return,
+          has_claim: orders[0]?.has_claim,
+          return_status: orders[0]?.return_status,
+          return_status_money: orders[0]?.return_status_money,
+          unified_data: orders[0]?.unified ? Object.keys(orders[0].unified).filter(k => k.startsWith('return_')) : 'sem unified'
+        }
+      });
+    }
+  }, [orders]);
+
+  useEffect(() => {
+    if (displayedOrders && displayedOrders.length > 0) {
+      console.log('🔍 [AUDIT] DisplayedOrders processados:', {
+        total: displayedOrders.length,
+        primeiro_com_devolucao: displayedOrders.find(o => o.has_return || o.return_status),
+        count_com_return: displayedOrders.filter(o => o.has_return).length,
+        count_com_claim: displayedOrders.filter(o => o.has_claim).length
+      });
+    }
+  }, [displayedOrders]);
+
   // ✅ MIGRAÇÃO FASE 1: Funções de tradução movidas para @/utils/pedidos-translations
 
   // ✅ MIGRAÇÃO: Usar traduções unificadas do sistema global

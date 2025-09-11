@@ -517,7 +517,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'ml',
     priority: 'important',
     visible: true,
-    default: true,
+    default: true, // FORÇAR COMO PADRÃO
     description: 'Status da devolução/reclamo',
     width: 130
   },
@@ -580,7 +580,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'ml',
     priority: 'important',
     visible: true,
-    default: true,
+    default: true, // FORÇAR COMO PADRÃO
     description: 'Status do dinheiro (retained, refunded, available)',
     width: 130
   },
