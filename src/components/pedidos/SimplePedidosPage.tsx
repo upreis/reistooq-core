@@ -149,15 +149,6 @@ function SimplePedidosPage({ className }: Props) {
   const columnManager = useColumnManager();
   const visibleColumns = columnManager.state.visibleColumns;
   
-  // Debug do sistema de colunas
-  useEffect(() => {
-    console.log('🔧 [COLUMNS DEBUG]', {
-      visibleColumns: Array.from(visibleColumns),
-      visibleDefinitions: columnManager.visibleDefinitions.map(col => ({ key: col.key, label: col.label })),
-      totalDefinitions: columnManager.definitions.length,
-      hasVisibleDefs: columnManager.visibleDefinitions.length > 0
-    });
-  }, [visibleColumns, columnManager.visibleDefinitions]);
   
   
   // Estados locais para funcionalidades específicas
@@ -1126,7 +1117,6 @@ useEffect(() => {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={(page) => {
-          console.log('📄 [SimplePedidosPage] onPageChange chamado com página:', page, 'currentPage atual:', currentPage, 'totalPages:', totalPages);
           actions.setPage(page);
         }}
         isPedidoProcessado={isPedidoProcessado}
