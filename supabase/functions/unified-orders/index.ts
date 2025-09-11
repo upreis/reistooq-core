@@ -197,31 +197,36 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
-        // 6. Enriquecer com dados de devoluções (claims/returns)
+        // 6. Enriquecer com dados de devoluções (claims/returns) - CORRIGIDO URL API
         if (order.id) {
           try {
-            // Buscar claims associadas ao pedido
-            const claimsResp = await fetch(
-              `https://api.mercadolibre.com/post-purchase/v1/claims/search?resource=order&resource_id=${order.id}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'x-format-new': 'true'
-                }
+            // Buscar claims associadas ao pedido (URL corrigida)
+            const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?resource=order&resource_id=${order.id}`;
+            console.log(`[unified-orders:${cid}] 🔍 Buscando claims para pedido ${order.id} na URL: ${claimsUrl}`);
+            console.log(`[unified-orders:${cid}] 🔑 Token disponível: ${accessToken ? 'SIM' : 'NÃO'}, Length: ${accessToken?.length || 0}`);
+            
+            const claimsResp = await fetch(claimsUrl, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'x-format-new': 'true'
               }
-            );
+            });
+            
+            console.log(`[unified-orders:${cid}] 📡 Response da API de claims - Status: ${claimsResp.status}, OK: ${claimsResp.ok}`);
             
             if (claimsResp.ok) {
               const claimsData = await claimsResp.json();
               (enrichedOrder as any).claims = claimsData;
               console.log(`[unified-orders:${cid}] 🔍 Claims encontrados para pedido ${order.id}:`, {
-                total_claims: claimsData?.results?.length || 0,
+                total_claims: claimsData?.results?.length || claimsData?.data?.length || 0,
+                claims_structure: Object.keys(claimsData || {}),
                 claims_data: JSON.stringify(claimsData, null, 2)
               });
               
               // Para cada claim, buscar dados de devolução se existir
-              if (claimsData?.results?.length > 0) {
-                const returnPromises = claimsData.results.map(async (claim: any) => {
+              const claimsList = claimsData?.results || claimsData?.data || [];
+              if (claimsList.length > 0) {
+                const returnPromises = claimsList.map(async (claim: any) => {
                   try {
                     // Sempre tentar buscar devoluções (remover condição restritiva)
                       const returnResp = await fetch(
@@ -283,9 +288,18 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
                     console.warn(`[unified-orders:${cid}] Aviso ao buscar devolução da claim ${claim.id}:`, returnErr);
                   }
                 });
-                
+                 
                 await Promise.all(returnPromises);
               }
+            } else {
+              // Log de erro quando claims API não retorna OK
+              const errorText = await claimsResp.text();
+              console.error(`[unified-orders:${cid}] ❌ Erro ao buscar claims para pedido ${order.id}:`, {
+                status: claimsResp.status,
+                statusText: claimsResp.statusText,
+                error: errorText,
+                url: claimsUrl
+              });
             }
           } catch (err) {
             console.warn(`[unified-orders:${cid}] Aviso ao buscar claims/devoluções ${order.id}:`, (err as any)?.message || err);
