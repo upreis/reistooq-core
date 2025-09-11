@@ -61,6 +61,12 @@ export function EnhancedPeriodFilter({
   const handlePresetSelect = useCallback((preset: PeriodPreset) => {
     const range = applyPreset(preset.id);
     if (range) {
+      console.log('🗓️ [EnhancedPeriodFilter] Aplicando preset:', preset.label, {
+        start: range.start,
+        end: range.end,
+        startFormatted: range.start.toISOString(),
+        endFormatted: range.end.toISOString()
+      });
       onDateRangeChange(range.start, range.end);
     }
     setIsOpen(false);
@@ -68,6 +74,13 @@ export function EnhancedPeriodFilter({
 
   const handleCustomApply = useCallback(() => {
     if (customStartDate || customEndDate) {
+      console.log('🗓️ [EnhancedPeriodFilter] Aplicando período customizado:', {
+        start: customStartDate,
+        end: customEndDate,
+        startFormatted: customStartDate?.toISOString(),
+        endFormatted: customEndDate?.toISOString()
+      });
+      
       const range: DateRange = {
         start: customStartDate || new Date(),
         end: customEndDate || new Date()
@@ -79,6 +92,7 @@ export function EnhancedPeriodFilter({
   }, [customStartDate, customEndDate, applyCustomRange, onDateRangeChange]);
 
   const handleClear = useCallback(() => {
+    console.log('🗓️ [EnhancedPeriodFilter] Limpando filtros de período');
     clearPeriod();
     onDateRangeChange(undefined, undefined);
     setCustomStartDate(undefined);

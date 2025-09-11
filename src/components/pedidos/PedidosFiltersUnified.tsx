@@ -316,6 +316,12 @@ export function PedidosFiltersUnified({
               startDate={filters.dataInicio}
               endDate={filters.dataFim}
               onDateRangeChange={(startDate, endDate) => {
+                console.log('🗓️ [PedidosFiltersUnified] Período alterado:', {
+                  startDate,
+                  endDate,
+                  startFormatted: startDate?.toISOString(),
+                  endFormatted: endDate?.toISOString()
+                });
                 onFilterChange('dataInicio', startDate);
                 onFilterChange('dataFim', endDate);
               }}
