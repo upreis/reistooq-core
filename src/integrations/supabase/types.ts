@@ -3447,6 +3447,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      get_mapeamentos_by_skus: {
+        Args: { skus: string[] }
+        Returns: {
+          ativo: boolean
+          quantidade: number
+          sku_correspondente: string
+          sku_pedido: string
+          sku_simples: string
+        }[]
+      }
       get_masked_clients: {
         Args: Record<PropertyKey, never>
         Returns: {

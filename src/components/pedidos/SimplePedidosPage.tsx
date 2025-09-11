@@ -314,9 +314,9 @@ function SimplePedidosPage({ className }: Props) {
     
     // Forçar refresh dos dados para recalcular totais
     setTimeout(() => {
-      onRefresh();
+      actions.refetch();
     }, 100);
-  }, [onRefresh]);
+  }, [actions]);
   
   useEffect(() => {
     if (quickFilter !== 'all') {
