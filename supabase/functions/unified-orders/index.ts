@@ -214,6 +214,10 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             if (claimsResp.ok) {
               const claimsData = await claimsResp.json();
               (enrichedOrder as any).claims = claimsData;
+              console.log(`[unified-orders:${cid}] 🔍 Claims encontrados para pedido ${order.id}:`, {
+                total_claims: claimsData?.results?.length || 0,
+                claims_data: JSON.stringify(claimsData, null, 2)
+              });
               
               // Para cada claim, buscar dados de devolução se existir
               if (claimsData?.results?.length > 0) {
@@ -246,10 +250,10 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
                           });
                         
                         // Buscar reviews da devolução se disponível
-                        if (returnData.id) {
+                        if (returnData.id && returnData.related_entities?.includes('reviews')) {
                           try {
                             const reviewsResp = await fetch(
-                              `https://api.mercadolivre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
+                              `https://api.mercadolibre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
                               {
                                 headers: {
                                   Authorization: `Bearer ${accessToken}`,
@@ -260,11 +264,15 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
                             if (reviewsResp.ok) {
                               const reviewsData = await reviewsResp.json();
                               returnData.reviews = reviewsData;
-                              console.log(`[unified-orders:${cid}] 📝 Reviews de devolução carregadas para return ${returnData.id}`);
+                              console.log(`[unified-orders:${cid}] 📝 Reviews de devolução carregadas para return ${returnData.id}:`, JSON.stringify(reviewsData, null, 2));
+                            } else {
+                              console.log(`[unified-orders:${cid}] ⚠️ Não foi possível carregar reviews para return ${returnData.id}: ${reviewsResp.status}`);
                             }
                           } catch (reviewErr) {
                             console.warn(`[unified-orders:${cid}] Aviso ao buscar reviews da devolução ${returnData.id}:`, reviewErr);
                           }
+                        } else {
+                          console.log(`[unified-orders:${cid}] ℹ️ Return ${returnData.id} não tem reviews ou não está relacionado`);
                         }
                         }
                       } else if (returnResp.status !== 404) {
@@ -497,7 +505,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       ...(() => {
         const firstClaim = order.claims?.results?.find((claim: any) => claim.return_data);
         const firstReturn = firstClaim?.return_data;
-        const firstReview = firstReturn?.reviews?.reviews?.[0]?.resource_reviews?.[0];
+        const firstReview = firstReturn?.reviews?.results?.[0] || firstReturn?.reviews?.[0] || null;
         
         if (firstReturn) {
           console.log(`[unified-orders:${cid}] 🔍 Mapeando dados de devolução para pedido ${order.id}:`, {
@@ -506,7 +514,8 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
             status_money: firstReturn.status_money,
             subtype: firstReturn.subtype,
             has_shipments: firstReturn.shipments?.length > 0,
-            has_reviews: !!firstReview
+            has_reviews: !!firstReview,
+            return_full_data: JSON.stringify(firstReturn, null, 2)
           });
         }
         
