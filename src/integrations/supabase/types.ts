@@ -3501,6 +3501,10 @@ export type Database = {
         Args: { p_state_value: string }
         Returns: boolean
       }
+      mask_cpf_cnpj: {
+        Args: { document: string }
+        Returns: string
+      }
       mask_customer_data: {
         Args: {
           p_cpf_cnpj: string
@@ -3521,15 +3525,15 @@ export type Database = {
         Returns: string
       }
       mask_email: {
-        Args: { email_input: string }
+        Args: { email_address: string }
         Returns: string
       }
       mask_name: {
-        Args: { input_name: string }
+        Args: { full_name: string }
         Returns: string
       }
       mask_phone: {
-        Args: { input_phone: string }
+        Args: { phone_number: string }
         Returns: string
       }
       mask_phone_secure: {
