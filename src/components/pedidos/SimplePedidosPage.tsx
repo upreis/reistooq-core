@@ -101,6 +101,27 @@ type Props = {
 function SimplePedidosPage({ className }: Props) {
   const isMobile = useIsMobile();
   
+  // ✅ CORREÇÃO CRÍTICA: Limpar filtros problemáticos do localStorage
+  useEffect(() => {
+    try {
+      // Limpar localStorage com filtros corrompidos/problemáticos
+      const keys = ['pedidos_unified_filters', 'pedidos_persistent_state', 'pedidos-saved-filters'];
+      keys.forEach(key => {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // Se tem statusEnvio = ["Cancelado"], limpar
+          if (parsed.statusEnvio?.includes?.('Cancelado') || parsed.filters?.statusEnvio?.includes?.('Cancelado')) {
+            console.log('🗑️ Removendo filtros problemáticos:', key, parsed);
+            localStorage.removeItem(key);
+          }
+        }
+      });
+    } catch (error) {
+      console.warn('Erro ao limpar filtros problemáticos:', error);
+    }
+  }, []);
+  
   // 🔄 PERSISTÊNCIA DE ESTADO - Manter filtros e dados ao sair/voltar da página
   const persistentState = usePersistentPedidosState();
   

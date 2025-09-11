@@ -31,6 +31,14 @@ export function usePersistentPedidosState() {
         if (saved) {
           const parsed: PersistentPedidosState = JSON.parse(saved);
           
+          // ✅ VERIFICAR E LIMPAR FILTROS PROBLEMÁTICOS
+          if (parsed.filters?.statusEnvio?.includes?.('Cancelado')) {
+            console.log('🗑️ Removendo estado com filtros problemáticos:', parsed.filters);
+            localStorage.removeItem(STORAGE_KEY);
+            setIsStateLoaded(true);
+            return;
+          }
+          
           // Converter datas string para Date nos filtros
           if (parsed.filters) {
             if (parsed.filters.dataInicio && typeof parsed.filters.dataInicio === 'string') {
