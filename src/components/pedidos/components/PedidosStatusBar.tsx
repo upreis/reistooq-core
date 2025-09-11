@@ -7,17 +7,17 @@ import { memo, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, AlertTriangle, Package, Truck, CheckSquare, Filter } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Package, Filter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PedidosStatusBarProps {
   orders: any[];
   quickFilter: string;
-  onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered') => void;
+  onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado') => void;
   mappingData: Map<string, any>;
   isPedidoProcessado: (order: any) => boolean;
   className?: string;
-  globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number; shipped: number; delivered: number }>;
+  globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number }>;
 }
 
 export const PedidosStatusBar = memo<PedidosStatusBarProps>(({ 
@@ -36,17 +36,13 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
         total: 0,
         prontosBaixa: 0,
         mapeamentoPendente: 0,
-        baixados: 0,
-        shipped: 0,
-        delivered: 0
+        baixados: 0
       };
     }
 
     let prontosBaixa = 0;
     let mapeamentoPendente = 0;
     let baixados = 0;
-    let shipped = 0;
-    let delivered = 0;
 
     for (const order of orders) {
       const id = order?.id || order?.numero || order?.unified?.id;
@@ -75,25 +71,13 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       if (isProcessado || String(order?.status_baixa || '').toLowerCase().includes('baixado')) {
         baixados++;
       }
-      
-      // Enviados
-      if (statuses.some((s: string) => s.includes('shipped') || s.includes('ready_to_ship'))) {
-        shipped++;
-      }
-      
-      // Entregues
-      if (statuses.some((s: string) => s.includes('delivered'))) {
-        delivered++;
-      }
     }
 
     const base = {
       total: orders.length,
       prontosBaixa,
       mapeamentoPendente,
-      baixados,
-      shipped,
-      delivered
+      baixados
     } as any;
 
     if (globalCounts) {
@@ -101,8 +85,6 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       base.prontosBaixa = globalCounts.prontosBaixa ?? base.prontosBaixa;
       base.mapeamentoPendente = globalCounts.mapeamentoPendente ?? base.mapeamentoPendente;
       base.baixados = globalCounts.baixados ?? base.baixados;
-      base.shipped = globalCounts.shipped ?? base.shipped;
-      base.delivered = globalCounts.delivered ?? base.delivered;
     }
 
     return base;
@@ -138,22 +120,6 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       label: 'Baixados',
       count: counters.baixados,
       icon: CheckCircle,
-      variant: 'outline' as const,
-      color: 'success'
-    },
-    {
-      key: 'shipped',
-      label: 'Enviados',
-      count: counters.shipped,
-      icon: Truck,
-      variant: 'outline' as const,
-      color: 'info'
-    },
-    {
-      key: 'delivered',
-      label: 'Entregues',
-      count: counters.delivered,
-      icon: CheckSquare,
       variant: 'outline' as const,
       color: 'success'
     }
