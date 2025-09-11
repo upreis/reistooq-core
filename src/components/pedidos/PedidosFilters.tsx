@@ -22,6 +22,13 @@ export interface PedidosFiltersState {
   valorMin?: number;
   valorMax?: number;
   contasML?: string[];  // ✅ NOVO: Filtro de contas ML
+  
+  // ✅ NOVOS FILTROS DE DEVOLUÇÕES
+  hasReturn?: boolean;
+  hasClaim?: boolean;
+  returnStatus?: string[];
+  returnStatusMoney?: string[];
+  returnProductCondition?: string[];
 }
 
 interface PedidosFiltersProps {
@@ -48,6 +55,37 @@ const UFS = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 
   'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 
   'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+];
+
+// ✅ NOVOS FILTROS DE DEVOLUÇÃO
+const RETURN_STATUS = [
+  'pending_cancel',
+  'pending',
+  'failed',
+  'shipped',
+  'pending_delivered',
+  'return_to_buyer',
+  'pending_expiration',
+  'scheduled',
+  'pending_failure',
+  'label_generated',
+  'cancelled',
+  'not_delivered',
+  'expired',
+  'delivered'
+];
+
+const RETURN_STATUS_MONEY = [
+  'retained',
+  'refunded', 
+  'available'
+];
+
+const RETURN_PRODUCT_CONDITION = [
+  'saleable',
+  'discard',
+  'unsaleable',
+  'missing'
 ];
 
 export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPendingChanges, contasML = [] }: PedidosFiltersProps) {
@@ -100,6 +138,12 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
     if (filters.uf) count++;
     if (filters.valorMin || filters.valorMax) count++;
     if (filters.contasML && filters.contasML.length > 0) count++; // ✅ NOVO
+    // ✅ NOVOS FILTROS DE DEVOLUÇÃO
+    if (filters.hasReturn) count++;
+    if (filters.hasClaim) count++;
+    if (filters.returnStatus && filters.returnStatus.length > 0) count++;
+    if (filters.returnStatusMoney && filters.returnStatusMoney.length > 0) count++;
+    if (filters.returnProductCondition && filters.returnProductCondition.length > 0) count++;
     return count;
   };
 
@@ -340,6 +384,96 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
               onChange={(e) => handleFilterChange('valorMax', e.target.value ? parseFloat(e.target.value) : undefined)}
             />
           </div>
+          
+          {/* ✅ SEÇÃO DE DEVOLUÇÕES */}
+          <div className="col-span-full pt-4 border-t">
+            <h3 className="text-sm font-medium mb-3 text-primary">Filtros de Devoluções</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Tem Devolução */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has-return"
+                  checked={filters.hasReturn || false}
+                  onCheckedChange={(checked) => handleFilterChange('hasReturn', checked as boolean || undefined)}
+                />
+                <label htmlFor="has-return" className="text-sm cursor-pointer">
+                  Tem Devolução
+                </label>
+              </div>
+
+              {/* Tem Reclamação */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="has-claim"
+                  checked={filters.hasClaim || false}
+                  onCheckedChange={(checked) => handleFilterChange('hasClaim', checked as boolean || undefined)}
+                />
+                <label htmlFor="has-claim" className="text-sm cursor-pointer">
+                  Tem Reclamação
+                </label>
+              </div>
+
+              {/* Status da Devolução */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Status Devolução</label>
+                <Select 
+                  value={filters.returnStatus?.[0] || ''} 
+                  onValueChange={(value) => handleFilterChange('returnStatus', value ? [value] : undefined)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    {RETURN_STATUS.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Status do Dinheiro */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Status Dinheiro</label>
+                <Select 
+                  value={filters.returnStatusMoney?.[0] || ''} 
+                  onValueChange={(value) => handleFilterChange('returnStatusMoney', value ? [value] : undefined)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    {RETURN_STATUS_MONEY.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Condição do Produto */}
+              <div>
+                <label className="text-sm font-medium mb-1 block">Condição Produto</label>
+                <Select 
+                  value={filters.returnProductCondition?.[0] || ''} 
+                  onValueChange={(value) => handleFilterChange('returnProductCondition', value ? [value] : undefined)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    {RETURN_PRODUCT_CONDITION.map((condition) => (
+                      <SelectItem key={condition} value={condition}>
+                        {condition.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -395,6 +529,36 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
                 handleFilterChange('valorMin', undefined);
                 handleFilterChange('valorMax', undefined);
               }} />
+            </Badge>
+          )}
+          {filters.hasReturn && (
+            <Badge variant="secondary" className="gap-1">
+              Tem Devolução
+              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('hasReturn', undefined)} />
+            </Badge>
+          )}
+          {filters.hasClaim && (
+            <Badge variant="secondary" className="gap-1">
+              Tem Reclamação
+              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('hasClaim', undefined)} />
+            </Badge>
+          )}
+          {filters.returnStatus && filters.returnStatus.length > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              Status Devolução: {filters.returnStatus[0]}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('returnStatus', undefined)} />
+            </Badge>
+          )}
+          {filters.returnStatusMoney && filters.returnStatusMoney.length > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              Status Dinheiro: {filters.returnStatusMoney[0]}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('returnStatusMoney', undefined)} />
+            </Badge>
+          )}
+          {filters.returnProductCondition && filters.returnProductCondition.length > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              Condição: {filters.returnProductCondition[0]}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('returnProductCondition', undefined)} />
             </Badge>
           )}
         </div>

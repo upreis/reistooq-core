@@ -197,7 +197,80 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
-        // 6. Enriquecer com mediações
+        // 6. Enriquecer com dados de devoluções (claims/returns)
+        if (order.id) {
+          try {
+            // Buscar claims associadas ao pedido
+            const claimsResp = await fetch(
+              `https://api.mercadolibre.com/post-purchase/v1/claims/search?resource=order&resource_id=${order.id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                }
+              }
+            );
+            
+            if (claimsResp.ok) {
+              const claimsData = await claimsResp.json();
+              (enrichedOrder as any).claims = claimsData;
+              
+              // Para cada claim, buscar dados de devolução se existir
+              if (claimsData?.results?.length > 0) {
+                const returnPromises = claimsData.results.map(async (claim: any) => {
+                  try {
+                    // Verificar se tem devolução associada
+                    if (claim.related_entities?.includes('return')) {
+                      const returnResp = await fetch(
+                        `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
+                        {
+                          headers: {
+                            Authorization: `Bearer ${accessToken}`,
+                            'x-format-new': 'true'
+                          }
+                        }
+                      );
+                      
+                      if (returnResp.ok) {
+                        const returnData = await returnResp.json();
+                        claim.return_data = returnData;
+                        
+                        // Buscar reviews da devolução se existir
+                        if (returnData.id && returnData.related_entities?.includes('reviews')) {
+                          try {
+                            const reviewsResp = await fetch(
+                              `https://api.mercadolivre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
+                              {
+                                headers: {
+                                  Authorization: `Bearer ${accessToken}`,
+                                  'x-format-new': 'true'
+                                }
+                              }
+                            );
+                            if (reviewsResp.ok) {
+                              const reviewsData = await reviewsResp.json();
+                              returnData.reviews = reviewsData;
+                            }
+                          } catch (reviewErr) {
+                            console.warn(`[unified-orders:${cid}] Aviso ao buscar reviews da devolução ${returnData.id}:`, reviewErr);
+                          }
+                        }
+                      }
+                    }
+                  } catch (returnErr) {
+                    console.warn(`[unified-orders:${cid}] Aviso ao buscar devolução da claim ${claim.id}:`, returnErr);
+                  }
+                });
+                
+                await Promise.all(returnPromises);
+              }
+            }
+          } catch (err) {
+            console.warn(`[unified-orders:${cid}] Aviso ao buscar claims/devoluções ${order.id}:`, (err as any)?.message || err);
+          }
+        }
+
+        // 7. Enriquecer com mediações
         if (order.id) {
           try {
             const mediationsResp = await fetch(
@@ -386,6 +459,77 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       
       // Mediações
       mediations_tags: order.mediations?.length ? order.mediations.map((m: any) => m.mediation_tags).flat().join(', ') : null,
+      
+      // ✅ NOVOS CAMPOS DE DEVOLUÇÃO ML
+      // Extração de dados das claims e returns
+      has_claim: order.claims?.results?.length > 0 || false,
+      has_return: order.claims?.results?.some((claim: any) => claim.return_data) || false,
+      
+      // Dados principais da devolução (pegar a primeira devolução se houver múltiplas)
+      return_status: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        return firstReturn?.status || null;
+      })(),
+      
+      return_shipment_status: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        return firstReturn?.shipments?.[0]?.status || null;
+      })(),
+      
+      return_tracking_number: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        return firstReturn?.shipments?.[0]?.tracking_number || null;
+      })(),
+      
+      return_refund_at: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        return firstReturn?.refund_at || null;
+      })(),
+      
+      return_date_closed: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        return firstReturn?.date_closed || null;
+      })(),
+      
+      return_date_created: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        return firstReturn?.date_created || null;
+      })(),
+      
+      return_status_money: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        return firstReturn?.status_money || null;
+      })(),
+      
+      return_subtype: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        return firstReturn?.subtype || null;
+      })(),
+      
+      // Dados de revisão da devolução
+      return_product_condition: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        const firstReview = firstReturn?.reviews?.reviews?.[0]?.resource_reviews?.[0];
+        return firstReview?.product_condition || null;
+      })(),
+      
+      return_product_destination: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        const firstReview = firstReturn?.reviews?.reviews?.[0]?.resource_reviews?.[0];
+        return firstReview?.product_destination || null;
+      })(),
+      
+      return_seller_status: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        const firstReview = firstReturn?.reviews?.reviews?.[0]?.resource_reviews?.[0];
+        return firstReview?.seller_status || null;
+      })(),
+      
+      return_benefited: (() => {
+        const firstReturn = order.claims?.results?.find((claim: any) => claim.return_data)?.return_data;
+        const firstReview = firstReturn?.reviews?.reviews?.[0]?.resource_reviews?.[0];
+        return firstReview?.benefited || null;
+      })(),
       
       // Informações dos produtos
       skus_produtos: skus || 'Sem SKU',

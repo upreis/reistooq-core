@@ -22,6 +22,23 @@ export const ML_STATUS_MAP: Record<string, StatusMapping> = {
   'completed': { portuguese: 'Concluído' },
   'expired': { portuguese: 'Expirado' },
   'paused': { portuguese: 'Pausado' },
+  
+  // Status de devoluções (novos)
+  'pending_cancel': { portuguese: 'Cancelamento Pendente' },
+  'failed': { portuguese: 'Falhado' },
+  'pending_delivered': { portuguese: 'Entrega Pendente' },
+  'return_to_buyer': { portuguese: 'Retorno ao Comprador' },
+  'pending_expiration': { portuguese: 'Expiração Pendente' },
+  'scheduled': { portuguese: 'Agendado' },
+  'pending_failure': { portuguese: 'Falha Pendente' },
+  'label_generated': { portuguese: 'Etiqueta Gerada' },
+  'not_delivered_return': { portuguese: 'Devolução Não Entregue' },
+  'expired_return': { portuguese: 'Devolução Expirada' },
+  
+  // Status de dinheiro (devoluções)
+  'retained': { portuguese: 'Retido' },
+  'refunded': { portuguese: 'Reembolsado' },
+  'available': { portuguese: 'Disponível' },
 };
 
 // Sub-status detalhados de envio do MercadoLivre (40+ status)
