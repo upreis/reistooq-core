@@ -95,6 +95,17 @@ serve(async (req) => {
           for (const order of orders) {
             const statusBaixa = (order as any).status_baixa || (order as any).unified?.status_baixa || '';
             
+            // Debug: log detalhado dos primeiros pedidos para identificar estrutura
+            if (orders.indexOf(order) < 3) {
+              console.log(`[pedidos-aggregator:${cid}] Debug order structure:`, {
+                orderId: (order as any).id || (order as any).numero,
+                status_baixa: (order as any).status_baixa,
+                unified_status_baixa: (order as any).unified?.status_baixa,
+                finalStatusBaixa: statusBaixa,
+                fullOrder: JSON.stringify(order, null, 2)
+              });
+            }
+            
             // Contar baseado na coluna "Status da Baixa"
             if (statusBaixa === 'Pronto p/ Baixar') {
               prontosBaixaCount++;
