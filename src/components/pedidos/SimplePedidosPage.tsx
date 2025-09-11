@@ -290,6 +290,16 @@ function SimplePedidosPage({ className }: Props) {
     }
   }, [displayedOrders]);
 
+  // Debug das colunas visíveis
+  useEffect(() => {
+    const colunasArray = Array.from(visibleColumns);
+    console.log('🔍 [AUDIT] Colunas visíveis sendo passadas para tabela:', {
+      total: colunasArray.length,
+      colunas_devolucao: colunasArray.filter(col => col.startsWith('return_') || col.includes('claim')),
+      todas_colunas: colunasArray
+    });
+  }, [visibleColumns]);
+
   // ✅ MIGRAÇÃO FASE 1: Funções de tradução movidas para @/utils/pedidos-translations
 
   // ✅ MIGRAÇÃO: Usar traduções unificadas do sistema global
