@@ -311,7 +311,12 @@ function SimplePedidosPage({ className }: Props) {
   const handleQuickFilterChange = useCallback((newFilter: typeof quickFilter) => {
     setQuickFilter(newFilter);
     persistentState.saveQuickFilter(newFilter);
-  }, []);
+    
+    // Forçar refresh dos dados para recalcular totais
+    setTimeout(() => {
+      onRefresh();
+    }, 100);
+  }, [onRefresh]);
   
   useEffect(() => {
     if (quickFilter !== 'all') {

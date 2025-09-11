@@ -92,27 +92,83 @@ serve(async (req) => {
 
           console.log(`[pedidos-aggregator:${cid}] Analyzing ${orders.length} orders from total ${totalCount}...`);
 
+          // Buscar dados de mapeamento para calcular status_baixa
+          const allSkus = [];
           for (const order of orders) {
-            const statusBaixa = (order as any).status_baixa || (order as any).unified?.status_baixa || '';
-            
-            // Debug: log detalhado dos primeiros pedidos para identificar estrutura
-            if (orders.indexOf(order) < 3) {
-              console.log(`[pedidos-aggregator:${cid}] Debug order structure:`, {
-                orderId: (order as any).id || (order as any).numero,
-                status_baixa: (order as any).status_baixa,
-                unified_status_baixa: (order as any).unified?.status_baixa,
-                finalStatusBaixa: statusBaixa,
-                fullOrder: JSON.stringify(order, null, 2)
-              });
+            const items = (order as any).order_items || [];
+            for (const item of items) {
+              if (item.item?.seller_sku) {
+                allSkus.push(item.item.seller_sku);
+              }
             }
-            
-            // Contar baseado na coluna "Status da Baixa"
-            if (statusBaixa === 'Pronto p/ Baixar') {
+          }
+
+          console.log(`[pedidos-aggregator:${cid}] Found ${allSkus.length} SKUs to check mappings for`);
+
+          // Buscar mapeamentos
+          let mapeamentosMap = new Map();
+          if (allSkus.length > 0) {
+            try {
+              const { data: mapeamentos, error: mapeamentosError } = await sb.rpc('get_mapeamentos_by_skus', {
+                skus: allSkus
+              });
+              
+              if (!mapeamentosError && mapeamentos) {
+                mapeamentosMap = new Map(
+                  mapeamentos.map((m: any) => [m.sku_pedido, m])
+                );
+                console.log(`[pedidos-aggregator:${cid}] Found ${mapeamentosMap.size} mappings`);
+              }
+            } catch (err) {
+              console.warn(`[pedidos-aggregator:${cid}] Error fetching mappings:`, err);
+            }
+          }
+
+          for (const order of orders) {
+            const items = (order as any).order_items || [];
+            let temMapeamentoCompleto = false;
+            let temMapeamentoIncompleto = false;
+            let temSemMapeamento = false;
+
+            // Analisar cada item do pedido
+            for (const item of items) {
+              const sku = item.item?.seller_sku;
+              if (!sku) continue;
+
+              const mapeamento = mapeamentosMap.get(sku);
+              if (!mapeamento) {
+                temSemMapeamento = true;
+              } else {
+                // Verificar se o mapeamento está completo
+                if (mapeamento.sku_correspondente || mapeamento.sku_simples) {
+                  temMapeamentoCompleto = true;
+                } else {
+                  temMapeamentoIncompleto = true;
+                }
+              }
+            }
+
+            // Calcular status da baixa baseado na lógica do frontend
+            let statusBaixa = '';
+            if (temMapeamentoCompleto && !temMapeamentoIncompleto && !temSemMapeamento) {
+              statusBaixa = 'Pronto p/ Baixar';
               prontosBaixaCount++;
-            } else if (statusBaixa === 'Mapear Incompleto') {
+            } else if (temMapeamentoIncompleto || temSemMapeamento) {
+              statusBaixa = 'Mapear Incompleto';
               mapeamentoPendenteCount++;
             }
-            // Baixados são contados separadamente via RPC
+
+            // Debug dos primeiros pedidos
+            if (orders.indexOf(order) < 3) {
+              console.log(`[pedidos-aggregator:${cid}] Debug order analysis:`, {
+                orderId: (order as any).id,
+                itemsCount: items.length,
+                temMapeamentoCompleto,
+                temMapeamentoIncompleto,
+                temSemMapeamento,
+                statusBaixa
+              });
+            }
           }
 
           console.log(`[pedidos-aggregator:${cid}] Analysis result: prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
