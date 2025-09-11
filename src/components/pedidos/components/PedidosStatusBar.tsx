@@ -13,9 +13,9 @@ import { cn } from '@/lib/utils';
 interface PedidosStatusBarProps {
   orders: any[];
   quickFilter: string;
-  onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado') => void;
+  onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered') => void;
   className?: string;
-  globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number }>;
+  globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number; shipped: number; delivered: number }>;
 }
 
 export const PedidosStatusBar = memo<PedidosStatusBarProps>(({ 
@@ -25,36 +25,48 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   className,
   globalCounts
 }) => {
-  // Usar contadores globais quando disponíveis (totais de todas as páginas do filtro)
+  // ✅ CORRIGIDO: Usar contadores globais quando disponíveis
   const counters = useMemo(() => {
-    // Se temos globalCounts, usar eles (resultado agregado dos filtros)
-    if (globalCounts) {
-      return {
+    console.log('📊 [StatusBar] Calculando contadores:', { globalCounts, ordersLength: orders?.length });
+    
+    // ✅ PRIORIDADE: Se temos globalCounts, usar eles (resultado agregado dos filtros)
+    if (globalCounts && typeof globalCounts.total === 'number') {
+      const result = {
         total: globalCounts.total || 0,
         prontosBaixa: globalCounts.prontosBaixa || 0,
         mapeamentoPendente: globalCounts.mapeamentoPendente || 0,
-        baixados: globalCounts.baixados || 0
+        baixados: globalCounts.baixados || 0,
+        shipped: globalCounts.shipped || 0,
+        delivered: globalCounts.delivered || 0
       };
+      console.log('📊 [StatusBar] Usando contadores globais:', result);
+      return result;
     }
 
-    // Fallback: calcular contadores da página atual se não temos globalCounts
+    // ✅ FALLBACK: Calcular contadores da página atual se não temos globalCounts válidos
     if (!orders?.length) {
+      console.log('📊 [StatusBar] Nenhum pedido, retornando zeros');
       return {
         total: 0,
         prontosBaixa: 0,
         mapeamentoPendente: 0,
-        baixados: 0
+        baixados: 0,
+        shipped: 0,
+        delivered: 0
       };
     }
 
     let prontosBaixa = 0;
     let mapeamentoPendente = 0;
     let baixados = 0;
+    let shipped = 0;
+    let delivered = 0;
 
     for (const order of orders) {
       const statusBaixa = order?.status_baixa || order?.unified?.status_baixa || '';
+      const shippingStatus = order?.shipping_status || order?.unified?.shipping?.status || '';
       
-      // Usar a coluna "Status da Baixa" como referência
+      // Usar a coluna "Status da Baixa" como referência principal
       if (statusBaixa === 'Pronto p/ Baixar') {
         prontosBaixa++;
       } else if (statusBaixa === 'Mapear Incompleto') {
@@ -62,14 +74,27 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       } else if (statusBaixa === 'Baixado' || statusBaixa === 'Processado') {
         baixados++;
       }
+      
+      // Contadores de status de envio
+      if (shippingStatus?.toLowerCase().includes('shipped')) {
+        shipped++;
+      }
+      if (shippingStatus?.toLowerCase().includes('delivered')) {
+        delivered++;
+      }
     }
 
-    return {
+    const result = {
       total: orders.length,
       prontosBaixa,
       mapeamentoPendente,
-      baixados
+      baixados,
+      shipped,
+      delivered
     };
+    
+    console.log('📊 [StatusBar] Contadores calculados localmente:', result);
+    return result;
   }, [orders, globalCounts]);
 
   const statusChips = [
@@ -101,6 +126,22 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       key: 'baixado',
       label: 'Baixados',
       count: counters.baixados,
+      icon: CheckCircle,
+      variant: 'outline' as const,
+      color: 'success'
+    },
+    {
+      key: 'shipped',
+      label: 'Enviados',
+      count: counters.shipped,
+      icon: CheckCircle,
+      variant: 'outline' as const,
+      color: 'info'
+    },
+    {
+      key: 'delivered',
+      label: 'Entregues',
+      count: counters.delivered,
       icon: CheckCircle,
       variant: 'outline' as const,
       color: 'success'

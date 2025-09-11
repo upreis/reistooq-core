@@ -99,23 +99,33 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     }
   }, [loadSavedFilters]);
 
-  // Salvar filtros aplicados com melhor gestão de datas
+  // ✅ Salvar filtros aplicados no localStorage automaticamente
   useEffect(() => {
     if (Object.keys(appliedFilters).length > 0) {
       try {
-        // Serializar datas para JSON de forma consistente
-        const filtersToSave = { ...appliedFilters };
-        if (filtersToSave.dataInicio) {
-          filtersToSave.dataInicio = filtersToSave.dataInicio.toISOString() as any;
-        }
-        if (filtersToSave.dataFim) {
-          filtersToSave.dataFim = filtersToSave.dataFim.toISOString() as any;
-        }
+        // ✅ CORREÇÃO ROBUSTA: Serializar datas como ISO strings para localStorage
+        const serializeValue = (value: any): any => {
+          if (value instanceof Date) {
+            return value.toISOString();
+          }
+          if (Array.isArray(value)) {
+            return value.map(serializeValue);
+          }
+          if (value && typeof value === 'object') {
+            const serialized: any = {};
+            for (const [key, val] of Object.entries(value)) {
+              serialized[key] = serializeValue(val);
+            }
+            return serialized;
+          }
+          return value;
+        };
         
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(filtersToSave));
-        console.log('💾 Filtros salvos com persistência aprimorada:', filtersToSave);
+        const serializedFilters = serializeValue(appliedFilters);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serializedFilters));
+        console.log('💾 Filtros salvos no localStorage:', serializedFilters);
       } catch (error) {
-        console.warn('Erro ao salvar filtros:', error);
+        console.error('❌ Erro ao salvar filtros no localStorage:', error);
       }
     }
   }, [appliedFilters]);
@@ -145,36 +155,22 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     });
   }, []);
 
-  // Aplicar filtros manuais - CORRIGIDO para garantir sincronização
-  const applyFilters = useCallback(async () => {
-    console.groupCollapsed('[apply/unified] INICIANDO APLICAÇÃO DE FILTROS');
-    console.log('draftFilters', draftFilters);
-    console.log('appliedFilters (anterior)', appliedFilters);
-    console.groupEnd();
+  // ✅ Aplicar filtros manualmente
+  const applyFilters = useCallback(() => {
+    console.log('🔄 [Filtros] Aplicando filtros:', draftFilters);
     
+    // ✅ CORREÇÃO: Garantir que o callback seja chamado com os filtros corretos
+    const filtersToApply = { ...draftFilters };
+    setAppliedFilters(filtersToApply);
     setIsApplying(true);
     
-    try {
-      // ✅ CRÍTICO: Primeiro aplicar o estado interno, depois chamar callback
-      setAppliedFilters({ ...draftFilters });
-      
-      // ✅ GARANTIR: Pequeno delay para garantir que o estado foi atualizado
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
-      // ✅ CRÍTICO: Chamar callback com os filtros aplicados
-      if (onFiltersApply) {
-        console.log('🔄 [FILTERS] Executando callback onFiltersApply com filtros:', draftFilters);
-        await onFiltersApply({ ...draftFilters });
-      }
-      
-      console.log('✅ [FILTERS] Filtros aplicados com sucesso');
-    } catch (error) {
-      console.error('❌ [FILTERS] Erro ao aplicar filtros:', error);
-      throw error;
-    } finally {
+    // ✅ IMPORTANTE: Chamar callback APÓS aplicar os filtros
+    setTimeout(() => {
+      onFiltersApply?.(filtersToApply);
       setIsApplying(false);
-    }
-  }, [draftFilters, appliedFilters, onFiltersApply]);
+      console.log('✅ [Filtros] Aplicação concluída:', filtersToApply);
+    }, 100);
+  }, [draftFilters, onFiltersApply]);
 
   // Cancelar mudanças pendentes
   const cancelChanges = useCallback(() => {

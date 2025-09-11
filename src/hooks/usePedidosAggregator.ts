@@ -5,7 +5,19 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { PedidosFiltersState } from '@/hooks/usePedidosFiltersUnified';
+// Tipo temporário compatível com ambos os sistemas
+interface CompatibleFiltersState {
+  search?: string;
+  dataInicio?: Date | string;
+  dataFim?: Date | string;
+  statusEnvio?: string | string[];
+  cidade?: string;
+  uf?: string;
+  valorMin?: number;
+  valorMax?: number;
+  contasML?: string[];
+  situacao?: string | string[]; // Para compatibilidade
+}
 import { mapSituacaoToApiStatus } from '@/utils/statusMapping';
 
 interface PedidosAggregatorCounts {
@@ -26,17 +38,23 @@ interface UsePedidosAggregatorReturn {
 
 export function usePedidosAggregator(
   integrationAccountId: string,
-  appliedFilters: PedidosFiltersState
+  appliedFilters: CompatibleFiltersState
 ): UsePedidosAggregatorReturn {
   const [counts, setCounts] = useState<PedidosAggregatorCounts | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchCounts = useCallback(async () => {
-    const accountIds = (appliedFilters?.contasML && (appliedFilters as any).contasML.length > 0)
-      ? (appliedFilters as any).contasML as string[]
+    console.log('🔢 [Aggregator] Iniciando busca com filtros:', appliedFilters);
+    
+    const accountIds = (appliedFilters?.contasML && appliedFilters.contasML.length > 0)
+      ? appliedFilters.contasML
       : (integrationAccountId ? [integrationAccountId] : []);
-    if (!accountIds.length) return;
+    
+    if (!accountIds.length) {
+      console.warn('🔢 [Aggregator] Nenhuma conta disponível');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -47,15 +65,19 @@ export function usePedidosAggregator(
       
       if (appliedFilters.search) {
         apiFilters.search = appliedFilters.search;
+        console.log('🔍 [Aggregator] Search aplicado:', appliedFilters.search);
       }
       
+      // ✅ CORREÇÃO: Normalizar datas corretamente
       if (appliedFilters.dataInicio) {
         const d = appliedFilters.dataInicio instanceof Date 
           ? appliedFilters.dataInicio 
           : new Date(appliedFilters.dataInicio);
         
         if (!isNaN(d.getTime())) {
+          d.setHours(0, 0, 0, 0); // Início do dia
           apiFilters.date_from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          console.log('📅 [Aggregator] Data início:', appliedFilters.dataInicio, '=>', apiFilters.date_from);
         }
       }
 
@@ -65,48 +87,71 @@ export function usePedidosAggregator(
           : new Date(appliedFilters.dataFim);
         
         if (!isNaN(d.getTime())) {
+          d.setHours(23, 59, 59, 999); // Fim do dia
           apiFilters.date_to = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          console.log('📅 [Aggregator] Data fim:', appliedFilters.dataFim, '=>', apiFilters.date_to);
         }
       }
 
       if (appliedFilters.cidade) {
         apiFilters.cidade = appliedFilters.cidade;
+        console.log('🏙️ [Aggregator] Cidade:', appliedFilters.cidade);
       }
 
       if (appliedFilters.uf) {
         apiFilters.uf = appliedFilters.uf;
+        console.log('🗺️ [Aggregator] UF:', appliedFilters.uf);
       }
 
-      if (appliedFilters.valorMin) {
+      if (appliedFilters.valorMin !== undefined) {
         apiFilters.valorMin = appliedFilters.valorMin;
+        console.log('💰 [Aggregator] Valor mín:', appliedFilters.valorMin);
       }
 
-      if (appliedFilters.valorMax) {
+      if (appliedFilters.valorMax !== undefined) {
         apiFilters.valorMax = appliedFilters.valorMax;
+        console.log('💰 [Aggregator] Valor máx:', appliedFilters.valorMax);
       }
 
-      // Mapear situacao -> shipping_status (quando houver apenas uma)
-      if ((appliedFilters as any).situacao) {
-        const situacoes = Array.isArray((appliedFilters as any).situacao)
-          ? (appliedFilters as any).situacao
-          : [(appliedFilters as any).situacao];
-        const mapped = situacoes
-          .map((sit: string) => mapSituacaoToApiStatus(sit) || null)
-          .filter(Boolean) as string[];
+      // ✅ CORREÇÃO: Mapear statusEnvio corretamente
+      if (appliedFilters.statusEnvio) {
+        const statusList = Array.isArray(appliedFilters.statusEnvio) 
+          ? appliedFilters.statusEnvio 
+          : [appliedFilters.statusEnvio];
+        
+        // Mapear valores da UI para API
+        const statusMapping: Record<string, string> = {
+          'Pendente': 'pending',
+          'Pronto para Envio': 'ready_to_ship', 
+          'Enviado': 'shipped',
+          'Entregue': 'delivered',
+          'Cancelado': 'cancelled'
+        };
+        
+        const mapped = statusList
+          .map(status => statusMapping[status] || status)
+          .filter(Boolean);
+          
         if (mapped.length === 1) {
           apiFilters.shipping_status = mapped[0];
+          console.log('📊 [Aggregator] Status envio:', mapped[0]);
         }
       }
 
+      // ✅ CORREÇÃO: Suportar múltiplas contas
       const requestBody: any = {
         filters: apiFilters
       };
+      
       if (accountIds.length > 1) {
         requestBody.integration_account_ids = accountIds;
+        console.log('🔗 [Aggregator] Múltiplas contas:', accountIds.length);
       } else {
         requestBody.integration_account_id = accountIds[0];
+        console.log('🔗 [Aggregator] Conta única:', accountIds[0]);
       }
-      console.log('🔢 [Aggregator] Buscando contadores agregados:', requestBody);
+      
+      console.log('🔢 [Aggregator] Request body completo:', requestBody);
 
       const { data, error } = await supabase.functions.invoke('pedidos-aggregator', {
         body: requestBody

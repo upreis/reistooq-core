@@ -24,7 +24,7 @@ interface PedidosFiltersUnifiedProps {
   filters: PedidosFiltersState;
   appliedFilters: PedidosFiltersState;
   onFilterChange: <K extends keyof PedidosFiltersState>(key: K, value: PedidosFiltersState[K]) => void;
-  onApplyFilters: () => Promise<void>; // ✅ CORRIGIDO: Deve ser async
+  onApplyFilters: () => void; // ✅ CORRIGIDO: Deve ser sync
   onCancelChanges: () => void;
   onClearFilters: () => void;
   hasPendingChanges: boolean;
