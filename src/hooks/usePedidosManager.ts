@@ -218,16 +218,36 @@ export function usePedidosManager(initialAccountId?: string) {
       console.log('🔍 [buildApiParams] Search adicionado:', filters.search);
     }
 
-    // Status do Envio (shipping_status)
+    // Status do Envio (traduzido para valores da UI)
     if (filters.statusEnvio) {
       const statusList = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
+      
+      // Converter valores traduzidos para valores da API
+      const statusMapping: Record<string, string> = {
+        'Pendente': 'pending',
+        'Pronto para Envio': 'ready_to_ship',
+        'Enviado': 'shipped',
+        'Entregue': 'delivered',
+        'Não Entregue': 'not_delivered',
+        'Cancelado': 'cancelled',
+        'A Combinar': 'to_be_agreed',
+        'Processando': 'handling',
+        'Pronto para Imprimir': 'ready_to_print',
+        'Impresso': 'printed',
+        'Atrasado': 'stale',
+        'Perdido': 'lost',
+        'Danificado': 'damaged',
+        'Medidas Não Correspondem': 'measures_not_correspond'
+      };
 
-      if (statusList.length === 1) {
-        params.statusEnvio = statusList[0];
-        console.log('📊 [STATUS ENVIO] Filtro aplicado:', statusList[0]);
-      } else if (statusList.length > 1) {
-        params._client_side_status_envio = statusList;
-        console.log('📊 [STATUS ENVIO] Múltiplos status (client-side):', statusList);
+      const apiStatusList = statusList.map(status => statusMapping[status] || status).filter(Boolean);
+
+      if (apiStatusList.length === 1) {
+        params.shipping_status = apiStatusList[0];
+        console.log('📊 [STATUS ENVIO] Filtro aplicado:', apiStatusList[0]);
+      } else if (apiStatusList.length > 1) {
+        params._client_side_shipping_statuses = apiStatusList;
+        console.log('📊 [STATUS ENVIO] Múltiplos status (client-side):', apiStatusList);
       }
     }
 
@@ -358,7 +378,7 @@ export function usePedidosManager(initialAccountId?: string) {
             integration_account_id: accountId,
             limit: pageSize,
             offset: (currentPage - 1) * pageSize,
-            ...(statusEnvio ? { statusEnvio } : {}),
+            ...(rest.shipping_status ? { shipping_status: rest.shipping_status } : {}),
             ...(rest.status ? { status: rest.status } : {}),
             ...(rest.q ? { q: rest.q, search: rest.q } : {}),
             ...(rest.cidade ? { cidade: rest.cidade } : {}),
@@ -530,7 +550,7 @@ export function usePedidosManager(initialAccountId?: string) {
       integration_account_id: apiParams.integration_account_id || integrationAccountId,
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
-      ...(statusEnvio ? { statusEnvio } : {}),
+      ...(rest.shipping_status ? { shipping_status: rest.shipping_status } : {}),
       ...(rest.status ? { status: rest.status } : {}),
       ...(rest.q ? { q: rest.q, search: rest.q } : {}),
       ...(rest.cidade ? { cidade: rest.cidade } : {}),
@@ -580,7 +600,7 @@ export function usePedidosManager(initialAccountId?: string) {
       unified: (data.unified && data.unified.length ? data.unified : (data.pedidos || [])),
       total: data.paging?.total || data.paging?.count || data.total || (Array.isArray(data.results) ? data.results.length : Array.isArray(data.pedidos) ? data.pedidos.length : 0),
       paging: data.paging || undefined,
-      serverStatusApplied: Boolean(statusEnvio)
+      serverStatusApplied: Boolean(rest.shipping_status)
     };
   }, [integrationAccountId, currentPage, pageSize, getUrlParams]);
 
@@ -674,23 +694,42 @@ export function usePedidosManager(initialAccountId?: string) {
             return false;
           }
         } else {
-          // Para status normais, usar lógica original
-          const orderStatuses = [
-            order.shipping_status,
-            order.shipping?.status,
-            order.raw?.shipping?.status,
-            order.situacao,
-            order.status
-          ].filter(Boolean);
+          // Para status normais de envio, comparar com valores traduzidos
+          const translateShippingStatus = (status: string): string => {
+            const translations: Record<string, string> = {
+              'pending': 'Pendente',
+              'ready_to_ship': 'Pronto para Envio',
+              'shipped': 'Enviado',
+              'delivered': 'Entregue',
+              'not_delivered': 'Não Entregue',
+              'cancelled': 'Cancelado',
+              'to_be_agreed': 'A Combinar',
+              'handling': 'Processando',
+              'ready_to_print': 'Pronto para Imprimir',
+              'printed': 'Impresso',
+              'stale': 'Atrasado',
+              'delayed': 'Atrasado',
+              'lost': 'Perdido',
+              'damaged': 'Danificado',
+              'measures_not_correspond': 'Medidas Não Correspondem'
+            };
+            return translations[status?.toLowerCase()] || status || '-';
+          };
+
+          // Obter o status de envio do pedido e traduzi-lo
+          const rawStatus = order.shipping_status ||
+                           order.shipping?.status ||
+                           order.raw?.shipping?.status ||
+                           order.status_envio;
           
-          // Usar função utilitária para verificação avançada
-          const statusMatches = orderStatuses.some(orderStatus => 
-            statusMatchesFilter(orderStatus, selectedStatuses)
-          );
+          const translatedStatus = translateShippingStatus(rawStatus);
+          
+          // Verificar se o status traduzido está nos filtros selecionados
+          const statusMatches = selectedStatuses.includes(translatedStatus);
           
           if (!statusMatches) {
             if (process.env.NODE_ENV === 'development') {
-              console.log('🚫 Pedido filtrado por status:', order.id, 'status encontrados:', orderStatuses, 'filtros:', selectedStatuses);
+              console.log('🚫 Pedido filtrado por status de envio:', order.id, 'status traduzido:', translatedStatus, 'filtros:', selectedStatuses);
             }
             return false;
           }

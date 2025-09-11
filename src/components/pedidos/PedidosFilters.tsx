@@ -33,14 +33,20 @@ interface PedidosFiltersProps {
 }
 
 const STATUS_ENVIO = [
-  'pending',
-  'processing',
-  'ready_to_ship',
-  'shipped',
-  'delivered',
-  'not_delivered',
-  'cancelled',
-  'to_be_agreed'
+  'Pendente',
+  'Pronto para Envio',
+  'Enviado',
+  'Entregue',
+  'Não Entregue',
+  'Cancelado',
+  'A Combinar',
+  'Processando',
+  'Pronto para Imprimir',
+  'Impresso',
+  'Atrasado',
+  'Perdido',
+  'Danificado',
+  'Medidas Não Correspondem'
 ];
 
 const UFS = [
