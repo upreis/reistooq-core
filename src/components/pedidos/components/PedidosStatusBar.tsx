@@ -29,8 +29,19 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   className,
   globalCounts
 }) => {
-  // Calcular contadores em tempo real
+  // Usar contadores globais quando disponíveis (totais de todas as páginas do filtro)
   const counters = useMemo(() => {
+    // Se temos globalCounts, usar eles (resultado agregado dos filtros)
+    if (globalCounts) {
+      return {
+        total: globalCounts.total || 0,
+        prontosBaixa: globalCounts.prontosBaixa || 0,
+        mapeamentoPendente: globalCounts.mapeamentoPendente || 0,
+        baixados: globalCounts.baixados || 0
+      };
+    }
+
+    // Fallback: calcular contadores da página atual se não temos globalCounts
     if (!orders?.length) {
       return {
         total: 0,
@@ -49,14 +60,6 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       const mapping = mappingData?.get?.(id);
       const isProcessado = isPedidoProcessado(order);
       
-      const statuses = [
-        order?.shipping_status,
-        order?.shipping?.status,
-        order?.unified?.shipping?.status,
-        order?.situacao,
-        order?.status
-      ].filter(Boolean).map((s: any) => String(s).toLowerCase());
-
       // Pronto para baixa: tem mapeamento completo e não foi baixado
       if (mapping && (mapping.skuEstoque || mapping.skuKit) && !isProcessado) {
         prontosBaixa++;
@@ -73,21 +76,12 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       }
     }
 
-    const base = {
+    return {
       total: orders.length,
       prontosBaixa,
       mapeamentoPendente,
       baixados
-    } as any;
-
-    if (globalCounts) {
-      base.total = globalCounts.total ?? base.total;
-      base.prontosBaixa = globalCounts.prontosBaixa ?? base.prontosBaixa;
-      base.mapeamentoPendente = globalCounts.mapeamentoPendente ?? base.mapeamentoPendente;
-      base.baixados = globalCounts.baixados ?? base.baixados;
-    }
-
-    return base;
+    };
   }, [orders, mappingData, isPedidoProcessado, globalCounts]);
 
   const statusChips = [
