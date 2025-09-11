@@ -161,7 +161,13 @@ export class SimpleBaixaService {
         custo_envio_seller: Number((pedido as any).custo_envio_seller || (shipping as any)?.seller_cost || primeiroPagamento?.overpaid_amount || 0),
         desconto_cupom: valorDescontoReal,
         taxa_marketplace: taxasReal,
-        valor_liquido_vendedor: primeiroPagamento?.transaction_amount || (valorTotalReal - taxasReal),
+        valor_liquido_vendedor: (() => {
+          // Valor líquido = Valor total - Taxa marketplace - Custo envio para vendedor
+          const valorTotal = valorTotalReal;
+          const taxaMarketplace = taxasReal;
+          const custoEnvioVendedor = Number((pedido as any).custo_envio_seller || (shipping as any)?.seller_cost || 0);
+          return Math.max(0, valorTotal - taxaMarketplace - custoEnvioVendedor);
+        })(),
         metodo_pagamento: metodoPagamentoDetalhado,
         status_pagamento: statusPagamentoDetalhado,
         tipo_pagamento: primeiroPagamento?.operation_type || primeiroPagamento?.payment_type || '',

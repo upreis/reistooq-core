@@ -445,60 +445,47 @@ function SimplePedidosPage({ className }: Props) {
   const getValorLiquidoVendedor = (order: any): number => {
     if (typeof order?.valor_liquido_vendedor === 'number') return order.valor_liquido_vendedor;
 
-    // Base sem frete: prioriza transaction_amount dos pagamentos
-    const paymentArrays = [
-      order?.payments,
-      order?.raw?.payments,
-      order?.unified?.payments,
-    ].filter(Boolean);
-
-    let transactionBase = 0;
-    for (const arr of paymentArrays) {
-      if (Array.isArray(arr) && arr.length) {
-        const sumTx = arr.reduce((acc: number, p: any) => {
-          const v = Number(p?.transaction_amount ?? 0);
-          return acc + (Number.isFinite(v) && v > 0 ? v : 0);
-        }, 0);
-        if (sumTx > 0) {
-          transactionBase = sumTx;
-          break;
-        }
-      }
-    }
-
-    if (!transactionBase) {
-      const totalAmount = Number(order?.total_amount ?? order?.valor_total ?? 0);
-      const paidAmount = Number(order?.paid_amount ?? order?.total_paid_amount ?? 0);
-      const shippingCost = Number(order?.shipping_cost ?? order?.lead_time?.cost ?? 0);
-      transactionBase = totalAmount || (paidAmount - (Number.isFinite(shippingCost) ? shippingCost : 0)) || paidAmount;
-    }
-
-    // Taxas: marketplace_fee ou soma de sale_fee dos itens
-    let fee = Number(order?.marketplace_fee ?? 0) || 0;
-    if (!fee) {
+    // ✅ CORREÇÃO: Calcular valor líquido corretamente
+    // Valor líquido = Valor total do pedido - Taxa marketplace - Custos do vendedor
+    
+    // 1. Obter valor total do pedido
+    const valorTotal = Number(order?.total_amount ?? order?.valor_total ?? 0);
+    
+    // 2. Obter taxa do marketplace (sale_fee)
+    const taxaMarketplace = (() => {
       const itemsArrays = [
         order?.order_items,
         order?.raw?.order_items,
         order?.unified?.order_items,
       ].filter(Boolean);
+      
+      let totalFee = 0;
       for (const arr of itemsArrays) {
         if (Array.isArray(arr) && arr.length) {
-          const sumFees = arr.reduce((acc: number, it: any) => {
-            const f = Number(it?.sale_fee ?? it?.sale_fee_amount ?? it?.fee ?? 0);
-            return acc + (Number.isFinite(f) && f > 0 ? f : 0);
+          totalFee = arr.reduce((acc: number, item: any) => {
+            const fee = Number(item?.sale_fee ?? 0);
+            return acc + (Number.isFinite(fee) && fee > 0 ? fee : 0);
           }, 0);
-          if (sumFees > 0) {
-            fee = sumFees;
-            break;
-          }
+          if (totalFee > 0) break;
         }
       }
-    }
-
-    // USAR APENAS RECEITA FLEX (bônus), NÃO frete pago pelo cliente
-    const receitaFlex = order.receita_flex || getReceitaPorEnvio(order);
-
-    return Math.max(0, transactionBase - fee + receitaFlex);
+      
+      // Fallback para marketplace_fee ou fees
+      if (!totalFee) {
+        totalFee = Number(order?.marketplace_fee ?? 0) || 
+                  Number(order?.fees?.[0]?.value ?? 0) ||
+                  Number(order?.raw?.fees?.[0]?.value ?? 0);
+      }
+      
+      return totalFee;
+    })();
+    
+    // 3. Custo de envio do vendedor (não confundir com frete pago pelo cliente)
+    const custoEnvioVendedor = Number(order?.custo_envio_seller ?? 
+                                     order?.shipping?.costs?.senders?.[0]?.cost ?? 0);
+    
+    // 4. Valor líquido = Total - Taxa ML - Custos vendedor
+    return Math.max(0, valorTotal - taxaMarketplace - custoEnvioVendedor);
   };
 
   // Configuração de colunas (reposta após ajuste)
