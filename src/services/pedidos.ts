@@ -11,7 +11,7 @@ export interface ListPedidosParams {
   page?: number;
   pageSize?: number;
   search?: string;
-  situacao?: string;
+  statusEnvio?: string | string[];
   dataInicio?: string; // YYYY-MM-DD
   dataFim?: string; // YYYY-MM-DD
   cidade?: string;
@@ -25,7 +25,7 @@ export async function listPedidos({
   page = 1,
   pageSize = 25,
   search,
-  situacao,
+  statusEnvio,
   dataInicio,
   dataFim,
   cidade,
@@ -74,7 +74,9 @@ export async function listPedidos({
       `numero.ilike.%${search}%,nome_cliente.ilike.%${search}%,cpf_cnpj.ilike.%${search}%`
     );
   }
-  if (situacao) query = query.eq('situacao', situacao);
+  // O filtro "situacao" agora filtra por shipping status
+  // Como não temos uma coluna específica de shipping status no banco, 
+  // removemos este filtro aqui e aplicamos no frontend
   if (dataInicio) query = query.gte('data_pedido', dataInicio);
   if (dataFim) query = query.lte('data_pedido', dataFim);
   if (cidade) query = query.ilike('cidade', `%${cidade}%`);
@@ -395,7 +397,7 @@ export interface UsePedidosHybridParams {
   page?: number;
   pageSize?: number;
   search?: string;
-  situacao?: string;
+  statusEnvio?: string | string[];
   dataInicio?: string;
   dataFim?: string;
   cidade?: string;
@@ -410,7 +412,7 @@ export function usePedidosHybrid({
   page = 1,
   pageSize = 25,
   search,
-  situacao,
+  statusEnvio,
   dataInicio,
   dataFim,
   cidade,
@@ -442,7 +444,7 @@ export function usePedidosHybrid({
         page,
         pageSize,
         search,
-        situacao,
+        statusEnvio,
         dataInicio,
         dataFim,
         cidade,
@@ -457,8 +459,29 @@ export function usePedidosHybrid({
       }
 
       if (bancoResult.data && bancoResult.data.length > 0) {
-        setRows(bancoResult.data);
-        setTotal(bancoResult.count || 0);
+        let filteredData = bancoResult.data;
+        
+        // Aplicar filtro de status de envio
+        if (statusEnvio && Array.isArray(statusEnvio) && statusEnvio.length > 0) {
+          filteredData = filteredData.filter(order => {
+            const shippingStatus = (order as any).shipping_status || 
+                                   (order as any).shipping?.status || 
+                                   (order as any).raw?.shipping?.status || 
+                                   (order as any).status_envio;
+            return statusEnvio.includes(shippingStatus);
+          });
+        } else if (statusEnvio && typeof statusEnvio === 'string') {
+          filteredData = filteredData.filter(order => {
+            const shippingStatus = (order as any).shipping_status || 
+                                   (order as any).shipping?.status || 
+                                   (order as any).raw?.shipping?.status || 
+                                   (order as any).status_envio;
+            return shippingStatus === statusEnvio;
+          });
+        }
+        
+        setRows(filteredData);
+        setTotal(filteredData.length);
         setFonte('banco');
       } else {
         await fetchFromUnifiedOrders();
@@ -473,7 +496,7 @@ export function usePedidosHybrid({
     page,
     pageSize,
     search,
-    situacao,
+    statusEnvio,
     dataInicio,
     dataFim,
     cidade,
@@ -494,9 +517,31 @@ export function usePedidosHybrid({
       });
 
       const mappedOrders = mapMlToUi(Array.isArray(results) ? results : []);
-      const withAccount = mappedOrders.map(o => ({ ...o, integration_account_id: integrationAccountId }));
-      setRows(withAccount);
-      setTotal(withAccount.length);
+      let filteredOrders = mappedOrders.map(o => ({ ...o, integration_account_id: integrationAccountId }));
+      
+      // Aplicar filtro de status de envio se especificado
+      if (statusEnvio && Array.isArray(statusEnvio) && statusEnvio.length > 0) {
+        filteredOrders = filteredOrders.filter(order => {
+          // Usar a mesma lógica da tabela para acessar shipping status
+          const shippingStatus = (order as any).shipping_status || 
+                                 (order as any).shipping?.status || 
+                                 (order as any).raw?.shipping?.status || 
+                                 (order as any).status_envio;
+          return statusEnvio.includes(shippingStatus);
+        });
+      } else if (statusEnvio && typeof statusEnvio === 'string') {
+        filteredOrders = filteredOrders.filter(order => {
+          // Usar a mesma lógica da tabela para acessar shipping status
+          const shippingStatus = (order as any).shipping_status || 
+                                 (order as any).shipping?.status || 
+                                 (order as any).raw?.shipping?.status || 
+                                 (order as any).status_envio;
+          return shippingStatus === statusEnvio;
+        });
+      }
+      
+      setRows(filteredOrders);
+      setTotal(filteredOrders.length);
       setFonte('tempo-real');
     } catch (err: any) {
       setError(err.message || 'Erro ao buscar pedidos em tempo real');

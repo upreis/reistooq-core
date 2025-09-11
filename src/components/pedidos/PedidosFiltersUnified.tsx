@@ -35,15 +35,21 @@ interface PedidosFiltersUnifiedProps {
   columnManager?: any;
 }
 
-const SITUACOES = [
+const STATUS_ENVIO = [
   'Pendente',
-  'Pronto para Envio', 
+  'Pronto para Envio',
   'Enviado',
   'Entregue',
   'Não Entregue',
   'Cancelado',
+  'A Combinar',
   'Processando',
-  'A Combinar'
+  'Pronto para Imprimir',
+  'Impresso',
+  'Atrasado',
+  'Perdido',
+  'Danificado',
+  'Medidas Não Correspondem'
 ];
 
 const UFS = [
@@ -70,13 +76,13 @@ export function PedidosFiltersUnified({
   const [contasMLOpen, setContasMLOpen] = useState(false);
 
   // Handlers para seleção múltipla
-  const handleSituacaoChange = (situacao: string, checked: boolean) => {
-    const current = filters.situacao || [];
+  const handleStatusEnvioChange = (status: string, checked: boolean) => {
+    const current = filters.statusEnvio || [];
     if (checked) {
-      onFilterChange('situacao', [...current, situacao]);
+      onFilterChange('statusEnvio', [...current, status]);
     } else {
-      const newList = current.filter(s => s !== situacao);
-      onFilterChange('situacao', newList.length > 0 ? newList : undefined);
+      const newList = current.filter(s => s !== status);
+      onFilterChange('statusEnvio', newList.length > 0 ? newList : undefined);
     }
   };
 
@@ -90,7 +96,7 @@ export function PedidosFiltersUnified({
     }
   };
 
-  const selectedSituacoes = filters.situacao || [];
+  const selectedStatusEnvio = filters.statusEnvio || [];
   const selectedContasML = filters.contasML || [];
 
   return (
@@ -168,10 +174,10 @@ export function PedidosFiltersUnified({
           </div>
         </div>
 
-        {/* Situação - Aplicação manual */}
+        {/* Status do Envio - Aplicação manual */}
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Situação
+            Status do Envio
             <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <Popover open={situacaoOpen} onOpenChange={setSituacaoOpen}>
@@ -182,39 +188,39 @@ export function PedidosFiltersUnified({
                 aria-expanded={situacaoOpen}
                 className={cn(
                   "w-full justify-between",
-                  hasPendingChanges && JSON.stringify(filters.situacao || []) !== JSON.stringify(appliedFilters.situacao || []) && "border-warning"
+                  hasPendingChanges && JSON.stringify(filters.statusEnvio || []) !== JSON.stringify(appliedFilters.statusEnvio || []) && "border-warning"
                 )}
               >
-                {selectedSituacoes.length === 0 
-                  ? "Todas as situações"
-                  : selectedSituacoes.length === 1
-                  ? selectedSituacoes[0]
-                  : `${selectedSituacoes.length} selecionadas`
+                {selectedStatusEnvio.length === 0
+                  ? "Todos os status"
+                  : selectedStatusEnvio.length === 1
+                  ? selectedStatusEnvio[0]
+                  : `${selectedStatusEnvio.length} selecionados`
                 }
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-full p-0 bg-background border border-border z-50">
               <div className="p-2 space-y-2">
-                <div className="text-sm font-medium px-2 py-1">Selecione as situações:</div>
-                {SITUACOES.map((situacao) => (
-                  <div key={situacao} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
+                <div className="text-sm font-medium px-2 py-1">Selecione os status:</div>
+                {STATUS_ENVIO.map((status) => (
+                  <div key={status} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
                     <Checkbox
-                      id={`situacao-${situacao}`}
-                      checked={selectedSituacoes.includes(situacao)}
-                      onCheckedChange={(checked) => handleSituacaoChange(situacao, checked as boolean)}
+                      id={`status-${status}`}
+                      checked={selectedStatusEnvio.includes(status)}
+                      onCheckedChange={(checked) => handleStatusEnvioChange(status, checked as boolean)}
                     />
-                    <label htmlFor={`situacao-${situacao}`} className="text-sm cursor-pointer flex-1">
-                      {situacao}
+                    <label htmlFor={`status-${status}`} className="text-sm cursor-pointer flex-1">
+                      {status}
                     </label>
                   </div>
                 ))}
-                {selectedSituacoes.length > 0 && (
+                {selectedStatusEnvio.length > 0 && (
                   <div className="border-t pt-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onFilterChange('situacao', undefined)}
+                      onClick={() => onFilterChange('statusEnvio', undefined)}
                       className="w-full"
                     >
                       Limpar seleção
@@ -354,10 +360,10 @@ export function PedidosFiltersUnified({
               <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('search', undefined)} />
             </Badge>
           )}
-          {(appliedFilters.situacao?.length || 0) > 0 && (
+          {(appliedFilters.statusEnvio?.length || 0) > 0 && (
             <Badge variant="secondary" className="gap-1">
-              Situação: {appliedFilters.situacao!.length === 1 ? appliedFilters.situacao![0] : `${appliedFilters.situacao!.length} selecionadas`}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('situacao', undefined)} />
+              Status do Envio: {appliedFilters.statusEnvio!.length === 1 ? appliedFilters.statusEnvio![0] : `${appliedFilters.statusEnvio!.length} selecionados`}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('statusEnvio', undefined)} />
             </Badge>
           )}
           {(appliedFilters.contasML?.length || 0) > 0 && (

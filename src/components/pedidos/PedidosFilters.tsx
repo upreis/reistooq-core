@@ -14,14 +14,14 @@ import { PeriodSelector } from './PeriodSelector';
 
 export interface PedidosFiltersState {
   search?: string;
-  situacao?: string[];  // ✅ MUDANÇA: Array para múltiplas situações
+  statusEnvio?: string[];  // Status do Envio (shipping_status)
   dataInicio?: Date;
   dataFim?: Date;
   cidade?: string;
   uf?: string;
   valorMin?: number;
   valorMax?: number;
-  contasML?: string[];  // ✅ NOVO: Filtro de contas ML
+  contasML?: string[];
 }
 
 interface PedidosFiltersProps {
@@ -32,16 +32,21 @@ interface PedidosFiltersProps {
   contasML?: Array<{ id: string; name: string; nickname?: string; active?: boolean; }>; // ✅ NOVO: Lista de contas ML
 }
 
-const SITUACOES = [
+const STATUS_ENVIO = [
   'Pendente',
-  'Processando', 
-  'Pago',
   'Pronto para Envio',
   'Enviado',
   'Entregue',
   'Não Entregue',
   'Cancelado',
-  'A Combinar'
+  'A Combinar',
+  'Processando',
+  'Pronto para Imprimir',
+  'Impresso',
+  'Atrasado',
+  'Perdido',
+  'Danificado',
+  'Medidas Não Correspondem'
 ];
 
 const UFS = [
@@ -61,18 +66,16 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
     onFiltersChange(newFilters);
   };
 
-  // ✅ NOVA FUNÇÃO: Gerenciar seleção múltipla de situações
-  const handleSituacaoChange = (situacao: string, checked: boolean) => {
-    const currentSituacoes = filters.situacao || [];
+  // Gerenciar seleção múltipla de status de envio
+  const handleStatusEnvioChange = (status: string, checked: boolean) => {
+    const currentStatus = filters.statusEnvio || [];
     
     if (checked) {
-      // Adicionar situação
-      const newSituacoes = [...currentSituacoes, situacao];
-      handleFilterChange('situacao', newSituacoes);
+      const newStatus = [...currentStatus, status];
+      handleFilterChange('statusEnvio', newStatus);
     } else {
-      // Remover situação
-      const newSituacoes = currentSituacoes.filter(s => s !== situacao);
-      handleFilterChange('situacao', newSituacoes.length > 0 ? newSituacoes : undefined);
+      const newStatus = currentStatus.filter(s => s !== status);
+      handleFilterChange('statusEnvio', newStatus.length > 0 ? newStatus : undefined);
     }
   };
 
@@ -94,17 +97,17 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
   const getActiveFiltersCount = () => {
     let count = 0;
     if (filters.search) count++;
-    if (filters.situacao && filters.situacao.length > 0) count++;
+    if (filters.statusEnvio && filters.statusEnvio.length > 0) count++;
     if (filters.dataInicio || filters.dataFim) count++;
     if (filters.cidade) count++;
     if (filters.uf) count++;
     if (filters.valorMin || filters.valorMax) count++;
-    if (filters.contasML && filters.contasML.length > 0) count++; // ✅ NOVO
+    if (filters.contasML && filters.contasML.length > 0) count++;
     return count;
   };
 
   const activeFiltersCount = getActiveFiltersCount();
-  const selectedSituacoes = filters.situacao || [];
+  const selectedStatusEnvio = filters.statusEnvio || [];
   const selectedContasML = filters.contasML || [];
 
   return (
@@ -127,9 +130,9 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
           </div>
         </div>
 
-        {/* ✅ SITUAÇÃO MÚLTIPLA RESPONSIVA */}
+        {/* Status do Envio */}
         <div className="lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block">Situação</label>
+          <label className="text-sm font-medium mb-1 block">Status do Envio</label>
           <Popover open={situacaoOpen} onOpenChange={setSituacaoOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -138,39 +141,39 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
                 aria-expanded={situacaoOpen}
                 className="w-full justify-between"
               >
-                {selectedSituacoes.length === 0 
-                  ? "Todas as situações"
-                  : selectedSituacoes.length === 1
-                  ? selectedSituacoes[0]
-                  : `${selectedSituacoes.length} selecionadas`
+                {selectedStatusEnvio.length === 0 
+                  ? "Todos os status"
+                  : selectedStatusEnvio.length === 1
+                  ? selectedStatusEnvio[0]
+                  : `${selectedStatusEnvio.length} selecionados`
                 }
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-full p-0 bg-background border border-border z-50">
               <div className="p-2 space-y-2">
-                <div className="text-sm font-medium px-2 py-1">Selecione as situações:</div>
-                {SITUACOES.map((situacao) => (
-                  <div key={situacao} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
+                <div className="text-sm font-medium px-2 py-1">Selecione os status:</div>
+                {STATUS_ENVIO.map((status) => (
+                  <div key={status} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
                     <Checkbox
-                      id={`situacao-${situacao}`}
-                      checked={selectedSituacoes.includes(situacao)}
-                      onCheckedChange={(checked) => handleSituacaoChange(situacao, checked as boolean)}
+                      id={`status-${status}`}
+                      checked={selectedStatusEnvio.includes(status)}
+                      onCheckedChange={(checked) => handleStatusEnvioChange(status, checked as boolean)}
                     />
                     <label
-                      htmlFor={`situacao-${situacao}`}
+                      htmlFor={`status-${status}`}
                       className="text-sm cursor-pointer flex-1"
                     >
-                      {situacao}
+                      {status}
                     </label>
                   </div>
                 ))}
-                {selectedSituacoes.length > 0 && (
+                {selectedStatusEnvio.length > 0 && (
                   <div className="border-t pt-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleFilterChange('situacao', undefined)}
+                      onClick={() => handleFilterChange('statusEnvio', undefined)}
                       className="w-full"
                     >
                       Limpar seleção
@@ -352,10 +355,10 @@ export function PedidosFilters({ filters, onFiltersChange, onClearFilters, hasPe
               <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('search', undefined)} />
             </Badge>
           )}
-          {selectedSituacoes.length > 0 && (
+          {selectedStatusEnvio.length > 0 && (
             <Badge variant="secondary" className="gap-1">
-              Situação: {selectedSituacoes.length === 1 ? selectedSituacoes[0] : `${selectedSituacoes.length} selecionadas`}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('situacao', undefined)} />
+              Status do Envio: {selectedStatusEnvio.length === 1 ? selectedStatusEnvio[0] : `${selectedStatusEnvio.length} selecionados`}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => handleFilterChange('statusEnvio', undefined)} />
             </Badge>
           )}
           {selectedContasML.length > 0 && (
