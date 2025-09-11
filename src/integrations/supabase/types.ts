@@ -446,47 +446,6 @@ export type Database = {
         }
         Relationships: []
       }
-      clientes_safe_secure: {
-        Row: {
-          cpf_cnpj: string | null
-          created_at: string | null
-          email: string | null
-          id: string
-          nome_completo: string | null
-          organization_id: string
-          telefone: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          cpf_cnpj?: string | null
-          created_at?: string | null
-          email?: string | null
-          id: string
-          nome_completo?: string | null
-          organization_id: string
-          telefone?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          cpf_cnpj?: string | null
-          created_at?: string | null
-          email?: string | null
-          id?: string
-          nome_completo?: string | null
-          organization_id?: string
-          telefone?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "clientes_safe_secure_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       componentes_em_uso: {
         Row: {
           created_at: string | null
@@ -2790,83 +2749,95 @@ export type Database = {
       }
     }
     Views: {
-      clientes_safe: {
+      historico_vendas_safe: {
         Row: {
-          cpf_cnpj: string | null
+          cidade: string | null
+          codigo_barras: string | null
+          codigo_rastreamento: string | null
           created_at: string | null
-          data_primeiro_pedido: string | null
-          data_ultimo_pedido: string | null
-          email: string | null
-          empresa: string | null
-          endereco_bairro: string | null
-          endereco_cep: string | null
-          endereco_cidade: string | null
-          endereco_numero: string | null
-          endereco_rua: string | null
-          endereco_uf: string | null
+          data_pedido: string | null
+          data_prevista: string | null
+          descricao: string | null
           id: string | null
-          integration_account_id: string | null
-          nome_completo: string | null
+          id_unico: string | null
+          ncm: string | null
+          numero_ecommerce: string | null
+          numero_pedido: string | null
+          numero_venda: string | null
+          obs: string | null
+          obs_interna: string | null
           observacoes: string | null
-          organization_id: string | null
-          status_cliente: string | null
-          telefone: string | null
-          ticket_medio: number | null
-          total_pedidos: number | null
+          pedido_id: string | null
+          qtd_kit: number | null
+          quantidade: number | null
+          situacao: string | null
+          sku_estoque: string | null
+          sku_kit: string | null
+          sku_produto: string | null
+          status: string | null
+          total_itens: number | null
+          uf: string | null
           updated_at: string | null
-          valor_total_gasto: number | null
-        }
-        Insert: {
-          cpf_cnpj?: never
-          created_at?: string | null
-          data_primeiro_pedido?: string | null
-          data_ultimo_pedido?: string | null
-          email?: never
-          empresa?: string | null
-          endereco_bairro?: string | null
-          endereco_cep?: never
-          endereco_cidade?: string | null
-          endereco_numero?: never
-          endereco_rua?: never
-          endereco_uf?: string | null
-          id?: string | null
-          integration_account_id?: string | null
-          nome_completo?: never
-          observacoes?: string | null
-          organization_id?: string | null
-          status_cliente?: string | null
-          telefone?: never
-          ticket_medio?: number | null
-          total_pedidos?: number | null
-          updated_at?: string | null
-          valor_total_gasto?: number | null
-        }
-        Update: {
-          cpf_cnpj?: never
-          created_at?: string | null
-          data_primeiro_pedido?: string | null
-          data_ultimo_pedido?: string | null
-          email?: never
-          empresa?: string | null
-          endereco_bairro?: string | null
-          endereco_cep?: never
-          endereco_cidade?: string | null
-          endereco_numero?: never
-          endereco_rua?: never
-          endereco_uf?: string | null
-          id?: string | null
-          integration_account_id?: string | null
-          nome_completo?: never
-          observacoes?: string | null
-          organization_id?: string | null
-          status_cliente?: string | null
-          telefone?: never
-          ticket_medio?: number | null
-          total_pedidos?: number | null
-          updated_at?: string | null
-          valor_total_gasto?: number | null
+          url_rastreamento: string | null
+          valor_desconto: number | null
+          valor_frete: number | null
+          valor_total: number | null
+          valor_unitario: number | null
         }
         Relationships: []
+      }
+      profiles_safe: {
+        Row: {
+          avatar_url: string | null
+          cargo: string | null
+          configuracoes_notificacao: Json | null
+          created_at: string | null
+          departamento: string | null
+          id: string | null
+          nome_completo: string | null
+          nome_exibicao: string | null
+          onboarding_banner_dismissed: boolean | null
+          organizacao_id: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          cargo?: string | null
+          configuracoes_notificacao?: Json | null
+          created_at?: string | null
+          departamento?: string | null
+          id?: string | null
+          nome_completo?: string | null
+          nome_exibicao?: string | null
+          onboarding_banner_dismissed?: boolean | null
+          organizacao_id?: string | null
+          telefone?: never
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          cargo?: string | null
+          configuracoes_notificacao?: Json | null
+          created_at?: string | null
+          departamento?: string | null
+          id?: string | null
+          nome_completo?: string | null
+          nome_exibicao?: string | null
+          onboarding_banner_dismissed?: boolean | null
+          organizacao_id?: string | null
+          telefone?: never
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_organizacao_id_fkey"
+            columns: ["organizacao_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -3837,6 +3808,13 @@ export type Database = {
       validate_security_settings: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      verify_view_security: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          is_security_definer: boolean
+          view_name: string
+        }[]
       }
     }
     Enums: {
