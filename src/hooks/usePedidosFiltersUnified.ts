@@ -155,7 +155,7 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     });
   }, []);
 
-  // ✅ Aplicar filtros manualmente
+  // ✅ Aplicar filtros manualmente - PASSO 2: FORÇAR REFETCH
   const applyFilters = useCallback(() => {
     console.log('🔄 [Filtros] Aplicando filtros:', draftFilters);
     
@@ -164,12 +164,14 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     setAppliedFilters(filtersToApply);
     setIsApplying(true);
     
-    // ✅ IMPORTANTE: Chamar callback APÓS aplicar os filtros
+    // ✅ PASSO 2: FORÇAR REFETCH IMEDIATO para garantir que os dados sejam recarregados
+    onFiltersApply?.(filtersToApply);
+    
+    // Finalizar estado após um breve delay para UX
     setTimeout(() => {
-      onFiltersApply?.(filtersToApply);
       setIsApplying(false);
       console.log('✅ [Filtros] Aplicação concluída:', filtersToApply);
-    }, 100);
+    }, 500);
   }, [draftFilters, onFiltersApply]);
 
   // Cancelar mudanças pendentes

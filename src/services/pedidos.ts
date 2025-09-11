@@ -69,18 +69,31 @@ export async function listPedidos({
     .eq('integration_account_id', integrationAccountId)
     .order('created_at', { ascending: false });
 
+  // ✅ PASSO 3: IMPLEMENTAR FILTROS AUSENTES NA API
   if (search) {
     query = query.or(
-      `numero.ilike.%${search}%,nome_cliente.ilike.%${search}%,cpf_cnpj.ilike.%${search}%`
+      `numero.ilike.%${search}%,nome_cliente.ilike.%${search}%,cpf_cnpj.ilike.%${search}%,numero_ecommerce.ilike.%${search}%`
     );
   }
-  // O filtro "situacao" agora filtra por shipping status
-  // Como não temos uma coluna específica de shipping status no banco, 
-  // removemos este filtro aqui e aplicamos no frontend
+  
+  // ✅ IMPLEMENTADO: Filtro de situação (status de pedido)
+  if (statusEnvio) {
+    const statusArray = Array.isArray(statusEnvio) ? statusEnvio : [statusEnvio];
+    if (statusArray.length > 0) {
+      const statusConditions = statusArray.map(status => `situacao.ilike.%${status}%`).join(',');
+      query = query.or(statusConditions);
+    }
+  }
+  
+  // ✅ FILTROS DE DATA - já implementados
   if (dataInicio) query = query.gte('data_pedido', dataInicio);
   if (dataFim) query = query.lte('data_pedido', dataFim);
+  
+  // ✅ FILTROS DE LOCALIZAÇÃO - já implementados  
   if (cidade) query = query.ilike('cidade', `%${cidade}%`);
   if (uf) query = query.eq('uf', uf);
+  
+  // ✅ FILTROS DE VALOR - já implementados
   if (valorMin !== undefined) query = query.gte('valor_total', valorMin);
   if (valorMax !== undefined) query = query.lte('valor_total', valorMax);
 
