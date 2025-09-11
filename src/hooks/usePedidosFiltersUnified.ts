@@ -219,6 +219,7 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
 
     if (appliedFilters.statusEnvio && appliedFilters.statusEnvio.length > 0) {
       params.statusEnvio = appliedFilters.statusEnvio;
+      console.log('📤 [FILTERS] Enviando statusEnvio para API:', appliedFilters.statusEnvio);
     }
 
     if (appliedFilters.dataInicio) {
