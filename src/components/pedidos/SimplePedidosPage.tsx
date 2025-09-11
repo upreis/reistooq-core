@@ -58,6 +58,7 @@ import { PedidosModalsSection } from './components/PedidosModalsSection';
 import { PedidosStatusBar } from './components/PedidosStatusBar';
 import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
+import StatusDebugPanel from './StatusDebugPanel';
 import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -110,9 +111,9 @@ function SimplePedidosPage({ className }: Props) {
         const saved = localStorage.getItem(key);
         if (saved) {
           const parsed = JSON.parse(saved);
-          // Se tem statusEnvio = ["Cancelado"], limpar
-          if (parsed.statusEnvio?.includes?.('Cancelado') || parsed.filters?.statusEnvio?.includes?.('Cancelado')) {
-            console.log('🗑️ Removendo filtros problemáticos:', key, parsed);
+          // ✅ CORREÇÃO: Limpar qualquer filtro de statusEnvio persistente
+          if (parsed.statusEnvio?.length > 0 || parsed.filters?.statusEnvio?.length > 0) {
+            console.log('🗑️ Removendo filtros de status persistentes:', key, parsed);
             localStorage.removeItem(key);
           }
         }
@@ -1183,6 +1184,18 @@ useEffect(() => {
         hasActiveFilters={filtersManager.hasActiveFilters}
         columnManager={columnManager}
       />
+
+      {/* 🔍 STATUS DEBUG PANEL - DEV ONLY */}
+      {process.env.NODE_ENV === 'development' && (
+        <StatusDebugPanel 
+          orders={orders || []}
+          currentFilter={filtersManager.filters.statusEnvio || []}
+          onStatusSelect={(status) => {
+            // Usar status raw da API para corrigir o filtro
+            filtersManager.updateFilter('statusEnvio', [status]);
+          }}
+        />
+      )}
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
     </div>

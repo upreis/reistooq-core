@@ -32,8 +32,8 @@ export function usePersistentPedidosState() {
           const parsed: PersistentPedidosState = JSON.parse(saved);
           
           // ✅ VERIFICAR E LIMPAR FILTROS PROBLEMÁTICOS
-          if (parsed.filters?.statusEnvio?.includes?.('Cancelado')) {
-            console.log('🗑️ Removendo estado com filtros problemáticos:', parsed.filters);
+          if (parsed.filters?.statusEnvio?.length > 0) {
+            console.log('🗑️ Removendo estado com filtros de status persistentes:', parsed.filters);
             localStorage.removeItem(STORAGE_KEY);
             setIsStateLoaded(true);
             return;

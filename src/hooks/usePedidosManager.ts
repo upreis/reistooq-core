@@ -723,6 +723,21 @@ export function usePedidosManager(initialAccountId?: string) {
           
           const translatedStatus = translateShippingStatus(rawStatus);
           
+          // 🔍 DEBUG: Log dos status reais para auditoria
+          if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+            console.log('📊 Status Debug:', {
+              orderId: order.id,
+              rawStatus,
+              translatedStatus,
+              sources: {
+                shipping_status: order.shipping_status,
+                'shipping.status': order.shipping?.status,
+                'raw.shipping.status': order.raw?.shipping?.status,
+                status_envio: order.status_envio
+              }
+            });
+          }
+          
           // Verificar se o status traduzido está nos filtros selecionados
           const statusMatches = selectedStatuses.includes(translatedStatus);
           
