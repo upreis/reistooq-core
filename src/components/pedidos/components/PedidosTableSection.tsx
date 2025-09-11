@@ -768,11 +768,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
         </div>
 
         <div className="border-t p-4 bg-muted/5">
-          <div className="text-xs text-muted-foreground mb-2 bg-yellow-100 p-2 rounded">
-            DEBUG: currentPage={currentPage}, totalPages={totalPages}, total={total}, pageSize={state?.pageSize}, 
-            hasPrev={state?.hasPrevPage ? 'yes' : 'no'}, hasNext={state?.hasNextPage ? 'yes' : 'no'}, 
-            ordersLength={orders.length}
-          </div>
 
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
