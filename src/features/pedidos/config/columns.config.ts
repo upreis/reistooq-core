@@ -342,14 +342,15 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'shipping_method_type',
-    label: 'Tipo Método Envio',
+    key: 'shipping_substatus',
+    label: 'SubStatus',
     category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Tipo do método de envio',
-    width: 160
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Substatus detalhado do envio (printed, picked_up, out_for_delivery, etc.)',
+    width: 160,
+    filterable: true
   },
   {
     key: 'substatus_detail',
@@ -547,14 +548,14 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     filterable: true
   },
   {
-    key: 'shipping_substatus',
-    label: 'Substatus do Envio',
+    key: 'shipping_method_type',
+    label: 'Tipo Método Envio',
     category: 'shipping',
-    priority: 'important',
+    priority: 'optional',
     visible: false,
     default: false,
-    description: 'Substatus detalhado do envio (printed, picked_up, out_for_delivery, etc.)',
-    width: 160,
+    description: 'Tipo do método de envio (custom, standard, express, etc.)',
+    width: 140,
     filterable: true
   }
 ];
@@ -594,8 +595,8 @@ export const DEFAULT_PROFILES: ColumnProfile[] = [
     description: 'Foco em envio e rastreamento',
     columns: [
       'id', 'numero', 'nome_cliente', 'nome_completo', 'data_pedido',
-      'situacao', 'shipping_status', 'logistic_mode', 'logistic_type',
-      'shipping_method_type', 'delivery_type', 'substatus_detail'
+      'situacao', 'shipping_status', 'shipping_substatus', 'logistic_mode', 'logistic_type',
+      'delivery_type', 'substatus_detail'
     ]
   },
   {
