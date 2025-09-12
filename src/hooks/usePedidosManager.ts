@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   mapOrderStatusToAPI
 } from '@/utils/orderStatusMapping';
+import { matchesShippingStatusFilter } from '@/utils/postSaleUtils';
 import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { formatDate } from '@/lib/format';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -17,6 +18,7 @@ import { toast } from 'react-hot-toast';
 export interface PedidosFilters {
   search?: string;
   statusPedido?: string | string[];   // ✅ NOVO: Status do pedido (order.status)
+  statusEnvio?: string[];             // ✅ VOLTA: Status de envio (client-side)
   dataInicio?: Date;
   dataFim?: Date;
   contasML?: string[];
@@ -607,7 +609,12 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // ✅ REMOVIDO: Filtro de status de envio (statusEnvio) foi removido
+      // ✅ VOLTA: Filtro de status de envio (client-side)
+      if (filters.statusEnvio && filters.statusEnvio.length > 0) {
+        if (!matchesShippingStatusFilter(order, filters.statusEnvio)) {
+          return false;
+        }
+      }
 
       // 📅 CORRIGIDO: Filtro de data com verificação robusta
       if (filters.dataInicio || filters.dataFim) {

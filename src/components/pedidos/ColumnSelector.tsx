@@ -72,6 +72,13 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'shipping_status', label: 'Status do Envio', visible: true, category: 'ml' },
   { key: 'shipping_mode', label: 'Modo de Envio', visible: true, category: 'ml' },
   { key: 'shipping_substatus', label: 'Sub-status Detalhado', visible: true, category: 'ml' },
+
+  // ✅ NOVAS COLUNAS PÓS-VENDA (com feature flag)
+  { key: 'post_sale_status_pedido', label: 'Status do Pedido', visible: false, category: 'ml' },
+  { key: 'post_sale_status_envio', label: 'Status do Envio', visible: false, category: 'ml' },
+  { key: 'post_sale_substatus', label: 'Substatus/Motivo', visible: false, category: 'ml' },
+  { key: 'post_sale_devolucao', label: 'Devolução', visible: false, category: 'ml' },
+  { key: 'post_sale_prev_entrega', label: 'Prev. Entrega', visible: false, category: 'ml' },
 ];
 
 interface ColumnSelectorProps {

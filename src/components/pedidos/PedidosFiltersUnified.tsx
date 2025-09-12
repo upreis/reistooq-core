@@ -50,11 +50,12 @@ const STATUS_PEDIDO = [
 // ✅ SEPARADO: Status de ENVIO (shipping.status) - apenas client-side
 const STATUS_ENVIO = [
   'Pronto para Envio',
-  'Enviado',
+  'A caminho',
   'Entregue',
   'Não Entregue',
-  'Cancelado',
-  'A Combinar'
+  'Atrasado',
+  'Em devolução',
+  'Devolvido'
 ];
 
 
@@ -73,6 +74,7 @@ export function PedidosFiltersUnified({
   columnManager
 }: PedidosFiltersUnifiedProps) {
   const [statusPedidoOpen, setStatusPedidoOpen] = useState(false);
+  const [statusEnvioOpen, setStatusEnvioOpen] = useState(false);
   const [contasMLOpen, setContasMLOpen] = useState(false);
 
   // ✅ NOVO: Handler para status do pedido
@@ -83,6 +85,17 @@ export function PedidosFiltersUnified({
     } else {
       const newList = current.filter(s => s !== status);
       onFilterChange('statusPedido', newList.length > 0 ? newList : undefined);
+    }
+  };
+
+  // ✅ VOLTA: Handler para status de envio
+  const handleStatusEnvioChange = (status: string, checked: boolean) => {
+    const current = filters.statusEnvio || [];
+    if (checked) {
+      onFilterChange('statusEnvio', [...current, status]);
+    } else {
+      const newList = current.filter(s => s !== status);
+      onFilterChange('statusEnvio', newList.length > 0 ? newList : undefined);
     }
   };
 
@@ -98,6 +111,7 @@ export function PedidosFiltersUnified({
   };
 
   const selectedStatusPedido = filters.statusPedido || [];
+  const selectedStatusEnvio = filters.statusEnvio || [];
   const selectedContasML = filters.contasML || [];
 
   return (
@@ -154,7 +168,7 @@ export function PedidosFiltersUnified({
       )}
 
       {/* Layout principal dos filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-6 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 xl:grid-cols-7 gap-4 items-end">
         {/* Busca - Aplicação manual */}
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
@@ -215,6 +229,45 @@ export function PedidosFiltersUnified({
           </Popover>
         </div>
 
+        {/* ✅ VOLTA: Status de Envio (client-side) */}
+        <div className="lg:col-span-1 xl:col-span-1">
+          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
+            Status de Envio
+            <Badge variant="outline" className="text-xs px-1 py-0">Client</Badge>
+          </label>
+          <Popover open={statusEnvioOpen} onOpenChange={setStatusEnvioOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={statusEnvioOpen}
+                className="w-full justify-between"
+              >
+                {selectedStatusEnvio.length === 0
+                  ? "Todos os status"
+                  : selectedStatusEnvio.length === 1
+                  ? selectedStatusEnvio[0]
+                  : `${selectedStatusEnvio.length} selecionados`
+                }
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0">
+              <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
+                {STATUS_ENVIO.map((status) => (
+                  <div key={status} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`status-envio-${status}`}
+                      checked={selectedStatusEnvio.includes(status)}
+                      onCheckedChange={(checked) => handleStatusEnvioChange(status, checked as boolean)}
+                    />
+                    <label htmlFor={`status-envio-${status}`} className="text-sm">{status}</label>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         {/* Contas ML - Aplicação manual */}
         <div className="lg:col-span-1 xl:col-span-1">
@@ -360,6 +413,15 @@ export function PedidosFiltersUnified({
                 : `${appliedFilters.contasML!.length} selecionadas`
               }
               <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('contasML', undefined)} />
+            </Badge>
+          )}
+          {(appliedFilters.statusEnvio?.length || 0) > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              Status Envio: {appliedFilters.statusEnvio!.length === 1 
+                ? appliedFilters.statusEnvio![0]
+                : `${appliedFilters.statusEnvio!.length} selecionados`
+              }
+              <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('statusEnvio', undefined)} />
             </Badge>
           )}
           {(appliedFilters.dataInicio || appliedFilters.dataFim) && (

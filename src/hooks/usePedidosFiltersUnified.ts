@@ -10,6 +10,7 @@ import { DEBOUNCE } from '@/lib/constants';
 export interface PedidosFiltersState {
   search?: string;
   statusPedido?: string[];  // ✅ CORRIGIDO: Status do pedido (order.status)
+  statusEnvio?: string[];   // ✅ VOLTA: Status de envio (client-side)
   dataInicio?: Date;
   dataFim?: Date;
   contasML?: string[];
@@ -25,6 +26,7 @@ export enum FilterStrategy {
 const FILTER_CONFIG = {
   search: { strategy: FilterStrategy.MANUAL },
   statusPedido: { strategy: FilterStrategy.MANUAL },
+  statusEnvio: { strategy: FilterStrategy.MANUAL }, // ✅ VOLTA: Client-side
   contasML: { strategy: FilterStrategy.MANUAL },
   dataInicio: { strategy: FilterStrategy.MANUAL },
   dataFim: { strategy: FilterStrategy.MANUAL },

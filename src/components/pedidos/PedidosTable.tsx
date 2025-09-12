@@ -24,6 +24,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ColumnConfig } from './ColumnSelector';
+import { POST_SALE_COLS } from '@/config/features';
+import { deriveStatuses } from '@/utils/postSaleUtils';
+import { formatDate as formatDateBasic } from '@/lib/format';
 
 interface PedidosTableProps {
   rows: Row[];
@@ -404,6 +407,51 @@ export function PedidosTable({
                           case 'quantidade':
                             const items = get(row.raw, 'order_items');
                             return Array.isArray(items) ? items.length : show(get(row.unified, 'total_itens'));
+                          
+                          // ✅ NOVAS COLUNAS PÓS-VENDA (com feature flag)
+                          case 'post_sale_status_pedido':
+                            if (!POST_SALE_COLS) return '—';
+                            const statusData = deriveStatuses(row);
+                            return (
+                              <Badge variant="outline">
+                                {statusData.pedidoPT}
+                              </Badge>
+                            );
+                          case 'post_sale_status_envio':
+                            if (!POST_SALE_COLS) return '—';
+                            const envioData = deriveStatuses(row);
+                            return (
+                              <Badge variant="secondary">
+                                {envioData.envioPT}
+                              </Badge>
+                            );
+                          case 'post_sale_substatus':
+                            if (!POST_SALE_COLS) return '—';
+                            const subData = deriveStatuses(row);
+                            return (
+                              <span className="text-sm">
+                                {subData.subPT}
+                              </span>
+                            );
+                          case 'post_sale_devolucao':
+                            if (!POST_SALE_COLS) return '—';
+                            const devData = deriveStatuses(row);
+                            return (
+                              <Badge 
+                                variant={devData.devolucaoPT === '—' ? 'outline' : 'destructive'}
+                                className="text-xs"
+                              >
+                                {devData.devolucaoPT}
+                              </Badge>
+                            );
+                          case 'post_sale_prev_entrega':
+                            if (!POST_SALE_COLS) return '—';
+                            const prevData = deriveStatuses(row);
+                            return prevData.etaTo ? (
+                              <span className="text-sm">
+                                {formatDateBasic(prevData.etaTo)}
+                              </span>
+                            ) : '—';
                           
                           default:
                             return '—';
