@@ -29,10 +29,10 @@ export function StatusFiltersToggle({
   const [isOpen, setIsOpen] = useState(useAdvancedStatus);
 
   const getTotalActiveFilters = () => {
-    return filters.orderStatus.length + 
-           filters.shippingStatus.length + 
-           filters.shippingSubstatus.length + 
-           filters.returnStatus.length;
+    return (filters.orderStatus?.length || 0) + 
+           (filters.shippingStatus?.length || 0) + 
+           (filters.shippingSubstatus?.length || 0) + 
+           (filters.returnStatus?.length || 0);
   };
 
   const handleToggleAdvanced = (enabled: boolean) => {

@@ -31,7 +31,7 @@ export function StatusFiltersAdvanced({
   const [activeTab, setActiveTab] = useState<OrderStatusCategory>('order');
 
   const handleStatusToggle = (category: OrderStatusCategory, status: string) => {
-    const currentFilters = filters[`${category}Status` as keyof StatusFilters] as string[];
+    const currentFilters = (filters[`${category}Status` as keyof StatusFilters] as string[]) || [];
     const isSelected = currentFilters.includes(status);
     
     const newStatuses = isSelected
@@ -52,15 +52,15 @@ export function StatusFiltersAdvanced({
   };
 
   const getTotalActiveFilters = () => {
-    return filters.orderStatus.length + 
-           filters.shippingStatus.length + 
-           filters.shippingSubstatus.length + 
-           filters.returnStatus.length;
+    return (filters.orderStatus?.length || 0) + 
+           (filters.shippingStatus?.length || 0) + 
+           (filters.shippingSubstatus?.length || 0) + 
+           (filters.returnStatus?.length || 0);
   };
 
   const renderStatusOptions = (category: OrderStatusCategory) => {
     const config = STATUS_FILTER_CONFIGS[category];
-    const selectedStatuses = filters[`${category}Status` as keyof StatusFilters] as string[];
+    const selectedStatuses = (filters[`${category}Status` as keyof StatusFilters] as string[]) || [];
 
     return (
       <div className="space-y-3">
@@ -168,33 +168,33 @@ export function StatusFiltersAdvanced({
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="order" className="text-xs">
               Pedido
-              {filters.orderStatus.length > 0 && (
+              {(filters.orderStatus?.length || 0) > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs h-4 px-1">
-                  {filters.orderStatus.length}
+                  {filters.orderStatus?.length || 0}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="shipping" className="text-xs">
               Envio
-              {filters.shippingStatus.length > 0 && (
+              {(filters.shippingStatus?.length || 0) > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs h-4 px-1">
-                  {filters.shippingStatus.length}
+                  {filters.shippingStatus?.length || 0}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="substatus" className="text-xs">
               Detalhes
-              {filters.shippingSubstatus.length > 0 && (
+              {(filters.shippingSubstatus?.length || 0) > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs h-4 px-1">
-                  {filters.shippingSubstatus.length}
+                  {filters.shippingSubstatus?.length || 0}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="return" className="text-xs">
               Devolução
-              {filters.returnStatus.length > 0 && (
+              {(filters.returnStatus?.length || 0) > 0 && (
                 <Badge variant="secondary" className="ml-1 text-xs h-4 px-1">
-                  {filters.returnStatus.length}
+                  {filters.returnStatus?.length || 0}
                 </Badge>
               )}
             </TabsTrigger>
