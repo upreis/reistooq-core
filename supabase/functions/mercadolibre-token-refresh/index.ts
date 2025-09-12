@@ -4,7 +4,7 @@ import { CRYPTO_KEY } from "../_shared/config.ts";
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
