@@ -66,7 +66,10 @@ export const SHIPPING_STATUS_EN_TO_PT: Record<string, string> = {
   'to_be_agreed': 'A Combinar',
   // Substatus que podem aparecer como status principal
   'in_hub': 'Em Trânsito',
-  'out_for_delivery': 'Saiu para Entrega'
+  'out_for_delivery': 'Saiu para Entrega',
+  // ✅ ADICIONADOS: Status que aparecem nos logs da API
+  'in_warehouse': 'Em Estoque/Depósito',
+  'in_transit': 'Em Trânsito'
 };
 
 // ===== 3️⃣ SUBSTATUS DE ENVIO (shipping.substatus) =====
@@ -108,7 +111,10 @@ export const SHIPPING_SUBSTATUS_EN_TO_PT: Record<string, string> = {
   'changed_address': 'Endereço Alterado',
   'retained': 'Retido',
   'delivery_blocked': 'Entrega Bloqueada',
-  'at_the_door': 'Na Porta do Destinatário'
+  'at_the_door': 'Na Porta do Destinatário',
+  // ✅ ADICIONADOS: Substatus que aparecem nos logs da API
+  'in_warehouse': 'Em Estoque/Depósito',
+  'ready_to_dispatch': 'Pronto para Despacho'
 };
 
 // ===== 4️⃣ STATUS DE DEVOLUÇÃO (returns.status) =====

@@ -10,7 +10,8 @@ import {
   ShippingStatusColumn, 
   ShippingSubstatusColumn,
   ReturnStatusColumn,
-  DeliveryEstimateColumn 
+  DeliveryEstimateColumn,
+  PackStatusDetailColumn
 } from './StatusColumnsAdvanced';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -346,18 +347,20 @@ export function PedidosTable({
                                    {translatedSubstatus}
                                  </Badge>
                                );
-                           
-                           // ===== COLUNAS AVANÇADAS =====
-                           case 'order_status_advanced':
-                             return <OrderStatusColumn row={row} />;
-                           case 'shipping_status_advanced':
-                             return <ShippingStatusColumn row={row} />;
-                           case 'shipping_substatus_advanced':
-                             return <ShippingSubstatusColumn row={row} />;
-                           case 'return_status_advanced':
-                             return <ReturnStatusColumn row={row} />;
-                           case 'delivery_estimate_advanced':
-                             return <DeliveryEstimateColumn row={row} />;
+                            
+                            // ===== COLUNAS AVANÇADAS =====
+                            case 'pack_status_detail':
+                              return <PackStatusDetailColumn row={row} />;
+                            case 'order_status_advanced':
+                              return <OrderStatusColumn row={row} />;
+                            case 'shipping_status_advanced':
+                              return <ShippingStatusColumn row={row} />;
+                            case 'shipping_substatus_advanced':
+                              return <ShippingSubstatusColumn row={row} />;
+                            case 'return_status_advanced':
+                              return <ReturnStatusColumn row={row} />;
+                            case 'delivery_estimate_advanced':
+                              return <DeliveryEstimateColumn row={row} />;
                            
                            case 'codigo_rastreamento':
                             return show(get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping_details.tracking_number'));

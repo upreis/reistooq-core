@@ -17,7 +17,22 @@ interface StatusColumnProps {
 
 // ===== 1️⃣ COLUNA STATUS DO PEDIDO =====
 export function OrderStatusColumn({ row, showTooltip = true }: StatusColumnProps) {
-  const orderStatus = (row as any)?.order?.status || row.unified?.situacao || (row as any)?.compat?.situacao || '—';
+  // ✅ CORREÇÃO: Acessar status do pedido corretamente
+  const orderStatus = (row as any)?.status || 
+                     (row as any)?.raw?.status || 
+                     row.unified?.situacao || 
+                     (row as any)?.order?.status || 
+                     '—';
+  
+  // Debug: verificar dados disponíveis
+  console.log('🐛 [OrderStatus] Debug para pedido', (row as any)?.id || row.unified?.numero, {
+    rawStatus: (row as any)?.status,
+    rawOrderStatus: (row as any)?.raw?.status,
+    unifiedSituacao: row.unified?.situacao,
+    orderStatus: (row as any)?.order?.status,
+    finalStatus: orderStatus
+  });
+
   const statusPT = mapOrderStatusFromFilter(orderStatus);
   const variant = getStatusBadgeVariant(statusPT, 'order');
 
@@ -53,10 +68,22 @@ export function OrderStatusColumn({ row, showTooltip = true }: StatusColumnProps
 
 // ===== 2️⃣ COLUNA STATUS DE ENVIO =====
 export function ShippingStatusColumn({ row, showTooltip = true }: StatusColumnProps) {
+  // ✅ CORREÇÃO: Acessar status de envio corretamente baseado nos logs da API
   const shippingStatus = (row as any)?.shipping?.status || 
-                        (row as any)?.enriched?.shipping?.status || 
-                        (row as any)?.compat?.status_envio || 
+                        (row as any)?.raw?.shipping?.status ||
+                        (row as any)?.detailed_shipping?.status ||
+                        (row as any)?.shipping_details?.status ||
                         '—';
+  
+  // Debug: verificar dados disponíveis
+  console.log('🐛 [ShippingStatus] Debug para pedido', (row as any)?.id || row.unified?.numero, {
+    shippingStatus: (row as any)?.shipping?.status,
+    rawShippingStatus: (row as any)?.raw?.shipping?.status,
+    detailedShippingStatus: (row as any)?.detailed_shipping?.status,
+    shippingDetailsStatus: (row as any)?.shipping_details?.status,
+    finalStatus: shippingStatus
+  });
+
   const statusPT = mapShippingStatusFromAPI(shippingStatus);
   const variant = getStatusBadgeVariant(statusPT, 'shipping');
 
@@ -90,10 +117,21 @@ export function ShippingStatusColumn({ row, showTooltip = true }: StatusColumnPr
 
 // ===== 3️⃣ COLUNA SUBSTATUS DE ENVIO =====
 export function ShippingSubstatusColumn({ row, showTooltip = true }: StatusColumnProps) {
+  // ✅ CORREÇÃO: Acessar substatus corretamente baseado nos logs da API
   const substatus = (row as any)?.shipping?.substatus || 
-                   (row as any)?.enriched?.shipping?.substatus || 
-                   (row as any)?.compat?.substatus || 
+                   (row as any)?.raw?.shipping?.substatus ||
+                   (row as any)?.detailed_shipping?.substatus ||
+                   (row as any)?.shipping_details?.substatus ||
                    null;
+  
+  // Debug: verificar dados disponíveis
+  console.log('🐛 [ShippingSubstatus] Debug para pedido', (row as any)?.id || row.unified?.numero, {
+    shippingSubstatus: (row as any)?.shipping?.substatus,
+    rawShippingSubstatus: (row as any)?.raw?.shipping?.substatus,
+    detailedShippingSubstatus: (row as any)?.detailed_shipping?.substatus,
+    shippingDetailsSubstatus: (row as any)?.shipping_details?.substatus,
+    finalSubstatus: substatus
+  });
   
   if (!substatus) {
     return <span className="text-muted-foreground text-sm">—</span>;
@@ -179,10 +217,23 @@ export function ReturnStatusColumn({ row, showTooltip = true }: StatusColumnProp
 
 // ===== 5️⃣ COLUNA PREVISÃO DE ENTREGA =====
 export function DeliveryEstimateColumn({ row, showTooltip = true }: StatusColumnProps) {
-  const estimatedDelivery = (row as any)?.enriched?.estimated_delivery_time?.date || 
-                           (row as any)?.shipping?.estimated_delivery?.date ||
+  // ✅ CORREÇÃO: Acessar previsão de entrega corretamente baseado nos logs da API
+  const estimatedDelivery = (row as any)?.shipping?.lead_time?.estimated_delivery_final?.date || 
+                           (row as any)?.shipping?.lead_time?.estimated_delivery_time?.date ||
+                           (row as any)?.shipping?.lead_time?.estimated_delivery_limit?.date ||
+                           (row as any)?.detailed_shipping?.lead_time?.estimated_delivery_final?.date ||
                            row.unified?.data_prevista ||
                            null;
+  
+  // Debug: verificar dados disponíveis
+  console.log('🐛 [DeliveryEstimate] Debug para pedido', (row as any)?.id || row.unified?.numero, {
+    leadTimeEstimatedFinal: (row as any)?.shipping?.lead_time?.estimated_delivery_final?.date,
+    leadTimeEstimatedTime: (row as any)?.shipping?.lead_time?.estimated_delivery_time?.date,
+    leadTimeEstimatedLimit: (row as any)?.shipping?.lead_time?.estimated_delivery_limit?.date,
+    detailedShippingLeadTime: (row as any)?.detailed_shipping?.lead_time?.estimated_delivery_final?.date,
+    unifiedDataPrevista: row.unified?.data_prevista,
+    finalEstimated: estimatedDelivery
+  });
   
   if (!estimatedDelivery) {
     return <span className="text-muted-foreground text-sm">—</span>;
@@ -223,6 +274,56 @@ export function DeliveryEstimateColumn({ row, showTooltip = true }: StatusColumn
             <p className="text-muted-foreground">
               {isOverdue ? 'Entrega atrasada' : 'Dentro do prazo'}
             </p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+// ===== 6️⃣ COLUNA PACK STATUS DETAIL =====
+export function PackStatusDetailColumn({ row, showTooltip = true }: StatusColumnProps) {
+  // ✅ CORREÇÃO: Acessar pack status detail baseado nos logs da API
+  const packStatusDetail = (row as any)?.pack_status_detail || 
+                          (row as any)?.raw?.pack_status_detail ||
+                          (row as any)?.shipping?.pack_status_detail ||
+                          null;
+  
+  // Debug: verificar dados disponíveis
+  console.log('🐛 [PackStatusDetail] Debug para pedido', (row as any)?.id || row.unified?.numero, {
+    packStatusDetail: (row as any)?.pack_status_detail,
+    rawPackStatusDetail: (row as any)?.raw?.pack_status_detail,
+    shippingPackStatusDetail: (row as any)?.shipping?.pack_status_detail,
+    finalPackStatusDetail: packStatusDetail
+  });
+  
+  if (!packStatusDetail) {
+    return <span className="text-muted-foreground text-sm">—</span>;
+  }
+
+  const content = (
+    <div className="flex items-center gap-2">
+      <div className="flex items-center justify-center w-4 h-4 rounded-full bg-purple-100">
+        <div className="w-2 h-2 rounded-full bg-purple-500" />
+      </div>
+      <Badge variant="outline" className="text-xs">
+        {packStatusDetail}
+      </Badge>
+    </div>
+  );
+
+  if (!showTooltip) return content;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="cursor-help">{content}</div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <div className="text-sm">
+            <p className="font-medium">Detalhe Status do Pack</p>
+            <p className="text-muted-foreground">API: {packStatusDetail}</p>
           </div>
         </TooltipContent>
       </Tooltip>

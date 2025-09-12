@@ -495,8 +495,8 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     label: 'Pack Status Detail',
     category: 'ml',
     priority: 'optional',
-    visible: false,
-    default: false,
+    visible: true,
+    default: true,
     description: 'Detalhes do status do pack',
     width: 140
   },
