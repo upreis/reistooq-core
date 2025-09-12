@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
+import { mapSituacaoToApiStatus, mapApiStatusToLabel, statusMatchesFilter } from '@/utils/statusMapping';
 import { formatDate } from '@/lib/format';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'react-hot-toast';
@@ -692,7 +692,7 @@ export function usePedidosManager(initialAccountId?: string) {
             return false;
           }
         } else {
-          // ✅ CORRIGIDO: Usar status reais que vêm da API
+          // ✅ CORRIGIDO: Mapear status português para inglês antes da comparação
           const realStatus = order.situacao || 
                             order.shipping_status ||
                             order.shipping?.status ||
@@ -717,8 +717,27 @@ export function usePedidosManager(initialAccountId?: string) {
             });
           }
           
-          // Verificar se o status real está nos filtros selecionados
-          const statusMatches = selectedStatuses.includes(realStatus);
+          // 🎯 MAPEAMENTO: Status português (filtro) -> status inglês (API)
+          const statusMatches = selectedStatuses.some(selectedStatusPT => {
+            // Mapear status PT para API
+            const apiStatus = mapSituacaoToApiStatus(selectedStatusPT);
+            
+            // Comparar com múltiplas fontes de status
+            const matchesStatus = realStatus === apiStatus ||
+                                realStatus === selectedStatusPT ||
+                                mapApiStatusToLabel(realStatus) === selectedStatusPT;
+            
+            if (process.env.NODE_ENV === 'development' && Math.random() < 0.05) {
+              console.log('🔄 Mapeamento Status:', {
+                selectedPT: selectedStatusPT,
+                mappedAPI: apiStatus,
+                realStatus,
+                matches: matchesStatus
+              });
+            }
+            
+            return matchesStatus;
+          });
           
           if (!statusMatches) {
             if (process.env.NODE_ENV === 'development') {
