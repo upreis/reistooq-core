@@ -692,12 +692,12 @@ export function usePedidosManager(initialAccountId?: string) {
             return false;
           }
         } else {
-          // ✅ CORRIGIDO: Mapear status português para inglês antes da comparação
-          const realStatus = order.situacao || 
-                            order.shipping_status ||
+          // ✅ CORRIGIDO: Usar shipping_status (Status do Envio) - coluna correta
+          const realStatus = order.shipping_status ||
                             order.shipping?.status ||
                             order.raw?.shipping?.status ||
                             order.status_envio ||
+                            order.situacao ||
                             order.status;
           
           // 🔍 DEBUG: Log dos status reais para auditoria
