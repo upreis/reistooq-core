@@ -353,16 +353,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     filterable: true
   },
   {
-    key: 'substatus_detail',
-    label: 'Substatus (Estado Atual)',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Sub-status detalhado atual',
-    width: 160
-  },
-  {
     key: 'shipping_mode',
     label: 'Modo de Envio (Combinado)',
     category: 'shipping',
