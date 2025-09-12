@@ -47,6 +47,7 @@ import { usePersistentPedidosState } from '@/hooks/usePersistentPedidosState';
 // ✅ SISTEMA UNIFICADO DE FILTROS
 import { usePedidosFiltersUnified } from '@/hooks/usePedidosFiltersUnified';
 import { PedidosFiltersUnified } from './PedidosFiltersUnified';
+import { StatusFilters } from '@/features/orders/types/orders-status.types';
 
 import { useColumnManager, resetColumnCache } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
@@ -127,6 +128,15 @@ function SimplePedidosPage({ className }: Props) {
   // 🔄 PERSISTÊNCIA DE ESTADO - Manter filtros e dados ao sair/voltar da página
   const persistentState = usePersistentPedidosState();
   
+  // Estado dos filtros avançados
+  const [useAdvancedStatus, setUseAdvancedStatus] = useState(false);
+  const [advancedStatusFilters, setAdvancedStatusFilters] = useState<StatusFilters>({
+    orderStatus: [],
+    shippingStatus: [],
+    shippingSubstatus: [],
+    returnStatus: []
+  });
+
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: async (filters) => {
@@ -155,6 +165,20 @@ function SimplePedidosPage({ className }: Props) {
     autoLoad: false,
     loadSavedFilters: false
   });
+
+  // Handlers para filtros avançados
+  const handleAdvancedStatusFiltersChange = useCallback((filters: StatusFilters) => {
+    setAdvancedStatusFilters(filters);
+  }, []);
+
+  const handleResetAdvancedStatusFilters = useCallback(() => {
+    setAdvancedStatusFilters({
+      orderStatus: [],
+      shippingStatus: [],
+      shippingSubstatus: [],
+      returnStatus: []
+    });
+  }, []);
   
   // Estado unificado dos pedidos
   const pedidosManager = usePedidosManager();
@@ -949,6 +973,11 @@ useEffect(() => {
         columnManager={columnManager}
         activeFiltersCount={filtersManager.activeFiltersCount}
         contasML={accounts}
+        useAdvancedStatus={useAdvancedStatus}
+        onToggleAdvancedStatus={setUseAdvancedStatus}
+        advancedStatusFilters={advancedStatusFilters}
+        onAdvancedStatusFiltersChange={handleAdvancedStatusFiltersChange}
+        onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
       />
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}

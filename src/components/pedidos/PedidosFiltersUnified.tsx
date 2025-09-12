@@ -19,6 +19,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PedidosFiltersState } from '@/hooks/usePedidosFiltersUnified';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 import { EnhancedPeriodFilter } from './EnhancedPeriodFilter';
+import { StatusFiltersToggle } from './StatusFiltersToggle';
+import { StatusFilters } from '@/features/orders/types/orders-status.types';
 
 interface PedidosFiltersUnifiedProps {
   filters: PedidosFiltersState;
@@ -33,6 +35,12 @@ interface PedidosFiltersUnifiedProps {
   activeFiltersCount: number;
   contasML?: Array<{ id: string; name: string; nickname?: string; active?: boolean; }>;
   columnManager?: any;
+  // Status Avançado
+  useAdvancedStatus?: boolean;
+  onToggleAdvancedStatus?: (enabled: boolean) => void;
+  advancedStatusFilters?: StatusFilters;
+  onAdvancedStatusFiltersChange?: (filters: StatusFilters) => void;
+  onResetAdvancedStatusFilters?: () => void;
 }
 
 // ✅ NOVO: Status do PEDIDO (order.status) para API ML
@@ -70,7 +78,12 @@ export function PedidosFiltersUnified({
   isApplying,
   activeFiltersCount,
   contasML = [],
-  columnManager
+  columnManager,
+  useAdvancedStatus = false,
+  onToggleAdvancedStatus,
+  advancedStatusFilters,
+  onAdvancedStatusFiltersChange,
+  onResetAdvancedStatusFilters
 }: PedidosFiltersUnifiedProps) {
   const [statusPedidoOpen, setStatusPedidoOpen] = useState(false);
   const [contasMLOpen, setContasMLOpen] = useState(false);
@@ -341,6 +354,18 @@ export function PedidosFiltersUnified({
         </div>
       </div>
 
+
+      {/* Filtros de Status Avançados */}
+      {onToggleAdvancedStatus && onAdvancedStatusFiltersChange && onResetAdvancedStatusFilters && advancedStatusFilters && (
+        <StatusFiltersToggle
+          useAdvancedStatus={useAdvancedStatus}
+          onToggleAdvanced={onToggleAdvancedStatus}
+          filters={advancedStatusFilters}
+          onFiltersChange={onAdvancedStatusFiltersChange}
+          onReset={onResetAdvancedStatusFilters}
+          className="mb-4"
+        />
+      )}
 
       {/* Tags de filtros ativos */}
       {activeFiltersCount > 0 && (

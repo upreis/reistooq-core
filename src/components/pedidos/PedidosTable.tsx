@@ -338,15 +338,28 @@ export function PedidosTable({
                               );
                            case 'shipping_mode':
                              return show(get(row.raw, 'shipping_details.shipping_mode'));
-                            case 'shipping_substatus':
-                              const rawSubstatus = get(row.raw, 'shipping_details.substatus');
-                              const translatedSubstatus = translateShippingSubstatus(rawSubstatus);
-                              return (
-                                <Badge variant={getStatusBadgeVariant('', rawSubstatus)}>
-                                  {translatedSubstatus}
-                                </Badge>
-                              );
-                          case 'codigo_rastreamento':
+                             case 'shipping_substatus':
+                               const rawSubstatus = get(row.raw, 'shipping_details.substatus');
+                               const translatedSubstatus = translateShippingSubstatus(rawSubstatus);
+                               return (
+                                 <Badge variant={getStatusBadgeVariant('', rawSubstatus)}>
+                                   {translatedSubstatus}
+                                 </Badge>
+                               );
+                           
+                           // ===== COLUNAS AVANÇADAS =====
+                           case 'order_status_advanced':
+                             return <OrderStatusColumn row={row} />;
+                           case 'shipping_status_advanced':
+                             return <ShippingStatusColumn row={row} />;
+                           case 'shipping_substatus_advanced':
+                             return <ShippingSubstatusColumn row={row} />;
+                           case 'return_status_advanced':
+                             return <ReturnStatusColumn row={row} />;
+                           case 'delivery_estimate_advanced':
+                             return <DeliveryEstimateColumn row={row} />;
+                           
+                           case 'codigo_rastreamento':
                             return show(get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping_details.tracking_number'));
                           case 'url_rastreamento':
                             return show(get(row.unified, 'url_rastreamento') ?? get(row.raw, 'shipping_details.tracking_url'));

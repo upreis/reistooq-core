@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { DEBOUNCE } from '@/lib/constants';
+import { StatusFilters } from '@/features/orders/types/orders-status.types';
 
 export interface PedidosFiltersState {
   search?: string;
@@ -13,6 +14,9 @@ export interface PedidosFiltersState {
   dataInicio?: Date;
   dataFim?: Date;
   contasML?: string[];
+  // Status Avançado
+  useAdvancedStatus?: boolean;
+  advancedStatusFilters?: StatusFilters;
 }
 
 // ✅ ESTRATÉGIA UNIFICADA: APLICAÇÃO SEMPRE MANUAL
