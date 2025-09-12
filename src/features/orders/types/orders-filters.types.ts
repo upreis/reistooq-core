@@ -1,4 +1,5 @@
 import { OrderStatus, OrderSource, OrderPriority, OrderAdvanced } from './orders-advanced.types';
+import { StatusFilters, OrderStatusCategory } from './orders-status.types';
 
 // ===== FILTER SYSTEM TYPES =====
 export interface OrderFiltersState {
@@ -11,6 +12,10 @@ export interface OrderFiltersState {
   location: LocationFilter;
   tags: string[];
   custom_fields: Record<string, any>;
+  
+  // ===== NOVOS FILTROS POR CATEGORIA =====
+  status_filters: StatusFilters;
+  enable_advanced_status: boolean;
 }
 
 export interface DateRange {
@@ -63,6 +68,12 @@ export const FILTER_PRESETS: Record<string, Partial<OrderFiltersState>> = {
   },
   pending: {
     status: ['Pendente', 'Aguardando'],
+    status_filters: {
+      orderStatus: ['Aguardando Pagamento'],
+      shippingStatus: [],
+      shippingSubstatus: [],
+      returnStatus: []
+    }
   },
   high_value: {
     value_range: { min: 1000, max: null },
@@ -75,13 +86,59 @@ export const FILTER_PRESETS: Record<string, Partial<OrderFiltersState>> = {
   },
   ready_to_ship: {
     status: ['Pago', 'Aprovado'],
+    status_filters: {
+      orderStatus: ['Pago'],
+      shippingStatus: ['Pronto para Envio'],
+      shippingSubstatus: [],
+      returnStatus: []
+    }
   },
   delivered: {
     status: ['Entregue'],
+    status_filters: {
+      orderStatus: [],
+      shippingStatus: ['Entregue'],
+      shippingSubstatus: [],
+      returnStatus: []
+    }
   },
   problems: {
     status: ['Cancelado', 'Devolvido', 'Reembolsado'],
+    status_filters: {
+      orderStatus: ['Cancelado'],
+      shippingStatus: ['Não Entregue'],
+      shippingSubstatus: ['Atrasado', 'Destinatário Ausente'],
+      returnStatus: ['Devolvido', 'Reembolsado']
+    }
   },
+  // ===== NOVOS PRESETS AVANÇADOS =====
+  delayed: {
+    status_filters: {
+      orderStatus: [],
+      shippingStatus: [],
+      shippingSubstatus: ['Atrasado'],
+      returnStatus: []
+    },
+    enable_advanced_status: true
+  },
+  out_for_delivery: {
+    status_filters: {
+      orderStatus: [],
+      shippingStatus: [],
+      shippingSubstatus: ['Saiu para Entrega'],
+      returnStatus: []
+    },
+    enable_advanced_status: true
+  },
+  returns: {
+    status_filters: {
+      orderStatus: [],
+      shippingStatus: [],
+      shippingSubstatus: [],
+      returnStatus: ['Devolvido', 'Reembolsado', 'Devolução Pendente']
+    },
+    enable_advanced_status: true
+  }
 };
 
 // ===== FILTER VALIDATION =====

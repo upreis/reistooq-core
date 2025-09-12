@@ -5,6 +5,13 @@ import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { mapMLStatus, getStatusBadgeVariant } from '@/utils/mlStatusMapping';
 import { translateShippingSubstatus } from '@/utils/pedidos-translations';
+import { 
+  OrderStatusColumn,
+  ShippingStatusColumn, 
+  ShippingSubstatusColumn,
+  ReturnStatusColumn,
+  DeliveryEstimateColumn 
+} from './StatusColumnsAdvanced';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';

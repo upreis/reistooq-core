@@ -218,7 +218,28 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
-        // 7. Enriquecer com dados dos produtos detalhados (order_items + product info)
+        // 7. Enriquecer com dados de devoluções (returns)
+        if (order.id) {
+          try {
+            const returnsResp = await fetch(
+              `https://api.mercadolibre.com/orders/${order.id}/returns`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                }
+              }
+            );
+            if (returnsResp.ok) {
+              const returnsData = await returnsResp.json();
+              (enrichedOrder as any).returns = returnsData;
+            }
+          } catch (err) {
+            console.warn(`[unified-orders:${cid}] Aviso ao buscar returns ${order.id}:`, (err as any)?.message || err);
+          }
+        }
+
+        // 8. Enriquecer com dados dos produtos detalhados (order_items + product info)
         if (order.order_items?.length) {
           try {
             const itemsWithDetails = await Promise.all(
@@ -391,6 +412,12 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       skus_produtos: skus || 'Sem SKU',
       quantidade_total: totalQuantity,
       titulo_produto: productTitles || 'Produto sem título',
+      
+      // ===== DADOS DE DEVOLUÇÕES =====
+      return_status: order.returns?.length ? order.returns[0]?.status : null,
+      return_id: order.returns?.length ? order.returns[0]?.id : null,
+      return_date: order.returns?.length ? order.returns[0]?.date_created : null,
+      return_reason: order.returns?.length ? order.returns[0]?.reason : null,
       
       // Valores financeiros detalhados
       frete_pago_cliente: fretePagoCliente,
