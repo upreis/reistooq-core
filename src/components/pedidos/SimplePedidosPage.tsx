@@ -56,6 +56,7 @@ import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';
 import { PedidosModalsSection } from './components/PedidosModalsSection';
 import { TestSubStatusColumn } from '../debug/TestSubStatusColumn';
+import { StatusSeparationTest } from '../debug/StatusSeparationTest';
 import { PedidosStatusBar } from './components/PedidosStatusBar';
 import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
@@ -1148,6 +1149,7 @@ useEffect(() => {
 
       {/* 🧪 TESTE TEMPORÁRIO */}
       <TestSubStatusColumn />
+      <StatusSeparationTest />
 
       {/* 🚀 FASE 2: Loading otimizado */}
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}

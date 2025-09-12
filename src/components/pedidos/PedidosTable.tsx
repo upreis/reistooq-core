@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Row, get, show } from '@/services/orders';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { createCombinedStatus, getStatusBadgeVariant, mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
+import { mapMLStatus, getStatusBadgeVariant, mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -288,15 +288,14 @@ export function PedidosTable({
                             return formatDate(get(row.unified, 'data_pedido') ?? get(row.raw, 'date_created'));
                           case 'data_prevista':
                             return formatDate(get(row.unified, 'data_prevista') ?? get(row.raw, 'date_closed'));
-                           case 'situacao':
-                             const situacao = get(row.unified, 'situacao') ?? get(row.raw, 'status');
-                             const substatus = get(row.raw, 'shipping_details.substatus') ?? get(row.raw, 'shipping.substatus');
-                             const combinedStatus = createCombinedStatus(situacao, substatus);
-                             return (
-                               <Badge variant={getStatusBadgeVariant(situacao, substatus)}>
-                                 {combinedStatus}
-                               </Badge>
-                             );
+                            case 'situacao':
+                              const situacao = get(row.unified, 'situacao') ?? get(row.raw, 'status');
+                              const mappedSituacao = mapMLStatus(situacao);
+                              return (
+                                <Badge variant={getStatusBadgeVariant(situacao)}>
+                                  {mappedSituacao}
+                                </Badge>
+                              );
                           case 'valor_total':
                             return formatMoney(get(row.unified, 'valor_total'));
                           case 'valor_frete':
@@ -321,15 +320,14 @@ export function PedidosTable({
                              return show(get(row.unified, 'endereco_numero') ?? get(row.raw, 'shipping_details.receiver_address.street_number') ?? get(row.raw, 'shipping.receiver_address.street_number'));
                            case 'endereco_bairro':
                              return show(get(row.unified, 'endereco_bairro') ?? get(row.raw, 'shipping_details.receiver_address.neighborhood.name') ?? get(row.raw, 'shipping.receiver_address.neighborhood.name'));
-                           case 'shipping_status':
-                             const shippingStatus = get(row.raw, 'shipping_details.status');
-                             const shippingSubstatus = get(row.raw, 'shipping_details.substatus');
-                             const combinedShippingStatus = createCombinedStatus(shippingStatus, shippingSubstatus);
-                             return (
-                               <Badge variant={getStatusBadgeVariant(shippingStatus, shippingSubstatus)}>
-                                 {combinedShippingStatus}
-                               </Badge>
-                             );
+                            case 'shipping_status':
+                              const shippingStatus = get(row.raw, 'shipping_details.status');
+                              const mappedStatus = mapMLStatus(shippingStatus);
+                              return (
+                                <Badge variant={getStatusBadgeVariant(shippingStatus)}>
+                                  {mappedStatus}
+                                </Badge>
+                              );
                            case 'shipping_mode':
                              return show(get(row.raw, 'shipping_details.shipping_mode'));
                            case 'shipping_substatus':
