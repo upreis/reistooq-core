@@ -1,11 +1,10 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, fail, ok, getMlConfig, makeClient } from "../_shared/client.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY } from "../_shared/config.ts";
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
