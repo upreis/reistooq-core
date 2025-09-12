@@ -692,8 +692,8 @@ export function usePedidosManager(initialAccountId?: string) {
             return false;
           }
         } else {
-          // ✅ CORRIGIDO: Usar shipping_status com fallback para situacao
-          const realStatus = order.shipping_status || order.situacao;
+          // ✅ CORRIGIDO: Usar APENAS shipping_status (Status do Envio) - COLUNA CORRETA
+          const realStatus = order.shipping_status; // PRIORIDADE 1: shipping_status = "Status do Envio"
           
           // 🚨 EVIDÊNCIA: Log SEMPRE para comprovar correção
           console.log('🎯 CORREÇÃO APLICADA - Usando shipping_status:', {
