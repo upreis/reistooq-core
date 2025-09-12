@@ -17,11 +17,13 @@ interface StatusColumnProps {
 
 // ===== 1️⃣ COLUNA STATUS DO PEDIDO =====
 export function OrderStatusColumn({ row, showTooltip = true }: StatusColumnProps) {
-  // ✅ CORREÇÃO: Acessar status do pedido corretamente
-  const orderStatus = row.unified?.situacao || 
+  // ✅ CORREÇÃO: Usar tags para derivar status baseado nos logs reais
+  const tags = (row as any)?.tags || [];
+  const orderStatus = tags.includes('not_paid') && tags.includes('not_delivered') ? 'cancelled' :
+                     tags.includes('delivered') ? 'paid' :
+                     tags.includes('not_delivered') ? 'confirmed' :
+                     row.unified?.situacao || 
                      (row as any)?.status || 
-                     (row as any)?.raw?.status || 
-                     (row as any)?.unified?.raw?.status ||
                      '—';
   
   // Debug: verificar dados disponíveis
@@ -68,11 +70,11 @@ export function OrderStatusColumn({ row, showTooltip = true }: StatusColumnProps
 
 // ===== 2️⃣ COLUNA STATUS DE ENVIO =====
 export function ShippingStatusColumn({ row, showTooltip = true }: StatusColumnProps) {
-  // ✅ CORREÇÃO: Acessar status de envio corretamente baseado nos logs da API
-  const shippingStatus = (row as any)?.status_envio || 
-                        (row as any)?.raw?.shipping?.status ||
-                        (row as any)?.unified?.shipping?.status ||
-                        (row as any)?.shipping?.status ||
+  // ✅ CORREÇÃO: Usar tags para derivar status de envio baseado nos logs reais
+  const tags = (row as any)?.tags || [];
+  const shippingStatus = tags.includes('delivered') ? 'delivered' :
+                        tags.includes('not_delivered') ? 'pending' :
+                        (row as any)?.shipping_status ||
                         '—';
   
   // Debug: verificar dados disponíveis
@@ -117,11 +119,10 @@ export function ShippingStatusColumn({ row, showTooltip = true }: StatusColumnPr
 
 // ===== 3️⃣ COLUNA SUBSTATUS DE ENVIO =====
 export function ShippingSubstatusColumn({ row, showTooltip = true }: StatusColumnProps) {
-  // ✅ CORREÇÃO: Acessar substatus corretamente baseado nos logs da API  
-  const substatus = (row as any)?.substatus || 
-                   (row as any)?.raw?.shipping?.substatus ||
-                   (row as any)?.unified?.shipping?.substatus ||
-                   (row as any)?.shipping?.substatus ||
+  // ✅ CORREÇÃO: Usar tags para derivar substatus baseado nos logs reais
+  const tags = (row as any)?.tags || [];
+  const substatus = tags.find(tag => ['pack_order', 'catalog', 'b2b', 'd2c', 'one_shot'].includes(tag)) ||
+                   (row as any)?.shipping_substatus ||
                    null;
   
   // Debug: verificar dados disponíveis
@@ -217,12 +218,10 @@ export function ReturnStatusColumn({ row, showTooltip = true }: StatusColumnProp
 
 // ===== 5️⃣ COLUNA PREVISÃO DE ENTREGA =====
 export function DeliveryEstimateColumn({ row, showTooltip = true }: StatusColumnProps) {
-  // ✅ CORREÇÃO: Acessar previsão de entrega corretamente baseado nos logs da API
+  // ✅ CORREÇÃO: Usar dados reais disponíveis 
   const estimatedDelivery = row.unified?.data_prevista ||
-                           (row as any)?.data_prevista || 
-                           (row as any)?.raw?.shipping?.date_first_printed ||
-                           (row as any)?.raw?.date_closed ||
-                           (row as any)?.unified?.shipping?.date_first_printed ||
+                           (row as any)?.unified?.data_criacao || // Usando data de criação como fallback
+                           (row as any)?.date_created ||
                            null;
   
   // Debug: verificar dados disponíveis
@@ -283,11 +282,10 @@ export function DeliveryEstimateColumn({ row, showTooltip = true }: StatusColumn
 
 // ===== 6️⃣ COLUNA PACK STATUS DETAIL =====
 export function PackStatusDetailColumn({ row, showTooltip = true }: StatusColumnProps) {
-  // ✅ CORREÇÃO: Acessar pack status detail baseado nos logs da API
-  const packStatusDetail = (row as any)?.pack_status_detail || 
-                          (row as any)?.raw?.pack_status_detail ||
-                          (row as any)?.raw?.pack_data?.status_detail ||
-                          (row as any)?.unified?.pack_data?.status_detail ||
+  // ✅ CORREÇÃO: Usar pack_id que realmente existe nos logs
+  const packId = (row as any)?.pack_id;
+  const packStatusDetail = packId ? `Pack ${packId}` :
+                          (row as any)?.pack_status_detail ||
                           null;
   
   // Debug: verificar dados disponíveis
