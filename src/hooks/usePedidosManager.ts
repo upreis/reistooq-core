@@ -233,13 +233,8 @@ export function usePedidosManager(initialAccountId?: string) {
       }
     }
 
-    // ✅ CORRIGIDO: Status de ENVIO (shipping.status) - APENAS CLIENT-SIDE
-    if (filters.statusEnvio) {
-      const statusList = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
-      // Marcar como client-side apenas, não enviar para API
-      params._clientSideShippingStatuses = statusList;
-      console.log('📊 [STATUS ENVIO] Client-side apenas:', statusList);
-    }
+    // ✅ CORRIGIDO: Status de ENVIO (shipping.status) - APENAS CLIENT-SIDE (não enviar para API)
+    // Status de envio será aplicado via client-side filtering após receber dados da API
 
     // 📅 CORRIGIDO: Datas com formato consistente e normalização para fim do dia
     if (filters.dataInicio) {
@@ -328,7 +323,8 @@ export function usePedidosManager(initialAccountId?: string) {
    * ✅ BLINDAGEM: Tolerante a falhas de conta, agregação robusta, feedback claro
    */
   const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
-    const { _clientSideShippingStatuses, ...rest } = apiParams || {};
+    // ✅ AUDITORIA FIX: Não extrair _clientSideShippingStatuses pois não enviamos mais para API
+    const rest = apiParams || {};
     
     // 🚨 AUDITORIA FIX: Suporte a múltiplas contas ML com blindagem total
     if (apiParams.integration_account_ids && Array.isArray(apiParams.integration_account_ids)) {
@@ -348,7 +344,7 @@ export function usePedidosManager(initialAccountId?: string) {
           integration_account_id: accountId,
           limit: pageSize,
           offset: (currentPage - 1) * pageSize,
-          // ✅ CORRIGIDO: Apenas status do pedido vai para API, shipping_status removido
+          // ✅ AUDITORIA: Apenas status do pedido (order.status) vai para API ML
           ...(rest.status ? { status: rest.status } : {}),
           ...(rest.q ? { q: rest.q, search: rest.q } : {}),
           ...(rest.date_from ? { date_from: rest.date_from } : {}),
@@ -494,7 +490,7 @@ export function usePedidosManager(initialAccountId?: string) {
         unified: allUnified,
         total: totalCount,
         paging: { total: totalCount, limit: pageSize, offset: (currentPage - 1) * pageSize },
-        serverStatusApplied: Boolean(_clientSideShippingStatuses),
+        serverStatusApplied: false, // ✅ AUDITORIA: shipping_status não é mais enviado para API
         _multiAccount: true,
         _accountStats: {
           total: apiParams.integration_account_ids.length,
