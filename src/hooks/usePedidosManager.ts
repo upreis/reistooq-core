@@ -6,7 +6,11 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { mapSituacaoToApiStatus, mapApiStatusToLabel, statusMatchesFilter } from '@/utils/statusMapping';
+import { 
+  mapOrderStatusToAPI, 
+  mapShippingStatusToFilter, 
+  matchesShippingStatusFilter 
+} from '@/utils/orderStatusMapping';
 import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { formatDate } from '@/lib/format';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -14,7 +18,8 @@ import { toast } from 'react-hot-toast';
 
 export interface PedidosFilters {
   search?: string;
-  statusEnvio?: string | string[];
+  statusPedido?: string | string[];   // ✅ NOVO: Status do pedido (order.status)
+  statusEnvio?: string | string[];    // ✅ MANTIDO: Status de envio (shipping.status) - client-side
   dataInicio?: Date;
   dataFim?: Date;
   contasML?: string[];
@@ -202,7 +207,7 @@ export function usePedidosManager(initialAccountId?: string) {
 
   /**
    * 🔧 AUDITORIA: Converte filtros para parâmetros da API 
-   * CORRIGIDO: Priorizar conta ML e mapear situação corretamente
+   * CORRIGIDO: Mapear status PT→EN e separar filtros de API vs client-side
    */
   const buildApiParams = useCallback((filters: PedidosFilters) => {
     console.log('🔍 [buildApiParams] Iniciando construção de parâmetros com filtros:', filters);
@@ -215,36 +220,25 @@ export function usePedidosManager(initialAccountId?: string) {
       console.log('🔍 [buildApiParams] Search adicionado:', filters.search);
     }
 
-    // ✅ CORRIGIDO: Status baseado nos valores REAIS da API
+    // ✅ NOVO: Status do PEDIDO (order.status) - mapear PT→EN para API
+    if (filters.statusPedido) {
+      const statusList = Array.isArray(filters.statusPedido) ? filters.statusPedido : [filters.statusPedido];
+      const mappedStatusList = statusList
+        .map(status => mapOrderStatusToAPI(status))
+        .filter(Boolean);
+      
+      if (mappedStatusList.length > 0) {
+        params.status = mappedStatusList.length === 1 ? mappedStatusList[0] : mappedStatusList.join(',');
+        console.log('📊 [STATUS PEDIDO] PT→EN mapeado para API:', statusList, '→', mappedStatusList);
+      }
+    }
+
+    // ✅ CORRIGIDO: Status de ENVIO (shipping.status) - APENAS CLIENT-SIDE
     if (filters.statusEnvio) {
       const statusList = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
-      
-      // ⚠️ IMPORTANTE: Usar os status EXATOS que vêm da API baseado nos logs
-      const statusMapping: Record<string, string> = {
-        'Pendente': 'Pendente',
-        'Pronto para Envio': 'Pronto para Envio', 
-        'Enviado': 'Enviado',
-        'Entregue': 'Entregue',
-        'Não Entregue': 'Não Entregue',
-        'Cancelado': 'Cancelado',
-        'A Combinar': 'A Combinar',
-        'Processando': 'Processando',
-        'Pronto para Imprimir': 'Pronto para Imprimir',
-        'Impresso': 'Impresso',
-        'Atrasado': 'Atrasado',
-        'Perdido': 'Perdido',
-        'Danificado': 'Danificado',
-        'Medidas Não Correspondem': 'Medidas Não Correspondem'
-      };
-
-      const mappedStatusList = statusList.map(status => statusMapping[status] || status).filter(Boolean);
-      
-      // ✅ FIX CRÍTICO: Não enviar para API, usar apenas client-side
-      if (mappedStatusList.length > 0) {
-        params._client_side_shipping_statuses = mappedStatusList;
-        console.log('📊 [STATUS ENVIO] Client-side filtros:', mappedStatusList);
-        // ⚠️ NÃO enviar shipping_status para API para evitar filtros incorretos
-      }
+      // Marcar como client-side apenas, não enviar para API
+      params._clientSideShippingStatuses = statusList;
+      console.log('📊 [STATUS ENVIO] Client-side apenas:', statusList);
     }
 
     // 📅 CORRIGIDO: Datas com formato consistente e normalização para fim do dia
@@ -334,7 +328,7 @@ export function usePedidosManager(initialAccountId?: string) {
    * ✅ BLINDAGEM: Tolerante a falhas de conta, agregação robusta, feedback claro
    */
   const loadFromUnifiedOrders = useCallback(async (apiParams: any) => {
-    const { statusEnvio, ...rest } = apiParams || {};
+    const { _clientSideShippingStatuses, ...rest } = apiParams || {};
     
     // 🚨 AUDITORIA FIX: Suporte a múltiplas contas ML com blindagem total
     if (apiParams.integration_account_ids && Array.isArray(apiParams.integration_account_ids)) {
@@ -350,21 +344,21 @@ export function usePedidosManager(initialAccountId?: string) {
       
       for (const accountId of apiParams.integration_account_ids) {
         try {
-          const singleAccountBody = {
-            integration_account_id: accountId,
-            limit: pageSize,
-            offset: (currentPage - 1) * pageSize,
-            ...(rest.shipping_status ? { shipping_status: rest.shipping_status } : {}),
-            ...(rest.status ? { status: rest.status } : {}),
-            ...(rest.q ? { q: rest.q, search: rest.q } : {}),
-            ...(rest.date_from ? { date_from: rest.date_from } : {}),
-            ...(rest.date_to ? { date_to: rest.date_to } : {}),
-            ...getUrlParams(),
-            enrich: true,
-            include_shipping: true,
-            enrich_skus: true,
-            include_skus: true
-          };
+        const singleAccountBody = {
+          integration_account_id: accountId,
+          limit: pageSize,
+          offset: (currentPage - 1) * pageSize,
+          // ✅ CORRIGIDO: Apenas status do pedido vai para API, shipping_status removido
+          ...(rest.status ? { status: rest.status } : {}),
+          ...(rest.q ? { q: rest.q, search: rest.q } : {}),
+          ...(rest.date_from ? { date_from: rest.date_from } : {}),
+          ...(rest.date_to ? { date_to: rest.date_to } : {}),
+          ...getUrlParams(),
+          enrich: true,
+          include_shipping: true,
+          enrich_skus: true,
+          include_skus: true
+        };
           
           console.groupCollapsed(`[CONTA ${accountId.slice(0, 8)}...] Requisição`);
           console.log('body', singleAccountBody);
@@ -409,18 +403,18 @@ export function usePedidosManager(initialAccountId?: string) {
               continue; // Pular conta sem token válido
             }
 
-            // Fallback: tentar sem statusEnvio apenas para outros erros
-            const { shipping_status: _omitStatus, ...withoutStatus } = singleAccountBody as any;
-            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Tentativa sem statusEnvio...`);
-            try {
-              ({ data, error } = await supabase.functions.invoke('unified-orders', {
-                body: withoutStatus
-              }));
-            } catch (e: any) {
-              error = e;
-            }
+            // ✅ REMOVIDO: Fallback desnecessário pois shipping_status já não é enviado
+            console.warn(`⚠️ [CONTA ${accountId.slice(0, 8)}...] Erro persistente, pulando conta`);
+            
+            failedAccounts.push(accountId);
+            accountErrors.push({
+              accountId,
+              error: error?.message || data?.error || 'Erro desconhecido',
+              status: String(data?.status || error?.status || 'unknown')
+            });
+            continue;
 
-            // ✅ FINAL: Se ainda há erro após fallback
+            // ✅ FINAL: Se ainda há erro após segunda tentativa
             if (error || data?.status >= 400) {
               const finalError = error?.message || data?.error || data?.detail || 'Erro desconhecido';
               console.error(`🚨 [CONTA ${accountId.slice(0, 8)}...] Erro crítico:`, finalError);
@@ -500,7 +494,7 @@ export function usePedidosManager(initialAccountId?: string) {
         unified: allUnified,
         total: totalCount,
         paging: { total: totalCount, limit: pageSize, offset: (currentPage - 1) * pageSize },
-        serverStatusApplied: Boolean(statusEnvio),
+        serverStatusApplied: Boolean(_clientSideShippingStatuses),
         _multiAccount: true,
         _accountStats: {
           total: apiParams.integration_account_ids.length,
@@ -550,17 +544,11 @@ export function usePedidosManager(initialAccountId?: string) {
       error = e;
     }
 
-    // Fallback: tentar sem statusEnvio mantendo datas e demais filtros
+    // ✅ REMOVIDO: Fallback desnecessário - statusEnvio não é mais enviado para API
     if (error || !data?.ok) {
-      const { statusEnvio: _omit, ...withoutStatus } = requestBody as any;
-      console.warn('⚠️ unified-orders falhou com statusEnvio, tentando sem status...');
-      try {
-        ({ data, error } = await supabase.functions.invoke('unified-orders', {
-          body: withoutStatus
-        }));
-      } catch (e: any) {
-        error = e;
-      }
+      console.warn('⚠️ unified-orders falhou, verificando erro...');
+      // Apenas relatar erro, não tentar novamente
+      console.error('❌ [unified-orders] Erro final:', error?.message || data?.error || 'Erro desconhecido');
     }
 
     if (error) throw new Error(error.message || 'unified-orders: erro na função');
@@ -665,58 +653,12 @@ export function usePedidosManager(initialAccountId?: string) {
             return false;
           }
         } else {
-          // ✅ CORRIGIDO: Usar APENAS shipping_status (Status do Envio) - COLUNA CORRETA
-          const realStatus = order.shipping_status; // PRIORIDADE 1: shipping_status = "Status do Envio"
-          
-          // 🚨 EVIDÊNCIA: Log SEMPRE para comprovar correção
-          console.log('🎯 CORREÇÃO APLICADA - Usando shipping_status:', {
-            orderId: order.id,
-            shipping_status: order.shipping_status,
-            situacao: order.situacao,
-            'USANDO_AGORA': 'shipping_status',
-            'ANTES_USAVA': 'situacao',
-            selectedStatuses,
-            'CORREÇÃO_ATIVA': true
-          });
-          
-          // 🔍 DEBUG: Comparação entre campos para evidência
-          if (order.shipping_status !== order.situacao) {
-            console.log('⚠️ DIFERENÇA DETECTADA entre campos:', {
-              orderId: order.id,
-              shipping_status: order.shipping_status,
-              situacao: order.situacao,
-              'CAMPO_CORRETO_EM_USO': 'shipping_status'
-            });
-          }
-          
-          // 🎯 COMPARAÇÃO DIRETA: API status (filtro) -> shipping_status (campo)
-          const statusMatches = selectedStatuses.some(selectedAPIStatus => {
-            // Comparar diretamente o status da API com os campos de envio
-            const shippingStatus = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.raw?.shipping_details?.status;
-            const shippingSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus;
-            
-            // Verificar se o status ou substatus corresponde ao filtro selecionado
-            const matchesStatus = shippingStatus === selectedAPIStatus ||
-                                  shippingSubstatus === selectedAPIStatus ||
-                                  mapMLShippingSubstatus(shippingStatus) === mapMLShippingSubstatus(selectedAPIStatus) ||
-                                  mapMLShippingSubstatus(shippingSubstatus) === mapMLShippingSubstatus(selectedAPIStatus);
-            
-            // 🚨 EVIDÊNCIA: Log detalhado da comparação
-            console.log('🔄 FILTRO STATUS ENVIO - Comparação direta:', {
-              selectedAPIStatus,
-              shippingStatus,
-              shippingSubstatus,
-              matches: matchesStatus,
-              orderId: order.id,
-              'CAMPO_SENDO_USADO': 'shipping_status + shipping_substatus'
-            });
-            
-            return matchesStatus;
-          });
+          // ✅ CORRIGIDO: Usar nova função de mapeamento para filtros de envio
+          const statusMatches = matchesShippingStatusFilter(order, selectedStatuses);
           
           if (!statusMatches) {
             if (process.env.NODE_ENV === 'development') {
-              console.log('🚫 Pedido filtrado por status:', order.id, 'status real:', realStatus, 'filtros:', selectedStatuses);
+              console.log('🚫 Pedido filtrado por status de envio:', order.id, 'filtros:', selectedStatuses);
             }
             return false;
           }

@@ -9,7 +9,8 @@ import { DEBOUNCE } from '@/lib/constants';
 
 export interface PedidosFiltersState {
   search?: string;
-  statusEnvio?: string[];
+  statusPedido?: string[];  // ✅ CORRIGIDO: Status do pedido (order.status)
+  statusEnvio?: string[];   // ✅ MANTIDO: Status de envio (shipping.status) - client-side apenas
   dataInicio?: Date;
   dataFim?: Date;
   contasML?: string[];
@@ -24,6 +25,7 @@ export enum FilterStrategy {
 // ✅ CONFIGURAÇÃO CONSISTENTE: Todos os filtros são manuais
 const FILTER_CONFIG = {
   search: { strategy: FilterStrategy.MANUAL },
+  statusPedido: { strategy: FilterStrategy.MANUAL },
   statusEnvio: { strategy: FilterStrategy.MANUAL },
   contasML: { strategy: FilterStrategy.MANUAL },
   dataInicio: { strategy: FilterStrategy.MANUAL },
@@ -234,8 +236,14 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
       params.search = appliedFilters.search;
     }
 
+    // ✅ NOVO: Status do pedido mapeado para API (EN)
+    if (appliedFilters.statusPedido && appliedFilters.statusPedido.length > 0) {
+      params.statusPedido = appliedFilters.statusPedido; // PT para EN será feito no manager
+    }
+
+    // ✅ CORRIGIDO: Status de envio apenas para client-side
     if (appliedFilters.statusEnvio && appliedFilters.statusEnvio.length > 0) {
-      params.statusEnvio = appliedFilters.statusEnvio;
+      params._clientSideShippingStatus = appliedFilters.statusEnvio; // Marcado como client-side
     }
 
     if (appliedFilters.dataInicio) {

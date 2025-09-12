@@ -35,21 +35,26 @@ interface PedidosFiltersUnifiedProps {
   columnManager?: any;
 }
 
+// ✅ NOVO: Status do PEDIDO (order.status) para API ML
+const STATUS_PEDIDO = [
+  'Confirmado',
+  'Aguardando Pagamento', 
+  'Processando Pagamento',
+  'Pago',
+  'Enviado',
+  'Entregue',
+  'Cancelado',
+  'Inválido'
+];
+
+// ✅ SEPARADO: Status de ENVIO (shipping.status) - apenas client-side
 const STATUS_ENVIO = [
-  'Pendente',
   'Pronto para Envio',
   'Enviado',
   'Entregue',
   'Não Entregue',
   'Cancelado',
-  'A Combinar',
-  'Processando',
-  'Pronto para Imprimir',
-  'Impresso',
-  'Atrasado',
-  'Perdido',
-  'Danificado',
-  'Medidas Não Correspondem'
+  'A Combinar'
 ];
 
 
@@ -67,10 +72,22 @@ export function PedidosFiltersUnified({
   contasML = [],
   columnManager
 }: PedidosFiltersUnifiedProps) {
-  const [situacaoOpen, setSituacaoOpen] = useState(false);
+  const [statusPedidoOpen, setStatusPedidoOpen] = useState(false);
+  const [statusEnvioOpen, setStatusEnvioOpen] = useState(false);
   const [contasMLOpen, setContasMLOpen] = useState(false);
 
-  // Handlers para seleção múltipla
+  // ✅ NOVO: Handler para status do pedido
+  const handleStatusPedidoChange = (status: string, checked: boolean) => {
+    const current = filters.statusPedido || [];
+    if (checked) {
+      onFilterChange('statusPedido', [...current, status]);
+    } else {
+      const newList = current.filter(s => s !== status);
+      onFilterChange('statusPedido', newList.length > 0 ? newList : undefined);
+    }
+  };
+
+  // ✅ MANTIDO: Handler para status de envio
   const handleStatusEnvioChange = (status: string, checked: boolean) => {
     const current = filters.statusEnvio || [];
     if (checked) {
@@ -91,6 +108,7 @@ export function PedidosFiltersUnified({
     }
   };
 
+  const selectedStatusPedido = filters.statusPedido || [];
   const selectedStatusEnvio = filters.statusEnvio || [];
   const selectedContasML = filters.contasML || [];
 
@@ -169,18 +187,58 @@ export function PedidosFiltersUnified({
           </div>
         </div>
 
+        {/* ✅ NOVO: Status do Pedido */}
+        <div className="lg:col-span-1 xl:col-span-1">
+          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
+            Status do Pedido
+            <Badge variant="secondary" className="text-xs px-1 py-0">API</Badge>
+          </label>
+          <Popover open={statusPedidoOpen} onOpenChange={setStatusPedidoOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={statusPedidoOpen}
+                className="w-full justify-between"
+              >
+                {selectedStatusPedido.length === 0
+                  ? "Todos os status"
+                  : selectedStatusPedido.length === 1
+                  ? selectedStatusPedido[0]
+                  : `${selectedStatusPedido.length} selecionados`
+                }
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0">
+              <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
+                {STATUS_PEDIDO.map((status) => (
+                  <div key={status} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`status-pedido-${status}`}
+                      checked={selectedStatusPedido.includes(status)}
+                      onCheckedChange={(checked) => handleStatusPedidoChange(status, checked as boolean)}
+                    />
+                    <label htmlFor={`status-pedido-${status}`} className="text-sm">{status}</label>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
         {/* Status do Envio - Aplicação manual */}
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Status do Envio
             <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
-          <Popover open={situacaoOpen} onOpenChange={setSituacaoOpen}>
+          <Popover open={statusEnvioOpen} onOpenChange={setStatusEnvioOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 role="combobox"
-                aria-expanded={situacaoOpen}
+                aria-expanded={statusEnvioOpen}
                 className={cn(
                   "w-full justify-between",
                   hasPendingChanges && JSON.stringify(filters.statusEnvio || []) !== JSON.stringify(appliedFilters.statusEnvio || []) && "border-warning"
