@@ -229,20 +229,39 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
-        // 6. Enriquecer com mediações
+        // 6. Buscar dados de devolução (returns)
+        try {
+          const returnData = await withTimeout(
+            fetch(`https://api.mercadolibre.com/returns/search?seller_id=${sellerId}&order_id=${order.id}`, {
+              headers: { Authorization: `Bearer ${accessToken}`, 'x-format-new': 'true' }
+            }).then(r => r.ok ? r.json() : null),
+            TIMEOUT_MS
+          );
+          
+          if (returnData && returnData.results && returnData.results.length > 0) {
+            enrichedOrder.enriched = enrichedOrder.enriched || {};
+            enrichedOrder.enriched.return = returnData.results[0];
+            console.log(`[unified-orders:${cid}] ➕ return data from=returns/search para order ${order.id}`);
+          } else {
+            enrichedOrder.enriched = enrichedOrder.enriched || {};
+            enrichedOrder.enriched.return = null;
+          }
+        } catch (err) {
+          console.warn(`[unified-orders:${cid}] ⚠️ Timeout/erro no return search para ${order.id}: ${(err as any)?.message || err}`);
+          enrichedOrder.enriched = enrichedOrder.enriched || {};
+          enrichedOrder.enriched.return = null;
+        }
+
+        // 7. Enriquecer com mediações
         if (order.id) {
           try {
-            const mediationsResp = await fetch(
-              `https://api.mercadolibre.com/orders/${order.id}/mediations`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'x-format-new': 'true'
-                }
-              }
+            const mediationsData = await withTimeout(
+              fetch(`https://api.mercadolibre.com/orders/${order.id}/mediations`, {
+                headers: { Authorization: `Bearer ${accessToken}`, 'x-format-new': 'true' }
+              }).then(r => r.ok ? r.json() : null),
+              TIMEOUT_MS
             );
-            if (mediationsResp.ok) {
-              const mediationsData = await mediationsResp.json();
+            if (mediationsData) {
               enrichedOrder.mediations = mediationsData;
               console.log(`[unified-orders:${cid}] ➕ mediations from=orders/{id}/mediations para order ${order.id}`);
             }
