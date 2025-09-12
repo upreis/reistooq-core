@@ -48,6 +48,16 @@ export function ColumnManager(props: ColumnManagerProps) {
     : internal
   );
   const { state, actions, definitions, visibleDefinitions, profiles } = used;
+
+  // Debug logging
+  console.log('🔧 [ColumnManager] Component data:', {
+    state: !!state,
+    actions: !!actions,
+    definitions: definitions?.length || 0,
+    visibleDefinitions: visibleDefinitions?.length || 0,
+    profiles: profiles?.length || 0,
+    visibleColumns: state?.visibleColumns?.size || 0
+  });
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -61,6 +71,11 @@ export function ColumnManager(props: ColumnManagerProps) {
 
   // Filtrar colunas por busca e categoria
   const filteredDefinitions = useMemo(() => {
+    if (!definitions || !Array.isArray(definitions)) {
+      console.warn('[ColumnManager] definitions is undefined or not an array:', definitions);
+      return [];
+    }
+    
     return definitions.filter(col => {
       const matchesSearch = searchTerm === '' || 
         col.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,6 +90,11 @@ export function ColumnManager(props: ColumnManagerProps) {
   // Agrupar por categoria
   const groupedColumns = useMemo(() => {
     const groups: Record<string, ColumnDefinition[]> = {};
+    
+    if (!filteredDefinitions || !Array.isArray(filteredDefinitions)) {
+      console.warn('[ColumnManager] filteredDefinitions is undefined or not an array:', filteredDefinitions);
+      return {};
+    }
     
     filteredDefinitions.forEach(col => {
       if (!groups[col.category]) {
@@ -125,8 +145,8 @@ export function ColumnManager(props: ColumnManagerProps) {
     }
   };
 
-  const visibleCount = state.visibleColumns.size;
-  const totalCount = definitions.length;
+  const visibleCount = state?.visibleColumns?.size || 0;
+  const totalCount = (definitions || []).length;
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -163,12 +183,12 @@ export function ColumnManager(props: ColumnManagerProps) {
                   <SelectValue placeholder="Selecione um perfil" />
                 </SelectTrigger>
                 <SelectContent className="z-[70] bg-background shadow-lg">
-                  {profiles.map(profile => (
+                  {(profiles || []).map(profile => (
                     <SelectItem key={profile.id} value={profile.id}>
                       <div className="flex items-center gap-2">
                         <span>{profile.name}</span>
                         <Badge variant="outline" className="text-xs">
-                          {profile.columns.length}
+                          {(profile.columns || []).length}
                         </Badge>
                       </div>
                     </SelectItem>
@@ -204,7 +224,7 @@ export function ColumnManager(props: ColumnManagerProps) {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => actions.setVisibleColumns(definitions.map(d => d.key))}
+                onClick={() => actions.setVisibleColumns((definitions || []).map(d => d.key))}
                 title="Mostrar todas as colunas"
               >
                 <EyeOff className="h-4 w-4 mr-1" />
@@ -278,7 +298,7 @@ export function ColumnManager(props: ColumnManagerProps) {
                     </div>
 
                     <div className="grid grid-cols-1 gap-1 ml-6">
-                      {columns.map(col => (
+                      {(columns || []).map(col => (
                         <div key={col.key} className="flex items-center space-x-2 py-1">
                           <Checkbox
                             checked={state.visibleColumns.has(col.key)}
