@@ -84,3 +84,29 @@ export function StatusBadge({ status, substatus, type, className }: StatusBadgeP
     </div>
   );
 }
+
+// 🔧 NOVA FUNÇÃO: Renderizar apenas o substatus
+export function SubStatusBadge({ substatus, className }: { substatus?: string; className?: string }) {
+  if (!substatus) return <span className="text-gray-400">—</span>;
+  
+  // Verifica se é um substatus importante para destacar
+  const isImportant = Object.keys(IMPORTANT_SUBSTATUS).includes(substatus);
+  const label = isImportant 
+    ? IMPORTANT_SUBSTATUS[substatus as keyof typeof IMPORTANT_SUBSTATUS]
+    : substatus; // Mostra o substatus original se não estiver mapeado
+  
+  return (
+    <Badge 
+      variant="outline" 
+      className={cn(
+        "text-xs",
+        isImportant 
+          ? "bg-blue-50 text-blue-700 border-blue-200" 
+          : "bg-gray-50 text-gray-600 border-gray-300",
+        className
+      )}
+    >
+      {label}
+    </Badge>
+  );
+}

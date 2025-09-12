@@ -166,7 +166,11 @@ const savePreferences = (state: ColumnState) => {
 export const resetColumnCache = () => {
   try {
     localStorage.removeItem(STORAGE_KEY);
-    console.log('🔄 Cache de colunas limpo');
+    localStorage.removeItem('pedidos:lastSearch'); // Limpar também o cache da última pesquisa
+    console.log('🔄 Cache de colunas limpo completamente');
+    
+    // Forçar recarga da página para aplicar as mudanças
+    window.location.reload();
   } catch (error) {
     console.warn('❌ Erro ao limpar cache de colunas:', error);
   }

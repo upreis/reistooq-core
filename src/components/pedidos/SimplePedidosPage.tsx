@@ -55,6 +55,7 @@ import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';
 import { PedidosModalsSection } from './components/PedidosModalsSection';
+import { TestSubStatusColumn } from '../debug/TestSubStatusColumn';
 import { PedidosStatusBar } from './components/PedidosStatusBar';
 import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
@@ -1109,14 +1110,27 @@ useEffect(() => {
             {/* Controle de Colunas */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Colunas</label>
-                  <ColumnManager
-                    trigger={
-                      <Button variant="outline" className="w-full">
-                        <Settings className="h-4 w-4 mr-2" />
-                        Configurar
-                      </Button>
-                    }
-                  />
+              <div className="space-y-2">
+                <ColumnManager
+                  trigger={
+                    <Button variant="outline" className="w-full">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Configurar
+                    </Button>
+                  }
+                />
+                <Button 
+                  onClick={() => {
+                    console.log('🔄 Resetando cache de colunas...');
+                    resetColumnCache();
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                >
+                  🔄 Reset Cache Colunas
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -1132,6 +1146,8 @@ useEffect(() => {
         </Card>
       )}
 
+      {/* 🧪 TESTE TEMPORÁRIO */}
+      <TestSubStatusColumn />
 
       {/* 🚀 FASE 2: Loading otimizado */}
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}
