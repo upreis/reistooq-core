@@ -17,10 +17,6 @@ export interface PedidosFilters {
   statusEnvio?: string | string[];
   dataInicio?: Date;
   dataFim?: Date;
-  cidade?: string;
-  uf?: string;
-  valorMin?: number;
-  valorMax?: number;
   contasML?: string[];
 }
 
@@ -271,26 +267,6 @@ export function usePedidosManager(initialAccountId?: string) {
       }
     }
 
-    // 🌍 Outros filtros geográficos e valores
-    console.log('🏙️ [GEO] Cidade:', filters.cidade, 'UF:', filters.uf);
-    console.log('💰 [VALOR] Min:', filters.valorMin, 'Max:', filters.valorMax);
-
-    if (filters.cidade) {
-      params.cidade = filters.cidade;
-      console.log('🏙️ [GEO] Cidade filtro aplicado:', filters.cidade);
-    }
-    if (filters.uf) {
-      params.uf = filters.uf;
-      console.log('🗺️ [GEO] UF filtro aplicado:', filters.uf);
-    }
-    if (filters.valorMin !== undefined) {
-      params.valorMin = filters.valorMin;
-      console.log('💰 [VALOR] Min filtro aplicado:', filters.valorMin);
-    }
-    if (filters.valorMax !== undefined) {
-      params.valorMax = filters.valorMax;
-      console.log('💰 [VALOR] Max filtro aplicado:', filters.valorMax);
-    }
 
     // 🚨 CRÍTICO: CORREÇÃO - Suportar múltiplas contas ML
     let targetAccountId = integrationAccountId;
@@ -381,10 +357,6 @@ export function usePedidosManager(initialAccountId?: string) {
             ...(rest.shipping_status ? { shipping_status: rest.shipping_status } : {}),
             ...(rest.status ? { status: rest.status } : {}),
             ...(rest.q ? { q: rest.q, search: rest.q } : {}),
-            ...(rest.cidade ? { cidade: rest.cidade } : {}),
-            ...(rest.uf ? { uf: rest.uf } : {}),
-            ...(rest.valorMin !== undefined ? { valorMin: rest.valorMin } : {}),
-            ...(rest.valorMax !== undefined ? { valorMax: rest.valorMax } : {}),
             ...(rest.date_from ? { date_from: rest.date_from } : {}),
             ...(rest.date_to ? { date_to: rest.date_to } : {}),
             ...getUrlParams(),
@@ -803,19 +775,7 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Outros filtros usando filters diretamente
-      if (filters.cidade && !order.cidade?.toLowerCase().includes(filters.cidade.toLowerCase())) {
-        return false;
-      }
-      if (filters.uf && order.uf !== filters.uf) {
-        return false;
-      }
-      if (filters.valorMin !== undefined && (order.valor_total || 0) < filters.valorMin) {
-        return false;
-      }
-      if (filters.valorMax !== undefined && (order.valor_total || 0) > filters.valorMax) {
-        return false;
-      }
+      // ✅ Filtros removidos: cidade, uf, valorMin, valorMax
 
       return true;
     });

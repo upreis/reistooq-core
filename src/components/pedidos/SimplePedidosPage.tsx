@@ -304,10 +304,6 @@ function SimplePedidosPage({ className }: Props) {
         filtersManager.updateFilter('statusEnvio', filters.statusEnvio);
         filtersManager.updateFilter('dataInicio', filters.dataInicio);
         filtersManager.updateFilter('dataFim', filters.dataFim);
-        filtersManager.updateFilter('cidade', filters.cidade);
-        filtersManager.updateFilter('uf', filters.uf);
-        filtersManager.updateFilter('valorMin', filters.valorMin);
-        filtersManager.updateFilter('valorMax', filters.valorMax);
         filtersManager.updateFilter('contasML', filters.contasML);
         
         // Aplicar filtros sem refetch (os dados já estão em cache)

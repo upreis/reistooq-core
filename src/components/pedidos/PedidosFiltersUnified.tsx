@@ -52,11 +52,6 @@ const STATUS_ENVIO = [
   'Medidas Não Correspondem'
 ];
 
-const UFS = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
-  'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
-  'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
-];
 
 export function PedidosFiltersUnified({
   filters,
@@ -390,27 +385,6 @@ export function PedidosFiltersUnified({
               <X className="h-3 w-3 cursor-pointer" onClick={() => {
                 onFilterChange('dataInicio', undefined);
                 onFilterChange('dataFim', undefined);
-              }} />
-            </Badge>
-          )}
-          {appliedFilters.cidade && (
-            <Badge variant="secondary" className="gap-1">
-              Cidade: {appliedFilters.cidade}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('cidade', undefined)} />
-            </Badge>
-          )}
-          {appliedFilters.uf && (
-            <Badge variant="secondary" className="gap-1">
-              UF: {appliedFilters.uf}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('uf', undefined)} />
-            </Badge>
-          )}
-          {(appliedFilters.valorMin || appliedFilters.valorMax) && (
-            <Badge variant="secondary" className="gap-1">
-              Valor: {appliedFilters.valorMin || 0} - {appliedFilters.valorMax || '∞'}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => {
-                onFilterChange('valorMin', undefined);
-                onFilterChange('valorMax', undefined);
               }} />
             </Badge>
           )}

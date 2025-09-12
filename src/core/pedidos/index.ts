@@ -2,7 +2,7 @@
 // Este arquivo serve como ponto de entrada protegido para o sistema de pedidos
 
 export { default as SimplePedidosPage } from '@/components/pedidos/SimplePedidosPage';
-export { PedidosFilters } from '@/components/pedidos/PedidosFilters';
+// export { PedidosFilters } from '@/components/pedidos/PedidosFilters'; // REMOVIDO
 export { PedidosTable } from '@/components/pedidos/PedidosTable';
 export { BaixaEstoqueModal } from '@/components/pedidos/BaixaEstoqueModal';
 
@@ -15,7 +15,7 @@ export {
   type FontePedidos
 } from '@/services/pedidos';
 
-export { usePedidosFilters } from '@/hooks/usePedidosFilters';
+// export { usePedidosFilters } from '@/hooks/usePedidosFilters'; // REMOVIDO
 export { default as MeliOrders } from '@/components/MeliOrders';
 
 // 🔒 VERSÃO DO SISTEMA PROTEGIDO
@@ -28,10 +28,10 @@ export async function verifyPedidosSystemIntegrity(): Promise<boolean> {
     // Verificar se os arquivos principais existem através de imports dinâmicos
     const checks = await Promise.all([
       import('@/components/pedidos/SimplePedidosPage').then(() => true).catch(() => false),
-      import('@/components/pedidos/PedidosFilters').then(() => true).catch(() => false),
+      // import('@/components/pedidos/PedidosFilters').then(() => true).catch(() => false), // REMOVIDO
       import('@/components/pedidos/PedidosTable').then(() => true).catch(() => false),
       import('@/services/pedidos').then(() => true).catch(() => false),
-      import('@/hooks/usePedidosFilters').then(() => true).catch(() => false),
+      // import('@/hooks/usePedidosFilters').then(() => true).catch(() => false), // REMOVIDO
     ]);
     
     const allComponentsExist = checks.every(check => check);

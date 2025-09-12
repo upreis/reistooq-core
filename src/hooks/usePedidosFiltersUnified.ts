@@ -12,10 +12,6 @@ export interface PedidosFiltersState {
   statusEnvio?: string[];
   dataInicio?: Date;
   dataFim?: Date;
-  cidade?: string;
-  uf?: string;
-  valorMin?: number;
-  valorMax?: number;
   contasML?: string[];
 }
 
@@ -32,10 +28,6 @@ const FILTER_CONFIG = {
   contasML: { strategy: FilterStrategy.MANUAL },
   dataInicio: { strategy: FilterStrategy.MANUAL },
   dataFim: { strategy: FilterStrategy.MANUAL },
-  cidade: { strategy: FilterStrategy.MANUAL },
-  uf: { strategy: FilterStrategy.MANUAL },
-  valorMin: { strategy: FilterStrategy.MANUAL },
-  valorMax: { strategy: FilterStrategy.MANUAL },
 } as const;
 
 const STORAGE_KEY = 'pedidos_unified_filters';
@@ -278,22 +270,6 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
       if (!isNaN(d.getTime())) {
         params.dataFim = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       }
-    }
-
-    if (appliedFilters.cidade) {
-      params.cidade = appliedFilters.cidade;
-    }
-
-    if (appliedFilters.uf) {
-      params.uf = appliedFilters.uf;
-    }
-
-    if (appliedFilters.valorMin) {
-      params.valorMin = appliedFilters.valorMin;
-    }
-
-    if (appliedFilters.valorMax) {
-      params.valorMax = appliedFilters.valorMax;
     }
 
     if (appliedFilters.contasML && appliedFilters.contasML.length > 0) {

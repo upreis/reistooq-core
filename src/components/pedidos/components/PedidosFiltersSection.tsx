@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Filter, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import PedidosFiltersMemo from '../PedidosFiltersMemo';
+// import PedidosFiltersMemo from '../PedidosFiltersMemo'; // REMOVIDO
 import { SavedFiltersManager } from '../SavedFiltersManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 
@@ -47,10 +47,6 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
     if (filters.situacao?.length > 0) count++;
     if (filters.dataInicio) count++;
     if (filters.dataFim) count++;
-    if (filters.cidade) count++;
-    if (filters.uf) count++;
-    if (filters.valorMin) count++;
-    if (filters.valorMax) count++;
     if (filters.contasML?.length > 0) count++; // ✅ NOVO: Contas ML
     return count;
   }, [filters]);
@@ -97,14 +93,7 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
 
       {/* Componente de Filtros Otimizado */}
       <div className="space-y-4">
-        <PedidosFiltersMemo
-          filters={filters}
-          onFiltersChange={onFiltersChange || actions?.setFilters}
-          onClearFilters={onClearFilters || actions?.clearFilters}
-          hasPendingChanges={hasPendingChanges}
-          isLoading={loading}
-          contasML={contasML} // ✅ NOVO: Passar contas ML
-        />
+        {/* Componente PedidosFiltersMemo removido */}
         
         {/* Gerenciador de Filtros Salvos */}
         {actions?.saveFilters && actions?.loadFilters && (
@@ -135,18 +124,6 @@ export const PedidosFiltersSection = memo<PedidosFiltersSectionProps>(({
             )}
             {filters.dataFim && (
               <Badge variant="outline">Data fim: {filters.dataFim.toLocaleDateString()}</Badge>
-            )}
-            {filters.cidade && (
-              <Badge variant="outline">Cidade: {filters.cidade}</Badge>
-            )}
-            {filters.uf && (
-              <Badge variant="outline">UF: {filters.uf}</Badge>
-            )}
-            {filters.valorMin && (
-              <Badge variant="outline">Valor mín: R$ {filters.valorMin}</Badge>
-            )}
-            {filters.valorMax && (
-              <Badge variant="outline">Valor máx: R$ {filters.valorMax}</Badge>
             )}
             {filters.contasML?.length > 0 && (
               <Badge variant="outline">

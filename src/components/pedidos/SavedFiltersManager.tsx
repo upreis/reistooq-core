@@ -136,11 +136,6 @@ export function SavedFiltersManager({
                                 Status: {Array.isArray(filter.filters.statusEnvio) ? filter.filters.statusEnvio.join(', ') : filter.filters.statusEnvio}
                               </Badge>
                             )}
-                            {filter.filters.uf && (
-                              <Badge variant="secondary" className="text-xs">
-                                UF: {filter.filters.uf}
-                              </Badge>
-                            )}
                           </div>
                         </div>
                         
