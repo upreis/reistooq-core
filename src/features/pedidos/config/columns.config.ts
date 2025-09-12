@@ -511,53 +511,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 140
   },
 
-  // ====== NOVAS COLUNAS - STATUS DETALHADOS DA API ======
-  {
-    key: 'order_status',
-    label: 'Status da Ordem',
-    category: 'ml',
-    priority: 'important',
-    visible: false,
-    default: false,
-    description: 'Status principal da ordem (confirmed, paid, cancelled, etc.)',
-    width: 130,
-    sortable: true,
-    filterable: true
-  },
-  {
-    key: 'order_status_detail',
-    label: 'Detalhes da Ordem',
-    category: 'ml',
-    priority: 'important',
-    visible: false,
-    default: false,
-    description: 'Detalhes específicos do status da ordem',
-    width: 150,
-    filterable: true
-  },
-  {
-    key: 'shipping_status',
-    label: 'Status do Envio',
-    category: 'shipping',
-    priority: 'important',
-    visible: false,
-    default: false,
-    description: 'Status do envio (ready_to_ship, shipped, delivered, etc.)',
-    width: 140,
-    sortable: true,
-    filterable: true
-  },
-  {
-    key: 'shipping_method_type',
-    label: 'Tipo Método Envio',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Tipo do método de envio (custom, standard, express, etc.)',
-    width: 140,
-    filterable: true
-  }
 ];
 
 // 🎯 PERFIS PRÉ-DEFINIDOS
