@@ -11,7 +11,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Package, CheckCircle, AlertTriangle, AlertCircle, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { mapApiStatusToLabel, getStatusBadgeVariant } from '@/utils/statusMapping';
+import { mapApiStatusToLabel } from '@/utils/statusMapping';
+import { getStatusBadgeVariant } from '@/utils/mlStatusMapping';
 import { StatusBadge } from '@/components/pedidos/StatusBadge';
 import { 
   translatePaymentStatus, 
@@ -429,8 +430,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                            type="shipping"
                          />
                        );
-                     case 'shipping_substatus':
-                       return <span className="text-xs">{order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus || '-'}</span>;
+                      case 'shipping_substatus':
+                        const rawSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus;
+                        return (
+                          <Badge variant={getStatusBadgeVariant('', rawSubstatus)}>
+                            {translateShippingSubstatus(rawSubstatus)}
+                          </Badge>
+                        );
                      case 'logistic_mode':
                        return <span className="text-xs">{formatText(order.logistic_mode || order.logistic_mode_principal || order.shipping?.logistic?.mode || order.raw?.shipping?.logistic?.mode || order.unified?.logistic?.mode || '-')}</span>;
                      case 'logistic_type':
