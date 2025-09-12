@@ -73,12 +73,12 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'shipping_mode', label: 'Modo de Envio', visible: true, category: 'ml' },
   { key: 'shipping_substatus', label: 'Sub-status Detalhado', visible: true, category: 'ml' },
   
-  // Status Avançados (Novos)
-  { key: 'order_status_advanced', label: 'Status do Pedido (Avançado)', visible: false, category: 'ml' },
-  { key: 'shipping_status_advanced', label: 'Status de Envio (Avançado)', visible: false, category: 'ml' },
-  { key: 'shipping_substatus_advanced', label: 'Substatus de Envio (Avançado)', visible: false, category: 'ml' },
-  { key: 'return_status_advanced', label: 'Status de Devolução (Avançado)', visible: false, category: 'ml' },
-  { key: 'delivery_estimate_advanced', label: 'Previsão de Entrega (Avançada)', visible: false, category: 'ml' },
+  // Status Avançados (Novos) - Visíveis por padrão para melhor entendimento
+  { key: 'order_status_advanced', label: 'Status do Pedido (Avançado)', visible: true, category: 'ml' },
+  { key: 'shipping_status_advanced', label: 'Status de Envio (Avançado)', visible: true, category: 'ml' },
+  { key: 'shipping_substatus_advanced', label: 'Substatus de Envio (Avançado)', visible: true, category: 'ml' },
+  { key: 'return_status_advanced', label: 'Status de Devolução (Avançado)', visible: true, category: 'ml' },
+  { key: 'delivery_estimate_advanced', label: 'Previsão de Entrega (Avançada)', visible: true, category: 'ml' },
 ];
 
 interface ColumnSelectorProps {
