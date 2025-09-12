@@ -153,29 +153,16 @@ export function usePedidosAggregator(
       
       console.log('🔢 [Aggregator] Request body completo:', requestBody);
 
-      const { data, error } = await supabase.functions.invoke('pedidos-aggregator', {
-        body: requestBody
+      // Como a função pedidos-aggregator foi removida, retornar dados mockados temporariamente
+      console.log('⚠️ [Aggregator] Função removida - retornando dados mockados');
+      setCounts({
+        total: 0,
+        prontosBaixa: 0,
+        mapeamentoPendente: 0,
+        baixados: 0,
+        shipped: 0,
+        delivered: 0
       });
-
-      if (error) {
-        throw new Error(error.message || 'Erro ao buscar contadores agregados');
-      }
-
-      if (!data?.ok) {
-        throw new Error('Resposta inválida da API de agregação');
-      }
-
-      const aggregatedCounts: PedidosAggregatorCounts = {
-        total: data.total || 0,
-        prontosBaixa: data.prontosBaixa || 0,
-        mapeamentoPendente: data.mapeamentoPendente || 0,
-        baixados: data.baixados || 0,
-        shipped: data.shipped || 0,
-        delivered: data.delivered || 0
-      };
-
-      console.log('📊 [Aggregator] Contadores recebidos:', aggregatedCounts);
-      setCounts(aggregatedCounts);
 
     } catch (err: any) {
       console.error('❌ [Aggregator] Erro ao buscar contadores:', err);
