@@ -171,12 +171,16 @@ export function ShippingSubstatusColumn({ row, showTooltip = true }: StatusColum
 
 // ===== 4️⃣ COLUNA STATUS DE DEVOLUÇÃO =====
 export function ReturnStatusColumn({ row, showTooltip = true }: StatusColumnProps) {
-  const returnStatus = (row as any)?.enriched?.return?.status || 
-                      (row as any)?.return?.status || 
-                      row.raw?.return?.status || 
-                      null;
+  // ✅ BUSCAR: Dados de returns que vem da API
+  const returnsData = (row as any)?.returns;
   
-  if (!returnStatus) {
+  // Debug: verificar dados disponíveis
+  console.log('🐛 [ReturnStatus] Debug para pedido', (row as any)?.id || row.unified?.numero, {
+    returnsData: returnsData,
+    hasReturns: Array.isArray(returnsData) && returnsData.length > 0
+  });
+  
+  if (!returnsData || !Array.isArray(returnsData) || returnsData.length === 0) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
         <div className="w-4 h-4 rounded-full border-2 border-dashed border-muted-foreground/30" />
@@ -184,15 +188,53 @@ export function ReturnStatusColumn({ row, showTooltip = true }: StatusColumnProp
       </div>
     );
   }
-
-  const statusPT = mapReturnStatusFromAPI(returnStatus);
-  const variant = getStatusBadgeVariant(statusPT, 'return');
+  
+  // Pegar o primeiro return (mais recente)
+  const returnInfo = returnsData[0];
+  const returnStatus = returnInfo?.status || '—';
+  const returnDate = returnInfo?.date_created || returnInfo?.created_date || null;
+  const refundDate = returnInfo?.refund_date || returnInfo?.date_closed || null;
+  const returnReason = returnInfo?.reason || returnInfo?.return_reason || null;
+  const returnId = returnInfo?.id || returnInfo?.return_id || null;
+  
+  const getReturnBadgeVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+      case 'refunded':
+      case 'closed':
+        return 'default';
+      case 'pending':
+      case 'processing':
+      case 'open':
+        return 'secondary';
+      case 'cancelled':
+      case 'rejected':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+  
+  const getReturnStatusText = (status: string) => {
+    const statusMap: Record<string, string> = {
+      completed: 'Concluída',
+      pending: 'Pendente', 
+      processing: 'Processando',
+      refunded: 'Reembolsada',
+      cancelled: 'Cancelada',
+      rejected: 'Rejeitada',
+      open: 'Aberta',
+      closed: 'Fechada'
+    };
+    
+    return statusMap[status.toLowerCase()] || status;
+  };
 
   const content = (
     <div className="flex items-center gap-2">
       <RotateCcw className="h-4 w-4 text-red-500" />
-      <Badge variant={variant} className="text-xs">
-        {statusPT}
+      <Badge variant={getReturnBadgeVariant(returnStatus)} className="text-xs">
+        {getReturnStatusText(returnStatus)}
       </Badge>
     </div>
   );
@@ -206,9 +248,12 @@ export function ReturnStatusColumn({ row, showTooltip = true }: StatusColumnProp
           <div className="cursor-help">{content}</div>
         </TooltipTrigger>
         <TooltipContent>
-          <div className="text-sm">
-            <p className="font-medium">Status de Devolução</p>
-            <p className="text-muted-foreground">API: {returnStatus}</p>
+          <div className="text-sm space-y-1">
+            <div><strong>Status:</strong> {getReturnStatusText(returnStatus)}</div>
+            {returnId && <div><strong>ID:</strong> {returnId}</div>}
+            {returnDate && <div><strong>Data devolução:</strong> {new Date(returnDate).toLocaleDateString('pt-BR')}</div>}
+            {refundDate && <div><strong>Data reembolso:</strong> {new Date(refundDate).toLocaleDateString('pt-BR')}</div>}
+            {returnReason && <div><strong>Motivo:</strong> {returnReason}</div>}
           </div>
         </TooltipContent>
       </Tooltip>
