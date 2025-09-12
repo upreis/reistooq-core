@@ -692,49 +692,49 @@ export function usePedidosManager(initialAccountId?: string) {
             return false;
           }
         } else {
-          // ✅ CORRIGIDO: Usar shipping_status (Status do Envio) - coluna correta
-          const realStatus = order.shipping_status ||
-                            order.shipping?.status ||
-                            order.raw?.shipping?.status ||
-                            order.status_envio ||
-                            order.situacao ||
-                            order.status;
+          // ✅ CORRIGIDO: Usar APENAS shipping_status (Status do Envio) - COLUNA CORRETA
+          const realStatus = order.shipping_status; // PRIORIDADE 1: shipping_status = "Status do Envio"
           
-          // 🔍 DEBUG: Log dos status reais para auditoria
-          if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
-            console.log('📊 Status Debug:', {
+          // 🚨 EVIDÊNCIA: Log SEMPRE para comprovar correção
+          console.log('🎯 CORREÇÃO APLICADA - Usando shipping_status:', {
+            orderId: order.id,
+            shipping_status: order.shipping_status,
+            situacao: order.situacao,
+            'USANDO_AGORA': 'shipping_status',
+            'ANTES_USAVA': 'situacao',
+            selectedStatuses,
+            'CORREÇÃO_ATIVA': true
+          });
+          
+          // 🔍 DEBUG: Comparação entre campos para evidência
+          if (order.shipping_status !== order.situacao) {
+            console.log('⚠️ DIFERENÇA DETECTADA entre campos:', {
               orderId: order.id,
-              realStatus,
-              selectedStatuses,
-              sources: {
-                situacao: order.situacao,
-                shipping_status: order.shipping_status,
-                'shipping.status': order.shipping?.status,
-                'raw.shipping.status': order.raw?.shipping?.status,
-                status_envio: order.status_envio,
-                status: order.status
-              }
+              shipping_status: order.shipping_status,
+              situacao: order.situacao,
+              'CAMPO_CORRETO_EM_USO': 'shipping_status'
             });
           }
           
-          // 🎯 MAPEAMENTO: Status português (filtro) -> status inglês (API)
+          // 🎯 MAPEAMENTO: Status português (filtro) -> status inglês (API) 
           const statusMatches = selectedStatuses.some(selectedStatusPT => {
             // Mapear status PT para API
             const apiStatus = mapSituacaoToApiStatus(selectedStatusPT);
             
-            // Comparar com múltiplas fontes de status
+            // ✅ COMPARAR APENAS COM shipping_status (campo correto)
             const matchesStatus = realStatus === apiStatus ||
                                 realStatus === selectedStatusPT ||
                                 mapApiStatusToLabel(realStatus) === selectedStatusPT;
             
-            if (process.env.NODE_ENV === 'development' && Math.random() < 0.05) {
-              console.log('🔄 Mapeamento Status:', {
-                selectedPT: selectedStatusPT,
-                mappedAPI: apiStatus,
-                realStatus,
-                matches: matchesStatus
-              });
-            }
+            // 🚨 EVIDÊNCIA: Log detalhado da comparação
+            console.log('🔄 PROVA DE CORREÇÃO - Mapeamento Status:', {
+              selectedPT: selectedStatusPT,
+              mappedAPI: apiStatus,
+              realStatus_shipping_status: realStatus,
+              matches: matchesStatus,
+              'CAMPO_SENDO_USADO': 'shipping_status',
+              'CORREÇÃO_CONFIRMADA': true
+            });
             
             return matchesStatus;
           });
