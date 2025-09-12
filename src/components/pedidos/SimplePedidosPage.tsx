@@ -104,7 +104,7 @@ type Props = {
 function SimplePedidosPage({ className }: Props) {
   const isMobile = useIsMobile();
   
-  // ✅ CORREÇÃO CRÍTICA: Limpar filtros problemáticos do localStorage
+  // ✅ CORREÇÃO CRÍTICA: Limpar filtros problemáticos do localStorage e cache de colunas
   useEffect(() => {
     try {
       // Limpar localStorage com filtros corrompidos/problemáticos
@@ -120,6 +120,31 @@ function SimplePedidosPage({ className }: Props) {
           }
         }
       });
+      
+      // ✅ FORÇAR ATUALIZAÇÃO: Limpar cache de colunas para reconhecer novas colunas avançadas
+      const columnCacheKeys = ['pedidos-column-preferences', 'pedidos:lastSearch'];
+      const hasOldColumns = columnCacheKeys.some(key => {
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            // Verificar se não tem as novas colunas avançadas
+            const visibleColumns = parsed.visibleColumns || {};
+            const hasAdvancedColumns = ['order_status_advanced', 'shipping_status_advanced'].some(col => 
+              Array.isArray(visibleColumns) ? visibleColumns.includes(col) : visibleColumns[col]
+            );
+            return !hasAdvancedColumns; // Se não tem, precisa limpar
+          } catch {
+            return true; // Se erro, limpar
+          }
+        }
+        return false;
+      });
+      
+      if (hasOldColumns) {
+        console.log('🔄 Limpando cache de colunas para incluir colunas avançadas...');
+        columnCacheKeys.forEach(key => localStorage.removeItem(key));
+      }
     } catch (error) {
       console.warn('Erro ao limpar filtros problemáticos:', error);
     }
