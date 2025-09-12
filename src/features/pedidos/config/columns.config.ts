@@ -501,58 +501,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 140
   },
 
-  // ✅ NOVAS COLUNAS PÓS-VENDA (com feature flag)
-  {
-    key: 'post_sale_status_pedido',
-    label: 'Status do Pedido (Derivado)',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status do pedido traduzido e derivado (order.status)',
-    width: 150
-  },
-  {
-    key: 'post_sale_status_envio',
-    label: 'Status do Envio (Derivado)',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status do envio traduzido e derivado (shipping.status)',
-    width: 150
-  },
-  {
-    key: 'post_sale_substatus',
-    label: 'Substatus/Motivo',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Detalhes do substatus de envio traduzido',
-    width: 160
-  },
-  {
-    key: 'post_sale_devolucao',
-    label: 'Devolução',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Estado de devolução derivado do substatus',
-    width: 120
-  },
-  {
-    key: 'post_sale_prev_entrega',
-    label: 'Prev. Entrega',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data estimada de entrega formatada',
-    width: 120
-  }
-
 ];
 
 // 🎯 PERFIS PRÉ-DEFINIDOS
@@ -609,7 +557,6 @@ export const DEFAULT_PROFILES: ColumnProfile[] = [
     description: 'Todas as colunas disponíveis',
     columns: COLUMN_DEFINITIONS.map(col => col.key)
   }
-
 ];
 
 // 🔧 CATEGORIAS E SUAS LABELS

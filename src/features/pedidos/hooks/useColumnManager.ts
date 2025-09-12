@@ -359,10 +359,10 @@ export const useColumnManager = (): UseColumnManagerReturn => {
   }, [state.customProfiles]);
 
   return {
-    state: state || { visibleColumns: new Set(), columnOrder: [], activeProfile: 'standard', customProfiles: [] },
+    state,
     actions,
-    definitions: COLUMN_DEFINITIONS || [],
-    visibleDefinitions: visibleDefinitions || [],
-    profiles: profiles || []
+    definitions: COLUMN_DEFINITIONS,
+    visibleDefinitions,
+    profiles
   };
 };

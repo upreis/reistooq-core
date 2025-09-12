@@ -24,9 +24,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ColumnConfig } from './ColumnSelector';
-import { POST_SALE_COLS } from '@/config/features';
-import { deriveStatuses } from '@/utils/postSaleUtils';
-import { formatDate as formatDateBasic } from '@/lib/format';
 
 interface PedidosTableProps {
   rows: Row[];
@@ -255,7 +252,7 @@ export function PedidosTable({
                   </TableCell>
                   
                   {/* Render each visible column */}
-                  {visibleColumnConfigs.map((col, colIndex) => (
+                  {visibleColumnConfigs.map((col) => (
                     <TableCell key={col.key}>
                       {(() => {
                         switch (col.key) {
@@ -312,30 +309,18 @@ export function PedidosTable({
                             return show(get(row.unified, 'numero_venda') ?? get(row.raw, 'id'));
                           case 'empresa':
                             return show(get(row.unified, 'empresa') ?? 'mercadolivre');
-                           case 'cidade':
-                             // Usar compat com fallback para campos antigos
-                             const compatCidade = (row as any).compat?.cidade;
-                             return show(compatCidade ?? get(row.unified, 'cidade') ?? get(row.raw, 'shipping_details.receiver_address.city.name'));
-                           case 'uf':
-                             // Usar compat com fallback para campos antigos
-                             const compatUf = (row as any).compat?.uf;
-                             return show(compatUf ?? get(row.unified, 'uf') ?? get(row.raw, 'shipping_details.receiver_address.state.id'));
-                            case 'cep':
-                              // Usar compat com fallback para campos antigos
-                              const compatCep = (row as any).compat?.cep;
-                              return show(compatCep ?? get(row.raw, 'shipping_details.receiver_address.zip_code'));
-                            case 'endereco_rua':
-                              // Usar compat com fallback para campos antigos
-                              const compatRua = (row as any).compat?.rua;
-                              return show(compatRua ?? get(row.unified, 'endereco_rua') ?? get(row.raw, 'shipping_details.receiver_address.street_name') ?? get(row.raw, 'shipping.receiver_address.street_name'));
-                            case 'endereco_numero':
-                              // Usar compat com fallback para campos antigos
-                              const compatNumero = (row as any).compat?.numero;
-                              return show(compatNumero ?? get(row.unified, 'endereco_numero') ?? get(row.raw, 'shipping_details.receiver_address.street_number') ?? get(row.raw, 'shipping.receiver_address.street_number'));
-                            case 'endereco_bairro':
-                              // Usar compat com fallback para campos antigos
-                              const compatBairro = (row as any).compat?.bairro;
-                              return show(compatBairro ?? get(row.unified, 'endereco_bairro') ?? get(row.raw, 'shipping_details.receiver_address.neighborhood.name') ?? get(row.raw, 'shipping.receiver_address.neighborhood.name'));
+                          case 'cidade':
+                            return show(get(row.unified, 'cidade') ?? get(row.raw, 'shipping_details.receiver_address.city.name'));
+                          case 'uf':
+                            return show(get(row.unified, 'uf') ?? get(row.raw, 'shipping_details.receiver_address.state.id'));
+                           case 'cep':
+                             return show(get(row.raw, 'shipping_details.receiver_address.zip_code'));
+                           case 'endereco_rua':
+                             return show(get(row.unified, 'endereco_rua') ?? get(row.raw, 'shipping_details.receiver_address.street_name') ?? get(row.raw, 'shipping.receiver_address.street_name'));
+                           case 'endereco_numero':
+                             return show(get(row.unified, 'endereco_numero') ?? get(row.raw, 'shipping_details.receiver_address.street_number') ?? get(row.raw, 'shipping.receiver_address.street_number'));
+                           case 'endereco_bairro':
+                             return show(get(row.unified, 'endereco_bairro') ?? get(row.raw, 'shipping_details.receiver_address.neighborhood.name') ?? get(row.raw, 'shipping.receiver_address.neighborhood.name'));
                             case 'shipping_status':
                               const shippingStatus = get(row.raw, 'shipping_details.status');
                               const mappedStatus = mapMLStatus(shippingStatus);
@@ -345,28 +330,12 @@ export function PedidosTable({
                                 </Badge>
                               );
                            case 'shipping_mode':
-                             // Usar compat com fallback para campos antigos
-                             const compatMode = (row as any).compat?.logistic_mode_principal;
-                             return show(compatMode ?? get(row.raw, 'shipping_details.shipping_mode') ?? get(row.raw, 'shipping.mode'));
-                           case 'tipo_logistico':
-                             // Nova coluna usando compat
-                             const compatTipo = (row as any).compat?.tipo_logistico;
-                             return show(compatTipo ?? get(row.raw, 'shipping.logistic_type') ?? get((row as any).enriched, 'shipping.logistic_type'));
-                           case 'modo_envio_combinado':
-                             // Nova coluna usando compat
-                             const compatModoEnvio = (row as any).compat?.modo_envio_comb;
-                             return show(compatModoEnvio);
-                           case 'metodo_envio_combinado':
-                             // Nova coluna usando compat
-                             const compatMetodoEnvio = (row as any).compat?.metodo_envio_comb;
-                             return show(compatMetodoEnvio);
+                             return show(get(row.raw, 'shipping_details.shipping_mode'));
                             case 'shipping_substatus':
-                              // Usar compat com fallback para campos antigos
-                              const compatSubstatus = (row as any).compat?.substatus;
-                              const finalSubstatus = compatSubstatus ?? get(row.raw, 'shipping_details.substatus') ?? get(row.raw, 'shipping.substatus');
-                              const translatedSubstatus = translateShippingSubstatus(finalSubstatus);
+                              const rawSubstatus = get(row.raw, 'shipping_details.substatus');
+                              const translatedSubstatus = translateShippingSubstatus(rawSubstatus);
                               return (
-                                <Badge variant={getStatusBadgeVariant('', finalSubstatus)}>
+                                <Badge variant={getStatusBadgeVariant('', rawSubstatus)}>
                                   {translatedSubstatus}
                                 </Badge>
                               );
@@ -435,122 +404,6 @@ export function PedidosTable({
                           case 'quantidade':
                             const items = get(row.raw, 'order_items');
                             return Array.isArray(items) ? items.length : show(get(row.unified, 'total_itens'));
-                          
-                          // ✅ NOVAS COLUNAS PÓS-VENDA (com feature flag)
-                          case 'post_sale_status_pedido':
-                            if (!POST_SALE_COLS) return '—';
-                            const statusData = deriveStatuses(row);
-                            
-                           // 🔍 AUDITORIA: Log da primeira linha renderizada
-                           if (colIndex === 0) {
-                             console.log('[ROW SAMPLE - Status Pedido]', {
-                               id: (row as any).id,
-                               path_usado: 'deriveStatuses(row).pedidoPT',
-                               valor_encontrado: statusData.pedidoPT,
-                               raw_order_status: (row as any).order?.status,
-                               raw_status: (row as any).raw?.status,
-                               unified_status: (row as any).unified?.status,
-                               keys_disponiveis: Object.keys(row)
-                             });
-                           }
-                            
-                            return (
-                              <Badge variant="outline">
-                                {statusData.pedidoPT}
-                              </Badge>
-                            );
-                          case 'post_sale_status_envio':
-                            if (!POST_SALE_COLS) return '—';
-                            const envioData = deriveStatuses(row);
-                            
-                           // 🔍 AUDITORIA: Log da primeira linha renderizada
-                           if (colIndex === 0) {
-                             console.log('[ROW SAMPLE - Status Envio]', {
-                               id: (row as any).id,
-                               path_usado: 'deriveStatuses(row).envioPT',
-                               valor_encontrado: envioData.envioPT,
-                               raw_shipping_status: (row as any).shipping?.status,
-                               enriched_shipping_status: (row as any).enriched?.shipping?.status,
-                               detailed_shipping_status: (row as any).detailed_shipping?.status,
-                               keys_shipping: Object.keys((row as any).shipping || {}),
-                               keys_enriched: Object.keys((row as any).enriched || {})
-                             });
-                           }
-                            
-                            return (
-                              <Badge variant="secondary">
-                                {envioData.envioPT}
-                              </Badge>
-                            );
-                          case 'post_sale_substatus':
-                            if (!POST_SALE_COLS) return '—';
-                            const subData = deriveStatuses(row);
-                            
-                           // 🔍 AUDITORIA: Log da primeira linha renderizada
-                           if (colIndex === 0) {
-                             console.log('[ROW SAMPLE - Substatus]', {
-                               id: (row as any).id,
-                               path_usado: 'deriveStatuses(row).subPT',
-                               valor_encontrado: subData.subPT,
-                               raw_substatus: (row as any).shipping?.substatus,
-                               enriched_substatus: (row as any).enriched?.shipping?.substatus,
-                               detailed_substatus: (row as any).detailed_shipping?.substatus,
-                               tags: (row as any).shipping?.tags || (row as any).tags
-                             });
-                           }
-                            
-                            return (
-                              <span className="text-sm">
-                                {subData.subPT}
-                              </span>
-                            );
-                          case 'post_sale_devolucao':
-                            if (!POST_SALE_COLS) return '—';
-                            const devData = deriveStatuses(row);
-                            
-                           // 🔍 AUDITORIA: Log da primeira linha renderizada
-                           if (colIndex === 0) {
-                             console.log('[ROW SAMPLE - Devolução]', {
-                               id: (row as any).id,
-                               path_usado: 'deriveStatuses(row).devolucaoPT',
-                               valor_encontrado: devData.devolucaoPT,
-                               return_status: (row as any).enriched?.return?.status,
-                               return_info: (row as any).return_info,
-                               tags: (row as any).shipping?.tags || (row as any).tags,
-                               substatus: (row as any).shipping?.substatus
-                             });
-                           }
-                            
-                            return (
-                              <Badge 
-                                variant={devData.devolucaoPT === '—' ? 'outline' : 'destructive'}
-                                className="text-xs"
-                              >
-                                {devData.devolucaoPT}
-                              </Badge>
-                            );
-                          case 'post_sale_prev_entrega':
-                            if (!POST_SALE_COLS) return '—';
-                            const prevData = deriveStatuses(row);
-                            
-                           // 🔍 AUDITORIA: Log da primeira linha renderizada
-                           if (colIndex === 0) {
-                             console.log('[ROW SAMPLE - Prev Entrega]', {
-                               id: (row as any).id,
-                               path_usado: 'deriveStatuses(row).etaTo',
-                               valor_encontrado: prevData.etaTo,
-                               estimated_delivery_date: (row as any).enriched?.estimated_delivery_time?.date,
-                               estimated_delivery_final: (row as any).detailed_shipping?.lead_time?.estimated_delivery_final?.date,
-                               estimated_delivery_limit: (row as any).detailed_shipping?.lead_time?.estimated_delivery_limit?.date,
-                               keys_detailed_shipping: Object.keys((row as any).detailed_shipping || {})
-                             });
-                           }
-                            
-                            return prevData.etaTo ? (
-                              <span className="text-sm">
-                                {formatDateBasic(prevData.etaTo)}
-                              </span>
-                            ) : '—';
                           
                           default:
                             return '—';

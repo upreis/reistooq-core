@@ -40,3 +40,6 @@ verify_jwt = true
 [functions.registrar-historico-vendas]
 verify_jwt = true
 
+[functions.pedidos-aggregator]
+verify_jwt = true
+
