@@ -1,42 +1,76 @@
-import { serve } from "https://deno.land/std@0.193.0/http/server.ts";
-import { makeClient, makeUserClient, makeServiceClient, corsHeaders, ok, fail, getMlConfig } from "../_shared/client.ts";
-import { decryptAESGCM } from "../_shared/crypto.ts";
-import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { makeClient, makeUserClient, makeServiceClient, ok, fail, corsHeaders, getMlConfig } from '../_shared/client.ts';
 
-// ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
+const CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY")!;
 
-// Função para refresh preventivo de tokens
-async function refreshIfNeeded(supabase: any, tokens: any, cid: string, authHeader: string | null) {
-  const { access_token, refresh_token, expires_at, account_id } = tokens;
-  
-  if (!expires_at) return { access_token };
-  
-  const expiryTime = new Date(expires_at).getTime();
-  const now = Date.now();
-  const timeToExpiry = expiryTime - now;
-  
-  // Se expira em menos de 5 minutos, fazer refresh preventivo
-  if (timeToExpiry < 5 * 60 * 1000) {
-    console.log(`[unified-orders:${cid}] ⚠️ Token expira em ${Math.round(timeToExpiry/1000/60)} min - refresh preventivo`);
-    
-    try {
-      const { data: refreshData } = await supabase.functions.invoke('mercadolibre-token-refresh', {
-        body: { integration_account_id: account_id },
-        headers: authHeader ? { Authorization: authHeader } : {}
-      });
-      
-      if (refreshData?.success && refreshData?.access_token) {
-        console.log(`[unified-orders:${cid}] ✅ Refresh preventivo bem-sucedido`);
-        return { access_token: refreshData.access_token };
-      }
-    } catch (e) {
-      console.warn(`[unified-orders:${cid}] ⚠️ Erro no refresh preventivo:`, e.message);
-    }
-  }
-  
-  return { access_token };
+// Hash function for keyfingerprint
+async function sha256hex(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Decodificação AEAD AES-GCM (Algoritmo Supabase Vault)
+async function decryptAESGCM(encryptedB64: string): Promise<string> {
+  try {
+    const encryptedData = new Uint8Array(atob(encryptedB64).split('').map(c => c.charCodeAt(0)));
+    const nonce = encryptedData.slice(0, 12);
+    const ciphertext = encryptedData.slice(12, -16);
+    const tag = encryptedData.slice(-16);
+    
+    const key = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(CRYPTO_KEY.slice(0, 32)),
+      { name: 'AES-GCM' },
+      false,
+      ['decrypt']
+    );
+    
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: nonce },
+      key,
+      new Uint8Array([...ciphertext, ...tag])
+    );
+    
+    return new TextDecoder().decode(decrypted);
+  } catch (error) {
+    throw new Error(`AES-GCM decrypt failed: ${error.message}`);
+  }
+}
+
+// Função para refresh automático de tokens
+async function refreshIfNeeded(supabase: any, tokens: any, cid: string, authHeader: string | null) {
+  const now = Date.now();
+  const expiresAt = tokens.expires_at ? new Date(tokens.expires_at).getTime() : 0;
+  const timeToExpiry = expiresAt - now;
+  
+  if (timeToExpiry > 300000) { // 5 minutos de margem
+    return tokens;
+  }
+  
+  console.log(`[unified-orders:${cid}] Token expirando em ${Math.round(timeToExpiry/1000)}s, renovando...`);
+  
+  try {
+    const { data, error } = await supabase.functions.invoke('mercadolivre-token-refresh', {
+      body: { integration_account_id: tokens.account_id },
+      headers: authHeader ? { Authorization: authHeader } : {}
+    });
+    
+    if (error || !data?.access_token) {
+      console.warn(`[unified-orders:${cid}] Falha no refresh automático:`, error);
+      return tokens;
+    }
+    
+    console.log(`[unified-orders:${cid}] ✅ Token renovado automaticamente`);
+    return data;
+  } catch (e) {
+    console.warn(`[unified-orders:${cid}] Erro no refresh automático:`, e);
+    return tokens;
+  }
+}
+
+// Função para enriquecer pedidos com dados detalhados de shipping, cancelamento, descontos etc.
 async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid: string) {
   if (!orders?.length) return orders;
 
@@ -67,6 +101,7 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
               detailed_order: orderData,
               enriched: true
             };
+            console.log(`[unified-orders:${cid}] ➕ order data from=orders/{id} para order ${order.id}`);
           }
         } catch (error) {
           console.warn(`[unified-orders:${cid}] Erro ao buscar order ${order.id}:`, error);
@@ -87,6 +122,7 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 
             if (shippingResp.ok) {
               const shippingData = await shippingResp.json();
+              console.log(`[unified-orders:${cid}] ➕ shipping data from=shipments/{id} para order ${order.id}, shipping ${order.shipping.id}`);
 
               // 2.a Endpoints adicionais: custos e SLA (executar em paralelo)
               try {
@@ -118,41 +154,35 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
                 console.warn(`[unified-orders:${cid}] Aviso ao buscar costs/sla do shipment ${order.shipping.id}:`, extraErr);
               }
 
-              enrichedOrder.shipping = {
-                ...enrichedOrder.shipping,
-                ...shippingData,
-                detailed_shipping: shippingData,
-                shipping_enriched: true
-              };
+              enrichedOrder.detailed_shipping = shippingData;
+              enrichedOrder.shipping_enriched = true;
             }
           } catch (error) {
             console.warn(`[unified-orders:${cid}] Erro ao enriquecer shipping ${order.shipping?.id}:`, error);
           }
         }
 
-        // 3. Enriquecer dados de pack (status)
+        // 3. Enriquecer dados de pack (status) - ENDPOINT AINDA NÃO IMPLEMENTADO
         if (order.pack_id) {
-          try {
-            const packResp = await fetch(
-              `https://api.mercadolibre.com/packs/${order.pack_id}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'x-format-new': 'true'
-                }
-              }
-            );
-            if (packResp.ok) {
-              const packData = await packResp.json();
-              (enrichedOrder as any).pack_data = packData;
-              const pStatus = (packData?.status?.status) ?? packData?.status ?? null;
-              const pDetail = (packData?.status?.detail) ?? packData?.status_detail ?? null;
-              (enrichedOrder as any).pack_status = pStatus ?? null;
-              (enrichedOrder as any).pack_status_detail = pDetail ?? null;
-            }
-          } catch (err) {
-            console.warn(`[unified-orders:${cid}] Aviso ao buscar pack ${order.pack_id}:`, (err as any)?.message || err);
-          }
+          console.log(`[unified-orders:${cid}] ⚠️ ENDPOINT FALTANTE: GET /packs/${order.pack_id} não implementado`);
+          // try {
+          //   const packResp = await fetch(
+          //     `https://api.mercadolibre.com/packs/${order.pack_id}`,
+          //     {
+          //       headers: {
+          //         Authorization: `Bearer ${accessToken}`,
+          //         'x-format-new': 'true'
+          //       }
+          //     }
+          //   );
+          //   if (packResp.ok) {
+          //     const packData = await packResp.json();
+          //     enrichedOrder.pack_data = packData;
+          //     console.log(`[unified-orders:${cid}] ➕ pack data from=packs/{pack_id} para pack ${order.pack_id}`);
+          //   }
+          // } catch (err) {
+          //   console.warn(`[unified-orders:${cid}] Aviso ao buscar pack ${order.pack_id}:`, (err as any)?.message || err);
+          // }
         }
 
         // 4. Enriquecer com informações de cancelamento (cancel_detail)
@@ -169,7 +199,8 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             );
             if (cancelResp.ok) {
               const cancelData = await cancelResp.json();
-              (enrichedOrder as any).cancel_detail = cancelData;
+              enrichedOrder.cancel_detail = cancelData;
+              console.log(`[unified-orders:${cid}] ➕ cancel detail from=orders/{id}/cancel_detail para order ${order.id}`);
             }
           } catch (err) {
             console.warn(`[unified-orders:${cid}] Aviso ao buscar cancel_detail ${order.id}:`, (err as any)?.message || err);
@@ -190,7 +221,8 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             );
             if (discountsResp.ok) {
               const discountsData = await discountsResp.json();
-              (enrichedOrder as any).discounts = discountsData;
+              enrichedOrder.discounts = discountsData;
+              console.log(`[unified-orders:${cid}] ➕ discounts from=orders/{id}/discounts para order ${order.id}`);
             }
           } catch (err) {
             console.warn(`[unified-orders:${cid}] Aviso ao buscar discounts ${order.id}:`, (err as any)?.message || err);
@@ -211,14 +243,39 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             );
             if (mediationsResp.ok) {
               const mediationsData = await mediationsResp.json();
-              (enrichedOrder as any).mediations = mediationsData;
+              enrichedOrder.mediations = mediationsData;
+              console.log(`[unified-orders:${cid}] ➕ mediations from=orders/{id}/mediations para order ${order.id}`);
             }
           } catch (err) {
             console.warn(`[unified-orders:${cid}] Aviso ao buscar mediations ${order.id}:`, (err as any)?.message || err);
           }
         }
 
-        // 7. Enriquecer com dados dos produtos detalhados (order_items + product info)
+        // 7. ENDPOINT FALTANTE: Returns/Devolução - NÃO IMPLEMENTADO
+        if (order.id) {
+          console.log(`[unified-orders:${cid}] ⚠️ ENDPOINT FALTANTE: GET /returns/search?seller_id=${order.seller?.id}&order_id=${order.id} não implementado`);
+          // Este endpoint seria usado para buscar informações de devolução:
+          // try {
+          //   const returnsResp = await fetch(
+          //     `https://api.mercadolibre.com/returns/search?seller_id=${order.seller?.id}&order_id=${order.id}`,
+          //     {
+          //       headers: {
+          //         Authorization: `Bearer ${accessToken}`,
+          //         'x-format-new': 'true'
+          //       }
+          //     }
+          //   );
+          //   if (returnsResp.ok) {
+          //     const returnsData = await returnsResp.json();
+          //     enrichedOrder.return_info = returnsData.results?.[0] || null;
+          //     console.log(`[unified-orders:${cid}] ➕ return data from=returns/search para order ${order.id}`);
+          //   }
+          // } catch (err) {
+          //   console.warn(`[unified-orders:${cid}] Aviso ao buscar returns ${order.id}:`, (err as any)?.message || err);
+          // }
+        }
+
+        // 8. Enriquecer com dados dos produtos detalhados (order_items + product info)
         if (order.order_items?.length) {
           try {
             const itemsWithDetails = await Promise.all(
@@ -280,183 +337,69 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
   return enrichedOrders;
 }
 
+// Função para transformar dados do ML em formato unificado
 function transformMLOrders(orders: any[], integration_account_id: string, accountName?: string, cid?: string) {
   return orders.map(order => {
     const buyer = order.buyer || {};
-    const seller = order.seller || {};
     const shipping = order.shipping || {};
     const payments = order.payments || [];
     const firstPayment = payments[0] || {};
-    const detailedOrder = order.detailed_order || order;
-    const detailedShipping = shipping.detailed_shipping || shipping;
-    const orderItems = order.order_items || [];
-    const packData = order.pack_data || {};
-    const context = order.context || {};
-    const feedback = order.feedback || {};
-
-    // Cálculos de quantidades e valores
-    const totalQuantity = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
-    const productTitles = orderItems.map((item: any) => 
-      item.item_details?.title || item.item?.title || item.title
-    ).filter(Boolean).join(', ');
-    const skus = orderItems.map((item: any) => 
-      item.item_details?.seller_custom_field || item.item?.seller_custom_field || item.seller_sku
-    ).filter(Boolean).join(', ');
-
-    // Debug das colunas problemáticas
-    console.log(`[unified-orders:${cid}] 🐛 Debug colunas para pedido ${order.id}:`, {
-      pickup_id: shipping.pickup_id,
-      manufacturing_ending_date: order.manufacturing_ending_date,
-      comment: order.buyer_comment || order.comment,
-      tags: order.tags,
-      pack_id: order.pack_id
-    });
-
-    // Valores de frete e receitas
-    const fretePagoCliente = shipping.cost || 0;
-    const receitaFlex = shipping.seller_cost_benefit || 0;
-    const custoEnvioSeller = shipping.base_cost || 0;
     
-    // Informações de endereço mais detalhadas
-    const address = detailedShipping.receiver_address || shipping.receiver_address || {};
-    
-    // Extrair dados de stock multi-origem
-    const stockData = orderItems.flatMap((item: any) => item.stock || []);
-    const storeIds = stockData.map((s: any) => s.store_id).filter(Boolean).join(', ');
-    const networkNodeIds = stockData.map((s: any) => s.network_node_id).filter(Boolean).join(', ');
-    
-    // Tags do pedido
-    const orderTags = (order.tags || []).join(', ');
-    
-    // Dados financeiros detalhados
-    const marketplaceFees = payments.map((p: any) => p.marketplace_fee || 0).reduce((a, b) => a + b, 0);
-    const refundedAmount = payments.map((p: any) => p.transaction_amount_refunded || 0).reduce((a, b) => a + b, 0);
-    const overpaidAmount = payments.map((p: any) => p.overpaid_amount || 0).reduce((a, b) => a + b, 0);
+    // Calcular valores
+    const valorTotal = order.total_amount || 0;
+    const valorFrete = shipping.cost || 0;
+    const valorBruto = valorTotal - valorFrete;
     
     return {
-      id: order.id?.toString() || '',
-      numero: order.id?.toString() || '',
-      nome_cliente: buyer.nickname || buyer.first_name || `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() || null,
-      cpf_cnpj: buyer.identification?.number || null,
-      data_pedido: order.date_created || null,
-      data_prevista: shipping.date_first_printed || order.date_closed || null,
-      situacao: order.status || null,
-      valor_total: order.total_amount || 0,
-      valor_frete: fretePagoCliente,
-      valor_desconto: order.coupon?.amount || 0,
-      numero_ecommerce: order.pack_id?.toString() || null,
-      numero_venda: order.id?.toString() || null,
+      // IDs e identificação
+      id: order.id?.toString(),
+      id_unico: `${integration_account_id}-${order.id}`,
+      id_pedido_original: order.id?.toString(),
+      numero_pedido: order.id?.toString(),
+      
+      // Empresa/Conta
       empresa: accountName || 'Mercado Livre',
-      cidade: address.city?.name || null,
-      uf: address.state?.id || null,
-      codigo_rastreamento: shipping.tracking_number || null,
-      url_rastreamento: shipping.tracking_method === 'custom' ? null : 
-        shipping.tracking_number ? `https://www.mercadolivre.com.br/gz/tracking/${shipping.tracking_number}` : null,
-      obs: order.buyer_comment || null,
-      obs_interna: null,
       integration_account_id,
-      created_at: order.date_created || new Date().toISOString(),
-      updated_at: order.last_updated || order.date_created || new Date().toISOString(),
       
-      // ✅ Campos existentes enriquecidos
-      // Dados básicos do pedido
-      last_updated: order.last_updated || order.date_created,
-      paid_amount: firstPayment.total_paid_amount || order.paid_amount || 0,
-      valor_liquido_vendedor: (order.total_amount || 0) - (shipping.cost || 0) - (order.marketplace_fee || 0),
-      date_created: order.date_created,
-      pack_id: order.pack_id?.toString() || null,
-      pickup_id: shipping.pickup_id || shipping.id || null,
-      manufacturing_ending_date: order.manufacturing_ending_date || null,
-      comment: order.buyer_comment || order.comment || orderItems.find((item: any) => item.comment)?.comment || null,
-      tags: Array.isArray(order.tags)
-        ? order.tags
-        : (typeof order.tags === 'string'
-            ? order.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-            : []),
-      pack_status: order.pack_status ?? order.pack_data?.status ?? null,
-      pack_status_detail: order.pack_status_detail ?? order.pack_data?.status_detail ?? order.pack_data?.status?.detail ?? null,
+      // Cliente
+      nome_cliente: `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() || buyer.nickname || '—',
+      email_cliente: buyer.email || '—',
+      cpf_cnpj: buyer.identification?.number || buyer.billing_info?.doc_number || '—',
+      telefone_cliente: buyer.phone?.number || buyer.phone?.area_code + buyer.phone?.number || '—',
       
-      // Informações de cancelamento
-      cancel_reason: order.cancel_detail?.reason || null,
-      cancel_responsible: order.cancel_detail?.responsible || null,
-      cancel_date: order.cancel_detail?.cancel_date || null,
+      // Localização
+      cidade: shipping.receiver_address?.city?.name || '—',
+      uf: shipping.receiver_address?.state?.name || '—',
+      cep: shipping.receiver_address?.zip_code || '—',
       
-      // Descontos aplicados
-      discounts_applied: order.discounts?.length ? order.discounts.map((d: any) => `${d.type}:${d.amount}`).join(', ') : null,
+      // Datas
+      data_pedido: order.date_created,
+      data_pagamento: firstPayment.date_approved,
+      data_faturamento: order.date_closed,
+      data_postagem: shipping.date_created,
       
-      // Mediações
-      mediations_tags: order.mediations?.length ? order.mediations.map((m: any) => m.mediation_tags).flat().join(', ') : null,
+      // Status
+      status: order.status,
+      status_envio: shipping.status,
+      forma_pagamento: firstPayment.payment_method_id || '—',
       
-      // Informações dos produtos
-      skus_produtos: skus || 'Sem SKU',
-      quantidade_total: totalQuantity,
-      titulo_produto: productTitles || 'Produto sem título',
+      // Valores financeiros
+      valor_total: valorTotal,
+      valor_bruto: valorBruto,
+      valor_frete: valorFrete,
+      valor_desconto: 0, // Calculado a partir de descontos se houver
       
-      // Valores financeiros detalhados
-      frete_pago_cliente: fretePagoCliente,
-      receita_flex: receitaFlex,
-      desconto_cupom: order.coupon?.amount || 0,
-      taxa_marketplace: order.marketplace_fee || 0,
-      custo_envio_seller: custoEnvioSeller,
-      
-      // Informações de pagamento
-      metodo_pagamento: firstPayment.payment_method_id || null,
-      status_pagamento: firstPayment.status || null,
-      tipo_pagamento: firstPayment.payment_type_id || null,
-      
-      // Informações de envio detalhadas
-      status_envio: shipping.status || null,
-      logistic_mode: detailedShipping?.logistic?.mode || shipping?.logistic?.mode || shipping?.mode || null,
-      tipo_logistico: detailedShipping?.logistic?.type || shipping?.logistic?.type || shipping?.logistic_type || null,
-      tipo_metodo_envio: detailedShipping?.shipping_method?.type || shipping?.shipping_method?.type || null,
-      tipo_entrega: shipping?.delivery_type || null,
-      substatus: shipping?.substatus || detailedShipping?.status_detail || null,
-      // "Combinados": reutilizamos as colunas para retornar custos (costs) e SLA conforme solicitado
-      modo_envio_combinado: (detailedShipping?.costs
-        ? `gross:${detailedShipping.costs?.gross_amount ?? ''}; receiver:${detailedShipping.costs?.receiver?.cost ?? ''}; sender:${Array.isArray(detailedShipping.costs?.senders) && detailedShipping.costs.senders[0]?.cost != null ? detailedShipping.costs.senders[0].cost : ''}`
-        : (detailedShipping?.logistic?.mode || shipping?.mode || null)),
-      metodo_envio_combinado: (detailedShipping?.sla
-        ? `${detailedShipping?.shipping_method?.name || shipping?.shipping_method?.name || '—'} | SLA:${detailedShipping.sla?.status ?? ''}${detailedShipping.sla?.expected_date ? ' até ' + detailedShipping.sla.expected_date : ''}`
-        : (detailedShipping?.shipping_method?.name || shipping?.shipping_method?.name || null)),
-      
-      // Endereço completo
-      rua: address.street_name || null,
-      numero: address.street_number || null,
-      bairro: address.neighborhood?.name || null,
-      cep: address.zip_code || null,
-
-      // 🆕 NOVOS CAMPOS DA DOCUMENTAÇÃO DE PACKS - Análise posterior
-      
-      // 🔹 TAGS DO PEDIDO (removido para evitar duplicação - já mapeado acima)
-      conditions: orderItems.map((item: any) => item.item?.condition).filter(Boolean).join(', ') || null,
-      global_prices: orderItems.map((item: any) => item.global_price).filter((p) => p != null).join(', ') || null,
-      net_weights: orderItems.map((item: any) => item.item?.net_weight).filter((w) => w != null).join(', ') || null,
-      manufacturing_days_total: orderItems.map((item: any) => item.manufacturing_days).filter((d) => d != null).reduce((a, b) => a + b, 0) || null,
-      sale_fees_total: orderItems.map((item: any) => item.sale_fee || 0).reduce((a, b) => a + b, 0),
-      listing_type_ids: orderItems.map((item: any) => item.listing_type_id).filter(Boolean).join(', ') || null,
-      
-      // 🆕 Dados de produtos detalhados
-      product_names: orderItems.map((item: any) => item.product_details?.name).filter(Boolean).join(', ') || null,
-      product_brands: orderItems.map((item: any) => item.product_details?.brand).filter(Boolean).join(', ') || null,
-      product_models: orderItems.map((item: any) => item.product_details?.model).filter(Boolean).join(', ') || null,
-      product_gtin: orderItems.map((item: any) => item.product_details?.gtin).filter(Boolean).join(', ') || null,
-      
-      // Dados completos para fallback
+      // Dados brutos para referência
       raw: order,
-      unified: {
-        order_items: orderItems,
-        shipping: detailedShipping,
-        buyer: buyer,
-        seller: seller,
-        payments: payments,
-        pack_data: packData,
-        context: context,
-        feedback: feedback
-      }
+      
+      // Metadados
+      fonte: 'mercadolivre',
+      sincronizado_em: new Date().toISOString()
     };
   });
 }
 
+// Handler principal da função
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -881,7 +824,7 @@ Deno.serve(async (req) => {
         const orderUf = order.shipping?.receiver_address?.state?.id || '';
         
         if (cidade && !orderCidade.toLowerCase().includes(cidade.toLowerCase())) return false;
-        if (uf && orderUf.toLowerCase() !== uf.toLowerCase()) return false;
+        if (uf && !orderUf.toLowerCase().includes(uf.toLowerCase())) return false;
         return true;
       });
     }
@@ -904,23 +847,127 @@ Deno.serve(async (req) => {
 
     console.log(`[unified-orders:${cid}] Após filtros locais: ${filteredOrders.length} pedidos`);
 
+    // 🔍 AUDITORIA DETALHADA - LOGGING DE 3 PEDIDOS ESPECÍFICOS
+    console.log(`[unified-orders:${cid}] 🔍 === AUDITORIA DE PEDIDOS INICIADA ===`);
+    
+    // Selecionar 3 pedidos para análise detalhada
+    const auditOrders = filteredOrders.slice(0, 3);
+    auditOrders.forEach((order, index) => {
+      console.log(`[unified-orders:${cid}] 🐛 === PEDIDO ${index + 1}/3 - ANÁLISE DETALHADA ===`);
+      console.log(`[unified-orders:${cid}] 🐛 DADOS BÁSICOS:`, {
+        order_id: order.id,
+        pack_id: order.pack_id,
+        order_status: order.status,
+        tags: order.tags || [],
+        from_source: "orders.search"
+      });
+      
+      console.log(`[unified-orders:${cid}] 🐛 SHIPPING ORIGINAL:`, {
+        shipping_id: order.shipping?.id,
+        shipping_status: order.shipping?.status,
+        shipping_substatus: order.shipping?.substatus,
+        has_shipping_data: !!order.shipping,
+        from_source: order.shipping?.id ? "orders.search" : "missing"
+      });
+      
+      console.log(`[unified-orders:${cid}] 🐛 SHIPPING ENRIQUECIDO:`, {
+        enriched_shipping_status: order.detailed_shipping?.status,
+        enriched_shipping_substatus: order.detailed_shipping?.substatus,
+        estimated_delivery_date: order.detailed_shipping?.lead_time?.estimated_delivery_time?.date,
+        has_detailed_shipping: !!order.detailed_shipping,
+        from_source: order.detailed_shipping ? "shipments/{id}" : "missing"
+      });
+      
+      console.log(`[unified-orders:${cid}] 🐛 RETURNS DATA:`, {
+        return_status: order.return_info?.status,
+        return_type: order.return_info?.type,
+        return_deadline: order.return_info?.deadline,
+        return_shipping_status: order.return_info?.shipping?.status,
+        has_return_data: !!order.return_info,
+        from_source: order.return_info ? "returns/search" : "not_implemented"
+      });
+      
+      console.log(`[unified-orders:${cid}] 🐛 Debug colunas para pedido ${order.id}:`, {
+        pickup_id: order.pickup_id,
+        manufacturing_ending_date: order.manufacturing_ending_date,
+        comment: order.comment,
+        tags: order.tags,
+        pack_id: order.pack_id
+      });
+    });
+
     // Transformar para formato unificado
-    const transformedOrders = transformMLOrders(filteredOrders, integration_account_id, accountData?.name, cid);
+    const unifiedOrders = transformMLOrders(filteredOrders, integration_account_id, accountData?.name, cid);
+
+    // 🔍 AUDITORIA - VERIFICAÇÃO DE CAMPOS FINAIS
+    console.log(`[unified-orders:${cid}] 🔍 === AUDITORIA DE CAMPOS FINAIS ===`);
+    unifiedOrders.slice(0, 3).forEach((row, index) => {
+      console.log(`[unified-orders:${cid}] 🔍 PEDIDO ${index + 1}/3 - CAMPOS FINAIS:`, {
+        id: row.id,
+        order_keys: Object.keys(row.raw?.order || {}),
+        shipping_keys: Object.keys(row.raw?.shipping || {}),
+        detailed_shipping_keys: Object.keys(row.raw?.detailed_shipping || {}),
+        raw_keys: Object.keys(row.raw || {}),
+        top_level_keys: Object.keys(row)
+      });
+      
+      console.log(`[unified-orders:${cid}] 🔍 CAMPOS ESPECÍFICOS UI:`, {
+        statusPedidoApi: row.raw?.status || row.status,
+        shippingStatusApi: row.raw?.shipping?.status || row.raw?.detailed_shipping?.status,
+        shippingSubstatus: row.raw?.shipping?.substatus || row.raw?.detailed_shipping?.substatus,
+        returnStatus: row.raw?.return_info?.status,
+        returnType: row.raw?.return_info?.type,
+        returnDeadline: row.raw?.return_info?.deadline,
+        estimatedDeliveryDate: row.raw?.detailed_shipping?.lead_time?.estimated_delivery_time?.date
+      });
+    });
+
+    console.log(`[unified-orders:${cid}] Enriquecimento completo concluído`);
 
     return ok({
-      // Compatibilidade: retornar tanto 'results' (raw ML enriquecido) quanto 'pedidos' (formato unificado)
-      results: enrichedOrders,
-      pedidos: transformedOrders,
-      paging: mlData?.paging ?? { total: transformedOrders.length, limit: safeLimit, offset: offset || 0 },
-      total: (mlData?.paging?.total ?? transformedOrders.length),
-      url: mlUrl.toString(),
-      provider: 'mercadolivre',
-      account_id: integration_account_id,
-      seller_id: seller
+      results: filteredOrders.map(order => ({
+        ...order,
+        // Compatibilidade: mapear campos para estrutura esperada pela UI
+        order: order,
+        shipping: order.shipping || {},
+        enriched: {
+          shipping: order.detailed_shipping || {},
+          estimated_delivery_time: order.detailed_shipping?.lead_time?.estimated_delivery_time || {},
+          return: order.return_info || {}
+        },
+        detailed_shipping: order.detailed_shipping || {},
+        raw: order,
+        unified: {
+          id: order.id,
+          status: order.status,
+          total_amount: order.total_amount
+        }
+      })),
+      total: filteredOrders.length,
+      pagination: {
+        offset: offset || 0,
+        limit: safeLimit,
+        has_more: orders.length >= safeLimit
+      },
+      debug: {
+        cid,
+        orders_fetched: orders.length,
+        orders_after_filters: filteredOrders.length,
+        account_name: accountData?.name,
+        seller_id: seller,
+        audit_summary: {
+          total_orders_analyzed: Math.min(3, filteredOrders.length),
+          has_shipping_enrichment: filteredOrders.some(o => !!o.detailed_shipping),
+          has_return_data: filteredOrders.some(o => !!o.return_info),
+          missing_endpoints: ["returns/search", "packs/{pack_id}"]
+        }
+      }
     }, cid);
-
   } catch (error) {
-    console.error(`[unified-orders:${cid}] Unexpected error:`, error);
-    return fail(String(error?.message ?? error), 500, null, cid);
+    console.error(`[unified-orders:${cid}] ERRO CRITICO:`, error);
+    return fail('Internal server error', 500, { 
+      error: error.message,
+      stack: error.stack?.slice(0, 1000)
+    }, cid);
   }
 });

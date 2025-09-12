@@ -412,6 +412,20 @@ export function PedidosTable({
                           case 'post_sale_status_pedido':
                             if (!POST_SALE_COLS) return '—';
                             const statusData = deriveStatuses(row);
+                            
+                            // 🔍 AUDITORIA: Log da primeira linha renderizada
+                            if (colIndex === 0) {
+                              console.log('[ROW SAMPLE - Status Pedido]', {
+                                id: (row as any).id,
+                                path_usado: 'deriveStatuses(row).pedidoPT',
+                                valor_encontrado: statusData.pedidoPT,
+                                raw_order_status: (row as any).order?.status,
+                                raw_status: (row as any).raw?.status,
+                                unified_status: (row as any).unified?.status,
+                                keys_disponiveis: Object.keys(row)
+                              });
+                            }
+                            
                             return (
                               <Badge variant="outline">
                                 {statusData.pedidoPT}
@@ -420,6 +434,21 @@ export function PedidosTable({
                           case 'post_sale_status_envio':
                             if (!POST_SALE_COLS) return '—';
                             const envioData = deriveStatuses(row);
+                            
+                            // 🔍 AUDITORIA: Log da primeira linha renderizada
+                            if (colIndex === 0) {
+                              console.log('[ROW SAMPLE - Status Envio]', {
+                                id: (row as any).id,
+                                path_usado: 'deriveStatuses(row).envioPT',
+                                valor_encontrado: envioData.envioPT,
+                                raw_shipping_status: (row as any).shipping?.status,
+                                enriched_shipping_status: (row as any).enriched?.shipping?.status,
+                                detailed_shipping_status: (row as any).detailed_shipping?.status,
+                                keys_shipping: Object.keys((row as any).shipping || {}),
+                                keys_enriched: Object.keys((row as any).enriched || {})
+                              });
+                            }
+                            
                             return (
                               <Badge variant="secondary">
                                 {envioData.envioPT}
@@ -428,6 +457,20 @@ export function PedidosTable({
                           case 'post_sale_substatus':
                             if (!POST_SALE_COLS) return '—';
                             const subData = deriveStatuses(row);
+                            
+                            // 🔍 AUDITORIA: Log da primeira linha renderizada
+                            if (colIndex === 0) {
+                              console.log('[ROW SAMPLE - Substatus]', {
+                                id: (row as any).id,
+                                path_usado: 'deriveStatuses(row).subPT',
+                                valor_encontrado: subData.subPT,
+                                raw_substatus: (row as any).shipping?.substatus,
+                                enriched_substatus: (row as any).enriched?.shipping?.substatus,
+                                detailed_substatus: (row as any).detailed_shipping?.substatus,
+                                tags: (row as any).shipping?.tags || (row as any).tags
+                              });
+                            }
+                            
                             return (
                               <span className="text-sm">
                                 {subData.subPT}
@@ -436,6 +479,20 @@ export function PedidosTable({
                           case 'post_sale_devolucao':
                             if (!POST_SALE_COLS) return '—';
                             const devData = deriveStatuses(row);
+                            
+                            // 🔍 AUDITORIA: Log da primeira linha renderizada
+                            if (colIndex === 0) {
+                              console.log('[ROW SAMPLE - Devolução]', {
+                                id: (row as any).id,
+                                path_usado: 'deriveStatuses(row).devolucaoPT',
+                                valor_encontrado: devData.devolucaoPT,
+                                return_status: (row as any).enriched?.return?.status,
+                                return_info: (row as any).return_info,
+                                tags: (row as any).shipping?.tags || (row as any).tags,
+                                substatus: (row as any).shipping?.substatus
+                              });
+                            }
+                            
                             return (
                               <Badge 
                                 variant={devData.devolucaoPT === '—' ? 'outline' : 'destructive'}
@@ -447,6 +504,20 @@ export function PedidosTable({
                           case 'post_sale_prev_entrega':
                             if (!POST_SALE_COLS) return '—';
                             const prevData = deriveStatuses(row);
+                            
+                            // 🔍 AUDITORIA: Log da primeira linha renderizada
+                            if (colIndex === 0) {
+                              console.log('[ROW SAMPLE - Prev Entrega]', {
+                                id: (row as any).id,
+                                path_usado: 'deriveStatuses(row).etaTo',
+                                valor_encontrado: prevData.etaTo,
+                                estimated_delivery_date: (row as any).enriched?.estimated_delivery_time?.date,
+                                estimated_delivery_final: (row as any).detailed_shipping?.lead_time?.estimated_delivery_final?.date,
+                                estimated_delivery_limit: (row as any).detailed_shipping?.lead_time?.estimated_delivery_limit?.date,
+                                keys_detailed_shipping: Object.keys((row as any).detailed_shipping || {})
+                              });
+                            }
+                            
                             return prevData.etaTo ? (
                               <span className="text-sm">
                                 {formatDateBasic(prevData.etaTo)}
