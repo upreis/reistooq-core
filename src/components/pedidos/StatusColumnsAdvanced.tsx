@@ -18,10 +18,10 @@ interface StatusColumnProps {
 // ===== 1️⃣ COLUNA STATUS DO PEDIDO =====
 export function OrderStatusColumn({ row, showTooltip = true }: StatusColumnProps) {
   // ✅ CORREÇÃO: Acessar status do pedido corretamente
-  const orderStatus = (row as any)?.status || 
+  const orderStatus = row.unified?.situacao || 
+                     (row as any)?.status || 
                      (row as any)?.raw?.status || 
-                     row.unified?.situacao || 
-                     (row as any)?.order?.status || 
+                     (row as any)?.unified?.raw?.status ||
                      '—';
   
   // Debug: verificar dados disponíveis
@@ -69,10 +69,10 @@ export function OrderStatusColumn({ row, showTooltip = true }: StatusColumnProps
 // ===== 2️⃣ COLUNA STATUS DE ENVIO =====
 export function ShippingStatusColumn({ row, showTooltip = true }: StatusColumnProps) {
   // ✅ CORREÇÃO: Acessar status de envio corretamente baseado nos logs da API
-  const shippingStatus = (row as any)?.shipping?.status || 
+  const shippingStatus = (row as any)?.status_envio || 
                         (row as any)?.raw?.shipping?.status ||
-                        (row as any)?.detailed_shipping?.status ||
-                        (row as any)?.shipping_details?.status ||
+                        (row as any)?.unified?.shipping?.status ||
+                        (row as any)?.shipping?.status ||
                         '—';
   
   // Debug: verificar dados disponíveis
@@ -117,11 +117,11 @@ export function ShippingStatusColumn({ row, showTooltip = true }: StatusColumnPr
 
 // ===== 3️⃣ COLUNA SUBSTATUS DE ENVIO =====
 export function ShippingSubstatusColumn({ row, showTooltip = true }: StatusColumnProps) {
-  // ✅ CORREÇÃO: Acessar substatus corretamente baseado nos logs da API
-  const substatus = (row as any)?.shipping?.substatus || 
+  // ✅ CORREÇÃO: Acessar substatus corretamente baseado nos logs da API  
+  const substatus = (row as any)?.substatus || 
                    (row as any)?.raw?.shipping?.substatus ||
-                   (row as any)?.detailed_shipping?.substatus ||
-                   (row as any)?.shipping_details?.substatus ||
+                   (row as any)?.unified?.shipping?.substatus ||
+                   (row as any)?.shipping?.substatus ||
                    null;
   
   // Debug: verificar dados disponíveis
@@ -218,11 +218,11 @@ export function ReturnStatusColumn({ row, showTooltip = true }: StatusColumnProp
 // ===== 5️⃣ COLUNA PREVISÃO DE ENTREGA =====
 export function DeliveryEstimateColumn({ row, showTooltip = true }: StatusColumnProps) {
   // ✅ CORREÇÃO: Acessar previsão de entrega corretamente baseado nos logs da API
-  const estimatedDelivery = (row as any)?.shipping?.lead_time?.estimated_delivery_final?.date || 
-                           (row as any)?.shipping?.lead_time?.estimated_delivery_time?.date ||
-                           (row as any)?.shipping?.lead_time?.estimated_delivery_limit?.date ||
-                           (row as any)?.detailed_shipping?.lead_time?.estimated_delivery_final?.date ||
-                           row.unified?.data_prevista ||
+  const estimatedDelivery = row.unified?.data_prevista ||
+                           (row as any)?.data_prevista || 
+                           (row as any)?.raw?.shipping?.date_first_printed ||
+                           (row as any)?.raw?.date_closed ||
+                           (row as any)?.unified?.shipping?.date_first_printed ||
                            null;
   
   // Debug: verificar dados disponíveis
@@ -286,7 +286,8 @@ export function PackStatusDetailColumn({ row, showTooltip = true }: StatusColumn
   // ✅ CORREÇÃO: Acessar pack status detail baseado nos logs da API
   const packStatusDetail = (row as any)?.pack_status_detail || 
                           (row as any)?.raw?.pack_status_detail ||
-                          (row as any)?.shipping?.pack_status_detail ||
+                          (row as any)?.raw?.pack_data?.status_detail ||
+                          (row as any)?.unified?.pack_data?.status_detail ||
                           null;
   
   // Debug: verificar dados disponíveis
