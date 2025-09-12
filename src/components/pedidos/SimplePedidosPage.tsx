@@ -112,9 +112,9 @@ function SimplePedidosPage({ className }: Props) {
         const saved = localStorage.getItem(key);
         if (saved) {
           const parsed = JSON.parse(saved);
-          // ✅ CORREÇÃO: Limpar qualquer filtro de statusEnvio persistente
+          // ✅ CORREÇÃO: Status de envio removido - apenas limpar localStorage antigo
           if (parsed.statusEnvio?.length > 0 || parsed.filters?.statusEnvio?.length > 0) {
-            console.log('🗑️ Removendo filtros de status persistentes:', key, parsed);
+            console.log('🗑️ Removendo filtros de status de envio antigos:', key, parsed);
             localStorage.removeItem(key);
           }
         }
@@ -301,7 +301,6 @@ function SimplePedidosPage({ className }: Props) {
         }
         
         filtersManager.updateFilter('search', filters.search);
-        filtersManager.updateFilter('statusEnvio', filters.statusEnvio);
         filtersManager.updateFilter('dataInicio', filters.dataInicio);
         filtersManager.updateFilter('dataFim', filters.dataFim);
         filtersManager.updateFilter('contasML', filters.contasML);
@@ -976,65 +975,6 @@ useEffect(() => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Filtro por Status do Envio - Multi seleção no Popover (igual Colunas) */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status do Envio</label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between">
-                    <span>
-                       {Array.isArray(filtersManager.filters.statusEnvio) && filtersManager.filters.statusEnvio.length > 0
-                        ? `${filtersManager.filters.statusEnvio.length} selecionado(s)`
-                        : 'Selecionar status'}
-                    </span>
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Status do Envio</h4>
-                      {Array.isArray(filtersManager.filters.statusEnvio) && filtersManager.filters.statusEnvio.length > 0 && (
-                        <Button size="sm" variant="ghost" onClick={() => filtersManager.updateFilter('statusEnvio', undefined)}>
-                          Limpar
-                        </Button>
-                      )}
-                    </div>
-                     <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
-                       {Object.entries(ML_SHIPPING_SUBSTATUS_MAP).map(([key, value]) => ({
-                         value: key,
-                         label: value.portuguese,
-                         color: getMLStatusBadgeVariant('', key) === 'default' ? 'bg-green-400' : 
-                                getMLStatusBadgeVariant('', key) === 'destructive' ? 'bg-red-400' :
-                                getMLStatusBadgeVariant('', key) === 'secondary' ? 'bg-blue-400' : 'bg-gray-400'
-                       })).sort((a, b) => a.label.localeCompare(b.label)).map((status) => {
-                        const current = Array.isArray(filtersManager.filters.statusEnvio)
-                          ? filtersManager.filters.statusEnvio
-                          : (filtersManager.filters.statusEnvio ? [filtersManager.filters.statusEnvio] : []);
-                        const isSelected = current.includes(status.value);
-                        return (
-                          <label key={status.value} className="flex items-center space-x-2 text-sm cursor-pointer">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  filtersManager.updateFilter('statusEnvio', [...current, status.value]);
-                                } else {
-                                  const next = current.filter((s) => s !== status.value);
-                                  filtersManager.updateFilter('statusEnvio', next.length > 0 ? next : undefined);
-                                }
-                              }}
-                            />
-                            <div className={`w-3 h-3 rounded-full ${status.color}`}></div>
-                            <span>{status.label}</span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
 
             {/* Data Início */}
             <div className="space-y-2">
@@ -1194,17 +1134,6 @@ useEffect(() => {
         columnManager={columnManager}
       />
 
-      {/* 🔍 STATUS DEBUG PANEL - DEV ONLY */}
-      {process.env.NODE_ENV === 'development' && (
-        <StatusDebugPanel 
-          orders={orders || []}
-          currentFilter={filtersManager.filters.statusEnvio || []}
-          onStatusSelect={(status) => {
-            // Usar status raw da API para corrigir o filtro
-            filtersManager.updateFilter('statusEnvio', [status]);
-          }}
-        />
-      )}
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
     </div>

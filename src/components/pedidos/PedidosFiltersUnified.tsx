@@ -73,7 +73,6 @@ export function PedidosFiltersUnified({
   columnManager
 }: PedidosFiltersUnifiedProps) {
   const [statusPedidoOpen, setStatusPedidoOpen] = useState(false);
-  const [statusEnvioOpen, setStatusEnvioOpen] = useState(false);
   const [contasMLOpen, setContasMLOpen] = useState(false);
 
   // ✅ NOVO: Handler para status do pedido
@@ -87,16 +86,6 @@ export function PedidosFiltersUnified({
     }
   };
 
-  // ✅ MANTIDO: Handler para status de envio
-  const handleStatusEnvioChange = (status: string, checked: boolean) => {
-    const current = filters.statusEnvio || [];
-    if (checked) {
-      onFilterChange('statusEnvio', [...current, status]);
-    } else {
-      const newList = current.filter(s => s !== status);
-      onFilterChange('statusEnvio', newList.length > 0 ? newList : undefined);
-    }
-  };
 
   const handleContasMLChange = (contaId: string, checked: boolean) => {
     const current = filters.contasML || [];
@@ -109,7 +98,6 @@ export function PedidosFiltersUnified({
   };
 
   const selectedStatusPedido = filters.statusPedido || [];
-  const selectedStatusEnvio = filters.statusEnvio || [];
   const selectedContasML = filters.contasML || [];
 
   return (
@@ -166,7 +154,7 @@ export function PedidosFiltersUnified({
       )}
 
       {/* Layout principal dos filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 xl:grid-cols-7 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-6 gap-4 items-end">
         {/* Busca - Aplicação manual */}
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
@@ -227,63 +215,6 @@ export function PedidosFiltersUnified({
           </Popover>
         </div>
 
-        {/* Status do Envio - Aplicação manual */}
-        <div className="lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Status do Envio
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
-          </label>
-          <Popover open={statusEnvioOpen} onOpenChange={setStatusEnvioOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={statusEnvioOpen}
-                className={cn(
-                  "w-full justify-between",
-                  hasPendingChanges && JSON.stringify(filters.statusEnvio || []) !== JSON.stringify(appliedFilters.statusEnvio || []) && "border-warning"
-                )}
-              >
-                {selectedStatusEnvio.length === 0
-                  ? "Todos os status"
-                  : selectedStatusEnvio.length === 1
-                  ? selectedStatusEnvio[0]
-                  : `${selectedStatusEnvio.length} selecionados`
-                }
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-full p-0 bg-background border border-border z-50">
-              <div className="p-2 space-y-2">
-                <div className="text-sm font-medium px-2 py-1">Selecione os status:</div>
-                {STATUS_ENVIO.map((status) => (
-                  <div key={status} className="flex items-center space-x-2 px-2 py-1 hover:bg-muted/50 rounded">
-                    <Checkbox
-                      id={`status-${status}`}
-                      checked={selectedStatusEnvio.includes(status)}
-                      onCheckedChange={(checked) => handleStatusEnvioChange(status, checked as boolean)}
-                    />
-                    <label htmlFor={`status-${status}`} className="text-sm cursor-pointer flex-1">
-                      {status}
-                    </label>
-                  </div>
-                ))}
-                {selectedStatusEnvio.length > 0 && (
-                  <div className="border-t pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onFilterChange('statusEnvio', undefined)}
-                      className="w-full"
-                    >
-                      Limpar seleção
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
 
         {/* Contas ML - Aplicação manual */}
         <div className="lg:col-span-1 xl:col-span-1">
@@ -418,12 +349,6 @@ export function PedidosFiltersUnified({
             <Badge variant="secondary" className="gap-1">
               Busca: {appliedFilters.search}
               <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('search', undefined)} />
-            </Badge>
-          )}
-          {(appliedFilters.statusEnvio?.length || 0) > 0 && (
-            <Badge variant="secondary" className="gap-1">
-              Status do Envio: {appliedFilters.statusEnvio!.length === 1 ? appliedFilters.statusEnvio![0] : `${appliedFilters.statusEnvio!.length} selecionados`}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('statusEnvio', undefined)} />
             </Badge>
           )}
           {(appliedFilters.contasML?.length || 0) > 0 && (

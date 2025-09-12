@@ -7,9 +7,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  mapOrderStatusToAPI, 
-  mapShippingStatusToFilter, 
-  matchesShippingStatusFilter 
+  mapOrderStatusToAPI
 } from '@/utils/orderStatusMapping';
 import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { formatDate } from '@/lib/format';
@@ -19,7 +17,6 @@ import { toast } from 'react-hot-toast';
 export interface PedidosFilters {
   search?: string;
   statusPedido?: string | string[];   // ✅ NOVO: Status do pedido (order.status)
-  statusEnvio?: string | string[];    // ✅ MANTIDO: Status de envio (shipping.status) - client-side
   dataInicio?: Date;
   dataFim?: Date;
   contasML?: string[];
@@ -610,56 +607,7 @@ export function usePedidosManager(initialAccountId?: string) {
         }
       }
 
-      // Filtro de status de envio
-      if (filters.statusEnvio) {
-        const selectedStatuses = Array.isArray(filters.statusEnvio) ? filters.statusEnvio : [filters.statusEnvio];
-        
-        // Verificar se é um filtro especial de status de estoque/mapeamento
-        const specialStatuses = ['pronto_baixar', 'mapear_incompleto', 'baixado'];
-        const hasSpecialStatus = selectedStatuses.some(status => specialStatuses.includes(status));
-        
-        if (hasSpecialStatus) {
-          // Para status especiais, verificar lógica de mapeamento
-          console.log('🔍 Verificando status especial para pedido:', order.id, 'status:', order.situacao || order.status, 'filtros especiais:', selectedStatuses);
-          
-          const statusMatches = selectedStatuses.some(selectedStatus => {
-            if (selectedStatus === 'pronto_baixar') {
-              // Verificar se tem mapeamento completo e pode baixar
-              // Aqui usamos uma lógica similar à da tabela para determinar se está pronto para baixar
-              const isPaid = ['paid', 'shipped', 'ready_to_ship'].includes(order.situacao || order.status);
-              console.log('📦 Verificando pronto_baixar:', order.id, 'isPaid:', isPaid, 'status:', order.situacao || order.status);
-              return isPaid; // Simplificado por agora - você pode refinar esta lógica
-            }
-            if (selectedStatus === 'mapear_incompleto') {
-              // Verificar se precisa de mapeamento
-              const needsMapping = ['confirmed', 'payment_required'].includes(order.situacao || order.status);
-              return needsMapping;
-            }
-            if (selectedStatus === 'baixado') {
-              // Verificar se já foi baixado (delivered)
-              return ['delivered'].includes(order.situacao || order.status);
-            }
-            return false;
-          });
-          
-          if (!statusMatches) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('🚫 Pedido filtrado por status especial:', order.id, 'status pedido:', order.situacao || order.status, 'filtros:', selectedStatuses);
-            }
-            return false;
-          }
-        } else {
-          // ✅ CORRIGIDO: Usar nova função de mapeamento para filtros de envio
-          const statusMatches = matchesShippingStatusFilter(order, selectedStatuses);
-          
-          if (!statusMatches) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('🚫 Pedido filtrado por status de envio:', order.id, 'filtros:', selectedStatuses);
-            }
-            return false;
-          }
-        }
-      }
+      // ✅ REMOVIDO: Filtro de status de envio (statusEnvio) foi removido
 
       // 📅 CORRIGIDO: Filtro de data com verificação robusta
       if (filters.dataInicio || filters.dataFim) {
@@ -855,7 +803,7 @@ export function usePedidosManager(initialAccountId?: string) {
       : (unifiedResult as any).results;
     const rawList = (unifiedResult as any).results || [];
     
-    const shouldApplyClientFilter = Boolean(filters.statusEnvio) && !serverAppliedFiltering;
+    const shouldApplyClientFilter = false; // ✅ REMOVIDO: statusEnvio não existe mais
     const filteredClientResults = shouldApplyClientFilter
       ? applyClientSideFilters(baseList)
       : baseList;
