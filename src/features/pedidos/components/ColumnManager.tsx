@@ -44,7 +44,13 @@ export function ColumnManager(props: ColumnManagerProps) {
   const { manager, state: extState, actions: extActions, definitions: extDefs, visibleDefinitions: extVisible, profiles: extProfiles, onColumnsChange, trigger } = props;
   const internal = useColumnManager();
   const used = manager ?? (extState && extActions 
-    ? { state: extState, actions: extActions, definitions: extDefs || internal.definitions, visibleDefinitions: extVisible || internal.visibleDefinitions, profiles: extProfiles || internal.profiles }
+    ? { 
+        state: extState || { visibleColumns: new Set(), columnOrder: [], activeProfile: 'standard', customProfiles: [] }, 
+        actions: extActions, 
+        definitions: extDefs || internal.definitions || [], 
+        visibleDefinitions: extVisible || internal.visibleDefinitions || [], 
+        profiles: extProfiles || internal.profiles || []
+      }
     : internal
   );
   const { state, actions, definitions, visibleDefinitions, profiles } = used;
@@ -130,6 +136,11 @@ export function ColumnManager(props: ColumnManagerProps) {
   };
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
+    if (!definitions || !Array.isArray(definitions)) {
+      console.warn('[ColumnManager] definitions is undefined in handleCategoryToggle');
+      return;
+    }
+    
     const categoryColumns = definitions
       .filter(col => col.category === category)
       .map(col => col.key);
@@ -140,7 +151,7 @@ export function ColumnManager(props: ColumnManagerProps) {
       categoryColumns.forEach(key => actions.hideColumn(key));
     }
     
-    if (onColumnsChange) {
+    if (onColumnsChange && state?.visibleColumns) {
       onColumnsChange(Array.from(state.visibleColumns));
     }
   };
@@ -271,6 +282,18 @@ export function ColumnManager(props: ColumnManagerProps) {
             <div className="flex-1 overflow-y-auto space-y-4">
               {Object.entries(groupedColumns).map(([category, columns]) => {
                 const categoryLabel = CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS];
+                
+                // Add safety checks for state.visibleColumns
+                if (!state?.visibleColumns || !columns || !Array.isArray(columns)) {
+                  console.warn('[ColumnManager] Missing state.visibleColumns or columns array:', { 
+                    hasState: !!state, 
+                    hasVisibleColumns: !!state?.visibleColumns, 
+                    hasColumns: !!columns,
+                    isArray: Array.isArray(columns)
+                  });
+                  return null;
+                }
+                
                 const visibleInCategory = columns.filter(col => state.visibleColumns.has(col.key)).length;
                 const allVisible = visibleInCategory === columns.length;
                 const someVisible = visibleInCategory > 0 && visibleInCategory < columns.length;
@@ -279,7 +302,7 @@ export function ColumnManager(props: ColumnManagerProps) {
                   <div key={category} className="space-y-2">
                     <div className="flex items-center space-x-2 pb-2 border-b">
                       <Checkbox
-                        checked={allVisible}
+                        checked={allVisible || false}
                         ref={(el) => {
                           if (el && 'indeterminate' in el) {
                             (el as any).indeterminate = someVisible;
@@ -301,7 +324,7 @@ export function ColumnManager(props: ColumnManagerProps) {
                       {(columns || []).map(col => (
                         <div key={col.key} className="flex items-center space-x-2 py-1">
                           <Checkbox
-                            checked={state.visibleColumns.has(col.key)}
+                            checked={state?.visibleColumns?.has(col.key) || false}
                             onCheckedChange={() => handleColumnToggle(col.key)}
                           />
                           <div className="flex-1 min-w-0">
