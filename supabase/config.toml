@@ -46,3 +46,6 @@ verify_jwt = true
 [functions.enviar-notificacao-pedido]
 verify_jwt = true
 
+[functions.ml-auth]
+verify_jwt = true
+
