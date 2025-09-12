@@ -12,6 +12,7 @@ import { Package, CheckCircle, AlertTriangle, AlertCircle, Clock, ChevronLeft, C
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { mapApiStatusToLabel, getStatusBadgeVariant } from '@/utils/statusMapping';
+import { StatusBadge } from '@/components/pedidos/StatusBadge';
 import { 
   translatePaymentStatus, 
   translatePaymentMethod, 
@@ -410,8 +411,26 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span className="text-xs">{translatePaymentStatus(order.payment_status || order.payments?.[0]?.status || order.raw?.payments?.[0]?.status || order.status_pagamento || '-')}</span>;
                      case 'payment_type':
                        return <span className="text-xs">{translatePaymentType(order.payment_type || order.payments?.[0]?.payment_type || order.raw?.payments?.[0]?.payment_type_id || order.tipo_pagamento || '-')}</span>;
-                    case 'shipping_status':
-                      return <span className="text-xs">{translateShippingStatus(order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.status_envio || '-')}</span>;
+                     case 'order_status':
+                       return (
+                         <StatusBadge 
+                           status={order.order_status || order.status || order.raw?.status || 'unknown'} 
+                           substatus={order.order_status_detail || order.status_detail || order.raw?.status_detail}
+                           type="order"
+                         />
+                       );
+                     case 'order_status_detail':
+                       return <span className="text-xs">{order.order_status_detail || order.status_detail || order.raw?.status_detail || '-'}</span>;
+                     case 'shipping_status':
+                       return (
+                         <StatusBadge 
+                           status={order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.raw?.shipping_details?.status || 'unknown'} 
+                           substatus={order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus}
+                           type="shipping"
+                         />
+                       );
+                     case 'shipping_substatus':
+                       return <span className="text-xs">{order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus || '-'}</span>;
                      case 'logistic_mode':
                        return <span className="text-xs">{formatText(order.logistic_mode || order.logistic_mode_principal || order.shipping?.logistic?.mode || order.raw?.shipping?.logistic?.mode || order.unified?.logistic?.mode || '-')}</span>;
                      case 'logistic_type':

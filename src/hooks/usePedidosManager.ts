@@ -1030,6 +1030,34 @@ export function usePedidosManager(initialAccountId?: string) {
           (o.shipping_details && o.shipping_details.delivery_type) ||
           (rawData && rawData.shipping?.delivery_type) ||
           undefined,
+        
+        // ⭐ NOVOS CAMPOS DE STATUS DETALHADOS DA API
+        order_status:
+          o.order_status ||
+          o.status ||
+          rawData.status ||
+          o.unified?.status ||
+          undefined,
+        order_status_detail:
+          o.order_status_detail ||
+          o.status_detail ||
+          rawData.status_detail ||
+          o.unified?.status_detail ||
+          undefined,
+        shipping_status:
+          o.shipping_status ||
+          o.shipping?.status ||
+          rawData.shipping?.status ||
+          o.shipping_details?.status ||
+          o.unified?.shipping?.status ||
+          undefined,
+        shipping_substatus:
+          o.shipping_substatus ||
+          o.shipping?.substatus ||
+          rawData.shipping?.substatus ||
+          o.shipping_details?.substatus ||
+          o.unified?.shipping?.substatus ||
+          undefined,
       };
     });
         // 🚨 FIX 2: Evitar respostas fora de ordem

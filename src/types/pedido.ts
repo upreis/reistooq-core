@@ -174,6 +174,12 @@ export interface Pedido {
   buyer?: Buyer;
   seller?: Seller;
   taxes?: Taxes;
+  
+  // Novos campos de status detalhados da API
+  order_status?: string;          // Status principal da ordem (confirmed, paid, cancelled)
+  order_status_detail?: string;   // Detalhes do status da ordem
+  shipping_status?: string;       // Status do envio (ready_to_ship, shipped, delivered)
+  shipping_substatus?: string;    // Substatus do envio (printed, picked_up, out_for_delivery)
 }
 
 export interface UnifiedOrdersParams {

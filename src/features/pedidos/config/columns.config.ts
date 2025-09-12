@@ -508,6 +508,54 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: false,
     description: 'Detalhes do status do pack',
     width: 140
+  },
+
+  // ====== NOVAS COLUNAS - STATUS DETALHADOS DA API ======
+  {
+    key: 'order_status',
+    label: 'Status da Ordem',
+    category: 'ml',
+    priority: 'important',
+    visible: false,
+    default: false,
+    description: 'Status principal da ordem (confirmed, paid, cancelled, etc.)',
+    width: 130,
+    sortable: true,
+    filterable: true
+  },
+  {
+    key: 'order_status_detail',
+    label: 'Detalhes da Ordem',
+    category: 'ml',
+    priority: 'important',
+    visible: false,
+    default: false,
+    description: 'Detalhes específicos do status da ordem',
+    width: 150,
+    filterable: true
+  },
+  {
+    key: 'shipping_status',
+    label: 'Status do Envio',
+    category: 'shipping',
+    priority: 'important',
+    visible: false,
+    default: false,
+    description: 'Status do envio (ready_to_ship, shipped, delivered, etc.)',
+    width: 140,
+    sortable: true,
+    filterable: true
+  },
+  {
+    key: 'shipping_substatus',
+    label: 'Substatus do Envio',
+    category: 'shipping',
+    priority: 'important',
+    visible: false,
+    default: false,
+    description: 'Substatus detalhado do envio (printed, picked_up, out_for_delivery, etc.)',
+    width: 160,
+    filterable: true
   }
 ];
 
