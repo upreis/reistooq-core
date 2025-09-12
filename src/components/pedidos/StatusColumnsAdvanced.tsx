@@ -171,16 +171,23 @@ export function ShippingSubstatusColumn({ row, showTooltip = true }: StatusColum
 
 // ===== 4️⃣ COLUNA STATUS DE DEVOLUÇÃO =====
 export function ReturnStatusColumn({ row, showTooltip = true }: StatusColumnProps) {
-  // ✅ BUSCAR: Dados de returns que vem da API
-  const returnsData = (row as any)?.returns;
+  // ✅ ACESSAR: Dados transformados que já vem prontos
+  const returnStatus = (row as any)?.return_status;
+  const returnId = (row as any)?.return_id;
+  const returnDate = (row as any)?.return_date;
+  const returnReason = (row as any)?.return_reason;
+  const refundDate = (row as any)?.refund_date;
   
   // Debug: verificar dados disponíveis
   console.log('🐛 [ReturnStatus] Debug para pedido', (row as any)?.id || row.unified?.numero, {
-    returnsData: returnsData,
-    hasReturns: Array.isArray(returnsData) && returnsData.length > 0
+    returnStatus,
+    returnId,
+    returnDate,
+    returnReason,
+    refundDate
   });
   
-  if (!returnsData || !Array.isArray(returnsData) || returnsData.length === 0) {
+  if (!returnStatus) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
         <div className="w-4 h-4 rounded-full border-2 border-dashed border-muted-foreground/30" />
@@ -188,14 +195,6 @@ export function ReturnStatusColumn({ row, showTooltip = true }: StatusColumnProp
       </div>
     );
   }
-  
-  // Pegar o primeiro return (mais recente)
-  const returnInfo = returnsData[0];
-  const returnStatus = returnInfo?.status || '—';
-  const returnDate = returnInfo?.date_created || returnInfo?.created_date || null;
-  const refundDate = returnInfo?.refund_date || returnInfo?.date_closed || null;
-  const returnReason = returnInfo?.reason || returnInfo?.return_reason || null;
-  const returnId = returnInfo?.id || returnInfo?.return_id || null;
   
   const getReturnBadgeVariant = (status: string) => {
     switch (status.toLowerCase()) {

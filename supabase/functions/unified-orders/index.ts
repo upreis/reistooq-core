@@ -418,6 +418,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       return_id: order.returns?.length ? order.returns[0]?.id : null,
       return_date: order.returns?.length ? order.returns[0]?.date_created : null,
       return_reason: order.returns?.length ? order.returns[0]?.reason : null,
+      refund_date: order.returns?.length ? order.returns[0]?.refund?.date : null,
       
       // Valores financeiros detalhados
       frete_pago_cliente: fretePagoCliente,
