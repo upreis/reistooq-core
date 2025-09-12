@@ -1,5 +1,4 @@
 // supabase/functions/mercadolibre-oauth-callback/index.ts
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Chave usada pelo RPC para cifrar/decifrar (Project Settings → Secrets)
@@ -32,7 +31,7 @@ function getMlConfig() {
   return { clientId, clientSecret, redirectUri, canonical };
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

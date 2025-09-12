@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { makeClient, corsHeaders } from "../_shared/client.ts";
 
 // POST /registrar-historico-vendas
@@ -228,4 +227,4 @@ export default async function handler(req: Request): Promise<Response> {
 }
 
 // Start the edge function server
-serve((req) => handler(req));
+Deno.serve((req) => handler(req));
