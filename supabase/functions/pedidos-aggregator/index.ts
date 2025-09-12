@@ -1,5 +1,4 @@
 // supabase/functions/pedidos-aggregator/index.ts
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -31,7 +30,7 @@ function fail(error: string, status = 400, detail?: unknown, cid?: string) {
   });
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
