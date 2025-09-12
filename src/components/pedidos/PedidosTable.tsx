@@ -312,18 +312,30 @@ export function PedidosTable({
                             return show(get(row.unified, 'numero_venda') ?? get(row.raw, 'id'));
                           case 'empresa':
                             return show(get(row.unified, 'empresa') ?? 'mercadolivre');
-                          case 'cidade':
-                            return show(get(row.unified, 'cidade') ?? get(row.raw, 'shipping_details.receiver_address.city.name'));
-                          case 'uf':
-                            return show(get(row.unified, 'uf') ?? get(row.raw, 'shipping_details.receiver_address.state.id'));
-                           case 'cep':
-                             return show(get(row.raw, 'shipping_details.receiver_address.zip_code'));
-                           case 'endereco_rua':
-                             return show(get(row.unified, 'endereco_rua') ?? get(row.raw, 'shipping_details.receiver_address.street_name') ?? get(row.raw, 'shipping.receiver_address.street_name'));
-                           case 'endereco_numero':
-                             return show(get(row.unified, 'endereco_numero') ?? get(row.raw, 'shipping_details.receiver_address.street_number') ?? get(row.raw, 'shipping.receiver_address.street_number'));
-                           case 'endereco_bairro':
-                             return show(get(row.unified, 'endereco_bairro') ?? get(row.raw, 'shipping_details.receiver_address.neighborhood.name') ?? get(row.raw, 'shipping.receiver_address.neighborhood.name'));
+                           case 'cidade':
+                             // Usar compat com fallback para campos antigos
+                             const compatCidade = (row as any).compat?.cidade;
+                             return show(compatCidade ?? get(row.unified, 'cidade') ?? get(row.raw, 'shipping_details.receiver_address.city.name'));
+                           case 'uf':
+                             // Usar compat com fallback para campos antigos
+                             const compatUf = (row as any).compat?.uf;
+                             return show(compatUf ?? get(row.unified, 'uf') ?? get(row.raw, 'shipping_details.receiver_address.state.id'));
+                            case 'cep':
+                              // Usar compat com fallback para campos antigos
+                              const compatCep = (row as any).compat?.cep;
+                              return show(compatCep ?? get(row.raw, 'shipping_details.receiver_address.zip_code'));
+                            case 'endereco_rua':
+                              // Usar compat com fallback para campos antigos
+                              const compatRua = (row as any).compat?.rua;
+                              return show(compatRua ?? get(row.unified, 'endereco_rua') ?? get(row.raw, 'shipping_details.receiver_address.street_name') ?? get(row.raw, 'shipping.receiver_address.street_name'));
+                            case 'endereco_numero':
+                              // Usar compat com fallback para campos antigos
+                              const compatNumero = (row as any).compat?.numero;
+                              return show(compatNumero ?? get(row.unified, 'endereco_numero') ?? get(row.raw, 'shipping_details.receiver_address.street_number') ?? get(row.raw, 'shipping.receiver_address.street_number'));
+                            case 'endereco_bairro':
+                              // Usar compat com fallback para campos antigos
+                              const compatBairro = (row as any).compat?.bairro;
+                              return show(compatBairro ?? get(row.unified, 'endereco_bairro') ?? get(row.raw, 'shipping_details.receiver_address.neighborhood.name') ?? get(row.raw, 'shipping.receiver_address.neighborhood.name'));
                             case 'shipping_status':
                               const shippingStatus = get(row.raw, 'shipping_details.status');
                               const mappedStatus = mapMLStatus(shippingStatus);
@@ -333,12 +345,28 @@ export function PedidosTable({
                                 </Badge>
                               );
                            case 'shipping_mode':
-                             return show(get(row.raw, 'shipping_details.shipping_mode'));
+                             // Usar compat com fallback para campos antigos
+                             const compatMode = (row as any).compat?.logistic_mode_principal;
+                             return show(compatMode ?? get(row.raw, 'shipping_details.shipping_mode') ?? get(row.raw, 'shipping.mode'));
+                           case 'tipo_logistico':
+                             // Nova coluna usando compat
+                             const compatTipo = (row as any).compat?.tipo_logistico;
+                             return show(compatTipo ?? get(row.raw, 'shipping.logistic_type') ?? get((row as any).enriched, 'shipping.logistic_type'));
+                           case 'modo_envio_combinado':
+                             // Nova coluna usando compat
+                             const compatModoEnvio = (row as any).compat?.modo_envio_comb;
+                             return show(compatModoEnvio);
+                           case 'metodo_envio_combinado':
+                             // Nova coluna usando compat
+                             const compatMetodoEnvio = (row as any).compat?.metodo_envio_comb;
+                             return show(compatMetodoEnvio);
                             case 'shipping_substatus':
-                              const rawSubstatus = get(row.raw, 'shipping_details.substatus');
-                              const translatedSubstatus = translateShippingSubstatus(rawSubstatus);
+                              // Usar compat com fallback para campos antigos
+                              const compatSubstatus = (row as any).compat?.substatus;
+                              const finalSubstatus = compatSubstatus ?? get(row.raw, 'shipping_details.substatus') ?? get(row.raw, 'shipping.substatus');
+                              const translatedSubstatus = translateShippingSubstatus(finalSubstatus);
                               return (
-                                <Badge variant={getStatusBadgeVariant('', rawSubstatus)}>
+                                <Badge variant={getStatusBadgeVariant('', finalSubstatus)}>
                                   {translatedSubstatus}
                                 </Badge>
                               );

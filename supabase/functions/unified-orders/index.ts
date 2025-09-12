@@ -943,10 +943,16 @@ Deno.serve(async (req) => {
 
     console.log(`[unified-orders:${cid}] Enriquecimento completo concluído`);
 
-    return ok({
-      results: filteredOrders.map(order => ({
-        ...order,
-        // Compatibilidade: mapear campos para estrutura esperada pela UI
+    // Retornar resultado estruturado com camada de compatibilidade
+    const resultsWithCompat = filteredOrders.map((order, index) => {
+      const ship = order.shipping || {};
+      const enrich = order.detailed_shipping || order.enriched?.shipping || {};
+      const rcvAddr = ship.receiver_address || enrich.receiver_address || {};
+      const stateObj = rcvAddr.state || {};
+      const cityObj = rcvAddr.city || {};
+      const neighObj = rcvAddr.neighborhood || {};
+
+      const row = {
         order: order,
         shipping: order.shipping || {},
         enriched: {
@@ -960,8 +966,53 @@ Deno.serve(async (req) => {
           id: order.id,
           status: order.status,
           total_amount: order.total_amount
+        },
+        // ===== CAMADA DE COMPATIBILIDADE =====
+        compat: {
+          // Campos que REGREDIRAM - usar cadeia de fallbacks
+          logistic_mode_principal: ship.mode ?? enrich.mode ?? null,
+          tipo_logistico: ship.logistic_type ?? enrich.logistic_type ?? null,
+          substatus: ship.substatus ?? enrich.substatus ?? null,
+
+          // Combos (preserve o que existia)
+          modo_envio_comb: (ship.mode ?? enrich.mode ?? null),
+          metodo_envio_comb: (ship.shipping_method?.name ?? enrich.shipping_method?.name ?? null),
+
+          // Endereço de entrega
+          rua: rcvAddr.street_name ?? null,
+          numero: rcvAddr.street_number ?? null,
+          bairro: (typeof neighObj === 'object' ? (neighObj.name ?? null) : neighObj ?? null),
+          cep: rcvAddr.zip_code ?? null,
+          cidade: (typeof cityObj === 'object' ? (cityObj.name ?? null) : cityObj ?? null),
+          uf: (stateObj.id ?? stateObj.name ?? null)
         }
-      })),
+      };
+
+      // Log de auditoria apenas da primeira linha
+      if (index === 0) {
+        console.log(`[unified-orders:${cid}] [compat-sample]`, {
+          id: row.order.id,
+          logistic_mode_principal: row.compat.logistic_mode_principal,
+          tipo_logistico: row.compat.tipo_logistico,
+          substatus: row.compat.substatus,
+          modo_envio_comb: row.compat.modo_envio_comb,
+          metodo_envio_comb: row.compat.metodo_envio_comb,
+          endereco: {
+            rua: row.compat.rua, 
+            numero: row.compat.numero,
+            bairro: row.compat.bairro, 
+            cep: row.compat.cep,
+            cidade: row.compat.cidade, 
+            uf: row.compat.uf,
+          },
+        });
+      }
+
+      return row;
+    });
+
+    return ok({
+      results: resultsWithCompat,
       total: filteredOrders.length,
       pagination: {
         offset: offset || 0,
