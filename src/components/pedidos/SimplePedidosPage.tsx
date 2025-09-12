@@ -63,6 +63,7 @@ import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
+import { ColumnDebugTest } from '../debug/ColumnDebugTest';
 
 
 
@@ -1145,6 +1146,10 @@ useEffect(() => {
         </Card>
       )}
 
+
+      
+      {/* 🔍 Debug temporário das colunas */}
+      <ColumnDebugTest />
 
       {/* 🚀 FASE 2: Loading otimizado */}
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}

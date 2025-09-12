@@ -3,7 +3,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Row, get, show } from '@/services/orders';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { mapMLStatus, getStatusBadgeVariant, mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
+import { mapMLStatus, getStatusBadgeVariant } from '@/utils/mlStatusMapping';
+import { translateShippingSubstatus } from '@/utils/pedidos-translations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -330,14 +331,14 @@ export function PedidosTable({
                               );
                            case 'shipping_mode':
                              return show(get(row.raw, 'shipping_details.shipping_mode'));
-                           case 'shipping_substatus':
-                             const rawSubstatus = get(row.raw, 'shipping_details.substatus');
-                             const mappedSubstatus = mapMLShippingSubstatus(rawSubstatus);
-                             return (
-                               <Badge variant={getStatusBadgeVariant('', rawSubstatus)}>
-                                 {mappedSubstatus || rawSubstatus || '—'}
-                               </Badge>
-                             );
+                            case 'shipping_substatus':
+                              const rawSubstatus = get(row.raw, 'shipping_details.substatus');
+                              const translatedSubstatus = translateShippingSubstatus(rawSubstatus);
+                              return (
+                                <Badge variant={getStatusBadgeVariant('', rawSubstatus)}>
+                                  {translatedSubstatus}
+                                </Badge>
+                              );
                           case 'codigo_rastreamento':
                             return show(get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping_details.tracking_number'));
                           case 'url_rastreamento':
