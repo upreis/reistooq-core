@@ -536,9 +536,9 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     key: 'return_status_advanced',
     label: 'Status de Devolução (Avançado)',
     category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
+    priority: 'important',
+    visible: true,
+    default: true,
     description: 'Status de devolução quando aplicável',
     width: 160
   },
