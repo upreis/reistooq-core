@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { mapSituacaoToApiStatus, mapApiStatusToLabel, statusMatchesFilter } from '@/utils/statusMapping';
+import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { formatDate } from '@/lib/format';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'react-hot-toast';
@@ -716,24 +717,26 @@ export function usePedidosManager(initialAccountId?: string) {
             });
           }
           
-          // 🎯 MAPEAMENTO: Status português (filtro) -> status inglês (API) 
-          const statusMatches = selectedStatuses.some(selectedStatusPT => {
-            // Mapear status PT para API
-            const apiStatus = mapSituacaoToApiStatus(selectedStatusPT);
+          // 🎯 COMPARAÇÃO DIRETA: API status (filtro) -> shipping_status (campo)
+          const statusMatches = selectedStatuses.some(selectedAPIStatus => {
+            // Comparar diretamente o status da API com os campos de envio
+            const shippingStatus = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status || order.raw?.shipping_details?.status;
+            const shippingSubstatus = order.shipping_substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.raw?.shipping_details?.substatus;
             
-            // ✅ COMPARAR APENAS COM shipping_status (campo correto)
-            const matchesStatus = realStatus === apiStatus ||
-                                realStatus === selectedStatusPT ||
-                                mapApiStatusToLabel(realStatus) === selectedStatusPT;
+            // Verificar se o status ou substatus corresponde ao filtro selecionado
+            const matchesStatus = shippingStatus === selectedAPIStatus ||
+                                  shippingSubstatus === selectedAPIStatus ||
+                                  mapMLShippingSubstatus(shippingStatus) === mapMLShippingSubstatus(selectedAPIStatus) ||
+                                  mapMLShippingSubstatus(shippingSubstatus) === mapMLShippingSubstatus(selectedAPIStatus);
             
             // 🚨 EVIDÊNCIA: Log detalhado da comparação
-            console.log('🔄 PROVA DE CORREÇÃO - Mapeamento Status:', {
-              selectedPT: selectedStatusPT,
-              mappedAPI: apiStatus,
-              realStatus_shipping_status: realStatus,
+            console.log('🔄 FILTRO STATUS ENVIO - Comparação direta:', {
+              selectedAPIStatus,
+              shippingStatus,
+              shippingSubstatus,
               matches: matchesStatus,
-              'CAMPO_SENDO_USADO': 'shipping_status',
-              'CORREÇÃO_CONFIRMADA': true
+              orderId: order.id,
+              'CAMPO_SENDO_USADO': 'shipping_status + shipping_substatus'
             });
             
             return matchesStatus;

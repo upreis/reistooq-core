@@ -24,7 +24,7 @@ import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoS
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
 
-import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
+import { mapMLShippingSubstatus, ML_SHIPPING_SUBSTATUS_MAP, getStatusBadgeVariant as getMLStatusBadgeVariant } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
 import { mapApiStatusToLabel, getStatusBadgeVariant, mapSituacaoToApiStatus, statusMatchesFilter } from '@/utils/statusMapping';
 import { usePedidosManager } from '@/hooks/usePedidosManager';
@@ -1004,17 +1004,14 @@ useEffect(() => {
                         </Button>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 gap-2">
-                      {[
-                        { value: 'pending', label: 'Pendente', color: 'bg-yellow-400' },
-                        { value: 'handling', label: 'Preparando', color: 'bg-cyan-400' },
-                        { value: 'ready_to_ship', label: 'Pronto para Enviar', color: 'bg-blue-400' },
-                        { value: 'shipped', label: 'A Caminho', color: 'bg-purple-400' },
-                        { value: 'delivered', label: 'Entregue', color: 'bg-green-400' },
-                        { value: 'not_delivered', label: 'Não Entregue', color: 'bg-red-400' },
-                        { value: 'cancelled', label: 'Cancelado', color: 'bg-gray-400' },
-                        { value: 'to_be_agreed', label: 'A Combinar', color: 'bg-orange-400' }
-                      ].map((status) => {
+                     <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
+                       {Object.entries(ML_SHIPPING_SUBSTATUS_MAP).map(([key, value]) => ({
+                         value: key,
+                         label: value.portuguese,
+                         color: getMLStatusBadgeVariant('', key) === 'default' ? 'bg-green-400' : 
+                                getMLStatusBadgeVariant('', key) === 'destructive' ? 'bg-red-400' :
+                                getMLStatusBadgeVariant('', key) === 'secondary' ? 'bg-blue-400' : 'bg-gray-400'
+                       })).sort((a, b) => a.label.localeCompare(b.label)).map((status) => {
                         const current = Array.isArray(filtersManager.filters.statusEnvio)
                           ? filtersManager.filters.statusEnvio
                           : (filtersManager.filters.statusEnvio ? [filtersManager.filters.statusEnvio] : []);
