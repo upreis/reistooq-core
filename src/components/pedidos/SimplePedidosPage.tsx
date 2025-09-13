@@ -931,12 +931,35 @@ useEffect(() => {
 
   // Render principal
   return (
-    <div className={`space-y-6 p-6 ${className}`}>
-      {/* 📊 DASHBOARD INTELIGENTE */}
-      <PedidosDashboardSection 
-        orders={orders || []}
-        loading={loading}
-      />
+    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'orders' | 'complete-sales')} className="h-screen flex flex-col">
+      {/* Header com abas */}
+      <div className="border-b bg-background sticky top-0 z-10 px-6 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            🛒
+            /
+            Pedidos
+          </div>
+        </div>
+        
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="orders" className="flex items-center gap-2">
+            📦 Orders
+          </TabsTrigger>
+          <TabsTrigger value="complete-sales" className="flex items-center gap-2">
+            🔍 Vendas Completas
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
+      {/* Conteúdo das abas */}
+      <TabsContent value="orders" className="flex-1 overflow-auto m-0 p-6">
+        <div className="space-y-6">
+          {/* 📊 DASHBOARD INTELIGENTE */}
+          <PedidosDashboardSection 
+            orders={orders || []}
+            loading={loading}
+          />
 
       {/* 🛡️ HEADER BLINDADO */}
       <PedidosHeaderSection
@@ -1192,7 +1215,15 @@ useEffect(() => {
         hasActiveFilters={filtersManager.hasActiveFilters}
         columnManager={columnManager}
       />
-    </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="complete-sales" className="flex-1 overflow-auto m-0 p-6">
+        <VendasCompletasTab accounts={accounts} />
+      </TabsContent>
+
+      {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
+    </Tabs>
   );
 }
 
