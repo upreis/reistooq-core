@@ -181,13 +181,15 @@ serve(async (req) => {
     console.log(`📅 [ML Devoluções] Buscando claims de ${dateFrom} até ${dateTo}`);
 
     while (true) {
-      // ✅ CORRETO - Endpoint que realmente existe (removido /search)
-      const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims?` +
-        `seller_id=${sellerId}&` +
+      // ✅ ENDPOINT CORRETO (com /search) + parâmetros corretos
+      const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
+        `resource=order&` +
+        `date_created=after:${new Date(dateFrom).toISOString()}&` +
         `offset=${offset}&` +
         `limit=${limit}`;
 
       console.log(`🔍 [ML Devoluções] Buscando claims - offset: ${offset}`);
+      console.log(`🔗 [ML Devoluções] URL: ${claimsUrl}`);
 
       const claimsResponse = await fetch(claimsUrl, {
         headers: {
@@ -199,25 +201,26 @@ serve(async (req) => {
       if (!claimsResponse.ok) {
         console.error(`❌ [ML Devoluções] Erro ao buscar claims: ${claimsResponse.status}`);
         console.error(`🔗 [ML Devoluções] URL tentada: ${claimsUrl}`);
+        
+        // Log do erro detalhado
+        try {
+          const errorBody = await claimsResponse.text();
+          console.error(`💥 [ML Devoluções] Resposta do erro: ${errorBody}`);
+        } catch (e) {
+          console.error(`💥 [ML Devoluções] Não foi possível ler o corpo do erro`);
+        }
+        
         throw new Error(`Erro na API do ML: ${claimsResponse.status}`);
       }
 
       const claimsData: MLClaimResponse = await claimsResponse.json();
       
-      // Filtrar por data localmente (já que a API não aceita filtros de data diretamente)
-      const filteredClaims = claimsData.results?.filter(claim => {
-        const claimDate = new Date(claim.date_created);
-        const fromDate = new Date(dateFrom);
-        const toDate = new Date(dateTo);
-        return claimDate >= fromDate && claimDate <= toDate;
-      }) || [];
-      
-      if (filteredClaims.length > 0) {
-        allClaims.push(...filteredClaims);
-        console.log(`📦 [ML Devoluções] Encontrados ${filteredClaims.length} claims (${claimsData.results?.length || 0} total, ${filteredClaims.length} no período)`);
+      if (claimsData.results && claimsData.results.length > 0) {
+        allClaims.push(...claimsData.results);
+        console.log(`📦 [ML Devoluções] Encontrados ${claimsData.results.length} claims`);
       }
 
-      // Verificar se há mais páginas (baseado no resultado original, não filtrado)
+      // Verificar se há mais páginas
       if (!claimsData.results || claimsData.results.length < limit) {
         break;
       }
