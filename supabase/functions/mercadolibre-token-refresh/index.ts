@@ -1,6 +1,30 @@
-import { corsHeaders, fail, ok, getMlConfig, makeClient } from "../_shared/client.ts";
-import { decryptAESGCM } from "../_shared/crypto.ts";
-import { CRYPTO_KEY } from "../_shared/config.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function makeClient(authHeader: string | null) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(url, key, {
+    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
+  });
+}
+
+function getMlConfig() {
+  const clientId = Deno.env.get('ML_CLIENT_ID');
+  const clientSecret = Deno.env.get('ML_CLIENT_SECRET');
+  const redirectUri = Deno.env.get('ML_REDIRECT_URI');
+
+  if (!clientId || !clientSecret) {
+    throw new Error('Missing ML secrets: ML_CLIENT_ID, ML_CLIENT_SECRET are required');
+  }
+
+  return { clientId, clientSecret, redirectUri };
+}
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
@@ -10,13 +34,19 @@ Deno.serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
-    return fail('Method not allowed', 405);
+    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   try {
     const { integration_account_id } = await req.json();
     if (!integration_account_id) {
-      return fail('integration_account_id required', 400);
+      return new Response(JSON.stringify({ success: false, error: 'integration_account_id required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     console.log(`[ML Token Refresh] Iniciando refresh para account: ${integration_account_id}`);
@@ -36,7 +66,14 @@ Deno.serve(async (req) => {
 
     if (secretsError || !secretData?.decrypted_data) {
       console.error('[ML Token Refresh] Erro ao buscar secrets:', secretsError);
-      return fail('Failed to fetch secrets', 500, secretsError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Failed to fetch secrets',
+        details: secretsError 
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     const secrets = secretData.decrypted_data;
@@ -51,36 +88,42 @@ Deno.serve(async (req) => {
     if (!refreshToken) {
       console.error('[ML Token Refresh] ❌ CRITICO: Refresh token não encontrado após todos os fallbacks');
       
-      // Verificar se secrets estão configurados (sistema blindado exige)
-      if (!CRYPTO_KEY || CRYPTO_KEY.length < 32) {
-        console.error('[ML Token Refresh] ❌ CRITICO: APP_ENCRYPTION_KEY ausente ou inválido');
-        return fail("APP_ENCRYPTION_KEY not configured", 500, { 
-          error_type: 'config_missing',
-          required_secret: 'APP_ENCRYPTION_KEY'
-        });
-      }
-
       try {
         const { clientId, clientSecret } = getMlConfig();
         if (!clientId || !clientSecret) {
           console.error('[ML Token Refresh] ❌ CRITICO: ML_CLIENT_ID ou ML_CLIENT_SECRET ausentes');
-          return fail("ML secrets not configured", 500, { 
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: "ML secrets not configured",
             error_type: 'config_missing',
             required_secrets: ['ML_CLIENT_ID', 'ML_CLIENT_SECRET']
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
       } catch (e) {
         console.error('[ML Token Refresh] ❌ CRITICO: Erro ao verificar ML secrets:', e.message);
-        return fail("ML configuration error", 500, { 
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: "ML configuration error",
           error_type: 'config_error',
           message: e.message
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
 
-      return fail("Refresh token não encontrado", 404, { 
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Refresh token não encontrado",
         error_type: 'no_refresh_token',
         message: 'Conta requer reconexão OAuth',
         account_id: integration_account_id
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
@@ -115,10 +158,15 @@ Deno.serve(async (req) => {
         "Refresh token inválido/expirado — reconecte a conta" : 
         "Falha ao renovar token de acesso";
         
-      return fail(msg, resp.status, {
+      return new Response(JSON.stringify({
+        success: false,
+        error: msg,
         http_status: resp.status,
         body: raw,
         error_type: raw.includes("invalid_grant") ? 'reconnect_required' : 'refresh_failed'
+      }), {
+        status: resp.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
@@ -140,23 +188,37 @@ Deno.serve(async (req) => {
 
     if (updateError || !updateResult?.success) {
       console.error('[ML Token Refresh] Erro ao salvar tokens:', updateError);
-      return fail("Falha ao salvar novos tokens", 500, updateError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Falha ao salvar novos tokens",
+        details: updateError
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     console.log('[ML Token Refresh] ✅ Tokens salvos com sucesso');
 
-    return ok({
+    return new Response(JSON.stringify({
       success: true,
       access_token: json.access_token,
       expires_at: newExpiresAt,
       token_type: json.token_type || "Bearer"
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (e) {
     console.error("[ML Token Refresh] Unexpected error:", e);
-    return fail(String(e?.message ?? e), 500, {
+    return new Response(JSON.stringify({
+      success: false,
+      error: String(e?.message ?? e),
       error_type: 'unexpected_error',
       message: e?.message || 'Unknown error'
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
