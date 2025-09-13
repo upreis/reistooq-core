@@ -931,14 +931,7 @@ useEffect(() => {
 
   // Render principal
   return (
-    <Tabs defaultValue="orders" className="flex-1 flex flex-col">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="orders">Orders</TabsTrigger>
-        <TabsTrigger value="complete-sales">Vendas Completas</TabsTrigger>
-      </TabsList>
-      
-      <TabsContent value="orders" className="flex-1 overflow-auto m-0 p-6">
-        <div className="space-y-6">
+    <div className={`space-y-6 p-6 ${className}`}>
       {/* 📊 DASHBOARD INTELIGENTE */}
       <PedidosDashboardSection 
         orders={orders || []}
@@ -1199,15 +1192,7 @@ useEffect(() => {
         hasActiveFilters={filtersManager.hasActiveFilters}
         columnManager={columnManager}
       />
-        </div>
-      </TabsContent>
-
-      <TabsContent value="complete-sales" className="flex-1 overflow-auto m-0 p-6">
-        <VendasCompletasTab accounts={accounts} />
-      </TabsContent>
-
-      {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
-    </Tabs>
+    </div>
   );
 }
 
