@@ -146,6 +146,7 @@ function generateCodeVerifier() {
   return btoa(String.fromCharCode(...array))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
+
 async function generateCodeChallenge(verifier: string) {
   const data = new TextEncoder().encode(verifier);
   const digest = await crypto.subtle.digest('SHA-256', data);
