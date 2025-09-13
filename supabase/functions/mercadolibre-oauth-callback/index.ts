@@ -246,15 +246,15 @@ Deno.serve(async (req) => {
     console.log("ML OAuth completed successfully for account:", account.id);
 
     return new Response(
-      `<!doctype html><script>
-        window.opener?.postMessage({
-          type:'oauth_success',
-          provider:'mercadolivre',
-          account_id:${JSON.stringify(account.id)},
-          account_name:${JSON.stringify(account.name)}
-        },'*');
-        window.close();
-      </script>`,
+      "<!doctype html><script>" +
+        "window.opener?.postMessage({" +
+          "type:'oauth_success'," +
+          "provider:'mercadolivre'," +
+          "account_id:" + JSON.stringify(account.id) + "," +
+          "account_name:" + JSON.stringify(account.name) +
+        "},'*');" +
+        "window.close();" +
+      "</script>",
       { headers: { ...corsHeaders, "Content-Type": "text/html" } }
     );
   } catch (e) {
