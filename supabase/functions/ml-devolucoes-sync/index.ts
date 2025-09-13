@@ -169,28 +169,28 @@ serve(async (req) => {
     const sellerId = account.account_identifier;
     console.log(`🔑 [ML Devoluções] Token obtido para seller: ${sellerId}`);
 
-    // 🎯 FLUXO EXATO DA PLANILHA: PRIMEIRO BUSCAR ORDERS COM PROBLEMAS
+    // 🎯 FLUXO EXATO DA PLANILHA: BUSCAR ORDERS CANCELADAS
     let allClaims: MLClaim[] = [];
     let orderOffset = 0;
     const limit = 50;
     
-    // Definir período de busca (últimos 6 meses para maior chance de encontrar devoluções)
-    const dateFrom = date_from || new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+    // Definir período de busca (últimos 60 dias como a planilha)
+    const dateFrom = date_from || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
     const dateTo = date_to || new Date().toISOString();
 
-    console.log(`📅 [ML Devoluções] Fluxo da planilha: buscando orders de ${dateFrom} até ${dateTo} (6 meses com rate limit)`);
+    console.log(`📅 [ML Devoluções] Fluxo da planilha: buscando orders CANCELADAS de ${dateFrom} até ${dateTo}`);
 
-    // PASSO 1: Buscar orders com possíveis problemas (como a planilha faz)
+    // PASSO 1: Buscar orders CANCELADAS (este é o segredo da planilha!)
     while (true) {
       const ordersUrl = `https://api.mercadolibre.com/orders/search?` +
         `seller=${sellerId}&` +
-        `order.status=cancelled,paid,confirmed,payment_required&` + // Status que podem ter devoluções
+        `order.status=cancelled&` +  // ← ESTE É O SEGREDO DA PLANILHA!
         `sort=date_desc&` +
         `limit=${limit}&` +
         `offset=${orderOffset}`;
 
-      console.log(`🔍 [ML Devoluções] Buscando orders - offset: ${orderOffset}`);
-      console.log(`🔗 [ML Devoluções] Orders URL: ${ordersUrl}`);
+      console.log(`🔍 [ML Devoluções] Buscando orders CANCELADAS - offset: ${orderOffset}`);
+      console.log(`🔗 [ML Devoluções] URL: ${ordersUrl}`);
 
       const ordersResponse = await fetch(ordersUrl, {
         headers: {
@@ -209,34 +209,33 @@ serve(async (req) => {
           await new Promise(resolve => setTimeout(resolve, 5000));
           continue; // Tentar novamente
         }
-        console.error(`❌ [ML Devoluções] Erro ao buscar orders: ${ordersResponse.status}`);
+        console.error(`❌ [ML Devoluções] Erro ao buscar orders canceladas: ${ordersResponse.status}`);
         const errorBody = await ordersResponse.text();
-        console.error(`💥 [ML Devoluções] Erro orders: ${errorBody}`);
-        break; // Continue mesmo se falhar orders
-      }
-
-      const ordersData = await ordersResponse.json();
-      console.log(`📦 [ML Devoluções] Encontrados ${ordersData.results?.length || 0} orders`);
-
-      if (!ordersData.results || ordersData.results.length === 0) {
-        console.log(`📭 [ML Devoluções] Nenhum order encontrado neste offset`);
+        console.error(`💥 [ML Devoluções] Erro: ${errorBody}`);
         break;
       }
 
-      // PASSO 2: Para cada order, buscar claims específicas (como a planilha faz)
+      const ordersData = await ordersResponse.json();
+      console.log(`📦 [ML Devoluções] Orders canceladas encontradas: ${ordersData.results?.length || 0}`);
+
+      if (!ordersData.results || ordersData.results.length === 0) {
+        console.log(`📭 [ML Devoluções] Nenhuma order cancelada encontrada neste offset`);
+        break;
+      }
+
+      // PASSO 2: Para cada order cancelada, buscar claims específicas
       for (const order of ordersData.results) {
-        // Verificar se order está no período desejado
+        // Verificar se order está no período desejado (últimos 60 dias)
         const orderDate = new Date(order.date_created);
-        const dateFromObj = new Date(dateFrom);
-        const dateToObj = new Date(dateTo);
+        const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
         
-        if (orderDate < dateFromObj || orderDate > dateToObj) {
+        if (orderDate < sixtyDaysAgo) {
           continue;
         }
 
-        console.log(`🔍 [ML Devoluções] Verificando claims para order: ${order.id}`);
+        console.log(`🔍 [ML Devoluções] Processando order cancelada: ${order.id} (${order.date_created})`);
 
-        // Buscar claims para este order específico
+        // Buscar claims para esta order específica
         const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
           `resource=order&` +
           `resource_id=${order.id}`;
@@ -254,11 +253,13 @@ serve(async (req) => {
           
           if (claimsResponse.ok) {
             const claimsData = await claimsResponse.json();
-            console.log(`🔍 [ML Devoluções] Claims para order ${order.id}:`, JSON.stringify(claimsData, null, 2));
+            console.log(`🔍 [ML Devoluções] Claims para order cancelada ${order.id}:`, JSON.stringify(claimsData, null, 2));
             
             if (claimsData.results && claimsData.results.length > 0) {
               allClaims.push(...claimsData.results);
-              console.log(`✅ [ML Devoluções] Encontradas ${claimsData.results.length} claims para order ${order.id}`);
+              console.log(`✅ [ML Devoluções] ENCONTRADAS ${claimsData.results.length} claims para order cancelada ${order.id}`);
+            } else {
+              console.log(`📋 [ML Devoluções] Order cancelada ${order.id} sem claims associadas`);
             }
           } else {
             // Tratar erro 429 (rate limit) nas claims também
@@ -266,17 +267,17 @@ serve(async (req) => {
               console.warn(`⏳ [ML Devoluções] Rate limit atingido ao buscar claims, aguardando 5 segundos...`);
               await new Promise(resolve => setTimeout(resolve, 5000));
             } else {
-              console.warn(`⚠️ [ML Devoluções] Falha ao buscar claims para order ${order.id}: ${claimsResponse.status}`);
+              console.warn(`⚠️ [ML Devoluções] Falha ao buscar claims para order cancelada ${order.id}: ${claimsResponse.status}`);
             }
           }
         } catch (error) {
-          console.warn(`⚠️ [ML Devoluções] Erro ao buscar claims para order ${order.id}:`, error);
+          console.warn(`⚠️ [ML Devoluções] Erro ao buscar claims para order cancelada ${order.id}:`, error);
         }
 
         // Não precisa de pausa adicional aqui pois já temos rate limit nas claims
       }
 
-      // Verificar se há mais páginas de orders
+      // Verificar se há mais páginas de orders canceladas
       if (ordersData.results.length < limit) {
         break;
       }
@@ -290,7 +291,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`📊 [ML Devoluções] Total de claims encontrados via planilha: ${allClaims.length}`);
+    console.log(`📊 [ML Devoluções] Total de claims encontrados via PLANILHA (orders canceladas): ${allClaims.length}`);
 
     // 4. Buscar dados dos pedidos para obter order_number
     const orderIds = [...new Set(allClaims.map(claim => claim.order_id))];
