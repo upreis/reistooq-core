@@ -233,16 +233,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    let storeErr = null;
-
-    if (storeErr) {
-      console.error("Failed to store secrets:", storeErr);
-      return new Response(
-        "<!doctype html><script>window.opener?.postMessage({type:'oauth_error',provider:'mercadolivre',error:'Failed to store tokens'},'*');window.close();</script>",
-        { headers: { ...corsHeaders, "Content-Type": "text/html" } }
-      );
-    }
-
     console.log("ML OAuth completed successfully for account:", account.id);
 
     return new Response(
