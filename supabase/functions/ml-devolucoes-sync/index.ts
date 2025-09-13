@@ -258,6 +258,9 @@ serve(async (req) => {
             if (claimsData.results && claimsData.results.length > 0) {
               allClaims.push(...claimsData.results);
               console.log(`✅ [ML Devoluções] ENCONTRADAS ${claimsData.results.length} claims para order cancelada ${order.id}`);
+              
+              // 💾 DEBUG: Log das claims encontradas
+              console.log(`💾 [ML Devoluções] Claims encontradas:`, JSON.stringify(claimsData.results, null, 2));
             } else {
               console.log(`📋 [ML Devoluções] Order cancelada ${order.id} sem claims associadas`);
             }
@@ -326,58 +329,67 @@ serve(async (req) => {
 
     for (const claim of allClaims) {
       try {
+        console.log(`🔍 [ML Devoluções] Processando claim:`, claim);
+        
         const claimData = {
           integration_account_id,
           organization_id: account.organization_id,
-          claim_id: claim.id,
-          order_id: claim.order_id,
-          order_number: orderNumbers[claim.order_id] || null,
-          buyer_id: claim.buyer.id,
-          buyer_nickname: claim.buyer.nickname,
-          buyer_email: claim.buyer.email || null,
-          item_id: claim.item.id,
-          item_title: claim.item.title,
-          sku: claim.item.sku || null,
-          variation_id: claim.item.variation_id || null,
-          quantity: claim.quantity,
-          unit_price: claim.unit_price,
+          claim_id: claim.id.toString(),
+          order_id: claim.resource_id ? claim.resource_id.toString() : claim.order_id?.toString(),
+          order_number: orderNumbers[claim.resource_id || claim.order_id] || null,
+          buyer_id: claim.players?.find(p => p.type === 'buyer')?.user_id?.toString() || null,
+          buyer_nickname: claim.players?.find(p => p.type === 'buyer')?.nickname || null,
+          buyer_email: claim.players?.find(p => p.type === 'buyer')?.email || null,
+          item_id: claim.item?.id?.toString() || null,
+          item_title: claim.item?.title || null,
+          sku: claim.item?.sku || null,
+          variation_id: claim.item?.variation_id?.toString() || null,
+          quantity: claim.quantity || 1,
+          unit_price: claim.unit_price || 0,
           claim_type: claim.type,
           claim_status: claim.status,
           claim_stage: claim.stage,
-          resolution: claim.resolution || null,
-          reason_code: claim.reason_code || null,
+          resolution: claim.resolution?.reason || null,
+          reason_code: claim.reason_id || null,
           reason_description: claim.reason_description || null,
           amount_claimed: claim.amount_claimed || null,
           amount_refunded: claim.amount_refunded || 0,
-          currency: claim.currency,
+          currency: claim.currency || 'BRL',
           date_created: claim.date_created,
-          date_closed: claim.date_closed || null,
-          date_last_update: claim.date_last_update || null,
+          date_closed: claim.resolution?.date_created || null,
+          date_last_update: claim.last_updated,
           last_message: claim.last_message || null,
           seller_response: claim.seller_response || null,
           raw_data: claim,
           updated_at: new Date().toISOString()
         };
 
+        console.log(`💾 [ML Devoluções] Salvando claim no banco:`, claimData);
+
         // Upsert do claim
-        const { error: upsertError } = await supabase
+        const { data: upsertedData, error: upsertError } = await supabase
           .from('ml_devolucoes_reclamacoes')
           .upsert(claimData, { 
             onConflict: 'claim_id,integration_account_id',
             ignoreDuplicates: false 
-          });
+          })
+          .select();
 
         if (upsertError) {
           console.error(`❌ [ML Devoluções] Erro ao salvar claim ${claim.id}:`, upsertError);
+          console.error(`❌ [ML Devoluções] Dados que falharam:`, JSON.stringify(claimData, null, 2));
         } else {
           processedCount++;
+          console.log(`✅ [ML Devoluções] Claim salva no banco: ${claim.id}`, upsertedData);
         }
       } catch (error) {
         console.error(`❌ [ML Devoluções] Erro ao processar claim ${claim.id}:`, error);
+        console.error(`❌ [ML Devoluções] Stack trace:`, error.stack);
       }
     }
 
-    console.log(`✅ [ML Devoluções] Processados ${processedCount} claims com sucesso`);
+    console.log(`✅ [ML Devoluções] Total de registros salvos: ${processedCount}`);
+    console.log(`📊 [ML Devoluções] Total de claims encontradas: ${allClaims.length}`);
 
     // 6. Buscar estatísticas atualizadas
     const { data: stats } = await supabase
