@@ -114,7 +114,7 @@ Deno.serve(async (req: Request) => {
     // Buscar segredo usando serviceClient (bypass RLS)
     const { data: secretRow, error: fetchError } = await serviceClient
       .from('integration_secrets')
-      .select('secret_enc, provider, expires_at')
+      .select('secret_enc, provider, expires_at, simple_tokens, use_simple')
       .eq('integration_account_id', integration_account_id)
       .eq('provider', provider || 'mercadolivre')
       .maybeSingle();
@@ -136,7 +136,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    if (!secretRow || !secretRow.secret_enc) {
+    if (!secretRow) {
       return new Response(JSON.stringify({ 
         found: false, 
         message: 'No secret found for this account' 
@@ -147,20 +147,57 @@ Deno.serve(async (req: Request) => {
     }
 
     try {
-      // Converter bytea para string se necessário
-      let secretString = secretRow.secret_enc;
-      if (typeof secretString === 'string' && secretString.startsWith('\\x')) {
-        const hexString = secretString.slice(2);
-        const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-        secretString = new TextDecoder().decode(bytes);
+      let secret = null;
+
+      // Tentar usar simple_tokens primeiro (implementação mais recente)
+      if (secretRow.simple_tokens && secretRow.use_simple) {
+        try {
+          const { data: decryptResult, error: decryptError } = await serviceClient
+            .rpc('decrypt_simple', { 
+              encrypted_data: secretRow.simple_tokens 
+            });
+          
+          if (decryptError) {
+            console.error('Simple decrypt error:', decryptError);
+          } else if (decryptResult) {
+            secret = JSON.parse(decryptResult);
+          }
+        } catch (error) {
+          console.warn('Failed to decrypt simple tokens, trying complex method:', error);
+        }
       }
 
-      const CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY");
-      if (!CRYPTO_KEY) {
-        throw new Error('Missing encryption key');
+      // Fallback para secret_enc (implementação mais antiga)
+      if (!secret && secretRow.secret_enc) {
+        try {
+          // Converter bytea para string se necessário
+          let secretString = secretRow.secret_enc;
+          if (typeof secretString === 'string' && secretString.startsWith('\\x')) {
+            const hexString = secretString.slice(2);
+            const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+            secretString = new TextDecoder().decode(bytes);
+          }
+
+          const CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY");
+          if (!CRYPTO_KEY) {
+            throw new Error('Missing encryption key');
+          }
+          const decryptedData = await decryptAESGCM(secretString, CRYPTO_KEY);
+          secret = JSON.parse(decryptedData);
+        } catch (error) {
+          console.warn('Failed to decrypt complex encryption:', error);
+        }
       }
-      const decryptedData = await decryptAESGCM(secretString, CRYPTO_KEY);
-      const secret = JSON.parse(decryptedData);
+
+      if (!secret) {
+        return new Response(JSON.stringify({ 
+          found: false, 
+          message: 'Failed to decrypt secret data - reconnection may be required' 
+        }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
 
       if (internal) {
         // Chamada interna: retorna segredo completo
