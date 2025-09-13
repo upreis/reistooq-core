@@ -17,12 +17,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { translateMLTags } from '@/lib/translations';
-import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, AlertCircle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search } from 'lucide-react';
+import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, AlertCircle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search, Database } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { mapMLShippingSubstatus, ML_SHIPPING_SUBSTATUS_MAP, getStatusBadgeVariant as getMLStatusBadgeVariant } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
@@ -64,6 +65,7 @@ import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
+import { VendasCompletasTab } from './VendasCompletasTab';
 
 
 
@@ -103,6 +105,9 @@ type Props = {
 
 function SimplePedidosPage({ className }: Props) {
   const isMobile = useIsMobile();
+  
+  // Estado para controlar a aba ativa (Orders ou Vendas Completas)
+  const [activeTab, setActiveTab] = useState<'orders' | 'complete-sales'>('orders');
   
   // ✅ CORREÇÃO CRÍTICA: Limpar filtros problemáticos do localStorage e cache de colunas
   useEffect(() => {
@@ -1187,10 +1192,17 @@ useEffect(() => {
         hasActiveFilters={filtersManager.hasActiveFilters}
         columnManager={columnManager}
       />
+            )}
+          </div>
+        </div>
+      </TabsContent>
 
+      <TabsContent value="complete-sales" className="flex-1 overflow-auto m-0 p-6">
+        <VendasCompletasTab accounts={accounts} />
+      </TabsContent>
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
-    </div>
+    </Tabs>
   );
 }
 
