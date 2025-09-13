@@ -236,6 +236,68 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
 
+  // ====== DEVOLUÇÕES E CLAIMS (MERCADO LIVRE) ======
+  {
+    key: 'return_status',
+    label: 'Status de Devolução',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Status da devolução do pedido',
+    width: 140
+  },
+  {
+    key: 'claims_count',
+    label: 'Reclamações',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Número de reclamações do pedido',
+    width: 100
+  },
+  {
+    key: 'detailed_returns_count',
+    label: 'Devoluções Detalhadas',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Número de devoluções com detalhes',
+    width: 150
+  },
+  {
+    key: 'return_reason',
+    label: 'Motivo da Devolução',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Motivo da devolução do pedido',
+    width: 180
+  },
+  {
+    key: 'return_date',
+    label: 'Data da Devolução',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Data em que a devolução foi iniciada',
+    width: 130
+  },
+  {
+    key: 'return_id',
+    label: 'ID da Devolução',
+    category: 'ml',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Identificador único da devolução',
+    width: 120
+  },
+
   // ====== MAPEAMENTO (das imagens 2 e 3) ======
   {
     key: 'cpf_cnpj',
