@@ -181,10 +181,10 @@ serve(async (req) => {
     console.log(`📅 [ML Devoluções] Buscando claims de ${dateFrom} até ${dateTo}`);
 
     while (true) {
-      // ✅ ENDPOINT CORRETO (com /search) + parâmetros corretos
+      // ✅ ENDPOINT CORRETO (com /search) + parâmetros corretos segundo documentação ML
       const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
         `resource=order&` +
-        `date_created=after:${new Date(dateFrom).toISOString()}&` +
+        `range=date_created:after:${new Date(dateFrom).toISOString()},before:${new Date(dateTo).toISOString()}&` +
         `offset=${offset}&` +
         `limit=${limit}`;
 
