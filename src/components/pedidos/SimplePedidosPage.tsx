@@ -1227,7 +1227,7 @@ useEffect(() => {
       </TabsContent>
 
       <TabsContent value="devolucoes" className="flex-1 overflow-auto m-0 p-6">
-        <DevolucoesMercadoLivreTab selectedAccounts={accounts} />
+        <DevolucoesMercadoLivreTab />
       </TabsContent>
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}

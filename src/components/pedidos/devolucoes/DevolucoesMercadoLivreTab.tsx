@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ContasMLSelector } from '../ContasMLSelector';
 interface MLConnectionStatusProps {
   accountsStats?: {
     total: number;
@@ -51,8 +52,7 @@ interface DevolucaoML {
 }
 
 interface DevolucoesMercadoLivreTabProps {
-  selectedAccounts: string[];
-  accountsStats?: MLConnectionStatusProps['accountsStats'];
+  // Props removidas - agora gerencia internamente
 }
 
 const statusLabels = {
@@ -82,7 +82,7 @@ const priorityColors = {
   urgent: 'bg-red-100 text-red-700'
 };
 
-export function DevolucoesMercadoLivreTab({ selectedAccounts, accountsStats }: DevolucoesMercadoLivreTabProps) {
+export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
   const [devolucoes, setDevolucoes] = useState<DevolucaoML[]>([]);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -93,6 +93,7 @@ export function DevolucoesMercadoLivreTab({ selectedAccounts, accountsStats }: D
   const [activeTab, setActiveTab] = useState<'pending' | 'reviewed'>('pending');
   const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoML | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
 
   // Estatísticas
   const totalDevolucoes = devolucoes.length;
@@ -144,7 +145,9 @@ export function DevolucoesMercadoLivreTab({ selectedAccounts, accountsStats }: D
       const syncPromises = selectedAccounts.map(accountId =>
         supabase.functions.invoke('ml-devolucoes-sync', {
           body: {
-            integration_account_id: accountId
+            integration_account_id: accountId,
+            date_from: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 dias atrás
+            date_to: new Date().toISOString()
           }
         })
       );
@@ -155,8 +158,9 @@ export function DevolucoesMercadoLivreTab({ selectedAccounts, accountsStats }: D
       let hasErrors = false;
 
       results.forEach((result, index) => {
+        const accountId = selectedAccounts[index];
         if (result.error) {
-          console.error(`Erro na conta ${selectedAccounts[index]}:`, result.error);
+          console.error(`Erro na conta ${accountId}:`, result.error);
           hasErrors = true;
         } else if (result.data?.success) {
           totalProcessed += result.data.processed || 0;
@@ -242,22 +246,15 @@ export function DevolucoesMercadoLivreTab({ selectedAccounts, accountsStats }: D
     }
   };
 
-  if (selectedAccounts.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Nenhuma conta selecionada</h3>
-          <p className="text-muted-foreground">
-            Selecione ao menos uma conta do Mercado Livre para visualizar devoluções e reclamações.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Componente sempre renderiza - o seletor de contas agora é parte da UI
 
   return (
     <div className="space-y-6">
+      {/* Seletor de Contas ML */}
+      <ContasMLSelector 
+        selectedAccounts={selectedAccounts}
+        onAccountsChange={setSelectedAccounts}
+      />
       {/* Header com estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -383,7 +380,17 @@ export function DevolucoesMercadoLivreTab({ selectedAccounts, accountsStats }: D
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-4">
-          {loading ? (
+          {selectedAccounts.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhuma conta selecionada</h3>
+                <p className="text-muted-foreground">
+                  Selecione ao menos uma conta do Mercado Livre acima para visualizar devoluções e reclamações.
+                </p>
+              </CardContent>
+            </Card>
+          ) : loading ? (
             <Card>
               <CardContent className="p-6 text-center">
                 <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
