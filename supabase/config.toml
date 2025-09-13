@@ -52,3 +52,6 @@ verify_jwt = true
 [functions.mercadolibre-diagnose]
 verify_jwt = true
 
+[functions.ml-webhook]
+verify_jwt = false
+
