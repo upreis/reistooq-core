@@ -174,11 +174,11 @@ serve(async (req) => {
     let orderOffset = 0;
     const limit = 50;
     
-    // Definir período de busca (últimos 60 dias como a planilha)
-    const dateFrom = date_from || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    // Definir período de busca (últimos 6 meses para maior chance de encontrar devoluções)
+    const dateFrom = date_from || new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
     const dateTo = date_to || new Date().toISOString();
 
-    console.log(`📅 [ML Devoluções] Fluxo da planilha: buscando orders de ${dateFrom} até ${dateTo}`);
+    console.log(`📅 [ML Devoluções] Fluxo da planilha: buscando orders de ${dateFrom} até ${dateTo} (6 meses com rate limit)`);
 
     // PASSO 1: Buscar orders com possíveis problemas (como a planilha faz)
     while (true) {
@@ -199,7 +199,16 @@ serve(async (req) => {
         }
       });
 
+      // Rate limit protection - aguardar antes de continuar
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       if (!ordersResponse.ok) {
+        // Tratar erro 429 (rate limit)
+        if (ordersResponse.status === 429) {
+          console.warn(`⏳ [ML Devoluções] Rate limit atingido, aguardando 5 segundos...`);
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue; // Tentar novamente
+        }
         console.error(`❌ [ML Devoluções] Erro ao buscar orders: ${ordersResponse.status}`);
         const errorBody = await ordersResponse.text();
         console.error(`💥 [ML Devoluções] Erro orders: ${errorBody}`);
@@ -240,6 +249,9 @@ serve(async (req) => {
             }
           });
           
+          // Rate limit protection - aguardar entre claims
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           if (claimsResponse.ok) {
             const claimsData = await claimsResponse.json();
             console.log(`🔍 [ML Devoluções] Claims para order ${order.id}:`, JSON.stringify(claimsData, null, 2));
@@ -249,14 +261,19 @@ serve(async (req) => {
               console.log(`✅ [ML Devoluções] Encontradas ${claimsData.results.length} claims para order ${order.id}`);
             }
           } else {
-            console.warn(`⚠️ [ML Devoluções] Falha ao buscar claims para order ${order.id}: ${claimsResponse.status}`);
+            // Tratar erro 429 (rate limit) nas claims também
+            if (claimsResponse.status === 429) {
+              console.warn(`⏳ [ML Devoluções] Rate limit atingido ao buscar claims, aguardando 5 segundos...`);
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            } else {
+              console.warn(`⚠️ [ML Devoluções] Falha ao buscar claims para order ${order.id}: ${claimsResponse.status}`);
+            }
           }
         } catch (error) {
           console.warn(`⚠️ [ML Devoluções] Erro ao buscar claims para order ${order.id}:`, error);
         }
 
-        // Pequena pausa para não sobrecarregar a API
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Não precisa de pausa adicional aqui pois já temos rate limit nas claims
       }
 
       // Verificar se há mais páginas de orders
