@@ -19,7 +19,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PedidosFiltersState } from '@/hooks/usePedidosFiltersUnified';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 import { EnhancedPeriodFilter } from './EnhancedPeriodFilter';
-import { StatusFiltersToggle } from './StatusFiltersToggle';
+
 import { StatusFilters } from '@/features/orders/types/orders-status.types';
 
 interface PedidosFiltersUnifiedProps {
@@ -355,17 +355,6 @@ export function PedidosFiltersUnified({
       </div>
 
 
-      {/* Filtros de Status Avançados */}
-      {onToggleAdvancedStatus && onAdvancedStatusFiltersChange && onResetAdvancedStatusFilters && advancedStatusFilters && (
-        <StatusFiltersToggle
-          useAdvancedStatus={useAdvancedStatus}
-          onToggleAdvanced={onToggleAdvancedStatus}
-          filters={advancedStatusFilters}
-          onFiltersChange={onAdvancedStatusFiltersChange}
-          onReset={onResetAdvancedStatusFilters}
-          className="mb-4"
-        />
-      )}
 
       {/* Tags de filtros ativos */}
       {activeFiltersCount > 0 && (

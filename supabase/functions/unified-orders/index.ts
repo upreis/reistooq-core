@@ -595,19 +595,19 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       })(),
       
       // ===== CAMPOS ESPECÍFICOS DE DEVOLUÇÕES VIA CLAIMS API =====
-      return_status_money: enrichedOrder.detailed_returns?.length ? enrichedOrder.detailed_returns[0]?.status_money : null,
-      return_shipment_status: enrichedOrder.detailed_returns?.length ? 
-        (enrichedOrder.detailed_returns[0]?.shipments?.length ? enrichedOrder.detailed_returns[0].shipments[0].status : null) : null,
-      return_intermediate_check: enrichedOrder.detailed_returns?.length ? enrichedOrder.detailed_returns[0]?.intermediate_check : null,
-      return_claim_id: enrichedOrder.claims?.results?.length ? enrichedOrder.claims.results[0]?.id : null,
-      return_has_reviews: enrichedOrder.return_reviews?.length > 0,
-      return_subtype: enrichedOrder.detailed_returns?.length ? enrichedOrder.detailed_returns[0]?.subtype : null,
-      return_refund_at: enrichedOrder.detailed_returns?.length ? enrichedOrder.detailed_returns[0]?.refund_at : null,
+      return_status_money: order.detailed_returns?.length ? order.detailed_returns[0]?.status_money : null,
+      return_shipment_status: order.detailed_returns?.length ? 
+        (order.detailed_returns[0]?.shipments?.length ? order.detailed_returns[0].shipments[0].status : null) : null,
+      return_intermediate_check: order.detailed_returns?.length ? order.detailed_returns[0]?.intermediate_check : null,
+      return_claim_id: order.claims?.results?.length ? order.claims.results[0]?.id : null,
+      return_has_reviews: order.return_reviews?.length > 0,
+      return_subtype: order.detailed_returns?.length ? order.detailed_returns[0]?.subtype : null,
+      return_refund_at: order.detailed_returns?.length ? order.detailed_returns[0]?.refund_at : null,
       
       // Contadores para referência
-      claims_count: enrichedOrder.claims?.results?.length || 0,
-      detailed_returns_count: enrichedOrder.detailed_returns?.length || 0,
-      return_reviews_count: enrichedOrder.return_reviews?.length || 0,
+      claims_count: order.claims?.results?.length || 0,
+      detailed_returns_count: order.detailed_returns?.length || 0,
+      return_reviews_count: order.return_reviews?.length || 0,
       
       // Valores financeiros detalhados
       frete_pago_cliente: fretePagoCliente,
