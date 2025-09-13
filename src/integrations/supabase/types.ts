@@ -1604,6 +1604,129 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_devolucoes_reclamacoes: {
+        Row: {
+          amount_claimed: number | null
+          amount_refunded: number | null
+          buyer_email: string | null
+          buyer_id: string | null
+          buyer_nickname: string | null
+          claim_id: string
+          claim_stage: string | null
+          claim_status: string
+          claim_type: string
+          created_at: string
+          currency: string | null
+          date_closed: string | null
+          date_created: string
+          date_last_update: string | null
+          id: string
+          integration_account_id: string
+          internal_notes: string | null
+          item_id: string | null
+          item_title: string | null
+          last_message: string | null
+          order_id: string
+          order_number: string | null
+          organization_id: string
+          priority: string | null
+          processed_at: string | null
+          processed_by: string | null
+          processed_status: string | null
+          quantity: number | null
+          raw_data: Json | null
+          reason_code: string | null
+          reason_description: string | null
+          resolution: string | null
+          seller_response: string | null
+          sku: string | null
+          tags: string[] | null
+          unit_price: number | null
+          updated_at: string
+          variation_id: string | null
+        }
+        Insert: {
+          amount_claimed?: number | null
+          amount_refunded?: number | null
+          buyer_email?: string | null
+          buyer_id?: string | null
+          buyer_nickname?: string | null
+          claim_id: string
+          claim_stage?: string | null
+          claim_status: string
+          claim_type: string
+          created_at?: string
+          currency?: string | null
+          date_closed?: string | null
+          date_created: string
+          date_last_update?: string | null
+          id?: string
+          integration_account_id: string
+          internal_notes?: string | null
+          item_id?: string | null
+          item_title?: string | null
+          last_message?: string | null
+          order_id: string
+          order_number?: string | null
+          organization_id?: string
+          priority?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          processed_status?: string | null
+          quantity?: number | null
+          raw_data?: Json | null
+          reason_code?: string | null
+          reason_description?: string | null
+          resolution?: string | null
+          seller_response?: string | null
+          sku?: string | null
+          tags?: string[] | null
+          unit_price?: number | null
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Update: {
+          amount_claimed?: number | null
+          amount_refunded?: number | null
+          buyer_email?: string | null
+          buyer_id?: string | null
+          buyer_nickname?: string | null
+          claim_id?: string
+          claim_stage?: string | null
+          claim_status?: string
+          claim_type?: string
+          created_at?: string
+          currency?: string | null
+          date_closed?: string | null
+          date_created?: string
+          date_last_update?: string | null
+          id?: string
+          integration_account_id?: string
+          internal_notes?: string | null
+          item_id?: string | null
+          item_title?: string | null
+          last_message?: string | null
+          order_id?: string
+          order_number?: string | null
+          organization_id?: string
+          priority?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          processed_status?: string | null
+          quantity?: number | null
+          raw_data?: Json | null
+          reason_code?: string | null
+          reason_description?: string | null
+          resolution?: string | null
+          seller_response?: string | null
+          sku?: string | null
+          tags?: string[] | null
+          unit_price?: number | null
+          updated_at?: string
+          variation_id?: string | null
+        }
+        Relationships: []
+      }
       movimentacoes_estoque: {
         Row: {
           created_at: string
