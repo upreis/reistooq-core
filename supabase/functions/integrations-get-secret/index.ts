@@ -1,29 +1,55 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { decryptAESGCM } from "../_shared/crypto.ts";
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-const CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY");
-const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") ?? "";
-
-// Fail-fast se envs obrigatórias estão ausentes
-const required = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_ANON_KEY", "APP_ENCRYPTION_KEY"];
-const missing = required.filter(k => !Deno.env.get(k));
-if (missing.length) throw new Error("Missing envs: " + missing.join(","));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Embedded crypto functions
+async function deriveKey(keyMaterial: string): Promise<CryptoKey> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(keyMaterial);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', keyData);
+  return await crypto.subtle.importKey(
+    'raw',
+    hashBuffer,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function decryptAESGCM(payloadB64: string, keyMaterial: string): Promise<string> {
+  try {
+    const payload = JSON.parse(atob(payloadB64));
+    const key = await deriveKey(keyMaterial);
+    const iv = new Uint8Array(payload.iv);
+    const ciphertext = new Uint8Array(payload.data);
+    
+    const decryptedBuffer = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertext
+    );
+    
+    return new TextDecoder().decode(decryptedBuffer);
+  } catch (error) {
+    console.error('Decryption failed:', error);
+    throw new Error('Failed to decrypt data');
+  }
+}
+
 function makeServiceClient() {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   return createClient(SUPABASE_URL, SERVICE_KEY, { 
     auth: { persistSession: false, autoRefreshToken: false } 
   });
 }
 
 function makeUserClient(req: Request) {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
   const auth = req.headers.get("Authorization") ?? "";
   return createClient(SUPABASE_URL, ANON_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -32,6 +58,7 @@ function makeUserClient(req: Request) {
 }
 
 function isInternal(req: Request) {
+  const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") ?? "";
   return req.headers.get("x-internal-call") === "true" && 
          INTERNAL_TOKEN && 
          req.headers.get("x-internal-token") === INTERNAL_TOKEN;
@@ -128,7 +155,11 @@ Deno.serve(async (req: Request) => {
         secretString = new TextDecoder().decode(bytes);
       }
 
-      const decryptedData = await decryptAESGCM(secretString, CRYPTO_KEY!);
+      const CRYPTO_KEY = Deno.env.get("APP_ENCRYPTION_KEY");
+      if (!CRYPTO_KEY) {
+        throw new Error('Missing encryption key');
+      }
+      const decryptedData = await decryptAESGCM(secretString, CRYPTO_KEY);
       const secret = JSON.parse(decryptedData);
 
       if (internal) {
