@@ -1,8 +1,22 @@
-import { makeClient, corsHeaders } from "../_shared/client.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function makeClient(authHeader: string | null) {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(url, key, {
+    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
+  });
+}
 
 // POST /registrar-historico-vendas
 // Body: objeto com as colunas existentes em public.historico_vendas
-export default async function handler(req: Request): Promise<Response> {
+Deno.serve(async (req: Request): Promise<Response> => {
   // CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -224,7 +238,4 @@ export default async function handler(req: Request): Promise<Response> {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
-}
-
-// Start the edge function server
-Deno.serve((req) => handler(req));
+});
