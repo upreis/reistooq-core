@@ -38,14 +38,12 @@ export function ContasMLSelector({ selectedAccounts, onAccountsChange, disabled 
   const loadAccounts = async () => {
     try {
       setLoading(true);
-      // Por enquanto, não trazer nenhuma conta para evitar mostrar contas de outros usuários
-      // O usuário deve conectar suas próprias contas via /auth/mercadolivre
+      // Buscar contas ML do usuário atual
       const { data, error } = await supabase
         .from('integration_accounts')
         .select('*')
         .eq('provider', 'mercadolivre')
         .eq('is_active', true)
-        .limit(0) // Temporariamente não carregar contas existentes
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
