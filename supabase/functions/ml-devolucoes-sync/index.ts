@@ -169,70 +169,111 @@ serve(async (req) => {
     const sellerId = account.account_identifier;
     console.log(`🔑 [ML Devoluções] Token obtido para seller: ${sellerId}`);
 
-    // 3. Buscar claims da API do Mercado Livre
+    // 🎯 FLUXO EXATO DA PLANILHA: PRIMEIRO BUSCAR ORDERS COM PROBLEMAS
     let allClaims: MLClaim[] = [];
-    let offset = 0;
+    let orderOffset = 0;
     const limit = 50;
     
     // Definir período de busca (últimos 60 dias como a planilha)
     const dateFrom = date_from || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
     const dateTo = date_to || new Date().toISOString();
 
-    console.log(`📅 [ML Devoluções] Buscando claims de ${dateFrom} até ${dateTo}`);
+    console.log(`📅 [ML Devoluções] Fluxo da planilha: buscando orders de ${dateFrom} até ${dateTo}`);
 
+    // PASSO 1: Buscar orders com possíveis problemas (como a planilha faz)
     while (true) {
-      // ✅ ENDPOINT CORRETO - buscar TODOS os tipos de claims (como a planilha)
-      const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
-        `players.user_id=${sellerId}&` +
-        `players.role=respondent&` +
-        `range=date_created:after:${new Date(dateFrom).toISOString()},before:${new Date(dateTo).toISOString()}&` +
-        `offset=${offset}&` +
-        `limit=${limit}`;
+      const ordersUrl = `https://api.mercadolibre.com/orders/search?` +
+        `seller=${sellerId}&` +
+        `order.status=cancelled,paid,confirmed,payment_required&` + // Status que podem ter devoluções
+        `sort=date_desc&` +
+        `limit=${limit}&` +
+        `offset=${orderOffset}`;
 
-      console.log(`🔍 [ML Devoluções] Buscando claims - offset: ${offset}`);
-      console.log(`🔗 [ML Devoluções] URL: ${claimsUrl}`);
+      console.log(`🔍 [ML Devoluções] Buscando orders - offset: ${orderOffset}`);
+      console.log(`🔗 [ML Devoluções] Orders URL: ${ordersUrl}`);
 
-      const claimsResponse = await fetch(claimsUrl, {
+      const ordersResponse = await fetch(ordersUrl, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (!claimsResponse.ok) {
-        console.error(`❌ [ML Devoluções] Erro ao buscar claims: ${claimsResponse.status}`);
-        console.error(`🔗 [ML Devoluções] URL tentada: ${claimsUrl}`);
+      if (!ordersResponse.ok) {
+        console.error(`❌ [ML Devoluções] Erro ao buscar orders: ${ordersResponse.status}`);
+        const errorBody = await ordersResponse.text();
+        console.error(`💥 [ML Devoluções] Erro orders: ${errorBody}`);
+        break; // Continue mesmo se falhar orders
+      }
+
+      const ordersData = await ordersResponse.json();
+      console.log(`📦 [ML Devoluções] Encontrados ${ordersData.results?.length || 0} orders`);
+
+      if (!ordersData.results || ordersData.results.length === 0) {
+        console.log(`📭 [ML Devoluções] Nenhum order encontrado neste offset`);
+        break;
+      }
+
+      // PASSO 2: Para cada order, buscar claims específicas (como a planilha faz)
+      for (const order of ordersData.results) {
+        // Verificar se order está no período desejado
+        const orderDate = new Date(order.date_created);
+        const dateFromObj = new Date(dateFrom);
+        const dateToObj = new Date(dateTo);
         
-        // Log do erro detalhado
-        try {
-          const errorBody = await claimsResponse.text();
-          console.error(`💥 [ML Devoluções] Resposta do erro: ${errorBody}`);
-        } catch (e) {
-          console.error(`💥 [ML Devoluções] Não foi possível ler o corpo do erro`);
+        if (orderDate < dateFromObj || orderDate > dateToObj) {
+          continue;
         }
-        
-        throw new Error(`Erro na API do ML: ${claimsResponse.status}`);
+
+        console.log(`🔍 [ML Devoluções] Verificando claims para order: ${order.id}`);
+
+        // Buscar claims para este order específico
+        const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
+          `resource=order&` +
+          `resource_id=${order.id}`;
+          
+        try {
+          const claimsResponse = await fetch(claimsUrl, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (claimsResponse.ok) {
+            const claimsData = await claimsResponse.json();
+            console.log(`🔍 [ML Devoluções] Claims para order ${order.id}:`, JSON.stringify(claimsData, null, 2));
+            
+            if (claimsData.results && claimsData.results.length > 0) {
+              allClaims.push(...claimsData.results);
+              console.log(`✅ [ML Devoluções] Encontradas ${claimsData.results.length} claims para order ${order.id}`);
+            }
+          } else {
+            console.warn(`⚠️ [ML Devoluções] Falha ao buscar claims para order ${order.id}: ${claimsResponse.status}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ [ML Devoluções] Erro ao buscar claims para order ${order.id}:`, error);
+        }
+
+        // Pequena pausa para não sobrecarregar a API
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      const claimsData: MLClaimResponse = await claimsResponse.json();
-      
-      // Log da resposta completa da API para debugging
-      console.log(`🔍 [ML Devoluções] Resposta da API:`, JSON.stringify(claimsData, null, 2));
-      
-      if (claimsData.results && claimsData.results.length > 0) {
-        allClaims.push(...claimsData.results);
-        console.log(`📦 [ML Devoluções] Encontrados ${claimsData.results.length} claims`);
-      }
-
-      // Verificar se há mais páginas
-      if (!claimsData.results || claimsData.results.length < limit) {
+      // Verificar se há mais páginas de orders
+      if (ordersData.results.length < limit) {
         break;
       }
       
-      offset += limit;
+      orderOffset += limit;
+
+      // Limite de segurança para não processar infinitamente
+      if (orderOffset > 500) {
+        console.log(`⚠️ [ML Devoluções] Limite de 500 orders atingido, parando busca`);
+        break;
+      }
     }
 
-    console.log(`📊 [ML Devoluções] Total de claims encontrados: ${allClaims.length}`);
+    console.log(`📊 [ML Devoluções] Total de claims encontrados via planilha: ${allClaims.length}`);
 
     // 4. Buscar dados dos pedidos para obter order_number
     const orderIds = [...new Set(allClaims.map(claim => claim.order_id))];
