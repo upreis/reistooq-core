@@ -174,18 +174,17 @@ serve(async (req) => {
     let offset = 0;
     const limit = 50;
     
-    // Definir período de busca (últimos 30 dias se não especificado)
-    const dateFrom = date_from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    // Definir período de busca (últimos 60 dias como a planilha)
+    const dateFrom = date_from || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
     const dateTo = date_to || new Date().toISOString();
 
     console.log(`📅 [ML Devoluções] Buscando claims de ${dateFrom} até ${dateTo}`);
 
     while (true) {
-      // ✅ ENDPOINT CORRETO - usando players.user_id, players.role e type=return conforme API exige
+      // ✅ ENDPOINT CORRETO - buscar TODOS os tipos de claims (como a planilha)
       const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
         `players.user_id=${sellerId}&` +
         `players.role=respondent&` +
-        `type=return&` +
         `range=date_created:after:${new Date(dateFrom).toISOString()},before:${new Date(dateTo).toISOString()}&` +
         `offset=${offset}&` +
         `limit=${limit}`;
@@ -216,6 +215,9 @@ serve(async (req) => {
       }
 
       const claimsData: MLClaimResponse = await claimsResponse.json();
+      
+      // Log da resposta completa da API para debugging
+      console.log(`🔍 [ML Devoluções] Resposta da API:`, JSON.stringify(claimsData, null, 2));
       
       if (claimsData.results && claimsData.results.length > 0) {
         allClaims.push(...claimsData.results);
