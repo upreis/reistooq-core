@@ -181,10 +181,9 @@ serve(async (req) => {
     console.log(`📅 [ML Devoluções] Buscando claims de ${dateFrom} até ${dateTo}`);
 
     while (true) {
-      const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
+      // ✅ CORRETO - Endpoint que realmente existe (removido /search)
+      const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims?` +
         `seller_id=${sellerId}&` +
-        `date_created.from=${dateFrom}&` +
-        `date_created.to=${dateTo}&` +
         `offset=${offset}&` +
         `limit=${limit}`;
 
@@ -199,18 +198,27 @@ serve(async (req) => {
 
       if (!claimsResponse.ok) {
         console.error(`❌ [ML Devoluções] Erro ao buscar claims: ${claimsResponse.status}`);
+        console.error(`🔗 [ML Devoluções] URL tentada: ${claimsUrl}`);
         throw new Error(`Erro na API do ML: ${claimsResponse.status}`);
       }
 
       const claimsData: MLClaimResponse = await claimsResponse.json();
       
-      if (claimsData.results && claimsData.results.length > 0) {
-        allClaims.push(...claimsData.results);
-        console.log(`📦 [ML Devoluções] Encontrados ${claimsData.results.length} claims`);
+      // Filtrar por data localmente (já que a API não aceita filtros de data diretamente)
+      const filteredClaims = claimsData.results?.filter(claim => {
+        const claimDate = new Date(claim.date_created);
+        const fromDate = new Date(dateFrom);
+        const toDate = new Date(dateTo);
+        return claimDate >= fromDate && claimDate <= toDate;
+      }) || [];
+      
+      if (filteredClaims.length > 0) {
+        allClaims.push(...filteredClaims);
+        console.log(`📦 [ML Devoluções] Encontrados ${filteredClaims.length} claims (${claimsData.results?.length || 0} total, ${filteredClaims.length} no período)`);
       }
 
-      // Verificar se há mais páginas
-      if (claimsData.results.length < limit) {
+      // Verificar se há mais páginas (baseado no resultado original, não filtrado)
+      if (!claimsData.results || claimsData.results.length < limit) {
         break;
       }
       
