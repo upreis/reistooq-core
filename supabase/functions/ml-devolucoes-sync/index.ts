@@ -88,7 +88,7 @@ serve(async (req) => {
     // 2. Buscar access token
     const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
     
-    const secretResponse = await fetch(
+    let secretResponse = await fetch(
       `${supabaseUrl}/functions/v1/integrations-get-secret`,
       {
         method: 'POST',
@@ -106,18 +106,65 @@ serve(async (req) => {
     );
 
     if (!secretResponse.ok) {
+      console.error(`❌ [ML Devoluções] Erro ao buscar secrets: ${secretResponse.status}`);
       throw new Error(`Erro ao buscar secrets: ${secretResponse.status}`);
     }
 
-    const secretData = await secretResponse.json();
-    if (!secretData?.found) {
-      throw new Error('Token de acesso não encontrado');
+    let secretData = await secretResponse.json();
+    
+    // Se não encontrou token ou está expirado, tentar renovar
+    if (!secretData?.found || !secretData?.secret?.access_token) {
+      console.log(`🔄 [ML Devoluções] Token não encontrado, tentando renovar...`);
+      
+      const refreshResponse = await fetch(
+        `${supabaseUrl}/functions/v1/mercadolivre-token-refresh`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': req.headers.get('Authorization') || ''
+          },
+          body: JSON.stringify({ 
+            account_id: integration_account_id,
+            internal_call: true
+          })
+        }
+      );
+
+      if (refreshResponse.ok) {
+        console.log(`✅ [ML Devoluções] Token renovado, buscando novamente...`);
+        
+        // Buscar token novamente após renovação
+        secretResponse = await fetch(
+          `${supabaseUrl}/functions/v1/integrations-get-secret`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': req.headers.get('Authorization') || '',
+              'x-internal-call': 'true',
+              'x-internal-token': INTERNAL_TOKEN
+            },
+            body: JSON.stringify({ 
+              integration_account_id,
+              provider: 'mercadolivre'
+            })
+          }
+        );
+
+        if (secretResponse.ok) {
+          secretData = await secretResponse.json();
+        }
+      } else {
+        console.warn(`⚠️ [ML Devoluções] Falha ao renovar token: ${refreshResponse.status}`);
+      }
     }
 
-    const accessToken = secretData.secret?.access_token;
-    if (!accessToken) {
-      throw new Error('Access token não encontrado nos secrets');
+    if (!secretData?.found || !secretData?.secret?.access_token) {
+      throw new Error('Token de acesso não encontrado após tentativa de renovação');
     }
+
+    const accessToken = secretData.secret.access_token;
 
     const sellerId = account.account_identifier;
     console.log(`🔑 [ML Devoluções] Token obtido para seller: ${sellerId}`);

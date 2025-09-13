@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ContasMLSelector } from '../ContasMLSelector';
+import { MLConnectionTester } from './MLConnectionTester';
 interface MLConnectionStatusProps {
   accountsStats?: {
     total: number;
@@ -250,6 +251,9 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Componente de Teste de Conexão */}
+      <MLConnectionTester />
+      
       {/* Seletor de Contas ML */}
       <ContasMLSelector 
         selectedAccounts={selectedAccounts}

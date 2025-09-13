@@ -58,3 +58,9 @@ verify_jwt = false
 [functions.complete-sales]
 verify_jwt = true
 
+[functions.ml-test-connection]
+verify_jwt = false
+
+[functions.ml-devolucoes-sync]
+verify_jwt = true
+
