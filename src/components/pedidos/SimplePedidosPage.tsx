@@ -931,7 +931,14 @@ useEffect(() => {
 
   // Render principal
   return (
-    <div className={`space-y-6 p-6 ${className}`}>
+    <Tabs defaultValue="orders" className="flex-1 flex flex-col">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="orders">Orders</TabsTrigger>
+        <TabsTrigger value="complete-sales">Vendas Completas</TabsTrigger>
+      </TabsList>
+      
+      <TabsContent value="orders" className="flex-1 overflow-auto m-0 p-6">
+        <div className="space-y-6">
       {/* 📊 DASHBOARD INTELIGENTE */}
       <PedidosDashboardSection 
         orders={orders || []}
@@ -1192,8 +1199,6 @@ useEffect(() => {
         hasActiveFilters={filtersManager.hasActiveFilters}
         columnManager={columnManager}
       />
-            )}
-          </div>
         </div>
       </TabsContent>
 
