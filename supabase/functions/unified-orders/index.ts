@@ -238,6 +238,26 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
+        // TESTE: Verificar se token tem acesso à Claims API
+        try {
+          const testResp = await fetch(
+            `https://api.mercadolibre.com/post-purchase/v1/claims/search?limit=1`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'x-format-new': 'true'
+              }
+            }
+          );
+          console.log(`[unified-orders:${cid}] 🔑 Claims API test status: ${testResp.status}`);
+          if (!testResp.ok) {
+            const errorText = await testResp.text();
+            console.log(`[unified-orders:${cid}] ❌ Claims API error: ${errorText}`);
+          }
+        } catch (err) {
+          console.log(`[unified-orders:${cid}] ❌ Claims API connection error:`, err);
+        }
+
         // 8. Buscar Claims relacionadas ao pedido (IMPLEMENTAÇÃO CORRIGIDA)
         if (order.id) {
           try {
@@ -251,6 +271,8 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
                 }
               }
             );
+            
+            console.log(`[unified-orders:${cid}] 🔍 Claims search executado para pedido ${order.id} - Status: ${claimsResp.status}`);
             
             if (claimsResp.ok) {
               const claimsData = await claimsResp.json();
@@ -572,15 +594,20 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
         return null;
       })(),
       
-      // ===== NOVOS DADOS APENAS DISPONÍVEIS VIA CLAIMS API =====
-      claims_count: order.claims?.results?.length || 0,
-      detailed_returns_count: order.detailed_returns?.length || 0,
-      return_reviews_count: order.return_reviews?.length || 0,
+      // ===== CAMPOS ESPECÍFICOS DE DEVOLUÇÕES VIA CLAIMS API =====
+      return_status_money: enrichedOrder.detailed_returns?.length ? enrichedOrder.detailed_returns[0]?.status_money : null,
+      return_shipment_status: enrichedOrder.detailed_returns?.length ? 
+        (enrichedOrder.detailed_returns[0]?.shipments?.length ? enrichedOrder.detailed_returns[0].shipments[0].status : null) : null,
+      return_intermediate_check: enrichedOrder.detailed_returns?.length ? enrichedOrder.detailed_returns[0]?.intermediate_check : null,
+      return_claim_id: enrichedOrder.claims?.results?.length ? enrichedOrder.claims.results[0]?.id : null,
+      return_has_reviews: enrichedOrder.return_reviews?.length > 0,
+      return_subtype: enrichedOrder.detailed_returns?.length ? enrichedOrder.detailed_returns[0]?.subtype : null,
+      return_refund_at: enrichedOrder.detailed_returns?.length ? enrichedOrder.detailed_returns[0]?.refund_at : null,
       
-      // Dados específicos de Claims que podem interessar na tabela
-      has_claims: order.claims?.results?.length > 0,
-      has_detailed_returns: order.detailed_returns?.length > 0,
-      has_return_reviews: order.return_reviews?.length > 0,
+      // Contadores para referência
+      claims_count: enrichedOrder.claims?.results?.length || 0,
+      detailed_returns_count: enrichedOrder.detailed_returns?.length || 0,
+      return_reviews_count: enrichedOrder.return_reviews?.length || 0,
       
       // Valores financeiros detalhados
       frete_pago_cliente: fretePagoCliente,
