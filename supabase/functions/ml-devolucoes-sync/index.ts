@@ -235,6 +235,30 @@ serve(async (req) => {
 
         console.log(`🔍 [ML Devoluções] Processando order cancelada: ${order.id} (${order.date_created})`);
 
+        // 💾 SALVAR ORDER RAW NA TABELA TEMPORÁRIA
+        try {
+          const orderRawData = {
+            data_type: 'order',
+            order_id: order.id.toString(),
+            claim_id: null,
+            raw_json: order,
+            integration_account_id,
+            organization_id: account.organization_id
+          };
+
+          const { error: orderInsertError } = await supabase
+            .from('ml_api_raw_data')
+            .insert(orderRawData);
+
+          if (orderInsertError) {
+            console.error(`❌ [ML Devoluções] Erro ao salvar order raw data:`, orderInsertError);
+          } else {
+            console.log(`💾 [ML Devoluções] Order raw data salva: ${order.id}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ [ML Devoluções] Erro ao salvar order raw data:`, error);
+        }
+
         // Buscar claims para esta order específica
         const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
           `resource=order&` +
@@ -256,6 +280,32 @@ serve(async (req) => {
             console.log(`🔍 [ML Devoluções] Claims para order cancelada ${order.id}:`, JSON.stringify(claimsData, null, 2));
             
             if (claimsData.results && claimsData.results.length > 0) {
+              // 💾 SALVAR CADA CLAIM RAW NA TABELA TEMPORÁRIA
+              for (const claim of claimsData.results) {
+                try {
+                  const claimRawData = {
+                    data_type: 'claim',
+                    order_id: order.id.toString(),
+                    claim_id: claim.id.toString(),
+                    raw_json: claim,
+                    integration_account_id,
+                    organization_id: account.organization_id
+                  };
+
+                  const { error: claimInsertError } = await supabase
+                    .from('ml_api_raw_data')
+                    .insert(claimRawData);
+
+                  if (claimInsertError) {
+                    console.error(`❌ [ML Devoluções] Erro ao salvar claim raw data:`, claimInsertError);
+                  } else {
+                    console.log(`💾 [ML Devoluções] Claim raw data salva: ${claim.id}`);
+                  }
+                } catch (error) {
+                  console.warn(`⚠️ [ML Devoluções] Erro ao salvar claim raw data:`, error);
+                }
+              }
+
               allClaims.push(...claimsData.results);
               console.log(`✅ [ML Devoluções] ENCONTRADAS ${claimsData.results.length} claims para order cancelada ${order.id}`);
               

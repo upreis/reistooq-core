@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import Scanner from "./pages/Scanner";
+import MLRawData from "./pages/MLRawData";
 import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
 import IntegracoesPage from "./pages/configuracoes/IntegracoesPage";
@@ -167,11 +168,16 @@ function App() {
                          <CategoryManager />
                        </PermissionRoute>
                      } />
-                    <Route path="/pedidos" element={
-                      <PermissionRoute requiredPermissions={['orders:read']}>
-                        <Pedidos />
-                      </PermissionRoute>
-                    } />
+                     <Route path="/pedidos" element={
+                       <PermissionRoute requiredPermissions={['orders:read']}>
+                         <Pedidos />
+                       </PermissionRoute>
+                     } />
+                     <Route path="/ml-raw-data" element={
+                       <PermissionRoute requiredPermissions={['integrations:manage']}>
+                         <MLRawData />
+                       </PermissionRoute>
+                     } />
                     <Route path="/scanner" element={
                       <PermissionRoute requiredPermissions={['scanner:use']}>
                         <Scanner />
