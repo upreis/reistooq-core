@@ -33,16 +33,41 @@ serve(async (req) => {
       throw new Error('Conta de integração não encontrada');
     }
 
-    // 2. Buscar access token
-    const { data: secretData } = await supabase.functions.invoke('integrations-get-secret', {
-      body: { integration_account_id }
-    });
+    // 2. Buscar access token (usando chamada interna)
+    const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+    
+    const secretResponse = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/integrations-get-secret`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': req.headers.get('Authorization') || '',
+          'x-internal-call': 'true',
+          'x-internal-token': INTERNAL_TOKEN
+        },
+        body: JSON.stringify({ 
+          integration_account_id,
+          provider: 'mercadolivre'
+        })
+      }
+    );
 
-    if (!secretData?.success) {
+    if (!secretResponse.ok) {
+      throw new Error(`Erro ao buscar secrets: ${secretResponse.status}`);
+    }
+
+    const secretData = await secretResponse.json();
+
+    if (!secretData?.found) {
       throw new Error('Token de acesso não encontrado');
     }
 
-    const accessToken = secretData.access_token;
+    const accessToken = secretData.secret?.access_token;
+    if (!accessToken) {
+      throw new Error('Access token não encontrado nos secrets');
+    }
+
     const sellerId = account.account_identifier;
 
     console.log(`[complete-sales] 🔑 Token obtido para seller: ${sellerId}`);

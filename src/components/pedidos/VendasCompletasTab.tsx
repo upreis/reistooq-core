@@ -104,6 +104,8 @@ export function VendasCompletasTab({ accounts }: VendasCompletasTabProps) {
 
     setSyncing(true);
     try {
+      console.log('🚀 Iniciando sincronização de vendas completas...');
+      
       const { data, error } = await supabase.functions.invoke('complete-sales', {
         body: {
           integration_account_id: selectedAccount,
