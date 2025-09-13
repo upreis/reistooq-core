@@ -238,7 +238,46 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
-        // 8. Enriquecer com dados dos produtos detalhados (order_items + product info)
+        // 8. Buscar Claims relacionadas ao pedido (IMPLEMENTAÇÃO CORRIGIDA)
+        if (order.id) {
+          try {
+            console.log(`[unified-orders:${cid}] 🔍 Buscando claims para pedido ${order.id}`);
+            const claimsResp = await fetch(
+              `https://api.mercadolibre.com/post-purchase/v1/claims/search?resource_id=${order.id}&resource=order`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  'x-format-new': 'true'
+                }
+              }
+            );
+            
+            if (claimsResp.ok) {
+              const claimsData = await claimsResp.json();
+              (enrichedOrder as any).claims = claimsData;
+              
+              if (claimsData.results?.length > 0) {
+                console.log(`[unified-orders:${cid}] ✅ Encontrados ${claimsData.results.length} claims para pedido ${order.id}`);
+                
+                // Para cada claim, verificar se tem devoluções
+                for (const claim of claimsData.results) {
+                  if (claim.related_entities && claim.related_entities.includes('return')) {
+                    console.log(`[unified-orders:${cid}] 🔄 Claim ${claim.id} tem devoluções associadas`);
+                    await enrichWithReturnDetails(enrichedOrder, claim.id, accessToken, cid);
+                  }
+                }
+              } else {
+                console.log(`[unified-orders:${cid}] ℹ️ Nenhum claim encontrado para pedido ${order.id}`);
+              }
+            } else {
+              console.warn(`[unified-orders:${cid}] ⚠️ Claims API retornou status ${claimsResp.status} para pedido ${order.id}`);
+            }
+          } catch (err) {
+            console.warn(`[unified-orders:${cid}] ❌ Erro ao buscar claims ${order.id}:`, err);
+          }
+        }
+
+        // 9. Enriquecer com dados dos produtos detalhados (order_items + product info)
         if (order.order_items?.length) {
           try {
             const itemsWithDetails = await Promise.all(
@@ -298,6 +337,68 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 
   console.log(`[unified-orders:${cid}] Enriquecimento completo concluído`);
   return enrichedOrders;
+}
+
+// NOVAS FUNÇÕES PARA IMPLEMENTAÇÃO CORRETA DE DEVOLUÇÕES
+
+// Função para enriquecer com detalhes de devolução via Claims API
+async function enrichWithReturnDetails(order: any, claimId: string, accessToken: string, cid: string) {
+  try {
+    // Buscar detalhes da devolução via Claims
+    const returnResp = await fetch(
+      `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/returns`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'x-format-new': 'true'
+        }
+      }
+    );
+
+    if (returnResp.ok) {
+      const returnData = await returnResp.json();
+      if (!order.detailed_returns) order.detailed_returns = [];
+      order.detailed_returns.push(returnData);
+      
+      console.log(`[unified-orders:${cid}] ✅ Devoluções detalhadas obtidas para claim ${claimId}`);
+
+      // Se tem reviews, buscar também
+      if (returnData.results?.length) {
+        for (const returnItem of returnData.results) {
+          if (returnItem.related_entities && returnItem.related_entities.includes('reviews')) {
+            await enrichWithReturnReviews(order, returnItem.id, accessToken, cid);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn(`[unified-orders:${cid}] Erro ao buscar detalhes da devolução ${claimId}:`, err);
+  }
+}
+
+// Função para enriquecer com reviews de devolução
+async function enrichWithReturnReviews(order: any, returnId: string, accessToken: string, cid: string) {
+  try {
+    const reviewsResp = await fetch(
+      `https://api.mercadolibre.com/post-purchase/v1/returns/${returnId}/reviews`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'x-format-new': 'true'
+        }
+      }
+    );
+
+    if (reviewsResp.ok) {
+      const reviewsData = await reviewsResp.json();
+      if (!order.return_reviews) order.return_reviews = [];
+      order.return_reviews.push(reviewsData);
+      
+      console.log(`[unified-orders:${cid}] ✅ Reviews de devolução obtidas para return ${returnId}`);
+    }
+  } catch (err) {
+    console.warn(`[unified-orders:${cid}] Erro ao buscar reviews da devolução ${returnId}:`, err);
+  }
 }
 
 function transformMLOrders(orders: any[], integration_account_id: string, accountName?: string, cid?: string) {
