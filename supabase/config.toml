@@ -49,3 +49,6 @@ verify_jwt = true
 [functions.ml-auth]
 verify_jwt = true
 
+[functions.mercadolibre-diagnose]
+verify_jwt = true
+
