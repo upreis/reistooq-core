@@ -178,18 +178,18 @@ serve(async (req) => {
     const dateFrom = date_from || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
     const dateTo = date_to || new Date().toISOString();
 
-    console.log(`📅 [ML Devoluções] Fluxo da planilha: buscando orders CANCELADAS de ${dateFrom} até ${dateTo}`);
+    console.log(`📅 [ML Devoluções] EXPANDINDO BUSCA: buscando orders com MÚLTIPLOS STATUS de ${dateFrom} até ${dateTo}`);
 
-    // PASSO 1: Buscar orders CANCELADAS (este é o segredo da planilha!)
+    // PASSO 1: Buscar orders com MÚLTIPLOS STATUS (expandindo para capturar TODAS as devoluções!)
     while (true) {
       const ordersUrl = `https://api.mercadolibre.com/orders/search?` +
         `seller=${sellerId}&` +
-        `order.status=cancelled&` +  // ← ESTE É O SEGREDO DA PLANILHA!
+        `order.status=cancelled,paid,shipped,delivered&` +  // ← EXPANDINDO STATUS PARA CAPTURAR TODAS AS DEVOLUÇÕES!
         `sort=date_desc&` +
         `limit=${limit}&` +
         `offset=${orderOffset}`;
 
-      console.log(`🔍 [ML Devoluções] Buscando orders CANCELADAS - offset: ${orderOffset}`);
+      console.log(`🔍 [ML Devoluções] Buscando orders MÚLTIPLOS STATUS - offset: ${orderOffset}`);
       console.log(`🔗 [ML Devoluções] URL: ${ordersUrl}`);
 
       const ordersResponse = await fetch(ordersUrl, {
@@ -216,14 +216,14 @@ serve(async (req) => {
       }
 
       const ordersData = await ordersResponse.json();
-      console.log(`📦 [ML Devoluções] Orders canceladas encontradas: ${ordersData.results?.length || 0}`);
+      console.log(`📦 [ML Devoluções] Orders com múltiplos status encontradas: ${ordersData.results?.length || 0}`);
 
       if (!ordersData.results || ordersData.results.length === 0) {
-        console.log(`📭 [ML Devoluções] Nenhuma order cancelada encontrada neste offset`);
+        console.log(`📭 [ML Devoluções] Nenhuma order encontrada neste offset`);
         break;
       }
 
-      // PASSO 2: Para cada order cancelada, buscar claims específicas
+      // PASSO 2: Para cada order, buscar claims específicas
       for (const order of ordersData.results) {
         // Verificar se order está no período desejado (últimos 60 dias)
         const orderDate = new Date(order.date_created);
@@ -233,7 +233,10 @@ serve(async (req) => {
           continue;
         }
 
-        console.log(`🔍 [ML Devoluções] Processando order cancelada: ${order.id} (${order.date_created})`);
+        // ADICIONAR LOG DOS MOTIVOS E STATUS
+        const statusDetail = order.status_detail?.description || 'N/A';
+        const cancelDetail = order.cancel_detail?.description || 'N/A';
+        console.log(`🔍 [ML Devoluções] Processando order: ${order.id} - Status: ${order.status} - Status Detail: ${statusDetail} - Cancel Detail: ${cancelDetail} (${order.date_created})`);
 
         // 💾 SALVAR ORDER RAW NA TABELA TEMPORÁRIA
         try {
@@ -307,12 +310,12 @@ serve(async (req) => {
               }
 
               allClaims.push(...claimsData.results);
-              console.log(`✅ [ML Devoluções] ENCONTRADAS ${claimsData.results.length} claims para order cancelada ${order.id}`);
+              console.log(`✅ [ML Devoluções] ENCONTRADAS ${claimsData.results.length} claims para order ${order.status} ${order.id}`);
               
-              // 💾 DEBUG: Log das claims encontradas
-              console.log(`💾 [ML Devoluções] Claims encontradas:`, JSON.stringify(claimsData.results, null, 2));
+              // 💾 DEBUG: Log das claims encontradas com motivos
+              console.log(`💾 [ML Devoluções] Claims encontradas para order ${order.status}:`, JSON.stringify(claimsData.results, null, 2));
             } else {
-              console.log(`📋 [ML Devoluções] Order cancelada ${order.id} sem claims associadas`);
+              console.log(`📋 [ML Devoluções] Order ${order.status} ${order.id} sem claims associadas`);
             }
           } else {
             // Tratar erro 429 (rate limit) nas claims também
@@ -344,7 +347,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`📊 [ML Devoluções] Total de claims encontrados via PLANILHA (orders canceladas): ${allClaims.length}`);
+    console.log(`📊 [ML Devoluções] Total de claims encontrados via BUSCA EXPANDIDA (múltiplos status): ${allClaims.length}`);
 
     // 4. Buscar dados dos pedidos para obter order_number
     const orderIds = [...new Set(allClaims.map(claim => claim.order_id))];
