@@ -513,12 +513,74 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       quantidade_total: totalQuantity,
       titulo_produto: productTitles || 'Produto sem título',
       
-      // ===== DADOS DE DEVOLUÇÕES =====
-      return_status: order.returns?.length ? order.returns[0]?.status : null,
-      return_id: order.returns?.length ? order.returns[0]?.id : null,
-      return_date: order.returns?.length ? order.returns[0]?.date_created : null,
-      return_reason: order.returns?.length ? order.returns[0]?.reason : null,
-      refund_date: order.returns?.length ? order.returns[0]?.refund?.date : null,
+      // ===== DADOS DE DEVOLUÇÕES (CLAIMS API + ORDERS API) =====
+      // Priorizar dados detalhados da Claims API se disponíveis
+      return_status: (() => {
+        // 1. Dados mais detalhados via Claims API
+        if (order.detailed_returns?.length) {
+          const latestReturn = order.detailed_returns[0]?.results?.[0];
+          return latestReturn?.status || null;
+        }
+        // 2. Fallback para dados básicos da Orders API
+        if (order.returns?.length) {
+          return order.returns[0]?.status;
+        }
+        return null;
+      })(),
+      
+      return_id: (() => {
+        if (order.detailed_returns?.length) {
+          const latestReturn = order.detailed_returns[0]?.results?.[0];
+          return latestReturn?.id || null;
+        }
+        if (order.returns?.length) {
+          return order.returns[0]?.id;
+        }
+        return null;
+      })(),
+      
+      return_date: (() => {
+        if (order.detailed_returns?.length) {
+          const latestReturn = order.detailed_returns[0]?.results?.[0];
+          return latestReturn?.date_created || null;
+        }
+        if (order.returns?.length) {
+          return order.returns[0]?.date_created;
+        }
+        return null;
+      })(),
+      
+      return_reason: (() => {
+        if (order.detailed_returns?.length) {
+          const latestReturn = order.detailed_returns[0]?.results?.[0];
+          return latestReturn?.reason || null;
+        }
+        if (order.returns?.length) {
+          return order.returns[0]?.reason;
+        }
+        return null;
+      })(),
+      
+      refund_date: (() => {
+        if (order.detailed_returns?.length) {
+          const latestReturn = order.detailed_returns[0]?.results?.[0];
+          return latestReturn?.refund?.date || null;
+        }
+        if (order.returns?.length) {
+          return order.returns[0]?.refund?.date;
+        }
+        return null;
+      })(),
+      
+      // ===== NOVOS DADOS APENAS DISPONÍVEIS VIA CLAIMS API =====
+      claims_count: order.claims?.results?.length || 0,
+      detailed_returns_count: order.detailed_returns?.length || 0,
+      return_reviews_count: order.return_reviews?.length || 0,
+      
+      // Dados específicos de Claims que podem interessar na tabela
+      has_claims: order.claims?.results?.length > 0,
+      has_detailed_returns: order.detailed_returns?.length > 0,
+      has_return_reviews: order.return_reviews?.length > 0,
       
       // Valores financeiros detalhados
       frete_pago_cliente: fretePagoCliente,

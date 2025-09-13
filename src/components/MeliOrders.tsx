@@ -68,6 +68,38 @@ export default function MeliOrders({ integrationAccountId, status = 'paid', limi
           <div className="font-medium">Pedido #{o.id}</div>
           <div>Status: {o.status}</div>
           <div>Total: {o.total_amount} {o.currency_id}</div>
+          
+          {/* NOVAS INFORMAÇÕES DE DEVOLUÇÕES */}
+          {o.return_status && (
+            <div className="mt-2 p-2 bg-orange-50 dark:bg-orange-900/20 rounded">
+              <div className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                🔄 Status Devolução: {o.return_status}
+              </div>
+              {o.return_id && (
+                <div className="text-xs text-orange-600 dark:text-orange-400">
+                  ID: {o.return_id}
+                </div>
+              )}
+              {o.return_reason && (
+                <div className="text-xs text-orange-600 dark:text-orange-400">
+                  Motivo: {o.return_reason}
+                </div>
+              )}
+              {o.return_date && (
+                <div className="text-xs text-orange-600 dark:text-orange-400">
+                  Data: {new Date(o.return_date).toLocaleDateString('pt-BR')}
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* CLAIMS INFORMATION */}
+          {o.claims_count > 0 && (
+            <div className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+              📋 {o.claims_count} reclamação(ões) • {o.detailed_returns_count} devolução(ões) detalhada(s)
+            </div>
+          )}
+          
           {o?.order_items?.length ? (
             <div className="text-sm opacity-80">
               Itens: {o.order_items.map((it: any) => it?.item?.title).filter(Boolean).join(' · ')}
