@@ -56,6 +56,51 @@ async function fetchRealReturns(claimId, accessToken) {
   return null;
 }
 
+// Função para buscar mensagens de pós-venda
+async function fetchPostSaleMessages(orderId, packId, sellerId, accessToken) {
+  try {
+    const endpoint = `https://api.mercadolibre.com/messages/packs/${packId || orderId}/sellers/${sellerId}?tag=post_sale`;
+    console.log(`📧 Buscando mensagens para order ${orderId}`);
+    
+    const response = await fetch(endpoint, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const messages = data.messages || [];
+      console.log(`✅ ${messages.length} mensagens encontradas para order ${orderId}`);
+      return messages;
+    }
+  } catch (error) {
+    console.warn(`⚠️ Falha ao buscar mensagens para order ${orderId}:`, error.message);
+  }
+
+  return [];
+}
+
+// Função para buscar ações disponíveis do claim
+async function fetchClaimActions(claimId, accessToken) {
+  try {
+    const endpoint = `https://api.mercadolibre.com/post-purchase/v1/claims/${claimId}/actions`;
+    console.log(`⚡ Buscando ações para claim ${claimId}`);
+    
+    const response = await fetch(endpoint, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    if (response.ok) {
+      const actions = await response.json();
+      console.log(`✅ ${actions.length} ações encontradas para claim ${claimId}`);
+      return actions;
+    }
+  } catch (error) {
+    console.warn(`⚠️ Falha ao buscar ações para claim ${claimId}:`, error.message);
+  }
+
+  return [];
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -70,12 +115,12 @@ Deno.serve(async (req) => {
     for (const accountId of account_ids) {
       console.log(`📋 Processando conta: ${accountId}`);
 
-      // Buscar orders sem claims processadas
+      // Buscar orders sem claims processadas OU com claims simulados
       const { data: localOrders, error: selectError } = await supabase
         .from('devolucoes_avancadas')
-        .select('id, order_id, dados_order')
+        .select('id, order_id, dados_order, claim_id')
         .eq('integration_account_id', accountId)
-        .is('claim_id', null)
+        .or('claim_id.is.null,claim_id.like.simulated_%')
         .limit(10); // Processar em lotes pequenos
 
       if (selectError) throw selectError;
@@ -97,46 +142,63 @@ Deno.serve(async (req) => {
 
       const tokenObj = JSON.parse(decryptResult);
       const accessToken = tokenObj.access_token;
+      const sellerId = tokenObj.user_id || 'unknown';
 
-      // Processar cada order
+      // Processar cada order com fluxo completo
       for (const localOrder of localOrders) {
-        const order = localOrder.dados_order;
+        const order = localOrder.dados_order || localOrder.raw_data;
 
         // 1. Buscar claims reais
         const realClaims = await fetchRealClaims(order.id, accessToken);
 
+        // 2. Buscar mensagens de pós-venda
+        const messages = await fetchPostSaleMessages(order.id, order.pack_id, sellerId, accessToken);
+
+        let updateData = {
+          dados_mensagens: messages,
+          ultima_atualizacao: new Date().toISOString()
+        };
+
         if (realClaims.length > 0) {
-          const mainClaim = realClaims[0];
+          const claim = realClaims[0];
 
-          // 2. Buscar returns para este claim
-          const returnData = await fetchRealReturns(mainClaim.id, accessToken);
+          // 3. Buscar returns se existir
+          let returnData = null;
+          if (claim.related_entities && claim.related_entities.includes('returns')) {
+            returnData = await fetchRealReturns(claim.id, accessToken);
+          }
 
-          // 3. Atualizar registro com dados reais
-          const updateData = {
-            claim_id: mainClaim.id,
-            dados_claim: mainClaim,
-            status_devolucao: mainClaim.status || 'open'
+          // 4. Buscar ações do claim
+          const actions = await fetchClaimActions(claim.id, accessToken);
+
+          // 5. Atualizar com dados reais
+          updateData = {
+            ...updateData,
+            claim_id: claim.id.toString(),
+            dados_claim: claim,
+            dados_acoes: actions,
+            status_devolucao: claim.status,
+            cronograma_status: claim.stage || 'unknown'
           };
 
           if (returnData) {
-            updateData.return_id = returnData.id;
+            updateData.return_id = returnData.id.toString();
             updateData.dados_return = returnData;
             updateData.status_envio = returnData.status;
           }
+        }
 
-          const { error: updateError } = await supabase
-            .from('devolucoes_avancadas')
-            .update(updateData)
-            .eq('id', localOrder.id);
+        // 6. Salvar no banco
+        const { error: updateError } = await supabase
+          .from('devolucoes_avancadas')
+          .update(updateData)
+          .eq('id', localOrder.id);
 
-          if (!updateError) {
-            processedCount++;
-            console.log(`✅ Order ${order.id} processada com claim real ${mainClaim.id}${returnData ? ` e return ${returnData.id}` : ''}`);
-          } else {
-            console.error(`❌ Erro ao atualizar order ${order.id}:`, updateError.message);
-          }
+        if (!updateError) {
+          processedCount++;
+          console.log(`✅ Order ${order.id} processada - Claims: ${realClaims.length}, Mensagens: ${messages.length}`);
         } else {
-          console.log(`ℹ️ Order ${order.id} não possui claims reais`);
+          console.error(`❌ Erro ao atualizar order ${order.id}:`, updateError.message);
         }
       }
     }
