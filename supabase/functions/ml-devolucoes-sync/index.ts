@@ -97,7 +97,7 @@ serve(async (req) => {
       .from('integration_accounts')
       .select('*')
       .eq('id', integration_account_id)
-      .eq('ativo', true)
+      .eq('is_active', true)
       .single();
 
     if (accountError || !account) {
