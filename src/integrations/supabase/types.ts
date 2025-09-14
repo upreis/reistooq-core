@@ -3087,7 +3087,87 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      clientes_secure: {
+        Row: {
+          cpf_cnpj: string | null
+          created_at: string | null
+          data_is_masked: boolean | null
+          data_primeiro_pedido: string | null
+          data_ultimo_pedido: string | null
+          email: string | null
+          empresa: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
+          id: string | null
+          integration_account_id: string | null
+          nome_completo: string | null
+          observacoes: string | null
+          organization_id: string | null
+          status_cliente: string | null
+          telefone: string | null
+          ticket_medio: number | null
+          total_pedidos: number | null
+          updated_at: string | null
+          valor_total_gasto: number | null
+        }
+        Insert: {
+          cpf_cnpj?: never
+          created_at?: string | null
+          data_is_masked?: never
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: never
+          empresa?: string | null
+          endereco_bairro?: never
+          endereco_cep?: never
+          endereco_cidade?: string | null
+          endereco_numero?: never
+          endereco_rua?: never
+          endereco_uf?: string | null
+          id?: string | null
+          integration_account_id?: string | null
+          nome_completo?: string | null
+          observacoes?: string | null
+          organization_id?: string | null
+          status_cliente?: string | null
+          telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
+        }
+        Update: {
+          cpf_cnpj?: never
+          created_at?: string | null
+          data_is_masked?: never
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: never
+          empresa?: string | null
+          endereco_bairro?: never
+          endereco_cep?: never
+          endereco_cidade?: string | null
+          endereco_numero?: never
+          endereco_rua?: never
+          endereco_uf?: string | null
+          id?: string | null
+          integration_account_id?: string | null
+          nome_completo?: string | null
+          observacoes?: string | null
+          organization_id?: string | null
+          status_cliente?: string | null
+          telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_invitation_secure: {
@@ -3142,6 +3222,10 @@ export type Database = {
       baixar_estoque_direto: {
         Args: { p_baixas: Json }
         Returns: Json
+      }
+      can_view_sensitive_customer_data: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       check_access_schedule: {
         Args: { _user_id: string }
@@ -3862,6 +3946,10 @@ export type Database = {
             }
         Returns: undefined
       }
+      log_customer_data_access: {
+        Args: { p_action?: string; p_customer_id: string }
+        Returns: undefined
+      }
       log_secret_access: {
         Args: {
           p_account_id: string
@@ -3890,6 +3978,14 @@ export type Database = {
         Args: { document: string }
         Returns: string
       }
+      mask_customer_address: {
+        Args: { address: string }
+        Returns: string
+      }
+      mask_customer_cep: {
+        Args: { cep: string }
+        Returns: string
+      }
       mask_customer_data: {
         Args: {
           p_cpf_cnpj: string
@@ -3905,6 +4001,10 @@ export type Database = {
         }
         Returns: Json
       }
+      mask_customer_phone: {
+        Args: { phone: string }
+        Returns: string
+      }
       mask_document: {
         Args: { doc: string }
         Returns: string
@@ -3915,10 +4015,6 @@ export type Database = {
       }
       mask_name: {
         Args: { full_name: string }
-        Returns: string
-      }
-      mask_phone: {
-        Args: { phone_number: string }
         Returns: string
       }
       mask_phone_secure: {
