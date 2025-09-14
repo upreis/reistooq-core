@@ -594,7 +594,9 @@ export type Database = {
           created_at: string | null
           cronograma_status: string | null
           cronograma_tipo: string | null
+          dados_acoes: Json | null
           dados_claim: Json | null
+          dados_mensagens: Json | null
           dados_order: Json | null
           dados_return: Json | null
           data_criacao: string | null
@@ -620,7 +622,9 @@ export type Database = {
           created_at?: string | null
           cronograma_status?: string | null
           cronograma_tipo?: string | null
+          dados_acoes?: Json | null
           dados_claim?: Json | null
+          dados_mensagens?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
           data_criacao?: string | null
@@ -646,7 +650,9 @@ export type Database = {
           created_at?: string | null
           cronograma_status?: string | null
           cronograma_tipo?: string | null
+          dados_acoes?: Json | null
           dados_claim?: Json | null
+          dados_mensagens?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
           data_criacao?: string | null
