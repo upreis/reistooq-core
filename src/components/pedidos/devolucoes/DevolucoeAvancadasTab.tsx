@@ -65,6 +65,18 @@ export default function DevolucoeAvancadasTab() {
     alertData: []
   });
 
+  // ✅ ETAPA 6: Estados para automação
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [autoSyncInterval, setAutoSyncInterval] = useState('1h');
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [activityLogs, setActivityLogs] = useState<Array<{
+    id: string;
+    timestamp: string;
+    action: string;
+    result: string;
+  }>>([]);
+  const [autoSyncTimer, setAutoSyncTimer] = useState<NodeJS.Timeout | null>(null);
+
   // ✅ ETAPA 5: Gerar dados para os gráficos do dashboard
   const generateChartData = (data: DevolucaoAvancada[]) => {
     // Devoluções por dia (últimos 30 dias)
@@ -106,6 +118,94 @@ export default function DevolucoeAvancadasTab() {
       alertData: []
     });
   };
+
+  // ✅ ETAPA 6: Funções de automação
+  const addActivityLog = (action: string, result: string) => {
+    const newLog = {
+      id: Date.now().toString(),
+      timestamp: new Date().toISOString(),
+      action,
+      result
+    };
+    setActivityLogs(prev => [newLog, ...prev.slice(0, 99)]);
+  };
+
+  const toggleAutoSync = () => {
+    const newEnabled = !autoSyncEnabled;
+    setAutoSyncEnabled(newEnabled);
+    
+    if (newEnabled) {
+      addActivityLog('Auto-sync ativado', `Intervalo: ${autoSyncInterval}`);
+      startAutoSync();
+    } else {
+      addActivityLog('Auto-sync desativado', 'Parado pelo usuário');
+      stopAutoSync();
+    }
+  };
+
+  const startAutoSync = () => {
+    stopAutoSync(); // Limpar timer anterior se existir
+    
+    const intervalMap = {
+      '30min': 30 * 60 * 1000,
+      '1h': 60 * 60 * 1000,
+      '2h': 2 * 60 * 60 * 1000
+    };
+    
+    const intervalMs = intervalMap[autoSyncInterval as keyof typeof intervalMap] || intervalMap['1h'];
+    
+    const timer = setInterval(async () => {
+      await handleAutoSync();
+    }, intervalMs);
+    
+    setAutoSyncTimer(timer);
+  };
+
+  const stopAutoSync = () => {
+    if (autoSyncTimer) {
+      clearInterval(autoSyncTimer);
+      setAutoSyncTimer(null);
+    }
+  };
+
+  const handleAutoSync = async () => {
+    try {
+      const beforeCount = devolucoes.length;
+      await handleSync();
+      const afterCount = devolucoes.length;
+      const newItems = afterCount - beforeCount;
+      
+      if (newItems > 0) {
+        setUnreadCount(prev => prev + newItems);
+        addActivityLog('Sincronização automática', `${newItems} nova(s) devolução(ões) encontrada(s)`);
+        toast.success(`${newItems} nova(s) devolução(ões) encontrada(s)`);
+      } else {
+        addActivityLog('Sincronização automática', 'Nenhuma nova devolução encontrada');
+      }
+    } catch (error) {
+      addActivityLog('Sincronização automática', `Erro: ${error}`);
+      console.error('Erro no auto-sync:', error);
+    }
+  };
+
+  const markAsSeen = () => {
+    setUnreadCount(0);
+    addActivityLog('Marcado como visto', `${unreadCount} itens marcados como vistos`);
+  };
+
+  // Limpar timer ao desmontar
+  useEffect(() => {
+    return () => {
+      stopAutoSync();
+    };
+  }, []);
+
+  // Reiniciar auto-sync quando intervalo mudar
+  useEffect(() => {
+    if (autoSyncEnabled) {
+      startAutoSync();
+    }
+  }, [autoSyncInterval]);
 
   // Carregar devoluções da nova tabela
   const loadDevolucoes = async () => {
@@ -430,6 +530,29 @@ export default function DevolucoeAvancadasTab() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-2">
+          {/* ✅ ETAPA 6: Controles de auto-sync */}
+          <div className="flex items-center gap-2">
+            <Select value={autoSyncInterval} onValueChange={setAutoSyncInterval}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30min">30min</SelectItem>
+                <SelectItem value="1h">1h</SelectItem>
+                <SelectItem value="2h">2h</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Button
+              variant={autoSyncEnabled ? "destructive" : "outline"}
+              onClick={toggleAutoSync}
+              className="flex items-center gap-2"
+            >
+              <Clock className="h-4 w-4" />
+              {autoSyncEnabled ? 'Parar Auto-sync' : 'Iniciar Auto-sync'}
+            </Button>
+          </div>
+
           <Button 
             onClick={handleSync} 
             disabled={syncing}
@@ -437,7 +560,19 @@ export default function DevolucoeAvancadasTab() {
           >
             <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
             Sincronizar Devoluções
+            {unreadCount > 0 && (
+              <Badge variant="destructive" className="ml-1">
+                {unreadCount}
+              </Badge>
+            )}
           </Button>
+
+          {unreadCount > 0 && (
+            <Button variant="outline" onClick={markAsSeen}>
+              <Eye className="h-4 w-4 mr-2" />
+              Marcar como visto
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1133,6 +1268,33 @@ export default function DevolucoeAvancadasTab() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ✅ ETAPA 6: Logs de atividade */}
+      {activityLogs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Logs de Atividade (Últimas 100)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {activityLogs.map((log) => (
+                <div key={log.id} className="flex items-center justify-between p-2 bg-muted rounded text-sm">
+                  <div className="flex-1">
+                    <span className="font-medium">{log.action}</span>
+                    <span className="text-muted-foreground ml-2">{log.result}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {formatDate(log.timestamp)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
