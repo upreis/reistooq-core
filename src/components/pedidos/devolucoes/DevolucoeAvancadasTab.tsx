@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RefreshCw, AlertCircle, Package2, Clock, Eye, Filter, Calendar } from 'lucide-react';
+import { RefreshCw, AlertCircle, Package2, Clock, Eye, Filter, Calendar, TrendingUp, AlertTriangle, DollarSign } from 'lucide-react';
 import { formatDate, formatMoney } from '@/lib/format';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 
 interface DevolucaoAvancada {
   id: number;
@@ -51,8 +52,60 @@ export default function DevolucoeAvancadasTab() {
     total: 0,
     pendentes: 0,
     finalizadas: 0,
-    comReembolso: 0
+    comReembolso: 0,
+    valorTotal: 0,
+    valorRetido: 0,
+    tempoMedioResolucao: 0,
+    atrasadas: 0,
+    valoresAltos: 0
   });
+  const [chartData, setChartData] = useState({
+    dailyReturns: [],
+    statusDistribution: [],
+    alertData: []
+  });
+
+  // ✅ ETAPA 5: Gerar dados para os gráficos do dashboard
+  const generateChartData = (data: DevolucaoAvancada[]) => {
+    // Devoluções por dia (últimos 30 dias)
+    const last30Days = Array.from({ length: 30 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (29 - i));
+      return date.toISOString().split('T')[0];
+    });
+
+    const dailyReturns = last30Days.map(date => {
+      const count = data.filter(d => {
+        if (!d.data_criacao) return false;
+        return d.data_criacao.split('T')[0] === date;
+      }).length;
+      
+      return {
+        date,
+        count,
+        displayDate: new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+      };
+    });
+
+    // Distribuição de status (gráfico pizza)
+    const statusCounts = data.reduce((acc: Record<string, number>, d) => {
+      const status = d.status_devolucao || 'Desconhecido';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
+      status,
+      count,
+      percentage: ((count / data.length) * 100).toFixed(1)
+    }));
+
+    setChartData({
+      dailyReturns,
+      statusDistribution,
+      alertData: []
+    });
+  };
 
   // Carregar devoluções da nova tabela
   const loadDevolucoes = async () => {
@@ -71,13 +124,53 @@ export default function DevolucoeAvancadasTab() {
 
       setDevolucoes(data || []);
       
-      // Calcular estatísticas
+      // Calcular estatísticas avançadas
       const total = data?.length || 0;
       const pendentes = data?.filter(d => d.status_devolucao === 'pending' || !d.data_fechamento).length || 0;
       const finalizadas = data?.filter(d => d.data_fechamento).length || 0;
       const comReembolso = data?.filter(d => d.valor_retido && d.valor_retido > 0).length || 0;
       
-      setStats({ total, pendentes, finalizadas, comReembolso });
+      // ✅ ETAPA 5: Métricas do dashboard
+      const valorTotal = data?.reduce((sum, d) => sum + (extractOrderValue(d) || 0), 0) || 0;
+      const valorRetido = data?.reduce((sum, d) => sum + (d.valor_retido || 0), 0) || 0;
+      
+      // Tempo médio de resolução (dias)
+      const resolvidas = data?.filter(d => d.data_fechamento && d.data_criacao) || [];
+      const tempoMedioResolucao = resolvidas.length > 0 
+        ? resolvidas.reduce((sum, d) => {
+            const inicio = new Date(d.data_criacao!);
+            const fim = new Date(d.data_fechamento!);
+            const dias = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
+            return sum + dias;
+          }, 0) / resolvidas.length
+        : 0;
+      
+      // Alertas: devoluções atrasadas (>7 dias sem atualização)
+      const agora = new Date();
+      const atrasadas = data?.filter(d => {
+        if (d.data_fechamento) return false; // Já finalizada
+        const ultimaAtualizacao = new Date(d.ultima_atualizacao || d.created_at || d.data_criacao || agora);
+        const diasSemAtualizacao = Math.ceil((agora.getTime() - ultimaAtualizacao.getTime()) / (1000 * 60 * 60 * 24));
+        return diasSemAtualizacao > 7;
+      }).length || 0;
+      
+      // Alertas: valores altos retidos (>R$ 500)
+      const valoresAltos = data?.filter(d => (d.valor_retido || 0) > 500).length || 0;
+      
+      setStats({ 
+        total, 
+        pendentes, 
+        finalizadas, 
+        comReembolso, 
+        valorTotal, 
+        valorRetido, 
+        tempoMedioResolucao: Math.round(tempoMedioResolucao), 
+        atrasadas, 
+        valoresAltos 
+      });
+      
+      // ✅ ETAPA 5: Gerar dados para gráficos
+      generateChartData(data || []);
       
       // Aplicar filtros após carregar
       applyFilters(data || []);
@@ -405,22 +498,22 @@ export default function DevolucoeAvancadasTab() {
         </CardContent>
       </Card>
 
-      {/* Cards de estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* ✅ ETAPA 5: Cards de métricas do dashboard */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Devoluções</CardTitle>
             <Package2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">devoluções registradas</p>
+            <p className="text-xs text-muted-foreground">registros encontrados</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+            <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
@@ -442,15 +535,234 @@ export default function DevolucoeAvancadasTab() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Com Reembolso</CardTitle>
-            <Package2 className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium">Valor Total Envolvido</CardTitle>
+            <DollarSign className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.comReembolso}</div>
-            <p className="text-xs text-muted-foreground">valores retidos</p>
+            <div className="text-2xl font-bold text-blue-600">
+              {formatMoney(stats.valorTotal)}
+            </div>
+            <p className="text-xs text-muted-foreground">em devoluções</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* ✅ ETAPA 5: Cards de métricas secundárias */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valor Retido</CardTitle>
+            <TrendingUp className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">
+              {formatMoney(stats.valorRetido)}
+            </div>
+            <p className="text-xs text-muted-foreground">em retenções</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tempo Médio</CardTitle>
+            <Clock className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{stats.tempoMedioResolucao}</div>
+            <p className="text-xs text-muted-foreground">dias para resolução</p>
+          </CardContent>
+        </Card>
+
+        <Card className={cn(stats.atrasadas > 0 && "border-yellow-500")}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Atrasadas</CardTitle>
+            <AlertTriangle className={cn("h-4 w-4", stats.atrasadas > 0 ? "text-yellow-600" : "text-gray-400")} />
+          </CardHeader>
+          <CardContent>
+            <div className={cn("text-2xl font-bold", stats.atrasadas > 0 ? "text-yellow-600" : "text-gray-400")}>
+              {stats.atrasadas}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats.atrasadas > 0 ? ">7 dias sem atualização" : "nenhuma atrasada"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className={cn(stats.valoresAltos > 0 && "border-red-500")}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Valores Altos</CardTitle>
+            <AlertTriangle className={cn("h-4 w-4", stats.valoresAltos > 0 ? "text-red-600" : "text-gray-400")} />
+          </CardHeader>
+          <CardContent>
+            <div className={cn("text-2xl font-bold", stats.valoresAltos > 0 ? "text-red-600" : "text-gray-400")}>
+              {stats.valoresAltos}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats.valoresAltos > 0 ? ">R$ 500 retidos" : "nenhum valor alto"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ✅ ETAPA 5: Gráficos simples do dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico: Devoluções por dia (últimos 30 dias) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Devoluções por Dia (Últimos 30 Dias)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData.dailyReturns}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="displayDate" 
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis 
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-background border rounded-lg p-2 shadow-md">
+                            <p className="text-sm">{`Data: ${label}`}</p>
+                            <p className="text-sm text-blue-600">
+                              {`Devoluções: ${payload[0].value}`}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="count" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Gráfico: Distribuição de Status (Pizza) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package2 className="h-5 w-5" />
+              Distribuição de Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData.statusDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="count"
+                  >
+                    {chartData.statusDistribution.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={`hsl(${(index * 137.5) % 360}, 70%, 50%)`}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border rounded-lg p-2 shadow-md">
+                            <p className="text-sm font-medium">{data.status}</p>
+                            <p className="text-sm text-blue-600">
+                              {`${data.count} devoluções (${data.percentage}%)`}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            {/* Legenda customizada */}
+            <div className="flex flex-wrap gap-2 mt-4">
+              {chartData.statusDistribution.map((entry, index) => (
+                <div key={entry.status} className="flex items-center gap-2">
+                  <div 
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: `hsl(${(index * 137.5) % 360}, 70%, 50%)` }}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {entry.status} ({entry.percentage}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ✅ ETAPA 5: Alertas básicos */}
+      {(stats.atrasadas > 0 || stats.valoresAltos > 0) && (
+        <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-yellow-800 dark:text-yellow-200">
+              <AlertTriangle className="h-5 w-5" />
+              Alertas do Sistema
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {stats.atrasadas > 0 && (
+              <div className="flex items-center gap-3 p-3 bg-yellow-100 dark:bg-yellow-900 rounded-md">
+                <Clock className="h-4 w-4 text-yellow-600" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                    {stats.atrasadas} devolução{stats.atrasadas > 1 ? 'ões' : ''} atrasada{stats.atrasadas > 1 ? 's' : ''}
+                  </p>
+                  <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                    Mais de 7 dias sem atualização. Verifique o status dos pedidos.
+                  </p>
+                </div>
+              </div>
+            )}
+            {stats.valoresAltos > 0 && (
+              <div className="flex items-center gap-3 p-3 bg-red-100 dark:bg-red-900 rounded-md">
+                <DollarSign className="h-4 w-4 text-red-600" />
+                <div>
+                  <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                    {stats.valoresAltos} devolução{stats.valoresAltos > 1 ? 'ões' : ''} com valor alto
+                  </p>
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    Valores superiores a R$ 500,00. Acompanhamento prioritário recomendado.
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Contador de registros */}
       <div className="flex items-center justify-between">
