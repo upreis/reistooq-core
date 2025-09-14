@@ -9,15 +9,21 @@ export class MLApiService {
   constructor() {
     this.accessToken = '';
     this.integrationAccountId = null;
+    // Inicializar automaticamente
+    this.initialize();
   }
 
   async initialize(integrationAccountId?: string) {
-    if (integrationAccountId) {
-      this.integrationAccountId = integrationAccountId;
-      await this.loadTokenFromIntegration(integrationAccountId);
-    } else {
-      // Buscar primeira conta ativa do ML
-      await this.loadDefaultAccount();
+    try {
+      if (integrationAccountId) {
+        this.integrationAccountId = integrationAccountId;
+        await this.loadTokenFromIntegration(integrationAccountId);
+      } else {
+        // Buscar primeira conta ativa do ML
+        await this.loadDefaultAccount();
+      }
+    } catch (error) {
+      console.error('Erro ao inicializar MLApiService:', error);
     }
   }
 
