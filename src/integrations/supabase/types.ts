@@ -1699,54 +1699,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ml_api_raw_data: {
-        Row: {
-          claim_id: string | null
-          created_at: string | null
-          data_type: string
-          id: number
-          integration_account_id: string | null
-          order_id: string | null
-          organization_id: string | null
-          raw_json: Json
-        }
-        Insert: {
-          claim_id?: string | null
-          created_at?: string | null
-          data_type: string
-          id?: number
-          integration_account_id?: string | null
-          order_id?: string | null
-          organization_id?: string | null
-          raw_json: Json
-        }
-        Update: {
-          claim_id?: string | null
-          created_at?: string | null
-          data_type?: string
-          id?: number
-          integration_account_id?: string | null
-          order_id?: string | null
-          organization_id?: string | null
-          raw_json?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ml_api_raw_data_integration_account_id_fkey"
-            columns: ["integration_account_id"]
-            isOneToOne: false
-            referencedRelation: "integration_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ml_api_raw_data_organization_id_fkey"
-            columns: ["organization_id"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       ml_devolucoes_reclamacoes: {
         Row: {
           amount_claimed: number | null
