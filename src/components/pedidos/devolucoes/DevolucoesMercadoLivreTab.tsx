@@ -188,6 +188,8 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
 
     setSyncing(true);
     try {
+      toast.loading('Iniciando sincronização das devoluções...', { duration: 2000 });
+
       const syncPromises = selectedAccounts.map(accountId =>
         supabase.functions.invoke('ml-devolucoes-sync', {
           body: {
@@ -201,29 +203,38 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
       const results = await Promise.all(syncPromises);
 
       let totalProcessed = 0;
+      let totalFound = 0;
       let hasErrors = false;
 
       results.forEach((result, index) => {
         const accountId = selectedAccounts[index];
+        console.log(`📊 [Devoluções] Resultado para conta ${accountId}:`, result);
+        
         if (result.error) {
-          console.error(`Erro na conta ${accountId}:`, result.error);
+          console.error(`❌ [Devoluções] Erro na conta ${accountId}:`, result.error);
           hasErrors = true;
         } else if (result.data?.success) {
           totalProcessed += result.data.processed || 0;
+          totalFound += result.data.total_found || 0;
+          console.log(`✅ [Devoluções] Conta ${accountId}: ${result.data.processed} processados, ${result.data.total_found} encontrados`);
         }
       });
 
       if (hasErrors) {
-        toast.error('Alguns erros ocorreram durante a sincronização');
+        toast.error('Alguns erros ocorreram durante a sincronização. Verifique o console para detalhes.');
+      } else if (totalProcessed > 0) {
+        toast.success(`Sincronização concluída! ${totalProcessed} devoluções processadas de ${totalFound} encontradas.`);
+      } else if (totalFound > 0) {
+        toast.success(`Sincronização concluída! ${totalFound} registros encontrados, mas nenhuma devolução nova.`);
       } else {
-        toast.success(`Sincronização concluída! ${totalProcessed} itens processados`);
+        toast.success('Sincronização concluída! Nenhuma devolução encontrada no período.');
       }
 
       // Recarregar dados
       await loadDevolucoes();
     } catch (error) {
-      console.error('Erro na sincronização:', error);
-      toast.error('Erro durante a sincronização');
+      console.error('❌ [Devoluções] Erro na sincronização:', error);
+      toast.error('Erro durante a sincronização. Verifique sua conexão e tente novamente.');
     } finally {
       setSyncing(false);
     }

@@ -291,12 +291,16 @@ serve(async (req) => {
           console.warn(`⚠️ [ML Devoluções] Erro ao salvar order data:`, error);
         }
 
-        // Buscar claims para esta order específica
-        const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
-          `resource=order&` +
-          `resource_id=${order.id}`;
-          
+        // Buscar claims para esta order específica - TESTANDO MÚLTIPLAS ABORDAGENS
+        let claimsData = null;
+        let foundClaims = false;
+        
+        // ABORDAGEM 1: API de claims por order
         try {
+          const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
+            `resource=order&` +
+            `resource_id=${order.id}`;
+            
           const claimsResponse = await fetch(claimsUrl, {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
@@ -304,16 +308,87 @@ serve(async (req) => {
             }
           });
           
-          // Rate limit protection - aguardar entre claims
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 300));
           
           if (claimsResponse.ok) {
-            const claimsData = await claimsResponse.json();
-            console.log(`🔍 [ML Devoluções] Claims para order cancelada ${order.id}:`, JSON.stringify(claimsData, null, 2));
+            claimsData = await claimsResponse.json();
+            console.log(`🔍 [ML Devoluções] Claims para order ${order.status} ${order.id}:`, JSON.stringify(claimsData, null, 2));
             
-            if (claimsData.results && claimsData.results.length > 0) {
+            if (claimsData && claimsData.data && claimsData.data.length > 0) {
+              foundClaims = true;
+            }
+          } else {
+            console.warn(`⚠️ [ML Devoluções] Falha na busca claims por order ${order.id}: ${claimsResponse.status}`);
+          }
+        } catch (error) {
+          console.warn(`⚠️ [ML Devoluções] Erro claims abordagem 1:`, error);
+        }
+        
+        // ABORDAGEM 2: Se order cancelada, buscar mediações
+        if (!foundClaims && order.status === 'cancelled') {
+          try {
+            const mediationUrl = `https://api.mercadolibre.com/mediation/order/${order.id}`;
+            
+            const mediationResponse = await fetch(mediationUrl, {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            if (mediationResponse.ok) {
+              const mediationData = await mediationResponse.json();
+              console.log(`🔍 [ML Devoluções] Mediação para order cancelada ${order.id}:`, JSON.stringify(mediationData, null, 2));
+              
+              if (mediationData && (mediationData.id || mediationData.mediations)) {
+                // Converter mediação para formato de claim
+                const mediation = Array.isArray(mediationData.mediations) ? mediationData.mediations[0] : mediationData;
+                
+                claimsData = {
+                  data: [{
+                    id: mediation.id || `mediation_${order.id}`,
+                    resource_id: order.id,
+                    type: 'cancellation',
+                    status: mediation.status || 'resolved',
+                    stage: mediation.stage || 'closed',
+                    reason_description: mediation.reason || order.cancel_detail?.description || 'Cancelamento',
+                    date_created: mediation.date_created || order.date_created,
+                    resolution: {
+                      reason: mediation.resolution_reason || 'cancelled'
+                    },
+                    players: order.buyer ? [{
+                      type: 'buyer',
+                      user_id: order.buyer.id,
+                      nickname: order.buyer.nickname,
+                      email: order.buyer.email || null
+                    }] : [],
+                    item: order.order_items?.[0]?.item || null,
+                    quantity: order.order_items?.[0]?.quantity || 1,
+                    unit_price: order.order_items?.[0]?.unit_price || 0,
+                    amount_refunded: order.total_amount || 0,
+                    currency: order.currency_id || 'BRL'
+                  }]
+                };
+                foundClaims = true;
+                console.log(`✅ [ML Devoluções] Mediação convertida para claim para order ${order.id}`);
+              }
+            } else {
+              console.warn(`⚠️ [ML Devoluções] Falha na busca mediação ${order.id}: ${mediationResponse.status}`);
+            }
+          } catch (error) {
+            console.warn(`⚠️ [ML Devoluções] Erro mediação abordagem 2:`, error);
+          }
+        }
+        
+        // PROCESSAR CLAIMS ENCONTRADAS
+        if (foundClaims && claimsData) {
+            
+            const claimsArray = claimsData.data || claimsData.results || [];
+            if (claimsArray && claimsArray.length > 0) {
               // 💾 SALVAR CADA CLAIM RAW NA TABELA TEMPORÁRIA
-              for (const claim of claimsData.results) {
+              for (const claim of claimsArray) {
                 try {
                   const claimRawData = {
                     data_type: 'claim',
@@ -338,8 +413,8 @@ serve(async (req) => {
                 }
               }
 
-              allClaims.push(...claimsData.results);
-              console.log(`✅ [ML Devoluções] ENCONTRADAS ${claimsData.results.length} claims para order ${order.status} ${order.id}`);
+              allClaims.push(...claimsArray);
+              console.log(`✅ [ML Devoluções] ENCONTRADAS ${claimsArray.length} claims para order ${order.status} ${order.id}`);
               
               // 🔄 ATUALIZAR ORDER COMO TENDO CLAIMS
               try {
@@ -347,7 +422,7 @@ serve(async (req) => {
                   .from('ml_orders_completas')
                   .update({ 
                     has_claims: true, 
-                    claims_count: claimsData.results.length 
+                    claims_count: claimsArray.length 
                   })
                   .eq('order_id', order.id.toString())
                   .eq('integration_account_id', integration_account_id);
@@ -356,21 +431,12 @@ serve(async (req) => {
               }
               
               // 💾 DEBUG: Log das claims encontradas com motivos
-              console.log(`💾 [ML Devoluções] Claims encontradas para order ${order.status}:`, JSON.stringify(claimsData.results, null, 2));
+              console.log(`💾 [ML Devoluções] Claims encontradas para order ${order.status}:`, JSON.stringify(claimsArray, null, 2));
             } else {
               console.log(`📋 [ML Devoluções] Order ${order.status} ${order.id} sem claims associadas`);
             }
-          } else {
-            // Tratar erro 429 (rate limit) nas claims também
-            if (claimsResponse.status === 429) {
-              console.warn(`⏳ [ML Devoluções] Rate limit atingido ao buscar claims, aguardando 5 segundos...`);
-              await new Promise(resolve => setTimeout(resolve, 5000));
-            } else {
-              console.warn(`⚠️ [ML Devoluções] Falha ao buscar claims para order cancelada ${order.id}: ${claimsResponse.status}`);
-            }
-          }
-        } catch (error) {
-          console.warn(`⚠️ [ML Devoluções] Erro ao buscar claims para order cancelada ${order.id}:`, error);
+        } else {
+          console.log(`📋 [ML Devoluções] Order ${order.status} ${order.id} sem claims associadas`);
         }
 
         // Não precisa de pausa adicional aqui pois já temos rate limit nas claims
@@ -431,15 +497,15 @@ serve(async (req) => {
           integration_account_id,
           organization_id: account.organization_id,
           claim_id: claim.id.toString(),
-          order_id: claim.resource_id ? claim.resource_id.toString() : claim.order_id?.toString(),
-          order_number: orderNumbers[claim.resource_id || claim.order_id] || null,
-          buyer_id: claim.players?.find(p => p.type === 'buyer')?.user_id?.toString() || null,
-          buyer_nickname: claim.players?.find(p => p.type === 'buyer')?.nickname || null,
-          buyer_email: claim.players?.find(p => p.type === 'buyer')?.email || null,
-          item_id: claim.item?.id?.toString() || null,
-          item_title: claim.item?.title || null,
-          sku: claim.item?.sku || null,
-          variation_id: claim.item?.variation_id?.toString() || null,
+          order_id: claim.resource_id ? claim.resource_id.toString() : (claim.order_id?.toString() || order.id?.toString()),
+          order_number: orderNumbers[claim.resource_id || claim.order_id || order.id] || null,
+          buyer_id: claim.players?.find(p => p.type === 'buyer')?.user_id?.toString() || order.buyer?.id?.toString() || null,
+          buyer_nickname: claim.players?.find(p => p.type === 'buyer')?.nickname || order.buyer?.nickname || null,
+          buyer_email: claim.players?.find(p => p.type === 'buyer')?.email || order.buyer?.email || null,
+          item_id: claim.item?.id?.toString() || order.order_items?.[0]?.item?.id?.toString() || null,
+          item_title: claim.item?.title || order.order_items?.[0]?.item?.title || null,
+          sku: claim.item?.sku || order.order_items?.[0]?.item?.seller_sku || null,
+          variation_id: claim.item?.variation_id?.toString() || order.order_items?.[0]?.item?.variation_id?.toString() || null,
           quantity: claim.quantity || 1,
           unit_price: claim.unit_price || 0,
           claim_type: claim.type,
