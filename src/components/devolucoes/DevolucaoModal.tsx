@@ -108,7 +108,7 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
                 <CardContent className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Nome</p>
-                    <p className="font-semibold">{devolucao.comprador}</p>
+                    <p className="font-semibold">{devolucao.comprador || devolucao.comprador_nome || 'N/A'}</p>
                   </div>
                   {devolucao.dados_order?.buyer?.email && (
                     <div>
@@ -136,14 +136,16 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
                 <CardContent className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Status</p>
-                    <Badge className={getStatusColor(devolucao.status_devolucao)}>
-                      {devolucao.status_devolucao}
+                    <Badge className={getStatusColor(devolucao.status_devolucao || '')}>
+                      {devolucao.status_devolucao || 'N/A'}
                     </Badge>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Data Criação</p>
-                    <p>{formatDate(devolucao.data_criacao)}</p>
-                  </div>
+                  {devolucao.data_criacao && (
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Data Criação</p>
+                      <p>{formatDate(devolucao.data_criacao)}</p>
+                    </div>
+                  )}
                   {devolucao.motivo_claim && (
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Motivo</p>
@@ -153,7 +155,7 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
                     <p className="text-lg font-bold text-green-600">
-                      {formatCurrency(devolucao.valor_total)}
+                      {formatCurrency(devolucao.valor_total || 0)}
                     </p>
                   </div>
                 </CardContent>
@@ -242,15 +244,15 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
                       </div>
                     </div>
 
-                    {devolucao.dados_order.shipping && (
+                    {devolucao.dados_order.shipping?.receiver_address && (
                       <>
                         <Separator />
                         <div>
                           <p className="text-sm font-medium text-muted-foreground mb-2">Endereço de Entrega</p>
                           <div className="bg-muted p-3 rounded-md">
-                            <p>{devolucao.dados_order.shipping.receiver_address.address_line}</p>
-                            <p>{devolucao.dados_order.shipping.receiver_address.city.name} - {devolucao.dados_order.shipping.receiver_address.state.name}</p>
-                            <p>CEP: {devolucao.dados_order.shipping.receiver_address.zip_code}</p>
+                            <p>{devolucao.dados_order.shipping.receiver_address.address_line || 'N/A'}</p>
+                            <p>{devolucao.dados_order.shipping.receiver_address.city?.name || 'N/A'} - {devolucao.dados_order.shipping.receiver_address.state?.name || 'N/A'}</p>
+                            <p>CEP: {devolucao.dados_order.shipping.receiver_address.zip_code || 'N/A'}</p>
                           </div>
                         </div>
                       </>
