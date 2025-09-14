@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Eye, Filter, Download } from "lucide-react";
+import { Search, Eye, Filter, Download, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import DevolucoeAvancadasTab from "@/components/pedidos/devolucoes/DevolucoeAvancadasTab";
+import { toast } from "sonner";
 
 interface MLOrder {
   id: number;
@@ -39,11 +40,61 @@ export default function MLOrdersCompletas() {
   const [selectedOrder, setSelectedOrder] = useState<MLOrder | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  
+  // Estado para engenharia reversa
+  const [showReverseEngineering, setShowReverseEngineering] = useState(false);
+  const [reverseResults, setReverseResults] = useState<any>(null);
+  const [reverseLoading, setReverseLoading] = useState(false);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
 
   // Debug logs
   useEffect(() => {
     console.log("🔍 [MLOrdersCompletas] Página carregada");
   }, []);
+
+  // Buscar contas ML disponíveis
+  const { data: mlAccounts } = useQuery({
+    queryKey: ["ml-accounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("integration_accounts")
+        .select("id, name, account_identifier")
+        .eq("provider", "mercadolivre")
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Função para executar engenharia reversa
+  const runReverseEngineering = async () => {
+    if (!selectedAccounts.length) {
+      toast.error("Selecione pelo menos uma conta ML");
+      return;
+    }
+
+    setReverseLoading(true);
+    try {
+      console.log("🔬 Iniciando engenharia reversa para contas:", selectedAccounts);
+      
+      const { data, error } = await supabase.functions.invoke('ml-reverse-engineering', {
+        body: { account_ids: selectedAccounts }
+      });
+
+      if (error) throw error;
+
+      setReverseResults(data);
+      toast.success("Engenharia reversa concluída com sucesso!");
+      console.log("✅ Resultados da engenharia reversa:", data);
+    } catch (error) {
+      console.error("❌ Erro na engenharia reversa:", error);
+      toast.error("Erro ao executar engenharia reversa: " + error.message);
+    } finally {
+      setReverseLoading(false);
+    }
+  };
 
   const { data: orders, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["ml-orders-completas", searchTerm, statusFilter, claimsFilter, dateFrom, dateTo],
@@ -239,7 +290,7 @@ export default function MLOrdersCompletas() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -291,6 +342,135 @@ export default function MLOrdersCompletas() {
             <Button onClick={() => refetch()} variant="outline">
               Atualizar
             </Button>
+
+            <Dialog open={showReverseEngineering} onOpenChange={setShowReverseEngineering}>
+              <DialogTrigger asChild>
+                <Button variant="secondary">
+                  <Wrench className="h-4 w-4 mr-2" />
+                  Engenharia Reversa
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-6xl max-h-[90vh]">
+                <DialogHeader>
+                  <DialogTitle>🔬 Engenharia Reversa - API Mercado Livre</DialogTitle>
+                </DialogHeader>
+                <ScrollArea className="max-h-[80vh]">
+                  <div className="space-y-6 p-4">
+                    {/* Seleção de contas */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Selecionar Contas ML</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {mlAccounts?.map((account) => (
+                          <div key={account.id} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={account.id}
+                              checked={selectedAccounts.includes(account.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedAccounts([...selectedAccounts, account.id]);
+                                } else {
+                                  setSelectedAccounts(selectedAccounts.filter(id => id !== account.id));
+                                }
+                              }}
+                              className="rounded"
+                            />
+                            <label htmlFor={account.id} className="text-sm font-medium">
+                              {account.name} ({account.account_identifier})
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={runReverseEngineering}
+                          disabled={reverseLoading || !selectedAccounts.length}
+                        >
+                          {reverseLoading ? "Executando..." : "Executar Engenharia Reversa"}
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedAccounts(mlAccounts?.map(a => a.id) || []);
+                          }}
+                        >
+                          Selecionar Todas
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => setSelectedAccounts([])}
+                        >
+                          Limpar Seleção
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Resultados */}
+                    {reverseResults && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">📊 Resultados da Engenharia Reversa</h3>
+                        
+                        {/* Estatísticas gerais */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm">Total Testados</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold">{reverseResults.total_tested}</div>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm">Funcionais</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold text-green-600">{reverseResults.total_working}</div>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-sm">Com Erro</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="text-2xl font-bold text-red-600">{reverseResults.total_errors}</div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Estatísticas por categoria */}
+                        {reverseResults.categories_stats && (
+                          <div className="space-y-2">
+                            <h4 className="font-semibold">Estatísticas por Categoria</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                              {reverseResults.categories_stats.map((category: any, index: number) => (
+                                <Card key={index} className="p-3">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-medium">{category.category}</span>
+                                    <Badge variant={category.working > 0 ? "default" : "destructive"}>
+                                      {category.working}/{category.total}
+                                    </Badge>
+                                  </div>
+                                </Card>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Raw results para debug */}
+                        <div className="space-y-2">
+                          <h4 className="font-semibold">Resposta Completa (Debug)</h4>
+                          <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto max-h-40">
+                            {JSON.stringify(reverseResults, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardContent>
       </Card>
