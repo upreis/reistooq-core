@@ -36,9 +36,16 @@ export default function MLOrdersCompletas() {
   const [claimsFilter, setClaimsFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<MLOrder | null>(null);
 
-  const { data: orders, isLoading, refetch } = useQuery({
+  // Debug logs
+  useEffect(() => {
+    console.log("🔍 [MLOrdersCompletas] Página carregada");
+  }, []);
+
+  const { data: orders, isLoading, refetch, error: queryError } = useQuery({
     queryKey: ["ml-orders-completas", searchTerm, statusFilter, claimsFilter],
     queryFn: async () => {
+      console.log("🔍 [MLOrdersCompletas] Buscando orders completas...");
+      
       let query = supabase.from("ml_orders_completas").select("*");
 
       if (searchTerm) {
@@ -57,7 +64,12 @@ export default function MLOrdersCompletas() {
 
       const { data, error } = await query.order("date_created", { ascending: false }).limit(1000);
       
-      if (error) throw error;
+      if (error) {
+        console.error("❌ [MLOrdersCompletas] Erro ao buscar orders:", error);
+        throw error;
+      }
+      
+      console.log("✅ [MLOrdersCompletas] Orders encontradas:", data?.length || 0);
       return data as MLOrder[];
     },
   });
@@ -131,6 +143,11 @@ export default function MLOrdersCompletas() {
     document.body.removeChild(link);
   };
 
+  // Debug para mostrar erros
+  if (queryError) {
+    console.error("❌ [MLOrdersCompletas] Erro na query:", queryError);
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -138,6 +155,11 @@ export default function MLOrdersCompletas() {
           <h1 className="text-3xl font-bold">Todas as Orders - ML</h1>
           <p className="text-muted-foreground">
             Visualização completa de todas as orders encontradas no Mercado Livre
+            {queryError && (
+              <span className="text-destructive ml-2">
+                ⚠️ Erro ao carregar: {queryError.message}
+              </span>
+            )}
           </p>
         </div>
         <Button onClick={exportToCSV} variant="outline" size="sm">
