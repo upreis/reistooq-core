@@ -106,19 +106,43 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
     // Auto-selecionar todas as contas ML ativas na inicialização
     const autoSelectAccounts = async () => {
       try {
+        // Buscar organização do usuário atual
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('organizacao_id')
+          .eq('id', (await supabase.auth.getUser()).data.user?.id)
+          .single();
+
+        if (!profile?.organizacao_id) {
+          console.error('❌ [Devoluções] Organização não encontrada');
+          return;
+        }
+
         const { data: accounts } = await supabase
           .from('integration_accounts')
-          .select('id')
+          .select('id, name, is_active, token_status')
           .eq('provider', 'mercadolivre')
-          .eq('is_active', true);
+          .eq('organization_id', profile.organizacao_id);
+        
+        console.log('🔍 [Devoluções] Contas ML encontradas:', accounts);
         
         if (accounts && accounts.length > 0) {
-          const accountIds = accounts.map(acc => acc.id);
-          setSelectedAccounts(accountIds);
-          console.log('🔄 [Devoluções] Auto-selecionando contas ML:', accountIds);
+          // Selecionar apenas contas ativas
+          const activeAccountIds = accounts
+            .filter(acc => acc.is_active)
+            .map(acc => acc.id);
+          
+          if (activeAccountIds.length > 0) {
+            setSelectedAccounts(activeAccountIds);
+            console.log('🔄 [Devoluções] Auto-selecionando contas ML ativas:', activeAccountIds);
+          } else {
+            console.log('⚠️ [Devoluções] Nenhuma conta ML ativa encontrada');
+          }
+        } else {
+          console.log('ℹ️ [Devoluções] Nenhuma conta ML encontrada');
         }
       } catch (error) {
-        console.error('Erro ao auto-selecionar contas:', error);
+        console.error('❌ [Devoluções] Erro ao auto-selecionar contas:', error);
       }
     };
 
