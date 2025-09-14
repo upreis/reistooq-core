@@ -1,529 +1,387 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, Filter, Download, Eye, TrendingUp, TrendingDown, DollarSign, Package, Loader2, AlertCircle } from 'lucide-react';
-import { DevolucaoModal } from '@/components/devolucoes/DevolucaoModal';
-import { DashboardMetricas } from '@/components/devolucoes/DashboardMetricas';
-import { MLApiService } from '@/services/mlApiService';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, RefreshCw, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
-interface DevolucaoData {
-  id: number;
+interface MLClaim {
+  id: string;
   order_id: string;
-  claim_id?: string | null;
-  data_criacao?: string | null;
-  status_devolucao?: string | null;
-  valor_total?: number | null;
-  comprador?: string | null;
-  produto_titulo?: string | null;
-  motivo_claim?: string | null;
-  dados_order?: any;
-  dados_claim?: any;
-  dados_mensagens?: any;
-  cronograma_status?: any;
-  integration_account_id?: string | null;
-  processado_em?: string | null;
-  organization_id?: string | null;
-  sku?: string | null;
-  // Para compatibilidade com o componente DashboardMetricas
-  produto?: string;
-  comprador_nome?: string;
+  claim_id: string;
+  claim_type: string;
+  claim_status: string;
+  claim_stage: string;
+  quantity: number;
+  amount_claimed: number;
+  amount_refunded: number;
+  currency: string;
+  reason_id: string;
+  date_created: string;
+  buyer_id: string;
+  buyer_nickname: string;
+  item_id: string;
+  item_title: string;
+  seller_sku: string;
+  created_at: string;
 }
 
 export default function DevolucaoAvancadas() {
-  const [devolucoes, setDevolucoes] = useState<DevolucaoData[]>([]);
-  const [filteredDevolucoes, setFilteredDevolucoes] = useState<DevolucaoData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoData | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
 
-  // Buscar contas ML ativas
-  const { data: mlAccounts, isLoading: accountsLoading, error: accountsError } = useQuery({
-    queryKey: ['ml-accounts'],
+  // Buscar contas ML disponíveis
+  const { data: mlAccounts } = useQuery({
+    queryKey: ["ml-accounts-devolucoes"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('integration_accounts')
-        .select('id, name, account_identifier, public_auth')
-        .eq('provider', 'mercadolivre')
-        .eq('is_active', true);
-
+        .from("integration_accounts")
+        .select("id, name, account_identifier")
+        .eq("provider", "mercadolivre")
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false });
+      
       if (error) throw error;
+      return data;
+    },
+  });
+
+  // Buscar dados de devoluções
+  const { data: claims, isLoading, refetch, error: queryError } = useQuery({
+    queryKey: ["ml-devolucoes", searchTerm, statusFilter, typeFilter, dateFrom, dateTo],
+    queryFn: async () => {
+      console.log("🔍 [Devoluções] Buscando claims...");
+      
+      let query = supabase.from("ml_devolucoes_reclamacoes").select("*");
+
+      if (searchTerm) {
+        query = query.or(`order_id.ilike.%${searchTerm}%,buyer_nickname.ilike.%${searchTerm}%,item_title.ilike.%${searchTerm}%,claim_id.ilike.%${searchTerm}%`);
+      }
+
+      if (statusFilter !== "all") {
+        query = query.eq("claim_status", statusFilter);
+      }
+
+      if (typeFilter !== "all") {
+        query = query.eq("claim_type", typeFilter);
+      }
+
+      if (dateFrom) {
+        query = query.gte("date_created", dateFrom);
+      }
+
+      if (dateTo) {
+        query = query.lte("date_created", dateTo);
+      }
+
+      const { data, error } = await query.order("date_created", { ascending: false }).limit(1000);
+      
+      if (error) {
+        console.error("❌ [Devoluções] Erro ao buscar claims:", error);
+        throw error;
+      }
+      
+      console.log("✅ [Devoluções] Claims encontradas:", data?.length || 0);
       return data || [];
-    }
-  });
-  
-  // Filtros
-  const [filtros, setFiltros] = useState({
-    dataInicio: '',
-    dataFim: '',
-    status: '',
-    valorMin: '',
-    valorMax: '',
-    comprador: '',
-    produto: ''
+    },
   });
 
-  // Selecionar primeira conta automaticamente
-  useEffect(() => {
-    if (mlAccounts && mlAccounts.length > 0 && !selectedAccountId) {
-      setSelectedAccountId(mlAccounts[0].id);
+  // Função para sincronizar devoluções
+  const syncDevolucoes = async () => {
+    if (!selectedAccounts.length) {
+      toast.error("Selecione pelo menos uma conta ML");
+      return;
     }
-  }, [mlAccounts, selectedAccountId]);
 
-  useEffect(() => {
-    if (selectedAccountId) {
-      carregarDevolucoes();
-    }
-  }, [selectedAccountId]);
-
-  useEffect(() => {
-    aplicarFiltros();
-  }, [filtros, devolucoes]);
-
-  const carregarDevolucoes = async () => {
-    setLoading(true);
+    setSyncLoading(true);
     try {
-      // Primeiro, buscar dados existentes no Supabase
-      const { data: existingData } = await supabase
-        .from('devolucoes_avancadas')
-        .select('*')
-        .order('data_criacao', { ascending: false });
-
-      if (existingData && existingData.length > 0) {
-        const mappedData = existingData.map((item: any) => ({
-          ...item,
-          produto: item.produto_titulo || 'Produto não identificado',
-          comprador_nome: item.comprador || 'Cliente não identificado'
-        }));
-        setDevolucoes(mappedData);
-      }
-
-      // Buscar novos dados da API ML se temos conta selecionada
-      if (selectedAccountId) {
-        await buscarDadosML(selectedAccountId);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar devoluções:', error);
-      toast.error('Erro ao carregar dados das devoluções');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const buscarDadosML = async (integrationAccountId?: string) => {
-    try {
-      const mlService = new MLApiService();
+      console.log("🔄 Sincronizando devoluções para contas:", selectedAccounts);
       
-      // Inicializar com conta específica ou buscar primeira conta disponível
-      await mlService.initialize();
-      
-      // Verificar se tem token válido após inicialização
-      if (!mlService.hasValidToken()) {
-        toast.error('Nenhuma conta do Mercado Livre configurada ou token inválido.');
-        return;
-      }
-      
-      // 1. Obter seller_id
-      const userInfo = await mlService.getUserInfo();
-      const sellerId = userInfo.id;
-
-      // 2. Buscar claims
-      const claims = await mlService.searchClaims(sellerId);
-      
-      // 3. Para cada claim, buscar dados completos
-      const devolucoesList: DevolucaoData[] = [];
-      
-      for (const claim of claims.results) {
-        try {
-          // Buscar dados do pedido
-          const orderData = await mlService.getOrder(claim.resource_id);
-          
-          // Buscar detalhes da devolução
-          const returnDetails = await mlService.getClaimReturns(claim.id);
-          
-          // Buscar mensagens
-          let mensagens = null;
-          try {
-            if (claim.mediations && claim.mediations.length > 0) {
-              const packId = claim.mediations[0].id;
-              mensagens = await mlService.getMessages(packId, sellerId);
-            }
-          } catch (msgError) {
-            console.warn('Erro ao buscar mensagens:', msgError);
+      for (const accountId of selectedAccounts) {
+        const { data, error } = await supabase.functions.invoke('ml-devolucoes-sync', {
+          body: { 
+            integration_account_id: accountId,
+            date_from: dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // últimos 30 dias se não especificado
+            date_to: dateTo || new Date().toISOString().split('T')[0]
           }
-
-          const devolucaoData = {
-            order_id: orderData.id.toString(),
-            claim_id: claim.id,
-            data_criacao: claim.date_created,
-            status_devolucao: claim.status,
-            valor_total: orderData.total_amount,
-            comprador: orderData.buyer.nickname,
-            produto_titulo: orderData.order_items[0]?.item.title || 'Produto não identificado',
-            motivo_claim: claim.reason,
-            dados_order: orderData,
-            dados_claim: claim,
-            dados_mensagens: mensagens,
-            cronograma_status: returnDetails,
-            integration_account_id: null,
-            organization_id: null
-          };
-
-          // Salvar no Supabase
-          const { data: insertedData } = await supabase
-            .from('devolucoes_avancadas')
-            .upsert(devolucaoData)
-            .select()
-            .single();
-          
-          if (insertedData) {
-            devolucoesList.push({
-              ...insertedData,
-              produto: (insertedData as any).produto_titulo || 'Produto não identificado',
-              comprador_nome: (insertedData as any).comprador || orderData.buyer.nickname
-            });
-          }
-
-        } catch (itemError) {
-          console.error(`Erro ao processar claim ${claim.id}:`, itemError);
-        }
-      }
-
-      if (devolucoesList.length > 0) {
-        setDevolucoes(prev => {
-          const merged = [...devolucoesList, ...prev];
-          return merged.filter((item, index, self) => 
-            index === self.findIndex(t => t.id === item.id)
-          );
         });
-        toast.success(`${devolucoesList.length} devoluções atualizadas`);
+
+        if (error) throw error;
+        console.log("✅ Sincronização concluída para conta:", accountId, data);
       }
-
+      
+      toast.success("Sincronização de devoluções concluída!");
+      refetch(); // Atualizar os dados
     } catch (error) {
-      console.error('Erro ao buscar dados ML:', error);
-      toast.error('Erro ao sincronizar com Mercado Livre');
+      console.error("❌ Erro na sincronização:", error);
+      toast.error("Erro ao sincronizar devoluções: " + error.message);
+    } finally {
+      setSyncLoading(false);
     }
-  };
-
-  const aplicarFiltros = () => {
-    let filtered = [...devolucoes];
-
-    if (filtros.dataInicio) {
-      filtered = filtered.filter(d => d.data_criacao && new Date(d.data_criacao) >= new Date(filtros.dataInicio));
-    }
-    
-    if (filtros.dataFim) {
-      filtered = filtered.filter(d => d.data_criacao && new Date(d.data_criacao) <= new Date(filtros.dataFim));
-    }
-    
-    if (filtros.status) {
-      filtered = filtered.filter(d => d.status_devolucao?.includes(filtros.status));
-    }
-    
-    if (filtros.valorMin) {
-      filtered = filtered.filter(d => (d.valor_total || 0) >= parseFloat(filtros.valorMin));
-    }
-    
-    if (filtros.valorMax) {
-      filtered = filtered.filter(d => (d.valor_total || 0) <= parseFloat(filtros.valorMax));
-    }
-    
-    if (filtros.comprador) {
-      filtered = filtered.filter(d => 
-        (d.comprador_nome || d.comprador || '').toLowerCase().includes(filtros.comprador.toLowerCase())
-      );
-    }
-    
-    if (filtros.produto) {
-      filtered = filtered.filter(d => 
-        (d.produto || d.produto_titulo || '').toLowerCase().includes(filtros.produto.toLowerCase())
-      );
-    }
-
-    setFilteredDevolucoes(filtered);
   };
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      'opened': 'bg-yellow-100 text-yellow-800',
-      'closed': 'bg-green-100 text-green-800',
-      'cancelled': 'bg-red-100 text-red-800',
-      'in_process': 'bg-blue-100 text-blue-800'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+    switch (status?.toLowerCase()) {
+      case "closed": return "default";
+      case "opened": return "destructive";
+      case "in_process": return "secondary";
+      case "waiting_buyer": return "outline";
+      case "waiting_seller": return "outline";
+      default: return "outline";
+    }
   };
 
-  const formatCurrency = (value: number) => {
+  const getStatusLabel = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "closed": return "Fechada";
+      case "opened": return "Aberta";
+      case "in_process": return "Em Processo";
+      case "waiting_buyer": return "Aguardando Comprador";
+      case "waiting_seller": return "Aguardando Vendedor";
+      default: return status || "-";
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    switch (type?.toLowerCase()) {
+      case "claim": return "Reclamação";
+      case "return": return "Devolução";
+      case "refund": return "Reembolso";
+      case "mediation": return "Mediação";
+      default: return type || "-";
+    }
+  };
+
+  const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+      currency: currency || 'BRL'
+    }).format(amount || 0);
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Devoluções Avançadas</h1>
-          <p className="text-muted-foreground">Sistema completo de gestão de devoluções ML</p>
-        </div>
-        <div className="flex gap-3">
-          <Button onClick={carregarDevolucoes} disabled={loading || !selectedAccountId}>
-            {loading ? 'Sincronizando...' : 'Sincronizar ML'}
-          </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar
-          </Button>
+          <h1 className="text-3xl font-bold">Sistema de Devoluções ML</h1>
+          <p className="text-muted-foreground">
+            Gestão simplificada de devoluções e reclamações do Mercado Livre
+          </p>
         </div>
       </div>
 
-      {/* Seleção de Conta ML */}
-      {accountsLoading && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      )}
-
-      {accountsError && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Erro ao carregar contas do Mercado Livre. Tente novamente.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {!accountsLoading && mlAccounts && mlAccounts.length === 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Nenhuma conta do Mercado Livre conectada. Conecte uma conta primeiro na página de integrações.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {mlAccounts && mlAccounts.length > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Selecionar Conta Mercado Livre</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {mlAccounts.map((account) => (
-                <Button
-                  key={account.id}
-                  variant={selectedAccountId === account.id ? "default" : "outline"}
-                  onClick={() => setSelectedAccountId(account.id)}
-                  className="w-full justify-start"
-                >
-                  {account.name} ({account.account_identifier})
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {selectedAccountId && (
-        <>
-          <div className="text-sm text-muted-foreground">
-            Conta ativa: {mlAccounts?.find(acc => acc.id === selectedAccountId)?.name}
-          </div>
-        </>
-      )}
-
-      {/* Dashboard de Métricas */}
-      <DashboardMetricas devolucoes={filteredDevolucoes} />
-
-      {/* Filtros Avançados */}
+      {/* Filtros e Sincronização */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filtros Avançados
+            <Search className="h-5 w-5" />
+            Filtros e Sincronização
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Data Início</label>
+          <div className="space-y-4">
+            {/* Seleção de contas */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Contas ML:</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                {mlAccounts?.map((account) => (
+                  <div key={account.id} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={account.id}
+                      checked={selectedAccounts.includes(account.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedAccounts([...selectedAccounts, account.id]);
+                        } else {
+                          setSelectedAccounts(selectedAccounts.filter(id => id !== account.id));
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <label htmlFor={account.id} className="text-sm">
+                      {account.name} ({account.account_identifier})
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Filtros */}
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por Order ID, Claim ID, comprador..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Status</SelectItem>
+                  <SelectItem value="opened">Abertas</SelectItem>
+                  <SelectItem value="closed">Fechadas</SelectItem>
+                  <SelectItem value="in_process">Em Processo</SelectItem>
+                  <SelectItem value="waiting_buyer">Aguardando Comprador</SelectItem>
+                  <SelectItem value="waiting_seller">Aguardando Vendedor</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Tipos</SelectItem>
+                  <SelectItem value="claim">Reclamações</SelectItem>
+                  <SelectItem value="return">Devoluções</SelectItem>
+                  <SelectItem value="refund">Reembolsos</SelectItem>
+                  <SelectItem value="mediation">Mediações</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Input
                 type="date"
-                value={filtros.dataInicio}
-                onChange={(e) => setFiltros(prev => ({ ...prev, dataInicio: e.target.value }))}
+                placeholder="Data início"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Data Fim</label>
+
               <Input
                 type="date"
-                value={filtros.dataFim}
-                onChange={(e) => setFiltros(prev => ({ ...prev, dataFim: e.target.value }))}
+                placeholder="Data fim"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Status</label>
-              <select
-                className="w-full p-2 border rounded-md bg-background"
-                value={filtros.status}
-                onChange={(e) => setFiltros(prev => ({ ...prev, status: e.target.value }))}
-              >
-                <option value="">Todos</option>
-                <option value="opened">Aberto</option>
-                <option value="closed">Fechado</option>
-                <option value="cancelled">Cancelado</option>
-                <option value="in_process">Em Processo</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Comprador</label>
-              <Input
-                placeholder="Nome do comprador"
-                value={filtros.comprador}
-                onChange={(e) => setFiltros(prev => ({ ...prev, comprador: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Valor Mínimo</label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={filtros.valorMin}
-                onChange={(e) => setFiltros(prev => ({ ...prev, valorMin: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Valor Máximo</label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={filtros.valorMax}
-                onChange={(e) => setFiltros(prev => ({ ...prev, valorMax: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Produto</label>
-              <Input
-                placeholder="Nome do produto"
-                value={filtros.produto}
-                onChange={(e) => setFiltros(prev => ({ ...prev, produto: e.target.value }))}
-              />
-            </div>
-            <div className="flex items-end">
-              <Button
-                variant="outline"
-                onClick={() => setFiltros({
-                  dataInicio: '', dataFim: '', status: '', valorMin: '', valorMax: '', comprador: '', produto: ''
-                })}
-                className="w-full"
-              >
-                Limpar Filtros
-              </Button>
+
+              <div className="flex gap-2">
+                <Button 
+                  onClick={syncDevolucoes}
+                  disabled={syncLoading || !selectedAccounts.length}
+                  className="gap-2"
+                >
+                  {syncLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  {syncLoading ? "Sincronizando..." : "Sincronizar"}
+                </Button>
+                
+                <Button onClick={() => refetch()} variant="outline">
+                  Atualizar
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tabela de Devoluções */}
+      {/* Resultados */}
       <Card>
         <CardHeader>
           <CardTitle>
-            Devoluções ({filteredDevolucoes.length})
+            Devoluções e Reclamações
+            {claims && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                ({claims.length} encontradas)
+              </span>
+            )}
+            {queryError && (
+              <span className="text-sm font-normal text-destructive ml-2">
+                ⚠️ Erro: {queryError.message}
+              </span>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full table-auto">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3">Data</th>
-                  <th className="text-left p-3">Pedido</th>
-                  <th className="text-left p-3">Comprador</th>
-                  <th className="text-left p-3">Produto</th>
-                  <th className="text-left p-3">Valor</th>
-                  <th className="text-left p-3">Status</th>
-                  <th className="text-left p-3">Motivo</th>
-                  <th className="text-left p-3">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDevolucoes.map((devolucao) => (
-                  <tr key={devolucao.id} className="border-b hover:bg-muted/50">
-                    <td className="p-3 text-sm">
-                      {devolucao.data_criacao ? formatDate(devolucao.data_criacao) : 'N/A'}
-                    </td>
-                    <td className="p-3">
-                      <span className="font-mono text-sm">{devolucao.order_id}</span>
-                    </td>
-                    <td className="p-3">{devolucao.comprador_nome || devolucao.comprador || 'N/A'}</td>
-                    <td className="p-3 max-w-xs truncate" title={devolucao.produto || devolucao.produto_titulo || ''}>
-                      {devolucao.produto || devolucao.produto_titulo || 'N/A'}
-                    </td>
-                    <td className="p-3 font-semibold">
-                      {formatCurrency(devolucao.valor_total || 0)}
-                    </td>
-                    <td className="p-3">
-                      <Badge className={getStatusColor(devolucao.status_devolucao || '')}>
-                        {devolucao.status_devolucao || 'N/A'}
-                      </Badge>
-                    </td>
-                    <td className="p-3 max-w-xs truncate">
-                      {devolucao.motivo_claim || 'N/A'}
-                    </td>
-                    <td className="p-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedDevolucao(devolucao);
-                          setModalOpen(true);
-                        }}
-                      >
-                        <Eye className="w-4 h-4 mr-1" />
-                        Ver
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            {filteredDevolucoes.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                {loading ? 'Carregando devoluções...' : 'Nenhuma devolução encontrada'}
-              </div>
-            )}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Carregando devoluções...</span>
+            </div>
+          ) : !claims || claims.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground">
+              {queryError ? "Erro ao carregar dados" : "Nenhuma devolução encontrada"}
+              <p className="text-sm mt-2">
+                {!selectedAccounts.length 
+                  ? "Selecione uma conta ML e clique em 'Sincronizar' para buscar dados"
+                  : "Tente ajustar os filtros ou sincronizar novamente"
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Claim ID</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Comprador</TableHead>
+                    <TableHead>Item</TableHead>
+                    <TableHead>Qtd</TableHead>
+                    <TableHead>Valor Reclamado</TableHead>
+                    <TableHead>Valor Reembolsado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {claims.map((claim) => (
+                    <TableRow key={`${claim.order_id}-${claim.claim_id}-${claim.id}`}>
+                      <TableCell className="font-mono text-sm">{claim.order_id}</TableCell>
+                      <TableCell className="font-mono text-sm">{claim.claim_id || "-"}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {getTypeLabel(claim.claim_type)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusColor(claim.claim_status)}>
+                          {getStatusLabel(claim.claim_status)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {claim.date_created ? format(new Date(claim.date_created), "dd/MM/yyyy", { locale: ptBR }) : "-"}
+                      </TableCell>
+                      <TableCell>{claim.buyer_nickname || "-"}</TableCell>
+                      <TableCell className="max-w-[200px] truncate" title={claim.item_title}>
+                        {claim.item_title || "-"}
+                      </TableCell>
+                      <TableCell>{claim.quantity || "-"}</TableCell>
+                      <TableCell>
+                        {claim.amount_claimed ? formatCurrency(claim.amount_claimed, claim.currency) : "-"}
+                      </TableCell>
+                      <TableCell>
+                        {claim.amount_refunded ? formatCurrency(claim.amount_refunded, claim.currency) : "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Modal Detalhado */}
-      <DevolucaoModal
-        devolucao={selectedDevolucao}
-        open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setSelectedDevolucao(null);
-        }}
-      />
     </div>
   );
 }
