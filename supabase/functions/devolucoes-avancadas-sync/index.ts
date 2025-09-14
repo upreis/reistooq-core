@@ -2,6 +2,28 @@ import { makeClient, makeUserClient, makeServiceClient, corsHeaders, ok, fail, g
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
+// Função para buscar returns diretamente por order
+async function fetchReturnsByOrder(orderId: string, accessToken: string) {
+  try {
+    const response = await fetch(`https://api.mercadolivre.com/orders/${orderId}/returns`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      return data.results || data || [];
+    }
+    
+    return [];
+  } catch (error) {
+    console.warn(`Erro ao buscar returns para order ${orderId}:`, error);
+    return [];
+  }
+}
+
 Deno.serve(async (req) => {
   // Generate correlation ID for tracking
   const cid = Math.random().toString(36).substring(2, 10);
@@ -210,8 +232,8 @@ Deno.serve(async (req) => {
         const sellerId = userData.id.toString();
         console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Seller ID obtido: ${sellerId}`);
         
-        // 2. Usar o seller ID real na busca de orders
-        const ordersUrl = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.status=paid,cancelled&sort=date_desc&limit=50`;
+        // 2. Usar o seller ID real na busca de orders - PRIORIZAR CANCELADAS
+        const ordersUrl = `https://api.mercadolivre.com/orders/search?seller=${sellerId}&order.status=cancelled,paid&sort=date_desc&limit=100`;
         
         console.log(`[devolucoes-avancadas-sync:${cid}] ML API URL: ${ordersUrl}`);
         console.log(`[devolucoes-avancadas-sync:${cid}] Buscando pedidos ML para seller ${sellerId}`);
@@ -243,7 +265,11 @@ Deno.serve(async (req) => {
           totalProcessed++;
           
           try {
-            console.log(`[devolucoes-avancadas-sync:${cid}] Processing order ${order.id}`);
+            console.log(`🔍 Processando order ${order.id}:`, {
+              status: order.status,
+              date_created: order.date_created,
+              total_amount: order.total_amount
+            });
 
             // Check if already exists
             const { data: existingData } = await serviceClient
@@ -260,9 +286,10 @@ Deno.serve(async (req) => {
 
             // Fetch claims for this order using the correct Claims API
             let claimsData = null;
+            let claims: any[] = [];
             try {
               console.log(`[devolucoes-avancadas-sync:${cid}] 🔍 Buscando claims para pedido ${order.id}`);
-              const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?resource_id=${order.id}&resource=order`;
+              const claimsUrl = `https://api.mercadolivre.com/post-purchase/v1/claims/search?resource_id=${order.id}&resource=order`;
               const claimsResponse = await fetch(claimsUrl, {
                 headers: {
                   'Authorization': `Bearer ${tokens.access_token}`,
@@ -275,25 +302,50 @@ Deno.serve(async (req) => {
 
               if (claimsResponse.ok) {
                 claimsData = await claimsResponse.json();
-                if (claimsData.results?.length > 0) {
-                  console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Encontrados ${claimsData.results.length} claims para pedido ${order.id}`);
+                claims = claimsData.results || [];
+                if (claims.length > 0) {
+                  console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Encontrados ${claims.length} claims para pedido ${order.id}`);
                 } else {
                   console.log(`[devolucoes-avancadas-sync:${cid}] ℹ️ Nenhum claim encontrado para pedido ${order.id}`);
                 }
               } else {
                 console.warn(`[devolucoes-avancadas-sync:${cid}] ⚠️ Claims API retornou status ${claimsResponse.status} para pedido ${order.id}`);
               }
+
+              // Se não encontrar claims pelo método atual, tentar alternativo
+              if (claims.length === 0) {
+                console.log(`Tentando endpoint alternativo para claims da order ${order.id}`);
+                
+                try {
+                  const altResponse = await fetch(`https://api.mercadolibre.com/orders/${order.id}/claims`, {
+                    headers: {
+                      'Authorization': `Bearer ${tokens.access_token}`,
+                      'Content-Type': 'application/json'
+                    }
+                  });
+                  
+                  if (altResponse.ok) {
+                    const altData = await altResponse.json();
+                    claims = altData.results || altData || [];
+                    console.log(`Claims encontradas via endpoint alternativo:`, claims.length);
+                  }
+                } catch (error) {
+                  console.warn(`Erro no endpoint alternativo de claims:`, error);
+                }
+              }
             } catch (claimError) {
               console.warn(`[devolucoes-avancadas-sync:${cid}] Failed to fetch claims for order ${order.id}:`, claimError);
             }
 
-            // Fetch returns for each claim using correct v2 API
-            let returnsData = null;
-            if (claimsData && claimsData.results?.length > 0) {
+            // Fetch returns using both methods
+            let returnsData: any[] = [];
+            
+            // Method 1: From claims
+            if (claims.length > 0) {
               try {
-                const returnPromises = claimsData.results.map(async (claim: any) => {
+                const returnPromises = claims.map(async (claim: any) => {
                   try {
-                    const returnUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
+                    const returnUrl = `https://api.mercadolivre.com/post-purchase/v2/claims/${claim.id}/returns`;
                     const returnResponse = await fetch(returnUrl, {
                       headers: {
                         'Authorization': `Bearer ${tokens.access_token}`,
@@ -321,11 +373,36 @@ Deno.serve(async (req) => {
               }
             }
 
+            // Method 2: Direct returns search by order
+            const directReturns = await fetchReturnsByOrder(order.id, tokens.access_token);
+            if (directReturns.length > 0) {
+              returnsData = [...returnsData, ...directReturns];
+              console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Encontrados ${directReturns.length} returns diretos para order ${order.id}`);
+            }
+
+            // Calcular cronograma mais detalhado
+            let cronograma = 'Normal';
+            let statusCronograma = 'Em andamento';
+
+            if (order.status === 'cancelled') {
+              cronograma = 'Cancelada';
+              statusCronograma = 'Finalizada';
+            } else if (returnsData && returnsData.length > 0) {
+              cronograma = 'Com Return';
+              statusCronograma = returnsData[0].status || 'Em processamento';
+            } else if (claims.length > 0) {
+              cronograma = 'Com Claim';
+              statusCronograma = claims[0].status || 'Em análise';
+            } else if (order.status === 'paid') {
+              cronograma = 'Paga - Sem problemas';
+              statusCronograma = 'Concluída';
+            }
+
             // Antes da inserção, validar dados obrigatórios
             const orderData = {
               order_id: order.id ? order.id.toString() : null,
-              claim_id: claimsData?.results?.[0]?.id?.toString() || null,
-              return_id: returnsData?.[0]?.results?.[0]?.id?.toString() || null,
+              claim_id: claims[0]?.id?.toString() || null,
+              return_id: returnsData[0]?.results?.[0]?.id?.toString() || returnsData[0]?.id?.toString() || null,
               data_criacao: order.date_created ? new Date(order.date_created).toISOString() : new Date().toISOString(),
               data_fechamento: order.date_closed ? new Date(order.date_closed).toISOString() : null,
               ultima_atualizacao: order.last_updated ? new Date(order.last_updated).toISOString() : null,
@@ -338,11 +415,13 @@ Deno.serve(async (req) => {
               destino_tipo: null, // Will be filled based on return data
               destino_endereco: order.shipping?.receiver_address || null,
               dados_order: order || {},
-              dados_claim: claimsData?.results?.[0] || null,
-              dados_return: returnsData?.[0] || null,
+              dados_claim: claims[0] || null,
+              dados_return: returnsData[0] || null,
               integration_account_id: accountId,
               organization_id: organizationId,
-              processado_em: new Date().toISOString()
+              processado_em: new Date().toISOString(),
+              cronograma_tipo: cronograma,
+              cronograma_status: statusCronograma
             };
 
             // Só inserir se tiver order_id válido
@@ -355,7 +434,10 @@ Deno.serve(async (req) => {
               order_id: orderData.order_id,
               status: orderData.status_devolucao,
               account: orderData.integration_account_id,
-              organization: orderData.organization_id
+              organization: orderData.organization_id,
+              cronograma: orderData.cronograma_tipo,
+              claims_found: claims.length,
+              returns_found: returnsData.length
             });
 
             // Insert into database
@@ -368,7 +450,7 @@ Deno.serve(async (req) => {
               errors.push(`Order ${order.id}: ${insertError.message}`);
             } else {
               totalSaved++;
-              console.log(`[devolucoes-avancadas-sync:${cid}] Successfully saved order ${order.id}`);
+              console.log(`[devolucoes-avancadas-sync:${cid}] Successfully saved order ${order.id} with cronograma: ${cronograma}`);
             }
 
           } catch (orderError) {

@@ -592,6 +592,8 @@ export type Database = {
           claim_id: string | null
           codigo_rastreamento: string | null
           created_at: string | null
+          cronograma_status: string | null
+          cronograma_tipo: string | null
           dados_claim: Json | null
           dados_order: Json | null
           dados_return: Json | null
@@ -616,6 +618,8 @@ export type Database = {
           claim_id?: string | null
           codigo_rastreamento?: string | null
           created_at?: string | null
+          cronograma_status?: string | null
+          cronograma_tipo?: string | null
           dados_claim?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
@@ -640,6 +644,8 @@ export type Database = {
           claim_id?: string | null
           codigo_rastreamento?: string | null
           created_at?: string | null
+          cronograma_status?: string | null
+          cronograma_tipo?: string | null
           dados_claim?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
