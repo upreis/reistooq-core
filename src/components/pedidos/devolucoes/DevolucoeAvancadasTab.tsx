@@ -3,9 +3,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, AlertCircle, Package2, Clock } from 'lucide-react';
-import { formatDate } from '@/lib/format';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RefreshCw, AlertCircle, Package2, Clock, Eye, Filter, Calendar } from 'lucide-react';
+import { formatDate, formatMoney } from '@/lib/format';
 import { toast } from 'react-hot-toast';
+import { cn } from '@/lib/utils';
 
 interface DevolucaoAvancada {
   id: number;
@@ -33,8 +38,15 @@ interface DevolucaoAvancada {
 
 export default function DevolucoeAvancadasTab() {
   const [devolucoes, setDevolucoes] = useState<DevolucaoAvancada[]>([]);
+  const [filteredDevolucoes, setFilteredDevolucoes] = useState<DevolucaoAvancada[]>([]);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoAvancada | null>(null);
+  const [filters, setFilters] = useState({
+    status: 'all',
+    periodo: '30',
+    hasClaim: 'all'
+  });
   const [stats, setStats] = useState({
     total: 0,
     pendentes: 0,
@@ -66,6 +78,9 @@ export default function DevolucoeAvancadasTab() {
       const comReembolso = data?.filter(d => d.valor_retido && d.valor_retido > 0).length || 0;
       
       setStats({ total, pendentes, finalizadas, comReembolso });
+      
+      // Aplicar filtros após carregar
+      applyFilters(data || []);
       
     } catch (error) {
       console.error('Erro ao buscar devoluções:', error);
@@ -138,6 +153,60 @@ export default function DevolucoeAvancadasTab() {
     }
   };
 
+  // Aplicar filtros
+  const applyFilters = (data: DevolucaoAvancada[]) => {
+    let filtered = [...data];
+    
+    // Filtro por status
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(d => d.status_devolucao === filters.status);
+    }
+    
+    // Filtro por período
+    if (filters.periodo !== 'all') {
+      const days = parseInt(filters.periodo);
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+      
+      filtered = filtered.filter(d => {
+        if (!d.data_criacao) return false;
+        return new Date(d.data_criacao) >= cutoffDate;
+      });
+    }
+    
+    // Filtro por presença de claim
+    if (filters.hasClaim !== 'all') {
+      const hasClaim = filters.hasClaim === 'sim';
+      filtered = filtered.filter(d => hasClaim ? !!d.claim_id : !d.claim_id);
+    }
+    
+    setFilteredDevolucoes(filtered);
+  };
+
+  // Aplicar filtros quando os filtros ou dados mudarem
+  useEffect(() => {
+    applyFilters(devolucoes);
+  }, [filters, devolucoes]);
+
+  // Extrair dados do JSON
+  const extractOrderValue = (devolucao: DevolucaoAvancada) => {
+    return devolucao.dados_order?.total_amount || devolucao.valor_retido || 0;
+  };
+
+  const extractProductTitle = (devolucao: DevolucaoAvancada) => {
+    const items = devolucao.dados_order?.order_items || [];
+    if (items.length > 0) {
+      return items[0].item?.title || 'Produto não identificado';
+    }
+    return 'N/A';
+  };
+
+  const extractBuyerName = (devolucao: DevolucaoAvancada) => {
+    return devolucao.dados_order?.buyer?.nickname || 
+           devolucao.dados_claim?.buyer?.nickname || 
+           'Comprador não identificado';
+  };
+
   // Carregar dados ao montar o componente
   useEffect(() => {
     loadDevolucoes();
@@ -162,8 +231,8 @@ export default function DevolucoeAvancadasTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header com estatísticas */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Header com estatísticas e filtros */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Devoluções Avançadas</h2>
           <p className="text-muted-foreground">
@@ -171,15 +240,74 @@ export default function DevolucoeAvancadasTab() {
           </p>
         </div>
         
-        <Button 
-          onClick={handleSync} 
-          disabled={syncing}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-          Sincronizar Devoluções
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button 
+            onClick={handleSync} 
+            disabled={syncing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+            Sincronizar Devoluções
+          </Button>
+        </div>
       </div>
+
+      {/* Filtros */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filtros
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Status</label>
+              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="paid">Pago</SelectItem>
+                  <SelectItem value="cancelled">Cancelado</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">Período</label>
+              <Select value={filters.periodo} onValueChange={(value) => setFilters(prev => ({ ...prev, periodo: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="7">Últimos 7 dias</SelectItem>
+                  <SelectItem value="30">Últimos 30 dias</SelectItem>
+                  <SelectItem value="60">Últimos 60 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">Tem Claim?</label>
+              <Select value={filters.hasClaim} onValueChange={(value) => setFilters(prev => ({ ...prev, hasClaim: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Claim" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="sim">Com Claim</SelectItem>
+                  <SelectItem value="nao">Sem Claim</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -231,7 +359,8 @@ export default function DevolucoeAvancadasTab() {
       {/* Contador de registros */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {stats.total} registro{stats.total !== 1 ? 's' : ''} encontrado{stats.total !== 1 ? 's' : ''}
+          {filteredDevolucoes.length} de {stats.total} registro{stats.total !== 1 ? 's' : ''} 
+          {filteredDevolucoes.length !== stats.total && ' (filtrados)'}
         </p>
       </div>
 
@@ -245,6 +374,16 @@ export default function DevolucoeAvancadasTab() {
             <div className="flex items-center justify-center py-8">
               <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
               <span className="ml-2 text-muted-foreground">Carregando...</span>
+            </div>
+          ) : filteredDevolucoes.length === 0 && devolucoes.length > 0 ? (
+            <div className="text-center py-8">
+              <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">
+                Nenhuma devolução encontrada com os filtros aplicados
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Tente ajustar os filtros para ver mais resultados
+              </p>
             </div>
           ) : devolucoes.length === 0 ? (
             <div className="text-center py-8">
@@ -262,28 +401,21 @@ export default function DevolucoeAvancadasTab() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4 font-medium">Order ID</th>
-                    <th className="text-left py-3 px-4 font-medium">Status Devolução</th>
                     <th className="text-left py-3 px-4 font-medium">Data Criação</th>
-                    <th className="text-left py-3 px-4 font-medium">Data Fechamento</th>
-                    <th className="text-left py-3 px-4 font-medium">Valor Retido</th>
-                    <th className="text-left py-3 px-4 font-medium">Rastreamento</th>
+                    <th className="text-left py-3 px-4 font-medium">Status</th>
+                    <th className="text-left py-3 px-4 font-medium">Comprador</th>
+                    <th className="text-left py-3 px-4 font-medium">Produto</th>
+                    <th className="text-left py-3 px-4 font-medium">Valor</th>
+                    <th className="text-left py-3 px-4 font-medium">Claim ID</th>
+                    <th className="text-left py-3 px-4 font-medium">Return ID</th>
+                    <th className="text-left py-3 px-4 font-medium">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {devolucoes.map((devolucao) => (
+                  {filteredDevolucoes.map((devolucao) => (
                     <tr key={devolucao.id} className="border-b hover:bg-muted/50">
                       <td className="py-3 px-4">
                         <div className="font-medium">{devolucao.order_id}</div>
-                        {devolucao.claim_id && (
-                          <div className="text-sm text-muted-foreground">
-                            Claim: {devolucao.claim_id}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge variant={getStatusBadgeVariant(devolucao.status_devolucao)}>
-                          {devolucao.status_devolucao || 'N/A'}
-                        </Badge>
                       </td>
                       <td className="py-3 px-4">
                         {devolucao.data_criacao ? (
@@ -295,31 +427,120 @@ export default function DevolucoeAvancadasTab() {
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        {devolucao.data_fechamento ? (
-                          <span className="text-sm text-green-600">
-                            {formatDate(devolucao.data_fechamento)}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">Em aberto</span>
-                        )}
+                        <Badge variant={getStatusBadgeVariant(devolucao.status_devolucao)}>
+                          {devolucao.status_devolucao || 'N/A'}
+                        </Badge>
                       </td>
                       <td className="py-3 px-4">
-                        {devolucao.valor_retido && devolucao.valor_retido > 0 ? (
-                          <span className="font-medium text-red-600">
-                            R$ {devolucao.valor_retido.toFixed(2)}
-                          </span>
+                        <span className="text-sm">
+                          {extractBuyerName(devolucao)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-sm max-w-[200px] truncate block" title={extractProductTitle(devolucao)}>
+                          {extractProductTitle(devolucao)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="font-medium text-green-600">
+                          {formatMoney(extractOrderValue(devolucao))}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        {devolucao.claim_id ? (
+                          <Badge variant="outline" className="text-xs">
+                            {devolucao.claim_id}
+                          </Badge>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        {devolucao.codigo_rastreamento ? (
-                          <span className="text-sm font-mono">
-                            {devolucao.codigo_rastreamento}
-                          </span>
+                        {devolucao.return_id ? (
+                          <Badge variant="outline" className="text-xs">
+                            {devolucao.return_id}
+                          </Badge>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedDevolucao(devolucao)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver Detalhes
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Detalhes da Devolução - Order {devolucao.order_id}</DialogTitle>
+                            </DialogHeader>
+                            
+                            <Tabs defaultValue="order" className="w-full">
+                              <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="order">Order</TabsTrigger>
+                                <TabsTrigger value="claim" disabled={!devolucao.dados_claim}>
+                                  Claim {!devolucao.dados_claim && '(N/A)'}
+                                </TabsTrigger>
+                                <TabsTrigger value="return" disabled={!devolucao.dados_return}>
+                                  Return {!devolucao.dados_return && '(N/A)'}
+                                </TabsTrigger>
+                              </TabsList>
+                              
+                              <TabsContent value="order" className="mt-4">
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle>Dados da Order</CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <pre className="bg-muted p-4 rounded-md text-xs overflow-auto">
+                                      {JSON.stringify(devolucao.dados_order, null, 2)}
+                                    </pre>
+                                  </CardContent>
+                                </Card>
+                              </TabsContent>
+                              
+                              <TabsContent value="claim" className="mt-4">
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle>Dados do Claim</CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    {devolucao.dados_claim ? (
+                                      <pre className="bg-muted p-4 rounded-md text-xs overflow-auto">
+                                        {JSON.stringify(devolucao.dados_claim, null, 2)}
+                                      </pre>
+                                    ) : (
+                                      <p className="text-muted-foreground">Nenhum claim associado a esta order.</p>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </TabsContent>
+                              
+                              <TabsContent value="return" className="mt-4">
+                                <Card>
+                                  <CardHeader>
+                                    <CardTitle>Dados do Return</CardTitle>
+                                  </CardHeader>
+                                  <CardContent>
+                                    {devolucao.dados_return ? (
+                                      <pre className="bg-muted p-4 rounded-md text-xs overflow-auto">
+                                        {JSON.stringify(devolucao.dados_return, null, 2)}
+                                      </pre>
+                                    ) : (
+                                      <p className="text-muted-foreground">Nenhum return associado a esta order.</p>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </TabsContent>
+                            </Tabs>
+                          </DialogContent>
+                        </Dialog>
                       </td>
                     </tr>
                   ))}
