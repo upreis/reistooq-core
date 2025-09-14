@@ -348,7 +348,7 @@ export default function DevolucoeAvancadasTab() {
     }
   };
 
-  // Aplicar filtros
+  // ✅ ETAPA 2: Aplicar filtros corrigidos
   const applyFilters = (data: DevolucaoAvancada[]) => {
     let filtered = [...data];
     
@@ -376,6 +376,51 @@ export default function DevolucoeAvancadasTab() {
     }
     
     setFilteredDevolucoes(filtered);
+    
+    // ✅ ETAPA 5: Recalcular métricas baseadas nos dados filtrados
+    const total = filtered.length;
+    const pendentes = filtered.filter(d => d.status_devolucao === 'pending' || !d.data_fechamento).length;
+    const finalizadas = filtered.filter(d => d.data_fechamento).length;
+    const comReembolso = filtered.filter(d => d.valor_retido && d.valor_retido > 0).length;
+    
+    const valorTotal = filtered.reduce((sum, d) => sum + (extractOrderValue(d) || 0), 0);
+    const valorRetido = filtered.reduce((sum, d) => sum + (d.valor_retido || 0), 0);
+    
+    // Tempo médio de resolução para dados filtrados
+    const resolvidas = filtered.filter(d => d.data_fechamento && d.data_criacao);
+    const tempoMedioResolucao = resolvidas.length > 0 
+      ? resolvidas.reduce((sum, d) => {
+          const inicio = new Date(d.data_criacao!);
+          const fim = new Date(d.data_fechamento!);
+          const dias = Math.ceil((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
+          return sum + dias;
+        }, 0) / resolvidas.length
+      : 0;
+    
+    const agora = new Date();
+    const atrasadas = filtered.filter(d => {
+      if (d.data_fechamento) return false;
+      const ultimaAtualizacao = new Date(d.ultima_atualizacao || d.created_at || d.data_criacao || agora);
+      const diasSemAtualizacao = Math.ceil((agora.getTime() - ultimaAtualizacao.getTime()) / (1000 * 60 * 60 * 24));
+      return diasSemAtualizacao > 7;
+    }).length;
+    
+    const valoresAltos = filtered.filter(d => (d.valor_retido || 0) > 500).length;
+    
+    setStats({ 
+      total, 
+      pendentes, 
+      finalizadas, 
+      comReembolso, 
+      valorTotal, 
+      valorRetido, 
+      tempoMedioResolucao: Math.round(tempoMedioResolucao), 
+      atrasadas, 
+      valoresAltos 
+    });
+    
+    // ✅ ETAPA 4: Regenerar dados dos gráficos com dados filtrados
+    generateChartData(filtered);
   };
 
   // Aplicar filtros quando os filtros ou dados mudarem
@@ -1106,12 +1151,94 @@ export default function DevolucoeAvancadasTab() {
                               <TabsContent value="order" className="mt-4">
                                 <Card>
                                   <CardHeader>
-                                    <CardTitle>Dados da Order</CardTitle>
+                                    <CardTitle>Informações da Order</CardTitle>
                                   </CardHeader>
                                   <CardContent>
-                                    <pre className="bg-muted p-4 rounded-md text-xs overflow-auto">
-                                      {JSON.stringify(devolucao.dados_order, null, 2)}
-                                    </pre>
+                                    {/* ✅ ETAPA 3: Modal de detalhes formatado */}
+                                    <div className="order-details space-y-6">
+                                      {(() => {
+                                        const orderData = devolucao.dados_order;
+                                        if (!orderData) return <p className="text-muted-foreground">Dados não disponíveis</p>;
+                                        
+                                        return (
+                                          <>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                              <div>
+                                                <h3 className="text-lg font-semibold mb-3">Informações Gerais</h3>
+                                                <div className="space-y-2">
+                                                  <div>
+                                                    <span className="text-sm font-medium text-muted-foreground">ID:</span>
+                                                    <p className="text-sm">{orderData.id}</p>
+                                                  </div>
+                                                  <div>
+                                                    <span className="text-sm font-medium text-muted-foreground">Status:</span>
+                                                    <Badge variant="outline">{orderData.status}</Badge>
+                                                  </div>
+                                                  <div>
+                                                    <span className="text-sm font-medium text-muted-foreground">Data:</span>
+                                                    <p className="text-sm">{orderData.date_created ? new Date(orderData.date_created).toLocaleDateString('pt-BR') : 'N/A'}</p>
+                                                  </div>
+                                                  <div>
+                                                    <span className="text-sm font-medium text-muted-foreground">Valor:</span>
+                                                    <p className="text-sm font-semibold">R$ {orderData.total_amount?.toFixed(2) || '0,00'}</p>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              
+                                              <div>
+                                                <h3 className="text-lg font-semibold mb-3">Comprador</h3>
+                                                <div className="space-y-2">
+                                                  <div>
+                                                    <span className="text-sm font-medium text-muted-foreground">Nickname:</span>
+                                                    <p className="text-sm">{orderData.buyer?.nickname || 'N/A'}</p>
+                                                  </div>
+                                                  <div>
+                                                    <span className="text-sm font-medium text-muted-foreground">ID:</span>
+                                                    <p className="text-sm">{orderData.buyer?.id || 'N/A'}</p>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </div>
+                                            
+                                            {orderData.order_items?.[0] && (
+                                              <div>
+                                                <h3 className="text-lg font-semibold mb-3">Produto</h3>
+                                                <div className="bg-muted p-4 rounded-lg">
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                      <span className="text-sm font-medium text-muted-foreground">Título:</span>
+                                                      <p className="text-sm">{orderData.order_items[0].item?.title || 'N/A'}</p>
+                                                    </div>
+                                                    <div>
+                                                      <span className="text-sm font-medium text-muted-foreground">Quantidade:</span>
+                                                      <p className="text-sm">{orderData.order_items[0].quantity || 1}</p>
+                                                    </div>
+                                                    <div>
+                                                      <span className="text-sm font-medium text-muted-foreground">Preço Unitário:</span>
+                                                      <p className="text-sm">R$ {orderData.order_items[0].unit_price?.toFixed(2) || '0,00'}</p>
+                                                    </div>
+                                                    <div>
+                                                      <span className="text-sm font-medium text-muted-foreground">SKU:</span>
+                                                      <p className="text-sm font-mono">{orderData.order_items[0].item?.seller_sku || 'N/A'}</p>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+                                            
+                                            {/* JSON completo para casos avançados */}
+                                            <details className="mt-6">
+                                              <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+                                                Ver dados completos (JSON)
+                                              </summary>
+                                              <pre className="bg-muted p-4 rounded-md text-xs overflow-auto mt-2">
+                                                {JSON.stringify(orderData, null, 2)}
+                                              </pre>
+                                            </details>
+                                          </>
+                                        );
+                                      })()}
+                                    </div>
                                   </CardContent>
                                 </Card>
                               </TabsContent>
