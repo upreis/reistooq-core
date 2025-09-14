@@ -52,6 +52,11 @@ export default function MLOrdersCompletas() {
   const [phase2Results, setPhase2Results] = useState<any>(null);
   const [phase2Loading, setPhase2Loading] = useState(false);
 
+  // Estado para Implementação Final
+  const [showFinalModal, setShowFinalModal] = useState(false);
+  const [finalResults, setFinalResults] = useState<any>(null);
+  const [finalLoading, setFinalLoading] = useState(false);
+
   // Debug logs
   useEffect(() => {
     console.log("🔍 [MLOrdersCompletas] Página carregada");
@@ -127,6 +132,35 @@ export default function MLOrdersCompletas() {
       toast.error("Erro ao executar Fase 2: " + error.message);
     } finally {
       setPhase2Loading(false);
+    }
+  };
+
+  // Função para executar implementação final
+  const runFinalImplementation = async () => {
+    if (!selectedAccounts.length) {
+      toast.error("Selecione pelo menos uma conta ML");
+      return;
+    }
+
+    setFinalLoading(true);
+    try {
+      console.log("🚀 Iniciando implementação final para contas:", selectedAccounts);
+      
+      const { data, error } = await supabase.functions.invoke('ml-implementacao-final', {
+        body: { account_ids: selectedAccounts }
+      });
+
+      if (error) throw error;
+
+      setFinalResults(data);
+      setShowFinalModal(true);
+      toast.success("Implementação final concluída com sucesso!");
+      console.log("✅ Resultados da Implementação Final:", data);
+    } catch (error) {
+      console.error("❌ Erro na Implementação Final:", error);
+      toast.error("Erro ao executar Implementação Final: " + error.message);
+    } finally {
+      setFinalLoading(false);
     }
   };
 
@@ -445,6 +479,19 @@ export default function MLOrdersCompletas() {
                         </Button>
                         
                         <Button 
+                          onClick={runFinalImplementation}
+                          disabled={finalLoading || !selectedAccounts.length}
+                          className="gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                        >
+                          {finalLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Wrench className="h-4 w-4" />
+                          )}
+                          {finalLoading ? "Implementando..." : "Implementação Final"}
+                        </Button>
+                        
+                        <Button 
                           variant="outline"
                           onClick={() => {
                             setSelectedAccounts(mlAccounts?.map(a => a.id) || []);
@@ -663,6 +710,129 @@ export default function MLOrdersCompletas() {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal da Implementação Final */}
+      <Dialog open={showFinalModal} onOpenChange={setShowFinalModal}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>🚀 Implementação Final - Resultados Práticos</DialogTitle>
+          </DialogHeader>
+          
+          {finalResults && (
+            <div className="space-y-6">
+              {/* Resumo Geral */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-green-700">
+                    {finalResults.total_accounts || 0}
+                  </div>
+                  <div className="text-sm text-green-600">Contas Processadas</div>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-700">
+                    {finalResults.results?.reduce((acc: any, r: any) => acc + r.total_records, 0) || 0}
+                  </div>
+                  <div className="text-sm text-blue-600">Total de Registros</div>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-700">
+                    {finalResults.results?.reduce((acc: any, r: any) => acc + r.summary.claims_found, 0) || 0}
+                  </div>
+                  <div className="text-sm text-purple-600">Claims Encontradas</div>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-700">
+                    {Math.round((finalResults.execution_time || 0) / 1000)}s
+                  </div>
+                  <div className="text-sm text-orange-600">Tempo de Execução</div>
+                </div>
+              </div>
+
+              {/* Resultados por Conta */}
+              {finalResults.results?.map((result: any, index: number) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <h3 className="font-semibold mb-4">Seller: {result.seller_id}</h3>
+                  
+                  {/* Resumo da Conta */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                    <div className="text-center p-3 bg-orange-50 rounded">
+                      <div className="font-semibold text-lg text-orange-700">{result.summary.claims_found}</div>
+                      <div className="text-sm text-orange-600">Claims</div>
+                    </div>
+                    <div className="text-center p-3 bg-blue-50 rounded">
+                      <div className="font-semibold text-lg text-blue-700">{result.summary.orders_found}</div>
+                      <div className="text-sm text-blue-600">Orders</div>
+                    </div>
+                    <div className="text-center p-3 bg-red-50 rounded">
+                      <div className="font-semibold text-lg text-red-700">{result.summary.cancelled_orders_found}</div>
+                      <div className="text-sm text-red-600">Canceladas</div>
+                    </div>
+                    <div className="text-center p-3 bg-green-50 rounded">
+                      <div className="font-semibold text-lg text-green-700">{result.summary.successful_relationships}</div>
+                      <div className="text-sm text-green-600">Relacionamentos</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded">
+                      <div className="font-semibold text-lg">{result.total_records}</div>
+                      <div className="text-sm text-gray-600">Total Registros</div>
+                    </div>
+                  </div>
+
+                  {/* Status e Informações */}
+                  <div className="bg-gray-50 p-4 rounded mb-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <strong>Dados Salvos:</strong> {result.summary.data_saved ? '✅ Sim' : '❌ Não'}
+                      </div>
+                      <div>
+                        <strong>Tempo de Execução:</strong> {Math.round(result.execution_time / 1000)}s
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preview dos Registros */}
+                  {result.records && result.records.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-3">📦 Primeiros Registros Salvos ({result.records.length} total)</h4>
+                      <div className="max-h-60 overflow-y-auto space-y-2">
+                        {result.records.slice(0, 5).map((record: any, ri: number) => (
+                          <div key={ri} className="bg-white p-3 rounded border text-sm">
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <strong>Order:</strong> {record.order_id}
+                                {record.claim_id && (
+                                  <div><strong>Claim:</strong> {record.claim_id}</div>
+                                )}
+                              </div>
+                              <div>
+                                <strong>Status:</strong> {record.status_devolucao}
+                                <div><strong>Valor:</strong> R$ {record.valor_total?.toFixed(2) || '0.00'}</div>
+                              </div>
+                              <div>
+                                <strong>Comprador:</strong> {record.comprador}
+                                <div><strong>Data:</strong> {new Date(record.data_criacao).toLocaleDateString('pt-BR')}</div>
+                              </div>
+                            </div>
+                            {record.produto && (
+                              <div className="mt-2 text-xs text-gray-600 truncate">
+                                <strong>Produto:</strong> {record.produto}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {result.records.length > 5 && (
+                        <div className="text-sm text-gray-500 mt-2">
+                          ... e mais {result.records.length - 5} registros salvos no banco
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
