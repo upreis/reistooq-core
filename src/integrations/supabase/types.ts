@@ -1775,6 +1775,81 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_orders_completas: {
+        Row: {
+          buyer_id: string | null
+          buyer_nickname: string | null
+          claims_count: number | null
+          created_at: string | null
+          currency: string | null
+          date_created: string | null
+          has_claims: boolean | null
+          id: number
+          integration_account_id: string | null
+          item_title: string | null
+          order_id: string
+          organization_id: string
+          quantity: number | null
+          raw_data: Json | null
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_id?: string | null
+          buyer_nickname?: string | null
+          claims_count?: number | null
+          created_at?: string | null
+          currency?: string | null
+          date_created?: string | null
+          has_claims?: boolean | null
+          id?: number
+          integration_account_id?: string | null
+          item_title?: string | null
+          order_id: string
+          organization_id: string
+          quantity?: number | null
+          raw_data?: Json | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_id?: string | null
+          buyer_nickname?: string | null
+          claims_count?: number | null
+          created_at?: string | null
+          currency?: string | null
+          date_created?: string | null
+          has_claims?: boolean | null
+          id?: number
+          integration_account_id?: string | null
+          item_title?: string | null
+          order_id?: string
+          organization_id?: string
+          quantity?: number | null
+          raw_data?: Json | null
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ml_orders_completas_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ml_orders_completas_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimentacoes_estoque: {
         Row: {
           created_at: string

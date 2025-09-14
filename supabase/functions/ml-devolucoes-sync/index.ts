@@ -180,16 +180,16 @@ serve(async (req) => {
 
     console.log(`📅 [ML Devoluções] EXPANDINDO BUSCA: buscando orders com MÚLTIPLOS STATUS de ${dateFrom} até ${dateTo}`);
 
-    // PASSO 1: Buscar orders com MÚLTIPLOS STATUS (expandindo para capturar TODAS as devoluções!)
+    // PASSO 1: Buscar orders com STATUS QUE FUNCIONAM (corrigindo erro 400)
     while (true) {
       const ordersUrl = `https://api.mercadolibre.com/orders/search?` +
         `seller=${sellerId}&` +
-        `order.status=cancelled,paid,shipped,delivered&` +  // ← EXPANDINDO STATUS PARA CAPTURAR TODAS AS DEVOLUÇÕES!
+        `order.status=cancelled,paid&` +  // ← APENAS STATUS QUE FUNCIONAM (delivered causava erro 400)
         `sort=date_desc&` +
         `limit=${limit}&` +
         `offset=${orderOffset}`;
 
-      console.log(`🔍 [ML Devoluções] Buscando orders MÚLTIPLOS STATUS - offset: ${orderOffset}`);
+      console.log(`🔍 [ML Devoluções] Buscando orders com status funcionais - offset: ${orderOffset}`);
       console.log(`🔗 [ML Devoluções] URL: ${ordersUrl}`);
 
       const ordersResponse = await fetch(ordersUrl, {
@@ -216,7 +216,7 @@ serve(async (req) => {
       }
 
       const ordersData = await ordersResponse.json();
-      console.log(`📦 [ML Devoluções] Orders com múltiplos status encontradas: ${ordersData.results?.length || 0}`);
+      console.log(`📦 [ML Devoluções] Orders encontradas: ${ordersData.results?.length || 0}`);
 
       if (!ordersData.results || ordersData.results.length === 0) {
         console.log(`📭 [ML Devoluções] Nenhuma order encontrada neste offset`);
@@ -238,8 +238,39 @@ serve(async (req) => {
         const cancelDetail = order.cancel_detail?.description || 'N/A';
         console.log(`🔍 [ML Devoluções] Processando order: ${order.id} - Status: ${order.status} - Status Detail: ${statusDetail} - Cancel Detail: ${cancelDetail} (${order.date_created})`);
 
-        // 💾 SALVAR ORDER RAW NA TABELA TEMPORÁRIA
+        // 💾 SALVAR ORDER COMPLETA NA NOVA TABELA
         try {
+          const orderCompleteData = {
+            order_id: order.id.toString(),
+            status: order.status,
+            date_created: order.date_created,
+            total_amount: order.total_amount || 0,
+            currency: order.currency_id || 'BRL',
+            buyer_id: order.buyer?.id?.toString() || null,
+            buyer_nickname: order.buyer?.nickname || null,
+            item_title: order.order_items?.[0]?.item?.title || null,
+            quantity: order.order_items?.[0]?.quantity || 1,
+            has_claims: false, // será atualizado quando encontrar claims
+            claims_count: 0,
+            raw_data: order,
+            integration_account_id,
+            organization_id: account.organization_id
+          };
+
+          const { error: orderCompleteError } = await supabase
+            .from('ml_orders_completas')
+            .upsert(orderCompleteData, { 
+              onConflict: 'order_id,integration_account_id',
+              ignoreDuplicates: false 
+            });
+
+          if (orderCompleteError) {
+            console.error(`❌ [ML Devoluções] Erro ao salvar order completa:`, orderCompleteError);
+          } else {
+            console.log(`💾 [ML Devoluções] Order completa salva: ${order.id}`);
+          }
+
+          // 💾 SALVAR ORDER RAW NA TABELA TEMPORÁRIA TAMBÉM
           const orderRawData = {
             data_type: 'order',
             order_id: order.id.toString(),
@@ -255,11 +286,9 @@ serve(async (req) => {
 
           if (orderInsertError) {
             console.error(`❌ [ML Devoluções] Erro ao salvar order raw data:`, orderInsertError);
-          } else {
-            console.log(`💾 [ML Devoluções] Order raw data salva: ${order.id}`);
           }
         } catch (error) {
-          console.warn(`⚠️ [ML Devoluções] Erro ao salvar order raw data:`, error);
+          console.warn(`⚠️ [ML Devoluções] Erro ao salvar order data:`, error);
         }
 
         // Buscar claims para esta order específica
@@ -312,6 +341,20 @@ serve(async (req) => {
               allClaims.push(...claimsData.results);
               console.log(`✅ [ML Devoluções] ENCONTRADAS ${claimsData.results.length} claims para order ${order.status} ${order.id}`);
               
+              // 🔄 ATUALIZAR ORDER COMO TENDO CLAIMS
+              try {
+                await supabase
+                  .from('ml_orders_completas')
+                  .update({ 
+                    has_claims: true, 
+                    claims_count: claimsData.results.length 
+                  })
+                  .eq('order_id', order.id.toString())
+                  .eq('integration_account_id', integration_account_id);
+              } catch (error) {
+                console.warn(`⚠️ [ML Devoluções] Erro ao atualizar has_claims:`, error);
+              }
+              
               // 💾 DEBUG: Log das claims encontradas com motivos
               console.log(`💾 [ML Devoluções] Claims encontradas para order ${order.status}:`, JSON.stringify(claimsData.results, null, 2));
             } else {
@@ -347,7 +390,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`📊 [ML Devoluções] Total de claims encontrados via BUSCA EXPANDIDA (múltiplos status): ${allClaims.length}`);
+    console.log(`📊 [ML Devoluções] Total de claims encontrados: ${allClaims.length}`);
 
     // 4. Buscar dados dos pedidos para obter order_number
     const orderIds = [...new Set(allClaims.map(claim => claim.order_id))];

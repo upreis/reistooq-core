@@ -19,6 +19,7 @@ import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import Scanner from "./pages/Scanner";
 import MLRawData from "./pages/MLRawData";
+import MLOrdersCompletas from "./pages/MLOrdersCompletas";
 import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
 import IntegracoesPage from "./pages/configuracoes/IntegracoesPage";
@@ -176,6 +177,11 @@ function App() {
                      <Route path="/ml-raw-data" element={
                        <PermissionRoute requiredPermissions={['integrations:manage']}>
                          <MLRawData />
+                       </PermissionRoute>
+                     } />
+                     <Route path="/ml-orders-completas" element={
+                       <PermissionRoute requiredPermissions={['integrations:manage']}>
+                         <MLOrdersCompletas />
                        </PermissionRoute>
                      } />
                     <Route path="/scanner" element={
