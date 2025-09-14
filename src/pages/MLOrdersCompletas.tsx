@@ -35,6 +35,8 @@ export default function MLOrdersCompletas() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [claimsFilter, setClaimsFilter] = useState("all");
   const [selectedOrder, setSelectedOrder] = useState<MLOrder | null>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   // Debug logs
   useEffect(() => {
@@ -42,7 +44,7 @@ export default function MLOrdersCompletas() {
   }, []);
 
   const { data: orders, isLoading, refetch, error: queryError } = useQuery({
-    queryKey: ["ml-orders-completas", searchTerm, statusFilter, claimsFilter],
+    queryKey: ["ml-orders-completas", searchTerm, statusFilter, claimsFilter, dateFrom, dateTo],
     queryFn: async () => {
       console.log("🔍 [MLOrdersCompletas] Buscando orders completas...");
       
@@ -60,6 +62,14 @@ export default function MLOrdersCompletas() {
         query = query.eq("has_claims", true);
       } else if (claimsFilter === "without_claims") {
         query = query.eq("has_claims", false);
+      }
+
+      if (dateFrom) {
+        query = query.gte("date_created", dateFrom);
+      }
+
+      if (dateTo) {
+        query = query.lte("date_created", dateTo);
       }
 
       const { data, error } = await query.order("date_created", { ascending: false }).limit(1000);
@@ -108,25 +118,49 @@ export default function MLOrdersCompletas() {
       "Order ID",
       "Status",
       "Data Criação",
+      "Data Fechamento",
       "Valor Total",
+      "Valor Pago",
+      "Comprador ID",
       "Comprador",
+      "SKU",
       "Item",
       "Quantidade",
+      "Tags",
+      "Shipping ID",
+      "Pack ID",
       "Tem Claims",
       "Qtd Claims"
     ];
 
-    const csvData = orders.map(order => [
-      order.order_id,
-      getStatusLabel(order.status),
-      format(new Date(order.date_created), "dd/MM/yyyy HH:mm", { locale: ptBR }),
-      formatCurrency(order.total_amount, order.currency),
-      order.buyer_nickname || "-",
-      order.item_title || "-",
-      order.quantity,
-      order.has_claims ? "Sim" : "Não",
-      order.claims_count
-    ]);
+    const csvData = orders.map(order => {
+      const rawData = order.raw_data || {};
+      const dateClosed = rawData.date_closed ? format(new Date(rawData.date_closed), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-";
+      const paidAmount = rawData.paid_amount || 0;
+      const tags = rawData.tags ? rawData.tags.join(", ") : "-";
+      const shippingId = rawData.shipping?.id || "-";
+      const packId = rawData.pack_id || "-";
+      const sellerSku = rawData.order_items?.[0]?.item?.seller_sku || "-";
+      
+      return [
+        order.order_id,
+        getStatusLabel(order.status),
+        format(new Date(order.date_created), "dd/MM/yyyy HH:mm", { locale: ptBR }),
+        dateClosed,
+        formatCurrency(order.total_amount, order.currency),
+        formatCurrency(paidAmount, order.currency),
+        order.buyer_id || "-",
+        order.buyer_nickname || "-",
+        sellerSku,
+        order.item_title || "-",
+        order.quantity,
+        tags,
+        shippingId,
+        packId,
+        order.has_claims ? "Sim" : "Não",
+        order.claims_count
+      ];
+    });
 
     const csvContent = [headers, ...csvData]
       .map(row => row.map(field => `"${field}"`).join(","))
@@ -155,6 +189,16 @@ export default function MLOrdersCompletas() {
           <h1 className="text-3xl font-bold">Todas as Orders - ML</h1>
           <p className="text-muted-foreground">
             Visualização completa de todas as orders encontradas no Mercado Livre
+            {dateFrom && dateTo && (
+              <span className="text-blue-600 ml-2">
+                📅 Período: {format(new Date(dateFrom), "dd/MM/yyyy")} - {format(new Date(dateTo), "dd/MM/yyyy")}
+              </span>
+            )}
+            {!dateFrom && !dateTo && (
+              <span className="text-orange-600 ml-2">
+                📅 Mostrando todas as datas
+              </span>
+            )}
             {queryError && (
               <span className="text-destructive ml-2">
                 ⚠️ Erro ao carregar: {queryError.message}
@@ -177,7 +221,7 @@ export default function MLOrdersCompletas() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -211,6 +255,20 @@ export default function MLOrdersCompletas() {
                 <SelectItem value="without_claims">Sem Claims</SelectItem>
               </SelectContent>
             </Select>
+
+            <Input
+              type="date"
+              placeholder="Data início"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+            />
+
+            <Input
+              type="date"
+              placeholder="Data fim"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+            />
 
             <Button onClick={() => refetch()} variant="outline">
               Atualizar
@@ -286,67 +344,95 @@ export default function MLOrdersCompletas() {
                   <TableRow>
                     <TableHead>Order ID</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead>Data Criação</TableHead>
+                    <TableHead>Data Fechamento</TableHead>
+                    <TableHead>Valor Total</TableHead>
+                    <TableHead>Valor Pago</TableHead>
+                    <TableHead>Comprador ID</TableHead>
                     <TableHead>Comprador</TableHead>
+                    <TableHead>SKU</TableHead>
                     <TableHead>Item</TableHead>
                     <TableHead>Qtd</TableHead>
+                    <TableHead>Tags</TableHead>
+                    <TableHead>Shipping ID</TableHead>
+                    <TableHead>Pack ID</TableHead>
                     <TableHead>Claims</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-mono text-sm">{order.order_id}</TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusColor(order.status)}>
-                          {getStatusLabel(order.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(order.date_created), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>{formatCurrency(order.total_amount, order.currency)}</TableCell>
-                      <TableCell className="max-w-[120px] truncate">
-                        {order.buyer_nickname || "-"}
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate">
-                        {order.item_title || "-"}
-                      </TableCell>
-                      <TableCell>{order.quantity}</TableCell>
-                      <TableCell>
-                        {order.has_claims ? (
-                          <Badge variant="destructive">{order.claims_count} claim(s)</Badge>
-                        ) : (
-                          <Badge variant="outline">Nenhuma</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setSelectedOrder(order)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh]">
-                            <DialogHeader>
-                              <DialogTitle>Detalhes da Order {order.order_id}</DialogTitle>
-                            </DialogHeader>
-                            <ScrollArea className="max-h-[60vh]">
-                              <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto">
-                                {JSON.stringify(order.raw_data, null, 2)}
-                              </pre>
-                            </ScrollArea>
-                          </DialogContent>
-                        </Dialog>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {orders.map((order) => {
+                    const rawData = order.raw_data || {};
+                    const dateClosed = rawData.date_closed ? format(new Date(rawData.date_closed), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-";
+                    const paidAmount = rawData.paid_amount || 0;
+                    const tags = rawData.tags ? rawData.tags.join(", ") : "-";
+                    const shippingId = rawData.shipping?.id || "-";
+                    const packId = rawData.pack_id || "-";
+                    const sellerSku = rawData.order_items?.[0]?.item?.seller_sku || "-";
+                    
+                    return (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-mono text-sm">{order.order_id}</TableCell>
+                        <TableCell>
+                          <Badge variant={getStatusColor(order.status)}>
+                            {getStatusLabel(order.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(order.date_created), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell>{dateClosed}</TableCell>
+                        <TableCell>{formatCurrency(order.total_amount, order.currency)}</TableCell>
+                        <TableCell>{formatCurrency(paidAmount, order.currency)}</TableCell>
+                        <TableCell className="font-mono text-sm">{order.buyer_id || "-"}</TableCell>
+                        <TableCell className="max-w-[120px] truncate">
+                          {order.buyer_nickname || "-"}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm max-w-[150px] truncate">
+                          {sellerSku}
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {order.item_title || "-"}
+                        </TableCell>
+                        <TableCell>{order.quantity}</TableCell>
+                        <TableCell className="max-w-[150px] truncate">
+                          {tags}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{shippingId}</TableCell>
+                        <TableCell className="font-mono text-sm">{packId}</TableCell>
+                        <TableCell>
+                          {order.has_claims ? (
+                            <Badge variant="destructive">{order.claims_count} claim(s)</Badge>
+                          ) : (
+                            <Badge variant="outline">Nenhuma</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSelectedOrder(order)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[80vh]">
+                              <DialogHeader>
+                                <DialogTitle>Detalhes da Order {order.order_id}</DialogTitle>
+                              </DialogHeader>
+                              <ScrollArea className="max-h-[60vh]">
+                                <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto">
+                                  {JSON.stringify(order.raw_data, null, 2)}
+                                </pre>
+                              </ScrollArea>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
