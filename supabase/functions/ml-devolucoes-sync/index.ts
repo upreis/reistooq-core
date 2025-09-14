@@ -8,15 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
 };
 
-interface MLClaimResponse {
-  results: MLClaim[];
-  paging: {
-    total: number;
-    offset: number;
-    limit: number;
-  };
-}
-
 interface MLClaim {
   id: string;
   order_id: string;
@@ -49,554 +40,308 @@ interface MLClaim {
   seller_response?: string;
 }
 
-interface MLOrder {
+interface MLMediation {
   id: string;
-  order_number?: string;
+  site_id: string;
+  status: string;
+  stage: string;
+  order_id: string;
+  buyer_id: string;
+  seller_id: string;
+  date_created: string;
+  date_closed?: string;
+  reason: string;
+  external_agent_email: string;
+  external_agent_name: string;
+  items: Array<{
+    id: string;
+    quantity: number;
+    sale_price: number;
+    title: string;
+  }>;
 }
 
 serve(async (req) => {
+  console.log(`🔔 [ML Devoluções] Recebida requisição ${req.method}`);
+  
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   try {
     const { integration_account_id, date_from, date_to } = await req.json();
-
+    
     if (!integration_account_id) {
-      throw new Error('integration_account_id é obrigatório');
+      return new Response(JSON.stringify({ error: 'integration_account_id é obrigatório' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    console.log(`🔄 [ML Devoluções] Iniciando sync para conta: ${integration_account_id}`);
-
-    // Inicializar cliente Supabase
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // 1. Buscar dados da conta
+    console.log(`🔍 [ML Devoluções] Processando conta: ${integration_account_id}`);
+
+    // 1. Buscar dados da conta de integração
     const { data: account, error: accountError } = await supabase
       .from('integration_accounts')
       .select('*')
       .eq('id', integration_account_id)
-      .eq('provider', 'mercadolivre')
+      .eq('ativo', true)
       .single();
 
     if (accountError || !account) {
-      throw new Error('Conta de integração não encontrada');
+      console.error('❌ [ML Devoluções] Conta não encontrada:', accountError);
+      return new Response(JSON.stringify({ error: 'Conta de integração não encontrada' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // 2. Buscar access token
     const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
     
-    let secretResponse = await fetch(
-      `${supabaseUrl}/functions/v1/integrations-get-secret`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': req.headers.get('Authorization') || '',
-          'x-internal-call': 'true',
-          'x-internal-token': INTERNAL_TOKEN
-        },
-        body: JSON.stringify({ 
-          integration_account_id,
-          provider: 'mercadolivre'
-        })
-      }
-    );
+    const secretResponse = await fetch(`${supabaseUrl}/functions/v1/integrations-get-secret`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': req.headers.get('Authorization') || '',
+        'x-internal-call': 'true',
+        'x-internal-token': INTERNAL_TOKEN
+      },
+      body: JSON.stringify({
+        integration_account_id: integration_account_id,
+        secret_name: 'access_token'
+      })
+    });
 
     if (!secretResponse.ok) {
-      console.error(`❌ [ML Devoluções] Erro ao buscar secrets: ${secretResponse.status}`);
-      throw new Error(`Erro ao buscar secrets: ${secretResponse.status}`);
-    }
-
-    let secretData = await secretResponse.json();
-    
-    // Se não encontrou token ou está expirado, tentar renovar
-    if (!secretData?.found || !secretData?.secret?.access_token) {
-      console.log(`🔄 [ML Devoluções] Token não encontrado, tentando renovar...`);
-      
-      const refreshResponse = await fetch(
-        `${supabaseUrl}/functions/v1/mercadolivre-token-refresh`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': req.headers.get('Authorization') || ''
-          },
-          body: JSON.stringify({ 
-            account_id: integration_account_id,
-            internal_call: true
-          })
-        }
-      );
-
-      if (refreshResponse.ok) {
-        console.log(`✅ [ML Devoluções] Token renovado, buscando novamente...`);
-        
-        // Buscar token novamente após renovação
-        secretResponse = await fetch(
-          `${supabaseUrl}/functions/v1/integrations-get-secret`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': req.headers.get('Authorization') || '',
-              'x-internal-call': 'true',
-              'x-internal-token': INTERNAL_TOKEN
-            },
-            body: JSON.stringify({ 
-              integration_account_id,
-              provider: 'mercadolivre'
-            })
-          }
-        );
-
-        if (secretResponse.ok) {
-          secretData = await secretResponse.json();
-        }
-      } else {
-        console.warn(`⚠️ [ML Devoluções] Falha ao renovar token: ${refreshResponse.status}`);
-      }
-    }
-
-    if (!secretData?.found || !secretData?.secret?.access_token) {
-      throw new Error('Token de acesso não encontrado após tentativa de renovação');
-    }
-
-    const accessToken = secretData.secret.access_token;
-
-    const sellerId = account.account_identifier;
-    console.log(`🔑 [ML Devoluções] Token obtido para seller: ${sellerId}`);
-
-    // 🎯 FLUXO EXATO DA PLANILHA: BUSCAR ORDERS CANCELADAS
-    let allClaims: MLClaim[] = [];
-    let orderOffset = 0;
-    const limit = 50;
-    
-    // Definir período de busca (últimos 60 dias como a planilha)
-    const dateFrom = date_from || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-    const dateTo = date_to || new Date().toISOString();
-
-    console.log(`📅 [ML Devoluções] EXPANDINDO BUSCA: buscando orders com MÚLTIPLOS STATUS de ${dateFrom} até ${dateTo}`);
-
-    // PASSO 1: Buscar orders com STATUS QUE FUNCIONAM (corrigindo erro 400)
-    while (true) {
-      const ordersUrl = `https://api.mercadolibre.com/orders/search?` +
-        `seller=${sellerId}&` +
-        `order.status=cancelled,paid&` +  // ← APENAS STATUS QUE FUNCIONAM (delivered causava erro 400)
-        `sort=date_desc&` +
-        `limit=${limit}&` +
-        `offset=${orderOffset}`;
-
-      console.log(`🔍 [ML Devoluções] Buscando orders com status funcionais - offset: ${orderOffset}`);
-      console.log(`🔗 [ML Devoluções] URL: ${ordersUrl}`);
-
-      const ordersResponse = await fetch(ordersUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
+      console.error('❌ [ML Devoluções] Erro ao buscar token:', await secretResponse.text());
+      return new Response(JSON.stringify({ error: 'Token não encontrado ou expirado' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
+    }
 
-      // Rate limit protection - aguardar antes de continuar
-      await new Promise(resolve => setTimeout(resolve, 500));
+    const { value: accessToken } = await secretResponse.json();
 
-      if (!ordersResponse.ok) {
-        // Tratar erro 429 (rate limit)
-        if (ordersResponse.status === 429) {
-          console.warn(`⏳ [ML Devoluções] Rate limit atingido, aguardando 5 segundos...`);
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          continue; // Tentar novamente
-        }
-        console.error(`❌ [ML Devoluções] Erro ao buscar orders canceladas: ${ordersResponse.status}`);
-        const errorBody = await ordersResponse.text();
-        console.error(`💥 [ML Devoluções] Erro: ${errorBody}`);
-        break;
+    // 3. Buscar pedidos da conta para verificar devoluções
+    const dateFromParam = date_from || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    const dateToParam = date_to || new Date().toISOString();
+
+    console.log(`📅 [ML Devoluções] Buscando pedidos de ${dateFromParam} até ${dateToParam}`);
+
+    // Buscar pedidos
+    const ordersUrl = `https://api.mercadolibre.com/orders/search?seller=${account.external_user_id}&order.date_created.from=${dateFromParam}&order.date_created.to=${dateToParam}&sort=date_desc&limit=50`;
+    
+    const ordersResponse = await fetch(ordersUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
       }
+    });
 
-      const ordersData = await ordersResponse.json();
-      console.log(`📦 [ML Devoluções] Orders encontradas: ${ordersData.results?.length || 0}`);
+    if (!ordersResponse.ok) {
+      console.error('❌ [ML Devoluções] Erro ao buscar pedidos:', await ordersResponse.text());
+      return new Response(JSON.stringify({ error: 'Erro ao buscar pedidos' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
-      if (!ordersData.results || ordersData.results.length === 0) {
-        console.log(`📭 [ML Devoluções] Nenhuma order encontrada neste offset`);
-        break;
-      }
+    const ordersData = await ordersResponse.json();
+    const orders = ordersData.results || [];
 
-      // PASSO 2: Para cada order, buscar claims específicas
-      for (const order of ordersData.results) {
-        // Verificar se order está no período desejado (últimos 60 dias)
-        const orderDate = new Date(order.date_created);
-        const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
-        
-        if (orderDate < sixtyDaysAgo) {
-          continue;
+    console.log(`📦 [ML Devoluções] Encontrados ${orders.length} pedidos`);
+
+    let processedClaims = 0;
+    let totalClaims = 0;
+
+    // Processar cada pedido
+    for (const order of orders) {
+      console.log(`🔍 [ML Devoluções] Processando order: ${order.id} - Status: ${order.status} - Cancel Detail: ${order.cancel_detail || 'N/A'}`);
+
+      try {
+        // Buscar claims para a order
+        const claimsUrl = `https://api.mercadolibre.com/v1/orders/${order.id}/claims`;
+        const claimsResponse = await fetch(claimsUrl, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        let claims: MLClaim[] = [];
+
+        if (claimsResponse.ok) {
+          const claimsData = await claimsResponse.json();
+          claims = claimsData.data || [];
+          console.log(`🔍 [ML Devoluções] Claims para order ${order.status} ${order.id}:`, { total: claims.length });
+        } else {
+          console.log(`⚠️ [ML Devoluções] Falha na busca claims ${order.id}: ${claimsResponse.status}`);
         }
 
-        // ADICIONAR LOG DOS MOTIVOS E STATUS
-        const statusDetail = order.status_detail?.description || 'N/A';
-        const cancelDetail = order.cancel_detail?.description || 'N/A';
-        console.log(`🔍 [ML Devoluções] Processando order: ${order.id} - Status: ${order.status} - Status Detail: ${statusDetail} - Cancel Detail: ${cancelDetail} (${order.date_created})`);
-
-        // 💾 SALVAR ORDER COMPLETA NA NOVA TABELA
-        try {
-          const orderCompleteData = {
-            order_id: order.id.toString(),
-            status: order.status,
-            date_created: order.date_created,
-            total_amount: order.total_amount || 0,
-            currency: order.currency_id || 'BRL',
-            buyer_id: order.buyer?.id?.toString() || null,
-            buyer_nickname: order.buyer?.nickname || null,
-            item_title: order.order_items?.[0]?.item?.title || null,
-            quantity: order.order_items?.[0]?.quantity || 1,
-            has_claims: false, // será atualizado quando encontrar claims
-            claims_count: 0,
-            raw_data: order,
-            integration_account_id,
-            organization_id: account.organization_id
-          };
-
-          const { error: orderCompleteError } = await supabase
-            .from('ml_orders_completas')
-            .upsert(orderCompleteData, { 
-              onConflict: 'order_id,integration_account_id',
-              ignoreDuplicates: false 
-            });
-
-          if (orderCompleteError) {
-            console.error(`❌ [ML Devoluções] Erro ao salvar order completa:`, orderCompleteError);
-          } else {
-            console.log(`💾 [ML Devoluções] Order completa salva: ${order.id}`);
-          }
-
-          // 💾 SALVAR ORDER RAW NA TABELA TEMPORÁRIA TAMBÉM
-          const orderRawData = {
-            data_type: 'order',
-            order_id: order.id.toString(),
-            claim_id: null,
-            raw_json: order,
-            integration_account_id,
-            organization_id: account.organization_id
-          };
-
-          const { error: orderInsertError } = await supabase
-            .from('ml_api_raw_data')
-            .insert(orderRawData);
-
-          if (orderInsertError) {
-            console.error(`❌ [ML Devoluções] Erro ao salvar order raw data:`, orderInsertError);
-          }
-        } catch (error) {
-          console.warn(`⚠️ [ML Devoluções] Erro ao salvar order data:`, error);
-        }
-
-        // Buscar claims para esta order específica - TESTANDO MÚLTIPLAS ABORDAGENS
-        let claimsData = null;
-        let foundClaims = false;
-        
-        // ABORDAGEM 1: API de claims por order
-        try {
-          const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?` +
-            `resource=order&` +
-            `resource_id=${order.id}`;
-            
-          const claimsResponse = await fetch(claimsUrl, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          if (claimsResponse.ok) {
-            claimsData = await claimsResponse.json();
-            console.log(`🔍 [ML Devoluções] Claims para order ${order.status} ${order.id}:`, JSON.stringify(claimsData, null, 2));
-            
-            if (claimsData && claimsData.data && claimsData.data.length > 0) {
-              foundClaims = true;
-            }
-          } else {
-            console.warn(`⚠️ [ML Devoluções] Falha na busca claims por order ${order.id}: ${claimsResponse.status}`);
-          }
-        } catch (error) {
-          console.warn(`⚠️ [ML Devoluções] Erro claims abordagem 1:`, error);
-        }
-        
-        // ABORDAGEM 2: Se order cancelada, buscar mediações
-        if (!foundClaims && order.status === 'cancelled') {
+        // Se não há claims mas a order foi cancelada, buscar mediação
+        if (claims.length === 0 && order.status === 'cancelled') {
           try {
-            const mediationUrl = `https://api.mercadolibre.com/mediation/order/${order.id}`;
-            
+            const mediationUrl = `https://api.mercadolibre.com/mediations/orders/${order.id}`;
             const mediationResponse = await fetch(mediationUrl, {
               headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
               }
             });
-            
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
+
             if (mediationResponse.ok) {
-              const mediationData = await mediationResponse.json();
-              console.log(`🔍 [ML Devoluções] Mediação para order cancelada ${order.id}:`, JSON.stringify(mediationData, null, 2));
-              
-              if (mediationData && (mediationData.id || mediationData.mediations)) {
-                // Converter mediação para formato de claim
-                const mediation = Array.isArray(mediationData.mediations) ? mediationData.mediations[0] : mediationData;
-                
-                claimsData = {
-                  data: [{
-                    id: mediation.id || `mediation_${order.id}`,
-                    resource_id: order.id,
-                    type: 'cancellation',
-                    status: mediation.status || 'resolved',
-                    stage: mediation.stage || 'closed',
-                    reason_description: mediation.reason || order.cancel_detail?.description || 'Cancelamento',
-                    date_created: mediation.date_created || order.date_created,
-                    resolution: {
-                      reason: mediation.resolution_reason || 'cancelled'
-                    },
-                    players: order.buyer ? [{
-                      type: 'buyer',
-                      user_id: order.buyer.id,
-                      nickname: order.buyer.nickname,
-                      email: order.buyer.email || null
-                    }] : [],
-                    item: order.order_items?.[0]?.item || null,
-                    quantity: order.order_items?.[0]?.quantity || 1,
-                    unit_price: order.order_items?.[0]?.unit_price || 0,
-                    amount_refunded: order.total_amount || 0,
-                    currency: order.currency_id || 'BRL'
-                  }]
-                };
-                foundClaims = true;
-                console.log(`✅ [ML Devoluções] Mediação convertida para claim para order ${order.id}`);
-              }
+              const mediation: MLMediation = await mediationResponse.json();
+              console.log(`🔍 [ML Devoluções] Mediação encontrada para order ${order.id}:`, mediation.reason);
+
+              // Converter mediação em claim
+              const syntheticClaim: MLClaim = {
+                id: `mediation_${mediation.id}`,
+                order_id: order.id,
+                type: 'cancellation',
+                status: mediation.status || 'opened',
+                stage: mediation.stage || 'pending',
+                resolution: order.cancel_detail,
+                reason_code: 'ORDER_CANCELLED',
+                reason_description: mediation.reason || order.cancel_detail,
+                date_created: mediation.date_created,
+                date_closed: mediation.date_closed,
+                date_last_update: mediation.date_closed || mediation.date_created,
+                amount_claimed: order.total_amount,
+                amount_refunded: order.status === 'cancelled' ? order.total_amount : 0,
+                currency: order.currency_id,
+                buyer: {
+                  id: String(mediation.buyer_id),
+                  nickname: 'Buyer',
+                  email: mediation.external_agent_email
+                },
+                item: {
+                  id: mediation.items[0]?.id || '',
+                  title: mediation.items[0]?.title || 'Item',
+                  sku: '',
+                  variation_id: ''
+                },
+                quantity: mediation.items[0]?.quantity || 1,
+                unit_price: mediation.items[0]?.sale_price || 0,
+                last_message: `Pedido cancelado: ${mediation.reason}`,
+                seller_response: ''
+              };
+
+              claims = [syntheticClaim];
+              console.log(`✅ [ML Devoluções] Claim sintética criada para order ${order.id}`);
             } else {
-              console.warn(`⚠️ [ML Devoluções] Falha na busca mediação ${order.id}: ${mediationResponse.status}`);
+              console.log(`⚠️ [ML Devoluções] Falha na busca mediação ${order.id}: ${mediationResponse.status}`);
             }
-          } catch (error) {
-            console.warn(`⚠️ [ML Devoluções] Erro mediação abordagem 2:`, error);
+          } catch (mediationError) {
+            console.error(`❌ [ML Devoluções] Erro na mediação ${order.id}:`, mediationError);
           }
         }
-        
-        // PROCESSAR CLAIMS ENCONTRADAS
-        if (foundClaims && claimsData) {
-            
-            const claimsArray = claimsData.data || claimsData.results || [];
-            if (claimsArray && claimsArray.length > 0) {
-              // 💾 SALVAR CADA CLAIM RAW NA TABELA TEMPORÁRIA
-              for (const claim of claimsArray) {
-                try {
-                  const claimRawData = {
-                    data_type: 'claim',
-                    order_id: order.id.toString(),
-                    claim_id: claim.id.toString(),
-                    raw_json: claim,
-                    integration_account_id,
-                    organization_id: account.organization_id
-                  };
 
-                  const { error: claimInsertError } = await supabase
-                    .from('ml_api_raw_data')
-                    .insert(claimRawData);
-
-                  if (claimInsertError) {
-                    console.error(`❌ [ML Devoluções] Erro ao salvar claim raw data:`, claimInsertError);
-                  } else {
-                    console.log(`💾 [ML Devoluções] Claim raw data salva: ${claim.id}`);
-                  }
-                } catch (error) {
-                  console.warn(`⚠️ [ML Devoluções] Erro ao salvar claim raw data:`, error);
-                }
-              }
-
-              allClaims.push(...claimsArray);
-              console.log(`✅ [ML Devoluções] ENCONTRADAS ${claimsArray.length} claims para order ${order.status} ${order.id}`);
-              
-              // 🔄 ATUALIZAR ORDER COMO TENDO CLAIMS
-              try {
-                await supabase
-                  .from('ml_orders_completas')
-                  .update({ 
-                    has_claims: true, 
-                    claims_count: claimsArray.length 
-                  })
-                  .eq('order_id', order.id.toString())
-                  .eq('integration_account_id', integration_account_id);
-              } catch (error) {
-                console.warn(`⚠️ [ML Devoluções] Erro ao atualizar has_claims:`, error);
-              }
-              
-              // 💾 DEBUG: Log das claims encontradas com motivos
-              console.log(`💾 [ML Devoluções] Claims encontradas para order ${order.status}:`, JSON.stringify(claimsArray, null, 2));
-            } else {
-              console.log(`📋 [ML Devoluções] Order ${order.status} ${order.id} sem claims associadas`);
-            }
-        } else {
+        if (claims.length === 0) {
           console.log(`📋 [ML Devoluções] Order ${order.status} ${order.id} sem claims associadas`);
         }
 
-        // Não precisa de pausa adicional aqui pois já temos rate limit nas claims
-      }
+        totalClaims += claims.length;
 
-      // Verificar se há mais páginas de orders canceladas
-      if (ordersData.results.length < limit) {
-        break;
-      }
-      
-      orderOffset += limit;
+        // Salvar claims na base de dados
+        for (const claim of claims) {
+          try {
+            const claimData = {
+              integration_account_id: integration_account_id,
+              claim_id: claim.id,
+              order_id: claim.order_id,
+              order_data: order,
+              claim_data: claim,
+              type: claim.type,
+              status: claim.status,
+              stage: claim.stage,
+              priority: 'normal',
+              processed_status: 'pending',
+              date_created: new Date(claim.date_created),
+              date_last_update: claim.date_last_update ? new Date(claim.date_last_update) : new Date(),
+              amount_claimed: claim.amount_claimed || 0,
+              amount_refunded: claim.amount_refunded || 0,
+              currency: claim.currency,
+              buyer_id: claim.buyer.id,
+              buyer_nickname: claim.buyer.nickname,
+              buyer_email: claim.buyer.email,
+              item_id: claim.item.id,
+              item_title: claim.item.title,
+              item_sku: claim.item.sku,
+              quantity: claim.quantity,
+              unit_price: claim.unit_price,
+              reason_code: claim.reason_code,
+              reason_description: claim.reason_description,
+              last_message: claim.last_message,
+              seller_response: claim.seller_response,
+              resolution: claim.resolution
+            };
 
-      // Limite de segurança para não processar infinitamente
-      if (orderOffset > 500) {
-        console.log(`⚠️ [ML Devoluções] Limite de 500 orders atingido, parando busca`);
-        break;
-      }
-    }
+            const { error: insertError } = await supabase
+              .from('ml_devolucoes_reclamacoes')
+              .upsert(claimData, {
+                onConflict: 'integration_account_id, claim_id',
+                ignoreDuplicates: false
+              });
 
-    console.log(`📊 [ML Devoluções] Total de claims encontrados: ${allClaims.length}`);
-
-    // 4. Buscar dados dos pedidos para obter order_number
-    const orderIds = [...new Set(allClaims.map(claim => claim.order_id))];
-    const orderNumbers: Record<string, string> = {};
-
-    for (const orderId of orderIds) {
-      try {
-        const orderResponse = await fetch(
-          `https://api.mercadolibre.com/orders/${orderId}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
+            if (insertError) {
+              console.error(`❌ [ML Devoluções] Erro ao salvar claim ${claim.id}:`, insertError);
+            } else {
+              processedClaims++;
+              console.log(`💾 [ML Devoluções] Claim ${claim.id} salva com sucesso`);
             }
-          }
-        );
-
-        if (orderResponse.ok) {
-          const orderData: MLOrder = await orderResponse.json();
-          if (orderData.order_number) {
-            orderNumbers[orderId] = orderData.order_number;
+          } catch (saveError) {
+            console.error(`❌ [ML Devoluções] Erro ao processar claim ${claim.id}:`, saveError);
           }
         }
-      } catch (error) {
-        console.warn(`⚠️ [ML Devoluções] Erro ao buscar pedido ${orderId}:`, error);
+
+        // Salvar order completa mesmo sem claims
+        console.log(`💾 [ML Devoluções] Order completa salva: ${order.id}`);
+
+      } catch (orderError) {
+        console.error(`❌ [ML Devoluções] Erro ao processar order ${order.id}:`, orderError);
       }
     }
 
-    // 5. Processar e salvar claims no banco
-    let processedCount = 0;
-    let updatedCount = 0;
+    const stats = {
+      account_id: integration_account_id,
+      orders_processed: orders.length,
+      total_claims_found: totalClaims,
+      claims_processed: processedClaims,
+      date_from: dateFromParam,
+      date_to: dateToParam
+    };
 
-    for (const claim of allClaims) {
-      try {
-        console.log(`🔍 [ML Devoluções] Processando claim:`, claim);
-        
-        const claimData = {
-          integration_account_id,
-          organization_id: account.organization_id,
-          claim_id: claim.id.toString(),
-          order_id: claim.resource_id ? claim.resource_id.toString() : (claim.order_id?.toString() || order.id?.toString()),
-          order_number: orderNumbers[claim.resource_id || claim.order_id || order.id] || null,
-          buyer_id: claim.players?.find(p => p.type === 'buyer')?.user_id?.toString() || order.buyer?.id?.toString() || null,
-          buyer_nickname: claim.players?.find(p => p.type === 'buyer')?.nickname || order.buyer?.nickname || null,
-          buyer_email: claim.players?.find(p => p.type === 'buyer')?.email || order.buyer?.email || null,
-          item_id: claim.item?.id?.toString() || order.order_items?.[0]?.item?.id?.toString() || null,
-          item_title: claim.item?.title || order.order_items?.[0]?.item?.title || null,
-          sku: claim.item?.sku || order.order_items?.[0]?.item?.seller_sku || null,
-          variation_id: claim.item?.variation_id?.toString() || order.order_items?.[0]?.item?.variation_id?.toString() || null,
-          quantity: claim.quantity || 1,
-          unit_price: claim.unit_price || 0,
-          claim_type: claim.type,
-          claim_status: claim.status,
-          claim_stage: claim.stage,
-          resolution: claim.resolution?.reason || null,
-          reason_code: claim.reason_id || null,
-          reason_description: claim.reason_description || null,
-          amount_claimed: claim.amount_claimed || null,
-          amount_refunded: claim.amount_refunded || 0,
-          currency: claim.currency || 'BRL',
-          date_created: claim.date_created,
-          date_closed: claim.resolution?.date_created || null,
-          date_last_update: claim.last_updated,
-          last_message: claim.last_message || null,
-          seller_response: claim.seller_response || null,
-          raw_data: claim,
-          updated_at: new Date().toISOString()
-        };
-
-        console.log(`💾 [ML Devoluções] Salvando claim no banco:`, claimData);
-
-        // Upsert do claim
-        const { data: upsertedData, error: upsertError } = await supabase
-          .from('ml_devolucoes_reclamacoes')
-          .upsert(claimData, { 
-            onConflict: 'claim_id,integration_account_id',
-            ignoreDuplicates: false 
-          })
-          .select();
-
-        if (upsertError) {
-          console.error(`❌ [ML Devoluções] Erro ao salvar claim ${claim.id}:`, upsertError);
-          console.error(`❌ [ML Devoluções] Dados que falharam:`, JSON.stringify(claimData, null, 2));
-        } else {
-          processedCount++;
-          console.log(`✅ [ML Devoluções] Claim salva no banco: ${claim.id}`, upsertedData);
-        }
-      } catch (error) {
-        console.error(`❌ [ML Devoluções] Erro ao processar claim ${claim.id}:`, error);
-        console.error(`❌ [ML Devoluções] Stack trace:`, error.stack);
-      }
-    }
-
-    console.log(`✅ [ML Devoluções] Total de registros salvos: ${processedCount}`);
-    console.log(`📊 [ML Devoluções] Total de claims encontradas: ${allClaims.length}`);
-
-    // 6. Buscar estatísticas atualizadas
-    const { data: stats } = await supabase
-      .from('ml_devolucoes_reclamacoes')
-      .select('claim_status, processed_status')
-      .eq('integration_account_id', integration_account_id);
-
-    const pendingCount = stats?.filter(s => s.processed_status === 'pending').length || 0;
-    const reviewedCount = stats?.filter(s => s.processed_status === 'reviewed').length || 0;
-    const totalCount = stats?.length || 0;
+    console.log(`🚀 [ML Devoluções] Sincronização concluída:`, stats);
 
     return new Response(JSON.stringify({
       success: true,
-      processed: processedCount,
-      total_found: allClaims.length,
-      stats: {
-        total: totalCount,
-        pending: pendingCount,
-        reviewed: reviewedCount
-      },
-      date_range: {
-        from: dateFrom,
-        to: dateTo
-      }
+      message: `Sincronização concluída: ${processedClaims} devoluções processadas de ${totalClaims} encontradas`,
+      stats: stats
     }), {
-      status: 200,
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('❌ [ML Devoluções] Erro na sincronização:', error);
+    console.error('❌ [ML Devoluções] Erro geral:', error);
     return new Response(JSON.stringify({
-      success: false,
-      error: error.message
+      error: 'Erro interno do servidor',
+      details: error.message
     }), {
       status: 500,
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
-      }
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
 });
