@@ -21,7 +21,17 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser();
     if (userError || !user) {
       console.error(`[devolucoes-avancadas-sync:${cid}] Authentication failed:`, userError);
-      return fail('Authentication required', 401, null, cid);
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        error: 'Authentication required', 
+        cid 
+      }), {
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        },
+        status: 401,
+      });
     }
 
     console.log(`[devolucoes-avancadas-sync:${cid}] User authenticated:`, user.id);
@@ -31,7 +41,17 @@ Deno.serve(async (req) => {
 
     if (!account_ids || !Array.isArray(account_ids) || account_ids.length === 0) {
       console.log(`[devolucoes-avancadas-sync:${cid}] No account IDs provided`);
-      return fail('account_ids array is required', 400, null, cid);
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        error: 'account_ids array is required', 
+        cid 
+      }), {
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        },
+        status: 400,
+      });
     }
 
     let totalProcessed = 0
@@ -147,16 +167,25 @@ Deno.serve(async (req) => {
 
         console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Tokens obtidos com sucesso para account ${accountId}`);
 
-        // Get seller ID from integration account
-        const { data: accountData } = await serviceClient
-          .from('integration_accounts')
-          .select('external_account_id')
-          .eq('id', accountId)
-          .single();
+        // 1. Primeiro obter o seller ID dinamicamente da API ML
+        const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
+          headers: {
+            'Authorization': `Bearer ${tokens.access_token}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-        const sellerId = accountData?.external_account_id || 'me';
+        if (!userResponse.ok) {
+          console.error(`[devolucoes-avancadas-sync:${cid}] Failed to get seller ID for account ${accountId}:`, userResponse.status);
+          errors.push(`Account ${accountId}: Failed to get seller ID (${userResponse.status})`);
+          continue;
+        }
+
+        const userData = await userResponse.json();
+        const sellerId = userData.id.toString();
+        console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Seller ID obtido: ${sellerId}`);
         
-        // Fetch orders from MercadoLivre API
+        // 2. Usar o seller ID real na busca de orders
         const ordersUrl = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.status=paid,cancelled&sort=date_desc&limit=50`;
         
         console.log(`[devolucoes-avancadas-sync:${cid}] ML API URL: ${ordersUrl}`);
@@ -324,10 +353,30 @@ Deno.serve(async (req) => {
 
     console.log(`[devolucoes-avancadas-sync:${cid}] Sync completed:`, result);
 
-    return ok(result, cid);
+    return new Response(JSON.stringify({ 
+      ok: true, 
+      cid, 
+      ...result 
+    }), {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json' 
+      },
+      status: 200,
+    });
 
   } catch (error) {
     console.error(`[devolucoes-avancadas-sync:${cid}] Unexpected error:`, error);
-    return fail(error.message, 500, null, cid);
+    return new Response(JSON.stringify({ 
+      ok: false, 
+      error: error.message, 
+      cid 
+    }), {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json' 
+      },
+      status: 500,
+    });
   }
 });
