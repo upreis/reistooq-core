@@ -62,6 +62,3 @@ verify_jwt = false
 [functions.ml-devolucoes-sync]
 verify_jwt = true
 
-[functions.devolucoes-avancadas-sync]
-verify_jwt = true
-

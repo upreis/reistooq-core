@@ -20,7 +20,6 @@ import Pedidos from "./pages/Pedidos";
 import Scanner from "./pages/Scanner";
 
 import MLOrdersCompletas from "./pages/MLOrdersCompletas";
-import DevolucaoAvancadas from "./pages/DevolucaoAvancadas";
 import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
 import IntegracoesPage from "./pages/configuracoes/IntegracoesPage";
@@ -175,17 +174,12 @@ function App() {
                          <Pedidos />
                        </PermissionRoute>
                      } />
-                     <Route path="/ml-orders-completas" element={
-                       <PermissionRoute requiredPermissions={['integrations:manage']}>
-                         <MLOrdersCompletas />
-                       </PermissionRoute>
-                     } />
-                     <Route path="/devolucoes-avancadas" element={
-                       <PermissionRoute requiredPermissions={['integrations:manage']}>
-                         <DevolucaoAvancadas />
-                       </PermissionRoute>
-                     } />
-                    <Route path="/scanner" element={
+                      <Route path="/ml-orders-completas" element={
+                        <PermissionRoute requiredPermissions={['integrations:manage']}>
+                          <MLOrdersCompletas />
+                        </PermissionRoute>
+                      } />
+                     <Route path="/scanner" element={
                       <PermissionRoute requiredPermissions={['scanner:use']}>
                         <Scanner />
                       </PermissionRoute>

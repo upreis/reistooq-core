@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Eye, Filter, Download, Wrench, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import DevolucoeAvancadasTab from "@/components/pedidos/devolucoes/DevolucoeAvancadasTab";
+
 import { toast } from "sonner";
 
 interface MLOrder {
@@ -1007,7 +1007,9 @@ export default function MLOrdersCompletas() {
         </TabsContent>
 
         <TabsContent value="devolucoes">
-          <DevolucoeAvancadasTab />
+          <div className="text-center p-8 text-muted-foreground">
+            Tab de devoluções removida
+          </div>
         </TabsContent>
       </Tabs>
     </div>
