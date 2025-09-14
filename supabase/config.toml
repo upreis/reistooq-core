@@ -55,8 +55,6 @@ verify_jwt = true
 [functions.ml-webhook]
 verify_jwt = false
 
-[functions.complete-sales]
-verify_jwt = true
 
 [functions.ml-test-connection]
 verify_jwt = false
