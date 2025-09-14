@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, Eye, Filter, Download, Wrench } from "lucide-react";
+import { Search, Eye, Filter, Download, Wrench, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import DevolucoeAvancadasTab from "@/components/pedidos/devolucoes/DevolucoeAvancadasTab";
@@ -41,11 +41,16 @@ export default function MLOrdersCompletas() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   
-  // Estado para engenharia reversa
+  // Estado para engenharia reversa - Fase 1
   const [showReverseEngineering, setShowReverseEngineering] = useState(false);
   const [reverseResults, setReverseResults] = useState<any>(null);
   const [reverseLoading, setReverseLoading] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+
+  // Estado para Fase 2 - Análise Detalhada
+  const [showPhase2Modal, setShowPhase2Modal] = useState(false);
+  const [phase2Results, setPhase2Results] = useState<any>(null);
+  const [phase2Loading, setPhase2Loading] = useState(false);
 
   // Debug logs
   useEffect(() => {
@@ -68,7 +73,7 @@ export default function MLOrdersCompletas() {
     },
   });
 
-  // Função para executar engenharia reversa
+  // Função para executar engenharia reversa - Fase 1
   const runReverseEngineering = async () => {
     if (!selectedAccounts.length) {
       toast.error("Selecione pelo menos uma conta ML");
@@ -77,7 +82,7 @@ export default function MLOrdersCompletas() {
 
     setReverseLoading(true);
     try {
-      console.log("🔬 Iniciando engenharia reversa para contas:", selectedAccounts);
+      console.log("🔬 Iniciando engenharia reversa - Fase 1 para contas:", selectedAccounts);
       
       const { data, error } = await supabase.functions.invoke('ml-reverse-engineering', {
         body: { account_ids: selectedAccounts }
@@ -86,13 +91,42 @@ export default function MLOrdersCompletas() {
       if (error) throw error;
 
       setReverseResults(data);
-      toast.success("Engenharia reversa concluída com sucesso!");
-      console.log("✅ Resultados da engenharia reversa:", data);
+      toast.success("Engenharia reversa (Fase 1) concluída com sucesso!");
+      console.log("✅ Resultados da Fase 1:", data);
     } catch (error) {
-      console.error("❌ Erro na engenharia reversa:", error);
-      toast.error("Erro ao executar engenharia reversa: " + error.message);
+      console.error("❌ Erro na Fase 1:", error);
+      toast.error("Erro ao executar Fase 1: " + error.message);
     } finally {
       setReverseLoading(false);
+    }
+  };
+
+  // Função para executar análise detalhada - Fase 2
+  const runPhase2Analysis = async () => {
+    if (!selectedAccounts.length) {
+      toast.error("Selecione pelo menos uma conta ML");
+      return;
+    }
+
+    setPhase2Loading(true);
+    try {
+      console.log("🔬 Iniciando análise detalhada - Fase 2 para contas:", selectedAccounts);
+      
+      const { data, error } = await supabase.functions.invoke('ml-reverse-engineering-phase2', {
+        body: { account_ids: selectedAccounts }
+      });
+
+      if (error) throw error;
+
+      setPhase2Results(data);
+      setShowPhase2Modal(true);
+      toast.success("Análise detalhada (Fase 2) concluída com sucesso!");
+      console.log("✅ Resultados da Fase 2:", data);
+    } catch (error) {
+      console.error("❌ Erro na Fase 2:", error);
+      toast.error("Erro ao executar Fase 2: " + error.message);
+    } finally {
+      setPhase2Loading(false);
     }
   };
 
@@ -286,11 +320,11 @@ export default function MLOrdersCompletas() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtros
+            Filtros e Ferramentas de Análise
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -347,12 +381,12 @@ export default function MLOrdersCompletas() {
               <DialogTrigger asChild>
                 <Button variant="secondary">
                   <Wrench className="h-4 w-4 mr-2" />
-                  Engenharia Reversa
+                  Análise API
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-6xl max-h-[90vh]">
                 <DialogHeader>
-                  <DialogTitle>🔬 Engenharia Reversa - API Mercado Livre</DialogTitle>
+                  <DialogTitle>🔬 Análise da API Mercado Livre</DialogTitle>
                 </DialogHeader>
                 <ScrollArea className="max-h-[80vh]">
                   <div className="space-y-6 p-4">
@@ -382,13 +416,34 @@ export default function MLOrdersCompletas() {
                         ))}
                       </div>
                       
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button 
                           onClick={runReverseEngineering}
                           disabled={reverseLoading || !selectedAccounts.length}
+                          className="gap-2"
                         >
-                          {reverseLoading ? "Executando..." : "Executar Engenharia Reversa"}
+                          {reverseLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Search className="h-4 w-4" />
+                          )}
+                          {reverseLoading ? "Executando..." : "Fase 1 - Mapear Endpoints"}
                         </Button>
+                        
+                        <Button 
+                          onClick={runPhase2Analysis}
+                          disabled={phase2Loading || !selectedAccounts.length}
+                          variant="outline"
+                          className="gap-2"
+                        >
+                          {phase2Loading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Search className="h-4 w-4" />
+                          )}
+                          {phase2Loading ? "Analisando..." : "Fase 2 - Análise Detalhada"}
+                        </Button>
+                        
                         <Button 
                           variant="outline"
                           onClick={() => {
@@ -406,10 +461,10 @@ export default function MLOrdersCompletas() {
                       </div>
                     </div>
 
-                    {/* Resultados */}
+                    {/* Resultados da Fase 1 */}
                     {reverseResults && (
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">📊 Resultados da Engenharia Reversa</h3>
+                        <h3 className="text-lg font-semibold">📊 Resultados da Fase 1 - Mapeamento</h3>
                         
                         {/* Estatísticas gerais */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -474,6 +529,148 @@ export default function MLOrdersCompletas() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal da Fase 2 - Análise Detalhada */}
+      <Dialog open={showPhase2Modal} onOpenChange={setShowPhase2Modal}>
+        <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>🔬 Fase 2 - Análise Detalhada dos Endpoints Funcionais</DialogTitle>
+          </DialogHeader>
+          
+          {phase2Results && (
+            <div className="space-y-6">
+              {/* Resumo Geral */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-700">
+                    {phase2Results.results?.reduce((acc: any, r: any) => acc + (r.summary?.total_endpoints_analyzed || 0), 0) || 0}
+                  </div>
+                  <div className="text-sm text-blue-600">Endpoints Analisados</div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-green-700">
+                    {phase2Results.results?.reduce((acc: any, r: any) => acc + (r.summary?.total_orders_found || 0), 0) || 0}
+                  </div>
+                  <div className="text-sm text-green-600">Orders Encontrados</div>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-700">
+                    {phase2Results.results?.reduce((acc: any, r: any) => acc + (r.summary?.total_claims_found || 0), 0) || 0}
+                  </div>
+                  <div className="text-sm text-purple-600">Claims Encontrados</div>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-yellow-700">
+                    {Math.round(phase2Results.results?.reduce((acc: any, r: any) => acc + (r.summary?.data_completeness_score || 0), 0) / (phase2Results.results?.length || 1)) || 0}%
+                  </div>
+                  <div className="text-sm text-yellow-600">Score Completude</div>
+                </div>
+              </div>
+
+              {/* Resultados por Conta */}
+              {phase2Results.results?.map((result: any, index: number) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <h3 className="font-semibold mb-4">Conta: {result.account_id}</h3>
+                  
+                  {/* Resumo da Conta */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                    <div className="text-center p-3 bg-gray-50 rounded">
+                      <div className="font-semibold text-lg">{result.summary?.orders_endpoints || 0}</div>
+                      <div className="text-sm text-gray-600">Orders Endpoints</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded">
+                      <div className="font-semibold text-lg">{result.summary?.claims_endpoints || 0}</div>
+                      <div className="text-sm text-gray-600">Claims Endpoints</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded">
+                      <div className="font-semibold text-lg">{result.summary?.total_orders_found || 0}</div>
+                      <div className="text-sm text-gray-600">Total Orders</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded">
+                      <div className="font-semibold text-lg">{result.summary?.total_claims_found || 0}</div>
+                      <div className="text-sm text-gray-600">Total Claims</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded">
+                      <div className="font-semibold text-lg">{result.summary?.data_completeness_score || 0}%</div>
+                      <div className="text-sm text-gray-600">Completude</div>
+                    </div>
+                  </div>
+
+                  {/* Análise de Orders */}
+                  {result.orders_analysis && result.orders_analysis.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="font-medium mb-3">📦 Análise de Orders ({result.orders_analysis.length} endpoints)</h4>
+                      <div className="max-h-60 overflow-y-auto space-y-2">
+                        {result.orders_analysis.map((analysis: any, i: number) => (
+                          <div key={i} className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
+                            <div className="font-mono text-xs text-blue-800 mb-2">{analysis.endpoint}</div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                              <div><strong>Orders:</strong> {analysis.total_orders}</div>
+                              <div><strong>Itens:</strong> {analysis.items_count}</div>
+                              <div><strong>Valor Total:</strong> R$ {analysis.total_amount_sum?.toFixed(2) || '0.00'}</div>
+                              <div><strong>Valor Médio:</strong> R$ {analysis.avg_amount?.toFixed(2) || '0.00'}</div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {analysis.unique_statuses?.map((status: string, si: number) => (
+                                <span key={si} className="bg-blue-200 text-blue-800 px-2 py-1 rounded text-xs">
+                                  {status} ({analysis.orders_by_status?.[status] || 0})
+                                </span>
+                              ))}
+                            </div>
+                            {analysis.payment_methods && analysis.payment_methods.length > 0 && (
+                              <div className="mt-2 text-xs text-gray-600">
+                                <strong>Métodos de Pagamento:</strong> {analysis.payment_methods.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Análise de Claims */}
+                  {result.claims_analysis && result.claims_analysis.length > 0 && (
+                    <div>
+                      <h4 className="font-medium mb-3">⚖️ Análise de Claims ({result.claims_analysis.length} endpoints)</h4>
+                      <div className="max-h-60 overflow-y-auto space-y-2">
+                        {result.claims_analysis.map((analysis: any, i: number) => (
+                          <div key={i} className="bg-purple-50 p-3 rounded border-l-4 border-purple-400">
+                            <div className="font-mono text-xs text-purple-800 mb-2">{analysis.endpoint}</div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                              <div><strong>Claims:</strong> {analysis.total_claims}</div>
+                              <div><strong>Resource IDs:</strong> {analysis.resource_ids?.length || 0}</div>
+                              <div><strong>Tem Reason ID:</strong> {analysis.has_reason_id ? 'Sim' : 'Não'}</div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {analysis.unique_types?.map((type: string, ti: number) => (
+                                <span key={ti} className="bg-purple-200 text-purple-800 px-2 py-1 rounded text-xs">
+                                  {type} ({analysis.claims_by_type?.[type] || 0})
+                                </span>
+                              ))}
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {analysis.unique_statuses?.map((status: string, si: number) => (
+                                <span key={si} className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
+                                  {status} ({analysis.claims_by_status?.[status] || 0})
+                                </span>
+                              ))}
+                            </div>
+                            {analysis.resolution_time_analysis && (
+                              <div className="mt-2 text-xs text-gray-600">
+                                <strong>Tempo Resolução:</strong> {analysis.resolution_time_analysis.avg_days?.toFixed(1) || 0} dias (média)
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
