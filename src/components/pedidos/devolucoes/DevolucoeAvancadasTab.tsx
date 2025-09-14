@@ -207,6 +207,102 @@ export default function DevolucoeAvancadasTab() {
            'Comprador não identificado';
   };
 
+  // ✅ ETAPA 4: Extrair dados de cronograma dos returns
+  const extractCronogramData = (devolucao: DevolucaoAvancada) => {
+    const returnData = devolucao.dados_return;
+    
+    if (!returnData) {
+      return {
+        status_envio: null,
+        codigo_rastreamento: null,
+        destino_tipo: null,
+        reembolso_quando: null,
+        status_dinheiro: null,
+        timeline: []
+      };
+    }
+
+    // Extrair shipments se existir
+    const shipments = returnData.shipments || [];
+    const firstShipment = shipments[0];
+    
+    return {
+      status_envio: firstShipment?.status || returnData.status || null,
+      codigo_rastreamento: returnData.tracking_number || firstShipment?.tracking_number || null,
+      destino_tipo: returnData.destination?.name || null,
+      reembolso_quando: returnData.refund_at || null,
+      status_dinheiro: returnData.status_money || returnData.money_status || null,
+      timeline: shipments.map((shipment: any) => ({
+        status: shipment.status,
+        date: shipment.created_at || shipment.date_created,
+        tracking: shipment.tracking_number,
+        description: shipment.status_detail || shipment.substatus
+      }))
+    };
+  };
+
+  // ✅ ETAPA 4: Determinar status do cronograma com ícones
+  const getCronogramStatus = (devolucao: DevolucaoAvancada) => {
+    const cronogramData = extractCronogramData(devolucao);
+    const statusEnvio = cronogramData.status_envio?.toLowerCase();
+    const statusDinheiro = cronogramData.status_dinheiro?.toLowerCase();
+    
+    // Priorizar status de dinheiro se já foi reembolsado
+    if (statusDinheiro === 'refunded' || statusDinheiro === 'approved') {
+      return {
+        icon: '💰',
+        label: 'Reembolsado',
+        color: 'text-green-600',
+        bgColor: 'bg-green-50'
+      };
+    }
+    
+    // Status baseado no envio
+    switch (statusEnvio) {
+      case 'delivered':
+        return {
+          icon: '✅',
+          label: 'Entregue',
+          color: 'text-green-600',
+          bgColor: 'bg-green-50'
+        };
+      case 'in_transit':
+      case 'shipped':
+        return {
+          icon: '🚚',
+          label: 'Em trânsito',
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-50'
+        };
+      case 'pending':
+      case 'ready_to_ship':
+        return {
+          icon: '⏳',
+          label: 'Pendente',
+          color: 'text-yellow-600',
+          bgColor: 'bg-yellow-50'
+        };
+      case 'cancelled':
+        return {
+          icon: '❌',
+          label: 'Cancelado',
+          color: 'text-red-600',
+          bgColor: 'bg-red-50'
+        };
+      default:
+        return {
+          icon: '❓',
+          label: 'Desconhecido',
+          color: 'text-gray-600',
+          bgColor: 'bg-gray-50'
+        };
+    }
+  };
+
+  // ✅ ETAPA 4: Estado para modal de cronograma
+  const [showCronogramModal, setShowCronogramModal] = useState(false);
+  const [selectedCronogramData, setSelectedCronogramData] = useState<any>(null);
+
   // Carregar dados ao montar o componente
   useEffect(() => {
     loadDevolucoes();
@@ -408,6 +504,7 @@ export default function DevolucoeAvancadasTab() {
                     <th className="text-left py-3 px-4 font-medium">Valor</th>
                     <th className="text-left py-3 px-4 font-medium">Claim ID</th>
                     <th className="text-left py-3 px-4 font-medium">Return ID</th>
+                    <th className="text-left py-3 px-4 font-medium">Cronograma</th>
                     <th className="text-left py-3 px-4 font-medium">Ações</th>
                   </tr>
                 </thead>
@@ -463,6 +560,50 @@ export default function DevolucoeAvancadasTab() {
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
+                      </td>
+                      
+                      {/* ✅ ETAPA 4: Coluna de Cronograma */}
+                      <td className="py-3 px-4">
+                        {(() => {
+                          const cronogramStatus = getCronogramStatus(devolucao);
+                          const cronogramData = extractCronogramData(devolucao);
+                          
+                          return (
+                            <div className="flex items-center gap-2">
+                              <div className={`p-2 rounded-full ${cronogramStatus.bgColor}`}>
+                                <span className="text-sm">{cronogramStatus.icon}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className={`text-sm font-medium ${cronogramStatus.color}`}>
+                                  {cronogramStatus.label}
+                                </span>
+                                {cronogramData.codigo_rastreamento && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {cronogramData.codigo_rastreamento}
+                                  </span>
+                                )}
+                              </div>
+                              {cronogramData.timeline.length > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => {
+                                    setSelectedCronogramData({
+                                      devolucao,
+                                      cronogramData,
+                                      cronogramStatus
+                                    });
+                                    setShowCronogramModal(true);
+                                  }}
+                                  title="Ver timeline completa"
+                                >
+                                  <Clock className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-4">
                         <Dialog>
@@ -550,6 +691,136 @@ export default function DevolucoeAvancadasTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* ✅ ETAPA 4: Modal de Timeline do Cronograma */}
+      <Dialog open={showCronogramModal} onOpenChange={setShowCronogramModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Cronograma de Devolução
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedCronogramData && (
+            <div className="space-y-6">
+              {/* Header do pedido */}
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Order ID</p>
+                    <p className="text-lg">{selectedCronogramData.devolucao.order_id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Status Atual</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xl">{selectedCronogramData.cronogramStatus.icon}</span>
+                      <span className={`font-medium ${selectedCronogramData.cronogramStatus.color}`}>
+                        {selectedCronogramData.cronogramStatus.label}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações do Cronograma */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedCronogramData.cronogramData.codigo_rastreamento && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Código de Rastreamento</p>
+                    <p className="font-mono text-sm bg-muted p-2 rounded">
+                      {selectedCronogramData.cronogramData.codigo_rastreamento}
+                    </p>
+                  </div>
+                )}
+                
+                {selectedCronogramData.cronogramData.destino_tipo && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Destino</p>
+                    <p className="text-sm">{selectedCronogramData.cronogramData.destino_tipo}</p>
+                  </div>
+                )}
+                
+                {selectedCronogramData.cronogramData.reembolso_quando && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Reembolso Previsto</p>
+                    <p className="text-sm">{formatDate(selectedCronogramData.cronogramData.reembolso_quando)}</p>
+                  </div>
+                )}
+                
+                {selectedCronogramData.cronogramData.status_dinheiro && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Status do Reembolso</p>
+                    <Badge variant="outline">
+                      {selectedCronogramData.cronogramData.status_dinheiro}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+
+              {/* Timeline Visual */}
+              {selectedCronogramData.cronogramData.timeline.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Timeline de Eventos</h3>
+                  <div className="space-y-4">
+                    {selectedCronogramData.cronogramData.timeline.map((event: any, index: number) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className={`w-3 h-3 rounded-full ${
+                            index === 0 ? 'bg-blue-500' : 'bg-gray-300'
+                          }`} />
+                          {index < selectedCronogramData.cronogramData.timeline.length - 1 && (
+                            <div className="w-px h-8 bg-gray-200 mt-2" />
+                          )}
+                        </div>
+                        <div className="flex-1 pb-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium">{event.status}</p>
+                              {event.description && (
+                                <p className="text-sm text-muted-foreground">{event.description}</p>
+                              )}
+                              {event.tracking && (
+                                <p className="text-xs text-muted-foreground font-mono">
+                                  {event.tracking}
+                                </p>
+                              )}
+                            </div>
+                            {event.date && (
+                              <span className="text-xs text-muted-foreground">
+                                {formatDate(event.date)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Próximos Passos Previstos */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">Próximos Passos Previstos</h4>
+                <div className="space-y-2 text-sm text-blue-800">
+                  {selectedCronogramData.cronogramStatus.label === 'Pendente' && (
+                    <p>• O produto será coletado e enviado para análise</p>
+                  )}
+                  {selectedCronogramData.cronogramStatus.label === 'Em trânsito' && (
+                    <p>• O produto está a caminho do centro de distribuição</p>
+                  )}
+                  {selectedCronogramData.cronogramStatus.label === 'Entregue' && (
+                    <p>• O produto foi recebido, aguardando processamento do reembolso</p>
+                  )}
+                  {selectedCronogramData.cronogramStatus.label === 'Reembolsado' && (
+                    <p>• Processo finalizado - reembolso concluído</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
