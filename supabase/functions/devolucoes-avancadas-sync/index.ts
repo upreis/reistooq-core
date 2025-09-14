@@ -58,24 +58,33 @@ async function fetchRealReturns(claimId, accessToken) {
 
 // Função para buscar mensagens de pós-venda
 async function fetchPostSaleMessages(orderId, packId, sellerId, accessToken) {
-  try {
-    const endpoint = `https://api.mercadolibre.com/messages/packs/${packId || orderId}/sellers/${sellerId}?tag=post_sale`;
-    console.log(`📧 Buscando mensagens para order ${orderId}`);
-    
-    const response = await fetch(endpoint, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
+  const endpoints = [
+    `https://api.mercadolibre.com/messages/packs/${packId || orderId}/sellers/${sellerId}?tag=post_sale`,
+    `https://api.mercadolibre.com/messages/orders/${orderId}`,
+    `https://api.mercadolibre.com/messages/search?order_id=${orderId}`
+  ];
 
-    if (response.ok) {
-      const data = await response.json();
-      const messages = data.messages || [];
-      console.log(`✅ ${messages.length} mensagens encontradas para order ${orderId}`);
-      return messages;
+  for (const endpoint of endpoints) {
+    try {
+      console.log(`📧 Testando endpoint de mensagens: ${endpoint}`);
+      const response = await fetch(endpoint, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const messages = data.messages || data.results || [];
+        console.log(`✅ ${messages.length} mensagens encontradas para order ${orderId} via ${endpoint}`);
+        return messages;
+      } else {
+        console.log(`⚠️ Endpoint ${endpoint} retornou status ${response.status}`);
+      }
+    } catch (error) {
+      console.warn(`⚠️ Falha no endpoint ${endpoint}:`, error.message);
     }
-  } catch (error) {
-    console.warn(`⚠️ Falha ao buscar mensagens para order ${orderId}:`, error.message);
   }
 
+  console.log(`ℹ️ Nenhuma mensagem encontrada para order ${orderId}`);
   return [];
 }
 
@@ -112,16 +121,25 @@ Deno.serve(async (req) => {
 
     let processedCount = 0;
 
+    // IDs REAIS para teste baseados na planilha
+    const testOrderIds = [
+      '20000129977268',
+      '20000130039950', 
+      '20000130164900',
+      '20000130194958',
+      '20000130200198'
+    ];
+    
     for (const accountId of account_ids) {
       console.log(`📋 Processando conta: ${accountId}`);
 
       // Buscar orders sem claims processadas OU com claims simulados
       const { data: localOrders, error: selectError } = await supabase
         .from('devolucoes_avancadas')
-        .select('id, order_id, dados_order, claim_id')
+        .select('id, order_id, dados_order, claim_id, id_carrinho, id_item, sku, quantidade, produto_titulo')
         .eq('integration_account_id', accountId)
         .or('claim_id.is.null,claim_id.like.simulated_%')
-        .limit(10); // Processar em lotes pequenos
+        .limit(20); // Aumentar lote para testar mais orders
 
       if (selectError) throw selectError;
       console.log(`📊 Encontradas ${localOrders.length} orders para processar`);
@@ -147,16 +165,42 @@ Deno.serve(async (req) => {
       // Processar cada order com fluxo completo
       for (const localOrder of localOrders) {
         const order = localOrder.dados_order || localOrder.raw_data;
+        const orderId = order?.id || localOrder.order_id;
+        
+        // Logs detalhados para debug
+        console.log(`🎯 Processando order real da planilha: ${orderId}`);
+        console.log(`📦 ID Carrinho: ${localOrder.id_carrinho || 'N/A'}`);
+        console.log(`🏷 ID Item: ${localOrder.id_item || 'N/A'}`);
+        console.log(`📋 SKU: ${localOrder.sku || 'N/A'}`);
+        console.log(`📊 Quantidade: ${localOrder.quantidade || 'N/A'}`);
+        console.log(`🛍 Produto: ${localOrder.produto_titulo || 'N/A'}`);
+
+        // Verificar se é um dos IDs de teste REAIS
+        const isTestOrder = testOrderIds.includes(orderId?.toString());
+        if (isTestOrder) {
+          console.log(`🎯 ORDEM DE TESTE REAL DETECTADA: ${orderId}`);
+        }
 
         // 1. Buscar claims reais
-        const realClaims = await fetchRealClaims(order.id, accessToken);
+        console.log(`🔍 Buscando claims para order real...`);
+        const realClaims = await fetchRealClaims(orderId, accessToken);
 
-        // 2. Buscar mensagens de pós-venda
-        const messages = await fetchPostSaleMessages(order.id, order.pack_id, sellerId, accessToken);
+        // 2. Buscar mensagens de pós-venda  
+        const messages = await fetchPostSaleMessages(orderId, order?.pack_id, sellerId, accessToken);
 
+        // Extrair dados dos order_items se disponível
+        const orderItems = order?.order_items || [];
+        const firstItem = orderItems[0];
+        
         let updateData = {
           dados_mensagens: messages,
-          ultima_atualizacao: new Date().toISOString()
+          ultima_atualizacao: new Date().toISOString(),
+          // Preencher campos da planilha baseados no order
+          id_carrinho: orderId,
+          id_item: firstItem?.item?.id || localOrder.id_item,
+          sku: firstItem?.item?.seller_sku || localOrder.sku,
+          quantidade: firstItem?.quantity || localOrder.quantidade || 1,
+          produto_titulo: firstItem?.item?.title || localOrder.produto_titulo
         };
 
         if (realClaims.length > 0) {
@@ -196,9 +240,16 @@ Deno.serve(async (req) => {
 
         if (!updateError) {
           processedCount++;
-          console.log(`✅ Order ${order.id} processada - Claims: ${realClaims.length}, Mensagens: ${messages.length}`);
+          console.log(`✅ Order ${orderId} processada com sucesso!`);
+          console.log(`   📊 Claims: ${realClaims.length}, Mensagens: ${messages.length}`);
+          console.log(`   📦 SKU: ${updateData.sku}, Quantidade: ${updateData.quantidade}`);
+          console.log(`   🛍 Produto: ${updateData.produto_titulo?.substring(0, 50)}...`);
+          
+          if (isTestOrder) {
+            console.log(`🎯 TESTE REAL CONCLUÍDO PARA: ${orderId}`);
+          }
         } else {
-          console.error(`❌ Erro ao atualizar order ${order.id}:`, updateError.message);
+          console.error(`❌ Erro ao atualizar order ${orderId}:`, updateError.message);
         }
       }
     }

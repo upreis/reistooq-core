@@ -33,11 +33,19 @@ interface DevolucaoAvancada {
   dados_order?: any;
   dados_claim?: any;
   dados_return?: any;
+  dados_mensagens?: any;
+  dados_acoes?: any;
   integration_account_id?: string;
   processado_em?: string;
   created_at?: string;
   cronograma_tipo?: string;
   cronograma_status?: string;
+  // Novos campos baseados na planilha
+  id_carrinho?: string;
+  id_item?: string;
+  sku?: string;
+  quantidade?: number;
+  produto_titulo?: string;
 }
 
 export default function DevolucoeAvancadasTab() {
@@ -1017,21 +1025,23 @@ export default function DevolucoeAvancadasTab() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-medium">Order ID</th>
-                    <th className="text-left py-3 px-4 font-medium">Data Criação</th>
-                    <th className="text-left py-3 px-4 font-medium">Status</th>
-                    <th className="text-left py-3 px-4 font-medium">Comprador</th>
-                    <th className="text-left py-3 px-4 font-medium">Produto</th>
-                    <th className="text-left py-3 px-4 font-medium">Valor</th>
-                    <th className="text-left py-3 px-4 font-medium">Claim ID</th>
-                    <th className="text-left py-3 px-4 font-medium">Return ID</th>
-                    <th className="text-left py-3 px-4 font-medium">Cronograma</th>
-                    <th className="text-left py-3 px-4 font-medium">Status ML</th>
-                    <th className="text-left py-3 px-4 font-medium">Ações</th>
-                  </tr>
-                </thead>
+                 <thead>
+                   <tr className="border-b">
+                     <th className="text-left py-3 px-4 font-medium">Order ID</th>
+                     <th className="text-left py-3 px-4 font-medium">Data Criação</th>
+                     <th className="text-left py-3 px-4 font-medium">Status</th>
+                     <th className="text-left py-3 px-4 font-medium">SKU</th>
+                     <th className="text-left py-3 px-4 font-medium">Produto</th>
+                     <th className="text-left py-3 px-4 font-medium">Qtd</th>
+                     <th className="text-left py-3 px-4 font-medium">Comprador</th>
+                     <th className="text-left py-3 px-4 font-medium">Valor</th>
+                     <th className="text-left py-3 px-4 font-medium">Claim ID</th>
+                     <th className="text-left py-3 px-4 font-medium">Return ID</th>
+                     <th className="text-left py-3 px-4 font-medium">Cronograma</th>
+                     <th className="text-left py-3 px-4 font-medium">Status ML</th>
+                     <th className="text-left py-3 px-4 font-medium">Ações</th>
+                   </tr>
+                 </thead>
                 <tbody>
                   {filteredDevolucoes.map((devolucao) => (
                     <tr key={devolucao.id} className="border-b hover:bg-muted/50">
@@ -1047,21 +1057,48 @@ export default function DevolucoeAvancadasTab() {
                           <span className="text-muted-foreground">-</span>
                         )}
                       </td>
-                      <td className="py-3 px-4">
-                        <Badge variant={getStatusBadgeVariant(devolucao.status_devolucao)}>
-                          {devolucao.status_devolucao || 'N/A'}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm">
-                          {extractBuyerName(devolucao)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm max-w-[200px] truncate block" title={extractProductTitle(devolucao)}>
-                          {extractProductTitle(devolucao)}
-                        </span>
-                      </td>
+                       <td className="py-3 px-4">
+                         <Badge variant={getStatusBadgeVariant(devolucao.status_devolucao)}>
+                           {devolucao.status_devolucao || 'N/A'}
+                         </Badge>
+                       </td>
+                       {/* Nova coluna SKU baseada na planilha */}
+                       <td className="py-3 px-4">
+                         {devolucao.sku ? (
+                           <Badge variant="secondary" className="text-xs font-mono">
+                             {devolucao.sku}
+                           </Badge>
+                         ) : (
+                           <span className="text-muted-foreground text-xs">N/A</span>
+                         )}
+                       </td>
+                       <td className="py-3 px-4">
+                         <div className="flex flex-col">
+                           <span className="text-sm max-w-[200px] truncate block" title={devolucao.produto_titulo || extractProductTitle(devolucao)}>
+                             {devolucao.produto_titulo || extractProductTitle(devolucao)}
+                           </span>
+                           {devolucao.id_item && (
+                             <span className="text-xs text-muted-foreground font-mono">
+                               Item: {devolucao.id_item}
+                             </span>
+                           )}
+                         </div>
+                       </td>
+                       {/* Nova coluna Quantidade */}
+                       <td className="py-3 px-4">
+                         {devolucao.quantidade ? (
+                           <Badge variant="outline" className="text-xs">
+                             {devolucao.quantidade}x
+                           </Badge>
+                         ) : (
+                           <span className="text-muted-foreground text-xs">-</span>
+                         )}
+                       </td>
+                       <td className="py-3 px-4">
+                         <span className="text-sm">
+                           {extractBuyerName(devolucao)}
+                         </span>
+                       </td>
                       <td className="py-3 px-4">
                         <span className="font-medium text-green-600">
                           {formatMoney(extractOrderValue(devolucao))}
