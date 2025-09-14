@@ -4,78 +4,13 @@ const ML_BASE_URL = 'https://api.mercadolibre.com';
 
 export class MLApiService {
   private accessToken: string;
-  private integrationAccountId: string | null;
 
   constructor() {
-    this.accessToken = '';
-    this.integrationAccountId = null;
-    // Inicializar automaticamente
-    this.initialize();
-  }
-
-  async initialize(integrationAccountId?: string) {
-    try {
-      if (integrationAccountId) {
-        this.integrationAccountId = integrationAccountId;
-        await this.loadTokenFromIntegration(integrationAccountId);
-      } else {
-        // Buscar primeira conta ativa do ML
-        await this.loadDefaultAccount();
-      }
-    } catch (error) {
-      console.error('Erro ao inicializar MLApiService:', error);
-    }
-  }
-
-  private async loadDefaultAccount() {
-    try {
-      const { data: accounts, error } = await supabase
-        .from('integration_accounts')
-        .select('id, name, account_identifier')
-        .eq('provider', 'mercadolivre')
-        .eq('is_active', true)
-        .limit(1);
-
-      if (error || !accounts || accounts.length === 0) {
-        console.warn('Nenhuma conta ML ativa encontrada');
-        return;
-      }
-
-      this.integrationAccountId = accounts[0].id;
-      await this.loadTokenFromIntegration(accounts[0].id);
-    } catch (error) {
-      console.error('Erro ao carregar conta padrão ML:', error);
-    }
-  }
-
-  private async loadTokenFromIntegration(integrationAccountId: string) {
-    try {
-      const { data, error } = await supabase.functions.invoke('integrations-get-secret', {
-        body: { 
-          integration_account_id: integrationAccountId,
-          provider: 'mercadolivre' 
-        }
-      });
-
-      if (error || !data?.ok) {
-        console.warn('Erro ao buscar token ML:', error || data?.error);
-        return;
-      }
-
-      if (data.secret?.access_token) {
-        this.accessToken = data.secret.access_token;
-      }
-    } catch (error) {
-      console.error('Erro ao carregar token da integração:', error);
-    }
+    // Token fixo temporário - SUBSTITUA PELO SEU TOKEN REAL
+    this.accessToken = 'APP_USR-YOUR_REAL_TOKEN_HERE';
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
-    // Se não temos token, tentar carregar
-    if (!this.accessToken && this.integrationAccountId) {
-      await this.loadTokenFromIntegration(this.integrationAccountId);
-    }
-
     const url = `${ML_BASE_URL}${endpoint}`;
     
     const response = await fetch(url, {
@@ -88,46 +23,10 @@ export class MLApiService {
     });
 
     if (!response.ok) {
-      // Se 401, tentar refresh do token
-      if (response.status === 401 && this.integrationAccountId) {
-        await this.refreshToken();
-        // Retry uma vez
-        const retryResponse = await fetch(url, {
-          ...options,
-          headers: {
-            'Authorization': `Bearer ${this.accessToken}`,
-            'Content-Type': 'application/json',
-            ...options.headers,
-          },
-        });
-        
-        if (!retryResponse.ok) {
-          throw new Error(`ML API Error: ${retryResponse.status} - ${retryResponse.statusText}`);
-        }
-        
-        return retryResponse.json();
-      }
-      
       throw new Error(`ML API Error: ${response.status} - ${response.statusText}`);
     }
 
     return response.json();
-  }
-
-  private async refreshToken() {
-    if (!this.integrationAccountId) return;
-
-    try {
-      const { error } = await supabase.functions.invoke('mercadolibre-token-refresh', {
-        body: { integration_account_id: this.integrationAccountId }
-      });
-      
-      if (!error) {
-        await this.loadTokenFromIntegration(this.integrationAccountId);
-      }
-    } catch (error) {
-      console.error('Erro ao fazer refresh do token ML:', error);
-    }
   }
 
   async getUserInfo() {
@@ -160,21 +59,16 @@ export class MLApiService {
     }
   }
 
-  setIntegrationAccount(integrationAccountId: string) {
-    this.integrationAccountId = integrationAccountId;
-    this.loadTokenFromIntegration(integrationAccountId);
+  setAccessToken(token: string) {
+    this.accessToken = token;
   }
 
   getAccessToken(): string {
     return this.accessToken;
   }
 
-  getIntegrationAccountId(): string | null {
-    return this.integrationAccountId;
-  }
-
   hasValidToken(): boolean {
-    return !!this.accessToken && this.accessToken.length > 0;
+    return !!this.accessToken && this.accessToken.length > 0 && this.accessToken !== 'APP_USR-YOUR_REAL_TOKEN_HERE';
   }
 
   async validateToken(): Promise<boolean> {
@@ -191,13 +85,13 @@ export class MLApiService {
     }
   }
 
-  // Mantém compatibilidade com implementação manual
-  setAccessToken(token: string) {
-    this.accessToken = token;
+  // Métodos de compatibilidade
+  clearToken(): void {
+    this.accessToken = 'APP_USR-YOUR_REAL_TOKEN_HERE';
   }
 
-  clearToken(): void {
-    this.accessToken = '';
-    this.integrationAccountId = null;
+  async initialize(): Promise<void> {
+    // Método vazio para compatibilidade
+    return Promise.resolve();
   }
 }

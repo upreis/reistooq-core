@@ -121,7 +121,7 @@ export default function DevolucaoAvancadas() {
       const mlService = new MLApiService();
       
       // Inicializar com conta específica ou buscar primeira conta disponível
-      await mlService.initialize(integrationAccountId);
+      await mlService.initialize();
       
       // Verificar se tem token válido após inicialização
       if (!mlService.hasValidToken()) {
