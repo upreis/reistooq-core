@@ -9,9 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Eye, Filter, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import DevolucoeAvancadasTab from "@/components/pedidos/devolucoes/DevolucoeAvancadasTab";
 
 interface MLOrder {
   id: number;
@@ -186,31 +188,47 @@ export default function MLOrdersCompletas() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Todas as Orders - ML</h1>
+          <h1 className="text-3xl font-bold">Sistema ML - Mercado Livre</h1>
           <p className="text-muted-foreground">
-            Visualização completa de todas as orders encontradas no Mercado Livre
-            {dateFrom && dateTo && (
-              <span className="text-blue-600 ml-2">
-                📅 Período: {format(new Date(dateFrom), "dd/MM/yyyy")} - {format(new Date(dateTo), "dd/MM/yyyy")}
-              </span>
-            )}
-            {!dateFrom && !dateTo && (
-              <span className="text-orange-600 ml-2">
-                📅 Mostrando todas as datas
-              </span>
-            )}
-            {queryError && (
-              <span className="text-destructive ml-2">
-                ⚠️ Erro ao carregar: {queryError.message}
-              </span>
-            )}
+            Sistema completo de gestão Mercado Livre
           </p>
         </div>
-        <Button onClick={exportToCSV} variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-2" />
-          Exportar CSV
-        </Button>
       </div>
+
+      <Tabs defaultValue="orders" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="orders">Orders Completas</TabsTrigger>
+          <TabsTrigger value="devolucoes">Devoluções Avançadas</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="orders" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Todas as Orders - ML</h2>
+              <p className="text-muted-foreground">
+                Visualização completa de todas as orders encontradas no Mercado Livre
+                {dateFrom && dateTo && (
+                  <span className="text-blue-600 ml-2">
+                    📅 Período: {format(new Date(dateFrom), "dd/MM/yyyy")} - {format(new Date(dateTo), "dd/MM/yyyy")}
+                  </span>
+                )}
+                {!dateFrom && !dateTo && (
+                  <span className="text-orange-600 ml-2">
+                    📅 Mostrando todas as datas
+                  </span>
+                )}
+                {queryError && (
+                  <span className="text-destructive ml-2">
+                    ⚠️ Erro ao carregar: {queryError.message}
+                  </span>
+                )}
+              </p>
+            </div>
+            <Button onClick={exportToCSV} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar CSV
+            </Button>
+          </div>
 
       {/* Filtros */}
       <Card>
@@ -439,6 +457,12 @@ export default function MLOrdersCompletas() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="devolucoes">
+          <DevolucoeAvancadasTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
