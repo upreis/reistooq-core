@@ -75,18 +75,59 @@ export default function DevolucoeAvancadasTab() {
     }
   };
 
-  // Sincronizar devoluções (placeholder para futura implementação)
+  // Sincronizar devoluções usando a nova edge function
   const handleSync = async () => {
     setSyncing(true);
     try {
-      toast.success('Sincronização iniciada! (Funcionalidade em desenvolvimento)');
+      // Buscar contas de integração ativas
+      const { data: accounts, error: accountsError } = await supabase
+        .from('integration_accounts')
+        .select('id')
+        .eq('provider', 'mercadolivre')
+        .eq('is_active', true);
+
+      if (accountsError) {
+        console.error('Erro ao buscar contas:', accountsError);
+        toast.error('Erro ao buscar contas de integração');
+        return;
+      }
+
+      if (!accounts || accounts.length === 0) {
+        toast.error('Nenhuma conta do Mercado Livre encontrada');
+        return;
+      }
+
+      const accountIds = accounts.map(acc => acc.id);
       
-      // TODO: Implementar edge function para sincronizar devoluções avançadas
-      // await supabase.functions.invoke('devolucoes-avancadas-sync', {
-      //   body: { integration_account_ids: [] }
-      // });
+      toast.success('Iniciando sincronização de devoluções...');
       
-      // Por enquanto, apenas recarregar os dados
+      // Chamar edge function para sincronizar
+      const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
+        body: { account_ids: accountIds }
+      });
+
+      if (error) {
+        console.error('Erro na sincronização:', error);
+        toast.error('Erro na sincronização: ' + error.message);
+        return;
+      }
+
+      const result = data as { success: boolean; totalProcessed: number; totalSaved: number; errors?: string[] };
+      
+      if (result.success) {
+        toast.success(
+          `Sincronização concluída! Processados: ${result.totalProcessed}, Salvos: ${result.totalSaved}`
+        );
+        
+        if (result.errors && result.errors.length > 0) {
+          console.warn('Alguns erros ocorreram:', result.errors);
+          toast.error(`${result.errors.length} erros encontrados (ver console)`);
+        }
+      } else {
+        toast.error('Erro na sincronização');
+      }
+      
+      // Recarregar dados após sincronização
       await loadDevolucoes();
       
     } catch (error) {
