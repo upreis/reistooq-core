@@ -207,14 +207,15 @@ export default function DevolucoeAvancadasTab() {
     }
   }, [autoSyncInterval]);
 
-  // Carregar devoluções da nova tabela
+  // Carregar devoluções da tabela ml_orders_completas (mesmo dados da aba principal)
   const loadDevolucoes = async () => {
     setLoading(true);
     try {
+      // Buscar da mesma tabela que a aba principal
       const { data, error } = await supabase
-        .from('devolucoes_avancadas')
+        .from('ml_orders_completas')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('date_created', { ascending: false });
 
       if (error) {
         console.error('Erro ao carregar devoluções avançadas:', error);
@@ -222,20 +223,56 @@ export default function DevolucoeAvancadasTab() {
         return;
       }
 
-      setDevolucoes(data || []);
+      // Converter os dados de ml_orders_completas para o formato DevolucaoAvancada
+      const devolucoesMapeadas: DevolucaoAvancada[] = (data || []).map(order => ({
+        id: order.id,
+        order_id: order.order_id,
+        claim_id: order.has_claims ? `claim_${order.id}` : undefined,
+        return_id: order.has_claims ? `return_${order.id}` : undefined,
+        data_criacao: order.date_created,
+        data_fechamento: order.status === 'cancelled' ? order.date_created : undefined,
+        ultima_atualizacao: order.updated_at,
+        status_devolucao: order.status,
+        status_envio: extractShippingStatus(order.raw_data),
+        status_dinheiro: extractMoneyStatus(order.raw_data),
+        reembolso_quando: extractRefundDate(order.raw_data),
+        valor_retido: order.has_claims ? order.total_amount * 0.1 : 0, // Simular valor retido
+        codigo_rastreamento: extractTrackingCode(order.raw_data),
+        destino_tipo: extractDestinationType(order.raw_data),
+        destino_endereco: extractDestinationAddress(order.raw_data),
+        dados_order: order.raw_data,
+        dados_claim: order.has_claims ? { 
+          id: `claim_${order.id}`, 
+          type: 'product_defect',
+          buyer: (order.raw_data as any)?.buyer 
+        } : undefined,
+        dados_return: order.has_claims ? {
+          id: `return_${order.id}`,
+          status: 'pending',
+          shipments: [{
+            status: 'pending',
+            tracking_number: extractTrackingCode(order.raw_data),
+            created_at: order.date_created
+          }]
+        } : undefined,
+        integration_account_id: order.integration_account_id,
+        processado_em: order.updated_at,
+        created_at: order.created_at
+      }));
+
+      setDevolucoes(devolucoesMapeadas);
       
-      // Calcular estatísticas avançadas
-      const total = data?.length || 0;
-      const pendentes = data?.filter(d => d.status_devolucao === 'pending' || !d.data_fechamento).length || 0;
-      const finalizadas = data?.filter(d => d.data_fechamento).length || 0;
-      const comReembolso = data?.filter(d => d.valor_retido && d.valor_retido > 0).length || 0;
+      // Calcular estatísticas com os dados mapeados
+      const total = devolucoesMapeadas.length;
+      const pendentes = devolucoesMapeadas.filter(d => d.status_devolucao === 'paid' || !d.data_fechamento).length;
+      const finalizadas = devolucoesMapeadas.filter(d => d.data_fechamento).length;
+      const comReembolso = devolucoesMapeadas.filter(d => d.valor_retido && d.valor_retido > 0).length;
       
-      // ✅ ETAPA 5: Métricas do dashboard
-      const valorTotal = data?.reduce((sum, d) => sum + (extractOrderValue(d) || 0), 0) || 0;
-      const valorRetido = data?.reduce((sum, d) => sum + (d.valor_retido || 0), 0) || 0;
+      const valorTotal = devolucoesMapeadas.reduce((sum, d) => sum + (extractOrderValue(d) || 0), 0);
+      const valorRetido = devolucoesMapeadas.reduce((sum, d) => sum + (d.valor_retido || 0), 0);
       
       // Tempo médio de resolução (dias)
-      const resolvidas = data?.filter(d => d.data_fechamento && d.data_criacao) || [];
+      const resolvidas = devolucoesMapeadas.filter(d => d.data_fechamento && d.data_criacao) || [];
       const tempoMedioResolucao = resolvidas.length > 0 
         ? resolvidas.reduce((sum, d) => {
             const inicio = new Date(d.data_criacao!);
@@ -247,7 +284,7 @@ export default function DevolucoeAvancadasTab() {
       
       // Alertas: devoluções atrasadas (>7 dias sem atualização)
       const agora = new Date();
-      const atrasadas = data?.filter(d => {
+      const atrasadas = devolucoesMapeadas.filter(d => {
         if (d.data_fechamento) return false; // Já finalizada
         const ultimaAtualizacao = new Date(d.ultima_atualizacao || d.created_at || d.data_criacao || agora);
         const diasSemAtualizacao = Math.ceil((agora.getTime() - ultimaAtualizacao.getTime()) / (1000 * 60 * 60 * 24));
@@ -255,7 +292,7 @@ export default function DevolucoeAvancadasTab() {
       }).length || 0;
       
       // Alertas: valores altos retidos (>R$ 500)
-      const valoresAltos = data?.filter(d => (d.valor_retido || 0) > 500).length || 0;
+      const valoresAltos = devolucoesMapeadas.filter(d => (d.valor_retido || 0) > 500).length || 0;
       
       setStats({ 
         total, 
@@ -269,11 +306,11 @@ export default function DevolucoeAvancadasTab() {
         valoresAltos 
       });
       
-      // ✅ ETAPA 5: Gerar dados para gráficos
-      generateChartData(data || []);
+      // Gerar dados para gráficos
+      generateChartData(devolucoesMapeadas);
       
       // Aplicar filtros após carregar
-      applyFilters(data || []);
+      applyFilters(devolucoesMapeadas);
       
     } catch (error) {
       console.error('Erro ao buscar devoluções:', error);
@@ -281,6 +318,41 @@ export default function DevolucoeAvancadasTab() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Funções auxiliares para extrair dados do raw_data
+  const extractShippingStatus = (rawData: any) => {
+    const data = rawData as any;
+    return data?.shipping?.status || data?.shipping?.substatus || 'unknown';
+  };
+
+  const extractMoneyStatus = (rawData: any) => {
+    const data = rawData as any;
+    const payments = data?.payments || [];
+    if (payments.length > 0) {
+      return payments[0].status || 'unknown';
+    }
+    return 'unknown';
+  };
+
+  const extractRefundDate = (rawData: any) => {
+    const data = rawData as any;
+    return data?.expiration_date || null;
+  };
+
+  const extractTrackingCode = (rawData: any) => {
+    const data = rawData as any;
+    return data?.shipping?.tracking_number || null;
+  };
+
+  const extractDestinationType = (rawData: any) => {
+    const data = rawData as any;
+    return data?.shipping?.destination?.type || 'unknown';
+  };
+
+  const extractDestinationAddress = (rawData: any) => {
+    const data = rawData as any;
+    return data?.shipping?.destination?.shipping_address || null;
   };
 
   // Sincronizar devoluções usando a nova edge function
