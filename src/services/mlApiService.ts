@@ -4,8 +4,8 @@ export class MLApiService {
   private accessToken: string;
 
   constructor() {
-    // Buscar token do localStorage ou variável de ambiente
-    this.accessToken = localStorage.getItem('ml_access_token') || process.env.NEXT_PUBLIC_ML_ACCESS_TOKEN || '';
+    // Buscar token do localStorage
+    this.accessToken = localStorage.getItem('ml_access_token') || '';
   }
 
   private async makeRequest(endpoint: string, options: RequestInit = {}) {
@@ -60,5 +60,32 @@ export class MLApiService {
   setAccessToken(token: string) {
     this.accessToken = token;
     localStorage.setItem('ml_access_token', token);
+  }
+
+  getAccessToken(): string {
+    return this.accessToken;
+  }
+
+  hasValidToken(): boolean {
+    return !!this.accessToken && this.accessToken.length > 0;
+  }
+
+  async validateToken(): Promise<boolean> {
+    if (!this.hasValidToken()) {
+      return false;
+    }
+    
+    try {
+      await this.getUserInfo();
+      return true;
+    } catch (error) {
+      console.error('Token inválido:', error);
+      return false;
+    }
+  }
+
+  clearToken(): void {
+    this.accessToken = '';
+    localStorage.removeItem('ml_access_token');
   }
 }

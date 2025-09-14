@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Filter, Download, Eye, TrendingUp, TrendingDown, DollarSign, Package } from 'lucide-react';
 import { DevolucaoModal } from '@/components/devolucoes/DevolucaoModal';
 import { DashboardMetricas } from '@/components/devolucoes/DashboardMetricas';
+import { MLTokenConfig } from '@/components/devolucoes/MLTokenConfig';
 import { MLApiService } from '@/services/mlApiService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -39,6 +40,7 @@ export default function DevolucaoAvancadas() {
   const [loading, setLoading] = useState(false);
   const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoData | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [tokenValido, setTokenValido] = useState(false);
   
   // Filtros
   const [filtros, setFiltros] = useState({
@@ -90,6 +92,12 @@ export default function DevolucaoAvancadas() {
   const buscarDadosML = async () => {
     try {
       const mlService = new MLApiService();
+      
+      // Verificar se tem token válido antes de fazer requisições
+      if (!mlService.hasValidToken()) {
+        toast.error('Token do Mercado Livre não configurado. Configure primeiro o token.');
+        return;
+      }
       
       // 1. Obter seller_id
       const userInfo = await mlService.getUserInfo();
@@ -247,7 +255,7 @@ export default function DevolucaoAvancadas() {
           <p className="text-muted-foreground">Sistema completo de gestão de devoluções ML</p>
         </div>
         <div className="flex gap-3">
-          <Button onClick={carregarDevolucoes} disabled={loading}>
+          <Button onClick={carregarDevolucoes} disabled={loading || !tokenValido}>
             {loading ? 'Sincronizando...' : 'Sincronizar ML'}
           </Button>
           <Button variant="outline">
@@ -256,6 +264,9 @@ export default function DevolucaoAvancadas() {
           </Button>
         </div>
       </div>
+
+      {/* Configuração do Token ML */}
+      <MLTokenConfig onTokenValidated={setTokenValido} />
 
       {/* Dashboard de Métricas */}
       <DashboardMetricas devolucoes={filteredDevolucoes} />
