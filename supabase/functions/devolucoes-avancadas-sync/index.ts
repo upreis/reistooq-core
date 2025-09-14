@@ -1,42 +1,37 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-interface MLTokens {
-  access_token: string;
-  refresh_token: string;
-  expires_at: number;
-}
+import { makeClient, makeUserClient, makeServiceClient, corsHeaders, ok, fail, getMlConfig } from "../_shared/client.ts";
+import { decryptAESGCM } from "../_shared/crypto.ts";
+import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
 Deno.serve(async (req) => {
-  console.log('[Devoluções Avançadas Sync] Request received:', req.method)
+  // Generate correlation ID for tracking
+  const cid = Math.random().toString(36).substring(2, 10);
+  console.log(`[devolucoes-avancadas-sync:${cid}] Request received:`, req.method);
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const authHeader = req.headers.get('Authorization');
+    const userClient = makeUserClient(req);
+    const serviceClient = makeServiceClient();
+    
+    // Ensure user is authenticated
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      console.error(`[devolucoes-avancadas-sync:${cid}] Authentication failed:`, userError);
+      return fail('Authentication required', 401, null, cid);
+    }
 
-    const { account_ids } = await req.json()
-    console.log('[Devoluções Avançadas Sync] Account IDs received:', account_ids)
+    console.log(`[devolucoes-avancadas-sync:${cid}] User authenticated:`, user.id);
+
+    const { account_ids } = await req.json();
+    console.log(`[devolucoes-avancadas-sync:${cid}] Account IDs received:`, account_ids);
 
     if (!account_ids || !Array.isArray(account_ids) || account_ids.length === 0) {
-      console.log('[Devoluções Avançadas Sync] No account IDs provided')
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: 'account_ids array is required' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      console.log(`[devolucoes-avancadas-sync:${cid}] No account IDs provided`);
+      return fail('account_ids array is required', 400, null, cid);
     }
 
     let totalProcessed = 0
@@ -45,138 +40,238 @@ Deno.serve(async (req) => {
 
     // Process each account
     for (const accountId of account_ids) {
-      console.log(`[Devoluções Avançadas Sync] Processing account: ${accountId}`)
+      console.log(`[devolucoes-avancadas-sync:${cid}] Processing account: ${accountId}`);
       
       try {
-        // Get tokens for this account
-        const { data: secretData, error: secretError } = await supabase
+        // ============= SISTEMA BLINDADO ML TOKEN DECRYPTION =============
+        const keyFp = await sha256hex(CRYPTO_KEY);
+        console.log(`[devolucoes-avancadas-sync:${cid}] keyFp ${keyFp.substring(0, 12)}`);
+        
+        // Get secret from database
+        const { data: secretRow, error: secretError } = await serviceClient
           .from('integration_secrets')
-          .select('simple_tokens')
+          .select('simple_tokens, use_simple, secret_enc, provider, expires_at, access_token, refresh_token')
           .eq('integration_account_id', accountId)
           .eq('provider', 'mercadolivre')
-          .single()
+          .single();
 
-        if (secretError || !secretData?.simple_tokens) {
-          console.error(`[Devoluções Avançadas Sync] No tokens found for account ${accountId}:`, secretError)
-          errors.push(`Account ${accountId}: No tokens found`)
-          continue
+        console.log(`[devolucoes-avancadas-sync:${cid}] 🔍 SECRET SEARCH DEBUG: {
+  secretError: ${secretError?.message},
+  hasRow: ${!!secretRow},
+  secretRowType: "${typeof secretRow}",
+  secretRowKeys: ${secretRow ? JSON.stringify(Object.keys(secretRow)) : 'null'},
+  hasSimpleTokens: ${!!secretRow?.simple_tokens},
+  simpleTokensType: "${typeof secretRow?.simple_tokens}",
+  simpleTokensLength: ${secretRow?.simple_tokens?.length || 0},
+  useSimple: ${secretRow?.use_simple},
+  hasSecretEnc: ${!!secretRow?.secret_enc},
+  secretEncType: "${typeof secretRow?.secret_enc}",
+  secretEncLength: ${secretRow?.secret_enc?.length || 0},
+  hasLegacyTokens: ${!!(secretRow?.access_token || secretRow?.refresh_token)},
+  keyFp: "${keyFp.substring(0, 12)}",
+  accountId: "${accountId}"
+}`);
+
+        if (secretError || !secretRow) {
+          console.error(`[devolucoes-avancadas-sync:${cid}] ❌ No secret found for account ${accountId}:`, secretError);
+          errors.push(`Account ${accountId}: No secret found`);
+          continue;
         }
 
-        // Decrypt tokens
-        const { data: decryptedData, error: decryptError } = await supabase.rpc(
-          'decrypt_simple', 
-          { encrypted_data: secretData.simple_tokens }
-        )
+        let tokens: any = null;
 
-        if (decryptError || !decryptedData) {
-          console.error(`[Devoluções Avançadas Sync] Failed to decrypt tokens for account ${accountId}:`, decryptError)
-          errors.push(`Account ${accountId}: Failed to decrypt tokens`)
-          continue
+        // Try simple decryption first
+        if (secretRow.simple_tokens) {
+          console.log(`[devolucoes-avancadas-sync:${cid}] 🔓 Tentando criptografia simples - dados: {
+  simpleTokensType: "${typeof secretRow.simple_tokens}",
+  simpleTokensLength: ${secretRow.simple_tokens.length},
+  simpleTokensPreview: "${secretRow.simple_tokens.substring(0, 50)}..."
+}`);
+
+          try {
+            const { data: decryptedSimple, error: decryptSimpleError } = await serviceClient.rpc(
+              'decrypt_simple',
+              { encrypted_data: secretRow.simple_tokens }
+            );
+
+            console.log(`[devolucoes-avancadas-sync:${cid}] 🔓 Resultado decrypt_simple: {
+  hasError: ${!!decryptSimpleError},
+  errorMsg: ${decryptSimpleError?.message},
+  hasData: ${!!decryptedSimple},
+  dataType: "${typeof decryptedSimple}",
+  dataLength: ${decryptedSimple?.length || 0}
+}`);
+
+            if (!decryptSimpleError && decryptedSimple) {
+              tokens = JSON.parse(decryptedSimple);
+              console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Descriptografia simples bem-sucedida - tokens extraídos: {
+  hasAccessToken: ${!!tokens.access_token},
+  hasRefreshToken: ${!!tokens.refresh_token},
+  hasExpiresAt: ${!!tokens.expires_at},
+  accessTokenLength: ${tokens.access_token?.length || 0},
+  refreshTokenLength: ${tokens.refresh_token?.length || 0}
+}`);
+            }
+          } catch (simpleError) {
+            console.warn(`[devolucoes-avancadas-sync:${cid}] ⚠️ Erro na descriptografia simples:`, simpleError.message);
+          }
         }
 
-        const tokens: MLTokens = JSON.parse(decryptedData)
-        console.log(`[Devoluções Avançadas Sync] Tokens decrypted for account ${accountId}`)
+        // Fallback to modern decryption
+        if (!tokens && secretRow.secret_enc) {
+          console.log(`[devolucoes-avancadas-sync:${cid}] 🔓 Tentando descriptografia moderna`);
+          try {
+            const decryptedModern = await decryptAESGCM(secretRow.secret_enc);
+            tokens = JSON.parse(decryptedModern);
+            console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Descriptografia moderna bem-sucedida`);
+          } catch (modernError) {
+            console.warn(`[devolucoes-avancadas-sync:${cid}] ⚠️ Erro na descriptografia moderna:`, modernError.message);
+          }
+        }
 
-        // Fetch orders from MercadoLivre API
-        const ordersUrl = 'https://api.mercadolibre.com/orders/search?seller_id=me&order.status=paid,cancelled&sort=date_desc&limit=50'
+        // Final fallback to legacy tokens
+        if (!tokens && (secretRow.access_token || secretRow.refresh_token)) {
+          console.log(`[devolucoes-avancadas-sync:${cid}] 🔓 Usando tokens legados`);
+          tokens = {
+            access_token: secretRow.access_token,
+            refresh_token: secretRow.refresh_token,
+            expires_at: secretRow.expires_at
+          };
+        }
+
+        if (!tokens || !tokens.access_token) {
+          console.error(`[devolucoes-avancadas-sync:${cid}] ❌ Nenhum método de descriptografia funcionou para account ${accountId}`);
+          errors.push(`Account ${accountId}: Failed to decrypt tokens`);
+          continue;
+        }
+
+        console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Tokens obtidos com sucesso para account ${accountId}`);
+
+        // Get seller ID from integration account
+        const { data: accountData } = await serviceClient
+          .from('integration_accounts')
+          .select('external_account_id')
+          .eq('id', accountId)
+          .single();
+
+        const sellerId = accountData?.external_account_id || 'me';
         
-        console.log(`[Devoluções Avançadas Sync] Fetching orders for account ${accountId}`)
+        // Fetch orders from MercadoLivre API
+        const ordersUrl = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.status=paid,cancelled&sort=date_desc&limit=50`;
+        
+        console.log(`[devolucoes-avancadas-sync:${cid}] ML API URL: ${ordersUrl}`);
+        console.log(`[devolucoes-avancadas-sync:${cid}] Buscando pedidos ML para seller ${sellerId}`);
+        
         const ordersResponse = await fetch(ordersUrl, {
           headers: {
             'Authorization': `Bearer ${tokens.access_token}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-format-new': 'true'
           }
-        })
+        });
 
         if (!ordersResponse.ok) {
-          console.error(`[Devoluções Avançadas Sync] Failed to fetch orders for account ${accountId}:`, ordersResponse.status)
-          errors.push(`Account ${accountId}: Failed to fetch orders (${ordersResponse.status})`)
-          continue
+          console.error(`[devolucoes-avancadas-sync:${cid}] Failed to fetch orders for account ${accountId}:`, ordersResponse.status);
+          errors.push(`Account ${accountId}: Failed to fetch orders (${ordersResponse.status})`);
+          continue;
         }
 
-        const ordersData = await ordersResponse.json()
-        console.log(`[Devoluções Avançadas Sync] Found ${ordersData.results?.length || 0} orders for account ${accountId}`)
+        const ordersData = await ordersResponse.json();
+        console.log(`[devolucoes-avancadas-sync:${cid}] ML retornou ${ordersData.results?.length || 0} pedidos`);
 
         if (!ordersData.results || ordersData.results.length === 0) {
-          console.log(`[Devoluções Avançadas Sync] No orders found for account ${accountId}`)
-          continue
+          console.log(`[devolucoes-avancadas-sync:${cid}] No orders found for account ${accountId}`);
+          continue;
         }
 
         // Process each order
         for (const order of ordersData.results) {
-          totalProcessed++
+          totalProcessed++;
           
           try {
-            console.log(`[Devoluções Avançadas Sync] Processing order ${order.id}`)
+            console.log(`[devolucoes-avancadas-sync:${cid}] Processing order ${order.id}`);
 
             // Check if already exists
-            const { data: existingData } = await supabase
+            const { data: existingData } = await serviceClient
               .from('devolucoes_avancadas')
               .select('id')
               .eq('order_id', order.id.toString())
               .eq('integration_account_id', accountId)
-              .single()
+              .single();
 
             if (existingData) {
-              console.log(`[Devoluções Avançadas Sync] Order ${order.id} already exists, skipping`)
-              continue
+              console.log(`[devolucoes-avancadas-sync:${cid}] Order ${order.id} already exists, skipping`);
+              continue;
             }
 
-            // Fetch claims for this order
-            let claimsData = null
+            // Fetch claims for this order using the correct Claims API
+            let claimsData = null;
             try {
-              const claimsUrl = `https://api.mercadolibre.com/orders/${order.id}/claims`
+              console.log(`[devolucoes-avancadas-sync:${cid}] 🔍 Buscando claims para pedido ${order.id}`);
+              const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?resource_id=${order.id}&resource=order`;
               const claimsResponse = await fetch(claimsUrl, {
                 headers: {
                   'Authorization': `Bearer ${tokens.access_token}`,
-                  'Content-Type': 'application/json'
+                  'Content-Type': 'application/json',
+                  'x-format-new': 'true'
                 }
-              })
+              });
+
+              console.log(`[devolucoes-avancadas-sync:${cid}] 🔍 Claims search executado para pedido ${order.id} - Status: ${claimsResponse.status}`);
 
               if (claimsResponse.ok) {
-                claimsData = await claimsResponse.json()
-                console.log(`[Devoluções Avançadas Sync] Found ${claimsData?.length || 0} claims for order ${order.id}`)
+                claimsData = await claimsResponse.json();
+                if (claimsData.results?.length > 0) {
+                  console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Encontrados ${claimsData.results.length} claims para pedido ${order.id}`);
+                } else {
+                  console.log(`[devolucoes-avancadas-sync:${cid}] ℹ️ Nenhum claim encontrado para pedido ${order.id}`);
+                }
+              } else {
+                console.warn(`[devolucoes-avancadas-sync:${cid}] ⚠️ Claims API retornou status ${claimsResponse.status} para pedido ${order.id}`);
               }
             } catch (claimError) {
-              console.warn(`[Devoluções Avançadas Sync] Failed to fetch claims for order ${order.id}:`, claimError)
+              console.warn(`[devolucoes-avancadas-sync:${cid}] Failed to fetch claims for order ${order.id}:`, claimError);
             }
 
-            // Fetch returns for each claim
-            let returnsData = null
-            if (claimsData && claimsData.length > 0) {
+            // Fetch returns for each claim using correct v2 API
+            let returnsData = null;
+            if (claimsData && claimsData.results?.length > 0) {
               try {
-                const returnPromises = claimsData.map(async (claim: any) => {
+                const returnPromises = claimsData.results.map(async (claim: any) => {
                   try {
-                    const returnUrl = `https://api.mercadolibre.com/claims/${claim.id}/return`
+                    const returnUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
                     const returnResponse = await fetch(returnUrl, {
                       headers: {
                         'Authorization': `Bearer ${tokens.access_token}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'x-format-new': 'true'
                       }
-                    })
+                    });
 
                     if (returnResponse.ok) {
-                      return await returnResponse.json()
+                      const returnData = await returnResponse.json();
+                      console.log(`[devolucoes-avancadas-sync:${cid}] ✅ Devoluções detalhadas obtidas para claim ${claim.id}`);
+                      return returnData;
                     }
                   } catch (returnError) {
-                    console.warn(`[Devoluções Avançadas Sync] Failed to fetch return for claim ${claim.id}:`, returnError)
+                    console.warn(`[devolucoes-avancadas-sync:${cid}] Failed to fetch return for claim ${claim.id}:`, returnError);
                   }
-                  return null
-                })
+                  return null;
+                });
 
-                const returns = await Promise.all(returnPromises)
-                returnsData = returns.filter(r => r !== null)
-                console.log(`[Devoluções Avançadas Sync] Found ${returnsData.length} returns for order ${order.id}`)
+                const returns = await Promise.all(returnPromises);
+                returnsData = returns.filter(r => r !== null);
+                console.log(`[devolucoes-avancadas-sync:${cid}] Found ${returnsData.length} returns for order ${order.id}`);
               } catch (returnError) {
-                console.warn(`[Devoluções Avançadas Sync] Failed to fetch returns for order ${order.id}:`, returnError)
+                console.warn(`[devolucoes-avancadas-sync:${cid}] Failed to fetch returns for order ${order.id}:`, returnError);
               }
             }
 
             // Prepare data for insertion
             const devolucaoData = {
               order_id: order.id.toString(),
-              claim_id: claimsData?.[0]?.id?.toString() || null,
-              return_id: returnsData?.[0]?.id?.toString() || null,
+              claim_id: claimsData?.results?.[0]?.id?.toString() || null,
+              return_id: returnsData?.[0]?.results?.[0]?.id?.toString() || null,
               data_criacao: order.date_created ? new Date(order.date_created).toISOString() : null,
               data_fechamento: order.date_closed ? new Date(order.date_closed).toISOString() : null,
               ultima_atualizacao: order.last_updated ? new Date(order.last_updated).toISOString() : null,
@@ -189,34 +284,34 @@ Deno.serve(async (req) => {
               destino_tipo: null, // Will be filled based on return data
               destino_endereco: order.shipping?.receiver_address || null,
               dados_order: order,
-              dados_claim: claimsData?.[0] || null,
+              dados_claim: claimsData?.results?.[0] || null,
               dados_return: returnsData?.[0] || null,
               integration_account_id: accountId,
               processado_em: new Date().toISOString()
-            }
+            };
 
             // Insert into database
-            const { error: insertError } = await supabase
+            const { error: insertError } = await serviceClient
               .from('devolucoes_avancadas')
-              .insert(devolucaoData)
+              .insert(devolucaoData);
 
             if (insertError) {
-              console.error(`[Devoluções Avançadas Sync] Failed to insert order ${order.id}:`, insertError)
-              errors.push(`Order ${order.id}: ${insertError.message}`)
+              console.error(`[devolucoes-avancadas-sync:${cid}] Failed to insert order ${order.id}:`, insertError);
+              errors.push(`Order ${order.id}: ${insertError.message}`);
             } else {
-              totalSaved++
-              console.log(`[Devoluções Avançadas Sync] Successfully saved order ${order.id}`)
+              totalSaved++;
+              console.log(`[devolucoes-avancadas-sync:${cid}] Successfully saved order ${order.id}`);
             }
 
           } catch (orderError) {
-            console.error(`[Devoluções Avançadas Sync] Error processing order ${order.id}:`, orderError)
-            errors.push(`Order ${order.id}: ${orderError.message}`)
+            console.error(`[devolucoes-avancadas-sync:${cid}] Error processing order ${order.id}:`, orderError);
+            errors.push(`Order ${order.id}: ${orderError.message}`);
           }
         }
 
       } catch (accountError) {
-        console.error(`[Devoluções Avançadas Sync] Error processing account ${accountId}:`, accountError)
-        errors.push(`Account ${accountId}: ${accountError.message}`)
+        console.error(`[devolucoes-avancadas-sync:${cid}] Error processing account ${accountId}:`, accountError);
+        errors.push(`Account ${accountId}: ${accountError.message}`);
       }
     }
 
@@ -225,29 +320,14 @@ Deno.serve(async (req) => {
       totalProcessed,
       totalSaved,
       errors: errors.length > 0 ? errors : null
-    }
+    };
 
-    console.log('[Devoluções Avançadas Sync] Sync completed:', result)
+    console.log(`[devolucoes-avancadas-sync:${cid}] Sync completed:`, result);
 
-    return new Response(
-      JSON.stringify(result),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    return ok(result, cid);
 
   } catch (error) {
-    console.error('[Devoluções Avançadas Sync] Unexpected error:', error)
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    )
+    console.error(`[devolucoes-avancadas-sync:${cid}] Unexpected error:`, error);
+    return fail(error.message, 500, null, cid);
   }
-})
+});
