@@ -1243,18 +1243,40 @@ export default function DevolucoeAvancadasTab() {
                                 </Card>
                               </TabsContent>
                               
-                              <TabsContent value="claim" className="mt-4">
+                                <TabsContent value="claim" className="mt-4">
                                 <Card>
                                   <CardHeader>
                                     <CardTitle>Dados do Claim</CardTitle>
                                   </CardHeader>
                                   <CardContent>
                                     {devolucao.dados_claim ? (
-                                      <pre className="bg-muted p-4 rounded-md text-xs overflow-auto">
-                                        {JSON.stringify(devolucao.dados_claim, null, 2)}
-                                      </pre>
+                                      <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                            <label className="text-sm font-medium text-gray-400">ID do Claim</label>
+                                            <p className="text-white">{devolucao.dados_claim.id}</p>
+                                          </div>
+                                          <div>
+                                            <label className="text-sm font-medium text-gray-400">Status</label>
+                                            <p className="text-white capitalize">{devolucao.dados_claim.status}</p>
+                                          </div>
+                                        </div>
+                                        
+                                        <div>
+                                          <label className="text-sm font-medium text-gray-400">Motivo</label>
+                                          <p className="text-white">{devolucao.dados_claim.reason || 'Não especificado'}</p>
+                                        </div>
+                                        
+                                        {devolucao.dados_claim.simulated && (
+                                          <div className="bg-yellow-900/20 border border-yellow-600 rounded-lg p-3">
+                                            <p className="text-yellow-400 text-sm">
+                                              ⚠️ Este claim foi simulado baseado no status da order
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
                                     ) : (
-                                      <p className="text-muted-foreground">Nenhum claim associado a esta order.</p>
+                                      <p className="text-gray-400">Nenhum claim encontrado para esta order</p>
                                     )}
                                   </CardContent>
                                 </Card>
