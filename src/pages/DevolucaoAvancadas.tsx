@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Filter, Download, Eye, TrendingUp, TrendingDown, DollarSign, Package } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calendar, Filter, Download, Eye, TrendingUp, TrendingDown, DollarSign, Package, Loader2, AlertCircle } from 'lucide-react';
 import { DevolucaoModal } from '@/components/devolucoes/DevolucaoModal';
 import { DashboardMetricas } from '@/components/devolucoes/DashboardMetricas';
-import { MLTokenConfig } from '@/components/devolucoes/MLTokenConfig';
 import { MLApiService } from '@/services/mlApiService';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -40,7 +41,22 @@ export default function DevolucaoAvancadas() {
   const [loading, setLoading] = useState(false);
   const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoData | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [tokenValido, setTokenValido] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+
+  // Buscar contas ML ativas
+  const { data: mlAccounts, isLoading: accountsLoading, error: accountsError } = useQuery({
+    queryKey: ['ml-accounts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('integration_accounts')
+        .select('id, name, account_identifier, public_auth')
+        .eq('provider', 'mercadolivre')
+        .eq('is_active', true);
+
+      if (error) throw error;
+      return data || [];
+    }
+  });
   
   // Filtros
   const [filtros, setFiltros] = useState({
@@ -53,9 +69,18 @@ export default function DevolucaoAvancadas() {
     produto: ''
   });
 
+  // Selecionar primeira conta automaticamente
   useEffect(() => {
-    carregarDevolucoes();
-  }, []);
+    if (mlAccounts && mlAccounts.length > 0 && !selectedAccountId) {
+      setSelectedAccountId(mlAccounts[0].id);
+    }
+  }, [mlAccounts, selectedAccountId]);
+
+  useEffect(() => {
+    if (selectedAccountId) {
+      carregarDevolucoes();
+    }
+  }, [selectedAccountId]);
 
   useEffect(() => {
     aplicarFiltros();
@@ -79,8 +104,10 @@ export default function DevolucaoAvancadas() {
         setDevolucoes(mappedData);
       }
 
-      // Buscar novos dados da API ML
-      await buscarDadosML();
+      // Buscar novos dados da API ML se temos conta selecionada
+      if (selectedAccountId) {
+        await buscarDadosML(selectedAccountId);
+      }
     } catch (error) {
       console.error('Erro ao carregar devoluções:', error);
       toast.error('Erro ao carregar dados das devoluções');
@@ -89,13 +116,16 @@ export default function DevolucaoAvancadas() {
     }
   };
 
-  const buscarDadosML = async () => {
+  const buscarDadosML = async (integrationAccountId?: string) => {
     try {
       const mlService = new MLApiService();
       
-      // Verificar se tem token válido antes de fazer requisições
+      // Inicializar com conta específica ou buscar primeira conta disponível
+      await mlService.initialize(integrationAccountId);
+      
+      // Verificar se tem token válido após inicialização
       if (!mlService.hasValidToken()) {
-        toast.error('Token do Mercado Livre não configurado. Configure primeiro o token.');
+        toast.error('Nenhuma conta do Mercado Livre configurada ou token inválido.');
         return;
       }
       
@@ -255,7 +285,7 @@ export default function DevolucaoAvancadas() {
           <p className="text-muted-foreground">Sistema completo de gestão de devoluções ML</p>
         </div>
         <div className="flex gap-3">
-          <Button onClick={carregarDevolucoes} disabled={loading || !tokenValido}>
+          <Button onClick={carregarDevolucoes} disabled={loading || !selectedAccountId}>
             {loading ? 'Sincronizando...' : 'Sincronizar ML'}
           </Button>
           <Button variant="outline">
@@ -265,8 +295,60 @@ export default function DevolucaoAvancadas() {
         </div>
       </div>
 
-      {/* Configuração do Token ML */}
-      <MLTokenConfig onTokenValidated={setTokenValido} />
+      {/* Seleção de Conta ML */}
+      {accountsLoading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      )}
+
+      {accountsError && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Erro ao carregar contas do Mercado Livre. Tente novamente.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!accountsLoading && mlAccounts && mlAccounts.length === 0 && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Nenhuma conta do Mercado Livre conectada. Conecte uma conta primeiro na página de integrações.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {mlAccounts && mlAccounts.length > 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Selecionar Conta Mercado Livre</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {mlAccounts.map((account) => (
+                <Button
+                  key={account.id}
+                  variant={selectedAccountId === account.id ? "default" : "outline"}
+                  onClick={() => setSelectedAccountId(account.id)}
+                  className="w-full justify-start"
+                >
+                  {account.name} ({account.account_identifier})
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {selectedAccountId && (
+        <>
+          <div className="text-sm text-muted-foreground">
+            Conta ativa: {mlAccounts?.find(acc => acc.id === selectedAccountId)?.name}
+          </div>
+        </>
+      )}
 
       {/* Dashboard de Métricas */}
       <DashboardMetricas devolucoes={filteredDevolucoes} />
