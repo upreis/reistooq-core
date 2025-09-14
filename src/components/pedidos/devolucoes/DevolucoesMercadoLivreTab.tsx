@@ -103,7 +103,28 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
   const urgentCount = devolucoes.filter(d => d.priority === 'urgent').length;
 
   useEffect(() => {
-    if (selectedAccounts.length > 0) {
+    // Auto-selecionar todas as contas ML ativas na inicialização
+    const autoSelectAccounts = async () => {
+      try {
+        const { data: accounts } = await supabase
+          .from('integration_accounts')
+          .select('id')
+          .eq('provider', 'mercadolivre')
+          .eq('is_active', true);
+        
+        if (accounts && accounts.length > 0) {
+          const accountIds = accounts.map(acc => acc.id);
+          setSelectedAccounts(accountIds);
+          console.log('🔄 [Devoluções] Auto-selecionando contas ML:', accountIds);
+        }
+      } catch (error) {
+        console.error('Erro ao auto-selecionar contas:', error);
+      }
+    };
+
+    if (selectedAccounts.length === 0) {
+      autoSelectAccounts();
+    } else {
       loadDevolucoes();
     }
   }, [selectedAccounts]);
@@ -385,15 +406,23 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
 
         <TabsContent value={activeTab} className="mt-4">
           {selectedAccounts.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhuma conta selecionada</h3>
-                <p className="text-muted-foreground">
-                  Selecione ao menos uma conta do Mercado Livre acima para visualizar devoluções e reclamações.
-                </p>
-              </CardContent>
-            </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Token ML Expirado</h3>
+            <p className="text-muted-foreground mb-4">
+              ❌ O token do Mercado Livre expirou hoje. É necessário renovar a autorização.
+            </p>
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                <strong>Passos para resolver:</strong><br/>
+                1. Vá em Integrações → Mercado Livre<br/>
+                2. Reconecte sua conta<br/>
+                3. Volte aqui e execute a sincronização
+              </p>
+            </div>
+          </CardContent>
+        </Card>
           ) : loading ? (
             <Card>
               <CardContent className="p-6 text-center">
