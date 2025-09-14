@@ -194,12 +194,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Zap' 
           },
           { 
-            id: 'ml-raw-data', 
-            label: 'API Raw Data - ML', 
-            path: '/ml-raw-data', 
-            icon: 'Database' 
-          },
-          { 
             id: 'ml-orders-completas', 
             label: 'Todas as Orders - ML', 
             path: '/ml-orders-completas', 
