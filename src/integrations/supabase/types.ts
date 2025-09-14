@@ -604,12 +604,17 @@ export type Database = {
           destino_endereco: Json | null
           destino_tipo: string | null
           id: number
+          id_carrinho: string | null
+          id_item: string | null
           integration_account_id: string | null
           order_id: string
           organization_id: string
           processado_em: string | null
+          produto_titulo: string | null
+          quantidade: number | null
           reembolso_quando: string | null
           return_id: string | null
+          sku: string | null
           status_devolucao: string | null
           status_dinheiro: string | null
           status_envio: string | null
@@ -632,12 +637,17 @@ export type Database = {
           destino_endereco?: Json | null
           destino_tipo?: string | null
           id?: number
+          id_carrinho?: string | null
+          id_item?: string | null
           integration_account_id?: string | null
           order_id: string
           organization_id?: string
           processado_em?: string | null
+          produto_titulo?: string | null
+          quantidade?: number | null
           reembolso_quando?: string | null
           return_id?: string | null
+          sku?: string | null
           status_devolucao?: string | null
           status_dinheiro?: string | null
           status_envio?: string | null
@@ -660,12 +670,17 @@ export type Database = {
           destino_endereco?: Json | null
           destino_tipo?: string | null
           id?: number
+          id_carrinho?: string | null
+          id_item?: string | null
           integration_account_id?: string | null
           order_id?: string
           organization_id?: string
           processado_em?: string | null
+          produto_titulo?: string | null
+          quantidade?: number | null
           reembolso_quando?: string | null
           return_id?: string | null
+          sku?: string | null
           status_devolucao?: string | null
           status_dinheiro?: string | null
           status_envio?: string | null
@@ -1896,6 +1911,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ml_reverse_engineering_results: {
+        Row: {
+          created_at: string
+          id: string
+          integration_account_id: string
+          mapping_results: Json
+          organization_id: string
+          seller_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          integration_account_id: string
+          mapping_results: Json
+          organization_id: string
+          seller_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          integration_account_id?: string
+          mapping_results?: Json
+          organization_id?: string
+          seller_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       movimentacoes_estoque: {
         Row: {

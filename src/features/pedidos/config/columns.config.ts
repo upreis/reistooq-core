@@ -236,67 +236,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
 
-  // ====== DEVOLUÇÕES E CLAIMS (MERCADO LIVRE) ======
-  {
-    key: 'return_status',
-    label: 'Status de Devolução',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status da devolução do pedido',
-    width: 140
-  },
-  {
-    key: 'claims_count',
-    label: 'Reclamações',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Número de reclamações do pedido',
-    width: 100
-  },
-  {
-    key: 'detailed_returns_count',
-    label: 'Devoluções Detalhadas',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Número de devoluções com detalhes',
-    width: 150
-  },
-  {
-    key: 'return_reason',
-    label: 'Motivo da Devolução',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Motivo da devolução do pedido',
-    width: 180
-  },
-  {
-    key: 'return_date',
-    label: 'Data da Devolução',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data em que a devolução foi iniciada',
-    width: 130
-  },
-  {
-    key: 'return_id',
-    label: 'ID da Devolução',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Identificador único da devolução',
-    width: 120
-  },
 
   // ====== MAPEAMENTO (das imagens 2 e 3) ======
   {
@@ -563,57 +502,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 140
   },
 
-  // ====== COLUNAS AVANÇADAS DE STATUS (NOVAS) ======
-  {
-    key: 'order_status_advanced',
-    label: 'Status do Pedido (Avançado)',
-    category: 'ml',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Status detalhado do pedido (Pago, Cancelado, Confirmado, etc.)',
-    width: 150
-  },
-  {
-    key: 'shipping_status_advanced',
-    label: 'Status de Envio (Avançado)',
-    category: 'ml',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Status detalhado do envio (Pendente, Enviado, Entregue, etc.)',
-    width: 150
-  },
-  {
-    key: 'shipping_substatus_advanced',
-    label: 'Substatus de Envio (Avançado)',
-    category: 'ml',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Substatus detalhado do envio (Saiu para Entrega, Atrasado, etc.)',
-    width: 180
-  },
-  {
-    key: 'return_status_advanced',
-    label: 'Status de Devolução (Avançado)',
-    category: 'ml',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Status de devolução quando aplicável',
-    width: 160
-  },
-  {
-    key: 'delivery_estimate_advanced',
-    label: 'Previsão de Entrega (Avançada)',
-    category: 'ml',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Data estimada de entrega com indicação de atraso',
-    width: 180
-  },
 
 ];
 

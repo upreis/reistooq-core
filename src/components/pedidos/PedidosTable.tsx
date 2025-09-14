@@ -5,14 +5,6 @@ import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { mapMLStatus, getStatusBadgeVariant } from '@/utils/mlStatusMapping';
 import { translateShippingSubstatus } from '@/utils/pedidos-translations';
-import { 
-  OrderStatusColumn,
-  ShippingStatusColumn, 
-  ShippingSubstatusColumn,
-  ReturnStatusColumn,
-  DeliveryEstimateColumn,
-  PackStatusDetailColumn
-} from './StatusColumnsAdvanced';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -348,19 +340,7 @@ export function PedidosTable({
                                  </Badge>
                                );
                             
-                            // ===== COLUNAS AVANÇADAS =====
-                            case 'pack_status_detail':
-                              return <PackStatusDetailColumn row={row} />;
-                            case 'order_status_advanced':
-                              return <OrderStatusColumn row={row} />;
-                            case 'shipping_status_advanced':
-                              return <ShippingStatusColumn row={row} />;
-                            case 'shipping_substatus_advanced':
-                              return <ShippingSubstatusColumn row={row} />;
-                            case 'return_status_advanced':
-                              return <ReturnStatusColumn row={row} />;
-                            case 'delivery_estimate_advanced':
-                              return <DeliveryEstimateColumn row={row} />;
+                             // ===== COLUNAS AVANÇADAS REMOVIDAS =====
                            
                            case 'codigo_rastreamento':
                             return show(get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping_details.tracking_number'));
