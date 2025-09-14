@@ -65,7 +65,7 @@ import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
-import { VendasCompletasTab } from './VendasCompletasTab';
+
 import { DevolucoesMercadoLivreTab } from './devolucoes/DevolucoesMercadoLivreTab';
 import DevolucoeAvancadasTab from './devolucoes/DevolucoeAvancadasTab';
 
@@ -108,8 +108,6 @@ type Props = {
 function SimplePedidosPage({ className }: Props) {
   const isMobile = useIsMobile();
   
-  // Estado para controlar a aba ativa (Orders ou Vendas Completas)
-  const [activeTab, setActiveTab] = useState<'orders' | 'complete-sales'>('orders');
   
   // ✅ CORREÇÃO CRÍTICA: Limpar filtros problemáticos do localStorage e cache de colunas
   useEffect(() => {
@@ -933,7 +931,7 @@ useEffect(() => {
 
   // Render principal
   return (
-    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'orders' | 'complete-sales')} className="h-screen flex flex-col">
+    <Tabs defaultValue="orders" className="h-screen flex flex-col">
       {/* Header com abas */}
       <div className="border-b bg-background sticky top-0 z-10 px-6 py-4">
         <div className="flex items-center justify-between mb-4">
@@ -947,9 +945,6 @@ useEffect(() => {
         <TabsList className="grid w-full grid-cols-3 max-w-lg">
           <TabsTrigger value="orders" className="flex items-center gap-2">
             📦 Orders
-          </TabsTrigger>
-          <TabsTrigger value="complete-sales" className="flex items-center gap-2">
-            🔍 Vendas Completas
           </TabsTrigger>
           <TabsTrigger value="devolucoes" className="flex items-center gap-2">
             🔄 Devoluções ML
@@ -1226,9 +1221,6 @@ useEffect(() => {
         </div>
       </TabsContent>
 
-      <TabsContent value="complete-sales" className="flex-1 overflow-auto m-0 p-6">
-        <VendasCompletasTab accounts={accounts} />
-      </TabsContent>
 
       <TabsContent value="devolucoes" className="flex-1 overflow-auto m-0 p-6">
         <DevolucoesMercadoLivreTab />
