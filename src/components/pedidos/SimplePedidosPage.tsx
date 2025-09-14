@@ -67,6 +67,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
 import { VendasCompletasTab } from './VendasCompletasTab';
 import { DevolucoesMercadoLivreTab } from './devolucoes/DevolucoesMercadoLivreTab';
+import DevolucoeAvancadasTab from './devolucoes/DevolucoeAvancadasTab';
 
 
 
@@ -953,6 +954,9 @@ useEffect(() => {
           <TabsTrigger value="devolucoes" className="flex items-center gap-2">
             🔄 Devoluções ML
           </TabsTrigger>
+          <TabsTrigger value="devolucoes-avancadas" className="flex items-center gap-2">
+            ⚡ Devoluções Avançadas
+          </TabsTrigger>
         </TabsList>
       </div>
 
@@ -1228,6 +1232,10 @@ useEffect(() => {
 
       <TabsContent value="devolucoes" className="flex-1 overflow-auto m-0 p-6">
         <DevolucoesMercadoLivreTab />
+      </TabsContent>
+
+      <TabsContent value="devolucoes-avancadas" className="flex-1 overflow-auto m-0 p-6">
+        <DevolucoeAvancadasTab />
       </TabsContent>
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
