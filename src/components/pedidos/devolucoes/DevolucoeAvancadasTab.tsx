@@ -35,6 +35,8 @@ interface DevolucaoAvancada {
   integration_account_id?: string;
   processado_em?: string;
   created_at?: string;
+  cronograma_tipo?: string;
+  cronograma_status?: string;
 }
 
 export default function DevolucoeAvancadasTab() {
@@ -952,6 +954,7 @@ export default function DevolucoeAvancadasTab() {
                     <th className="text-left py-3 px-4 font-medium">Claim ID</th>
                     <th className="text-left py-3 px-4 font-medium">Return ID</th>
                     <th className="text-left py-3 px-4 font-medium">Cronograma</th>
+                    <th className="text-left py-3 px-4 font-medium">Status ML</th>
                     <th className="text-left py-3 px-4 font-medium">Ações</th>
                   </tr>
                 </thead>
@@ -1051,9 +1054,29 @@ export default function DevolucoeAvancadasTab() {
                             </div>
                           );
                         })()}
-                      </td>
+                       </td>
+                      
+                      {/* ✅ NOVA COLUNA: Status ML aprimorado */}
                       <td className="py-3 px-4">
-                        <Dialog>
+                        <div className="flex flex-col gap-1">
+                          {devolucao.cronograma_tipo && (
+                            <Badge variant="outline" className="text-xs">
+                              {devolucao.cronograma_tipo}
+                            </Badge>
+                          )}
+                          {devolucao.cronograma_status && (
+                            <span className="text-xs text-muted-foreground">
+                              {devolucao.cronograma_status}
+                            </span>
+                          )}
+                          {!devolucao.cronograma_tipo && !devolucao.cronograma_status && (
+                            <span className="text-muted-foreground text-xs">Não processado</span>
+                          )}
+                        </div>
+                      </td>
+                      
+                       <td className="py-3 px-4">
+                         <Dialog>
                           <DialogTrigger asChild>
                             <Button 
                               variant="outline" 
