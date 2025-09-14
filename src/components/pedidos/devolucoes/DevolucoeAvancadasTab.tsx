@@ -12,6 +12,7 @@ import { formatDate, formatMoney } from '@/lib/format';
 import { toast } from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { ContasMLSelector } from '@/components/pedidos/ContasMLSelector';
 
 interface DevolucaoAvancada {
   id: number;
@@ -45,6 +46,7 @@ export default function DevolucoeAvancadasTab() {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoAvancada | null>(null);
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [filters, setFilters] = useState({
     status: 'all',
     periodo: '30',
@@ -213,10 +215,16 @@ export default function DevolucoeAvancadasTab() {
   const loadDevolucoes = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('devolucoes_avancadas')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
+
+      // Filtrar por contas selecionadas se houver alguma
+      if (selectedAccounts.length > 0) {
+        query = query.in('integration_account_id', selectedAccounts);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Erro ao carregar devoluções avançadas:', error);
@@ -289,25 +297,29 @@ export default function DevolucoeAvancadasTab() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      // Buscar contas de integração ativas
-      const { data: accounts, error: accountsError } = await supabase
-        .from('integration_accounts')
-        .select('id')
-        .eq('provider', 'mercadolivre')
-        .eq('is_active', true);
+      // Usar contas selecionadas ou buscar todas se nenhuma selecionada
+      let accountIds = selectedAccounts;
+      
+      if (accountIds.length === 0) {
+        const { data: accounts, error: accountsError } = await supabase
+          .from('integration_accounts')
+          .select('id')
+          .eq('provider', 'mercadolivre')
+          .eq('is_active', true);
 
-      if (accountsError) {
-        console.error('Erro ao buscar contas:', accountsError);
-        toast.error('Erro ao buscar contas de integração');
-        return;
+        if (accountsError) {
+          console.error('Erro ao buscar contas:', accountsError);
+          toast.error('Erro ao buscar contas de integração');
+          return;
+        }
+
+        if (!accounts || accounts.length === 0) {
+          toast.error('Nenhuma conta do Mercado Livre encontrada');
+          return;
+        }
+
+        accountIds = accounts.map(acc => acc.id);
       }
-
-      if (!accounts || accounts.length === 0) {
-        toast.error('Nenhuma conta do Mercado Livre encontrada');
-        return;
-      }
-
-      const accountIds = accounts.map(acc => acc.id);
       
       toast.success('Iniciando sincronização de devoluções...');
       
@@ -423,10 +435,15 @@ export default function DevolucoeAvancadasTab() {
     generateChartData(filtered);
   };
 
-  // Aplicar filtros quando os filtros ou dados mudarem
+  // Aplicar filtros quando os filtros, dados ou contas selecionadas mudarem
   useEffect(() => {
     applyFilters(devolucoes);
   }, [filters, devolucoes]);
+
+  // Recarregar dados quando contas selecionadas mudarem
+  useEffect(() => {
+    loadDevolucoes();
+  }, [selectedAccounts]);
 
   // Extrair dados do JSON
   const extractOrderValue = (devolucao: DevolucaoAvancada) => {
@@ -567,12 +584,24 @@ export default function DevolucoeAvancadasTab() {
 
   return (
     <div className="space-y-6">
+      {/* Seletor de Contas */}
+      <ContasMLSelector
+        selectedAccounts={selectedAccounts}
+        onAccountsChange={setSelectedAccounts}
+        disabled={syncing || loading}
+      />
+
       {/* Header com estatísticas e filtros */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Devoluções Avançadas</h2>
           <p className="text-muted-foreground">
             Sistema avançado de controle de devoluções e reclamações
+            {selectedAccounts.length > 0 && (
+              <span className="text-blue-600 ml-2">
+                ({selectedAccounts.length} conta{selectedAccounts.length > 1 ? 's' : ''} selecionada{selectedAccounts.length > 1 ? 's' : ''})
+              </span>
+            )}
           </p>
         </div>
         
