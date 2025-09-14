@@ -58,6 +58,31 @@ Deno.serve(async (req) => {
     let totalSaved = 0
     let errors: string[] = []
 
+    // Get user's organization_id
+    const { data: profile } = await userClient
+      .from('profiles')
+      .select('organizacao_id')
+      .eq('id', user.id)
+      .single();
+
+    const organizationId = profile?.organizacao_id;
+    if (!organizationId) {
+      console.error(`[devolucoes-avancadas-sync:${cid}] No organization found for user:`, user.id);
+      return new Response(JSON.stringify({ 
+        ok: false, 
+        error: 'User organization not found', 
+        cid 
+      }), {
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        },
+        status: 400,
+      });
+    }
+
+    console.log(`[devolucoes-avancadas-sync:${cid}] Organization ID:`, organizationId);
+
     // Process each account
     for (const accountId of account_ids) {
       console.log(`[devolucoes-avancadas-sync:${cid}] Processing account: ${accountId}`);
@@ -296,15 +321,15 @@ Deno.serve(async (req) => {
               }
             }
 
-            // Prepare data for insertion
-            const devolucaoData = {
-              order_id: order.id.toString(),
+            // Antes da inserção, validar dados obrigatórios
+            const orderData = {
+              order_id: order.id ? order.id.toString() : null,
               claim_id: claimsData?.results?.[0]?.id?.toString() || null,
               return_id: returnsData?.[0]?.results?.[0]?.id?.toString() || null,
-              data_criacao: order.date_created ? new Date(order.date_created).toISOString() : null,
+              data_criacao: order.date_created ? new Date(order.date_created).toISOString() : new Date().toISOString(),
               data_fechamento: order.date_closed ? new Date(order.date_closed).toISOString() : null,
               ultima_atualizacao: order.last_updated ? new Date(order.last_updated).toISOString() : null,
-              status_devolucao: order.status || null,
+              status_devolucao: order.status || 'unknown',
               status_envio: order.shipping?.status || null,
               status_dinheiro: order.payments?.[0]?.status || null,
               reembolso_quando: null, // Will be filled based on specific logic later
@@ -312,17 +337,31 @@ Deno.serve(async (req) => {
               codigo_rastreamento: order.shipping?.id?.toString() || null,
               destino_tipo: null, // Will be filled based on return data
               destino_endereco: order.shipping?.receiver_address || null,
-              dados_order: order,
+              dados_order: order || {},
               dados_claim: claimsData?.results?.[0] || null,
               dados_return: returnsData?.[0] || null,
               integration_account_id: accountId,
+              organization_id: organizationId,
               processado_em: new Date().toISOString()
             };
+
+            // Só inserir se tiver order_id válido
+            if (!orderData.order_id) {
+              console.warn(`[devolucoes-avancadas-sync:${cid}] Order sem ID válido, pulando:`, order);
+              continue;
+            }
+
+            console.log(`[devolucoes-avancadas-sync:${cid}] Tentando inserir order:`, {
+              order_id: orderData.order_id,
+              status: orderData.status_devolucao,
+              account: orderData.integration_account_id,
+              organization: orderData.organization_id
+            });
 
             // Insert into database
             const { error: insertError } = await serviceClient
               .from('devolucoes_avancadas')
-              .insert(devolucaoData);
+              .insert(orderData);
 
             if (insertError) {
               console.error(`[devolucoes-avancadas-sync:${cid}] Failed to insert order ${order.id}:`, insertError);
