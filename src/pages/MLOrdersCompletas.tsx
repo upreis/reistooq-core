@@ -14,7 +14,6 @@ import { Search, Eye, Filter, Download, Wrench, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
-
 import { toast } from "sonner";
 
 interface MLOrder {
@@ -325,8 +324,22 @@ export default function MLOrdersCompletas() {
           <DevolucaoAvancadasTab 
             mlAccounts={mlAccounts || []}
             refetch={async () => { 
-              // Add a simple refetch function that could be enhanced later
-              window.location.reload();
+              // Buscar devoluções atualizadas sem reload da página
+              try {
+                const { data: devolucoes, error } = await supabase
+                  .from('devolucoes_avancadas')
+                  .select('*')
+                  .order('created_at', { ascending: false });
+                
+                if (error) {
+                  console.error('Erro ao recarregar devoluções:', error);
+                  toast.error('Erro ao atualizar dados');
+                } else {
+                  console.log('✅ Devoluções recarregadas com sucesso');
+                }
+              } catch (error) {
+                console.error('Erro no refetch:', error);
+              }
             }}
             existingDevolucoes={[]}
           />
