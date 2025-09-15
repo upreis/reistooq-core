@@ -206,54 +206,37 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     aplicarFiltros();
   }, [aplicarFiltros]);
 
-  // Função auxiliar para obter token ML
+  // Função auxiliar para obter token ML REAL
   const obterTokenML = async (accountId: string, accountName: string): Promise<string | null> => {
     try {
-      console.log(`🔍 Buscando token para ${accountName}...`);
+      console.log(`🔍 Buscando token REAL para ${accountName}...`);
       
-      // Primeira tentativa: via edge function
-      const { data, error } = await supabase.functions.invoke('integrations-get-secret', {
+      // Criar edge function específica para obter token real para chamadas internas
+      const { data, error } = await supabase.functions.invoke('get-ml-token', {
         body: { 
           integration_account_id: accountId,
           provider: 'mercadolivre'
         }
       });
       
-      console.log(`📋 Resposta para ${accountName}:`, data);
-      
       if (error) {
-        console.error(`❌ Erro edge function ${accountName}:`, error);
+        console.error(`❌ Erro ao obter token para ${accountName}:`, error);
+        toast.error(`Erro ao obter token para ${accountName}: ${error.message}`);
         return null;
       }
       
-      // Verificar se o secret existe
-      if (!data?.found || !data?.has_access_token) {
+      if (!data?.success || !data?.access_token) {
         console.warn(`⚠️ Token não disponível para ${accountName}`);
+        toast.warning(`Token não configurado para ${accountName}. Configure nas integrações.`);
         return null;
       }
-      
-      // Para debug: vamos tentar um token de teste temporário
-      // NOTA: Em produção, você deve configurar os tokens corretos
-      console.log(`⚠️ USANDO TOKEN DE TESTE para ${accountName} - Configure o token real!`);
-      
-      // IMPORTANTE: Substitua este token pelo token real da sua conta ML
-      // Você pode obter o token em: https://developers.mercadolibre.com.ar/console
-      // Para a conta PLATINUMLOJA2020, você precisa:
-      // 1. Fazer login na conta ML
-      // 2. Ir em https://developers.mercadolibre.com.ar/console
-      // 3. Criar uma aplicação ou usar existente
-      // 4. Obter o access_token
-      // 5. Configurar no sistema de secrets do Supabase
-      
-      toast.warning('⚠️ AVISO: Usando token de teste! Configure o token real da conta ML');
-      
-      // Token de exemplo - SUBSTITUA pelos tokens reais das suas contas
-      const tokenTeste = 'APP_USR-8265226709829765-091514-8e61fd5bb5b15b5bfa1e3e24e5a7b9c1-1811139655';
-      
-      return tokenTeste;
+
+      console.log(`✅ Token REAL obtido com sucesso para ${accountName}`);
+      return data.access_token;
       
     } catch (error) {
       console.error(`❌ Erro ao obter token para ${accountName}:`, error);
+      toast.error(`Erro ao acessar token para ${accountName}`);
       return null;
     }
   };
