@@ -118,32 +118,26 @@ export default function DevolucaoAvancadasTab() {
           
           let accessToken;
           try {
-            // Usar chamada interna igual à edge function ml-devolucoes-sync
+            // Usar chamada interna via supabase.functions.invoke
             const { data: sessionData } = await supabase.auth.getSession();
-            const authToken = sessionData.session?.access_token;
             
-            const secretResponse = await fetch(`${window.location.origin}/functions/v1/integrations-get-secret`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': authToken ? `Bearer ${authToken}` : '',
-                'x-internal-call': 'true',
-                'x-internal-token': 'internal-shared-token' // Valor padrão das edge functions
-              },
-              body: JSON.stringify({
+            const { data: secretData, error: secretError } = await supabase.functions.invoke('integrations-get-secret', {
+              body: {
                 integration_account_id: account.id,
                 provider: 'mercadolivre'
-              })
+              },
+              headers: {
+                'x-internal-call': 'true',
+                'x-internal-token': 'internal-shared-token'
+              }
             });
 
-            if (!secretResponse.ok) {
-              const errorText = await secretResponse.text();
-              console.error(`❌ Erro ao buscar token para ${account.name}:`, errorText);
+            if (secretError || !secretData) {
+              console.error(`❌ Erro ao buscar token para ${account.name}:`, secretError);
               toast.error(`Token não encontrado para ${account.name} - Reconecte a conta`);
               continue;
             }
 
-            const secretData = await secretResponse.json();
             accessToken = secretData.secret?.access_token;
 
             if (!accessToken) {
