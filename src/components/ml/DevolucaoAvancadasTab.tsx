@@ -22,40 +22,18 @@ import {
 interface DevolucaoAvancada {
   id: string;
   integration_account_id: string;
-  organization_id: string;
-  claim_id: string;
+  claim_id?: string;
   order_id: string;
-  order_number?: string;
-  buyer_id?: string;
-  buyer_nickname?: string;
-  buyer_email?: string;
-  item_id?: string;
-  item_title?: string;
+  data_criacao: string;
+  status_devolucao?: string;
+  valor_retido?: number;
+  produto_titulo?: string;
   sku?: string;
-  variation_id?: string;
-  quantity?: number;
-  unit_price?: number;
-  claim_type: string;
-  claim_status: string;
-  claim_stage?: string;
-  resolution?: string;
-  reason_code?: string;
-  reason_description?: string;
-  amount_claimed?: number;
-  amount_refunded?: number;
-  currency?: string;
-  date_created: string;
-  date_closed?: string;
-  date_last_update?: string;
-  last_message?: string;
-  seller_response?: string;
-  processed_status?: string;
-  internal_notes?: string;
-  processed_by?: string;
-  processed_at?: string;
-  raw_data?: any;
-  tags?: string[];
-  priority?: string;
+  quantidade?: number;
+  dados_order?: any;
+  dados_claim?: any;
+  dados_mensagens?: any;
+  dados_return?: any;
   created_at: string;
   updated_at: string;
 }
@@ -96,12 +74,29 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     dataFim: ''
   });
 
-  // Atualizar dados quando recebemos devoluções existentes
+  // Buscar devoluções existentes ao carregar o componente
   useEffect(() => {
-    if (existingDevolucoes) {
-      setDevolucoes(existingDevolucoes);
-    }
-  }, [existingDevolucoes]);
+    const carregarDevolucoes = async () => {
+      try {
+        const { data: devolucoes, error } = await supabase
+          .from('devolucoes_avancadas')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Erro ao carregar devoluções:', error);
+          toast.error('Erro ao carregar devoluções');
+        } else {
+          console.log(`✅ Carregadas ${devolucoes?.length || 0} devoluções existentes`);
+          setDevolucoes(devolucoes as DevolucaoAvancada[] || []);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar devoluções:', error);
+      }
+    };
+
+    carregarDevolucoes();
+  }, []);
 
   useEffect(() => {
     aplicarFiltros();
@@ -290,27 +285,26 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       const term = filtros.searchTerm.toLowerCase();
       filtered = filtered.filter(dev => 
         dev.order_id?.toLowerCase().includes(term) ||
-        dev.item_title?.toLowerCase().includes(term) ||
+        dev.produto_titulo?.toLowerCase().includes(term) ||
         dev.sku?.toLowerCase().includes(term) ||
-        dev.claim_id?.toLowerCase().includes(term) ||
-        dev.buyer_nickname?.toLowerCase().includes(term)
+        dev.claim_id?.toLowerCase().includes(term)
       );
     }
 
     if (filtros.status) {
-      filtered = filtered.filter(dev => dev.claim_status === filtros.status);
+      filtered = filtered.filter(dev => dev.status_devolucao === filtros.status);
     }
 
     if (filtros.dataInicio) {
       filtered = filtered.filter(dev => {
-        const devDate = new Date(dev.date_created || 0);
+        const devDate = new Date(dev.data_criacao || 0);
         return devDate >= new Date(filtros.dataInicio);
       });
     }
 
     if (filtros.dataFim) {
       filtered = filtered.filter(dev => {
-        const devDate = new Date(dev.date_created || 0);
+        const devDate = new Date(dev.data_criacao || 0);
         return devDate <= new Date(filtros.dataFim);
       });
     }
@@ -343,15 +337,15 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       dev.claim_id || '',
       dev.order_id || '',
       dev.sku || '',
-      dev.item_title || '',
-      dev.quantity || '',
-      dev.amount_claimed || '',
-      dev.claim_status || '',
-      dev.claim_stage || '',
-      dev.claim_type || '',
-      dev.date_created ? new Date(dev.date_created).toLocaleDateString() : '',
-      dev.date_closed ? new Date(dev.date_closed).toLocaleDateString() : '',
-      dev.date_last_update ? new Date(dev.date_last_update).toLocaleDateString() : ''
+      dev.produto_titulo || '',
+      dev.quantidade || '',
+      dev.valor_retido || '',
+      dev.status_devolucao || '',
+      'N/A', // claim_stage não existe na nossa interface
+      'N/A', // claim_type não existe na nossa interface
+      dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString() : '',
+      'N/A', // date_closed não existe na nossa interface
+      dev.updated_at ? new Date(dev.updated_at).toLocaleDateString() : ''
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -400,7 +394,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <div>
                 <p className="text-sm font-medium text-gray-600">Pendentes</p>
                 <p className="text-2xl font-bold">
-                  {devolucoesFiltradas.filter(d => d.claim_status === 'opened' || d.claim_status === 'pending').length}
+                  {devolucoesFiltradas.filter(d => d.status_devolucao === 'with_claims').length}
                 </p>
               </div>
             </div>
@@ -416,7 +410,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <div>
                 <p className="text-sm font-medium text-gray-600">Concluídas</p>
                 <p className="text-2xl font-bold">
-                  {devolucoesFiltradas.filter(d => d.claim_status === 'closed' || d.claim_status === 'completed').length}
+                  {devolucoesFiltradas.filter(d => d.status_devolucao === 'completed').length}
                 </p>
               </div>
             </div>
@@ -432,7 +426,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <div>
                 <p className="text-sm font-medium text-gray-600">Canceladas</p>
                 <p className="text-2xl font-bold">
-                  {devolucoesFiltradas.filter(d => d.claim_status === 'cancelled' || d.claim_status === 'rejected').length}
+                  {devolucoesFiltradas.filter(d => d.status_devolucao === 'cancelled').length}
                 </p>
               </div>
             </div>
@@ -562,60 +556,81 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   <th className="text-left p-2">Produto</th>
                   <th className="text-left p-2">SKU</th>
                   <th className="text-left p-2">Qtd</th>
-                  <th className="text-left p-2">Valor</th>
+                  <th className="text-left p-2">Valor Retido</th>
                   <th className="text-left p-2">Status</th>
-                  <th className="text-left p-2">Data</th>
+                  <th className="text-left p-2">Data Criação</th>
+                  <th className="text-left p-2">Tipo</th>
+                  <th className="text-left p-2">Account ID</th>
                   <th className="text-left p-2">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {devolucoesFiltradas.map((devolucao, index) => (
-                  <tr key={index} className="border-b hover:bg-gray-50">
-                    <td className="p-2">
-                      <span className="font-mono text-sm">{devolucao.order_id}</span>
-                    </td>
-                    <td className="p-2">
-                      <div className="max-w-xs truncate" title={devolucao.item_title}>
-                        {devolucao.item_title || 'N/A'}
-                      </div>
-                    </td>
-                    <td className="p-2">
-                      <span className="font-mono text-sm">{devolucao.sku || 'N/A'}</span>
-                    </td>
-                    <td className="p-2">{devolucao.quantity || 0}</td>
-                    <td className="p-2">
-                      {devolucao.amount_claimed ? `R$ ${Number(devolucao.amount_claimed).toFixed(2)}` : 'N/A'}
-                    </td>
-                    <td className="p-2">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        devolucao.claim_status === 'closed' || devolucao.claim_status === 'completed' ? 'bg-green-100 text-green-800' :
-                        devolucao.claim_status === 'opened' || devolucao.claim_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        devolucao.claim_status === 'cancelled' || devolucao.claim_status === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {devolucao.claim_status || 'N/A'}
-                      </span>
-                    </td>
-                    <td className="p-2">
-                      {devolucao.date_created ? 
-                        new Date(devolucao.date_created).toLocaleDateString() : 
-                        'N/A'
-                      }
-                    </td>
-                    <td className="p-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          // Implementar visualização de detalhes
-                          console.log('Detalhes:', devolucao);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {devolucoesFiltradas.map((devolucao, index) => {
+                  // Mapear campos da tabela real para campos esperados pela interface
+                  const orderData = devolucao.dados_order || {};
+                  const claimData = devolucao.dados_claim || {};
+                  
+                  return (
+                    <tr key={devolucao.id || index} className="border-b hover:bg-gray-50">
+                      <td className="p-2">
+                        <span className="font-mono text-sm">{devolucao.order_id}</span>
+                      </td>
+                      <td className="p-2">
+                        <div className="max-w-xs truncate" title={devolucao.produto_titulo}>
+                          {devolucao.produto_titulo || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="p-2">
+                        <span className="font-mono text-sm">{devolucao.sku || 'N/A'}</span>
+                      </td>
+                      <td className="p-2">{devolucao.quantidade || 0}</td>
+                      <td className="p-2">
+                        R$ {Number(devolucao.valor_retido || 0).toFixed(2)}
+                      </td>
+                      <td className="p-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          devolucao.status_devolucao === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          devolucao.status_devolucao === 'with_claims' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {devolucao.status_devolucao || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        {devolucao.data_criacao ? 
+                          new Date(devolucao.data_criacao).toLocaleDateString('pt-BR') : 
+                          'N/A'
+                        }
+                      </td>
+                      <td className="p-2">
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          {claimData.type || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        <span className="font-mono text-xs text-gray-500">
+                          {devolucao.integration_account_id?.substring(0, 8)}...
+                        </span>
+                      </td>
+                      <td className="p-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            console.log('📋 Detalhes completos da devolução:', {
+                              ...devolucao,
+                              dados_order_sample: orderData,
+                              dados_claim_sample: claimData
+                            });
+                            toast.info('Detalhes logados no console');
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             

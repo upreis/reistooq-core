@@ -590,112 +590,59 @@ export type Database = {
       devolucoes_avancadas: {
         Row: {
           claim_id: string | null
-          codigo_rastreamento: string | null
           created_at: string | null
-          cronograma_status: string | null
-          cronograma_tipo: string | null
-          dados_acoes: Json | null
           dados_claim: Json | null
           dados_mensagens: Json | null
           dados_order: Json | null
           dados_return: Json | null
           data_criacao: string | null
-          data_fechamento: string | null
-          destino_endereco: Json | null
-          destino_tipo: string | null
-          id: number
-          id_carrinho: string | null
-          id_item: string | null
+          id: string
           integration_account_id: string | null
           order_id: string
-          organization_id: string
-          processado_em: string | null
           produto_titulo: string | null
           quantidade: number | null
-          reembolso_quando: string | null
-          return_id: string | null
           sku: string | null
           status_devolucao: string | null
-          status_dinheiro: string | null
-          status_envio: string | null
-          ultima_atualizacao: string | null
+          updated_at: string | null
           valor_retido: number | null
         }
         Insert: {
           claim_id?: string | null
-          codigo_rastreamento?: string | null
           created_at?: string | null
-          cronograma_status?: string | null
-          cronograma_tipo?: string | null
-          dados_acoes?: Json | null
           dados_claim?: Json | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
           data_criacao?: string | null
-          data_fechamento?: string | null
-          destino_endereco?: Json | null
-          destino_tipo?: string | null
-          id?: number
-          id_carrinho?: string | null
-          id_item?: string | null
+          id?: string
           integration_account_id?: string | null
           order_id: string
-          organization_id?: string
-          processado_em?: string | null
           produto_titulo?: string | null
           quantidade?: number | null
-          reembolso_quando?: string | null
-          return_id?: string | null
           sku?: string | null
           status_devolucao?: string | null
-          status_dinheiro?: string | null
-          status_envio?: string | null
-          ultima_atualizacao?: string | null
+          updated_at?: string | null
           valor_retido?: number | null
         }
         Update: {
           claim_id?: string | null
-          codigo_rastreamento?: string | null
           created_at?: string | null
-          cronograma_status?: string | null
-          cronograma_tipo?: string | null
-          dados_acoes?: Json | null
           dados_claim?: Json | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
           data_criacao?: string | null
-          data_fechamento?: string | null
-          destino_endereco?: Json | null
-          destino_tipo?: string | null
-          id?: number
-          id_carrinho?: string | null
-          id_item?: string | null
+          id?: string
           integration_account_id?: string | null
           order_id?: string
-          organization_id?: string
-          processado_em?: string | null
           produto_titulo?: string | null
           quantidade?: number | null
-          reembolso_quando?: string | null
-          return_id?: string | null
           sku?: string | null
           status_devolucao?: string | null
-          status_dinheiro?: string | null
-          status_envio?: string | null
-          ultima_atualizacao?: string | null
+          updated_at?: string | null
           valor_retido?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "devolucoes_avancadas_integration_account_id_fkey"
-            columns: ["integration_account_id"]
-            isOneToOne: false
-            referencedRelation: "integration_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       historico: {
         Row: {
