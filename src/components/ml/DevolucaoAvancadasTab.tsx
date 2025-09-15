@@ -1036,6 +1036,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   <th className="text-left p-2">Qtd</th>
                   <th className="text-left p-2">Valor Retido</th>
                   <th className="text-left p-2">Status</th>
+                  <th className="text-left p-2">📋 Claim</th>
+                  <th className="text-left p-2">📦 Return</th>
+                  <th className="text-left p-2">⚖️ Mediação</th>
+                  <th className="text-left p-2">📎 Anexos</th>
                   <th className="text-left p-2">Data Criação</th>
                   <th className="text-left p-2">Data Última Atualização</th>
                   <th className="text-left p-2">Tipo</th>
@@ -1048,8 +1052,15 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   // Mapear campos da tabela real para campos esperados pela interface
                   const orderData = devolucao.dados_order || {};
                   const claimData = devolucao.dados_claim || {};
+                  const returnData = devolucao.dados_return || {};
                   const buyerNickname = orderData?.buyer?.nickname || 'N/A';
                   const cancelReason = claimData?.reason?.description || orderData?.cancel_detail?.description || 'N/A';
+                  
+                  // Verificar tipos de dados disponíveis
+                  const temClaimData = !!(claimData && Object.keys(claimData).length > 0);
+                  const temReturnData = !!(returnData && Object.keys(returnData).length > 0);
+                  const temMediationData = !!(claimData?.mediation_details);
+                  const temAttachmentsData = !!(claimData?.attachments || claimData?.claim_attachments);
                   
                   return (
                     <tr key={devolucao.id || index} className="border-b hover:bg-gray-50">
@@ -1079,6 +1090,35 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                         }`}>
                           {devolucao.status_devolucao || 'N/A'}
                         </span>
+                      </td>
+                      {/* Novas colunas indicadoras */}
+                      <td className="p-2 text-center">
+                        {temClaimData ? (
+                          <span className="text-blue-600 text-lg" title="Dados de Claim disponíveis">📋</span>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="p-2 text-center">
+                        {temReturnData ? (
+                          <span className="text-green-600 text-lg" title="Dados de Return disponíveis">📦</span>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="p-2 text-center">
+                        {temMediationData ? (
+                          <span className="text-orange-600 text-lg" title="Dados de Mediação disponíveis">⚖️</span>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
+                      </td>
+                      <td className="p-2 text-center">
+                        {temAttachmentsData ? (
+                          <span className="text-gray-600 text-lg" title="Anexos disponíveis">📎</span>
+                        ) : (
+                          <span className="text-gray-300">-</span>
+                        )}
                       </td>
                       <td className="p-2">
                         {devolucao.data_criacao ? 
