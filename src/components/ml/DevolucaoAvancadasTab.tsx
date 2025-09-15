@@ -19,7 +19,8 @@ import {
   DollarSign,
   Loader2,
   FileText,
-  CheckSquare
+  CheckSquare,
+  Search
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -790,42 +791,41 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </div>
       </div>
 
-      {/* Filtros Avançados */}
+      {/* COMPONENTE DE FILTROS AVANÇADOS */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros Avançados
+            <Filter className="w-5 h-5" />
+            Filtros Avançados - Busca em Tempo Real
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Toggle para busca tempo real */}
+            {/* Toggle para busca em tempo real */}
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                id="buscarTempoReal"
+                id="tempo-real"
                 checked={filtrosAvancados.buscarEmTempoReal}
-                onChange={(e) => setFiltrosAvancados(prev => ({ 
-                  ...prev, 
-                  buscarEmTempoReal: e.target.checked 
+                onChange={(e) => setFiltrosAvancados(prev => ({
+                  ...prev,
+                  buscarEmTempoReal: e.target.checked
                 }))}
-                className="rounded"
               />
-              <Label htmlFor="buscarTempoReal" className="font-medium">
-                Buscar em tempo real na API ML (mais lento, mas dados atuais)
-              </Label>
+              <label htmlFor="tempo-real" className="text-sm font-medium">
+                🔴 Buscar em tempo real da API ML (mais lento, dados atuais)
+              </label>
             </div>
 
             {/* Seleção de contas */}
             <div>
-              <Label>Contas ML Selecionadas</Label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+              <label className="block text-sm font-medium mb-2">Contas ML</label>
+              <div className="grid grid-cols-2 gap-2">
                 {mlAccounts?.map((account) => (
                   <div key={account.id} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id={`account_${account.id}`}
+                      id={account.id}
                       checked={filtrosAvancados.contasSelecionadas.includes(account.id)}
                       onChange={(e) => {
                         if (e.target.checked) {
@@ -840,65 +840,73 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                           }));
                         }
                       }}
-                      className="rounded"
                     />
-                    <Label htmlFor={`account_${account.id}`} className="text-sm">
+                    <label htmlFor={account.id} className="text-sm">
                       {account.name}
-                    </Label>
+                    </label>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Filtros de data e status para tempo real */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Filtros de data */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="dataInicioAvancado">Data Início</Label>
+                <label className="block text-sm font-medium mb-2">Data Início</label>
                 <Input
-                  id="dataInicioAvancado"
                   type="date"
                   value={filtrosAvancados.dataInicio}
-                  onChange={(e) => setFiltrosAvancados(prev => ({ 
-                    ...prev, 
-                    dataInicio: e.target.value 
+                  onChange={(e) => setFiltrosAvancados(prev => ({
+                    ...prev,
+                    dataInicio: e.target.value
                   }))}
                 />
               </div>
-
               <div>
-                <Label htmlFor="dataFimAvancado">Data Fim</Label>
+                <label className="block text-sm font-medium mb-2">Data Fim</label>
                 <Input
-                  id="dataFimAvancado"
                   type="date"
                   value={filtrosAvancados.dataFim}
-                  onChange={(e) => setFiltrosAvancados(prev => ({ 
-                    ...prev, 
-                    dataFim: e.target.value 
+                  onChange={(e) => setFiltrosAvancados(prev => ({
+                    ...prev,
+                    dataFim: e.target.value
                   }))}
                 />
               </div>
-
-              <div>
-                <Label htmlFor="statusClaimAvancado">Status Claim</Label>
-                <Select
-                  value={filtrosAvancados.statusClaim}
-                  onValueChange={(value) => setFiltrosAvancados(prev => ({ 
-                    ...prev, 
-                    statusClaim: value 
-                  }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos os status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todos</SelectItem>
-                    <SelectItem value="opened">Aberta</SelectItem>
-                    <SelectItem value="closed">Fechada</SelectItem>
-                    <SelectItem value="cancelled">Cancelada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
+
+            {/* Status do claim */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Status</label>
+              <Select value={filtrosAvancados.statusClaim} onValueChange={(value) => 
+                setFiltrosAvancados(prev => ({ ...prev, statusClaim: value }))
+              }>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="opened">Aberto</SelectItem>
+                  <SelectItem value="closed">Fechado</SelectItem>
+                  <SelectItem value="cancelled">Cancelado</SelectItem>
+                  <SelectItem value="in_process">Em Processo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Botão de busca */}
+            <Button 
+              onClick={buscarComFiltros}
+              disabled={loading}
+              className="w-full gap-2"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4" />
+              )}
+              {filtrosAvancados.buscarEmTempoReal ? 'Buscar na API ML' : 'Buscar no Banco'}
+            </Button>
           </div>
         </CardContent>
       </Card>
