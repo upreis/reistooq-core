@@ -202,179 +202,26 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         try {
           console.log(`🔍 Processando conta: ${account.name}`);
           
-          // 1. Obter token de forma robusta
-          const accessToken = await obterTokenML(accountId, account.name);
-          
-          if (!accessToken) {
-            console.warn(`⚠️ Token não obtido para ${account.name}`);
-            continue;
-          }
-          
-          console.log(`✅ Token obtido para ${account.name}`);
-
-          // 2. Buscar seller_id
-          const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
+          // Usar edge function para buscar devoluções (evita CORS)
+          const { data: devolucaesData, error: devolucaesError } = await supabase.functions.invoke('ml-devolucoes-sync', {
+            body: {
+              integration_account_id: accountId,
+              provider: 'mercadolivre',
+              sellerId: account.account_identifier || account.name,
+              dateFrom: filtros.dataInicio,
+              dateTo: filtros.dataFim,
+              status: filtros.statusClaim
             }
           });
 
-          if (!userResponse.ok) {
-            console.error(`❌ Token inválido para ${account.name}`);
+          if (devolucaesError) {
+            console.error(`❌ Erro na edge function para ${account.name}:`, devolucaesError);
             continue;
           }
 
-          const userData = await userResponse.json();
-          const sellerId = userData.id;
-
-          console.log(`👤 Seller ID: ${sellerId} (${userData.nickname})`);
-
-          // 3. BUSCAR CLAIMS EM TEMPO REAL
-          const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?seller_id=${sellerId}&limit=50`;
-          
-          const claimsResponse = await fetch(claimsUrl, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          let claims = [];
-          if (claimsResponse.ok) {
-            const claimsData = await claimsResponse.json();
-            claims = claimsData.results || [];
-            console.log(`📋 Claims encontradas: ${claims.length}`);
-          }
-
-          // 4. BUSCAR ORDERS CANCELADAS EM TEMPO REAL
-          let ordersUrl = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.status=cancelled&limit=50`;
-          
-          // Aplicar filtro de data se fornecido
-          if (filtros.dataInicio) {
-            ordersUrl += `&order.date_created.from=${filtros.dataInicio}`;
-          }
-          if (filtros.dataFim) {
-            ordersUrl += `&order.date_created.to=${filtros.dataFim}`;
-          }
-
-          const ordersResponse = await fetch(ordersUrl, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (ordersResponse.ok) {
-            const ordersData = await ordersResponse.json();
-            const cancelledOrders = ordersData.results || [];
-            console.log(`🚫 Orders canceladas: ${cancelledOrders.length}`);
-
-            // Adicionar orders canceladas como claims
-            for (const order of cancelledOrders) {
-              claims.push({
-                id: `cancelled_${order.id}`,
-                resource_id: order.id,
-                type: 'cancellation',
-                status: 'closed',
-                reason: order.cancel_detail || 'Pedido cancelado',
-                date_created: order.date_created,
-                order_data: order
-              });
-            }
-          }
-
-          // 5. PROCESSAR CADA CLAIM EM TEMPO REAL
-          for (const claim of claims) {
-            try {
-              // Buscar dados completos da order
-              const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${claim.resource_id}`, {
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json'
-                }
-              });
-
-              if (!orderResponse.ok) continue;
-
-              const orderData = await orderResponse.json();
-
-              // Aplicar filtros
-              const dataOrder = new Date(claim.date_created);
-              if (filtros.dataInicio && dataOrder < new Date(filtros.dataInicio)) continue;
-              if (filtros.dataFim && dataOrder > new Date(filtros.dataFim)) continue;
-              if (filtros.statusClaim && claim.status !== filtros.statusClaim) continue;
-
-              // Buscar mensagens se houver mediação
-              let mensagens = null;
-              if (claim.mediations && claim.mediations.length > 0) {
-                try {
-                  const packId = claim.mediations[0].id;
-                  const messagesResponse = await fetch(`https://api.mercadolibre.com/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`, {
-                    headers: {
-                      'Authorization': `Bearer ${accessToken}`,
-                      'Content-Type': 'application/json'
-                    }
-                  });
-
-                  if (messagesResponse.ok) {
-                    mensagens = await messagesResponse.json();
-                  }
-                } catch (msgError) {
-                  console.warn('⚠️ Erro ao buscar mensagens:', msgError);
-                }
-              }
-
-              // Buscar detalhes de devolução
-              let returnDetails = null;
-              if (claim.id && !claim.id.startsWith('cancelled_')) {
-                try {
-                  const returnResponse = await fetch(`https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`, {
-                    headers: {
-                      'Authorization': `Bearer ${accessToken}`,
-                      'Content-Type': 'application/json'
-                    }
-                  });
-
-                  if (returnResponse.ok) {
-                    returnDetails = await returnResponse.json();
-                  }
-                } catch (returnError) {
-                  console.warn('⚠️ Erro ao buscar detalhes de devolução:', returnError);
-                }
-              }
-
-              // Criar objeto de devolução em tempo real
-              const devolucao: DevolucaoAvancada = {
-                id: `${claim.id}_${orderData.id}`,
-                order_id: orderData.id.toString(),
-                claim_id: claim.id.startsWith('cancelled_') ? null : claim.id,
-                data_criacao: claim.date_created,
-                claim_status: claim.status || 'unknown',
-                valor_retido: orderData.total_amount || 0,
-                produto_titulo: orderData.order_items?.[0]?.item?.title || 'Produto não identificado',
-                sku: orderData.order_items?.[0]?.item?.seller_sku || '',
-                quantidade: orderData.order_items?.[0]?.quantity || 1,
-                comprador_nickname: orderData.buyer?.nickname || 'Desconhecido',
-                dados_order: orderData,
-                dados_claim: claim,
-                dados_mensagens: mensagens,
-                dados_return: returnDetails,
-                integration_account_id: accountId,
-                account_name: account.name,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
-
-              todasDevolucoes.push(devolucao);
-              console.log(`✅ Devolução processada: ${orderData.id}`);
-
-            } catch (claimError) {
-              console.error(`❌ Erro ao processar claim:`, claimError);
-            }
-
-            // Pausa para evitar rate limiting
-            await new Promise(resolve => setTimeout(resolve, 200));
+          if (devolucaesData?.success && devolucaesData.data) {
+            console.log(`📋 Encontradas ${devolucaesData.data.length} devoluções para ${account.name}`);
+            todasDevolucoes.push(...devolucaesData.data);
           }
 
         } catch (accountError) {

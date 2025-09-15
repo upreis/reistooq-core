@@ -77,7 +77,7 @@ serve(async (req) => {
   }
 
   try {
-    const { integration_account_id, date_from, date_to } = await req.json();
+    const { integration_account_id, date_from, date_to, sellerId, dateFrom, dateTo, status } = await req.json();
     
     if (!integration_account_id) {
       return new Response(JSON.stringify({ error: 'integration_account_id é obrigatório' }), {
@@ -108,7 +108,7 @@ serve(async (req) => {
       });
     }
 
-    // 2. Tentar buscar access token primeiro (verificação mais confiável)
+    // 2. Buscar access token via integrations-get-secret
     const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
     
     let accessToken;
@@ -125,14 +125,18 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           integration_account_id: integration_account_id,
-          secret_name: 'access_token'
+          provider: 'mercadolivre'
         })
       });
 
       if (secretResponse.ok) {
         const tokenData = await secretResponse.json();
-        accessToken = tokenData.value;
-        console.log('🔑 [ML Devoluções] Token obtido com sucesso');
+        if (tokenData.found && tokenData.access_token) {
+          accessToken = tokenData.access_token;
+          console.log('🔑 [ML Devoluções] Token obtido com sucesso');
+        } else {
+          tokenRetrievalError = 'Token não encontrado na resposta';
+        }
       } else {
         const errorText = await secretResponse.text();
         tokenRetrievalError = errorText;
@@ -177,141 +181,60 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-    // 3. Buscar pedidos da conta para verificar devoluções
-    const dateFromParam = date_from || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-    const dateToParam = date_to || new Date().toISOString();
+    // 3. Buscar claims direto da API ML
+    const sellerIdParam = sellerId || account.account_identifier;
+    const dateFromParam = dateFrom || date_from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const dateToParam = dateTo || date_to || new Date().toISOString();
 
-    console.log(`📅 [ML Devoluções] Buscando pedidos de ${dateFromParam} até ${dateToParam}`);
+    console.log(`📅 [ML Devoluções] Buscando claims de ${dateFromParam} até ${dateToParam} para seller ${sellerIdParam}`);
 
-    // Buscar pedidos usando account_identifier como user_id do vendedor
-    const ordersUrl = `https://api.mercadolibre.com/orders/search?seller=${account.account_identifier}&order.date_created.from=${dateFromParam}&order.date_created.to=${dateToParam}&sort=date_desc&limit=50`;
+    // Buscar claims direto da API ML
+    let claimsUrl = `https://api.mercadolibre.com/claims/search?seller_id=${sellerIdParam}`;
     
-    console.log(`🔗 [ML Devoluções] URL da busca: ${ordersUrl}`);
+    if (dateFromParam) claimsUrl += `&date_created_from=${dateFromParam}`;
+    if (dateToParam) claimsUrl += `&date_created_to=${dateToParam}`;
+    if (status) claimsUrl += `&status=${status}`;
     
-    const ordersResponse = await fetch(ordersUrl, {
+    claimsUrl += '&limit=50&offset=0';
+    
+    console.log(`🔗 [ML Devoluções] URL da busca claims: ${claimsUrl}`);
+    
+    const claimsResponse = await fetch(claimsUrl, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
       }
     });
 
-    if (!ordersResponse.ok) {
-      const errorText = await ordersResponse.text();
-      console.error(`❌ [ML Devoluções] Erro ao buscar pedidos:`, {
-        status: ordersResponse.status,
-        statusText: ordersResponse.statusText,
-        url: ordersUrl,
+    if (!claimsResponse.ok) {
+      const errorText = await claimsResponse.text();
+      console.error(`❌ [ML Devoluções] Erro ao buscar claims:`, {
+        status: claimsResponse.status,
+        statusText: claimsResponse.statusText,
+        url: claimsUrl,
         response: errorText,
-        account_identifier: account.account_identifier
+        seller_id: sellerIdParam
       });
       return new Response(JSON.stringify({ 
-        error: 'Erro ao buscar pedidos',
-        details: `Status ${ordersResponse.status}: ${errorText}`,
-        seller_id: account.account_identifier
+        error: 'Erro ao buscar claims',
+        details: `Status ${claimsResponse.status}: ${errorText}`,
+        seller_id: sellerIdParam
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const ordersData = await ordersResponse.json();
-    const orders = ordersData.results || [];
+    const claimsData = await claimsResponse.json();
+    const claims = claimsData.results || [];
 
-    console.log(`📦 [ML Devoluções] Encontrados ${orders.length} pedidos`);
+    console.log(`📦 [ML Devoluções] Encontrados ${claims.length} claims`);
 
-    let processedClaims = 0;
-    let totalClaims = 0;
-
-    // Processar cada pedido
-    for (const order of orders) {
-      console.log(`🔍 [ML Devoluções] Processando order: ${order.id} - Status: ${order.status} - Cancel Detail: ${order.cancel_detail || 'N/A'}`);
-
+    // 4. Processar cada claim e buscar detalhes da order
+    const processedDevolucoes = [];
+    
+    for (const claim of claims) {
       try {
-        // Buscar claims para a order
-        const claimsUrl = `https://api.mercadolibre.com/v1/orders/${order.id}/claims`;
-        const claimsResponse = await fetch(claimsUrl, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        let claims: MLClaim[] = [];
-
-        if (claimsResponse.ok) {
-          const claimsData = await claimsResponse.json();
-          claims = claimsData.data || [];
-          console.log(`🔍 [ML Devoluções] Claims para order ${order.status} ${order.id}:`, { total: claims.length });
-        } else {
-          console.log(`⚠️ [ML Devoluções] Falha na busca claims ${order.id}: ${claimsResponse.status}`);
-        }
-
-        // Se não há claims mas a order foi cancelada, buscar mediação
-        if (claims.length === 0 && order.status === 'cancelled') {
-          try {
-            const mediationUrl = `https://api.mercadolibre.com/mediations/orders/${order.id}`;
-            const mediationResponse = await fetch(mediationUrl, {
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-              }
-            });
-
-            if (mediationResponse.ok) {
-              const mediation: MLMediation = await mediationResponse.json();
-              console.log(`🔍 [ML Devoluções] Mediação encontrada para order ${order.id}:`, mediation.reason);
-
-              // Converter mediação em claim
-              const syntheticClaim: MLClaim = {
-                id: `mediation_${mediation.id}`,
-                order_id: order.id,
-                type: 'cancellation',
-                status: mediation.status || 'opened',
-                stage: mediation.stage || 'pending',
-                resolution: order.cancel_detail,
-                reason_code: 'ORDER_CANCELLED',
-                reason_description: mediation.reason || order.cancel_detail,
-                date_created: mediation.date_created,
-                date_closed: mediation.date_closed,
-                date_last_update: mediation.date_closed || mediation.date_created,
-                amount_claimed: order.total_amount,
-                amount_refunded: order.status === 'cancelled' ? order.total_amount : 0,
-                currency: order.currency_id,
-                buyer: {
-                  id: String(mediation.buyer_id),
-                  nickname: 'Buyer',
-                  email: mediation.external_agent_email
-                },
-                item: {
-                  id: mediation.items[0]?.id || '',
-                  title: mediation.items[0]?.title || 'Item',
-                  sku: '',
-                  variation_id: ''
-                },
-                quantity: mediation.items[0]?.quantity || 1,
-                unit_price: mediation.items[0]?.sale_price || 0,
-                last_message: `Pedido cancelado: ${mediation.reason}`,
-                seller_response: ''
-              };
-
-              claims = [syntheticClaim];
-              console.log(`✅ [ML Devoluções] Claim sintética criada para order ${order.id}`);
-            } else {
-              console.log(`⚠️ [ML Devoluções] Falha na busca mediação ${order.id}: ${mediationResponse.status}`);
-            }
-          } catch (mediationError) {
-            console.error(`❌ [ML Devoluções] Erro na mediação ${order.id}:`, mediationError);
-          }
-        }
-
-        if (claims.length === 0) {
-          console.log(`📋 [ML Devoluções] Order ${order.status} ${order.id} sem claims associadas`);
-        }
-
-        totalClaims += claims.length;
-
-        // Salvar claims na base de dados
-        for (const claim of claims) {
           try {
             // Buscar organization_id da conta
             const { data: accountInfo, error: accountError } = await supabase
