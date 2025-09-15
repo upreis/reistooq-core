@@ -45,6 +45,33 @@ const PAYMENT_TYPE_TRANSLATIONS: Record<string, string> = {
   'digital_wallet': 'Carteira Digital'
 };
 
+// Mapeamento de traduções para motivos de cancelamento
+const CANCEL_REASON_TRANSLATIONS: Record<string, string> = {
+  'buyer_request': 'Solicitação do Comprador',
+  'seller_request': 'Solicitação do Vendedor',
+  'out_of_stock': 'Sem Estoque',
+  'invalid_address': 'Endereço Inválido',
+  'payment_failed': 'Falha no Pagamento',
+  'fraud_suspicion': 'Suspeita de Fraude',
+  'buyer_not_available': 'Comprador Indisponível',
+  'seller_not_available': 'Vendedor Indisponível',
+  'shipping_cost': 'Custo de Envio',
+  'quality_issues': 'Problemas de Qualidade',
+  'price_error': 'Erro no Preço',
+  'product_unavailable': 'Produto Indisponível',
+  'delivery_delay': 'Atraso na Entrega',
+  'packaging_issues': 'Problemas na Embalagem',
+  'wrong_product': 'Produto Errado',
+  'defective_product': 'Produto Defeituoso',
+  'changed_mind': 'Mudança de Opinião',
+  'duplicate_order': 'Pedido Duplicado',
+  'payment_issues': 'Problemas de Pagamento',
+  'communication_failure': 'Falha na Comunicação',
+  'system_error': 'Erro do Sistema',
+  'no_reason_specified': 'Motivo Não Especificado',
+  'other': 'Outros'
+};
+
 // Mapeamento de traduções para status de envio
 const SHIPPING_STATUS_TRANSLATIONS: Record<string, string> = {
   'pending': 'Pendente',
@@ -323,6 +350,44 @@ export function translateMLTags(tags: string[]): string {
            ML_TAGS_TRANSLATIONS[normalizedTag] || 
            formatText(tag);
   }).filter(Boolean).join(', ') || '-';
+}
+
+/**
+ * Função para traduzir motivos de cancelamento
+ */
+export function translateCancelReason(reason: string): string {
+  if (!reason) return 'Motivo Não Especificado';
+  
+  const cancelReasonTranslations: Record<string, string> = {
+    'buyer_request': 'Solicitação do Comprador',
+    'seller_request': 'Solicitação do Vendedor',
+    'out_of_stock': 'Sem Estoque',
+    'invalid_address': 'Endereço Inválido',
+    'payment_failed': 'Falha no Pagamento',
+    'fraud_suspicion': 'Suspeita de Fraude',
+    'buyer_not_available': 'Comprador Indisponível',
+    'seller_not_available': 'Vendedor Indisponível',
+    'shipping_cost': 'Custo de Envio',
+    'quality_issues': 'Problemas de Qualidade',
+    'price_error': 'Erro no Preço',
+    'product_unavailable': 'Produto Indisponível',
+    'delivery_delay': 'Atraso na Entrega',
+    'packaging_issues': 'Problemas na Embalagem',
+    'wrong_product': 'Produto Errado',
+    'defective_product': 'Produto Defeituoso',
+    'changed_mind': 'Mudança de Opinião',
+    'duplicate_order': 'Pedido Duplicado',
+    'payment_issues': 'Problemas de Pagamento',
+    'communication_failure': 'Falha na Comunicação',
+    'system_error': 'Erro do Sistema',
+    'no_reason_specified': 'Motivo Não Especificado',
+    'other': 'Outros'
+  };
+  
+  const normalized = normalizeText(reason);
+  return cancelReasonTranslations[normalized] || 
+         cancelReasonTranslations[reason.toLowerCase()] || 
+         formatText(reason);
 }
 
 /**

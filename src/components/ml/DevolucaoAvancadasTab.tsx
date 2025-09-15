@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { translateCancelReason } from '@/lib/translations';
 import { 
   RefreshCw, 
   Download, 
@@ -1053,8 +1054,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                         </span>
                       </td>
                       <td className="p-2">
-                        <div className="max-w-xs truncate text-xs" title={cancelReason}>
-                          {cancelReason}
+                        <div className="max-w-xs truncate text-xs" title={translateCancelReason(cancelReason)}>
+                          {translateCancelReason(cancelReason)}
                         </div>
                       </td>
                       <td className="p-2">
