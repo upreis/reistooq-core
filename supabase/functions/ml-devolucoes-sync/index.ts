@@ -2,7 +2,6 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-/* ============================== CORS/Helpers ============================== */
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-call, x-internal-token",
@@ -29,7 +28,6 @@ function fail(msg, status = 400, details) {
 
 const API_BASE = "https://api.mercadolibre.com";
 
-/* ============================== Datas ISO ============================== */
 function dayStartISO(d) {
   return new Date(`${d}T00:00:00.000Z`).toISOString();
 }
@@ -38,7 +36,6 @@ function dayEndISO(d) {
   return new Date(`${d}T23:59:59.999Z`).toISOString();
 }
 
-/* ============================== Token Refresh ============================== */
 async function refreshTokenIfNeeded(integration_account_id, supabaseUrl, authHeader, internalToken) {
   try {
     console.log(`🔄 [ML Devoluções] Tentando refresh do token para conta: ${integration_account_id}`);
@@ -97,150 +94,97 @@ async function fetchWithRetry(url, options, integration_account_id, supabaseUrl,
   return response;
 }
 
-async function detectWorkingCombo(base, paths, paramVariants, headers) {
-  for (const p of paths) {
-    for (const pv of paramVariants) {
-      const u = new URL(p, base);
-      Object.entries(pv).forEach(([k, v]) => v && u.searchParams.set(k, v));
-
-      const resp = await fetch(u.toString(), {
-        headers,
-        method: "GET"
-      });
-
-      if (resp.ok) {
-        console.log("✅ [ML Devoluções] Combo aceito:", p, pv);
-        return {
-          path: p,
-          params: pv
-        };
-      }
-    }
-  }
-  return null;
-}
-
-async function fetchPaginatedWithDetectedCombo(base, detectPaths, detectParamsVariants, headers, integration_account_id, supabaseUrl, authHeader, internalToken, maxPages = 20) {
-  const detected = await detectWorkingCombo(base, detectPaths, detectParamsVariants, headers);
-  if (!detected) {
-    console.error("❌ [ML Devoluções] Nenhum combo (path/params) aceito pela API.");
-    return {
-      items: [],
-      meta: {
-        path: null,
-        params: null
-      }
-    };
-  }
-
-  const items = [];
+async function fetchAllPages(baseUrl, headers, integration_account_id, supabaseUrl, authHeader, internalToken, maxPages = 20) {
+  const allResults = [];
   let offset = 0;
   const limit = 50;
 
   for (let page = 0; page < maxPages; page++) {
-    const u = new URL(detected.path, base);
-    Object.entries(detected.params).forEach(([k, v]) => v && u.searchParams.set(k, v));
-    u.searchParams.set("limit", String(limit));
-    u.searchParams.set("offset", String(offset));
+    const url = `${baseUrl}&limit=${limit}&offset=${offset}`;
+    console.log(`📄 [ML Devoluções] Buscando página ${page + 1}, offset: ${offset}`);
 
-    console.log(`📄 [ML Devoluções] ${detected.path} página ${page + 1} offset=${offset}`);
-
-    const resp = await fetchWithRetry(u.toString(), {
+    const resp = await fetchWithRetry(url, {
       headers,
       method: "GET"
     }, integration_account_id, supabaseUrl, authHeader, internalToken);
 
     if (!resp.ok) {
       const txt = await resp.text().catch(() => "");
-      console.error(`❌ [ML Devoluções] Erro página ${page + 1} (${resp.status})`, txt.slice(0, 200));
+      console.error(`❌ [ML Devoluções] Erro na página ${page + 1} (${resp.status}): ${txt.slice(0, 200)}`);
       break;
     }
 
     const json = await resp.json().catch(() => ({}));
     const results = json?.results ?? json?.data ?? (Array.isArray(json) ? json : []);
-    console.log(`📦 [ML Devoluções] Página ${page + 1}: ${Array.isArray(results) ? results.length : 0}`);
+    console.log(`📦 [ML Devoluções] Página ${page + 1}: ${Array.isArray(results) ? results.length : 0} itens`);
 
     if (!Array.isArray(results) || results.length === 0) break;
 
-    items.push(...results);
+    allResults.push(...results);
     if (results.length < limit) break;
     offset += limit;
+
+    // Pequena pausa entre requests
+    await new Promise(resolve => setTimeout(resolve, 200));
   }
 
-  return {
-    items,
-    meta: detected
-  };
+  return allResults;
 }
 
-/* ============================== Endpoints de alto nível ============================== */
-async function fetchClaimsRobusto(opts) {
+async function fetchClaimsData(opts) {
   const { accessToken, sellerId, dateFromISO, dateToISO, status, integration_account_id, supabaseUrl, authHeader, internalToken } = opts;
 
+  console.log("🔍 [ML Devoluções] Buscando Claims...");
+  
   const headers = {
     Authorization: `Bearer ${accessToken}`,
     Accept: "application/json"
   };
 
-  const paramVariants = [
-    {
-      ...sellerId ? { seller_id: sellerId } : {},
-      ...status ? { status } : {},
-      ...dateFromISO ? { "date_created.from": dateFromISO } : {},
-      ...dateToISO ? { "date_created.to": dateToISO } : {}
-    },
-    {
-      ...sellerId ? { seller_id: sellerId } : {},
-      ...status ? { status } : {},
-      ...dateFromISO ? { date_created_from: dateFromISO } : {},
-      ...dateToISO ? { date_created_to: dateToISO } : {}
-    }
-  ];
+  let baseUrl = `${API_BASE}/claims/search?seller_id=${sellerId}`;
+  if (dateFromISO) baseUrl += `&date_created_from=${dateFromISO}`;
+  if (dateToISO) baseUrl += `&date_created_to=${dateToISO}`;
+  if (status) baseUrl += `&status=${status}`;
 
-  const pathCandidates = [
-    "/claims",
-    "/claims/search"
-  ];
+  console.log(`📅 [ML Devoluções] Buscando claims de ${dateFromISO} até ${dateToISO} para seller ${sellerId}`);
 
-  const r = await fetchPaginatedWithDetectedCombo(API_BASE, pathCandidates, paramVariants, headers, integration_account_id, supabaseUrl, authHeader, internalToken);
-  console.log("🔎 [ML Devoluções] claims meta:", r.meta);
-  return r.items;
+  try {
+    const claims = await fetchAllPages(baseUrl, headers, integration_account_id, supabaseUrl, authHeader, internalToken);
+    console.log(`📦 [ML Devoluções] Claims encontrados: ${claims.length}`);
+    return claims;
+  } catch (error) {
+    console.error(`❌ [ML Devoluções] Erro ao buscar claims:`, error);
+    return [];
+  }
 }
 
-async function fetchReturnsRobusto(opts) {
+async function fetchReturnsData(opts) {
   const { accessToken, sellerId, dateFromISO, dateToISO, status, integration_account_id, supabaseUrl, authHeader, internalToken } = opts;
 
+  console.log("🔍 [ML Devoluções] Buscando Returns...");
+  
   const headers = {
     Authorization: `Bearer ${accessToken}`,
     Accept: "application/json"
   };
 
-  const paramVariants = [
-    {
-      ...sellerId ? { seller_id: sellerId } : {},
-      ...status ? { status } : {},
-      ...dateFromISO ? { "date_created.from": dateFromISO } : {},
-      ...dateToISO ? { "date_created.to": dateToISO } : {}
-    },
-    {
-      ...sellerId ? { seller_id: sellerId } : {},
-      ...status ? { status } : {},
-      ...dateFromISO ? { date_created_from: dateFromISO } : {},
-      ...dateToISO ? { date_created_to: dateToISO } : {}
-    }
-  ];
+  let baseUrl = `${API_BASE}/post-sale/returns/search?seller_id=${sellerId}`;
+  if (dateFromISO) baseUrl += `&date_created.from=${dateFromISO}`;
+  if (dateToISO) baseUrl += `&date_created.to=${dateToISO}`;
+  if (status) baseUrl += `&status=${status}`;
 
-  const pathCandidates = [
-    "/returns",
-    "/returns/search"
-  ];
+  console.log(`📅 [ML Devoluções] Buscando returns de ${dateFromISO} até ${dateToISO} para seller ${sellerId}`);
 
-  const r = await fetchPaginatedWithDetectedCombo(API_BASE, pathCandidates, paramVariants, headers, integration_account_id, supabaseUrl, authHeader, internalToken);
-  console.log("🔎 [ML Devoluções] returns meta:", r.meta);
-  return r.items;
+  try {
+    const returns = await fetchAllPages(baseUrl, headers, integration_account_id, supabaseUrl, authHeader, internalToken);
+    console.log(`📦 [ML Devoluções] Returns encontrados: ${returns.length}`);
+    return returns;
+  } catch (error) {
+    console.error(`❌ [ML Devoluções] Erro ao buscar returns:`, error);
+    return [];
+  }
 }
 
-/* ============================== Handler principal ============================== */
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", {
     headers: corsHeaders
@@ -250,7 +194,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { integration_account_id, date_from, date_to, dateFrom, dateTo, sellerId, status, mode = "both", include_messages = false } = body || {};
+    const { integration_account_id, date_from, date_to, dateFrom, dateTo, sellerId, status, mode = "both" } = body || {};
 
     if (!integration_account_id) return fail("integration_account_id é obrigatório", 400);
 
@@ -264,6 +208,8 @@ serve(async (req) => {
     const sb = createClient(supabaseUrl, supabaseKey);
     const authHeader = req.headers.get("Authorization") || "";
     const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+
+    console.log(`🔍 [ML Devoluções] Processando conta: ${integration_account_id}, modo: ${mode}`);
 
     // 1) Conta
     const { data: account, error: accErr } = await sb.from("integration_accounts").select("*").eq("id", integration_account_id).eq("is_active", true).single();
@@ -302,6 +248,8 @@ serve(async (req) => {
       return fail("Token não encontrado na resposta do integrations-get-secret", 500, secJson);
     }
 
+    console.log("🔑 [ML Devoluções] Token obtido com sucesso");
+
     const sellerParam = sellerId ?? sellerFromSecret ?? account?.account_identifier ?? account?.external_user_id;
 
     // 3) Datas em ISO completo
@@ -314,9 +262,9 @@ serve(async (req) => {
 
     const all = [];
 
-    /* ============================== Claims ============================== */
+    // 4) Buscar Claims
     if (mode === "both" || mode === "claims") {
-      const claims = await fetchClaimsRobusto({
+      const claims = await fetchClaimsData({
         accessToken,
         sellerId: sellerParam,
         dateFromISO,
@@ -336,9 +284,9 @@ serve(async (req) => {
       }
     }
 
-    /* ============================== Returns ============================== */
+    // 5) Buscar Returns  
     if (mode === "both" || mode === "returns") {
-      const returnsItems = await fetchReturnsRobusto({
+      const returns = await fetchReturnsData({
         accessToken,
         sellerId: sellerParam,
         dateFromISO,
@@ -350,9 +298,7 @@ serve(async (req) => {
         internalToken: INTERNAL_TOKEN
       });
 
-      console.log(`📦 [ML Devoluções] Returns encontrados: ${returnsItems.length}`);
-
-      for (const r of returnsItems) {
+      for (const r of returns) {
         all.push({
           kind: "return",
           data: r
@@ -360,7 +306,7 @@ serve(async (req) => {
       }
     }
 
-    /* ============================== Persistência ============================== */
+    // 6) Persistir dados
     let persisted = 0;
     let errors = 0;
 
@@ -368,16 +314,8 @@ serve(async (req) => {
       try {
         if (it.kind === "claim") {
           const c = it.data ?? {};
-          const buyer = c.buyer ?? {
-            id: "",
-            nickname: "",
-            email: ""
-          };
-          const item = c.items?.[0] ?? c.item ?? {
-            id: "",
-            title: "",
-            sku: ""
-          };
+          const buyer = c.buyer ?? { id: "", nickname: "", email: "" };
+          const item = c.items?.[0] ?? c.item ?? { id: "", title: "", sku: "" };
 
           const record = {
             integration_account_id,
@@ -466,6 +404,8 @@ serve(async (req) => {
         errors++;
       }
     }
+
+    console.log(`🚀 [ML Devoluções] Processamento concluído: ${all.length} devoluções encontradas`);
 
     return ok({
       ok: true,
