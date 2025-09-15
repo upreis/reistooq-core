@@ -69,7 +69,7 @@ export default function MLOrdersCompletas() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("integration_accounts")
-        .select("id, name, account_identifier")
+        .select("id, name, account_identifier, organization_id, is_active")
         .eq("provider", "mercadolivre")
         .eq("is_active", true)
         .order("updated_at", { ascending: false });
@@ -322,7 +322,14 @@ export default function MLOrdersCompletas() {
         </TabsList>
 
         <TabsContent value="devolucoes" className="space-y-6">
-          <DevolucaoAvancadasTab />
+          <DevolucaoAvancadasTab 
+            mlAccounts={mlAccounts || []}
+            refetch={async () => { 
+              // Add a simple refetch function that could be enhanced later
+              window.location.reload();
+            }}
+            existingDevolucoes={[]}
+          />
         </TabsContent>
 
         <TabsContent value="orders" className="space-y-6">
@@ -1011,11 +1018,6 @@ export default function MLOrdersCompletas() {
       </Card>
         </TabsContent>
 
-        <TabsContent value="devolucoes">
-          <div className="text-center p-8 text-muted-foreground">
-            Tab de devoluções removida
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   );

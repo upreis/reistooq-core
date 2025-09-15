@@ -80,7 +80,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   existingDevolucoes
 }) => {
   const [loading, setLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [devolucoes, setDevolucoes] = useState<DevolucaoAvancada[]>([]);
   const [devolucoesFiltradas, setDevolucoesFiltradas] = useState<DevolucaoAvancada[]>([]);
   const [filtros, setFiltros] = useState<Filtros>({
