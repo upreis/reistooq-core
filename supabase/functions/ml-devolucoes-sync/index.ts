@@ -131,8 +131,8 @@ serve(async (req) => {
 
       if (secretResponse.ok) {
         const tokenData = await secretResponse.json();
-        if (tokenData.found && tokenData.access_token) {
-          accessToken = tokenData.access_token;
+        if (tokenData.found && tokenData.secret?.access_token) {
+          accessToken = tokenData.secret.access_token;
           console.log('🔑 [ML Devoluções] Token obtido com sucesso');
         } else {
           tokenRetrievalError = 'Token não encontrado na resposta';
