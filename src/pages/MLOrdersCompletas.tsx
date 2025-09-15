@@ -1001,7 +1001,7 @@ export default function MLOrdersCompletas() {
                               </DialogHeader>
                               <ScrollArea className="max-h-[60vh]">
                                 <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto">
-                                  {JSON.stringify(order.raw_data, null, 2)}
+                                  {JSON.stringify(order.raw_data || {}, null, 2)}
                                 </pre>
                               </ScrollArea>
                             </DialogContent>
