@@ -9,8 +9,32 @@ const mockCustomers = [
     doc: "12.345.678/0001-90",
     email: "cliente@exemplo.com",
     phone: "(11) 99999-9999",
-    price_tier: "standard" as const,
+    price_tier: "standard" as 'standard' | 'premium' | 'vip',
     payment_terms: "30_days",
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: "2",
+    name: "Cliente Premium",
+    doc: "11.222.333/0001-44",
+    email: "premium@exemplo.com",
+    phone: "(11) 88888-8888",
+    price_tier: "premium" as 'standard' | 'premium' | 'vip',
+    payment_terms: "15_days",
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: "3",
+    name: "Cliente VIP",
+    doc: "55.666.777/0001-88",
+    email: "vip@exemplo.com",
+    phone: "(11) 77777-7777",
+    price_tier: "vip" as 'standard' | 'premium' | 'vip',
+    payment_terms: "cash",
     is_active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
