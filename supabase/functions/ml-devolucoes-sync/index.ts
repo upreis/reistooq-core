@@ -258,41 +258,54 @@ serve(async (req) => {
         // Salvar claims na base de dados
         for (const claim of claims) {
           try {
+            // Buscar organization_id da conta
+            const { data: accountInfo } = await supabase
+              .from('integration_accounts')
+              .select('organization_id')
+              .eq('id', integration_account_id)
+              .single();
+
             const claimData = {
               integration_account_id: integration_account_id,
+              organization_id: accountInfo?.organization_id,
               claim_id: claim.id,
               order_id: claim.order_id,
-              order_data: order,
-              claim_data: claim,
-              type: claim.type,
-              status: claim.status,
-              stage: claim.stage,
-              priority: 'normal',
-              processed_status: 'pending',
-              date_created: new Date(claim.date_created),
-              date_last_update: claim.date_last_update ? new Date(claim.date_last_update) : new Date(),
-              amount_claimed: claim.amount_claimed || 0,
-              amount_refunded: claim.amount_refunded || 0,
-              currency: claim.currency,
+              order_number: order.pack_id ? String(order.pack_id) : null,
               buyer_id: claim.buyer.id,
               buyer_nickname: claim.buyer.nickname,
               buyer_email: claim.buyer.email,
               item_id: claim.item.id,
               item_title: claim.item.title,
-              item_sku: claim.item.sku,
+              sku: claim.item.sku,
+              variation_id: claim.item.variation_id,
               quantity: claim.quantity,
               unit_price: claim.unit_price,
+              claim_type: claim.type,
+              claim_status: claim.status,
+              claim_stage: claim.stage,
+              resolution: claim.resolution,
               reason_code: claim.reason_code,
               reason_description: claim.reason_description,
+              amount_claimed: claim.amount_claimed || 0,
+              amount_refunded: claim.amount_refunded || 0,
+              currency: claim.currency,
+              date_created: new Date(claim.date_created),
+              date_closed: claim.date_closed ? new Date(claim.date_closed) : null,
+              date_last_update: claim.date_last_update ? new Date(claim.date_last_update) : new Date(),
               last_message: claim.last_message,
               seller_response: claim.seller_response,
-              resolution: claim.resolution
+              processed_status: 'pending',
+              priority: 'normal',
+              raw_data: {
+                order: order,
+                claim: claim
+              }
             };
 
             const { error: insertError } = await supabase
               .from('ml_devolucoes_reclamacoes')
               .upsert(claimData, {
-                onConflict: 'integration_account_id, claim_id',
+                onConflict: 'claim_id',
                 ignoreDuplicates: false
               });
 
