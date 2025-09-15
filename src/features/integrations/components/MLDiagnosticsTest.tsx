@@ -29,19 +29,16 @@ export function MLDiagnosticsTest() {
         throw new Error('Usuário não autenticado');
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mercadolibre-diagnose?autofix=1`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      // Use supabase.functions.invoke instead of direct fetch to avoid CORS and env variable issues
+      const { data: diagnosticData, error } = await supabase.functions.invoke('mercadolibre-diagnose', {
+        body: { autofix: 1 }
+      });
 
-      const data = await response.json();
-      setResult(data);
+      if (error) {
+        throw new Error(error.message || 'Erro na função de diagnóstico');
+      }
+
+      setResult(diagnosticData);
     } catch (error) {
       console.error('Erro no diagnóstico:', error);
       setResult({
