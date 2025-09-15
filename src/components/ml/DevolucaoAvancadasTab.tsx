@@ -123,7 +123,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         console.log(`🔍 Processando conta: ${account.name}`);
         
         try {
-          // 1. Testar se unified-orders funciona
+          // 1. Testar unified-orders
           const { data: unifiedData, error: unifiedError } = await supabase.functions.invoke('unified-orders', {
             body: { 
               integration_account_id: account.id,
@@ -154,14 +154,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
           console.log(`📦 Encontradas ${ordersWithClaims?.length || 0} orders com claims`);
 
-          // 3. Processar orders com claims
+          // 3. Processar orders com claims usando UPSERT correto
           if (ordersWithClaims && ordersWithClaims.length > 0) {
             for (const order of ordersWithClaims) {
               try {
                 const rawData = order.raw_data || {};
                 
                 const devolucaoData = {
-                  order_id: order.order_id.toString(), // Garantir que é string
+                  order_id: order.order_id.toString(),
                   claim_id: null,
                   data_criacao: order.date_created,
                   status_devolucao: 'with_claims',
@@ -176,42 +176,23 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                     status: order.status,
                     detected_at: new Date().toISOString()
                   },
-                  integration_account_id: account.id
+                  integration_account_id: account.id,
+                  updated_at: new Date().toISOString()
                 };
 
-                // Tentar inserir primeiro, depois atualizar se já existir
-                const { error: insertError } = await supabase
+                // USAR UPSERT CORRETO
+                const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
-                  .insert(devolucaoData);
+                  .upsert(devolucaoData, { 
+                    onConflict: 'order_id',
+                    ignoreDuplicates: false 
+                  });
 
-                if (insertError) {
-                  // Se já existe, atualizar
-                  if (insertError.code === '23505') { // Unique constraint violation
-                    const { error: updateError } = await supabase
-                      .from('devolucoes_avancadas')
-                      .update({
-                        ...devolucaoData,
-                        ultima_atualizacao: new Date().toISOString()
-                      })
-                      .eq('order_id', order.order_id);
-
-                    if (updateError) {
-                      console.error(`❌ Erro ao atualizar ${order.order_id}:`, updateError);
-                    } else {
-                      totalProcessadas++;
-                      console.log(`🔄 Atualizada: ${order.order_id}`);
-                    }
-                  } else {
-                    console.error(`❌ Erro ao inserir ${order.order_id}:`, insertError);
-                    
-                    if (insertError.code === '42P01') {
-                      toast.error('Tabela devolucoes_avancadas não existe - Execute o SQL primeiro!');
-                      return;
-                    }
-                  }
+                if (upsertError) {
+                  console.error(`❌ Erro upsert ${order.order_id}:`, upsertError);
                 } else {
                   totalProcessadas++;
-                  console.log(`💾 ✅ Inserida: ${order.order_id}`);
+                  console.log(`💾 ✅ Upsert: ${order.order_id}`);
                 }
 
               } catch (orderError) {
@@ -249,34 +230,23 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                     reason: (rawData as any)?.cancel_detail || 'Pedido cancelado',
                     cancelled_at: (rawData as any)?.date_closed || order.date_created
                   },
-                  integration_account_id: account.id
+                  integration_account_id: account.id,
+                  updated_at: new Date().toISOString()
                 };
 
-                // Mesmo método: inserir primeiro, depois atualizar
-                const { error: insertError } = await supabase
+                // USAR UPSERT CORRETO
+                const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
-                  .insert(devolucaoData);
+                  .upsert(devolucaoData, { 
+                    onConflict: 'order_id',
+                    ignoreDuplicates: false 
+                  });
 
-                if (insertError) {
-                  if (insertError.code === '23505') { // Já existe
-                    const { error: updateError } = await supabase
-                      .from('devolucoes_avancadas')
-                      .update({
-                        ...devolucaoData,
-                        ultima_atualizacao: new Date().toISOString()
-                      })
-                      .eq('order_id', order.order_id);
-
-                    if (!updateError) {
-                      totalProcessadas++;
-                      console.log(`🔄 Cancelamento atualizado: ${order.order_id}`);
-                    }
-                  } else {
-                    console.error(`❌ Erro ao inserir cancelamento:`, insertError);
-                  }
+                if (upsertError) {
+                  console.error(`❌ Erro upsert cancelamento:`, upsertError);
                 } else {
                   totalProcessadas++;
-                  console.log(`💾 ✅ Cancelamento inserido: ${order.order_id}`);
+                  console.log(`💾 ✅ Cancelamento upsert: ${order.order_id}`);
                 }
 
               } catch (orderError) {
@@ -293,9 +263,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         }
       }
 
-      // Recarregar dados
-      console.log(`🔄 Recarregando dados da tabela...`);
-      await refetch();
+      // Recarregar dados SEM await para evitar problemas
+      refetch();
       
       if (totalProcessadas > 0) {
         toast.success(`🎉 ${totalProcessadas} devoluções/cancelamentos processados!`);
