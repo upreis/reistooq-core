@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Eye, Filter, Download, Wrench, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
 
 import { toast } from "sonner";
 
@@ -319,6 +320,10 @@ export default function MLOrdersCompletas() {
           <TabsTrigger value="orders">Orders Completas</TabsTrigger>
           <TabsTrigger value="devolucoes">Devoluções Avançadas</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="devolucoes" className="space-y-6">
+          <DevolucaoAvancadasTab />
+        </TabsContent>
 
         <TabsContent value="orders" className="space-y-6">
           <div className="flex items-center justify-between">
