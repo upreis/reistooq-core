@@ -1695,6 +1695,7 @@ export type Database = {
           reason_code: string | null
           reason_description: string | null
           resolution: string | null
+          return_id: string | null
           seller_response: string | null
           sku: string | null
           tags: string[] | null
@@ -1735,6 +1736,7 @@ export type Database = {
           reason_code?: string | null
           reason_description?: string | null
           resolution?: string | null
+          return_id?: string | null
           seller_response?: string | null
           sku?: string | null
           tags?: string[] | null
@@ -1775,6 +1777,7 @@ export type Database = {
           reason_code?: string | null
           reason_description?: string | null
           resolution?: string | null
+          return_id?: string | null
           seller_response?: string | null
           sku?: string | null
           tags?: string[] | null
