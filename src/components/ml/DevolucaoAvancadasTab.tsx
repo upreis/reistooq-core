@@ -220,35 +220,58 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             continue;
           }
 
-          if (devolucaesData?.success && devolucaesData.data) {
-            console.log(`📋 Encontradas ${devolucaesData.data.length} devoluções para ${account.name}`);
-            
-            // Converter os dados para o formato DevolucaoAvancada
-            const devolucoesProcesadas = devolucaesData.data.map((item: any) => ({
-              id: item.id,
-              order_id: item.order_id,
-              claim_id: item.claim_id,
-              data_criacao: item.data_criacao,
-              status_devolucao: item.status_devolucao || 'unknown',
-              valor_retido: item.valor_retido || 0,
-              produto_titulo: item.produto_titulo || 'Produto não identificado',
-              sku: item.sku || '',
-              quantidade: item.quantidade || 1,
-              comprador_nickname: item.dados_order?.buyer?.nickname || 'Desconhecido',
-              dados_order: item.dados_order,
-              dados_claim: item.dados_claim,
-              dados_mensagens: item.dados_mensagens,
-              dados_return: item.dados_return,
-              integration_account_id: accountId,
-              account_name: account.name,
-              created_at: item.created_at,
-              updated_at: item.updated_at
-            }));
+          console.log(`📋 Resposta da edge function:`, devolucaesData);
 
-            todasDevolucoes.push(...devolucoesProcesadas);
-            toast.success(`✅ ${devolucoesProcesadas.length} devoluções encontradas para ${account.name}`);
+          if (devolucaesData?.ok) {
+            // A função ml-devolucoes-sync persiste os dados automaticamente
+            // Agora vamos buscar os dados persistidos na tabela
+            const { data: dbDevolucoes, error: dbError } = await supabase
+              .from('devolucoes_avancadas')
+              .select('*')
+              .eq('integration_account_id', accountId)
+              .order('created_at', { ascending: false })
+              .limit(100);
+
+            if (dbError) {
+              console.error(`❌ Erro ao buscar dados da DB para ${account.name}:`, dbError);
+              toast.error(`Erro no banco para ${account.name}: ${dbError.message}`);
+              continue;
+            }
+
+            if (dbDevolucoes && dbDevolucoes.length > 0) {
+              console.log(`📋 Encontradas ${dbDevolucoes.length} devoluções na DB para ${account.name}`);
+              
+              // Converter os dados para o formato DevolucaoAvancada
+              const devolucoesProcesadas = dbDevolucoes.map((item: any) => ({
+                id: item.id,
+                order_id: item.order_id,
+                claim_id: item.claim_id,
+                data_criacao: item.data_criacao,
+                status_devolucao: item.status_devolucao || 'unknown',
+                valor_retido: item.valor_retido || 0,
+                produto_titulo: item.produto_titulo || 'Produto não identificado',
+                sku: item.sku || '',
+                quantidade: item.quantidade || 1,
+                comprador_nickname: item.dados_order?.buyer?.nickname || 'Desconhecido',
+                dados_order: item.dados_order,
+                dados_claim: item.dados_claim,
+                dados_mensagens: item.dados_mensagens,
+                dados_return: item.dados_return,
+                integration_account_id: accountId,
+                account_name: account.name,
+                created_at: item.created_at,
+                updated_at: item.updated_at
+              }));
+
+              todasDevolucoes.push(...devolucoesProcesadas);
+              toast.success(`✅ ${devolucoesProcesadas.length} devoluções encontradas para ${account.name}`);
+            } else {
+              console.log(`ℹ️ Nenhuma devolução encontrada na DB para ${account.name}`);
+              toast.info(`ℹ️ Nenhuma devolução encontrada para ${account.name} no período`);
+            }
           } else {
-            console.log(`ℹ️ Nenhuma devolução encontrada para ${account.name} no período`);
+            console.log(`❌ Edge function retornou erro para ${account.name}:`, devolucaesData);
+            toast.error(`Erro na sincronização para ${account.name}`);
           }
 
         } catch (accountError) {
