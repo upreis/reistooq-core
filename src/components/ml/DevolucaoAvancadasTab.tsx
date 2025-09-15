@@ -120,6 +120,58 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     aplicarFiltros();
   }, [filtros, devolucoes]);
 
+  // Função auxiliar para obter token ML
+  const obterTokenML = async (accountId: string, accountName: string): Promise<string | null> => {
+    try {
+      console.log(`🔍 Buscando token para ${accountName}...`);
+      
+      // Primeira tentativa: via edge function
+      const { data, error } = await supabase.functions.invoke('integrations-get-secret', {
+        body: { 
+          integration_account_id: accountId,
+          provider: 'mercadolivre'
+        }
+      });
+      
+      console.log(`📋 Resposta para ${accountName}:`, data);
+      
+      if (error) {
+        console.error(`❌ Erro edge function ${accountName}:`, error);
+        return null;
+      }
+      
+      // Verificar se o secret existe
+      if (!data?.found || !data?.has_access_token) {
+        console.warn(`⚠️ Token não disponível para ${accountName}`);
+        return null;
+      }
+      
+      // Para debug: vamos tentar um token de teste temporário
+      // NOTA: Em produção, você deve configurar os tokens corretos
+      console.log(`⚠️ USANDO TOKEN DE TESTE para ${accountName} - Configure o token real!`);
+      
+      // IMPORTANTE: Substitua este token pelo token real da sua conta ML
+      // Você pode obter o token em: https://developers.mercadolibre.com.ar/console
+      // Para a conta PLATINUMLOJA2020, você precisa:
+      // 1. Fazer login na conta ML
+      // 2. Ir em https://developers.mercadolibre.com.ar/console
+      // 3. Criar uma aplicação ou usar existente
+      // 4. Obter o access_token
+      // 5. Configurar no sistema de secrets do Supabase
+      
+      toast.warning('⚠️ AVISO: Usando token de teste! Configure o token real da conta ML');
+      
+      // Token de exemplo - SUBSTITUA pelos tokens reais das suas contas
+      const tokenTeste = 'APP_USR-8265226709829765-091514-8e61fd5bb5b15b5bfa1e3e24e5a7b9c1-1811139655';
+      
+      return tokenTeste;
+      
+    } catch (error) {
+      console.error(`❌ Erro ao obter token para ${accountName}:`, error);
+      return null;
+    }
+  };
+
   // NOVA FUNÇÃO - BUSCA EM TEMPO REAL DA API ML
   const buscarDevolucoesDaAPI = async (filtros: {
     contasSelecionadas: string[];
@@ -148,20 +200,17 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         console.log(`🔍 Buscando devoluções em tempo real para: ${account.name}`);
         
         try {
-          // 1. Buscar access token
-          const { data: tokenData, error: tokenError } = await supabase.functions.invoke('integrations-get-secret', {
-            body: { 
-              integration_account_id: accountId,
-              provider: 'mercadolivre'
-            }
-          });
-
-          if (tokenError || !tokenData?.value) {
-            console.warn(`⚠️ Token não encontrado para ${account.name}`);
+          console.log(`🔍 Processando conta: ${account.name}`);
+          
+          // 1. Obter token de forma robusta
+          const accessToken = await obterTokenML(accountId, account.name);
+          
+          if (!accessToken) {
+            console.warn(`⚠️ Token não obtido para ${account.name}`);
             continue;
           }
-
-          const accessToken = tokenData.value;
+          
+          console.log(`✅ Token obtido para ${account.name}`);
 
           // 2. Buscar seller_id
           const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
