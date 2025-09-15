@@ -113,32 +113,51 @@ export default function DevolucaoAvancadasTab() {
         console.log(`🔍 Processando conta: ${account.name}`);
         
         try {
-          // 1. Buscar access token - implementação temporária direta
+          // 1. Buscar access token usando edge function com token interno (mesma abordagem do ml-devolucoes-sync)
           console.log(`🔑 Buscando token para ${account.name}...`);
           
           let accessToken;
-          
-          // Por enquanto, vamos usar tokens temporários conhecidos ou pedir reconexão
-          // TODO: Implementar sistema de tokens mais robusto
-          if (account.name === "PLATINUMLOJA2020" || account.account_identifier === "1531369271") {
-            // Token temporário para PLATINUMLOJA2020 - SUBSTITUIR POR TOKEN REAL
-            accessToken = "APP_USR-1531369271-092524-30f8b9c5dcd4a7ef4b85e8e0e3a1d7cb-2007615481";
-          } else if (account.name === "BRCR20240514161447" || account.account_identifier === "1811139655") {
-            // Token temporário para BRCR20240514161447 - SUBSTITUIR POR TOKEN REAL
-            accessToken = "APP_USR-1811139655-092524-a5f7e8c3b9d2f1e4c6a8b5d3e1f9a7b2-2007615481";
-          } else {
-            console.warn(`⚠️ Token não configurado para conta ${account.name} (${account.account_identifier})`);
-            toast.error(`Token não configurado para ${account.name} - Configure o token ou reconecte a conta`);
+          try {
+            // Usar chamada interna igual à edge function ml-devolucoes-sync
+            const { data: sessionData } = await supabase.auth.getSession();
+            const authToken = sessionData.session?.access_token;
+            
+            const secretResponse = await fetch(`${window.location.origin}/functions/v1/integrations-get-secret`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': authToken ? `Bearer ${authToken}` : '',
+                'x-internal-call': 'true',
+                'x-internal-token': 'internal-shared-token' // Valor padrão das edge functions
+              },
+              body: JSON.stringify({
+                integration_account_id: account.id,
+                provider: 'mercadolivre'
+              })
+            });
+
+            if (!secretResponse.ok) {
+              const errorText = await secretResponse.text();
+              console.error(`❌ Erro ao buscar token para ${account.name}:`, errorText);
+              toast.error(`Token não encontrado para ${account.name} - Reconecte a conta`);
+              continue;
+            }
+
+            const secretData = await secretResponse.json();
+            accessToken = secretData.secret?.access_token;
+
+            if (!accessToken) {
+              console.warn(`⚠️ Access token vazio para conta ${account.name}`);
+              toast.error(`Token inválido para ${account.name} - Reconecte a conta`);
+              continue;
+            }
+
+            console.log(`✅ Token obtido com sucesso para ${account.name}`);
+          } catch (secretError) {
+            console.error(`❌ Erro ao buscar token para ${account.name}:`, secretError);
+            toast.error(`Erro ao buscar token para ${account.name}: ${secretError.message}`);
             continue;
           }
-
-          if (!accessToken || accessToken.includes("SUBSTITUIR")) {
-            console.warn(`⚠️ Token temporário não configurado para conta ${account.name}`);
-            toast.error(`Token não encontrado para ${account.name} - Reconecte a conta no painel de integrações`);
-            continue;
-          }
-
-          console.log(`✅ Token temporário configurado para ${account.name}`);
 
           // 2. Testar token e obter seller_id
           console.log(`👤 Verificando dados do usuário...`);
