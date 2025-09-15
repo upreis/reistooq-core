@@ -1668,12 +1668,17 @@ export type Database = {
           buyer_email: string | null
           buyer_id: string | null
           buyer_nickname: string | null
-          claim_id: string
+          claim_id: string | null
           claim_stage: string | null
-          claim_status: string
-          claim_type: string
+          claim_status: string | null
+          claim_type: string | null
           created_at: string
           currency: string | null
+          dados_claim: Json | null
+          dados_mensagens: Json | null
+          dados_order: Json | null
+          dados_return: Json | null
+          data_criacao: string | null
           date_closed: string | null
           date_created: string
           date_last_update: string | null
@@ -1690,6 +1695,8 @@ export type Database = {
           processed_at: string | null
           processed_by: string | null
           processed_status: string | null
+          produto_titulo: string | null
+          quantidade: number | null
           quantity: number | null
           raw_data: Json | null
           reason_code: string | null
@@ -1698,9 +1705,11 @@ export type Database = {
           return_id: string | null
           seller_response: string | null
           sku: string | null
+          status_devolucao: string | null
           tags: string[] | null
           unit_price: number | null
           updated_at: string
+          valor_retido: number | null
           variation_id: string | null
         }
         Insert: {
@@ -1709,12 +1718,17 @@ export type Database = {
           buyer_email?: string | null
           buyer_id?: string | null
           buyer_nickname?: string | null
-          claim_id: string
+          claim_id?: string | null
           claim_stage?: string | null
-          claim_status: string
-          claim_type: string
+          claim_status?: string | null
+          claim_type?: string | null
           created_at?: string
           currency?: string | null
+          dados_claim?: Json | null
+          dados_mensagens?: Json | null
+          dados_order?: Json | null
+          dados_return?: Json | null
+          data_criacao?: string | null
           date_closed?: string | null
           date_created: string
           date_last_update?: string | null
@@ -1731,6 +1745,8 @@ export type Database = {
           processed_at?: string | null
           processed_by?: string | null
           processed_status?: string | null
+          produto_titulo?: string | null
+          quantidade?: number | null
           quantity?: number | null
           raw_data?: Json | null
           reason_code?: string | null
@@ -1739,9 +1755,11 @@ export type Database = {
           return_id?: string | null
           seller_response?: string | null
           sku?: string | null
+          status_devolucao?: string | null
           tags?: string[] | null
           unit_price?: number | null
           updated_at?: string
+          valor_retido?: number | null
           variation_id?: string | null
         }
         Update: {
@@ -1750,12 +1768,17 @@ export type Database = {
           buyer_email?: string | null
           buyer_id?: string | null
           buyer_nickname?: string | null
-          claim_id?: string
+          claim_id?: string | null
           claim_stage?: string | null
-          claim_status?: string
-          claim_type?: string
+          claim_status?: string | null
+          claim_type?: string | null
           created_at?: string
           currency?: string | null
+          dados_claim?: Json | null
+          dados_mensagens?: Json | null
+          dados_order?: Json | null
+          dados_return?: Json | null
+          data_criacao?: string | null
           date_closed?: string | null
           date_created?: string
           date_last_update?: string | null
@@ -1772,6 +1795,8 @@ export type Database = {
           processed_at?: string | null
           processed_by?: string | null
           processed_status?: string | null
+          produto_titulo?: string | null
+          quantidade?: number | null
           quantity?: number | null
           raw_data?: Json | null
           reason_code?: string | null
@@ -1780,9 +1805,11 @@ export type Database = {
           return_id?: string | null
           seller_response?: string | null
           sku?: string | null
+          status_devolucao?: string | null
           tags?: string[] | null
           unit_price?: number | null
           updated_at?: string
+          valor_retido?: number | null
           variation_id?: string | null
         }
         Relationships: []
