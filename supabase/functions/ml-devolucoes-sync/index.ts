@@ -109,7 +109,17 @@ serve(async (req) => {
     }
 
     // Verificar status do token
-    if (account.token_status !== 'valid') {
+    if (account.token_status === 'reconnect_required') {
+      console.error(`❌ [ML Devoluções] Token status inválido: reconnect_required para conta ${account.name}`);
+      return new Response(JSON.stringify({ 
+        error: 'Token de acesso inválido',
+        details: `Status do token: reconnect_required. Favor reconectar a conta.`,
+        account_name: account.name
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    } else if (account.token_status !== 'valid') {
       console.error(`❌ [ML Devoluções] Token status inválido: ${account.token_status} para conta ${account.name}`);
       return new Response(JSON.stringify({ 
         error: 'Token de acesso inválido',
