@@ -475,8 +475,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
           <Button 
+            type="button"
             onClick={(e) => {
-              e.preventDefault(); // Prevenir reload
+              e.preventDefault();
+              e.stopPropagation();
               sincronizarDevolucoes();
             }}
             disabled={loading}
@@ -487,7 +489,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            {loading ? 'Sincronizando...' : 'Sincronizar Devoluções'}
+            Sincronizar Devoluções
           </Button>
           
           <Button 
