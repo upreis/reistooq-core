@@ -165,6 +165,7 @@ Deno.serve(async (req) => {
         name: user.nickname || user.first_name,
         account_identifier: String(user.id),
         is_active: true,
+        token_status: 'active',
         organization_id: organizationId,
         public_auth: {
           user_id: user.id,
