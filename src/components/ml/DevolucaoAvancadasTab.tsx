@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { translateCancelReason } from '@/lib/translations';
+import { usePersistentMLOrdersState } from '@/hooks/usePersistentMLOrdersState';
 import { 
   RefreshCw, 
   Download, 
@@ -22,7 +23,9 @@ import {
   FileText,
   CheckSquare,
   Search,
-  Wrench
+  Wrench,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -85,6 +88,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     dataFim: ''
   });
 
+  // PAGINAÇÃO
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
+
+  // HOOK DE PERSISTÊNCIA
+  const persistentState = usePersistentMLOrdersState();
+
   // NOVOS ESTADOS PARA FILTROS AVANÇADOS
   const [filtrosAvancados, setFiltrosAvancados] = useState({
     contasSelecionadas: [] as string[],
@@ -137,8 +147,30 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
   // Carregar dados iniciais (BUSCAR DIRETO DA API)
   useEffect(() => {
+    if (!persistentState.isStateLoaded) return;
+
     const carregarDevolucoes = async () => {
       console.log('🚀 Carregando devoluções da API do Mercado Livre...');
+      
+      // Verificar se existe estado persistido válido
+      if (persistentState.hasValidPersistedState()) {
+        console.log('🔄 Restaurando dados persistidos...');
+        const state = persistentState.persistedState!;
+        setDevolucoes(state.devolucoes);
+        setFiltros(state.filters || filtros);
+        setCurrentPage(state.currentPage || 1);
+        
+        // Aplicar contas selecionadas se existir
+        if (state.integrationAccountId) {
+          setFiltrosAvancados(prev => ({
+            ...prev,
+            contasSelecionadas: [state.integrationAccountId!]
+          }));
+        }
+        
+        toast.success(`🔄 ${state.devolucoes.length} devoluções restauradas`);
+        return;
+      }
       
       // Buscar direto da API por padrão
       if (mlAccounts && mlAccounts.length > 0) {
@@ -161,6 +193,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             
             if (devolucoesDaAPI.length > 0) {
               setDevolucoes(devolucoesDaAPI);
+              // Salvar dados no estado persistido
+              persistentState.saveOrdersData(devolucoesDaAPI, devolucoesDaAPI.length, 1);
+              setCurrentPage(1);
               toast.success(`🎉 ${devolucoesDaAPI.length} devoluções carregadas da API`);
             } else {
               toast.info('ℹ️ Nenhuma devolução encontrada na API');
@@ -179,7 +214,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     if (mlAccounts && mlAccounts.length > 0) {
       carregarDevolucoes();
     }
-  }, [mlAccounts]); // Dependência das contas ML
+  }, [mlAccounts, persistentState.isStateLoaded]); // Dependência das contas ML
 
   // Função para aplicar filtros otimizada com useCallback
   const aplicarFiltros = useCallback(() => {
@@ -220,7 +255,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
     console.log('✅ Resultado final dos filtros:', resultados.length);
     setDevolucoesFiltradas(resultados);
-  }, [filtros, devolucoes]);
+    
+    // Salvar filtros aplicados
+    persistentState.saveAppliedFilters(filtros);
+  }, [filtros, devolucoes, persistentState]);
 
   useEffect(() => {
     console.log('🔍 Aplicando filtros - dados originais:', devolucoes.length);
@@ -384,6 +422,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       console.log(`🎉 Total de devoluções encontradas na API: ${todasDevolucoes.length}`);
       
       if (todasDevolucoes.length > 0) {
+        // Salvar no estado persistido
+        persistentState.saveOrdersData(todasDevolucoes, todasDevolucoes.length, 1);
+        setCurrentPage(1);
         toast.success(`✅ API: ${todasDevolucoes.length} devoluções encontradas em tempo real`);
       } else {
         toast.info('ℹ️ Nenhuma devolução encontrada na API no período selecionado');
@@ -953,12 +994,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => setFiltros({
-                searchTerm: '',
-                status: '',
-                dataInicio: '',
-                dataFim: ''
-              })}
+              onClick={() => {
+                setFiltros({
+                  searchTerm: '',
+                  status: '',
+                  dataInicio: '',
+                  dataFim: ''
+                });
+                setCurrentPage(1);
+                persistentState.clearPersistedState();
+              }}
             >
               Limpar Filtros
             </Button>
@@ -1048,7 +1093,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {devolucoesFiltradas.map((devolucao, index) => {
+                {devolucoesFiltradas
+                  .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                  .map((devolucao, index) => {
                   // Mapear campos da tabela real para campos esperados pela interface
                   const orderData = devolucao.dados_order || {};
                   const claimData = devolucao.dados_claim || {};
