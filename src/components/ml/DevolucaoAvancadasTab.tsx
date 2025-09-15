@@ -109,231 +109,35 @@ export default function DevolucaoAvancadasTab() {
       let totalProcessadas = 0;
 
       for (const account of mlAccounts) {
-        console.log(`🔍 Processando conta: ${account.name} (${account.account_identifier})`);
+        console.log(`🔍 Processando conta: ${account.name}`);
         
         try {
-          // 1. Buscar access token da conta
-          const accessToken = await getAccessToken(account.id);
-          if (!accessToken) {
-            console.warn(`⚠️ Token não encontrado para conta ${account.name}`);
-            continue;
-          }
+          const { data, error } = await supabase.functions.invoke('ml-devolucoes-sync', {
+            body: { integration_account_id: account.id }
+          });
 
-          // 2. Buscar claims da API ML  
-          // Usar account_identifier como seller_id
-          const claims = await buscarClaimsML(account.account_identifier, accessToken);
-          console.log(`📋 Encontradas ${claims.length} claims para ${account.name}`);
+          if (error) throw error;
 
-          // 3. Processar cada claim
-          for (const claim of claims) {
-            try {
-              const devolucaoData = await processarClaim(claim, accessToken, account.id);
-              if (devolucaoData) {
-                // Salvar no Supabase
-                await salvarDevolucao(devolucaoData);
-                totalProcessadas++;
-              }
-            } catch (claimError) {
-              console.error(`❌ Erro ao processar claim ${claim.id}:`, claimError);
-            }
-          }
+          console.log(`✅ Processadas ${data.stats?.claims_processed || 0} devoluções para ${account.name}`);
+          totalProcessadas += data.stats?.claims_processed || 0;
 
         } catch (accountError) {
-          console.error(`❌ Erro ao processar conta ${account.name}:`, accountError);
-          toast.error(`Erro na conta ${account.name}: ${accountError.message}`);
+          console.error(`❌ Erro na conta ${account.name}:`, accountError);
+          toast.error(`Erro na conta ${account.name}`);
         }
       }
 
-      // Recarregar dados
       await refetchDevolucoes();
-      
-      toast.success(`✅ Sincronização concluída: ${totalProcessadas} devoluções processadas`);
+      toast.success(`✅ ${totalProcessadas} devoluções sincronizadas`);
 
     } catch (error) {
-      console.error('❌ Erro na sincronização:', error);
-      toast.error('Erro na sincronização: ' + error.message);
+      console.error('❌ Erro:', error);
+      toast.error('Erro na sincronização');
     } finally {
       setLoading(false);
     }
   };
 
-  // Buscar access token da conta
-  const getAccessToken = async (accountId: string): Promise<string | null> => {
-    try {
-      const { data, error } = await supabase.functions.invoke('integrations-get-secret', {
-        body: { 
-          integration_account_id: accountId,
-          provider: 'mercadolivre'
-        }
-      });
-
-      if (error) throw error;
-      return data?.access_token || null;
-    } catch (error) {
-      console.error('❌ Erro ao buscar token:', error);
-      return null;
-    }
-  };
-
-  // Buscar claims da API ML
-  const buscarClaimsML = async (sellerId: string, accessToken: string) => {
-    const claims = [];
-
-    try {
-      // 1. Buscar via post-purchase claims
-      const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?seller_id=${sellerId}&limit=50`;
-      
-      const response = await fetch(claimsUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        claims.push(...(data.results || []));
-      } else {
-        console.warn(`⚠️ Falha na busca de claims: ${response.status}`);
-      }
-
-      // 2. Buscar orders canceladas (últimos 60 dias)
-      const dateFrom = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
-      const ordersUrl = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.status=cancelled&order.date_created.from=${dateFrom}&limit=50`;
-      
-      const ordersResponse = await fetch(ordersUrl, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (ordersResponse.ok) {
-        const ordersData = await ordersResponse.json();
-        const cancelledOrders = ordersData.results || [];
-
-        // Para cada order cancelada, criar uma "claim sintética"
-        for (const order of cancelledOrders) {
-          claims.push({
-            id: `cancelled_${order.id}`,
-            resource_id: order.id,
-            type: 'cancellation',
-            status: 'closed',
-            stage: 'completed',
-            reason: order.cancel_detail || 'Order cancelled',
-            date_created: order.date_created,
-            date_closed: order.date_closed,
-            order_data: order
-          });
-        }
-      }
-
-    } catch (error) {
-      console.error('❌ Erro ao buscar claims ML:', error);
-    }
-
-    return claims;
-  };
-
-  // Processar cada claim individual
-  const processarClaim = async (claim: any, accessToken: string, accountId: string): Promise<any | null> => {
-    try {
-      // 1. Buscar dados da order
-      const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${claim.resource_id}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!orderResponse.ok) {
-        console.warn(`⚠️ Falha ao buscar order ${claim.resource_id}: ${orderResponse.status}`);
-        return null;
-      }
-
-      const orderData = await orderResponse.json();
-
-      // 2. Buscar detalhes de devolução (se aplicável)
-      let returnDetails = null;
-      if (claim.id && !claim.id.startsWith('cancelled_')) {
-        try {
-          const returnResponse = await fetch(`https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (returnResponse.ok) {
-            returnDetails = await returnResponse.json();
-          }
-        } catch (returnError) {
-          console.warn('⚠️ Erro ao buscar detalhes de devolução:', returnError);
-        }
-      }
-
-      // 3. Buscar mensagens (se aplicável)
-      let mensagens = null;
-      if (claim.mediations && claim.mediations.length > 0) {
-        try {
-          const packId = claim.mediations[0].id;
-          const sellerId = orderData.seller.id;
-          
-          const messagesResponse = await fetch(`https://api.mercadolibre.com/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (messagesResponse.ok) {
-            mensagens = await messagesResponse.json();
-          }
-        } catch (msgError) {
-          console.warn('⚠️ Erro ao buscar mensagens:', msgError);
-        }
-      }
-
-      // 4. Montar dados da devolução
-      const devolucaoData = {
-        order_id: orderData.id.toString(),
-        claim_id: claim.id.startsWith('cancelled_') ? null : claim.id,
-        data_criacao: claim.date_created,
-        status_devolucao: claim.status || 'unknown',
-        valor_retido: orderData.total_amount || 0,
-        produto_titulo: orderData.order_items?.[0]?.item?.title || 'Produto não identificado',
-        sku: orderData.order_items?.[0]?.item?.seller_sku || '',
-        quantidade: orderData.order_items?.[0]?.quantity || 1,
-        dados_order: orderData,
-        dados_claim: claim,
-        dados_mensagens: mensagens,
-        dados_return: returnDetails,
-        integration_account_id: accountId
-      };
-
-      return devolucaoData;
-
-    } catch (error) {
-      console.error('❌ Erro ao processar claim:', error);
-      return null;
-    }
-  };
-
-  // Salvar devolução no Supabase
-  const salvarDevolucao = async (devolucaoData: any) => {
-    try {
-      const { error } = await supabase
-        .from('devolucoes_avancadas')
-        .upsert(devolucaoData, { onConflict: 'order_id,claim_id' });
-
-      if (error) throw error;
-      
-      console.log(`💾 Devolução salva: ${devolucaoData.order_id}`);
-    } catch (error) {
-      console.error('❌ Erro ao salvar devolução:', error);
-      throw error;
-    }
-  };
 
   // Aplicar filtros
   const aplicarFiltros = () => {
