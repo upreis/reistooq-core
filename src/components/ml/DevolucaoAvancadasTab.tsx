@@ -172,7 +172,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
   };
 
-  // NOVA FUNÇÃO - BUSCA EM TEMPO REAL DA API ML
+  // VERSÃO CORRIGIDA - BUSCA VIA EDGE FUNCTION (EVITA CORS)
   const buscarDevolucoesDaAPI = async (filtros: {
     contasSelecionadas: string[];
     dataInicio?: string;
@@ -200,7 +200,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         console.log(`🔍 Buscando devoluções em tempo real para: ${account.name}`);
         
         try {
-          console.log(`🔍 Processando conta: ${account.name}`);
+          console.log(`🔑 Verificando token para ${account.name}...`);
           
           // Usar edge function para buscar devoluções (evita CORS)
           const { data: devolucaesData, error: devolucaesError } = await supabase.functions.invoke('ml-devolucoes-sync', {
@@ -216,25 +216,61 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
           if (devolucaesError) {
             console.error(`❌ Erro na edge function para ${account.name}:`, devolucaesError);
+            toast.error(`Erro na conta ${account.name}: ${devolucaesError.message}`);
             continue;
           }
 
           if (devolucaesData?.success && devolucaesData.data) {
             console.log(`📋 Encontradas ${devolucaesData.data.length} devoluções para ${account.name}`);
-            todasDevolucoes.push(...devolucaesData.data);
+            
+            // Converter os dados para o formato DevolucaoAvancada
+            const devolucoesProcesadas = devolucaesData.data.map((item: any) => ({
+              id: item.id,
+              order_id: item.order_id,
+              claim_id: item.claim_id,
+              data_criacao: item.data_criacao,
+              status_devolucao: item.status_devolucao || 'unknown',
+              valor_retido: item.valor_retido || 0,
+              produto_titulo: item.produto_titulo || 'Produto não identificado',
+              sku: item.sku || '',
+              quantidade: item.quantidade || 1,
+              comprador_nickname: item.dados_order?.buyer?.nickname || 'Desconhecido',
+              dados_order: item.dados_order,
+              dados_claim: item.dados_claim,
+              dados_mensagens: item.dados_mensagens,
+              dados_return: item.dados_return,
+              integration_account_id: accountId,
+              account_name: account.name,
+              created_at: item.created_at,
+              updated_at: item.updated_at
+            }));
+
+            todasDevolucoes.push(...devolucoesProcesadas);
+            toast.success(`✅ ${devolucoesProcesadas.length} devoluções encontradas para ${account.name}`);
+          } else {
+            console.log(`ℹ️ Nenhuma devolução encontrada para ${account.name} no período`);
           }
 
         } catch (accountError) {
-          console.error(`❌ Erro na conta ${account.name}:`, accountError);
+          console.error(`❌ Erro ao processar conta ${account.name}:`, accountError);
+          toast.error(`Erro na conta ${account.name}: ${accountError.message}`);
         }
       }
 
       console.log(`🎉 Total de devoluções encontradas: ${todasDevolucoes.length}`);
+      
+      if (todasDevolucoes.length > 0) {
+        toast.success(`✅ Total: ${todasDevolucoes.length} devoluções encontradas em tempo real`);
+      } else {
+        toast.info('ℹ️ Nenhuma devolução encontrada no período selecionado');
+      }
+      
       return todasDevolucoes;
 
     } catch (error) {
       console.error('❌ Erro geral na busca:', error);
-      throw error;
+      toast.error(`Erro na busca: ${error.message}`);
+      return [];
     } finally {
       setLoading(false);
     }
