@@ -142,8 +142,8 @@ async function fetchClaimsData(opts) {
   };
 
   let baseUrl = `${API_BASE}/post-purchase/v1/claims/search?seller_id=${sellerId}`;
-  if (dateFromISO) baseUrl += `&date_created=${dateFromISO}`;
-  if (dateToISO) baseUrl += `&last_updated=${dateToISO}`;
+  if (dateFromISO) baseUrl += `&date_created=${encodeURIComponent(dateFromISO)}`;
+  if (dateToISO) baseUrl += `&last_updated=${encodeURIComponent(dateToISO)}`;
   if (status) baseUrl += `&status=${status}`;
 
   console.log(`📅 [ML Devoluções] Buscando claims de ${dateFromISO} até ${dateToISO} para seller ${sellerId}`);
