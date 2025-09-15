@@ -1,92 +1,96 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Search, Eye, Filter, Download, RefreshCw, 
-  TrendingUp, TrendingDown, DollarSign, Package, 
-  Clock, AlertTriangle, MessageSquare, Calendar
-} from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { SecretsService } from '@/services/SecretsService';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  RefreshCw, 
+  Download, 
+  Filter, 
+  Eye, 
+  Package, 
+  Clock, 
+  CheckCircle, 
+  XCircle, 
+  DollarSign,
+  Loader2 
+} from 'lucide-react';
 
-interface DevolucaoData {
-  id?: number;
+interface DevolucaoAvancada {
+  id: number;
+  claim_id: string;
+  return_id: string;
   order_id: string;
-  claim_id?: string;
-  data_criacao: string;
-  status_devolucao?: string;
-  valor_retido?: number;
-  produto_titulo?: string;
+  id_carrinho?: string;
+  id_item?: string;
   sku?: string;
+  produto_titulo?: string;
   quantidade?: number;
-  dados_order?: any;
+  valor_retido?: number;
+  status_devolucao?: string;
+  cronograma_status?: string;
+  cronograma_tipo?: string;
+  destino_tipo?: string;
+  destino_endereco?: any;
+  data_criacao?: string;
+  data_fechamento?: string;
+  ultima_atualizacao?: string;
+  status_envio?: string;
+  codigo_rastreamento?: string;
+  status_dinheiro?: string;
+  reembolso_quando?: string;
   dados_claim?: any;
-  dados_mensagens?: any;
   dados_return?: any;
+  dados_order?: any;
+  dados_mensagens?: any;
+  dados_acoes?: any;
   integration_account_id?: string;
-  created_at?: string;
-  processado_em?: string;
   organization_id?: string;
+  processado_em?: string;
+  created_at?: string;
 }
 
-export default function DevolucaoAvancadasTab() {
-  const [devolucoes, setDevolucoes] = useState<DevolucaoData[]>([]);
-  const [filteredDevolucoes, setFilteredDevolucoes] = useState<DevolucaoData[]>([]);
+interface MLAccount {
+  id: string;
+  name: string;
+  account_identifier: string;
+  organization_id: string;
+  is_active: boolean;
+}
+
+interface Filtros {
+  searchTerm: string;
+  status: string;
+  dataInicio: string;
+  dataFim: string;
+}
+
+interface DevolucaoAvancadasTabProps {
+  mlAccounts: MLAccount[];
+  refetch: () => Promise<void>;
+  existingDevolucoes: DevolucaoAvancada[];
+}
+
+const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
+  mlAccounts,
+  refetch,
+  existingDevolucoes
+}) => {
   const [loading, setLoading] = useState(false);
-  const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoData | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  
-  // Filtros
-  const [filtros, setFiltros] = useState({
-    dataInicio: '',
-    dataFim: '',
+  const [loading, setLoading] = useState(false);
+  const [devolucoes, setDevolucoes] = useState<DevolucaoAvancada[]>([]);
+  const [devolucoesFiltradas, setDevolucoesFiltradas] = useState<DevolucaoAvancada[]>([]);
+  const [filtros, setFiltros] = useState<Filtros>({
+    searchTerm: '',
     status: '',
-    valorMin: '',
-    valorMax: '',
-    comprador: '',
-    produto: ''
+    dataInicio: '',
+    dataFim: ''
   });
 
-  // Buscar contas ML ativas
-  const { data: mlAccounts } = useQuery({
-    queryKey: ["ml-accounts-devolucoes"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("integration_accounts")
-        .select("id, name, account_identifier")
-        .eq("provider", "mercadolivre")
-        .eq("is_active", true);
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Carregar devoluções existentes
-  const { data: existingDevolucoes, refetch: refetchDevolucoes } = useQuery({
-    queryKey: ["devolucoes-avancadas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('devolucoes_avancadas')
-        .select('*')
-        .order('data_criacao', { ascending: false });
-
-      if (error) throw error;
-      return data as DevolucaoData[];
-    },
-  });
-
+  // Atualizar dados quando recebemos devoluções existentes
   useEffect(() => {
     if (existingDevolucoes) {
       setDevolucoes(existingDevolucoes);
@@ -105,571 +109,413 @@ export default function DevolucaoAvancadasTab() {
     }
 
     setLoading(true);
+    console.log('🚀 Iniciando sincronização de devoluções...');
     
     try {
-      let totalProcessadas = 0;
+      let processedAccounts = 0;
 
       for (const account of mlAccounts) {
         console.log(`🔍 Processando conta: ${account.name}`);
         
         try {
-          // 1. Buscar access token usando edge function com token interno (mesma abordagem do ml-devolucoes-sync)
-          console.log(`🔑 Buscando token para ${account.name}...`);
+          // Usar edge function ml-devolucoes-sync que já tem acesso interno aos tokens
+          console.log(`🔄 Sincronizando devoluções para ${account.name}...`);
           
-          let accessToken;
-          try {
-            // Usar chamada interna via supabase.functions.invoke
-            const { data: sessionData } = await supabase.auth.getSession();
-            
-            const { data: secretData, error: secretError } = await supabase.functions.invoke('integrations-get-secret', {
-              body: {
-                integration_account_id: account.id,
-                provider: 'mercadolivre'
-              },
-              headers: {
-                'x-internal-call': 'true',
-                'x-internal-token': 'internal-shared-token'
-              }
-            });
-
-            if (secretError || !secretData) {
-              console.error(`❌ Erro ao buscar token para ${account.name}:`, secretError);
-              toast.error(`Token não encontrado para ${account.name} - Reconecte a conta`);
-              continue;
-            }
-
-            accessToken = secretData.secret?.access_token;
-
-            if (!accessToken) {
-              console.warn(`⚠️ Access token vazio para conta ${account.name}`);
-              toast.error(`Token inválido para ${account.name} - Reconecte a conta`);
-              continue;
-            }
-
-            console.log(`✅ Token obtido com sucesso para ${account.name}`);
-          } catch (secretError) {
-            console.error(`❌ Erro ao buscar token para ${account.name}:`, secretError);
-            toast.error(`Erro ao buscar token para ${account.name}: ${secretError.message}`);
-            continue;
-          }
-
-          // 2. Testar token e obter seller_id
-          console.log(`👤 Verificando dados do usuário...`);
-          
-          const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
+          const { data: syncData, error: syncError } = await supabase.functions.invoke('ml-devolucoes-sync', {
+            body: {
+              integration_account_id: account.id,
+              date_from: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 dias
+              date_to: new Date().toISOString()
             }
           });
 
-          if (!userResponse.ok) {
-            console.error(`❌ Token inválido para ${account.name}: ${userResponse.status}`);
-            const errorText = await userResponse.text();
-            console.error(`Erro detalhado:`, errorText);
-            toast.error(`Token expirado para ${account.name} - Reconecte a conta`);
+          if (syncError) {
+            console.error(`❌ Erro ao sincronizar devoluções para ${account.name}:`, syncError);
+            toast.error(`Erro ao sincronizar devoluções para ${account.name}: ${syncError.message}`);
             continue;
           }
 
-          const userData = await userResponse.json();
-          const sellerId = userData.id;
-          console.log(`✅ Seller ID: ${sellerId} (${userData.nickname})`);
-
-          // 3. Buscar claims via post-purchase
-          console.log(`🔍 Buscando claims para seller ${sellerId}...`);
-          
-          const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?seller_id=${sellerId}&limit=50`;
-          
-          const claimsResponse = await fetch(claimsUrl, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          let allClaims = [];
-          
-          if (claimsResponse.ok) {
-            const claimsData = await claimsResponse.json();
-            allClaims = claimsData.results || [];
-            console.log(`📋 Claims post-purchase encontradas: ${allClaims.length}`);
-          } else {
-            console.warn(`⚠️ Falha na busca de claims post-purchase: ${claimsResponse.status}`);
-            const errorText = await claimsResponse.text();
-            console.warn(`Erro:`, errorText);
-          }
-
-          // 4. Buscar orders canceladas (método alternativo)
-          console.log(`🔍 Buscando orders canceladas...`);
-          
-          const dateFrom = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          const ordersUrl = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.status=cancelled&order.date_created.from=${dateFrom}&limit=20`;
-          
-          const ordersResponse = await fetch(ordersUrl, {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (ordersResponse.ok) {
-            const ordersData = await ordersResponse.json();
-            const cancelledOrders = ordersData.results || [];
-            console.log(`🚫 Orders canceladas encontradas: ${cancelledOrders.length}`);
-
-            // Adicionar orders canceladas como claims sintéticas
-            for (const order of cancelledOrders) {
-              allClaims.push({
-                id: `cancelled_${order.id}`,
-                resource_id: order.id,
-                type: 'cancellation',
-                status: 'closed',
-                reason: order.cancel_detail || 'Pedido cancelado',
-                date_created: order.date_created,
-                order_data: order
-              });
-            }
-          } else {
-            console.warn(`⚠️ Falha na busca de orders canceladas: ${ordersResponse.status}`);
-            const errorText = await ordersResponse.text();
-            console.warn(`Erro:`, errorText);
-          }
-
-          console.log(`📊 Total de claims/devoluções para processar: ${allClaims.length}`);
-
-          if (allClaims.length === 0) {
-            console.log(`ℹ️ Nenhuma devolução encontrada para ${account.name}`);
+          if (!syncData || syncData.error) {
+            console.error(`❌ Erro na resposta da sincronização para ${account.name}:`, syncData?.error);
+            toast.error(`Erro na sincronização de ${account.name}: ${syncData?.error || 'Resposta inválida'}`);
             continue;
           }
 
-          // 5. Processar cada claim
-          for (const [index, claim] of allClaims.entries()) {
-            try {
-              console.log(`📦 Processando ${index + 1}/${allClaims.length}: Order ${claim.resource_id}`);
-
-              // Buscar dados completos da order
-              const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${claim.resource_id}`, {
-                headers: {
-                  'Authorization': `Bearer ${accessToken}`,
-                  'Content-Type': 'application/json'
-                }
-              });
-
-              if (!orderResponse.ok) {
-                console.warn(`⚠️ Erro ao buscar order ${claim.resource_id}: ${orderResponse.status}`);
-                continue;
-              }
-
-              const orderData = await orderResponse.json();
-              console.log(`✅ Order ${claim.resource_id} obtida: ${orderData.order_items?.[0]?.item?.title}`);
-
-              // Montar dados da devolução
-              const devolucaoData = {
-                order_id: orderData.id.toString(),
-                claim_id: claim.id.startsWith('cancelled_') ? null : claim.id,
-                data_criacao: claim.date_created,
-                status_devolucao: claim.status || 'unknown',
-                valor_retido: orderData.total_amount || 0,
-                produto_titulo: orderData.order_items?.[0]?.item?.title || 'Produto não identificado',
-                sku: orderData.order_items?.[0]?.item?.seller_sku || '',
-                quantidade: orderData.order_items?.[0]?.quantity || 1,
-                dados_order: orderData,
-                dados_claim: claim,
-                dados_mensagens: null,
-                dados_return: null,
-                integration_account_id: account.id,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              };
-
-              // Salvar no Supabase
-              const { error: insertError } = await supabase
-                .from('devolucoes_avancadas')
-                .upsert(devolucaoData, { 
-                  onConflict: 'order_id',
-                  ignoreDuplicates: false 
-                });
-
-              if (insertError) {
-                console.error(`❌ Erro ao salvar devolução ${orderData.id}:`, insertError);
-                
-                if (insertError.code === '42P01') {
-                  toast.error('Tabela devolucoes_avancadas não existe - Execute o SQL primeiro!');
-                  return;
-                }
-              } else {
-                totalProcessadas++;
-                console.log(`💾 ✅ Devolução salva: ${orderData.id}`);
-              }
-
-            } catch (claimError) {
-              console.error(`❌ Erro ao processar claim ${claim.id}:`, claimError);
-            }
-
-            // Pausa para evitar rate limiting da API ML
-            if (index < allClaims.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 300));
-            }
-          }
-
-          console.log(`✅ Conta ${account.name} processada com sucesso!`);
-
-        } catch (accountError) {
-          console.error(`❌ Erro ao processar conta ${account.name}:`, accountError);
-          toast.error(`Erro na conta ${account.name}: ${accountError.message}`);
+          const processedCount = syncData.processed_returns || 0;
+          const totalCount = syncData.total_found || 0;
+          
+          console.log(`✅ Sincronização concluída para ${account.name}: ${processedCount}/${totalCount} devoluções processadas`);
+          toast.success(`${account.name}: ${processedCount} devoluções sincronizadas de ${totalCount} encontradas`);
+          
+          processedAccounts++;
+        } catch (syncError) {
+          console.error(`❌ Erro na sincronização para ${account.name}:`, syncError);
+          toast.error(`Erro na sincronização de ${account.name}: ${syncError.message}`);
         }
       }
 
-      // Recarregar dados da tabela
-      console.log(`🔄 Recarregando dados da tabela...`);
-      await refetchDevolucoes();
-      
-      if (totalProcessadas > 0) {
-        toast.success(`🎉 ${totalProcessadas} devoluções sincronizadas com sucesso!`);
-        console.log(`🎉 Sincronização concluída: ${totalProcessadas} devoluções processadas`);
+      // Mostrar resultados finais
+      if (processedAccounts > 0) {
+        toast.success(`✅ Sincronização concluída para ${processedAccounts} conta(s)`);
+        console.log(`🎉 Sincronização finalizada - ${processedAccounts} contas processadas`);
+        
+        // Recarregar dados
+        await refetch();
       } else {
-        toast.warning('⚠️ Nenhuma devolução encontrada para processar');
-        console.log(`ℹ️ Nenhuma devolução foi encontrada ou processada`);
+        toast.error('Nenhuma conta foi processada com sucesso');
       }
-
     } catch (error) {
       console.error('❌ Erro geral na sincronização:', error);
-      toast.error(`Erro na sincronização: ${error.message}`);
+      toast.error('Erro na sincronização de devoluções');
     } finally {
       setLoading(false);
     }
   };
 
-
   // Aplicar filtros
   const aplicarFiltros = () => {
     let filtered = [...devolucoes];
 
-    if (filtros.dataInicio) {
-      filtered = filtered.filter(d => new Date(d.data_criacao) >= new Date(filtros.dataInicio));
+    if (filtros.searchTerm) {
+      const term = filtros.searchTerm.toLowerCase();
+      filtered = filtered.filter(dev => 
+        dev.order_id?.toLowerCase().includes(term) ||
+        dev.produto_titulo?.toLowerCase().includes(term) ||
+        dev.sku?.toLowerCase().includes(term) ||
+        dev.claim_id?.toLowerCase().includes(term) ||
+        dev.return_id?.toLowerCase().includes(term)
+      );
     }
-    
-    if (filtros.dataFim) {
-      filtered = filtered.filter(d => new Date(d.data_criacao) <= new Date(filtros.dataFim));
-    }
-    
+
     if (filtros.status) {
-      filtered = filtered.filter(d => d.status_devolucao && d.status_devolucao.includes(filtros.status));
-    }
-    
-    if (filtros.valorMin) {
-      filtered = filtered.filter(d => (d.valor_retido || 0) >= parseFloat(filtros.valorMin));
-    }
-    
-    if (filtros.valorMax) {
-      filtered = filtered.filter(d => (d.valor_retido || 0) <= parseFloat(filtros.valorMax));
-    }
-    
-    if (filtros.comprador) {
-      filtered = filtered.filter(d => 
-        d.dados_order?.buyer?.nickname && d.dados_order.buyer.nickname.toLowerCase().includes(filtros.comprador.toLowerCase())
-      );
-    }
-    
-    if (filtros.produto) {
-      filtered = filtered.filter(d => 
-        d.produto_titulo && d.produto_titulo.toLowerCase().includes(filtros.produto.toLowerCase())
-      );
+      filtered = filtered.filter(dev => dev.status_devolucao === filtros.status);
     }
 
-    setFilteredDevolucoes(filtered);
+    if (filtros.dataInicio) {
+      filtered = filtered.filter(dev => {
+        const devDate = new Date(dev.data_criacao || 0);
+        return devDate >= new Date(filtros.dataInicio);
+      });
+    }
+
+    if (filtros.dataFim) {
+      filtered = filtered.filter(dev => {
+        const devDate = new Date(dev.data_criacao || 0);
+        return devDate <= new Date(filtros.dataFim);
+      });
+    }
+
+    setDevolucoesFiltradas(filtered);
   };
 
-  // Funções de formatação
-  const getStatusColor = (status: string) => {
-    const colors = {
-      'opened': 'bg-yellow-100 text-yellow-800',
-      'closed': 'bg-green-100 text-green-800',
-      'cancelled': 'bg-red-100 text-red-800',
-      'in_process': 'bg-blue-100 text-blue-800',
-      'completed': 'bg-green-100 text-green-800'
-    };
-    return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value || 0);
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
-    } catch {
-      return 'Data inválida';
+  const exportarCSV = () => {
+    if (!devolucoesFiltradas.length) {
+      toast.error('Nenhum dado para exportar');
+      return;
     }
-  };
 
-  // Calcular métricas
-  const metricas = {
-    total: filteredDevolucoes.length,
-    abertas: filteredDevolucoes.filter(d => d.status_devolucao === 'opened').length,
-    fechadas: filteredDevolucoes.filter(d => ['closed', 'completed'].includes(d.status_devolucao || '')).length,
-    valorTotal: filteredDevolucoes.reduce((sum, d) => sum + (d.valor_retido || 0), 0)
+    const headers = [
+      'ID Claim',
+      'ID Return', 
+      'ID Pedido',
+      'SKU',
+      'Produto',
+      'Quantidade',
+      'Valor Retido',
+      'Status Devolução',
+      'Status Cronograma',
+      'Tipo Cronograma',
+      'Data Criação',
+      'Data Fechamento',
+      'Última Atualização'
+    ];
+
+    const csvData = devolucoesFiltradas.map(dev => [
+      dev.claim_id || '',
+      dev.return_id || '',
+      dev.order_id || '',
+      dev.sku || '',
+      dev.produto_titulo || '',
+      dev.quantidade || '',
+      dev.valor_retido || '',
+      dev.status_devolucao || '',
+      dev.cronograma_status || '',
+      dev.cronograma_tipo || '',
+      dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString() : '',
+      dev.data_fechamento ? new Date(dev.data_fechamento).toLocaleDateString() : '',
+      dev.ultima_atualizacao ? new Date(dev.ultima_atualizacao).toLocaleDateString() : ''
+    ]);
+
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `devolucoes_ml_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success('Arquivo CSV exportado com sucesso!');
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header com estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Package className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total</p>
+                <p className="text-2xl font-bold">{devolucoesFiltradas.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Clock className="h-4 w-4 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Pendentes</p>
+                <p className="text-2xl font-bold">
+                  {devolucoesFiltradas.filter(d => d.status_devolucao === 'pending').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Concluídas</p>
+                <p className="text-2xl font-bold">
+                  {devolucoesFiltradas.filter(d => d.status_devolucao === 'completed').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <XCircle className="h-4 w-4 text-red-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Canceladas</p>
+                <p className="text-2xl font-bold">
+                  {devolucoesFiltradas.filter(d => d.status_devolucao === 'cancelled').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Controles de ação */}
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Devoluções Avançadas</h2>
-          <p className="text-muted-foreground">
-            Sistema completo de gestão de devoluções e reclamações ML
-          </p>
-        </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <Button 
             onClick={sincronizarDevolucoes} 
             disabled={loading}
-            className="gap-2"
+            className="flex items-center gap-2"
           >
             {loading ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="h-4 w-4" />
             )}
-            {loading ? 'Sincronizando...' : 'Sincronizar ML'}
+            Sincronizar Devoluções
           </Button>
-          <Button variant="outline" className="gap-2">
-            <Download className="w-4 h-4" />
-            Exportar
+          
+          <Button 
+            variant="outline" 
+            onClick={exportarCSV}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Exportar CSV
           </Button>
         </div>
-      </div>
-
-      {/* Dashboard de Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Package className="w-4 h-4" />
-              Total Devoluções
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metricas.total}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Em Aberto
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{metricas.abertas}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Fechadas
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{metricas.fechadas}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="w-4 h-4" />
-              Valor Total
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(metricas.valorTotal)}</div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Filtros */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Filter className="w-4 h-4" />
-            Filtros
+            <Filter className="h-5 w-5" />
+            Filtros de Busca
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Input
-              type="date"
-              placeholder="Data início"
-              value={filtros.dataInicio}
-              onChange={(e) => setFiltros({...filtros, dataInicio: e.target.value})}
-            />
-            <Input
-              type="date"
-              placeholder="Data fim"
-              value={filtros.dataFim}
-              onChange={(e) => setFiltros({...filtros, dataFim: e.target.value})}
-            />
-            <Select value={filtros.status} onValueChange={(value) => setFiltros({...filtros, status: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                <SelectItem value="opened">Abertas</SelectItem>
-                <SelectItem value="closed">Fechadas</SelectItem>
-                <SelectItem value="cancelled">Canceladas</SelectItem>
-              </SelectContent>
-            </Select>
-            <Input
-              placeholder="Buscar comprador..."
-              value={filtros.comprador}
-              onChange={(e) => setFiltros({...filtros, comprador: e.target.value})}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div>
+              <Label htmlFor="search">Buscar</Label>
+              <Input
+                id="search"
+                placeholder="Order ID, SKU, Produto..."
+                value={filtros.searchTerm}
+                onChange={(e) => setFiltros(prev => ({ ...prev, searchTerm: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={filtros.status}
+                onValueChange={(value) => setFiltros(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
+                  <SelectItem value="approved">Aprovada</SelectItem>
+                  <SelectItem value="rejected">Rejeitada</SelectItem>
+                  <SelectItem value="completed">Concluída</SelectItem>
+                  <SelectItem value="cancelled">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="dataInicio">Data Início</Label>
+              <Input
+                id="dataInicio"
+                type="date"
+                value={filtros.dataInicio}
+                onChange={(e) => setFiltros(prev => ({ ...prev, dataInicio: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="dataFim">Data Fim</Label>
+              <Input
+                id="dataFim"
+                type="date"
+                value={filtros.dataFim}
+                onChange={(e) => setFiltros(prev => ({ ...prev, dataFim: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex items-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setFiltros({ searchTerm: '', status: '', dataInicio: '', dataFim: '' })}
+                className="w-full"
+              >
+                Limpar Filtros
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Tabela de Devoluções */}
+      {/* Tabela de devoluções */}
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Devoluções ({filteredDevolucoes.length})</CardTitle>
+          <CardTitle>Devoluções do Mercado Livre</CardTitle>
+          <CardDescription>
+            {devolucoesFiltradas.length} devoluções encontradas
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Produto</TableHead>
-                  <TableHead>Motivo</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredDevolucoes.map((devolucao) => (
-                  <TableRow key={`${devolucao.order_id}-${devolucao.id}`}>
-                    <TableCell className="font-mono">{devolucao.order_id}</TableCell>
-                    <TableCell>{formatDate(devolucao.data_criacao)}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(devolucao.status_devolucao || 'unknown')}>
-                        {devolucao.status_devolucao || 'Desconhecido'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatCurrency(devolucao.valor_retido || 0)}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {devolucao.produto_titulo || 'Produto não identificado'}
-                    </TableCell>
-                    <TableCell className="max-w-[150px] truncate">
-                      {devolucao.dados_claim?.reason || '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh]">
-                          <DialogHeader>
-                            <DialogTitle>Detalhes da Devolução - {devolucao.order_id}</DialogTitle>
-                          </DialogHeader>
-                          <ScrollArea className="max-h-[70vh]">
-                            <Tabs defaultValue="geral" className="w-full">
-                              <TabsList className="grid w-full grid-cols-4">
-                                <TabsTrigger value="geral">Geral</TabsTrigger>
-                                <TabsTrigger value="order">Order</TabsTrigger>
-                                <TabsTrigger value="claim">Claim</TabsTrigger>
-                                <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
-                              </TabsList>
-                              <TabsContent value="geral" className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="text-sm font-medium">Order ID:</label>
-                                    <p className="font-mono">{devolucao.order_id}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Status:</label>
-                                    <p>
-                                      <Badge className={getStatusColor(devolucao.status_devolucao || 'unknown')}>
-                                        {devolucao.status_devolucao || 'Desconhecido'}
-                                      </Badge>
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Data:</label>
-                                    <p>{formatDate(devolucao.data_criacao)}</p>
-                                  </div>
-                                  <div>
-                                    <label className="text-sm font-medium">Valor:</label>
-                                    <p>{formatCurrency(devolucao.valor_retido || 0)}</p>
-                                  </div>
-                                  <div className="col-span-2">
-                                    <label className="text-sm font-medium">Produto:</label>
-                                    <p>{devolucao.produto_titulo || 'Produto não identificado'}</p>
-                                  </div>
-                                  <div className="col-span-2">
-                                    <label className="text-sm font-medium">Motivo:</label>
-                                    <p>{devolucao.dados_claim?.reason || 'Não informado'}</p>
-                                  </div>
-                                </div>
-                              </TabsContent>
-                              <TabsContent value="order">
-                                <ScrollArea className="h-[400px]">
-                                  <pre className="text-xs bg-muted p-4 rounded">
-                                    {JSON.stringify(devolucao.dados_order, null, 2)}
-                                  </pre>
-                                </ScrollArea>
-                              </TabsContent>
-                              <TabsContent value="claim">
-                                <ScrollArea className="h-[400px]">
-                                  <pre className="text-xs bg-muted p-4 rounded">
-                                    {JSON.stringify(devolucao.dados_claim, null, 2)}
-                                  </pre>
-                                </ScrollArea>
-                              </TabsContent>
-                              <TabsContent value="mensagens">
-                                <ScrollArea className="h-[400px]">
-                                  {devolucao.dados_mensagens ? (
-                                    <pre className="text-xs bg-muted p-4 rounded">
-                                      {JSON.stringify(devolucao.dados_mensagens, null, 2)}
-                                    </pre>
-                                  ) : (
-                                    <p className="text-muted-foreground">Nenhuma mensagem encontrada</p>
-                                  )}
-                                </ScrollArea>
-                              </TabsContent>
-                            </Tabs>
-                          </ScrollArea>
-                        </DialogContent>
-                      </Dialog>
-                    </TableCell>
-                  </TableRow>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Order ID</th>
+                  <th className="text-left p-2">Produto</th>
+                  <th className="text-left p-2">SKU</th>
+                  <th className="text-left p-2">Qtd</th>
+                  <th className="text-left p-2">Valor</th>
+                  <th className="text-left p-2">Status</th>
+                  <th className="text-left p-2">Data</th>
+                  <th className="text-left p-2">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {devolucoesFiltradas.map((devolucao, index) => (
+                  <tr key={index} className="border-b hover:bg-gray-50">
+                    <td className="p-2">
+                      <span className="font-mono text-sm">{devolucao.order_id}</span>
+                    </td>
+                    <td className="p-2">
+                      <div className="max-w-xs truncate" title={devolucao.produto_titulo}>
+                        {devolucao.produto_titulo || 'N/A'}
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <span className="font-mono text-sm">{devolucao.sku || 'N/A'}</span>
+                    </td>
+                    <td className="p-2">{devolucao.quantidade || 0}</td>
+                    <td className="p-2">
+                      {devolucao.valor_retido ? `R$ ${Number(devolucao.valor_retido).toFixed(2)}` : 'N/A'}
+                    </td>
+                    <td className="p-2">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        devolucao.status_devolucao === 'completed' ? 'bg-green-100 text-green-800' :
+                        devolucao.status_devolucao === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        devolucao.status_devolucao === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {devolucao.status_devolucao || 'N/A'}
+                      </span>
+                    </td>
+                    <td className="p-2">
+                      {devolucao.data_criacao ? 
+                        new Date(devolucao.data_criacao).toLocaleDateString() : 
+                        'N/A'
+                      }
+                    </td>
+                    <td className="p-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // Implementar visualização de detalhes
+                          console.log('Detalhes:', devolucao);
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
+            
+            {devolucoesFiltradas.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                Nenhuma devolução encontrada
+              </div>
+            )}
           </div>
-          {filteredDevolucoes.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Nenhuma devolução encontrada</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Clique em "Sincronizar ML" para buscar devoluções das suas contas
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default DevolucaoAvancadasTab;
