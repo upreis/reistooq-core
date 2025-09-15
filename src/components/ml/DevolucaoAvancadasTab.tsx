@@ -1053,14 +1053,38 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   const orderData = devolucao.dados_order || {};
                   const claimData = devolucao.dados_claim || {};
                   const returnData = devolucao.dados_return || {};
+                  const mensagensData = devolucao.dados_mensagens || {};
                   const buyerNickname = orderData?.buyer?.nickname || 'N/A';
                   const cancelReason = claimData?.reason?.description || orderData?.cancel_detail?.description || 'N/A';
                   
-                  // Verificar tipos de dados disponíveis
-                  const temClaimData = !!(claimData && Object.keys(claimData).length > 0);
-                  const temReturnData = !!(returnData && Object.keys(returnData).length > 0);
-                  const temMediationData = !!(claimData?.mediation_details);
-                  const temAttachmentsData = !!(claimData?.attachments || claimData?.claim_attachments);
+                  // Verificar tipos de dados disponíveis baseado na estrutura real
+                  const temClaimData = !!(
+                    claimData && Object.keys(claimData).length > 0 ||
+                    orderData?.mediations && orderData.mediations.length > 0
+                  );
+                  
+                  const temReturnData = !!(
+                    returnData && Object.keys(returnData).length > 0 ||
+                    orderData?.order_request?.return ||
+                    orderData?.tags?.includes('return') ||
+                    orderData?.tags?.includes('refund')
+                  );
+                  
+                  const temMediationData = !!(
+                    orderData?.mediations && orderData.mediations.length > 0 ||
+                    claimData?.mediation_details ||
+                    claimData?.reason?.code === 'buyer_cancel_express'
+                  );
+                  
+                  const temAttachmentsData = !!(
+                    claimData?.attachments ||
+                    claimData?.claim_attachments ||
+                    mensagensData && Object.keys(mensagensData).length > 0
+                  );
+                  
+                  const temMensagensData = !!(
+                    mensagensData && Object.keys(mensagensData).length > 0
+                  );
                   
                   return (
                     <tr key={devolucao.id || index} className="border-b hover:bg-gray-50">
@@ -1094,30 +1118,42 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       {/* Novas colunas indicadoras */}
                       <td className="p-2 text-center">
                         {temClaimData ? (
-                          <span className="text-blue-600 text-lg" title="Dados de Claim disponíveis">📋</span>
+                          <span className="text-blue-600 text-lg" title={`Dados de Claim: ${claimData?.type || 'Sim'}`}>
+                            📋
+                          </span>
                         ) : (
-                          <span className="text-gray-300">-</span>
+                          <span className="text-gray-300" title="Sem dados de claim">-</span>
                         )}
                       </td>
                       <td className="p-2 text-center">
                         {temReturnData ? (
-                          <span className="text-green-600 text-lg" title="Dados de Return disponíveis">📦</span>
+                          <span className="text-green-600 text-lg" title="Dados de Return/Devolução disponíveis">
+                            📦
+                          </span>
                         ) : (
-                          <span className="text-gray-300">-</span>
+                          <span className="text-gray-300" title="Sem dados de return">-</span>
                         )}
                       </td>
                       <td className="p-2 text-center">
                         {temMediationData ? (
-                          <span className="text-orange-600 text-lg" title="Dados de Mediação disponíveis">⚖️</span>
+                          <span className="text-orange-600 text-lg" title={`Mediação: ${orderData?.mediations?.length || 1} ativa(s)`}>
+                            ⚖️
+                          </span>
                         ) : (
-                          <span className="text-gray-300">-</span>
+                          <span className="text-gray-300" title="Sem mediação">-</span>
                         )}
                       </td>
                       <td className="p-2 text-center">
                         {temAttachmentsData ? (
-                          <span className="text-gray-600 text-lg" title="Anexos disponíveis">📎</span>
+                          <span className="text-gray-600 text-lg" title="Mensagens/Anexos disponíveis">
+                            📎
+                          </span>
+                        ) : temMensagensData ? (
+                          <span className="text-blue-600 text-lg" title="Mensagens disponíveis">
+                            💬
+                          </span>
                         ) : (
-                          <span className="text-gray-300">-</span>
+                          <span className="text-gray-300" title="Sem anexos ou mensagens">-</span>
                         )}
                       </td>
                       <td className="p-2">
