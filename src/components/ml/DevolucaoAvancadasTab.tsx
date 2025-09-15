@@ -112,14 +112,157 @@ export default function DevolucaoAvancadasTab() {
         console.log(`🔍 Processando conta: ${account.name}`);
         
         try {
-          const { data, error } = await supabase.functions.invoke('ml-devolucoes-sync', {
-            body: { integration_account_id: account.id }
+          // 1. Buscar access token diretamente do banco
+          const { data: secrets, error: secretError } = await supabase
+            .from('integration_secrets')
+            .select('access_token')
+            .eq('integration_account_id', account.id)
+            .eq('provider', 'mercadolivre')
+            .single();
+
+          if (secretError || !secrets?.access_token) {
+            console.warn(`⚠️ Token não encontrado para conta ${account.name}`);
+            toast.error(`Token não encontrado para ${account.name}`);
+            continue;
+          }
+
+          const accessToken = secrets.access_token;
+          console.log(`✅ Token encontrado para ${account.name}`);
+
+          // 2. Testar token e obter seller_id
+          const userResponse = await fetch('https://api.mercadolibre.com/users/me', {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
           });
 
-          if (error) throw error;
+          if (!userResponse.ok) {
+            console.error(`❌ Token inválido para ${account.name}: ${userResponse.status}`);
+            toast.error(`Token expirado para ${account.name} - Reconecte a conta`);
+            continue;
+          }
 
-          console.log(`✅ Processadas ${data.stats?.claims_processed || 0} devoluções para ${account.name}`);
-          totalProcessadas += data.stats?.claims_processed || 0;
+          const userData = await userResponse.json();
+          const sellerId = userData.id;
+          console.log(`👤 Seller ID: ${sellerId} (${userData.nickname})`);
+
+          // 3. Buscar claims via post-purchase
+          console.log(`🔍 Buscando claims...`);
+          
+          const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?seller_id=${sellerId}&limit=50`;
+          
+          const claimsResponse = await fetch(claimsUrl, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          let allClaims = [];
+          
+          if (claimsResponse.ok) {
+            const claimsData = await claimsResponse.json();
+            allClaims = claimsData.results || [];
+            console.log(`📋 Claims encontradas: ${allClaims.length}`);
+          } else {
+            console.warn(`⚠️ Falha na busca de claims: ${claimsResponse.status}`);
+          }
+
+          // 4. Buscar orders canceladas (últimos 15 dias)
+          console.log(`🔍 Buscando orders canceladas...`);
+          
+          const dateFrom = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          const ordersUrl = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.status=cancelled&order.date_created.from=${dateFrom}&limit=20`;
+          
+          const ordersResponse = await fetch(ordersUrl, {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (ordersResponse.ok) {
+            const ordersData = await ordersResponse.json();
+            const cancelledOrders = ordersData.results || [];
+            console.log(`🚫 Orders canceladas: ${cancelledOrders.length}`);
+
+            // Adicionar como claims sintéticas
+            for (const order of cancelledOrders) {
+              allClaims.push({
+                id: `cancelled_${order.id}`,
+                resource_id: order.id,
+                type: 'cancellation',
+                status: 'closed',
+                reason: order.cancel_detail || 'Pedido cancelado',
+                date_created: order.date_created,
+                order_data: order
+              });
+            }
+          } else {
+            console.warn(`⚠️ Falha na busca de orders: ${ordersResponse.status}`);
+          }
+
+          console.log(`📊 Total para processar: ${allClaims.length}`);
+
+          // 5. Processar cada claim
+          for (const [index, claim] of allClaims.entries()) {
+            try {
+              console.log(`📦 ${index + 1}/${allClaims.length}: Order ${claim.resource_id}`);
+
+              // Buscar dados da order
+              const orderResponse = await fetch(`https://api.mercadolibre.com/orders/${claim.resource_id}`, {
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              if (!orderResponse.ok) {
+                console.warn(`⚠️ Erro na order ${claim.resource_id}: ${orderResponse.status}`);
+                continue;
+              }
+
+              const orderData = await orderResponse.json();
+
+              // Montar dados da devolução
+              const devolucaoData = {
+                order_id: orderData.id.toString(),
+                claim_id: claim.id.startsWith('cancelled_') ? null : claim.id,
+                data_criacao: claim.date_created,
+                status_devolucao: claim.status || 'unknown',
+                valor_retido: orderData.total_amount || 0,
+                produto_titulo: orderData.order_items?.[0]?.item?.title || 'Produto não identificado',
+                sku: orderData.order_items?.[0]?.item?.seller_sku || '',
+                quantidade: orderData.order_items?.[0]?.quantity || 1,
+                dados_order: orderData,
+                dados_claim: claim,
+                integration_account_id: account.id
+              };
+
+              // Salvar no Supabase
+              const { error: insertError } = await supabase
+                .from('devolucoes_avancadas')
+                .upsert(devolucaoData, { onConflict: 'order_id' });
+
+              if (insertError) {
+                console.error(`❌ Erro ao salvar ${orderData.id}:`, insertError);
+                if (insertError.code === '42P01') {
+                  toast.error('Execute o SQL da tabela primeiro!');
+                  return;
+                }
+              } else {
+                totalProcessadas++;
+                console.log(`💾 Salva: ${orderData.id}`);
+              }
+
+            } catch (claimError) {
+              console.error(`❌ Erro no claim:`, claimError);
+            }
+
+            // Pausa para evitar rate limit
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
 
         } catch (accountError) {
           console.error(`❌ Erro na conta ${account.name}:`, accountError);
@@ -127,11 +270,17 @@ export default function DevolucaoAvancadasTab() {
         }
       }
 
+      // Recarregar dados
       await refetchDevolucoes();
-      toast.success(`✅ ${totalProcessadas} devoluções sincronizadas`);
+      
+      if (totalProcessadas > 0) {
+        toast.success(`✅ ${totalProcessadas} devoluções sincronizadas!`);
+      } else {
+        toast.warning('Nenhuma devolução encontrada');
+      }
 
     } catch (error) {
-      console.error('❌ Erro:', error);
+      console.error('❌ Erro geral:', error);
       toast.error('Erro na sincronização');
     } finally {
       setLoading(false);
