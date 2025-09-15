@@ -123,32 +123,28 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         console.log(`🔍 Processando conta: ${account.name}`);
         
         try {
-          // 1. USAR O MESMO MÉTODO DOS PEDIDOS - Edge Function unified-orders
-          console.log(`🔑 Testando token via unified-orders para ${account.name}...`);
-          
+          // 1. Testar se unified-orders funciona
           const { data: unifiedData, error: unifiedError } = await supabase.functions.invoke('unified-orders', {
             body: { 
               integration_account_id: account.id,
-              limit: 1 // Só queremos testar o token
+              limit: 1
             }
           });
 
           if (unifiedError) {
             console.warn(`⚠️ Erro na unified-orders para ${account.name}:`, unifiedError);
-            toast.error(`Erro de token para ${account.name}`);
             continue;
           }
 
           console.log(`✅ unified-orders funcionou para ${account.name}`);
 
-          // 2. Buscar orders com claims da tabela ml_orders_completas
+          // 2. Buscar orders com claims
           console.log(`📋 Buscando orders com claims da tabela ml_orders_completas...`);
           
           const { data: ordersWithClaims, error: ordersError } = await supabase
             .from('ml_orders_completas')
             .select('*')
             .eq('has_claims', true)
-            .eq('integration_account_id', account.id)
             .limit(50);
 
           if (ordersError) {
@@ -164,16 +160,15 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               try {
                 const rawData = order.raw_data || {};
                 
-                // Montar dados da devolução baseado nos dados já existentes
                 const devolucaoData = {
-                  order_id: order.order_id,
-                  claim_id: `claim_${order.order_id}_${Date.now()}`,
+                  order_id: order.order_id.toString(), // Garantir que é string
+                  claim_id: null,
                   data_criacao: order.date_created,
-                  status_devolucao: order.status === 'cancelled' ? 'cancelled' : 'with_claims',
-                  valor_retido: order.total_amount || 0,
+                  status_devolucao: 'with_claims',
+                  valor_retido: parseFloat(order.total_amount.toString()) || 0,
                   produto_titulo: order.item_title || 'Produto não identificado',
                   sku: (rawData as any)?.order_items?.[0]?.item?.seller_sku || '',
-                  quantidade: order.quantity || 1,
+                  quantidade: parseInt(order.quantity.toString()) || 1,
                   dados_order: rawData,
                   dados_claim: { 
                     type: 'claim_detected',
@@ -181,30 +176,42 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                     status: order.status,
                     detected_at: new Date().toISOString()
                   },
-                  dados_mensagens: null,
-                  dados_return: null,
-                  integration_account_id: account.id,
-                  ultima_atualizacao: new Date().toISOString()
+                  integration_account_id: account.id
                 };
 
-                // Salvar no Supabase
+                // Tentar inserir primeiro, depois atualizar se já existir
                 const { error: insertError } = await supabase
                   .from('devolucoes_avancadas')
-                  .upsert(devolucaoData, { 
-                    onConflict: 'order_id',
-                    ignoreDuplicates: false 
-                  });
+                  .insert(devolucaoData);
 
                 if (insertError) {
-                  console.error(`❌ Erro ao salvar devolução ${order.order_id}:`, insertError);
-                  
-                  if (insertError.code === '42P01') {
-                    toast.error('Tabela devolucoes_avancadas não existe - Execute o SQL primeiro!');
-                    return;
+                  // Se já existe, atualizar
+                  if (insertError.code === '23505') { // Unique constraint violation
+                    const { error: updateError } = await supabase
+                      .from('devolucoes_avancadas')
+                      .update({
+                        ...devolucaoData,
+                        ultima_atualizacao: new Date().toISOString()
+                      })
+                      .eq('order_id', order.order_id);
+
+                    if (updateError) {
+                      console.error(`❌ Erro ao atualizar ${order.order_id}:`, updateError);
+                    } else {
+                      totalProcessadas++;
+                      console.log(`🔄 Atualizada: ${order.order_id}`);
+                    }
+                  } else {
+                    console.error(`❌ Erro ao inserir ${order.order_id}:`, insertError);
+                    
+                    if (insertError.code === '42P01') {
+                      toast.error('Tabela devolucoes_avancadas não existe - Execute o SQL primeiro!');
+                      return;
+                    }
                   }
                 } else {
                   totalProcessadas++;
-                  console.log(`💾 ✅ Devolução salva: ${order.order_id}`);
+                  console.log(`💾 ✅ Inserida: ${order.order_id}`);
                 }
 
               } catch (orderError) {
@@ -213,12 +220,11 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             }
           }
 
-          // 4. Também buscar orders canceladas da tabela
+          // 4. Buscar orders canceladas
           const { data: cancelledOrders, error: cancelledError } = await supabase
             .from('ml_orders_completas')
             .select('*')
             .eq('status', 'cancelled')
-            .eq('integration_account_id', account.id)
             .limit(50);
 
           if (!cancelledError && cancelledOrders && cancelledOrders.length > 0) {
@@ -229,33 +235,48 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 const rawData = order.raw_data || {};
                 
                 const devolucaoData = {
-                  order_id: order.order_id,
-                  claim_id: `cancel_${order.order_id}_${Date.now()}`,
+                  order_id: order.order_id.toString(),
+                  claim_id: null,
                   data_criacao: order.date_created,
                   status_devolucao: 'cancelled',
-                  valor_retido: order.total_amount || 0,
+                  valor_retido: parseFloat(order.total_amount.toString()) || 0,
                   produto_titulo: order.item_title || 'Produto não identificado',
                   sku: (rawData as any)?.order_items?.[0]?.item?.seller_sku || '',
-                  quantidade: order.quantity || 1,
+                  quantidade: parseInt(order.quantity.toString()) || 1,
                   dados_order: rawData,
                   dados_claim: { 
                     type: 'cancellation',
                     reason: (rawData as any)?.cancel_detail || 'Pedido cancelado',
                     cancelled_at: (rawData as any)?.date_closed || order.date_created
                   },
-                  dados_mensagens: null,
-                  dados_return: null,
-                  integration_account_id: account.id,
-                  ultima_atualizacao: new Date().toISOString()
+                  integration_account_id: account.id
                 };
 
+                // Mesmo método: inserir primeiro, depois atualizar
                 const { error: insertError } = await supabase
                   .from('devolucoes_avancadas')
-                  .upsert(devolucaoData, { onConflict: 'order_id' });
+                  .insert(devolucaoData);
 
-                if (!insertError) {
+                if (insertError) {
+                  if (insertError.code === '23505') { // Já existe
+                    const { error: updateError } = await supabase
+                      .from('devolucoes_avancadas')
+                      .update({
+                        ...devolucaoData,
+                        ultima_atualizacao: new Date().toISOString()
+                      })
+                      .eq('order_id', order.order_id);
+
+                    if (!updateError) {
+                      totalProcessadas++;
+                      console.log(`🔄 Cancelamento atualizado: ${order.order_id}`);
+                    }
+                  } else {
+                    console.error(`❌ Erro ao inserir cancelamento:`, insertError);
+                  }
+                } else {
                   totalProcessadas++;
-                  console.log(`💾 ✅ Cancelamento salvo: ${order.order_id}`);
+                  console.log(`💾 ✅ Cancelamento inserido: ${order.order_id}`);
                 }
 
               } catch (orderError) {
@@ -272,16 +293,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         }
       }
 
-      // Recarregar dados da tabela
+      // Recarregar dados
       console.log(`🔄 Recarregando dados da tabela...`);
       await refetch();
       
       if (totalProcessadas > 0) {
-        toast.success(`🎉 ${totalProcessadas} devoluções/cancelamentos sincronizados!`);
-        console.log(`🎉 Sincronização concluída: ${totalProcessadas} registros processados`);
+        toast.success(`🎉 ${totalProcessadas} devoluções/cancelamentos processados!`);
+        console.log(`🎉 Sincronização concluída: ${totalProcessadas} registros`);
       } else {
-        toast.warning('⚠️ Nenhuma devolução encontrada');
-        console.log(`ℹ️ Nenhuma devolução foi encontrada`);
+        toast.warning('⚠️ Nenhuma devolução nova encontrada');
+        console.log(`ℹ️ Nenhuma devolução nova foi processada`);
       }
 
     } catch (error) {
@@ -454,7 +475,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
           <Button 
-            onClick={sincronizarDevolucoes} 
+            onClick={(e) => {
+              e.preventDefault(); // Prevenir reload
+              sincronizarDevolucoes();
+            }}
             disabled={loading}
             className="flex items-center gap-2"
           >
@@ -463,7 +487,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            Sincronizar Devoluções
+            {loading ? 'Sincronizando...' : 'Sincronizar Devoluções'}
           </Button>
           
           <Button 
