@@ -145,10 +145,19 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         const contasAtivas = mlAccounts.filter(acc => acc.is_active);
         
         if (contasAtivas.length > 0) {
+          // Configurar contas selecionadas automaticamente
+          setFiltrosAvancados(prev => ({
+            ...prev,
+            contasSelecionadas: contasAtivas.map(acc => acc.id),
+            buscarEmTempoReal: true // Habilitar busca em tempo real por padrão
+          }));
+
           try {
             const devolucoesDaAPI = await buscarDevolucoesDaAPI({
               contasSelecionadas: contasAtivas.map(acc => acc.id),
             });
+            
+            console.log('📊 Dados recebidos da API:', devolucoesDaAPI);
             
             if (devolucoesDaAPI.length > 0) {
               setDevolucoes(devolucoesDaAPI);
@@ -167,46 +176,70 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     };
 
     // Aguardar as contas ML carregarem
-    if (mlAccounts) {
+    if (mlAccounts && mlAccounts.length > 0) {
       carregarDevolucoes();
     }
   }, [mlAccounts]); // Dependência das contas ML
 
   // Função para aplicar filtros otimizada com useCallback
   const aplicarFiltros = useCallback(() => {
-    let resultados = devolucoes;
+    console.log('🔄 Aplicando filtros:', filtros);
+    console.log('📊 Dados base para filtrar:', devolucoes.length);
+    
+    let resultados = [...devolucoes]; // Criar cópia para evitar mutação
 
-    if (filtros.searchTerm) {
+    if (filtros.searchTerm && filtros.searchTerm.trim()) {
+      const searchTerm = filtros.searchTerm.toLowerCase();
       resultados = resultados.filter(dev => 
-        dev.produto_titulo?.toLowerCase().includes(filtros.searchTerm.toLowerCase()) ||
-        dev.order_id?.toString().includes(filtros.searchTerm) ||
-        dev.sku?.toLowerCase().includes(filtros.searchTerm.toLowerCase()) ||
-        dev.comprador_nickname?.toLowerCase().includes(filtros.searchTerm.toLowerCase())
+        dev.produto_titulo?.toLowerCase().includes(searchTerm) ||
+        dev.order_id?.toString().includes(searchTerm) ||
+        dev.sku?.toLowerCase().includes(searchTerm) ||
+        dev.comprador_nickname?.toLowerCase().includes(searchTerm)
       );
+      console.log('🔍 Após filtro de busca:', resultados.length);
     }
 
-    if (filtros.status) {
+    if (filtros.status && filtros.status.trim()) {
       resultados = resultados.filter(dev => dev.status_devolucao === filtros.status);
+      console.log('📋 Após filtro de status:', resultados.length);
     }
 
-    if (filtros.dataInicio) {
+    if (filtros.dataInicio && filtros.dataInicio.trim()) {
       resultados = resultados.filter(dev => 
         new Date(dev.data_criacao) >= new Date(filtros.dataInicio)
       );
+      console.log('📅 Após filtro data início:', resultados.length);
     }
 
-    if (filtros.dataFim) {
+    if (filtros.dataFim && filtros.dataFim.trim()) {
       resultados = resultados.filter(dev => 
         new Date(dev.data_criacao) <= new Date(filtros.dataFim)
       );
+      console.log('📅 Após filtro data fim:', resultados.length);
     }
 
+    console.log('✅ Resultado final dos filtros:', resultados.length);
     setDevolucoesFiltradas(resultados);
   }, [filtros, devolucoes]);
 
   useEffect(() => {
+    console.log('🔍 Aplicando filtros - dados originais:', devolucoes.length);
     aplicarFiltros();
+    console.log('🔍 Dados após filtros:', devolucoesFiltradas.length);
   }, [aplicarFiltros]);
+
+  // Debug para verificar quando os dados mudam
+  useEffect(() => {
+    console.log('📊 Estado devolucoes mudou:', {
+      total: devolucoes.length,
+      filtradas: devolucoesFiltradas.length,
+      amostras: devolucoes.slice(0, 3).map(d => ({
+        orderId: d.order_id,
+        status: d.status_devolucao,
+        produto: d.produto_titulo
+      }))
+    });
+  }, [devolucoes, devolucoesFiltradas]);
 
   // Função auxiliar para obter token ML REAL
   const obterTokenML = async (accountId: string, accountName: string): Promise<string | null> => {
@@ -310,13 +343,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             const devolucoesDaAPI = apiResponse.data;
             
             // Processar dados vindos diretamente da API
-            const devolucoesProcesadas = devolucoesDaAPI.map((item: any) => ({
-              id: `api_${item.order_id}_${Date.now()}`, // ID temporário para API
-              order_id: item.order_id,
+            const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => ({
+              id: `api_${item.order_id}_${accountId}_${index}`, // ID único para API
+              order_id: item.order_id.toString(),
               claim_id: item.claim_id || null,
               data_criacao: item.date_created,
-              status_devolucao: item.status || 'unknown',
-              valor_retido: item.amount || 0,
+              status_devolucao: item.status || 'cancelled', // Definir como cancelado por padrão
+              valor_retido: parseFloat(item.amount || 0),
               produto_titulo: item.resource_data?.title || item.reason || 'Produto não identificado',
               sku: item.resource_data?.sku || '',
               quantidade: item.resource_data?.quantity || 1,
@@ -584,7 +617,18 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           dataFim: filtrosAvancados.dataFim,
           statusClaim: filtrosAvancados.statusClaim
         });
+        
+        console.log('📊 Dados da API ML (buscarComFiltros):', devolucoesDaAPI);
         setDevolucoes(devolucoesDaAPI);
+        
+        // Limpar filtros básicos para mostrar todos os dados da API
+        setFiltros({
+          searchTerm: '',
+          status: '',
+          dataInicio: '',
+          dataFim: ''
+        });
+        
         toast.success(`✅ ${devolucoesDaAPI.length} devoluções encontradas na API ML`);
       } catch (error) {
         console.error('❌ Erro na busca da API:', error);
@@ -901,10 +945,81 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       </Card>
 
 
+      {/* Filtros Simples */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Filtros de Busca (Dados Locais)</span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setFiltros({
+                searchTerm: '',
+                status: '',
+                dataInicio: '',
+                dataFim: ''
+              })}
+            >
+              Limpar Filtros
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label htmlFor="search">Buscar</Label>
+              <Input
+                id="search"
+                placeholder="Order ID, SKU, Produto..."
+                value={filtros.searchTerm}
+                onChange={(e) => setFiltros(prev => ({ ...prev, searchTerm: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="status-filter">Status</Label>
+              <Select value={filtros.status} onValueChange={(value) => setFiltros(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos os status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value="cancelled">Canceladas</SelectItem>
+                  <SelectItem value="with_claims">Com Claims</SelectItem>
+                  <SelectItem value="completed">Concluídas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="data-inicio">Data Início</Label>
+              <Input
+                id="data-inicio"
+                type="date"
+                value={filtros.dataInicio}
+                onChange={(e) => setFiltros(prev => ({ ...prev, dataInicio: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="data-fim">Data Fim</Label>
+              <Input
+                id="data-fim"
+                type="date"
+                value={filtros.dataFim}
+                onChange={(e) => setFiltros(prev => ({ ...prev, dataFim: e.target.value }))}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Tabela de devoluções */}
       <Card>
         <CardHeader>
-          <CardTitle>Devoluções do Mercado Livre</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Devoluções do Mercado Livre</span>
+            <div className="text-sm text-muted-foreground">
+              Total carregado: {devolucoes.length} | Filtrado: {devolucoesFiltradas.length}
+            </div>
+          </CardTitle>
           <CardDescription>
             {devolucoesFiltradas.length} devoluções encontradas
           </CardDescription>
@@ -1005,9 +1120,24 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </tbody>
             </table>
             
-            {devolucoesFiltradas.length === 0 && (
+            {devolucoesFiltradas.length === 0 && !loading && (
               <div className="text-center py-8 text-gray-500">
-                Nenhuma devolução encontrada
+                <div className="space-y-2">
+                  <p>Nenhuma devolução encontrada</p>
+                  <p className="text-sm">Total de dados carregados: {devolucoes.length}</p>
+                  {devolucoes.length > 0 && (
+                    <p className="text-sm text-blue-600">
+                      💡 Verifique os filtros aplicados - há dados disponíveis mas podem estar filtrados
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {loading && (
+              <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+                <p className="text-gray-500 mt-2">Carregando devoluções...</p>
               </div>
             )}
           </div>
