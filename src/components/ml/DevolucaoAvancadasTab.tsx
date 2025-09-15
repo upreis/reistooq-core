@@ -21,8 +21,7 @@ import {
   Loader2,
   FileText,
   CheckSquare,
-  Search,
-  Wrench
+  Search
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -900,120 +899,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Filtros e Ferramentas de Análise */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros e Ferramentas de Análise
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por Order ID, comprador ou item..."
-                value={filtros.searchTerm}
-                onChange={(e) => setFiltros(prev => ({ ...prev, searchTerm: e.target.value }))}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={filtros.status} onValueChange={(value) => setFiltros(prev => ({ ...prev, status: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Todos os Status</SelectItem>
-                <SelectItem value="cancelled">Canceladas</SelectItem>
-                <SelectItem value="paid">Pagas</SelectItem>
-                <SelectItem value="shipped">Enviadas</SelectItem>
-                <SelectItem value="delivered">Entregues</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value="all" onValueChange={() => {}}>
-              <SelectTrigger>
-                <SelectValue placeholder="Claims" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                <SelectItem value="with_claims">Com Claims</SelectItem>
-                <SelectItem value="without_claims">Sem Claims</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input
-              type="date"
-              placeholder="Data início"
-              value={filtros.dataInicio}
-              onChange={(e) => setFiltros(prev => ({ ...prev, dataInicio: e.target.value }))}
-            />
-
-            <Input
-              type="date"
-              placeholder="Data fim"
-              value={filtros.dataFim}
-              onChange={(e) => setFiltros(prev => ({ ...prev, dataFim: e.target.value }))}
-            />
-
-            <Button onClick={() => buscarDevolucoesDaAPI({ contasSelecionadas: mlAccounts.map(acc => acc.id), dataInicio: filtros.dataInicio, dataFim: filtros.dataFim })} variant="outline">
-              Atualizar
-            </Button>
-
-            <Button variant="secondary">
-              <Wrench className="h-4 w-4 mr-2" />
-              Análise API
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cards de Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{devolucoesFiltradas.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Com Claims</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {devolucoesFiltradas.filter(d => d.claim_id).length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Canceladas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {devolucoesFiltradas.filter(d => d.status_devolucao === 'cancelled').length}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              R$ {devolucoesFiltradas.reduce((sum, d) => sum + (d.valor_retido || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Tabela de devoluções */}
       <Card>
