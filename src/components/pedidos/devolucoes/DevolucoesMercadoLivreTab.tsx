@@ -590,14 +590,30 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
-                            {devolucao.raw_data?.dados_completos && (
-                              <Badge variant="secondary" className="text-xs">
-                                Completo
+                            {/* Indicadores de tipos de dados disponíveis */}
+                            {(devolucao.raw_data?.claim_details || devolucao.raw_data?.claim_messages) && (
+                              <Badge variant="default" className="text-xs bg-blue-100 text-blue-700">
+                                📋 Claim
+                              </Badge>
+                            )}
+                            {(devolucao.raw_data?.returns_v1 || devolucao.raw_data?.returns_v2) && (
+                              <Badge variant="default" className="text-xs bg-green-100 text-green-700">
+                                📦 Return
+                              </Badge>
+                            )}
+                            {devolucao.raw_data?.mediation_details && (
+                              <Badge variant="default" className="text-xs bg-orange-100 text-orange-700">
+                                ⚖️ Mediação
+                              </Badge>
+                            )}
+                            {devolucao.raw_data?.claim_attachments && (
+                              <Badge variant="default" className="text-xs bg-gray-100 text-gray-700">
+                                📎 Anexos
                               </Badge>
                             )}
                             {devolucao.raw_data?.messages_count > 0 && (
                               <Badge variant="outline" className="text-xs">
-                                {devolucao.raw_data.messages_count} msg
+                                💬 {devolucao.raw_data.messages_count}
                               </Badge>
                             )}
                           </div>
@@ -644,12 +660,27 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
                            <Badge className={priorityColors[devolucao.priority]}>
                              {priorityLabels[devolucao.priority]}
                            </Badge>
-                            {/* Indicador de dados completos do claim */}
-                            {devolucao.raw_data?.dados_completos && (
-                              <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
-                                Dados Completos
-                              </Badge>
-                            )}
+                              {/* Indicadores de dados disponíveis */}
+                              {(devolucao.raw_data?.claim_details || devolucao.raw_data?.claim_messages) && (
+                                <Badge variant="default" className="bg-blue-100 text-blue-700">
+                                  📋 Claim
+                                </Badge>
+                              )}
+                              {(devolucao.raw_data?.returns_v1 || devolucao.raw_data?.returns_v2) && (
+                                <Badge variant="default" className="bg-green-100 text-green-700">
+                                  📦 Return
+                                </Badge>
+                              )}
+                              {devolucao.raw_data?.mediation_details && (
+                                <Badge variant="default" className="bg-orange-100 text-orange-700">
+                                  ⚖️ Mediação
+                                </Badge>
+                              )}
+                              {devolucao.raw_data?.claim_attachments && (
+                                <Badge variant="default" className="bg-gray-100 text-gray-700">
+                                  📎 Anexos
+                                </Badge>
+                              )}
                          </div>
                         
                         <div>

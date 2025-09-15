@@ -1,0 +1,194 @@
+{
+  "exemplo_venda_com_dados_completos": {
+    "id": "exemplo-123",
+    "claim_id": "5388827997",
+    "order_id": "2000012340425678",
+    "order_number": "12340425678",
+    "buyer_nickname": "JOAO_SILVA123",
+    "buyer_email": "joao.silva@email.com",
+    "item_title": "Smartphone Samsung Galaxy A54 128GB",
+    "sku": "SAMSUNG-A54-128GB",
+    "quantity": 1,
+    "unit_price": 1299.99,
+    "claim_type": "return",
+    "claim_status": "in_process",
+    "claim_stage": "resolution_pending",
+    "resolution": "refund_approved",
+    "reason_description": "Produto chegou com defeito na tela",
+    "amount_claimed": 1299.99,
+    "amount_refunded": 0,
+    "date_created": "2025-01-15T10:30:00Z",
+    "date_closed": null,
+    "processed_status": "pending",
+    "internal_notes": "Cliente relatou defeito na tela touch",
+    "priority": "high",
+    "raw_data": {
+      "claim_details": {
+        "id": "5388827997",
+        "type": "return",
+        "status": "in_process",
+        "stage": "resolution_pending",
+        "description": "Produto chegou com defeito na tela touch, não responde aos comandos",
+        "resolution": {
+          "type": "refund",
+          "amount": 1299.99,
+          "status": "approved"
+        },
+        "players": {
+          "buyer": { "id": "123456", "nickname": "JOAO_SILVA123" },
+          "seller": { "id": "1531369271", "nickname": "LOJA_TECH_BR" }
+        },
+        "created_date": "2025-01-15T10:30:00Z",
+        "last_updated": "2025-01-15T14:45:00Z"
+      },
+      "claim_messages": {
+        "pack_id": "pack_789123",
+        "messages": [
+          {
+            "id": "msg_001",
+            "from": { "user_id": "123456", "role": "buyer" },
+            "to": { "user_id": "1531369271", "role": "seller" },
+            "text": "Olá, recebi o produto mas a tela não está funcionando corretamente",
+            "date_created": "2025-01-15T10:35:00Z",
+            "attachments": ["foto_defeito_001.jpg"]
+          },
+          {
+            "id": "msg_002", 
+            "from": { "user_id": "1531369271", "role": "seller" },
+            "to": { "user_id": "123456", "role": "buyer" },
+            "text": "Lamentamos o ocorrido. Vamos processar sua devolução imediatamente",
+            "date_created": "2025-01-15T11:15:00Z"
+          }
+        ],
+        "total_messages": 5
+      },
+      "mediation_details": {
+        "id": "5388827997",
+        "status": "in_progress",
+        "stage": "seller_response",
+        "available_actions": ["accept_return", "dispute_claim"],
+        "timeline": [
+          { "date": "2025-01-15T10:30:00Z", "action": "claim_created", "actor": "buyer" },
+          { "date": "2025-01-15T11:15:00Z", "action": "seller_acknowledged", "actor": "seller" },
+          { "date": "2025-01-15T14:45:00Z", "action": "return_approved", "actor": "ml_support" }
+        ]
+      },
+      "claim_attachments": {
+        "images": [
+          { "id": "att_001", "url": "https://example.com/foto_defeito_001.jpg", "type": "evidence" },
+          { "id": "att_002", "url": "https://example.com/foto_embalagem.jpg", "type": "packaging" }
+        ],
+        "documents": []
+      },
+      "returns_v1": {
+        "id": "ret_123456",
+        "status": "requested",
+        "tracking_code": "BR123456789ML",
+        "return_address": {
+          "street": "Rua das Flores, 123",
+          "city": "São Paulo",
+          "state": "SP",
+          "zip_code": "01234-567"
+        },
+        "estimated_arrival": "2025-01-20"
+      },
+      "returns_v2": {
+        "id": "ret_v2_123456",
+        "status": "in_transit",
+        "tracking_number": "BR123456789ML",
+        "carrier": "Correios",
+        "shipping_method": "PAC",
+        "tracking_events": [
+          { "date": "2025-01-16T09:00:00Z", "status": "picked_up", "location": "São Paulo - SP" },
+          { "date": "2025-01-17T14:30:00Z", "status": "in_transit", "location": "Centro de Distribuição SP" }
+        ]
+      },
+      "return_reviews": {
+        "quality_score": 8.5,
+        "response_time_score": 9.0,
+        "resolution_score": 7.5,
+        "overall_rating": 8.3,
+        "feedback": "Vendedor foi bem atencioso na resolução do problema"
+      },
+      "messages_count": 5,
+      "dados_completos": true,
+      "claim_status": "in_process",
+      "return_status": "in_transit",
+      "return_tracking": "BR123456789ML"
+    }
+  },
+  
+  "exemplo_venda_apenas_claim": {
+    "id": "exemplo-456",
+    "claim_id": "5388883962",
+    "order_id": "2000012340857436",
+    "buyer_nickname": "MARIA_SANTOS456",
+    "item_title": "Fone Bluetooth JBL Tune 510BT",
+    "sku": "JBL-TUNE-510BT",
+    "quantity": 1,
+    "unit_price": 189.99,
+    "claim_type": "claim",
+    "claim_status": "pending",
+    "processed_status": "pending",
+    "priority": "normal",
+    "raw_data": {
+      "claim_details": {
+        "id": "5388883962",
+        "type": "claim",
+        "status": "pending",
+        "description": "Produto não carrega adequadamente"
+      },
+      "messages_count": 2,
+      "claim_status": "pending"
+    }
+  },
+
+  "exemplo_venda_apenas_return": {
+    "id": "exemplo-789",
+    "claim_id": "5392787816", 
+    "order_id": "2000012347235454",
+    "buyer_nickname": "PEDRO_OLIVEIRA789",
+    "item_title": "Carregador USB-C 65W",
+    "sku": "CHARGER-USBC-65W",
+    "quantity": 1,
+    "unit_price": 79.99,
+    "claim_type": "return",
+    "claim_status": "resolved",
+    "processed_status": "reviewed",
+    "priority": "low",
+    "raw_data": {
+      "returns_v2": {
+        "id": "ret_v2_789",
+        "status": "completed",
+        "tracking_number": "BR987654321ML"
+      },
+      "return_status": "completed",
+      "return_tracking": "BR987654321ML"
+    }
+  },
+
+  "explicacao_indicadores": {
+    "📋 Claim": "Indica que há dados detalhados do claim (detalhes e/ou mensagens)",
+    "📦 Return": "Indica que há dados de devolução (v1 e/ou v2 da API)",
+    "⚖️ Mediação": "Indica que há detalhes da mediação disponíveis",
+    "📎 Anexos": "Indica que há anexos/evidências do claim",
+    "💬 N": "Número de mensagens trocadas entre comprador e vendedor",
+    
+    "como_identificar": {
+      "na_tabela": "Verifique a coluna 'Dados' - ela mostra badges coloridos para cada tipo de dado disponível",
+      "nos_cards": "Os badges aparecem junto com o tipo e status do claim",
+      "cores": {
+        "azul": "📋 Dados do Claim",
+        "verde": "📦 Dados de Return/Devolução", 
+        "laranja": "⚖️ Dados de Mediação",
+        "cinza": "📎 Anexos/Evidências"
+      }
+    },
+
+    "onde_ver_detalhes": {
+      "1": "Clique em 'Ver Detalhes' ou 'Detalhes' em qualquer item",
+      "2": "Na modal que abrir, role até a seção 'Dados Completos do Claim'",
+      "3": "Lá você verá seções expandidas com todos os dados disponíveis"
+    }
+  }
+}
