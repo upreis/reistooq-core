@@ -141,9 +141,9 @@ async function fetchClaimsData(opts) {
     Accept: "application/json"
   };
 
-  let baseUrl = `${API_BASE}/claims/search?seller_id=${sellerId}`;
-  if (dateFromISO) baseUrl += `&date_created_from=${dateFromISO}`;
-  if (dateToISO) baseUrl += `&date_created_to=${dateToISO}`;
+  let baseUrl = `${API_BASE}/post-purchase/v1/claims/search?seller_id=${sellerId}`;
+  if (dateFromISO) baseUrl += `&date_created=${dateFromISO}`;
+  if (dateToISO) baseUrl += `&last_updated=${dateToISO}`;
   if (status) baseUrl += `&status=${status}`;
 
   console.log(`📅 [ML Devoluções] Buscando claims de ${dateFromISO} até ${dateToISO} para seller ${sellerId}`);
@@ -168,9 +168,11 @@ async function fetchReturnsData(opts) {
     Accept: "application/json"
   };
 
-  let baseUrl = `${API_BASE}/post-sale/returns/search?seller_id=${sellerId}`;
-  if (dateFromISO) baseUrl += `&date_created.from=${dateFromISO}`;
-  if (dateToISO) baseUrl += `&date_created.to=${dateToISO}`;
+  // Returns endpoint requires claim_id - this approach needs to be revised
+  // For now, we'll try the generic endpoint but this might not work
+  let baseUrl = `${API_BASE}/post-purchase/v2/returns/search?seller_id=${sellerId}`;
+  if (dateFromISO) baseUrl += `&date_created=${dateFromISO}`;
+  if (dateToISO) baseUrl += `&last_updated=${dateToISO}`;
   if (status) baseUrl += `&status=${status}`;
 
   console.log(`📅 [ML Devoluções] Buscando returns de ${dateFromISO} até ${dateToISO} para seller ${sellerId}`);
