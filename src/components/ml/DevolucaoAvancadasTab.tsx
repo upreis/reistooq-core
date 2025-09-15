@@ -107,7 +107,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     aplicarFiltros();
   }, [filtros, devolucoes]);
 
-  // Função principal para sincronizar devoluções
+  // Função principal para sincronizar devoluções usando o mesmo sistema dos pedidos
   const sincronizarDevolucoes = async () => {
     if (!mlAccounts || mlAccounts.length === 0) {
       toast.error('Nenhuma conta ML encontrada');
@@ -115,64 +115,178 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
 
     setLoading(true);
-    console.log('🚀 Iniciando sincronização de devoluções...');
     
     try {
-      let processedAccounts = 0;
+      let totalProcessadas = 0;
 
       for (const account of mlAccounts) {
         console.log(`🔍 Processando conta: ${account.name}`);
         
         try {
-          // Usar edge function ml-devolucoes-sync que já tem acesso interno aos tokens
-          console.log(`🔄 Sincronizando devoluções para ${account.name}...`);
+          // 1. USAR O MESMO MÉTODO DOS PEDIDOS - Edge Function unified-orders
+          console.log(`🔑 Testando token via unified-orders para ${account.name}...`);
           
-          const { data: syncData, error: syncError } = await supabase.functions.invoke('ml-devolucoes-sync', {
-            body: {
+          const { data: unifiedData, error: unifiedError } = await supabase.functions.invoke('unified-orders', {
+            body: { 
               integration_account_id: account.id,
-              date_from: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 dias
-              date_to: new Date().toISOString()
+              limit: 1 // Só queremos testar o token
             }
           });
 
-          if (syncError) {
-            console.error(`❌ Erro ao sincronizar devoluções para ${account.name}:`, syncError);
-            toast.error(`Erro ao sincronizar devoluções para ${account.name}: ${syncError.message}`);
+          if (unifiedError) {
+            console.warn(`⚠️ Erro na unified-orders para ${account.name}:`, unifiedError);
+            toast.error(`Erro de token para ${account.name}`);
             continue;
           }
 
-          if (!syncData || syncData.error) {
-            console.error(`❌ Erro na resposta da sincronização para ${account.name}:`, syncData?.error);
-            toast.error(`Erro na sincronização de ${account.name}: ${syncData?.error || 'Resposta inválida'}`);
+          console.log(`✅ unified-orders funcionou para ${account.name}`);
+
+          // 2. Buscar orders com claims da tabela ml_orders_completas
+          console.log(`📋 Buscando orders com claims da tabela ml_orders_completas...`);
+          
+          const { data: ordersWithClaims, error: ordersError } = await supabase
+            .from('ml_orders_completas')
+            .select('*')
+            .eq('has_claims', true)
+            .eq('integration_account_id', account.id)
+            .limit(50);
+
+          if (ordersError) {
+            console.error(`❌ Erro ao buscar orders com claims:`, ordersError);
             continue;
           }
 
-          const processedCount = syncData.processed_returns || 0;
-          const totalCount = syncData.total_found || 0;
-          
-          console.log(`✅ Sincronização concluída para ${account.name}: ${processedCount}/${totalCount} devoluções processadas`);
-          toast.success(`${account.name}: ${processedCount} devoluções sincronizadas de ${totalCount} encontradas`);
-          
-          processedAccounts++;
-        } catch (syncError) {
-          console.error(`❌ Erro na sincronização para ${account.name}:`, syncError);
-          toast.error(`Erro na sincronização de ${account.name}: ${syncError.message}`);
+          console.log(`📦 Encontradas ${ordersWithClaims?.length || 0} orders com claims`);
+
+          // 3. Processar orders com claims
+          if (ordersWithClaims && ordersWithClaims.length > 0) {
+            for (const order of ordersWithClaims) {
+              try {
+                const rawData = order.raw_data || {};
+                
+                // Montar dados da devolução baseado nos dados já existentes
+                const devolucaoData = {
+                  order_id: order.order_id,
+                  claim_id: `claim_${order.order_id}_${Date.now()}`,
+                  data_criacao: order.date_created,
+                  status_devolucao: order.status === 'cancelled' ? 'cancelled' : 'with_claims',
+                  valor_retido: order.total_amount || 0,
+                  produto_titulo: order.item_title || 'Produto não identificado',
+                  sku: (rawData as any)?.order_items?.[0]?.item?.seller_sku || '',
+                  quantidade: order.quantity || 1,
+                  dados_order: rawData,
+                  dados_claim: { 
+                    type: 'claim_detected',
+                    claims_count: order.claims_count,
+                    status: order.status,
+                    detected_at: new Date().toISOString()
+                  },
+                  dados_mensagens: null,
+                  dados_return: null,
+                  integration_account_id: account.id,
+                  ultima_atualizacao: new Date().toISOString()
+                };
+
+                // Salvar no Supabase
+                const { error: insertError } = await supabase
+                  .from('devolucoes_avancadas')
+                  .upsert(devolucaoData, { 
+                    onConflict: 'order_id',
+                    ignoreDuplicates: false 
+                  });
+
+                if (insertError) {
+                  console.error(`❌ Erro ao salvar devolução ${order.order_id}:`, insertError);
+                  
+                  if (insertError.code === '42P01') {
+                    toast.error('Tabela devolucoes_avancadas não existe - Execute o SQL primeiro!');
+                    return;
+                  }
+                } else {
+                  totalProcessadas++;
+                  console.log(`💾 ✅ Devolução salva: ${order.order_id}`);
+                }
+
+              } catch (orderError) {
+                console.error(`❌ Erro ao processar order ${order.order_id}:`, orderError);
+              }
+            }
+          }
+
+          // 4. Também buscar orders canceladas da tabela
+          const { data: cancelledOrders, error: cancelledError } = await supabase
+            .from('ml_orders_completas')
+            .select('*')
+            .eq('status', 'cancelled')
+            .eq('integration_account_id', account.id)
+            .limit(50);
+
+          if (!cancelledError && cancelledOrders && cancelledOrders.length > 0) {
+            console.log(`🚫 Encontradas ${cancelledOrders.length} orders canceladas`);
+            
+            for (const order of cancelledOrders) {
+              try {
+                const rawData = order.raw_data || {};
+                
+                const devolucaoData = {
+                  order_id: order.order_id,
+                  claim_id: `cancel_${order.order_id}_${Date.now()}`,
+                  data_criacao: order.date_created,
+                  status_devolucao: 'cancelled',
+                  valor_retido: order.total_amount || 0,
+                  produto_titulo: order.item_title || 'Produto não identificado',
+                  sku: (rawData as any)?.order_items?.[0]?.item?.seller_sku || '',
+                  quantidade: order.quantity || 1,
+                  dados_order: rawData,
+                  dados_claim: { 
+                    type: 'cancellation',
+                    reason: (rawData as any)?.cancel_detail || 'Pedido cancelado',
+                    cancelled_at: (rawData as any)?.date_closed || order.date_created
+                  },
+                  dados_mensagens: null,
+                  dados_return: null,
+                  integration_account_id: account.id,
+                  ultima_atualizacao: new Date().toISOString()
+                };
+
+                const { error: insertError } = await supabase
+                  .from('devolucoes_avancadas')
+                  .upsert(devolucaoData, { onConflict: 'order_id' });
+
+                if (!insertError) {
+                  totalProcessadas++;
+                  console.log(`💾 ✅ Cancelamento salvo: ${order.order_id}`);
+                }
+
+              } catch (orderError) {
+                console.error(`❌ Erro ao processar order cancelada:`, orderError);
+              }
+            }
+          }
+
+          console.log(`✅ Conta ${account.name} processada com sucesso!`);
+
+        } catch (accountError) {
+          console.error(`❌ Erro ao processar conta ${account.name}:`, accountError);
+          toast.error(`Erro na conta ${account.name}`);
         }
       }
 
-      // Mostrar resultados finais
-      if (processedAccounts > 0) {
-        toast.success(`✅ Sincronização concluída para ${processedAccounts} conta(s)`);
-        console.log(`🎉 Sincronização finalizada - ${processedAccounts} contas processadas`);
-        
-        // Recarregar dados
-        await refetch();
+      // Recarregar dados da tabela
+      console.log(`🔄 Recarregando dados da tabela...`);
+      await refetch();
+      
+      if (totalProcessadas > 0) {
+        toast.success(`🎉 ${totalProcessadas} devoluções/cancelamentos sincronizados!`);
+        console.log(`🎉 Sincronização concluída: ${totalProcessadas} registros processados`);
       } else {
-        toast.error('Nenhuma conta foi processada com sucesso');
+        toast.warning('⚠️ Nenhuma devolução encontrada');
+        console.log(`ℹ️ Nenhuma devolução foi encontrada`);
       }
+
     } catch (error) {
       console.error('❌ Erro geral na sincronização:', error);
-      toast.error('Erro na sincronização de devoluções');
+      toast.error(`Erro na sincronização: ${error.message}`);
     } finally {
       setLoading(false);
     }
