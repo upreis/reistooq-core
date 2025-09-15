@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RefreshCw, Search, Filter, Download, AlertTriangle, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { RefreshCw, Search, Filter, Download, AlertTriangle, CheckCircle2, Clock, XCircle, Table as TableIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
@@ -95,6 +96,7 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
   const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoML | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   // Estatísticas
   const totalDevolucoes = devolucoes.length;
@@ -421,6 +423,14 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
         </div>
 
         <div className="flex gap-2">
+          <Button 
+            onClick={() => setViewMode(viewMode === 'cards' ? 'table' : 'cards')} 
+            variant="outline"
+            size="sm"
+          >
+            <TableIcon className="h-4 w-4 mr-2" />
+            {viewMode === 'cards' ? 'Tabela' : 'Cards'}
+          </Button>
           <Button onClick={handleSync} disabled={syncing} variant="outline">
             <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
             {syncing ? 'Sincronizando...' : 'Sincronizar'}
@@ -478,6 +488,138 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
                 </p>
               </CardContent>
             </Card>
+          ) : viewMode === 'table' ? (
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[120px]">Claim ID</TableHead>
+                      <TableHead className="w-[100px]">Tipo</TableHead>
+                      <TableHead className="w-[250px]">Produto</TableHead>
+                      <TableHead className="w-[150px]">Cliente</TableHead>
+                      <TableHead className="w-[100px]">Status</TableHead>
+                      <TableHead className="w-[120px]">Status Claim</TableHead>
+                      <TableHead className="w-[120px]">Status Return</TableHead>
+                      <TableHead className="w-[100px]">Rastreamento</TableHead>
+                      <TableHead className="w-[120px]">Data Criação</TableHead>
+                      <TableHead className="w-[100px]">Valor</TableHead>
+                      <TableHead className="w-[100px]">Prioridade</TableHead>
+                      <TableHead className="w-[100px]">Dados</TableHead>
+                      <TableHead className="w-[100px]">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredDevolucoes.map((devolucao) => (
+                      <TableRow key={devolucao.id}>
+                        <TableCell>
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {devolucao.claim_id}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">
+                            {typeLabels[devolucao.claim_type]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-[200px]">
+                            <p className="font-medium text-sm truncate">{devolucao.item_title}</p>
+                            {devolucao.sku && (
+                              <p className="text-xs text-muted-foreground">SKU: {devolucao.sku}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-sm">{devolucao.buyer_nickname}</p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {statusLabels[devolucao.claim_status as keyof typeof statusLabels] || devolucao.claim_status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {devolucao.raw_data?.claim_status ? (
+                            <Badge 
+                              variant={devolucao.raw_data.claim_status === 'resolved' ? 'default' : 'secondary'} 
+                              className="text-xs"
+                            >
+                              {devolucao.raw_data.claim_status}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">N/A</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {devolucao.raw_data?.return_status ? (
+                            <Badge 
+                              variant={devolucao.raw_data.return_status === 'completed' ? 'default' : 'outline'} 
+                              className="text-xs"
+                            >
+                              {devolucao.raw_data.return_status}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">N/A</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {devolucao.raw_data?.return_tracking ? (
+                            <Badge variant="outline" className="text-xs font-mono">
+                              {devolucao.raw_data.return_tracking}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">N/A</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs">
+                            {format(new Date(devolucao.date_created), 'dd/MM/yyyy', { locale: ptBR })}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {devolucao.amount_claimed && (
+                            <span className="text-xs font-medium">
+                              R$ {devolucao.amount_claimed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`text-xs ${priorityColors[devolucao.priority]}`}>
+                            {priorityLabels[devolucao.priority]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            {devolucao.raw_data?.dados_completos && (
+                              <Badge variant="secondary" className="text-xs">
+                                Completo
+                              </Badge>
+                            )}
+                            {devolucao.raw_data?.messages_count > 0 && (
+                              <Badge variant="outline" className="text-xs">
+                                {devolucao.raw_data.messages_count} msg
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedDevolucao(devolucao);
+                              setShowDetails(true);
+                            }}
+                          >
+                            Detalhes
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           ) : (
             <div className="space-y-4">
               {filteredDevolucoes.map((devolucao) => (
@@ -503,10 +645,7 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
                              {priorityLabels[devolucao.priority]}
                            </Badge>
                             {/* Indicador de dados completos do claim */}
-                            {(devolucao.raw_data?.claim_details || 
-                              devolucao.raw_data?.claim_messages || 
-                              devolucao.raw_data?.mediation_details || 
-                              devolucao.raw_data?.claim_attachments) && (
+                            {devolucao.raw_data?.dados_completos && (
                               <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
                                 Dados Completos
                               </Badge>

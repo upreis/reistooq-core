@@ -122,6 +122,34 @@ export class MLApiService {
     }
   }
 
+  // Novos métodos para enriquecimento de dados conforme estratégia do PDF
+  async getClaimReturnsV2(claimId: string) {
+    try {
+      return await this.makeRequest(`/post-purchase/v2/claims/${claimId}/returns`);
+    } catch (error) {
+      console.warn(`Erro ao buscar returns v2 para claim ${claimId}:`, error);
+      return null;
+    }
+  }
+
+  async getClaimReturnsV1(claimId: string) {
+    try {
+      return await this.makeRequest(`/post-purchase/v1/claims/${claimId}/returns`);
+    } catch (error) {
+      console.warn(`Erro ao buscar returns v1 para claim ${claimId}:`, error);
+      return null;
+    }
+  }
+
+  async getReturnReviews(returnId: string) {
+    try {
+      return await this.makeRequest(`/post-purchase/v1/returns/${returnId}/reviews`);
+    } catch (error) {
+      console.warn(`Erro ao buscar reviews do return ${returnId}:`, error);
+      return null;
+    }
+  }
+
   // Métodos de compatibilidade
   clearToken(): void {
     this.accessToken = 'APP_USR-YOUR_REAL_TOKEN_HERE';

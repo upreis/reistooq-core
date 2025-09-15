@@ -504,6 +504,191 @@ export function DevolucaoDetails({
                   </CardContent>
                 </Card>
               )}
+
+              {/* Novos dados de returns v2 */}
+              {devolucao.raw_data?.return_details_v2 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Detalhes das Devoluções (v2)
+                      {devolucao.raw_data.return_details_v2.results && (
+                        <Badge variant="secondary">
+                          {devolucao.raw_data.return_details_v2.results.length} returns
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {devolucao.raw_data.return_details_v2.results?.length > 0 ? (
+                      <div className="space-y-4">
+                        {devolucao.raw_data.return_details_v2.results.map((returnItem: any, idx: number) => (
+                          <div key={idx} className="bg-gray-50 p-4 rounded-lg">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">ID do Return</label>
+                                <p className="font-mono text-sm">{returnItem.id}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Status</label>
+                                <Badge variant="outline">{returnItem.status}</Badge>
+                              </div>
+                              {returnItem.tracking_number && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Rastreamento</label>
+                                  <p className="font-mono text-sm">{returnItem.tracking_number}</p>
+                                </div>
+                              )}
+                              {returnItem.type && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Tipo</label>
+                                  <p className="text-sm">{returnItem.type}</p>
+                                </div>
+                              )}
+                              {returnItem.date_created && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Data de Criação</label>
+                                  <p className="text-sm">{format(new Date(returnItem.date_created), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">Nenhuma devolução encontrada</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Dados de returns v1 */}
+              {devolucao.raw_data?.return_details_v1 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Detalhes das Devoluções (v1)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <pre className="text-xs text-muted-foreground overflow-auto">
+                        {JSON.stringify(devolucao.raw_data.return_details_v1, null, 2)}
+                      </pre>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Reviews das devoluções */}
+              {devolucao.raw_data?.return_reviews && devolucao.raw_data.return_reviews.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Avaliações das Devoluções
+                      <Badge variant="secondary">
+                        {devolucao.raw_data.return_reviews.length}
+                      </Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {devolucao.raw_data.return_reviews.map((review: any, idx: number) => (
+                        <div key={idx} className="bg-gray-50 p-3 rounded-lg">
+                          {review.score && (
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-sm font-medium">Nota:</span>
+                              <Badge variant="default">{review.score}/5</Badge>
+                            </div>
+                          )}
+                          {review.comment && (
+                            <p className="text-sm">{review.comment}</p>
+                          )}
+                          {review.date && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {format(new Date(review.date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Resumo dos campos enriquecidos */}
+              {(devolucao.raw_data?.claim_status || 
+                devolucao.raw_data?.return_status || 
+                devolucao.raw_data?.return_tracking || 
+                devolucao.raw_data?.resolution_date || 
+                devolucao.raw_data?.messages_count > 0) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Info className="h-4 w-4" />
+                      Resumo Enriquecido
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {devolucao.raw_data.claim_status && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Status do Claim</label>
+                          <Badge variant="outline" className="mt-1">
+                            {devolucao.raw_data.claim_status}
+                          </Badge>
+                        </div>
+                      )}
+                      {devolucao.raw_data.return_status && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Status da Devolução</label>
+                          <Badge variant="outline" className="mt-1">
+                            {devolucao.raw_data.return_status}
+                          </Badge>
+                        </div>
+                      )}
+                      {devolucao.raw_data.return_tracking && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Rastreamento</label>
+                          <p className="font-mono text-sm mt-1">{devolucao.raw_data.return_tracking}</p>
+                        </div>
+                      )}
+                      {devolucao.raw_data.resolution_date && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Data de Resolução</label>
+                          <p className="text-sm mt-1">
+                            {format(new Date(devolucao.raw_data.resolution_date), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </p>
+                        </div>
+                      )}
+                      {devolucao.raw_data.resolution_reason && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Motivo da Resolução</label>
+                          <p className="text-sm mt-1">{devolucao.raw_data.resolution_reason}</p>
+                        </div>
+                      )}
+                      {devolucao.raw_data.messages_count > 0 && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Total de Mensagens</label>
+                          <Badge variant="secondary" className="mt-1">
+                            {devolucao.raw_data.messages_count}
+                          </Badge>
+                        </div>
+                      )}
+                      {devolucao.raw_data.review_score && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Nota da Avaliação</label>
+                          <Badge variant="default" className="mt-1">
+                            {devolucao.raw_data.review_score}/5
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 

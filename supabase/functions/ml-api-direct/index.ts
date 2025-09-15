@@ -136,7 +136,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               
               console.log(`🔍 Buscando dados completos do claim - Mediation ID: ${mediationId}`)
               
-              // Buscar todos os dados do claim em paralelo
+              // Buscar todos os dados do claim em paralelo incluindo returns (estratégia do PDF)
               const claimPromises = []
               
               // 1. Buscar claim principal
@@ -170,15 +170,63 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   headers: { 'Authorization': `Bearer ${accessToken}` }
                 }).then(r => r.ok ? r.json() : null).catch(() => null)
               )
+
+              // 5. Buscar returns v2 usando claim ID (novo)
+              claimPromises.push(
+                fetch(`https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`, {
+                  headers: { 'Authorization': `Bearer ${accessToken}` }
+                }).then(r => r.ok ? r.json() : null).catch(() => null)
+              )
+
+              // 6. Buscar returns v1 usando claim ID (novo)
+              claimPromises.push(
+                fetch(`https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/returns`, {
+                  headers: { 'Authorization': `Bearer ${accessToken}` }
+                }).then(r => r.ok ? r.json() : null).catch(() => null)
+              )
               
               try {
-                const [claimDetails, claimMessages, mediationDetails, claimAttachments] = await Promise.all(claimPromises)
+                const [claimDetails, claimMessages, mediationDetails, claimAttachments, returnsV2, returnsV1] = await Promise.all(claimPromises)
+                
+                // Buscar reviews dos returns se existirem
+                let returnReviews = []
+                if (returnsV2?.results?.length > 0) {
+                  const reviewPromises = returnsV2.results.map(async (returnItem: any) => {
+                    try {
+                      const response = await fetch(`https://api.mercadolibre.com/post-purchase/v1/returns/${returnItem.id}/reviews`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                      })
+                      return response.ok ? await response.json() : null
+                    } catch (error) {
+                      console.warn(`⚠️ Erro ao buscar review do return ${returnItem.id}:`, error)
+                      return null
+                    }
+                  })
+                  
+                  try {
+                    returnReviews = (await Promise.all(reviewPromises)).filter(review => review !== null)
+                  } catch (error) {
+                    console.warn(`⚠️ Erro ao buscar reviews dos returns:`, error)
+                  }
+                }
                 
                 claimData = {
                   claim_details: claimDetails,
                   claim_messages: claimMessages,
                   mediation_details: mediationDetails,
-                  claim_attachments: claimAttachments
+                  claim_attachments: claimAttachments,
+                  return_details_v2: returnsV2,
+                  return_details_v1: returnsV1,
+                  return_reviews: returnReviews,
+                  // Campos enriquecidos conforme estratégia do PDF
+                  claim_status: claimDetails?.status || null,
+                  return_status: returnsV2?.results?.[0]?.status || null,
+                  return_tracking: returnsV2?.results?.[0]?.tracking_number || null,
+                  resolution_date: claimDetails?.date_closed || claimDetails?.resolution?.date || null,
+                  resolution_reason: claimDetails?.resolution?.reason || null,
+                  messages_count: claimMessages?.messages?.length || 0,
+                  review_score: returnReviews?.[0]?.score || null,
+                  dados_completos: true
                 }
                 
                 console.log(`✅ Dados completos do claim obtidos para mediação ${mediationId}`)
