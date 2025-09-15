@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -92,6 +92,47 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     buscarEmTempoReal: false
   });
 
+  // TEMPO REAL: Configurar listener para atualizações automáticas
+  useEffect(() => {
+    console.log('🔄 Configurando listener tempo real para devolucoes_avancadas');
+    
+    const channel = supabase
+      .channel('devolucoes-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'devolucoes_avancadas'
+        },
+        (payload) => {
+          console.log('📡 Atualização tempo real:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            const novaDevolucao = payload.new as DevolucaoAvancada;
+            setDevolucoes(prev => [novaDevolucao, ...prev]);
+            toast.success(`✅ Nova devolução detectada: ${novaDevolucao.produto_titulo || 'Produto'}`);
+          } else if (payload.eventType === 'UPDATE') {
+            const devolucaoAtualizada = payload.new as DevolucaoAvancada;
+            setDevolucoes(prev => prev.map(d => 
+              d.id === devolucaoAtualizada.id ? devolucaoAtualizada : d
+            ));
+            toast.info(`🔄 Devolução atualizada: ${devolucaoAtualizada.produto_titulo || 'Produto'}`);
+          } else if (payload.eventType === 'DELETE') {
+            const devolucaoRemovida = payload.old as DevolucaoAvancada;
+            setDevolucoes(prev => prev.filter(d => d.id !== devolucaoRemovida.id));
+            toast.info(`🗑️ Devolução removida`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('🔄 Removendo listener tempo real');
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Buscar devoluções existentes ao carregar o componente
   useEffect(() => {
     const carregarDevolucoes = async () => {
@@ -116,9 +157,41 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     carregarDevolucoes();
   }, []);
 
+  // Função para aplicar filtros otimizada com useCallback
+  const aplicarFiltros = useCallback(() => {
+    let resultados = devolucoes;
+
+    if (filtros.searchTerm) {
+      resultados = resultados.filter(dev => 
+        dev.produto_titulo?.toLowerCase().includes(filtros.searchTerm.toLowerCase()) ||
+        dev.order_id?.toString().includes(filtros.searchTerm) ||
+        dev.sku?.toLowerCase().includes(filtros.searchTerm.toLowerCase()) ||
+        dev.comprador_nickname?.toLowerCase().includes(filtros.searchTerm.toLowerCase())
+      );
+    }
+
+    if (filtros.status) {
+      resultados = resultados.filter(dev => dev.status_devolucao === filtros.status);
+    }
+
+    if (filtros.dataInicio) {
+      resultados = resultados.filter(dev => 
+        new Date(dev.data_criacao) >= new Date(filtros.dataInicio)
+      );
+    }
+
+    if (filtros.dataFim) {
+      resultados = resultados.filter(dev => 
+        new Date(dev.data_criacao) <= new Date(filtros.dataFim)
+      );
+    }
+
+    setDevolucoesFiltradas(resultados);
+  }, [filtros, devolucoes]);
+
   useEffect(() => {
     aplicarFiltros();
-  }, [filtros, devolucoes]);
+  }, [aplicarFiltros]);
 
   // Função auxiliar para obter token ML
   const obterTokenML = async (accountId: string, accountName: string): Promise<string | null> => {
@@ -538,40 +611,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
   };
 
-  // Aplicar filtros
-  const aplicarFiltros = () => {
-    let filtered = [...devolucoes];
-
-    if (filtros.searchTerm) {
-      const term = filtros.searchTerm.toLowerCase();
-      filtered = filtered.filter(dev => 
-        dev.order_id?.toLowerCase().includes(term) ||
-        dev.produto_titulo?.toLowerCase().includes(term) ||
-        dev.sku?.toLowerCase().includes(term) ||
-        dev.claim_id?.toLowerCase().includes(term)
-      );
-    }
-
-    if (filtros.status) {
-      filtered = filtered.filter(dev => dev.status_devolucao === filtros.status);
-    }
-
-    if (filtros.dataInicio) {
-      filtered = filtered.filter(dev => {
-        const devDate = new Date(dev.data_criacao || 0);
-        return devDate >= new Date(filtros.dataInicio);
-      });
-    }
-
-    if (filtros.dataFim) {
-      filtered = filtered.filter(dev => {
-        const devDate = new Date(dev.data_criacao || 0);
-        return devDate <= new Date(filtros.dataFim);
-      });
-    }
-
-    setDevolucoesFiltradas(filtered);
-  };
 
   const exportarCSV = () => {
     if (!devolucoesFiltradas.length) {
