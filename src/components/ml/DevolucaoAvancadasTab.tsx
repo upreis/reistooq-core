@@ -18,7 +18,8 @@ import {
   XCircle, 
   DollarSign,
   Loader2,
-  FileText
+  FileText,
+  CheckSquare
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -81,6 +82,15 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     dataFim: ''
   });
 
+  // NOVOS ESTADOS PARA FILTROS AVANÇADOS
+  const [filtrosAvancados, setFiltrosAvancados] = useState({
+    contasSelecionadas: [] as string[],
+    dataInicio: '',
+    dataFim: '',
+    statusClaim: '',
+    buscarEmTempoReal: false
+  });
+
   // Buscar devoluções existentes ao carregar o componente
   useEffect(() => {
     const carregarDevolucoes = async () => {
@@ -114,11 +124,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     contasSelecionadas: string[];
     dataInicio?: string;
     dataFim?: string;
-    status?: string;
+    statusClaim?: string;
   }) => {
     if (!filtros.contasSelecionadas.length) {
-      toast.error('Selecione pelo menos uma conta ML');
-      return [];
+      // Se nenhuma conta selecionada, usar todas as ativas
+      const contasAtivas = mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [];
+      if (!contasAtivas.length) {
+        toast.error('Nenhuma conta ML ativa encontrada');
+        return [];
+      }
+      filtros.contasSelecionadas = contasAtivas;
     }
 
     setLoading(true);
@@ -238,7 +253,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               const dataOrder = new Date(claim.date_created);
               if (filtros.dataInicio && dataOrder < new Date(filtros.dataInicio)) continue;
               if (filtros.dataFim && dataOrder > new Date(filtros.dataFim)) continue;
-              if (filtros.status && claim.status !== filtros.status) continue;
+              if (filtros.statusClaim && claim.status !== filtros.statusClaim) continue;
 
               // Buscar mensagens se houver mediação
               let mensagens = null;
@@ -510,7 +525,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
   };
 
-  // Nova função para buscar em tempo real
+  // Nova função para buscar em tempo real (legacy - manter compatibilidade)
   const buscarEmTempoReal = async () => {
     const contasSelecionadas = mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [];
     
@@ -519,7 +534,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         contasSelecionadas,
         dataInicio: filtros.dataInicio,
         dataFim: filtros.dataFim,
-        status: filtros.status
+        statusClaim: filtros.status
       });
       
       if (devolucoesDaAPI.length > 0) {
@@ -531,6 +546,39 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     } catch (error) {
       console.error('❌ Erro na busca em tempo real:', error);
       toast.error('Erro ao buscar devoluções em tempo real');
+    }
+  };
+
+  // FUNÇÃO PARA BUSCAR COM FILTROS
+  const buscarComFiltros = async () => {
+    if (filtrosAvancados.buscarEmTempoReal) {
+      // Buscar da API ML em tempo real
+      try {
+        const devolucoesDaAPI = await buscarDevolucoesDaAPI({
+          contasSelecionadas: filtrosAvancados.contasSelecionadas,
+          dataInicio: filtrosAvancados.dataInicio,
+          dataFim: filtrosAvancados.dataFim,
+          statusClaim: filtrosAvancados.statusClaim
+        });
+        setDevolucoes(devolucoesDaAPI);
+        toast.success(`✅ ${devolucoesDaAPI.length} devoluções encontradas na API ML`);
+      } catch (error) {
+        console.error('❌ Erro na busca da API:', error);
+        toast.error('Erro ao buscar da API ML');
+      }
+    } else {
+      // Buscar do banco local (comportamento atual)
+      const { data: novasDevolucoes, error } = await supabase
+        .from('devolucoes_avancadas')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!error && novasDevolucoes) {
+        setDevolucoes(novasDevolucoes as DevolucaoAvancada[]);
+        toast.success('✅ Dados atualizados do banco local');
+      } else {
+        toast.error('Erro ao atualizar dados do banco');
+      }
     }
   };
 
@@ -717,7 +765,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              buscarEmTempoReal();
+              buscarComFiltros();
             }}
             disabled={loading}
             variant="secondary"
@@ -728,7 +776,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            Buscar Tempo Real (API)
+            {filtrosAvancados.buscarEmTempoReal ? 'Buscar API ML' : 'Atualizar BD'}
           </Button>
           
           <Button 
@@ -742,12 +790,125 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </div>
       </div>
 
-      {/* Filtros */}
+      {/* Filtros Avançados */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtros de Busca
+            Filtros Avançados
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Toggle para busca tempo real */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="buscarTempoReal"
+                checked={filtrosAvancados.buscarEmTempoReal}
+                onChange={(e) => setFiltrosAvancados(prev => ({ 
+                  ...prev, 
+                  buscarEmTempoReal: e.target.checked 
+                }))}
+                className="rounded"
+              />
+              <Label htmlFor="buscarTempoReal" className="font-medium">
+                Buscar em tempo real na API ML (mais lento, mas dados atuais)
+              </Label>
+            </div>
+
+            {/* Seleção de contas */}
+            <div>
+              <Label>Contas ML Selecionadas</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                {mlAccounts?.map((account) => (
+                  <div key={account.id} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`account_${account.id}`}
+                      checked={filtrosAvancados.contasSelecionadas.includes(account.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFiltrosAvancados(prev => ({
+                            ...prev,
+                            contasSelecionadas: [...prev.contasSelecionadas, account.id]
+                          }));
+                        } else {
+                          setFiltrosAvancados(prev => ({
+                            ...prev,
+                            contasSelecionadas: prev.contasSelecionadas.filter(id => id !== account.id)
+                          }));
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <Label htmlFor={`account_${account.id}`} className="text-sm">
+                      {account.name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Filtros de data e status para tempo real */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="dataInicioAvancado">Data Início</Label>
+                <Input
+                  id="dataInicioAvancado"
+                  type="date"
+                  value={filtrosAvancados.dataInicio}
+                  onChange={(e) => setFiltrosAvancados(prev => ({ 
+                    ...prev, 
+                    dataInicio: e.target.value 
+                  }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="dataFimAvancado">Data Fim</Label>
+                <Input
+                  id="dataFimAvancado"
+                  type="date"
+                  value={filtrosAvancados.dataFim}
+                  onChange={(e) => setFiltrosAvancados(prev => ({ 
+                    ...prev, 
+                    dataFim: e.target.value 
+                  }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="statusClaimAvancado">Status Claim</Label>
+                <Select
+                  value={filtrosAvancados.statusClaim}
+                  onValueChange={(value) => setFiltrosAvancados(prev => ({ 
+                    ...prev, 
+                    statusClaim: value 
+                  }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos</SelectItem>
+                    <SelectItem value="opened">Aberta</SelectItem>
+                    <SelectItem value="closed">Fechada</SelectItem>
+                    <SelectItem value="cancelled">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Filtros Simples */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filtros de Busca (Dados Locais)
           </CardTitle>
         </CardHeader>
         <CardContent>
