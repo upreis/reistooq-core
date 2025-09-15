@@ -108,33 +108,12 @@ serve(async (req) => {
       });
     }
 
-    // Verificar status do token
-    if (account.token_status === 'reconnect_required') {
-      console.error(`❌ [ML Devoluções] Token status inválido: reconnect_required para conta ${account.name}`);
-      return new Response(JSON.stringify({ 
-        error: 'Token de acesso inválido',
-        details: `Status do token: reconnect_required. Favor reconectar a conta.`,
-        account_name: account.name
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    } else if (account.token_status !== 'valid') {
-      console.error(`❌ [ML Devoluções] Token status inválido: ${account.token_status} para conta ${account.name}`);
-      return new Response(JSON.stringify({ 
-        error: 'Token de acesso inválido',
-        details: `Status do token: ${account.token_status}. Favor reconectar a conta.`,
-        account_name: account.name
-      }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    // 2. Buscar access token (tentativa com renovação automática se necessário)
+    // 2. Tentar buscar access token primeiro (verificação mais confiável)
     const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
     
     let accessToken;
+    let tokenRetrievalError = null;
+    
     try {
       const secretResponse = await fetch(`${supabaseUrl}/functions/v1/integrations-get-secret`, {
         method: 'POST',
@@ -150,72 +129,54 @@ serve(async (req) => {
         })
       });
 
-      if (!secretResponse.ok) {
-        const errorText = await secretResponse.text();
-        console.error('❌ [ML Devoluções] Erro ao buscar token:', errorText);
-        
-        // Se token expirado, tentar renovar automaticamente
-        if (account.token_status === 'expired' || account.token_status === 'reconnect_required') {
-          console.log('🔄 [ML Devoluções] Tentando renovar token automaticamente...');
-          
-          const refreshResponse = await fetch(`${supabaseUrl}/functions/v1/mercadolivre-token-refresh`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': req.headers.get('Authorization') || ''
-            },
-            body: JSON.stringify({
-              integration_account_id: integration_account_id
-            })
-          });
-          
-          if (refreshResponse.ok) {
-            console.log('✅ [ML Devoluções] Token renovado com sucesso, tentando buscar novamente...');
-            // Tentar buscar token novamente após renovação
-            const retrySecretResponse = await fetch(`${supabaseUrl}/functions/v1/integrations-get-secret`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': req.headers.get('Authorization') || '',
-                'x-internal-call': 'true',
-                'x-internal-token': INTERNAL_TOKEN
-              },
-              body: JSON.stringify({
-                integration_account_id: integration_account_id,
-                secret_name: 'access_token'
-              })
-            });
-            
-            if (retrySecretResponse.ok) {
-              const retryTokenData = await retrySecretResponse.json();
-              accessToken = retryTokenData.value;
-            } else {
-              throw new Error('Token renovado mas ainda não consegue ser acessado');
-            }
-          } else {
-            throw new Error('Falha na renovação automática do token');
-          }
-        } else {
-          throw new Error(`Token não encontrado: ${errorText}`);
-        }
-      } else {
+      if (secretResponse.ok) {
         const tokenData = await secretResponse.json();
         accessToken = tokenData.value;
+        console.log('🔑 [ML Devoluções] Token obtido com sucesso');
+      } else {
+        const errorText = await secretResponse.text();
+        tokenRetrievalError = errorText;
+        console.error('❌ [ML Devoluções] Erro ao buscar token:', errorText);
       }
-    } catch (tokenError) {
-      console.error('❌ [ML Devoluções] Erro crítico com token:', tokenError);
+    } catch (error) {
+      tokenRetrievalError = error.message;
+      console.error('❌ [ML Devoluções] Erro crítico ao buscar token:', error);
+    }
+
+    // Se não conseguiu buscar o token, verificar o status na tabela
+    if (!accessToken) {
+      if (account.token_status === 'reconnect_required') {
+        console.error(`❌ [ML Devoluções] Token status inválido: reconnect_required para conta ${account.name}`);
+        return new Response(JSON.stringify({ 
+          error: 'Token de acesso inválido',
+          details: `Status do token: reconnect_required. Favor reconectar a conta.`,
+          account_name: account.name
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } else if (account.token_status !== 'valid') {
+        console.error(`❌ [ML Devoluções] Token status inválido: ${account.token_status} para conta ${account.name}`);
+        return new Response(JSON.stringify({ 
+          error: 'Token de acesso inválido',
+          details: `Status do token: ${account.token_status}. Favor reconectar a conta.`,
+          account_name: account.name
+        }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Se chegou aqui, significa que o status indica válido mas não conseguiu buscar o token
       return new Response(JSON.stringify({ 
-        error: 'Token não encontrado ou expirado',
-        details: tokenError.message,
-        suggestion: 'Favor reconectar a conta do Mercado Livre'
+        error: 'Erro ao buscar token de acesso',
+        details: tokenRetrievalError || 'Token não encontrado',
+        suggestion: 'Favor tentar novamente ou reconectar a conta'
       }), {
-        status: 401,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-
-    console.log('🔑 [ML Devoluções] Token obtido com sucesso');
-
     // 3. Buscar pedidos da conta para verificar devoluções
     const dateFromParam = date_from || new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
     const dateToParam = date_to || new Date().toISOString();
