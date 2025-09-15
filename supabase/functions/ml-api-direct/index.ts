@@ -16,25 +16,18 @@ serve(async (req) => {
     console.log(`🔍 ML API Direct - Action: ${action}, Seller: ${seller_id}`)
 
     if (action === 'get_claims_and_returns') {
-      // ============ BUSCAR CLAIMS DA API MERCADO LIVRE ============
-      const claims = await buscarClaimsAPI(seller_id, access_token, filters)
+      // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
+      const cancelledOrders = await buscarPedidosCancelados(seller_id, access_token, filters)
       
-      // ============ BUSCAR RETURNS DA API MERCADO LIVRE ============  
-      const returns = await buscarReturnsAPI(seller_id, access_token, filters)
-      
-      // Combinar claims e returns
-      const allData = [...claims, ...returns]
-      
-      console.log(`📊 Total encontrado: ${allData.length} (${claims.length} claims + ${returns.length} returns)`)
+      console.log(`📊 Total de pedidos cancelados encontrados: ${cancelledOrders.length}`)
       
       return new Response(
         JSON.stringify({
           success: true,
-          data: allData,
+          data: cancelledOrders,
           totals: {
-            claims: claims.length,
-            returns: returns.length,
-            total: allData.length
+            cancelled_orders: cancelledOrders.length,
+            total: cancelledOrders.length
           }
         }),
         { 
@@ -65,28 +58,25 @@ serve(async (req) => {
   }
 })
 
-// ============ FUNÇÃO PARA BUSCAR CLAIMS DA API ML ============
-async function buscarClaimsAPI(sellerId: string, accessToken: string, filters: any) {
+// ============ FUNÇÃO PARA BUSCAR PEDIDOS CANCELADOS DA API ML ============
+async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any) {
   try {
-    console.log(`🔍 Buscando claims para seller ${sellerId}...`)
+    console.log(`🔍 Buscando pedidos cancelados para seller ${sellerId}...`)
     
-    let url = `https://api.mercadolibre.com/claims/search?seller=${sellerId}`
+    let url = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.status=cancelled`
     
     // Adicionar filtros de data se fornecidos
     if (filters?.date_from) {
-      url += `&date_from=${filters.date_from}`
+      url += `&order.date_created.from=${filters.date_from}T00:00:00.000Z`
     }
     if (filters?.date_to) {
-      url += `&date_to=${filters.date_to}`
-    }
-    if (filters?.status) {
-      url += `&status=${filters.status}`
+      url += `&order.date_created.to=${filters.date_to}T23:59:59.999Z`
     }
     
     // Limitar a 50 resultados por requisição
-    url += `&limit=50`
+    url += `&limit=50&sort=date_desc`
     
-    console.log(`📞 URL da API Claims: ${url}`)
+    console.log(`📞 URL da API Orders Cancelados: ${url}`)
     
     const response = await fetch(url, {
       method: 'GET',
@@ -97,129 +87,79 @@ async function buscarClaimsAPI(sellerId: string, accessToken: string, filters: a
     })
     
     if (!response.ok) {
-      console.error(`❌ Erro na API Claims: ${response.status} - ${response.statusText}`)
+      console.error(`❌ Erro na API Orders: ${response.status} - ${response.statusText}`)
       
       if (response.status === 401) {
         throw new Error('Token de acesso inválido ou expirado')
       }
       if (response.status === 403) {
-        throw new Error('Sem permissão para acessar claims')
-      }
-      if (response.status === 404) {
-        console.log('ℹ️ Endpoint de claims não encontrado, pode não estar disponível')
-        return []
+        throw new Error('Sem permissão para acessar orders')
       }
       
       throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`)
     }
     
     const data = await response.json()
-    console.log(`📋 Claims encontrados: ${data?.results?.length || 0}`)
+    console.log(`📋 Orders cancelados encontrados: ${data?.results?.length || 0}`)
     
-    return (data?.results || []).map((claim: any) => ({
-      type: 'claim',
-      claim_id: claim.id,
-      order_id: claim.resource_id,
-      date_created: claim.date_created,
-      status: claim.status,
-      reason: claim.reason,
-      amount: claim.amount?.amount || 0,
-      resource_data: claim.resource,
-      claim_data: claim,
-      buyer: claim.resource?.buyer,
-      order_data: claim.resource
-    }))
-    
-  } catch (error) {
-    console.error('❌ Erro ao buscar claims:', error)
-    
-    // Se der erro, retorna array vazio em vez de falhar completamente
-    if (error.message.includes('404') || error.message.includes('não encontrado')) {
-      console.log('ℹ️ API de claims não disponível, continuando...')
+    if (!data?.results || data.results.length === 0) {
+      console.log('ℹ️ Nenhum pedido cancelado encontrado')
       return []
     }
-    
-    throw error
-  }
-}
 
-// ============ FUNÇÃO PARA BUSCAR RETURNS DA API ML ============
-async function buscarReturnsAPI(sellerId: string, accessToken: string, filters: any) {
-  try {
-    console.log(`🔍 Buscando returns para seller ${sellerId}...`)
+    // Processar cada order cancelado para obter detalhes completos
+    const ordersCancelados = []
     
-    let url = `https://api.mercadolibre.com/returns/search?seller=${sellerId}`
-    
-    // Adicionar filtros de data se fornecidos
-    if (filters?.date_from) {
-      url += `&date_from=${filters.date_from}`
-    }
-    if (filters?.date_to) {
-      url += `&date_to=${filters.date_to}`
-    }
-    if (filters?.status) {
-      url += `&status=${filters.status}`
-    }
-    
-    // Limitar a 50 resultados por requisição
-    url += `&limit=50`
-    
-    console.log(`📞 URL da API Returns: ${url}`)
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+    for (const order of data.results) {
+      try {
+        // Buscar detalhes completos do pedido
+        const orderDetailUrl = `https://api.mercadolibre.com/orders/${order.id}`
+        console.log(`📞 Buscando detalhes do pedido: ${order.id}`)
+        
+        const orderDetailResponse = await fetch(orderDetailUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (orderDetailResponse.ok) {
+          const orderDetail = await orderDetailResponse.json()
+          
+          // Processar como devolução/cancelamento
+          const devolucao = {
+            type: 'cancellation',
+            order_id: orderDetail.id,
+            date_created: orderDetail.date_created,
+            status: orderDetail.status,
+            reason: orderDetail.cancel_detail?.description || 'Pedido cancelado',
+            amount: orderDetail.total_amount || 0,
+            resource_data: {
+              title: orderDetail.order_items?.[0]?.item?.title || 'Produto não identificado',
+              sku: orderDetail.order_items?.[0]?.item?.seller_sku || '',
+              quantity: orderDetail.order_items?.[0]?.quantity || 1
+            },
+            order_data: orderDetail,
+            buyer: orderDetail.buyer,
+            cancel_detail: orderDetail.cancel_detail
+          }
+          
+          ordersCancelados.push(devolucao)
+          console.log(`✅ Processado pedido cancelado: ${order.id}`)
+        } else {
+          console.warn(`⚠️ Erro ao buscar detalhes do pedido ${order.id}: ${orderDetailResponse.status}`)
+        }
+      } catch (orderError) {
+        console.error(`❌ Erro ao processar pedido ${order.id}:`, orderError)
       }
-    })
-    
-    if (!response.ok) {
-      console.error(`❌ Erro na API Returns: ${response.status} - ${response.statusText}`)
-      
-      if (response.status === 401) {
-        throw new Error('Token de acesso inválido ou expirado')
-      }
-      if (response.status === 403) {
-        throw new Error('Sem permissão para acessar returns')
-      }
-      if (response.status === 404) {
-        console.log('ℹ️ Endpoint de returns não encontrado, pode não estar disponível')
-        return []
-      }
-      
-      throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`)
     }
     
-    const data = await response.json()
-    console.log(`📋 Returns encontrados: ${data?.results?.length || 0}`)
-    
-    return (data?.results || []).map((returnItem: any) => ({
-      type: 'return',
-      return_id: returnItem.id,
-      order_id: returnItem.order_id,
-      date_created: returnItem.date_created,
-      status: returnItem.status,
-      reason: returnItem.reason,
-      amount: returnItem.refund?.amount || 0,
-      resource_data: {
-        title: returnItem.items?.[0]?.title,
-        sku: returnItem.items?.[0]?.seller_sku,
-        quantity: returnItem.items?.[0]?.quantity
-      },
-      return_data: returnItem,
-      buyer: returnItem.buyer
-    }))
+    console.log(`🎉 Total de pedidos cancelados processados: ${ordersCancelados.length}`)
+    return ordersCancelados
     
   } catch (error) {
-    console.error('❌ Erro ao buscar returns:', error)
-    
-    // Se der erro, retorna array vazio em vez de falhar completamente
-    if (error.message.includes('404') || error.message.includes('não encontrado')) {
-      console.log('ℹ️ API de returns não disponível, continuando...')
-      return []
-    }
-    
+    console.error('❌ Erro ao buscar pedidos cancelados:', error)
     throw error
   }
 }
