@@ -485,24 +485,33 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex-1 space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="font-mono">
-                            {devolucao.claim_id}
-                          </Badge>
-                          <Badge variant="secondary">
-                            {typeLabels[devolucao.claim_type]}
-                          </Badge>
-                          <Badge 
-                            variant="outline" 
-                            className={`${getStatusIcon(devolucao.claim_status)} ${priorityColors[devolucao.priority]}`}
-                          >
-                            {getStatusIcon(devolucao.claim_status)}
-                            {statusLabels[devolucao.claim_status as keyof typeof statusLabels] || devolucao.claim_status}
-                          </Badge>
-                          <Badge className={priorityColors[devolucao.priority]}>
-                            {priorityLabels[devolucao.priority]}
-                          </Badge>
-                        </div>
+                         <div className="flex items-center space-x-2">
+                           <Badge variant="outline" className="font-mono">
+                             {devolucao.claim_id}
+                           </Badge>
+                           <Badge variant="secondary">
+                             {typeLabels[devolucao.claim_type]}
+                           </Badge>
+                           <Badge 
+                             variant="outline" 
+                             className={`${getStatusIcon(devolucao.claim_status)} ${priorityColors[devolucao.priority]}`}
+                           >
+                             {getStatusIcon(devolucao.claim_status)}
+                             {statusLabels[devolucao.claim_status as keyof typeof statusLabels] || devolucao.claim_status}
+                           </Badge>
+                           <Badge className={priorityColors[devolucao.priority]}>
+                             {priorityLabels[devolucao.priority]}
+                           </Badge>
+                            {/* Indicador de dados completos do claim */}
+                            {(devolucao.raw_data?.claim_details || 
+                              devolucao.raw_data?.claim_messages || 
+                              devolucao.raw_data?.mediation_details || 
+                              devolucao.raw_data?.claim_attachments) && (
+                              <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-200">
+                                Dados Completos
+                              </Badge>
+                            )}
+                         </div>
                         
                         <div>
                           <h3 className="font-semibold text-lg">{devolucao.item_title}</h3>

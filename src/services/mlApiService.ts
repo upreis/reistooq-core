@@ -85,6 +85,43 @@ export class MLApiService {
     }
   }
 
+  // Métodos para buscar dados completos do claim
+  async getClaim(claimId: string) {
+    try {
+      return await this.makeRequest(`/post-purchase/v1/claims/${claimId}`);
+    } catch (error) {
+      console.warn(`Erro ao buscar claim ${claimId}:`, error);
+      return null;
+    }
+  }
+
+  async getClaimMessages(packId: string, sellerId: string) {
+    try {
+      return await this.makeRequest(`/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`);
+    } catch (error) {
+      console.warn(`Erro ao buscar mensagens do claim para pack ${packId}:`, error);
+      return null;
+    }
+  }
+
+  async getMediationDetails(mediationId: string) {
+    try {
+      return await this.makeRequest(`/post-purchase/v1/mediations/${mediationId}`);
+    } catch (error) {
+      console.warn(`Erro ao buscar detalhes da mediação ${mediationId}:`, error);
+      return null;
+    }
+  }
+
+  async getClaimAttachments(claimId: string) {
+    try {
+      return await this.makeRequest(`/post-purchase/v1/claims/${claimId}/attachments`);
+    } catch (error) {
+      console.warn(`Erro ao buscar anexos do claim ${claimId}:`, error);
+      return null;
+    }
+  }
+
   // Métodos de compatibilidade
   clearToken(): void {
     this.accessToken = 'APP_USR-YOUR_REAL_TOKEN_HERE';

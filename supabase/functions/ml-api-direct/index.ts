@@ -107,53 +107,115 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       return []
     }
 
-    // Processar cada order cancelado para obter detalhes completos
-    const ordersCancelados = []
-    
-    for (const order of data.results) {
-      try {
-        // Buscar detalhes completos do pedido
-        const orderDetailUrl = `https://api.mercadolibre.com/orders/${order.id}`
-        console.log(`📞 Buscando detalhes do pedido: ${order.id}`)
-        
-        const orderDetailResponse = await fetch(orderDetailUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        })
-        
-        if (orderDetailResponse.ok) {
-          const orderDetail = await orderDetailResponse.json()
+      // Processar cada order cancelado para obter detalhes completos
+      const ordersCancelados = []
+      
+      for (const order of data.results) {
+        try {
+          // Buscar detalhes completos do pedido
+          const orderDetailUrl = `https://api.mercadolibre.com/orders/${order.id}`
+          console.log(`📞 Buscando detalhes do pedido: ${order.id}`)
           
-          // Processar como devolução/cancelamento
-          const devolucao = {
-            type: 'cancellation',
-            order_id: orderDetail.id,
-            date_created: orderDetail.date_created,
-            status: orderDetail.status,
-            reason: orderDetail.cancel_detail?.description || 'Pedido cancelado',
-            amount: orderDetail.total_amount || 0,
-            resource_data: {
-              title: orderDetail.order_items?.[0]?.item?.title || 'Produto não identificado',
-              sku: orderDetail.order_items?.[0]?.item?.seller_sku || '',
-              quantity: orderDetail.order_items?.[0]?.quantity || 1
-            },
-            order_data: orderDetail,
-            buyer: orderDetail.buyer,
-            cancel_detail: orderDetail.cancel_detail
-          }
+          const orderDetailResponse = await fetch(orderDetailUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          })
           
-          ordersCancelados.push(devolucao)
-          console.log(`✅ Processado pedido cancelado: ${order.id}`)
-        } else {
-          console.warn(`⚠️ Erro ao buscar detalhes do pedido ${order.id}: ${orderDetailResponse.status}`)
+          if (orderDetailResponse.ok) {
+            const orderDetail = await orderDetailResponse.json()
+            
+            // Buscar dados completos do claim se houver mediação
+            let claimData = null
+            if (orderDetail.mediations && orderDetail.mediations.length > 0) {
+              const mediationId = orderDetail.mediations[0].id
+              const packId = orderDetail.pack_id
+              const sellerId = orderDetail.seller.id
+              
+              console.log(`🔍 Buscando dados completos do claim - Mediation ID: ${mediationId}`)
+              
+              // Buscar todos os dados do claim em paralelo
+              const claimPromises = []
+              
+              // 1. Buscar claim principal
+              claimPromises.push(
+                fetch(`https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}`, {
+                  headers: { 'Authorization': `Bearer ${accessToken}` }
+                }).then(r => r.ok ? r.json() : null).catch(() => null)
+              )
+              
+              // 2. Buscar mensagens se tiver pack_id
+              if (packId) {
+                claimPromises.push(
+                  fetch(`https://api.mercadolibre.com/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                  }).then(r => r.ok ? r.json() : null).catch(() => null)
+                )
+              } else {
+                claimPromises.push(Promise.resolve(null))
+              }
+              
+              // 3. Buscar detalhes da mediação
+              claimPromises.push(
+                fetch(`https://api.mercadolibre.com/post-purchase/v1/mediations/${mediationId}`, {
+                  headers: { 'Authorization': `Bearer ${accessToken}` }
+                }).then(r => r.ok ? r.json() : null).catch(() => null)
+              )
+              
+              // 4. Buscar anexos do claim
+              claimPromises.push(
+                fetch(`https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/attachments`, {
+                  headers: { 'Authorization': `Bearer ${accessToken}` }
+                }).then(r => r.ok ? r.json() : null).catch(() => null)
+              )
+              
+              try {
+                const [claimDetails, claimMessages, mediationDetails, claimAttachments] = await Promise.all(claimPromises)
+                
+                claimData = {
+                  claim_details: claimDetails,
+                  claim_messages: claimMessages,
+                  mediation_details: mediationDetails,
+                  claim_attachments: claimAttachments
+                }
+                
+                console.log(`✅ Dados completos do claim obtidos para mediação ${mediationId}`)
+              } catch (claimError) {
+                console.warn(`⚠️ Erro ao buscar dados do claim ${mediationId}:`, claimError)
+              }
+            }
+            
+            // Processar como devolução/cancelamento
+            const devolucao = {
+              type: 'cancellation',
+              order_id: orderDetail.id,
+              date_created: orderDetail.date_created,
+              status: orderDetail.status,
+              reason: orderDetail.cancel_detail?.description || 'Pedido cancelado',
+              amount: orderDetail.total_amount || 0,
+              resource_data: {
+                title: orderDetail.order_items?.[0]?.item?.title || 'Produto não identificado',
+                sku: orderDetail.order_items?.[0]?.item?.seller_sku || '',
+                quantity: orderDetail.order_items?.[0]?.quantity || 1
+              },
+              order_data: orderDetail,
+              buyer: orderDetail.buyer,
+              cancel_detail: orderDetail.cancel_detail,
+              // Adicionar dados completos do claim
+              ...claimData
+            }
+            
+            ordersCancelados.push(devolucao)
+            console.log(`✅ Processado pedido cancelado: ${order.id}`)
+          } else {
+            console.warn(`⚠️ Erro ao buscar detalhes do pedido ${order.id}: ${orderDetailResponse.status}`)
+          }
+        } catch (orderError) {
+          console.error(`❌ Erro ao processar pedido ${order.id}:`, orderError)
         }
-      } catch (orderError) {
-        console.error(`❌ Erro ao processar pedido ${order.id}:`, orderError)
       }
-    }
     
     console.log(`🎉 Total de pedidos cancelados processados: ${ordersCancelados.length}`)
     return ordersCancelados

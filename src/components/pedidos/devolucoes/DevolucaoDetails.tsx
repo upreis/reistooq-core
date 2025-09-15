@@ -17,7 +17,11 @@ import {
   FileText, 
   Calendar,
   Save,
-  ExternalLink
+  ExternalLink,
+  MessageSquare,
+  Paperclip,
+  GitCommit,
+  Info
 } from 'lucide-react';
 
 interface DevolucaoML {
@@ -311,6 +315,196 @@ export function DevolucaoDetails({
                 <p className="bg-gray-50 p-3 rounded-md">{devolucao.reason_description}</p>
               </CardContent>
             </Card>
+          )}
+
+          {/* Dados Completos do Claim */}
+          {(devolucao.raw_data?.claim_details || 
+            devolucao.raw_data?.claim_messages || 
+            devolucao.raw_data?.mediation_details || 
+            devolucao.raw_data?.claim_attachments) && (
+            <div className="space-y-4">
+              <Separator />
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Info className="h-5 w-5" />
+                Dados Completos do Claim
+              </h3>
+
+              {/* Detalhes do Claim */}
+              {devolucao.raw_data?.claim_details && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Detalhes do Claim
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {devolucao.raw_data.claim_details.status && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Status do Claim</label>
+                          <p>{devolucao.raw_data.claim_details.status}</p>
+                        </div>
+                      )}
+                      {devolucao.raw_data.claim_details.type && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Tipo do Claim</label>
+                          <p>{devolucao.raw_data.claim_details.type}</p>
+                        </div>
+                      )}
+                      {devolucao.raw_data.claim_details.stage && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Estágio</label>
+                          <p>{devolucao.raw_data.claim_details.stage}</p>
+                        </div>
+                      )}
+                      {devolucao.raw_data.claim_details.resolution && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Resolução</label>
+                          <p>{devolucao.raw_data.claim_details.resolution}</p>
+                        </div>
+                      )}
+                    </div>
+                    {devolucao.raw_data.claim_details.description && (
+                      <div className="mt-4">
+                        <label className="text-sm font-medium text-muted-foreground">Descrição</label>
+                        <p className="bg-gray-50 p-3 rounded-md mt-1">{devolucao.raw_data.claim_details.description}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Mensagens do Claim */}
+              {devolucao.raw_data?.claim_messages && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Mensagens do Claim
+                      {devolucao.raw_data.claim_messages.messages && (
+                        <Badge variant="secondary">
+                          {devolucao.raw_data.claim_messages.messages.length}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {devolucao.raw_data.claim_messages.messages?.length > 0 ? (
+                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {devolucao.raw_data.claim_messages.messages.slice(0, 5).map((msg: any, idx: number) => (
+                          <div key={idx} className="bg-gray-50 p-3 rounded-md">
+                            <div className="flex justify-between items-start mb-2">
+                              <Badge variant="outline">{msg.from?.user_id === devolucao.raw_data.order_data?.seller?.id ? 'Vendedor' : 'Comprador'}</Badge>
+                              {msg.date_created && (
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(msg.date_created), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm">{msg.text || 'Mensagem sem texto'}</p>
+                          </div>
+                        ))}
+                        {devolucao.raw_data.claim_messages.messages.length > 5 && (
+                          <p className="text-sm text-muted-foreground text-center">
+                            + {devolucao.raw_data.claim_messages.messages.length - 5} mensagens adicionais
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">Nenhuma mensagem encontrada</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Detalhes da Mediação */}
+              {devolucao.raw_data?.mediation_details && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <GitCommit className="h-4 w-4" />
+                      Detalhes da Mediação
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {devolucao.raw_data.mediation_details.status && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Status da Mediação</label>
+                          <p>{devolucao.raw_data.mediation_details.status}</p>
+                        </div>
+                      )}
+                      {devolucao.raw_data.mediation_details.stage && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Estágio da Mediação</label>
+                          <p>{devolucao.raw_data.mediation_details.stage}</p>
+                        </div>
+                      )}
+                      {devolucao.raw_data.mediation_details.available_actions && (
+                        <div className="md:col-span-2">
+                          <label className="text-sm font-medium text-muted-foreground">Ações Disponíveis</label>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {devolucao.raw_data.mediation_details.available_actions.map((action: string, idx: number) => (
+                              <Badge key={idx} variant="outline">{action}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Anexos do Claim */}
+              {devolucao.raw_data?.claim_attachments && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Paperclip className="h-4 w-4" />
+                      Anexos e Evidências
+                      {devolucao.raw_data.claim_attachments.length > 0 && (
+                        <Badge variant="secondary">
+                          {devolucao.raw_data.claim_attachments.length}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {devolucao.raw_data.claim_attachments.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {devolucao.raw_data.claim_attachments.map((attachment: any, idx: number) => (
+                          <div key={idx} className="bg-gray-50 p-3 rounded-md">
+                            <div className="flex items-center gap-2">
+                              <Paperclip className="h-4 w-4" />
+                              <span className="text-sm font-medium">
+                                {attachment.name || `Anexo ${idx + 1}`}
+                              </span>
+                            </div>
+                            {attachment.type && (
+                              <p className="text-xs text-muted-foreground mt-1">Tipo: {attachment.type}</p>
+                            )}
+                            {attachment.url && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="mt-2 p-0 h-auto"
+                                onClick={() => window.open(attachment.url, '_blank')}
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                Ver anexo
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">Nenhum anexo encontrado</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
 
           <Separator />
