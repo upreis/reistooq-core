@@ -158,33 +158,58 @@ async function fetchClaimsData(opts) {
   }
 }
 
-async function fetchReturnsData(opts) {
-  const { accessToken, sellerId, dateFromISO, dateToISO, status, integration_account_id, supabaseUrl, authHeader, internalToken } = opts;
+async function fetchReturnsFromClaims(claims, opts) {
+  const { accessToken, integration_account_id, supabaseUrl, authHeader, internalToken } = opts;
 
-  console.log("🔍 [ML Devoluções] Buscando Returns...");
+  console.log("🔍 [ML Devoluções] Buscando Returns de cada Claim...");
   
   const headers = {
     Authorization: `Bearer ${accessToken}`,
     Accept: "application/json"
   };
 
-  // Returns endpoint requires claim_id - this approach needs to be revised
-  // For now, we'll try the generic endpoint but this might not work
-  let baseUrl = `${API_BASE}/post-purchase/v2/returns/search?seller_id=${sellerId}`;
-  if (dateFromISO) baseUrl += `&date_created=${dateFromISO}`;
-  if (dateToISO) baseUrl += `&last_updated=${dateToISO}`;
-  if (status) baseUrl += `&status=${status}`;
+  const allReturns = [];
 
-  console.log(`📅 [ML Devoluções] Buscando returns de ${dateFromISO} até ${dateToISO} para seller ${sellerId}`);
+  for (const claim of claims) {
+    if (!claim.id) continue;
+    
+    try {
+      console.log(`📦 [ML Devoluções] Buscando returns do claim ${claim.id}`);
+      
+      const url = `${API_BASE}/post-purchase/v2/claims/${claim.id}/returns`;
+      
+      const resp = await fetchWithRetry(url, {
+        headers,
+        method: "GET"
+      }, integration_account_id, supabaseUrl, authHeader, internalToken);
 
-  try {
-    const returns = await fetchAllPages(baseUrl, headers, integration_account_id, supabaseUrl, authHeader, internalToken);
-    console.log(`📦 [ML Devoluções] Returns encontrados: ${returns.length}`);
-    return returns;
-  } catch (error) {
-    console.error(`❌ [ML Devoluções] Erro ao buscar returns:`, error);
-    return [];
+      if (!resp.ok) {
+        console.warn(`⚠️ [ML Devoluções] Claim ${claim.id} sem returns (${resp.status})`);
+        continue;
+      }
+
+      const json = await resp.json().catch(() => ({}));
+      const returns = json?.results ?? json?.data ?? (Array.isArray(json) ? json : []);
+      
+      if (Array.isArray(returns) && returns.length > 0) {
+        console.log(`✅ [ML Devoluções] Claim ${claim.id}: ${returns.length} returns encontrados`);
+        // Adicionar referência ao claim em cada return
+        returns.forEach(ret => {
+          ret._source_claim = claim;
+        });
+        allReturns.push(...returns);
+      }
+
+      // Pequena pausa entre requests para evitar rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+    } catch (error) {
+      console.error(`❌ [ML Devoluções] Erro ao buscar returns do claim ${claim.id}:`, error);
+    }
   }
+
+  console.log(`📦 [ML Devoluções] Total de returns encontrados: ${allReturns.length}`);
+  return allReturns;
 }
 
 serve(async (req) => {
@@ -264,9 +289,10 @@ serve(async (req) => {
 
     const all = [];
 
-    // 4) Buscar Claims
-    if (mode === "both" || mode === "claims") {
-      const claims = await fetchClaimsData({
+    // 4) Buscar Claims (sempre necessário para buscar returns)
+    let claims = [];
+    if (mode === "both" || mode === "claims" || mode === "returns") {
+      claims = await fetchClaimsData({
         accessToken,
         sellerId: sellerParam,
         dateFromISO,
@@ -278,22 +304,21 @@ serve(async (req) => {
         internalToken: INTERNAL_TOKEN
       });
 
-      for (const c of claims) {
-        all.push({
-          kind: "claim",
-          data: c
-        });
+      // Adicionar claims aos resultados apenas se solicitado
+      if (mode === "both" || mode === "claims") {
+        for (const c of claims) {
+          all.push({
+            kind: "claim",
+            data: c
+          });
+        }
       }
     }
 
-    // 5) Buscar Returns  
-    if (mode === "both" || mode === "returns") {
-      const returns = await fetchReturnsData({
+    // 5) Buscar Returns baseado nos Claims encontrados
+    if ((mode === "both" || mode === "returns") && claims.length > 0) {
+      const returns = await fetchReturnsFromClaims(claims, {
         accessToken,
-        sellerId: sellerParam,
-        dateFromISO,
-        dateToISO,
-        status,
         integration_account_id,
         supabaseUrl,
         authHeader,
@@ -306,6 +331,8 @@ serve(async (req) => {
           data: r
         });
       }
+    } else if (mode === "returns" && claims.length === 0) {
+      console.log("⚠️ [ML Devoluções] Modo 'returns' solicitado mas nenhum claim encontrado. Returns requerem claims.");
     }
 
     // 6) Persistir dados
@@ -362,38 +389,43 @@ serve(async (req) => {
           } else persisted++;
         } else {
           const r = it.data ?? {};
-          const o = r?._order ?? {};
-          const firstItem = o?.order_items?.[0];
+          const sourceClaim = r?._source_claim ?? {};
+          const claimItem = sourceClaim?.items?.[0] ?? sourceClaim?.item ?? {};
 
           const base = {
             integration_account_id,
-            order_id: o?.id ?? r?.order_id,
-            claim_id: null,
+            order_id: sourceClaim?.order_id ?? r?.order_id,
+            claim_id: sourceClaim?.id,
             return_id: r?.id ?? null,
-            order_number: `ML-${o?.id ?? r?.order_id ?? ""}`,
-            claim_data: r,
+            order_number: `ML-${sourceClaim?.order_id ?? r?.order_id ?? ""}`,
+            claim_data: {
+              ...r,
+              source_claim: sourceClaim
+            },
             type: "return",
             status: r?.status ?? "pending",
             priority: "normal",
             processed_status: "pending",
-            date_created: new Date(r?.date_created ?? o?.date_created ?? new Date().toISOString()),
+            date_created: new Date(r?.date_created ?? sourceClaim?.date_created ?? new Date().toISOString()),
             date_last_update: new Date(),
-            amount_claimed: 0,
-            amount_refunded: 0,
-            currency: o?.currency_id ?? "BRL",
-            buyer_id: o?.buyer?.id ?? "",
-            buyer_nickname: o?.buyer?.nickname ?? "",
-            buyer_email: "",
-            item_id: firstItem?.item?.id,
-            item_title: firstItem?.item?.title,
-            item_sku: firstItem?.item?.seller_sku,
-            quantity: firstItem?.quantity ?? 1,
-            unit_price: firstItem?.unit_price ?? 0,
+            amount_claimed: sourceClaim?.amount_claimed ?? 0,
+            amount_refunded: r?.amount_refunded ?? 0,
+            currency: sourceClaim?.currency ?? "BRL",
+            buyer_id: sourceClaim?.buyer?.id ?? "",
+            buyer_nickname: sourceClaim?.buyer?.nickname ?? "",
+            buyer_email: sourceClaim?.buyer?.email ?? "",
+            item_id: claimItem?.id,
+            item_title: claimItem?.title,
+            item_sku: claimItem?.sku,
+            quantity: r?.quantity ?? claimItem?.quantity ?? 1,
+            unit_price: r?.unit_price ?? claimItem?.unit_price ?? 0,
+            reason_code: r?.reason_code ?? sourceClaim?.reason_code,
+            reason_description: r?.reason_description ?? sourceClaim?.reason_description,
             updated_at: new Date().toISOString()
           };
 
           const { error } = await sb.from("ml_devolucoes_reclamacoes").upsert(base, {
-            onConflict: "integration_account_id, order_id"
+            onConflict: "integration_account_id, return_id"
           });
 
           if (error) {
