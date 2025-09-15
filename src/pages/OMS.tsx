@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { OMSDashboard } from "@/features/oms/components/OMSDashboard";
-import { OMSOrders } from "@/features/oms/components/OMSOrders";
-import { OMSCustomers } from "@/features/oms/components/OMSCustomers";
-import { OMSSuppliers } from "@/features/oms/components/OMSSuppliers";
-import { OMSReports } from "@/features/oms/components/OMSReports";
-import { OMSSettings } from "@/features/oms/components/OMSSettings";
+import { OMSNav } from "@/features/oms/components/OMSNav";
+import OrdersPage from "@/pages/oms/OrdersPage";
+import CustomersPage from "@/pages/oms/CustomersPage";
+import OMSSettingsPage from "@/pages/oms/OMSSettingsPage";
 
 const OMS = () => {
   return (
@@ -17,15 +15,17 @@ const OMS = () => {
         <span className="text-primary">Vendas</span>
       </div>
 
-      <Routes>
-        <Route path="/" element={<OMSDashboard />} />
-        <Route path="/pedidos" element={<OMSOrders />} />
-        <Route path="/clientes" element={<OMSCustomers />} />
-        <Route path="/fornecedores" element={<OMSSuppliers />} />
-        <Route path="/relatorios" element={<OMSReports />} />
-        <Route path="/configuracoes" element={<OMSSettings />} />
-        <Route path="*" element={<Navigate to="/oms" replace />} />
-      </Routes>
+      <OMSNav />
+      
+      <div className="mt-6">
+        <Routes>
+          <Route path="/" element={<Navigate to="/oms/pedidos" replace />} />
+          <Route path="/pedidos" element={<OrdersPage />} />
+          <Route path="/clientes" element={<CustomersPage />} />
+          <Route path="/configuracoes" element={<OMSSettingsPage />} />
+          <Route path="*" element={<Navigate to="/oms/pedidos" replace />} />
+        </Routes>
+      </div>
     </div>
   );
 };

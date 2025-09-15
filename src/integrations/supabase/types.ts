@@ -4051,6 +4051,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      seed_oms_sample_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       set_integration_secret: {
         Args: { _key: string; _provider: string; _value: string }
         Returns: undefined
