@@ -159,7 +159,7 @@ serve(async (req) => {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
-      } else if (account.token_status !== 'valid') {
+      } else if (account.token_status !== 'valid' && account.token_status !== 'active') {
         console.error(`❌ [ML Devoluções] Token status inválido: ${account.token_status} para conta ${account.name}`);
         return new Response(JSON.stringify({ 
           error: 'Token de acesso inválido',
