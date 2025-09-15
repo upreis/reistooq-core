@@ -259,15 +259,22 @@ serve(async (req) => {
         for (const claim of claims) {
           try {
             // Buscar organization_id da conta
-            const { data: accountInfo } = await supabase
+            const { data: accountInfo, error: accountError } = await supabase
               .from('integration_accounts')
               .select('organization_id')
               .eq('id', integration_account_id)
               .single();
 
+            if (accountError || !accountInfo?.organization_id) {
+              console.error(`❌ [ML Devoluções] Erro ao buscar organização da conta ${integration_account_id}:`, accountError);
+              continue;
+            }
+
+            console.log(`🏢 [ML Devoluções] Organization ID encontrado: ${accountInfo.organization_id}`);
+
             const claimData = {
               integration_account_id: integration_account_id,
-              organization_id: accountInfo?.organization_id,
+              organization_id: accountInfo.organization_id,
               claim_id: claim.id,
               order_id: claim.order_id,
               order_number: order.pack_id ? String(order.pack_id) : null,
@@ -302,6 +309,8 @@ serve(async (req) => {
               }
             };
 
+            console.log(`💾 [ML Devoluções] Tentando inserir claim ${claim.id} para organização ${accountInfo.organization_id}`);
+
             const { error: insertError } = await supabase
               .from('ml_devolucoes_reclamacoes')
               .upsert(claimData, {
@@ -310,10 +319,18 @@ serve(async (req) => {
               });
 
             if (insertError) {
-              console.error(`❌ [ML Devoluções] Erro ao salvar claim ${claim.id}:`, insertError);
+              console.error(`❌ [ML Devoluções] Erro detalhado ao salvar claim ${claim.id}:`, {
+                error: insertError,
+                message: insertError.message,
+                details: insertError.details,
+                hint: insertError.hint,
+                code: insertError.code,
+                claimId: claim.id,
+                organizationId: accountInfo.organization_id
+              });
             } else {
               processedClaims++;
-              console.log(`💾 [ML Devoluções] Claim ${claim.id} salva com sucesso`);
+              console.log(`✅ [ML Devoluções] Claim ${claim.id} salva com sucesso`);
             }
           } catch (saveError) {
             console.error(`❌ [ML Devoluções] Erro ao processar claim ${claim.id}:`, saveError);
@@ -348,10 +365,17 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('❌ [ML Devoluções] Erro geral:', error);
+    console.error('❌ [ML Devoluções] Erro geral detalhado:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      cause: error.cause,
+      toString: error.toString()
+    });
     return new Response(JSON.stringify({
       error: 'Erro interno do servidor',
-      details: error.message
+      details: error.message,
+      type: error.name
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
