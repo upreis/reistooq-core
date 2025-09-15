@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,8 @@ import {
   CheckCircle, 
   XCircle, 
   DollarSign,
-  Loader2 
+  Loader2,
+  FileText
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -67,6 +69,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [loading, setLoading] = useState(false);
   const [devolucoes, setDevolucoes] = useState<DevolucaoAvancada[]>([]);
   const [devolucoesFiltradas, setDevolucoesFiltradas] = useState<DevolucaoAvancada[]>([]);
+  const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoAvancada | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
   const [filtros, setFiltros] = useState<Filtros>({
     searchTerm: '',
     status: '',
@@ -555,12 +559,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   <th className="text-left p-2">Order ID</th>
                   <th className="text-left p-2">Produto</th>
                   <th className="text-left p-2">SKU</th>
+                  <th className="text-left p-2">Comprador</th>
                   <th className="text-left p-2">Qtd</th>
                   <th className="text-left p-2">Valor Retido</th>
                   <th className="text-left p-2">Status</th>
                   <th className="text-left p-2">Data Criação</th>
+                  <th className="text-left p-2">Data Última Atualização</th>
                   <th className="text-left p-2">Tipo</th>
-                  <th className="text-left p-2">Account ID</th>
+                  <th className="text-left p-2">Motivo Cancelamento</th>
                   <th className="text-left p-2">Ações</th>
                 </tr>
               </thead>
@@ -569,6 +575,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   // Mapear campos da tabela real para campos esperados pela interface
                   const orderData = devolucao.dados_order || {};
                   const claimData = devolucao.dados_claim || {};
+                  const buyerNickname = orderData?.buyer?.nickname || 'N/A';
+                  const cancelReason = claimData?.reason?.description || orderData?.cancel_detail?.description || 'N/A';
                   
                   return (
                     <tr key={devolucao.id || index} className="border-b hover:bg-gray-50">
@@ -582,6 +590,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       </td>
                       <td className="p-2">
                         <span className="font-mono text-sm">{devolucao.sku || 'N/A'}</span>
+                      </td>
+                      <td className="p-2">
+                        <span className="text-sm">{buyerNickname}</span>
                       </td>
                       <td className="p-2">{devolucao.quantidade || 0}</td>
                       <td className="p-2">
@@ -603,26 +614,28 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                         }
                       </td>
                       <td className="p-2">
+                        {devolucao.updated_at ? 
+                          new Date(devolucao.updated_at).toLocaleDateString('pt-BR') : 
+                          'N/A'
+                        }
+                      </td>
+                      <td className="p-2">
                         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
                           {claimData.type || 'N/A'}
                         </span>
                       </td>
                       <td className="p-2">
-                        <span className="font-mono text-xs text-gray-500">
-                          {devolucao.integration_account_id?.substring(0, 8)}...
-                        </span>
+                        <div className="max-w-xs truncate text-xs" title={cancelReason}>
+                          {cancelReason}
+                        </div>
                       </td>
                       <td className="p-2">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            console.log('📋 Detalhes completos da devolução:', {
-                              ...devolucao,
-                              dados_order_sample: orderData,
-                              dados_claim_sample: claimData
-                            });
-                            toast.info('Detalhes logados no console');
+                            setSelectedDevolucao(devolucao);
+                            setShowDetails(true);
                           }}
                         >
                           <Eye className="h-4 w-4" />
@@ -642,6 +655,106 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal de Detalhes */}
+      {selectedDevolucao && (
+        <Dialog open={showDetails} onOpenChange={setShowDetails}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Detalhes da Devolução/Cancelamento - {selectedDevolucao.order_id}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Informações Básicas */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Informações Básicas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Order ID</label>
+                      <p className="font-mono">{selectedDevolucao.order_id}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Status</label>
+                      <p className="font-semibold">{selectedDevolucao.status_devolucao}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Valor Retido</label>
+                      <p className="font-semibold text-lg">R$ {Number(selectedDevolucao.valor_retido || 0).toFixed(2)}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Informações do Produto */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Produto
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Título</label>
+                      <p className="font-semibold">{selectedDevolucao.produto_titulo}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">SKU</label>
+                      <p className="font-mono">{selectedDevolucao.sku}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Quantidade</label>
+                      <p>{selectedDevolucao.quantidade}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Dados do Pedido (JSON) */}
+              {selectedDevolucao.dados_order && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dados Completos do Pedido</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-gray-50 p-4 rounded-md overflow-auto max-h-96">
+                      <pre className="text-xs">{JSON.stringify(selectedDevolucao.dados_order, null, 2)}</pre>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Dados da Claim (JSON) */}
+              {selectedDevolucao.dados_claim && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Dados da Reclamação/Cancelamento</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-gray-50 p-4 rounded-md overflow-auto max-h-96">
+                      <pre className="text-xs">{JSON.stringify(selectedDevolucao.dados_claim, null, 2)}</pre>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowDetails(false)}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
