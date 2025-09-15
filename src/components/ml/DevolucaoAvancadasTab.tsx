@@ -1264,6 +1264,52 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </div>
             )}
           </div>
+          
+          {/* PAGINAÇÃO */}
+          {devolucoesFiltradas.length > itemsPerPage && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Mostrando {Math.min((currentPage - 1) * itemsPerPage + 1, devolucoesFiltradas.length)} a {Math.min(currentPage * itemsPerPage, devolucoesFiltradas.length)} de {devolucoesFiltradas.length} resultados
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newPage = currentPage - 1;
+                    setCurrentPage(newPage);
+                    persistentState.saveOrdersData(devolucoes, devolucoes.length, newPage);
+                  }}
+                  disabled={currentPage <= 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+                
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">Página</span>
+                  <span className="font-medium text-sm">{currentPage}</span>
+                  <span className="text-sm">de</span>
+                  <span className="font-medium text-sm">{Math.ceil(devolucoesFiltradas.length / itemsPerPage)}</span>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newPage = currentPage + 1;
+                    setCurrentPage(newPage);
+                    persistentState.saveOrdersData(devolucoes, devolucoes.length, newPage);
+                  }}
+                  disabled={currentPage >= Math.ceil(devolucoesFiltradas.length / itemsPerPage)}
+                >
+                  Próxima
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
