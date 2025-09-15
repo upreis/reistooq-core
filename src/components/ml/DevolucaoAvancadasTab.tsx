@@ -18,6 +18,7 @@ import {
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
+import { SecretsService } from '@/services/SecretsService';
 
 interface DevolucaoData {
   id?: number;
@@ -112,48 +113,30 @@ export default function DevolucaoAvancadasTab() {
         console.log(`🔍 Processando conta: ${account.name}`);
         
         try {
-          // 1. Buscar access token descriptografado via Edge Function interna
+          // 1. Buscar access token usando SecretsService
           console.log(`🔑 Buscando token para ${account.name}...`);
           
-          const { data: secretData, error: secretError } = await supabase
-            .from('integration_secrets')
-            .select('simple_tokens')
-            .eq('integration_account_id', account.id)
-            .eq('provider', 'mercadolivre')
-            .single();
-
-          if (secretError || !secretData?.simple_tokens) {
-            console.warn(`⚠️ Token criptografado não encontrado para conta ${account.name}:`, secretError);
-            toast.error(`Token não encontrado para ${account.name} - Reconecte a conta`);
-            continue;
-          }
-
           let accessToken;
           try {
-            // Descriptografar o token usando a função do Supabase
-            const { data: decryptedData, error: decryptError } = await supabase.rpc('decrypt_simple', {
-              encrypted_data: secretData.simple_tokens
+            // Usar o SecretsService que já temos configurado
+            const secret = await SecretsService.getSecret({
+              integration_account_id: account.id,
+              provider: 'mercadolivre'
             });
 
-            if (decryptError || !decryptedData) {
-              console.warn(`⚠️ Erro ao descriptografar token para ${account.name}:`, decryptError);
-              toast.error(`Erro ao descriptografar token para ${account.name}`);
+            console.log(`🔍 Resposta do SecretsService para ${account.name}:`, secret);
+
+            if (!secret?.access_token) {
+              console.warn(`⚠️ Access token não encontrado para conta ${account.name}`);
+              toast.error(`Token não encontrado para ${account.name} - Reconecte a conta`);
               continue;
             }
 
-            const tokenObject = JSON.parse(decryptedData);
-            accessToken = tokenObject.access_token;
-
-            if (!accessToken) {
-              console.warn(`⚠️ Access token não encontrado no objeto descriptografado para ${account.name}`);
-              toast.error(`Access token não encontrado para ${account.name}`);
-              continue;
-            }
-            
-            console.log(`✅ Token descriptografado com sucesso para ${account.name}`);
-          } catch (parseError) {
-            console.warn(`⚠️ Erro ao processar token para ${account.name}:`, parseError);
-            toast.error(`Erro ao processar token para ${account.name}`);
+            accessToken = secret.access_token;
+            console.log(`✅ Token obtido com sucesso para ${account.name}`);
+          } catch (secretError) {
+            console.error(`❌ Erro ao buscar token para ${account.name}:`, secretError);
+            toast.error(`Erro ao buscar token para ${account.name}: ${secretError.message}`);
             continue;
           }
 
