@@ -6,7 +6,8 @@ import {
   Search, Filter, Download, RefreshCw, Eye, Package, 
   DollarSign, Clock, Activity, BarChart3, X, TrendingUp,
   ChevronDown, ChevronUp, Grid, Table2, AlertTriangle,
-  FileText, Loader2, Settings, Users, Calendar
+  FileText, Loader2, Settings, Users, Calendar, RotateCcw,
+  MessageCircle, CheckCircle, XCircle, AlertCircle
 } from 'lucide-react';
 
 // UI Components
@@ -38,6 +39,11 @@ interface DevolucaoML {
   processed_status?: 'pending' | 'reviewed' | 'resolved';
   priority?: 'low' | 'normal' | 'high' | 'urgent';
   raw_data?: any;
+  reason_code?: string;
+  reason_description?: string;
+  dados_claim?: any;
+  dados_return?: any;
+  dados_mensagens?: any;
 }
 
 interface Props {
@@ -253,49 +259,74 @@ const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, i
   );
 });
 
-const DevolucaoCard = React.memo(({ devolucao, onClick }: { devolucao: DevolucaoML; onClick: () => void }) => (
-  <Card className="hover-scale transition-all duration-200 cursor-pointer" onClick={onClick}>
-    <CardContent className="p-4">
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h3 className="font-semibold text-sm truncate max-w-[200px]" title={devolucao.item_title}>
-            {devolucao.item_title || 'Produto não identificado'}
-          </h3>
-          <p className="text-xs text-muted-foreground">Order: {devolucao.order_id}</p>
+const DevolucaoCard = React.memo(({ devolucao, onClick }: { devolucao: DevolucaoML; onClick: () => void }) => {
+  const getTypeIcon = () => {
+    switch (devolucao.claim_type) {
+      case 'return':
+        return <RotateCcw className="h-4 w-4 text-blue-600" />;
+      case 'claim':
+        return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+      case 'cancellation':
+        return <XCircle className="h-4 w-4 text-red-600" />;
+      default:
+        return <MessageCircle className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  return (
+    <Card className="hover-scale transition-all duration-200 cursor-pointer" onClick={onClick}>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              {getTypeIcon()}
+              <h3 className="font-semibold text-sm truncate max-w-[180px]" title={devolucao.item_title}>
+                {devolucao.item_title || 'Produto não identificado'}
+              </h3>
+            </div>
+            <p className="text-xs text-muted-foreground">Order: {devolucao.order_id}</p>
+            {devolucao.reason_description && (
+              <p className="text-xs text-orange-600 mt-1 italic">
+                Motivo: {devolucao.reason_description}
+              </p>
+            )}
+          </div>
+          <Badge variant={
+            devolucao.priority === 'urgent' ? 'destructive' :
+            devolucao.priority === 'high' ? 'default' :
+            'secondary'
+          }>
+            {devolucao.claim_status}
+          </Badge>
         </div>
-        <Badge variant={
-          devolucao.priority === 'urgent' ? 'destructive' :
-          devolucao.priority === 'high' ? 'default' :
-          'secondary'
-        }>
-          {devolucao.claim_status}
-        </Badge>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-2 text-xs">
-        <div>
-          <span className="text-muted-foreground">Comprador:</span>
-          <p className="font-medium">{devolucao.buyer_nickname || 'N/A'}</p>
+        
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="text-muted-foreground">Comprador:</span>
+            <p className="font-medium">{devolucao.buyer_nickname || 'N/A'}</p>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Valor:</span>
+            <p className="font-medium text-green-600">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(devolucao.amount_refunded || 0)}
+            </p>
+          </div>
         </div>
-        <div>
-          <span className="text-muted-foreground">Valor:</span>
-          <p className="font-medium text-green-600">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(devolucao.amount_refunded || 0)}
-          </p>
+        
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {new Date(devolucao.date_created).toLocaleDateString('pt-BR')}
+          </span>
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className="text-xs">
+              {devolucao.claim_type}
+            </Badge>
+          </div>
         </div>
-      </div>
-      
-      <div className="mt-3 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">
-          {new Date(devolucao.date_created).toLocaleDateString('pt-BR')}
-        </span>
-        <Badge variant="outline" className="text-xs">
-          {devolucao.claim_type}
-        </Badge>
-      </div>
-    </CardContent>
-  </Card>
-));
+      </CardContent>
+    </Card>
+  );
+});
 
 // Componente principal otimizado
 const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) => {
@@ -422,13 +453,14 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
     }
 
     const csvContent = [
-      ['Order ID', 'Status', 'Tipo', 'Comprador', 'Produto', 'Valor', 'Data'],
+      ['Order ID', 'Status', 'Tipo', 'Comprador', 'Produto', 'Motivo Cancelamento', 'Valor', 'Data'],
       ...devolucoes.map(d => [
         d.order_id,
         d.claim_status,
         d.claim_type,
         d.buyer_nickname || '',
         d.item_title || '',
+        d.reason_description || '',
         d.amount_refunded || 0,
         new Date(d.date_created).toLocaleDateString('pt-BR')
       ])
@@ -443,16 +475,40 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
     URL.revokeObjectURL(url);
   }, [devolucoes]);
 
+  // Função para ícones de tipo
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'return':
+        return <RotateCcw className="h-4 w-4 text-blue-600" />;
+      case 'claim':
+        return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+      case 'cancellation':
+        return <XCircle className="h-4 w-4 text-red-600" />;
+      default:
+        return <MessageCircle className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
   // Colunas para tabela virtual
   const tableColumns = React.useMemo(() => [
     { key: 'order_id', label: 'Order ID', width: 120, render: (item: DevolucaoML) => item.order_id },
+    { key: 'type_icon', label: 'Tipo', width: 80, render: (item: DevolucaoML) => (
+      <div className="flex items-center justify-center">
+        {getTypeIcon(item.claim_type)}
+      </div>
+    )},
     { key: 'claim_status', label: 'Status', width: 100, render: (item: DevolucaoML) => (
       <Badge variant="outline">{item.claim_status}</Badge>
     )},
-    { key: 'claim_type', label: 'Tipo', width: 100, render: (item: DevolucaoML) => item.claim_type },
+    { key: 'claim_type', label: 'Categoria', width: 100, render: (item: DevolucaoML) => item.claim_type },
     { key: 'buyer_nickname', label: 'Comprador', width: 150, render: (item: DevolucaoML) => item.buyer_nickname || 'N/A' },
     { key: 'item_title', label: 'Produto', width: 200, render: (item: DevolucaoML) => (
       <span className="truncate" title={item.item_title}>{item.item_title}</span>
+    )},
+    { key: 'reason_description', label: 'Motivo Cancelamento', width: 180, render: (item: DevolucaoML) => (
+      <span className="truncate text-orange-600" title={item.reason_description}>
+        {item.reason_description || '-'}
+      </span>
     )},
     { key: 'amount_refunded', label: 'Valor', width: 120, render: (item: DevolucaoML) => (
       <span className="text-green-600 font-medium">
@@ -626,7 +682,10 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
       <Dialog open={!!selectedDevolucao} onOpenChange={() => setSelectedDevolucao(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Detalhes da Devolução</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedDevolucao && getTypeIcon(selectedDevolucao.claim_type)}
+              Detalhes da Devolução
+            </DialogTitle>
           </DialogHeader>
           {selectedDevolucao && (
             <ScrollArea className="max-h-[70vh]">
@@ -636,9 +695,13 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
                     <h4 className="font-semibold mb-2">Informações Básicas</h4>
                     <div className="space-y-2 text-sm">
                       <div><strong>Order ID:</strong> {selectedDevolucao.order_id}</div>
+                      <div><strong>Claim ID:</strong> {selectedDevolucao.claim_id || 'N/A'}</div>
                       <div><strong>Status:</strong> <Badge>{selectedDevolucao.claim_status}</Badge></div>
                       <div><strong>Tipo:</strong> {selectedDevolucao.claim_type}</div>
-                      <div><strong>Data:</strong> {new Date(selectedDevolucao.date_created).toLocaleString('pt-BR')}</div>
+                      <div><strong>Data Criação:</strong> {new Date(selectedDevolucao.date_created).toLocaleString('pt-BR')}</div>
+                      {selectedDevolucao.date_closed && (
+                        <div><strong>Data Fechamento:</strong> {new Date(selectedDevolucao.date_closed).toLocaleString('pt-BR')}</div>
+                      )}
                     </div>
                   </div>
                   <div>
@@ -646,6 +709,7 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
                     <div className="space-y-2 text-sm">
                       <div><strong>Produto:</strong> {selectedDevolucao.item_title}</div>
                       <div><strong>SKU:</strong> {selectedDevolucao.sku || 'N/A'}</div>
+                      <div><strong>Comprador:</strong> {selectedDevolucao.buyer_nickname || 'N/A'}</div>
                       <div><strong>Quantidade:</strong> {selectedDevolucao.quantity}</div>
                       <div><strong>Valor Reembolsado:</strong> 
                         <span className="text-green-600 font-medium ml-1">
@@ -655,10 +719,72 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
                     </div>
                   </div>
                 </div>
+
+                {selectedDevolucao.reason_description && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-orange-600">Motivo do Cancelamento</h4>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <p className="text-sm text-orange-800">
+                        <strong>Código:</strong> {selectedDevolucao.reason_code || 'N/A'}
+                      </p>
+                      <p className="text-sm text-orange-800 mt-1">
+                        <strong>Descrição:</strong> {selectedDevolucao.reason_description}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedDevolucao.dados_mensagens?.messages && (
+                  <div>
+                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4" />
+                      Mensagens
+                    </h4>
+                    <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                      {selectedDevolucao.dados_mensagens.messages.map((msg: any, idx: number) => (
+                        <div key={idx} className="bg-muted rounded-lg p-3">
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {msg.from === 'buyer' ? 'Comprador' : msg.from === 'seller' ? 'Vendedor' : 'Suporte ML'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(msg.date).toLocaleString('pt-BR')}
+                            </span>
+                          </div>
+                          <p className="text-sm">{msg.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
+                {(selectedDevolucao.dados_claim || selectedDevolucao.dados_return) && (
+                  <div>
+                    <h4 className="font-semibold mb-2">Dados Detalhados</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedDevolucao.dados_claim && (
+                        <div>
+                          <h5 className="text-sm font-medium mb-2">Dados do Claim</h5>
+                          <pre className="bg-muted p-3 rounded-lg text-xs overflow-auto max-h-[150px]">
+                            {JSON.stringify(selectedDevolucao.dados_claim, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                      {selectedDevolucao.dados_return && (
+                        <div>
+                          <h5 className="text-sm font-medium mb-2">Dados da Devolução</h5>
+                          <pre className="bg-muted p-3 rounded-lg text-xs overflow-auto max-h-[150px]">
+                            {JSON.stringify(selectedDevolucao.dados_return, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {selectedDevolucao.raw_data && (
                   <div>
-                    <h4 className="font-semibold mb-2">Dados Técnicos</h4>
+                    <h4 className="font-semibold mb-2">Dados Técnicos Completos</h4>
                     <pre className="bg-muted p-4 rounded-lg text-xs overflow-auto max-h-[200px]">
                       {JSON.stringify(selectedDevolucao.raw_data, null, 2)}
                     </pre>
