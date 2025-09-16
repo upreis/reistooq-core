@@ -663,23 +663,23 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="border-b bg-gray-50 dark:bg-gray-800">
-                      <th className="text-left p-2 font-medium dark:text-white">Order ID</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Produto</th>
-                      <th className="text-left p-2 font-medium dark:text-white">SKU</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Comprador</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Qtd</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Valor Retido</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Status</th>
-                      <th className="text-left p-2 font-medium dark:text-white">📋 Claim</th>
-                      <th className="text-left p-2 font-medium dark:text-white">📦 Return</th>
-                      <th className="text-left p-2 font-medium dark:text-white">⚖️ Mediação</th>
-                      <th className="text-left p-2 font-medium dark:text-white">📎 Anexos</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Data Criação</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Data Última Atualização</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Tipo</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Motivo Cancelamento</th>
-                      <th className="text-left p-2 font-medium dark:text-white">Ações</th>
+                    <tr className="border-b bg-muted/50 dark:bg-muted">
+                       <th className="text-left p-2 font-medium text-muted-foreground">Order ID</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Produto</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">SKU</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Comprador</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Qtd</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Valor Retido</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Status</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">📋 Claim</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">📦 Return</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">⚖️ Mediação</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">📎 Anexos</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Data Criação</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Data Última Atualização</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Tipo</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Motivo Cancelamento</th>
+                       <th className="text-left p-2 font-medium text-muted-foreground">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
