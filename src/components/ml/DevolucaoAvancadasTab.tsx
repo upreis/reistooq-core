@@ -707,7 +707,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       );
 
                       return (
-                        <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:border-gray-700">
+                        <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-muted/50 dark:border-border">
                           <td className="p-2 font-medium text-blue-600 dark:text-blue-400">{devolucao.order_id}</td>
                           <td className="p-2 max-w-xs">
                             <div className="truncate dark:text-white" title={devolucao.produto_titulo}>
@@ -735,28 +735,28 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             {temClaimData ? (
                               <span className="text-blue-600 dark:text-blue-400">📋</span>
                             ) : (
-                              <span className="text-gray-300 dark:text-gray-600">-</span>
+                              <span className="text-muted-foreground">-</span>
                             )}
                           </td>
                           <td className="p-2 text-center">
                             {temReturnData ? (
                               <span className="text-orange-600 dark:text-orange-400">📦</span>
                             ) : (
-                              <span className="text-gray-300 dark:text-gray-600">-</span>
+                              <span className="text-muted-foreground">-</span>
                             )}
                           </td>
                           <td className="p-2 text-center">
                             {temMediationData ? (
                               <span className="text-purple-600 dark:text-purple-400">⚖️</span>
                             ) : (
-                              <span className="text-gray-300 dark:text-gray-600">-</span>
+                              <span className="text-muted-foreground">-</span>
                             )}
                           </td>
                           <td className="p-2 text-center">
                             {temAttachmentsData ? (
                               <span className="text-green-600 dark:text-green-400">📎</span>
                             ) : (
-                              <span className="text-gray-300 dark:text-gray-600">-</span>
+                              <span className="text-muted-foreground">-</span>
                             )}
                           </td>
                           <td className="p-2 text-sm dark:text-white">
