@@ -32,7 +32,9 @@ import {
   ChevronRight,
   BarChart3,
   TrendingUp,
-  FileDown
+  FileDown,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -80,6 +82,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [showDetails, setShowDetails] = useState(false);
   const [showTableView, setShowTableView] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   // Hook principal consolidado com otimizações
   const {
@@ -487,14 +490,25 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* CONFIGURAÇÕES DE PERFORMANCE */}
+      {/* CONFIGURAÇÕES AVANÇADAS (Colapsável) */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wrench className="w-5 h-5" />
-            Configurações de Performance
+          <CardTitle 
+            className="flex items-center justify-between cursor-pointer"
+            onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+          >
+            <div className="flex items-center gap-2">
+              <Wrench className="w-5 h-5" />
+              Configurações Avançadas
+            </div>
+            {showAdvancedSettings ? (
+              <ChevronUp className="w-4 h-4" />
+            ) : (
+              <ChevronDown className="w-4 h-4" />
+            )}
           </CardTitle>
         </CardHeader>
+        {showAdvancedSettings && (
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center space-x-2">
@@ -589,6 +603,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             </div>
           )}
         </CardContent>
+        )}
       </Card>
 
       {/* FILTROS BÁSICOS */}
