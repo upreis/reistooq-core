@@ -237,13 +237,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
   }, []);
 
-  // Tempo real para demonstração
+  // Tempo real para demonstração - corrigir dependências
   useDevolucoesDemostracao(
     advancedFilters.buscarEmTempoReal,
-    (payload) => {
+    useCallback((payload) => {
       // Atualização automática será implementada se necessário
       console.log('📡 Atualização tempo real:', payload);
-    }
+    }, [])
   );
 
   const exportarCSV = useCallback(() => {
@@ -624,10 +624,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               >
                 Desativar
               </Button>
-              {advancedFilters.autoRefreshEnabled && (
+              {advancedFilters.autoRefreshEnabled && autoRefresh && (
                 <div className="text-xs text-gray-400">
-                  Próxima: {autoRefresh?.timeUntilRefresh || 0}s
-                  {autoRefresh?.isRefreshing && " (atualizando...)"}
+                  Próxima: {autoRefresh.timeUntilRefresh || 0}s
+                  {autoRefresh.isRefreshing && " (atualizando...)"}
                 </div>
               )}
             </div>
@@ -648,13 +648,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           <CardContent>
             {loading ? (
               <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin" />
+                <Loader2 className="h-8 w-8 animate-spin dark:text-white" />
               </div>
             ) : devolucoes.length === 0 ? (
               <div className="text-center p-8">
-                <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-500">Nenhuma devolução encontrada</p>
-                <p className="text-sm text-gray-400 mt-2">
+                <Package className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">Nenhuma devolução encontrada</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
                   Use os filtros para buscar da API ML
                 </p>
               </div>
@@ -715,67 +715,67 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       );
 
                       return (
-                        <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-gray-50">
-                          <td className="p-2 font-medium text-blue-600">{devolucao.order_id}</td>
+                        <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:border-gray-700">
+                          <td className="p-2 font-medium text-blue-600 dark:text-blue-400">{devolucao.order_id}</td>
                           <td className="p-2 max-w-xs">
-                            <div className="truncate" title={devolucao.produto_titulo}>
+                            <div className="truncate dark:text-white" title={devolucao.produto_titulo}>
                               {devolucao.produto_titulo}
                             </div>
                           </td>
-                          <td className="p-2">{devolucao.sku || 'N/A'}</td>
-                          <td className="p-2">{devolucao.comprador_nickname || 'N/A'}</td>
-                          <td className="p-2 text-center">{devolucao.quantidade || 1}</td>
-                          <td className="p-2 text-green-600 font-medium">
+                          <td className="p-2 dark:text-white">{devolucao.sku || 'N/A'}</td>
+                          <td className="p-2 dark:text-white">{devolucao.comprador_nickname || 'N/A'}</td>
+                          <td className="p-2 text-center dark:text-white">{devolucao.quantidade || 1}</td>
+                          <td className="p-2 text-green-600 dark:text-green-400 font-medium">
                             R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}
                           </td>
                           <td className="p-2">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${
                               devolucao.status_devolucao === 'completed' 
-                                ? 'bg-green-100 text-green-800'
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                                 : devolucao.status_devolucao === 'cancelled'
-                                ? 'bg-red-100 text-red-800' 
-                                : 'bg-yellow-100 text-yellow-800'
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' 
+                                : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
                             }`}>
                               {devolucao.status_devolucao}
                             </span>
                           </td>
                           <td className="p-2 text-center">
                             {temClaimData ? (
-                              <span className="text-blue-600">📋</span>
+                              <span className="text-blue-600 dark:text-blue-400">📋</span>
                             ) : (
-                              <span className="text-gray-300">-</span>
+                              <span className="text-gray-300 dark:text-gray-600">-</span>
                             )}
                           </td>
                           <td className="p-2 text-center">
                             {temReturnData ? (
-                              <span className="text-orange-600">📦</span>
+                              <span className="text-orange-600 dark:text-orange-400">📦</span>
                             ) : (
-                              <span className="text-gray-300">-</span>
+                              <span className="text-gray-300 dark:text-gray-600">-</span>
                             )}
                           </td>
                           <td className="p-2 text-center">
                             {temMediationData ? (
-                              <span className="text-purple-600">⚖️</span>
+                              <span className="text-purple-600 dark:text-purple-400">⚖️</span>
                             ) : (
-                              <span className="text-gray-300">-</span>
+                              <span className="text-gray-300 dark:text-gray-600">-</span>
                             )}
                           </td>
                           <td className="p-2 text-center">
                             {temAttachmentsData ? (
-                              <span className="text-green-600">📎</span>
+                              <span className="text-green-600 dark:text-green-400">📎</span>
                             ) : (
-                              <span className="text-gray-300">-</span>
+                              <span className="text-gray-300 dark:text-gray-600">-</span>
                             )}
                           </td>
-                          <td className="p-2 text-sm">
+                          <td className="p-2 text-sm dark:text-white">
                             {new Date(devolucao.data_criacao).toLocaleDateString()}
                           </td>
-                          <td className="p-2 text-sm">
+                          <td className="p-2 text-sm dark:text-white">
                             {new Date(devolucao.updated_at).toLocaleDateString()}
                           </td>
-                          <td className="p-2">{claimData.type || 'N/A'}</td>
+                          <td className="p-2 dark:text-white">{claimData.type || 'N/A'}</td>
                           <td className="p-2 max-w-xs">
-                            <div className="truncate text-sm" title={String(getMotivoCancelamento(devolucao))}>
+                            <div className="truncate text-sm dark:text-white" title={String(getMotivoCancelamento(devolucao))}>
                               {String(getMotivoCancelamento(devolucao))}
                             </div>
                           </td>
@@ -787,6 +787,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                                 setSelectedDevolucao(devolucao);
                                 setShowDetails(true);
                               }}
+                              className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -805,13 +806,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                     <div className="flex justify-between items-start">
                       <div className="space-y-3 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold text-lg">{devolucao.produto_titulo}</h3>
+                          <h3 className="font-semibold text-lg dark:text-white">{devolucao.produto_titulo}</h3>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             devolucao.status_devolucao === 'completed' 
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                               : devolucao.status_devolucao === 'cancelled'
-                              ? 'bg-red-100 text-red-800' 
-                              : 'bg-yellow-100 text-yellow-800'
+                              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' 
+                              : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
                           }`}>
                             {devolucao.status_devolucao}
                           </span>
@@ -918,19 +919,19 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                         {/* Status badges com ícones */}
                         <div className="flex flex-wrap gap-2 mt-2">
                           {devolucao.dados_claim && Object.keys(devolucao.dados_claim).length > 0 && (
-                            <span className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                            <span className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2 py-1 rounded text-xs">
                               <FileText className="h-3 w-3" />
                               Com Claim
                             </span>
                           )}
                           {devolucao.dados_return && Object.keys(devolucao.dados_return).length > 0 && (
-                            <span className="flex items-center gap-1 bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
+                            <span className="flex items-center gap-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 px-2 py-1 rounded text-xs">
                               <Package className="h-3 w-3" />
                               Com Return
                             </span>
                           )}
                           {devolucao.dados_mensagens && Object.keys(devolucao.dados_mensagens).length > 0 && (
-                            <span className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                            <span className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-2 py-1 rounded text-xs">
                               <Wrench className="h-3 w-3" />
                               Com Mensagens
                             </span>
@@ -945,7 +946,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                           setSelectedDevolucao(devolucao);
                           setShowDetails(true);
                         }}
-                        className="ml-4 flex items-center gap-2"
+                        className="ml-4 flex items-center gap-2 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
                       >
                         <Eye className="h-4 w-4" />
                         Detalhes
@@ -967,12 +968,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             size="sm"
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
+            className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
           >
             <ChevronLeft className="h-4 w-4" />
             Anterior
           </Button>
           
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-600 dark:text-gray-300">
             Página {currentPage} de {totalPages}
           </span>
           
@@ -981,6 +983,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             size="sm"
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}
+            className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
           >
             Próxima
             <ChevronRight className="h-4 w-4" />
@@ -1011,31 +1014,31 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                     <div className="flex items-center gap-3">
-                      <Package className="h-5 w-5 text-blue-600" />
+                      <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       <div>
-                        <Label className="text-sm text-gray-500">Order ID</Label>
-                        <p className="font-medium text-lg">{selectedDevolucao.order_id}</p>
+                        <Label className="text-sm text-gray-500 dark:text-gray-400">Order ID</Label>
+                        <p className="font-medium text-lg dark:text-white">{selectedDevolucao.order_id}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-purple-600" />
+                      <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                       <div>
-                        <Label className="text-sm text-gray-500">Claim ID</Label>
-                        <p className="font-medium">{selectedDevolucao.claim_id || 'N/A'}</p>
+                        <Label className="text-sm text-gray-500 dark:text-gray-400">Claim ID</Label>
+                        <p className="font-medium dark:text-white">{selectedDevolucao.claim_id || 'N/A'}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                       <div>
-                        <Label className="text-sm text-gray-500">Status</Label>
+                        <Label className="text-sm text-gray-500 dark:text-gray-400">Status</Label>
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                           selectedDevolucao.status_devolucao === 'completed' 
-                            ? 'bg-green-100 text-green-800'
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                             : selectedDevolucao.status_devolucao === 'cancelled'
-                            ? 'bg-red-100 text-red-800' 
-                            : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' 
+                            : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
                         }`}>
                           {selectedDevolucao.status_devolucao}
                         </span>
@@ -1043,7 +1046,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <Search className="h-5 w-5 text-gray-600" />
+                      <Search className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                       <div>
                         <Label className="text-sm text-gray-500">SKU</Label>
                         <p className="font-medium">{selectedDevolucao.sku || 'N/A'}</p>

@@ -66,19 +66,15 @@ export function useDevolucoes(mlAccounts: any[]) {
   } = useDebounce(advancedFilters.searchTerm, performanceSettings.debounceDelay);
 
   // Busca principal - SEMPRE da API ML 
-  const executarBusca = useCallback(async () => {
-    // Forçar busca sempre da API ML
-    const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
-    setDevolucoes(dadosAPI);
-    setCurrentPage(1);
-    persistence.saveApiData(dadosAPI, advancedFilters);
-  }, [advancedFilters, busca, mlAccounts, persistence]);
-
-  // Auto-refresh configurável - sempre habilitado quando autoRefresh está ativo
   const autoRefresh = useAutoRefresh({
-    enabled: advancedFilters.autoRefreshEnabled, // Removido dependência de buscarEmTempoReal
+    enabled: advancedFilters.autoRefreshEnabled,
     interval: advancedFilters.autoRefreshInterval,
-    onRefresh: executarBusca,
+    onRefresh: useCallback(async () => {
+      const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
+      setDevolucoes(dadosAPI);
+      setCurrentPage(1);
+      persistence.saveApiData(dadosAPI, advancedFilters);
+    }, [advancedFilters, busca, mlAccounts, persistence]),
     maxRetries: 3,
     retryDelay: 10
   });
@@ -172,8 +168,11 @@ export function useDevolucoes(mlAccounts: any[]) {
   // Buscar com filtros (flush debounce para busca imediata)
   const buscarComFiltros = useCallback(async () => {
     flushDebounce(); // Aplicar busca imediatamente
-    await executarBusca();
-  }, [executarBusca, flushDebounce]);
+    const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
+    setDevolucoes(dadosAPI);
+    setCurrentPage(1);
+    persistence.saveApiData(dadosAPI, advancedFilters);
+  }, [flushDebounce, busca, advancedFilters, mlAccounts, persistence]);
 
   // Sincronizar devoluções
   const sincronizarDevolucoes = useCallback(async () => {
