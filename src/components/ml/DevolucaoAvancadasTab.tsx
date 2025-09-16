@@ -754,18 +754,52 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📋 Claim</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📦 Return</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">⚖️ Mediação</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📎 Anexos</th>
+                       
+                       {/* MENSAGENS E COMUNICAÇÃO */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[70px]">💬 Msgs</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔔 Não Lidas</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📎 Anexos</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">👮 Moderação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Msg</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">👤 Remetente</th>
+                       
+                       {/* DATAS E PRAZOS */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Dias Rest.</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Venc. Ação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Est. Troca</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Lim. Troca</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📝 Prazo Rev.</th>
+                       
+                       {/* RASTREAMENTO E LOGÍSTICA */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">🚛 Rastreio</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Transport.</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📍 Status Env.</th>
+                       
+                       {/* CUSTOS E FINANCEIRO */}
+                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💰 Custo Env.</th>
+                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Compensação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">💱 Moeda</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏢 Resp. Custo</th>
+                       
+                       {/* CLASSIFICAÇÃO E RESOLUÇÃO */}
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Tipo</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Subtipo</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚖️ Mediação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Resolução</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🚨 Prioridade</th>
+                       
+                       {/* MÉTRICAS E KPIS */}
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏱️ Resp (min)</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏁 Total (min)</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📊 Evidências</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">😊 Satisfação</th>
+                       
+                       {/* ESTADOS E FLAGS */}
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🔄 Troca</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🚀 ML</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">✋ Ação Req.</th>
+                       
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Criação</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo Cancelamento</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Ações</th>
                     </tr>
                   </thead>
@@ -855,41 +889,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             </span>
                           </td>
                           
-                          {/* Claim */}
-                          <td className="px-3 py-3 text-center">
-                            {temClaimData ? (
-                              <span className="text-blue-600 dark:text-blue-400" title="Tem dados de Claim">📋</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          
-                          {/* Return */}
-                          <td className="px-3 py-3 text-center">
-                            {temReturnData ? (
-                              <span className="text-orange-600 dark:text-orange-400" title="Tem dados de Return">📦</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          
-                          {/* Mediação */}
-                          <td className="px-3 py-3 text-center">
-                            {temMediationData ? (
-                              <span className="text-purple-600 dark:text-purple-400" title="Tem Mediação">⚖️</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          
-                          {/* Anexos */}
-                          <td className="px-3 py-3 text-center">
-                            {temAttachmentsData ? (
-                              <span className="text-green-600 dark:text-green-400" title="Tem Anexos">📎</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
+                          {/* MENSAGENS E COMUNICAÇÃO (6 colunas) */}
                           
                           {/* Mensagens */}
                           <td className="px-3 py-3 text-center">
@@ -909,6 +909,46 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             )}
                           </td>
                           
+                          {/* Anexos Count */}
+                          <td className="px-3 py-3 text-center">
+                            <span className="text-purple-600 dark:text-purple-400 font-medium">
+                              {devolucao.anexos_count || 0}
+                            </span>
+                          </td>
+                          
+                          {/* Status Moderação */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.status_moderacao ? (
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                devolucao.status_moderacao === 'approved' ? 'bg-green-100 text-green-800' :
+                                devolucao.status_moderacao === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {devolucao.status_moderacao}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Última Mensagem Data */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {devolucao.ultima_mensagem_data ? new Date(devolucao.ultima_mensagem_data).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            }) : '-'}
+                          </td>
+                          
+                          {/* Última Mensagem Remetente */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.ultima_mensagem_remetente || '-'}
+                          </td>
+                          
+                          {/* DATAS E PRAZOS (5 colunas) */}
+                          
                           {/* Dias Restantes */}
                           <td className="px-3 py-3 text-center">
                             {devolucao.dias_restantes_acao !== null && devolucao.dias_restantes_acao !== undefined ? (
@@ -926,6 +966,28 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             )}
                           </td>
                           
+                          {/* Data Vencimento Ação */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {devolucao.data_vencimento_acao ? new Date(devolucao.data_vencimento_acao).toLocaleDateString('pt-BR') : '-'}
+                          </td>
+                          
+                          {/* Data Estimada Troca */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {devolucao.data_estimada_troca ? new Date(devolucao.data_estimada_troca).toLocaleDateString('pt-BR') : '-'}
+                          </td>
+                          
+                          {/* Data Limite Troca */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {devolucao.data_limite_troca ? new Date(devolucao.data_limite_troca).toLocaleDateString('pt-BR') : '-'}
+                          </td>
+                          
+                          {/* Prazo Revisão Dias */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.prazo_revisao_dias || '-'}
+                          </td>
+                          
+                          {/* RASTREAMENTO E LOGÍSTICA (3 colunas) */}
+                          
                           {/* Rastreamento */}
                           <td className="px-3 py-3 text-center">
                             {devolucao.codigo_rastreamento ? (
@@ -942,6 +1004,146 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             )}
                           </td>
                           
+                          {/* Transportadora */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.transportadora || '-'}
+                          </td>
+                          
+                          {/* Status Rastreamento */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.status_rastreamento ? (
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                devolucao.status_rastreamento === 'delivered' ? 'bg-green-100 text-green-800' :
+                                devolucao.status_rastreamento === 'in_transit' ? 'bg-blue-100 text-blue-800' :
+                                devolucao.status_rastreamento === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {devolucao.status_rastreamento}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* CUSTOS E FINANCEIRO (4 colunas) */}
+                          
+                          {/* Custo Envio */}
+                          <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 font-semibold whitespace-nowrap">
+                            {devolucao.custo_envio_devolucao ? `R$ ${devolucao.custo_envio_devolucao.toFixed(2)}` : '-'}
+                          </td>
+                          
+                          {/* Valor Compensação */}
+                          <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
+                            {devolucao.valor_compensacao ? `R$ ${devolucao.valor_compensacao.toFixed(2)}` : '-'}
+                          </td>
+                          
+                          {/* Moeda */}
+                          <td className="px-3 py-3 text-center font-medium">
+                            {devolucao.moeda_custo || 'BRL'}
+                          </td>
+                          
+                          {/* Responsável Custo */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.responsavel_custo || '-'}
+                          </td>
+                          
+                          {/* CLASSIFICAÇÃO E RESOLUÇÃO (5 colunas) */}
+                          
+                          {/* Tipo Claim */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.tipo_claim || '-'}
+                          </td>
+                          
+                          {/* Subtipo Claim */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.subtipo_claim || '-'}
+                          </td>
+                          
+                          {/* Em Mediação */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.em_mediacao ? (
+                              <span className="text-orange-600 dark:text-orange-400">⚖️</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Método Resolução */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.metodo_resolucao || '-'}
+                          </td>
+                          
+                          {/* Nível Prioridade */}
+                          <td className="px-3 py-3 text-center">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              devolucao.nivel_prioridade === 'critical' ? 'bg-red-100 text-red-800' :
+                              devolucao.nivel_prioridade === 'high' ? 'bg-orange-100 text-orange-800' :
+                              devolucao.nivel_prioridade === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {devolucao.nivel_prioridade || 'medium'}
+                            </span>
+                          </td>
+                          
+                          {/* MÉTRICAS E KPIS (4 colunas) */}
+                          
+                          {/* Tempo Resposta */}
+                          <td className="px-3 py-3 text-center text-sm">
+                            {devolucao.tempo_resposta_medio ? `${devolucao.tempo_resposta_medio}min` : '-'}
+                          </td>
+                          
+                          {/* Tempo Total */}
+                          <td className="px-3 py-3 text-center text-sm">
+                            {devolucao.tempo_total_resolucao ? `${devolucao.tempo_total_resolucao}min` : '-'}
+                          </td>
+                          
+                          {/* Total Evidências */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.total_evidencias || 0}
+                          </td>
+                          
+                          {/* Taxa Satisfação */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.taxa_satisfacao ? (
+                              <span className={`font-medium ${
+                                devolucao.taxa_satisfacao >= 80 ? 'text-green-600' :
+                                devolucao.taxa_satisfacao >= 60 ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`}>
+                                {devolucao.taxa_satisfacao}%
+                              </span>
+                            ) : '-'}
+                          </td>
+                          
+                          {/* ESTADOS E FLAGS (3 colunas) */}
+                          
+                          {/* É Troca */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.eh_troca ? (
+                              <span className="text-blue-600 dark:text-blue-400">🔄</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Escalado para ML */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.escalado_para_ml ? (
+                              <span className="text-purple-600 dark:text-purple-400">🚀</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Ação Seller Necessária */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.acao_seller_necessaria ? (
+                              <span className="text-orange-600 dark:text-orange-400">✋</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
                           {/* Data Criação */}
                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
                             {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
@@ -949,27 +1151,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                               month: '2-digit',
                               year: 'numeric'
                             })}
-                          </td>
-                          
-                          {/* Data Atualização */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </td>
-                          
-                          {/* Tipo */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {claimData.type || 'N/A'}
-                          </td>
-                          
-                          {/* Motivo Cancelamento */}
-                          <td className="px-3 py-3">
-                            <div className="max-w-[200px] text-sm text-foreground line-clamp-2" title={String(getMotivoCancelamento(devolucao))}>
-                              {String(getMotivoCancelamento(devolucao))}
-                            </div>
                           </td>
                           
                           {/* Ações */}
