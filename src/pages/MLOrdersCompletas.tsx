@@ -314,7 +314,7 @@ export default function MLOrdersCompletas() {
         </div>
       </div>
 
-      <Tabs defaultValue="orders" className="space-y-4">
+      <Tabs defaultValue="devolucoes" className="space-y-4">
         <TabsList>
           <TabsTrigger value="orders">Orders Completas</TabsTrigger>
           <TabsTrigger value="devolucoes">Devoluções Avançadas</TabsTrigger>
