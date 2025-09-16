@@ -1,10 +1,11 @@
 import * as React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
   Search, RefreshCw, Download, Filter, Package, 
-  Users, Calendar, Loader2, AlertTriangle, CheckCircle
+  Users, Calendar, Loader2, AlertTriangle, CheckCircle,
+  Eye, Grid, Table2, X
 } from 'lucide-react';
 
 // UI Components
@@ -15,24 +16,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { VirtualTable } from '@/components/ui/virtual-table';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Types
 interface MLOrder {
   id: string;
-  order_id: string;
+  order_id?: string;
   status: string;
   date_created: string;
   total_amount: number;
-  currency: string;
+  currency?: string;
   buyer_id?: string;
   buyer_nickname?: string;
   item_title?: string;
   quantity: number;
-  has_claims: boolean;
-  claims_count: number;
-  raw_data: any;
+  has_claims?: boolean;
+  claims_count?: number;
+  raw_data?: any;
 }
 
 interface MLAccount {
@@ -48,7 +48,7 @@ interface Props {
   onOrdersLoaded?: (orders: MLOrder[]) => void;
 }
 
-// Hooks customizados
+// Hook customizado para debounce
 const useDebounce = (value: string, delay: number) => {
   const [debouncedValue, setDebouncedValue] = React.useState(value);
 
@@ -60,7 +60,7 @@ const useDebounce = (value: string, delay: number) => {
   return debouncedValue;
 };
 
-// Componentes memoizados
+// Componente de métricas
 const MetricCard = React.memo(({ title, value, icon: Icon, color = "default" }: {
   title: string;
   value: string | number;
@@ -92,9 +92,10 @@ const MetricCard = React.memo(({ title, value, icon: Icon, color = "default" }: 
   </Card>
 ));
 
+// Componente de card de pedido
 const OrderCard = React.memo(({ order, onClick }: { order: MLOrder; onClick: () => void }) => {
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'cancelled': return 'destructive';
       case 'paid': return 'default';
       case 'shipped': return 'secondary';
@@ -104,12 +105,12 @@ const OrderCard = React.memo(({ order, onClick }: { order: MLOrder; onClick: () 
   };
 
   const getStatusLabel = (status: string) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'cancelled': return 'Cancelada';
       case 'paid': return 'Paga';
       case 'shipped': return 'Enviada';
       case 'delivered': return 'Entregue';
-      default: return status;
+      default: return status || 'N/A';
     }
   };
 
@@ -121,7 +122,7 @@ const OrderCard = React.memo(({ order, onClick }: { order: MLOrder; onClick: () 
             <h3 className="font-semibold text-sm truncate max-w-[200px]" title={order.item_title}>
               {order.item_title || 'Produto não identificado'}
             </h3>
-            <p className="text-xs text-muted-foreground">Order: {order.order_id}</p>
+            <p className="text-xs text-muted-foreground">Order: {order.id || order.order_id}</p>
           </div>
           <Badge variant={getStatusColor(order.status)}>
             {getStatusLabel(order.status)}
@@ -136,7 +137,7 @@ const OrderCard = React.memo(({ order, onClick }: { order: MLOrder; onClick: () 
           <div>
             <span className="text-muted-foreground">Valor:</span>
             <p className="font-medium text-green-600">
-              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: order.currency || 'BRL' }).format(order.total_amount || 0)}
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total_amount || 0)}
             </p>
           </div>
         </div>
@@ -145,16 +146,9 @@ const OrderCard = React.memo(({ order, onClick }: { order: MLOrder; onClick: () 
           <span className="text-xs text-muted-foreground">
             {new Date(order.date_created).toLocaleDateString('pt-BR')}
           </span>
-          <div className="flex gap-1">
-            <Badge variant="outline" className="text-xs">
-              Qtd: {order.quantity}
-            </Badge>
-            {order.has_claims && (
-              <Badge variant="destructive" className="text-xs">
-                {order.claims_count} claims
-              </Badge>
-            )}
-          </div>
+          <span className="text-xs text-muted-foreground">
+            Qtd: {order.quantity || 1}
+          </span>
         </div>
       </CardContent>
     </Card>
@@ -166,168 +160,128 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
   console.log('✅ MLOrdersSelector carregado - mlAccounts:', mlAccounts?.length);
   
   // Estados
-  const [filtros, setFiltros] = React.useState({
+  const [selectedAccount, setSelectedAccount] = React.useState<string>('');
+  const [filters, setFilters] = React.useState({
     search: '',
     status: 'all',
     dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     dateTo: new Date().toISOString().split('T')[0],
-    accountIds: [] as string[],
-    claimsFilter: 'all'
+    limit: 100,
+    offset: 0
   });
-
   const [viewMode, setViewMode] = React.useState<'cards' | 'table'>('cards');
   const [selectedOrder, setSelectedOrder] = React.useState<MLOrder | null>(null);
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const [orders, setOrders] = React.useState<MLOrder[]>([]);
+  const [showFilters, setShowFilters] = React.useState(false);
   
-  const queryClient = useQueryClient();
-  const debouncedSearch = useDebounce(filtros.search, 500);
+  const debouncedSearch = useDebounce(filters.search, 500);
 
   // Auto-selecionar primeira conta ativa
   React.useEffect(() => {
-    if (mlAccounts?.length > 0 && filtros.accountIds.length === 0) {
-      const firstActive = mlAccounts.find(acc => acc.is_active);
-      if (firstActive) {
-        setFiltros(prev => ({ ...prev, accountIds: [firstActive.id] }));
-      }
+    if (mlAccounts?.length > 0 && !selectedAccount) {
+      setSelectedAccount(mlAccounts[0].id);
     }
-  }, [mlAccounts]);
+  }, [mlAccounts, selectedAccount]);
 
-  // Mutation para buscar pedidos da API
-  const fetchOrdersMutation = useMutation({
-    mutationFn: async () => {
-      if (filtros.accountIds.length === 0) {
-        throw new Error('Selecione pelo menos uma conta ML');
+  // Query para buscar pedidos da API do ML
+  const { data: ordersData, isLoading, error, refetch } = useQuery({
+    queryKey: ['ml-orders-api', selectedAccount, filters.dateFrom, filters.dateTo, filters.status, debouncedSearch],
+    queryFn: async () => {
+      if (!selectedAccount) {
+        console.log('⚠️ Nenhuma conta selecionada');
+        return { results: [], ok: false };
       }
 
-      const results = await Promise.allSettled(
-        filtros.accountIds.map(async (accountId) => {
-          const account = mlAccounts.find(acc => acc.id === accountId);
-          if (!account) return [];
+      console.log('🔍 Buscando pedidos da API ML para conta:', selectedAccount);
+      console.log('📝 Filtros aplicados:', {
+        integration_account_id: selectedAccount,
+        limit: filters.limit,
+        offset: filters.offset,
+        date_from: filters.dateFrom,
+        date_to: filters.dateTo,
+        status: filters.status !== 'all' ? filters.status : undefined,
+        search: debouncedSearch || undefined
+      });
 
-          console.log(`🔍 Buscando pedidos para conta: ${account.name}`);
-          
-          const { data, error } = await supabase.functions.invoke('unified-orders', {
-            body: {
-              integration_account_id: accountId,
-              limit: 100,
-              offset: 0,
-              status: filtros.status !== 'all' ? filtros.status : undefined,
-              date_from: filtros.dateFrom,
-              date_to: filtros.dateTo,
-              search: debouncedSearch || undefined
-            }
-          });
+      const requestBody: any = {
+        integration_account_id: selectedAccount,
+        limit: filters.limit,
+        offset: filters.offset,
+        date_from: filters.dateFrom,
+        date_to: filters.dateTo
+      };
 
-          if (error) {
-            console.error(`❌ Erro ao buscar pedidos para ${account.name}:`, error);
-            throw new Error(`Erro na conta ${account.name}: ${error.message}`);
-          }
-
-          return (data?.orders || []).map((order: any) => ({
-            id: order.id || order.order_id,
-            order_id: order.order_id || order.id,
-            status: order.status,
-            date_created: order.date_created,
-            total_amount: order.total_amount,
-            currency: order.currency || 'BRL',
-            buyer_id: order.buyer_id,
-            buyer_nickname: order.buyer_nickname,
-            item_title: order.item_title,
-            quantity: order.quantity || 1,
-            has_claims: order.has_claims || false,
-            claims_count: order.claims_count || 0,
-            raw_data: order
-          }));
-        })
-      );
-
-      const allOrders = results
-        .filter((result): result is PromiseFulfilledResult<MLOrder[]> => result.status === 'fulfilled')
-        .flatMap(result => result.value);
-
-      const errors = results
-        .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
-        .map(result => result.reason.message);
-
-      if (errors.length > 0) {
-        console.warn('Alguns erros ocorreram:', errors);
-        toast.warning(`Algumas contas falharam: ${errors.join(', ')}`);
+      if (filters.status !== 'all') {
+        requestBody.status = filters.status;
       }
 
-      return allOrders;
+      if (debouncedSearch) {
+        requestBody.search = debouncedSearch;
+      }
+
+      const { data, error } = await supabase.functions.invoke('unified-orders', {
+        body: requestBody
+      });
+
+      if (error) {
+        console.error('❌ Erro ao buscar pedidos da API:', error);
+        throw error;
+      }
+
+      console.log('✅ Resposta da API recebida:', data);
+      return data || { results: [], ok: false };
     },
-    onSuccess: (data) => {
-      setOrders(data);
-      onOrdersLoaded?.(data);
-      toast.success(`✅ ${data.length} pedidos carregados da API ML`);
-    },
-    onError: (error: any) => {
-      console.error('❌ Erro ao buscar pedidos:', error);
-      toast.error(`Erro ao buscar pedidos: ${error.message}`);
-    }
+    enabled: !!selectedAccount,
+    staleTime: 1 * 60 * 1000, // 1 minuto
+    gcTime: 5 * 60 * 1000, // 5 minutos
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
+  // Extrair pedidos dos dados
+  const orders = React.useMemo(() => {
+    const results = ordersData?.results || [];
+    console.log('📊 Pedidos processados:', results.length);
+    return results;
+  }, [ordersData]);
+
+  // Notificar callback quando orders mudarem
+  React.useEffect(() => {
+    if (orders.length > 0 && onOrdersLoaded) {
+      onOrdersLoaded(orders);
+    }
+  }, [orders, onOrdersLoaded]);
+
   // Métricas calculadas
-  const metricas = React.useMemo(() => {
+  const metrics = React.useMemo(() => {
     const total = orders.length;
-    const pagos = orders.filter(o => o.status === 'paid').length;
-    const enviados = orders.filter(o => o.status === 'shipped').length;
-    const cancelados = orders.filter(o => o.status === 'cancelled').length;
-    const comClaims = orders.filter(o => o.has_claims).length;
-    const valorTotal = orders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
+    const paid = orders.filter(o => o.status?.toLowerCase() === 'paid').length;
+    const shipped = orders.filter(o => o.status?.toLowerCase() === 'shipped').length;
+    const cancelled = orders.filter(o => o.status?.toLowerCase() === 'cancelled').length;
+    const totalValue = orders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
 
-    return { total, pagos, enviados, cancelados, comClaims, valorTotal };
+    return { total, paid, shipped, cancelled, totalValue };
   }, [orders]);
-
-  // Filtrar pedidos
-  const ordersFiltered = React.useMemo(() => {
-    let filtered = orders;
-
-    if (debouncedSearch) {
-      const search = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(order => 
-        order.order_id?.toLowerCase().includes(search) ||
-        order.buyer_nickname?.toLowerCase().includes(search) ||
-        order.item_title?.toLowerCase().includes(search)
-      );
-    }
-
-    if (filtros.status !== 'all') {
-      filtered = filtered.filter(order => order.status === filtros.status);
-    }
-
-    if (filtros.claimsFilter === 'with_claims') {
-      filtered = filtered.filter(order => order.has_claims);
-    } else if (filtros.claimsFilter === 'without_claims') {
-      filtered = filtered.filter(order => !order.has_claims);
-    }
-
-    return filtered;
-  }, [orders, debouncedSearch, filtros.status, filtros.claimsFilter]);
 
   // Handlers
   const handleSearch = React.useCallback(() => {
-    setCurrentPage(1);
-    fetchOrdersMutation.mutate();
-  }, [fetchOrdersMutation]);
+    refetch();
+  }, [refetch]);
 
   const handleExport = React.useCallback(() => {
-    if (ordersFiltered.length === 0) {
-      toast.error('Nenhum pedido para exportar');
+    if (orders.length === 0) {
+      toast.error('Nenhum dados para exportar');
       return;
     }
 
     const csvContent = [
-      ['Order ID', 'Status', 'Data', 'Comprador', 'Produto', 'Valor', 'Claims'],
-      ...ordersFiltered.map(order => [
-        order.order_id,
-        order.status,
-        new Date(order.date_created).toLocaleDateString('pt-BR'),
-        order.buyer_nickname || '',
-        order.item_title || '',
-        order.total_amount || 0,
-        order.has_claims ? `${order.claims_count} claims` : 'Sem claims'
+      ['Order ID', 'Status', 'Comprador', 'Produto', 'Valor', 'Data'],
+      ...orders.map(o => [
+        o.id || o.order_id || '',
+        o.status || '',
+        o.buyer_nickname || '',
+        o.item_title || '',
+        o.total_amount || 0,
+        new Date(o.date_created).toLocaleDateString('pt-BR')
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -335,203 +289,213 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ml_orders_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `pedidos_ml_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [ordersFiltered]);
+    toast.success('Arquivo exportado com sucesso!');
+  }, [orders]);
 
-  // Colunas para tabela virtual
-  const tableColumns = React.useMemo(() => [
-    { key: 'order_id', label: 'Order ID', width: 140, render: (item: MLOrder) => item.order_id },
-    { key: 'status', label: 'Status', width: 100, render: (item: MLOrder) => (
-      <Badge variant="outline">{item.status}</Badge>
-    )},
-    { key: 'buyer_nickname', label: 'Comprador', width: 150, render: (item: MLOrder) => item.buyer_nickname || 'N/A' },
-    { key: 'item_title', label: 'Produto', width: 200, render: (item: MLOrder) => (
-      <span className="truncate" title={item.item_title}>{item.item_title}</span>
-    )},
-    { key: 'total_amount', label: 'Valor', width: 120, render: (item: MLOrder) => (
-      <span className="text-green-600 font-medium">
-        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: item.currency || 'BRL' }).format(item.total_amount || 0)}
-      </span>
-    )},
-    { key: 'date_created', label: 'Data', width: 120, render: (item: MLOrder) => (
-      new Date(item.date_created).toLocaleDateString('pt-BR')
-    )},
-    { key: 'claims', label: 'Claims', width: 80, render: (item: MLOrder) => (
-      item.has_claims ? (
-        <Badge variant="destructive" className="text-xs">{item.claims_count}</Badge>
-      ) : (
-        <Badge variant="secondary" className="text-xs">0</Badge>
-      )
-    )}
-  ], []);
+  const clearFilters = React.useCallback(() => {
+    setFilters({
+      search: '',
+      status: 'all',
+      dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      dateTo: new Date().toISOString().split('T')[0],
+      limit: 100,
+      offset: 0
+    });
+  }, []);
+
+  if (error) {
+    console.error('💥 Erro na query:', error);
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold mb-2 text-red-600">Erro ao carregar pedidos</h3>
+          <p className="text-muted-foreground mb-4">{error.message}</p>
+          <Button onClick={() => refetch()} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Tentar Novamente
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Pedidos Mercado Livre</h2>
-          <p className="text-muted-foreground">Buscar pedidos diretamente da API ML</p>
+      {/* Header com controles */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold">Pedidos da API ML</h2>
+            <p className="text-muted-foreground">Buscar pedidos diretamente da API do Mercado Livre</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="h-4 w-4 mr-1" />
+              Filtros
+            </Button>
+            <Button
+              variant="outline" 
+              size="sm"
+              onClick={handleExport}
+              disabled={orders.length === 0}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Exportar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSearch}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-1" />
+              )}
+              Buscar
+            </Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport} disabled={ordersFiltered.length === 0}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
-        </div>
-      </div>
 
-      {/* Métricas Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <MetricCard title="Total" value={metricas.total} icon={Package} />
-        <MetricCard title="Pagos" value={metricas.pagos} icon={CheckCircle} color="success" />
-        <MetricCard title="Enviados" value={metricas.enviados} icon={Package} color="default" />
-        <MetricCard title="Cancelados" value={metricas.cancelados} icon={AlertTriangle} color="error" />
-        <MetricCard title="Com Claims" value={metricas.comClaims} icon={AlertTriangle} color="warning" />
-        <MetricCard 
-          title="Valor Total" 
-          value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metricas.valorTotal)} 
-          icon={Package} 
-          color="success" 
-        />
-      </div>
-
-      {/* Filtros e Seleção de Contas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros e Configurações
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Seleção de Contas ML */}
+        {/* Seleção de conta */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">
               <Users className="h-4 w-4 inline mr-1" />
-              Contas ML (obrigatório)
+              Conta ML
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-              {mlAccounts.map((account) => (
-                <div key={account.id} className="flex items-center space-x-2 p-2 border rounded">
-                  <input
-                    type="checkbox"
-                    id={account.id}
-                    checked={filtros.accountIds.includes(account.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setFiltros(prev => ({ 
-                          ...prev, 
-                          accountIds: [...prev.accountIds, account.id] 
-                        }));
-                      } else {
-                        setFiltros(prev => ({ 
-                          ...prev, 
-                          accountIds: prev.accountIds.filter(id => id !== account.id) 
-                        }));
-                      }
-                    }}
-                    className="rounded"
-                  />
-                  <label htmlFor={account.id} className="text-sm font-medium cursor-pointer">
+            <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar conta" />
+              </SelectTrigger>
+              <SelectContent>
+                {mlAccounts.map(account => (
+                  <SelectItem key={account.id} value={account.id}>
                     {account.name} ({account.account_identifier})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              <Calendar className="h-4 w-4 inline mr-1" />
+              Data Inicial
+            </label>
+            <Input
+              type="date"
+              value={filters.dateFrom}
+              onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              <Calendar className="h-4 w-4 inline mr-1" />
+              Data Final
+            </label>
+            <Input
+              type="date"
+              value={filters.dateTo}
+              onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        {/* Filtros expandidos */}
+        {showFilters && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    <Search className="h-4 w-4 inline mr-1" />
+                    Pesquisar
                   </label>
-                  {account.is_active ? (
-                    <Badge variant="outline" className="text-xs">Ativa</Badge>
-                  ) : (
-                    <Badge variant="destructive" className="text-xs">Inativa</Badge>
-                  )}
+                  <Input
+                    placeholder="Order ID, comprador, produto..."
+                    value={filters.search}
+                    onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  />
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Filtros básicos */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por Order ID, comprador, produto..."
-                value={filtros.search}
-                onChange={(e) => setFiltros(prev => ({ ...prev, search: e.target.value }))}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={filtros.status} onValueChange={(value) => setFiltros(prev => ({ ...prev, status: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os Status</SelectItem>
-                <SelectItem value="paid">Pagos</SelectItem>
-                <SelectItem value="shipped">Enviados</SelectItem>
-                <SelectItem value="delivered">Entregues</SelectItem>
-                <SelectItem value="cancelled">Cancelados</SelectItem>
-              </SelectContent>
-            </Select>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    Status
+                  </label>
+                  <Select 
+                    value={filters.status} 
+                    onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="paid">Pagos</SelectItem>
+                      <SelectItem value="shipped">Enviados</SelectItem>
+                      <SelectItem value="delivered">Entregues</SelectItem>
+                      <SelectItem value="cancelled">Cancelados</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <Select value={filtros.claimsFilter} onValueChange={(value) => setFiltros(prev => ({ ...prev, claimsFilter: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Claims" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="with_claims">Com Claims</SelectItem>
-                <SelectItem value="without_claims">Sem Claims</SelectItem>
-              </SelectContent>
-            </Select>
+                <div className="flex items-end">
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    <X className="h-4 w-4 mr-1" />
+                    Limpar
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
-            <Input
-              type="date"
-              value={filtros.dateFrom}
-              onChange={(e) => setFiltros(prev => ({ ...prev, dateFrom: e.target.value }))}
-            />
+      {/* Métricas */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <MetricCard
+          title="Total"
+          value={metrics.total}
+          icon={Package}
+          color="default"
+        />
+        <MetricCard
+          title="Pagos"
+          value={metrics.paid}
+          icon={CheckCircle}
+          color="success"
+        />
+        <MetricCard
+          title="Enviados"
+          value={metrics.shipped}
+          icon={Package}
+          color="default"
+        />
+        <MetricCard
+          title="Cancelados"
+          value={metrics.cancelled}
+          icon={AlertTriangle}
+          color="error"
+        />
+        <MetricCard
+          title="Valor Total"
+          value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.totalValue)}
+          icon={Package}
+          color="success"
+        />
+      </div>
 
-            <Input
-              type="date"
-              value={filtros.dateTo}
-              onChange={(e) => setFiltros(prev => ({ ...prev, dateTo: e.target.value }))}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button 
-              onClick={handleSearch} 
-              disabled={fetchOrdersMutation.isPending || filtros.accountIds.length === 0}
-              className="flex items-center gap-2"
-            >
-              {fetchOrdersMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
-              {fetchOrdersMutation.isPending ? 'Buscando...' : 'Buscar Pedidos'}
-            </Button>
-            
-            <Button 
-              variant="outline"
-              onClick={() => setFiltros(prev => ({ 
-                ...prev, 
-                accountIds: mlAccounts.filter(acc => acc.is_active).map(acc => acc.id) 
-              }))}
-            >
-              Selecionar Todas Ativas
-            </Button>
-            
-            <Button 
-              variant="outline"
-              onClick={() => setFiltros(prev => ({ ...prev, accountIds: [] }))}
-            >
-              Limpar Seleção
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Controles de Visualização */}
+      {/* Controles de visualização */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Visualização:</span>
@@ -542,7 +506,7 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
               onClick={() => setViewMode('cards')}
               className="rounded-r-none"
             >
-              <Package className="h-4 w-4" />
+              <Grid className="h-4 w-4" />
             </Button>
             <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}
@@ -550,17 +514,17 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
               onClick={() => setViewMode('table')}
               className="rounded-l-none"
             >
-              <Filter className="h-4 w-4" />
+              <Table2 className="h-4 w-4" />
             </Button>
           </div>
         </div>
         <span className="text-sm text-muted-foreground">
-          {ordersFiltered.length} de {orders.length} {ordersFiltered.length === 1 ? 'resultado' : 'resultados'}
+          {orders.length} {orders.length === 1 ? 'pedido' : 'pedidos'}
         </span>
       </div>
 
       {/* Conteúdo principal */}
-      {fetchOrdersMutation.isPending ? (
+      {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <Card key={i}>
@@ -573,32 +537,24 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
             </Card>
           ))}
         </div>
-      ) : ordersFiltered.length === 0 ? (
+      ) : orders.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhum pedido encontrado</h3>
-            <p className="text-muted-foreground mb-4">
-              {orders.length === 0 
-                ? 'Selecione uma conta ML e clique em "Buscar Pedidos"' 
-                : 'Ajuste os filtros para encontrar pedidos'
+            <p className="text-muted-foreground">
+              {!selectedAccount 
+                ? 'Selecione uma conta ML para buscar pedidos' 
+                : 'Ajuste os filtros ou tente um período diferente'
               }
             </p>
-            {filtros.accountIds.length === 0 && (
-              <Button onClick={() => setFiltros(prev => ({ 
-                ...prev, 
-                accountIds: mlAccounts.filter(acc => acc.is_active).map(acc => acc.id) 
-              }))}>
-                Selecionar Contas Ativas
-              </Button>
-            )}
           </CardContent>
         </Card>
       ) : viewMode === 'cards' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {ordersFiltered.map((order) => (
+          {orders.map((order) => (
             <OrderCard
-              key={order.id}
+              key={order.id || order.order_id}
               order={order}
               onClick={() => setSelectedOrder(order)}
             />
@@ -607,74 +563,108 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
       ) : (
         <Card>
           <CardContent className="p-0">
-            <VirtualTable
-              data={ordersFiltered}
-              columns={tableColumns}
-              height={600}
-              itemHeight={60}
-              onRowClick={(order) => setSelectedOrder(order)}
-              enableVirtualization={ordersFiltered.length > 50}
-              threshold={50}
-            />
+            <div className="border rounded-lg overflow-hidden">
+              <div className="max-h-[600px] overflow-auto">
+                <table className="w-full">
+                  <thead className="bg-muted">
+                    <tr>
+                      <th className="text-left p-3 text-sm font-medium">Order ID</th>
+                      <th className="text-left p-3 text-sm font-medium">Status</th>
+                      <th className="text-left p-3 text-sm font-medium">Comprador</th>
+                      <th className="text-left p-3 text-sm font-medium">Produto</th>
+                      <th className="text-left p-3 text-sm font-medium">Valor</th>
+                      <th className="text-left p-3 text-sm font-medium">Data</th>
+                      <th className="text-left p-3 text-sm font-medium">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orders.map((order) => (
+                      <tr key={order.id || order.order_id} className="border-b hover:bg-muted/50">
+                        <td className="p-3 text-sm">{order.id || order.order_id}</td>
+                        <td className="p-3">
+                          <Badge variant="outline">{order.status}</Badge>
+                        </td>
+                        <td className="p-3 text-sm">{order.buyer_nickname || 'N/A'}</td>
+                        <td className="p-3 text-sm truncate max-w-[200px]" title={order.item_title}>
+                          {order.item_title || 'N/A'}
+                        </td>
+                        <td className="p-3 text-sm font-medium">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total_amount || 0)}
+                        </td>
+                        <td className="p-3 text-sm">
+                          {new Date(order.date_created).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="p-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Modal de Detalhes */}
+      {/* Modal de detalhes */}
       <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Detalhes do Pedido</DialogTitle>
           </DialogHeader>
           {selectedOrder && (
-            <ScrollArea className="max-h-[70vh]">
-              <div className="space-y-6 p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Informações Básicas</h4>
-                    <div className="space-y-2 text-sm">
-                      <div><strong>Order ID:</strong> {selectedOrder.order_id}</div>
-                      <div><strong>Status:</strong> <Badge>{selectedOrder.status}</Badge></div>
-                      <div><strong>Data:</strong> {new Date(selectedOrder.date_created).toLocaleString('pt-BR')}</div>
-                      <div><strong>Quantidade:</strong> {selectedOrder.quantity}</div>
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold mb-2">Comprador e Valores</h4>
-                    <div className="space-y-2 text-sm">
-                      <div><strong>Comprador:</strong> {selectedOrder.buyer_nickname || 'N/A'}</div>
-                      <div><strong>ID Comprador:</strong> {selectedOrder.buyer_id || 'N/A'}</div>
-                      <div><strong>Valor Total:</strong> 
-                        <span className="text-green-600 font-medium ml-1">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: selectedOrder.currency || 'BRL' }).format(selectedOrder.total_amount || 0)}
-                        </span>
-                      </div>
-                      <div><strong>Claims:</strong> 
-                        {selectedOrder.has_claims ? (
-                          <Badge variant="destructive" className="ml-1">{selectedOrder.claims_count} claims</Badge>
-                        ) : (
-                          <Badge variant="secondary" className="ml-1">Sem claims</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Produto</h4>
-                  <p className="text-sm">{selectedOrder.item_title || 'Produto não identificado'}</p>
+                  <label className="text-sm font-medium text-muted-foreground">Order ID</label>
+                  <p className="text-sm">{selectedOrder.id || selectedOrder.order_id}</p>
                 </div>
-                
-                {selectedOrder.raw_data && (
-                  <div>
-                    <h4 className="font-semibold mb-2">Dados Técnicos</h4>
-                    <pre className="bg-muted p-4 rounded-lg text-xs overflow-auto max-h-[200px]">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Status</label>
+                  <p className="text-sm">
+                    <Badge variant="outline">{selectedOrder.status}</Badge>
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Comprador</label>
+                  <p className="text-sm">{selectedOrder.buyer_nickname || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Valor Total</label>
+                  <p className="text-sm font-medium">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOrder.total_amount || 0)}
+                  </p>
+                </div>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Produto</label>
+                <p className="text-sm">{selectedOrder.item_title || 'N/A'}</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">Data de Criação</label>
+                <p className="text-sm">{new Date(selectedOrder.date_created).toLocaleString('pt-BR')}</p>
+              </div>
+
+              {selectedOrder.raw_data && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Dados Completos (JSON)</label>
+                  <ScrollArea className="h-40 w-full border rounded p-3 bg-muted">
+                    <pre className="text-xs">
                       {JSON.stringify(selectedOrder.raw_data, null, 2)}
                     </pre>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+                  </ScrollArea>
+                </div>
+              )}
+            </div>
           )}
         </DialogContent>
       </Dialog>
@@ -682,4 +672,4 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
   );
 };
 
-export default React.memo(MLOrdersSelector);
+export default MLOrdersSelector;
