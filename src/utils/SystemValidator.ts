@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 // 🔧 SISTEMA DE VALIDAÇÃO AUTOMÁTICA REISTOQ
 // Detecta problemas em tempo real durante desenvolvimento
@@ -240,8 +240,8 @@ class SystemValidator {
 export function useSystemValidator() {
   const validator = SystemValidator.getInstance();
   
-  // Usar React.useEffect ao invés de useEffect direto
-  React.useEffect(() => {
+  // Usar useEffect hook
+  useEffect(() => {
     validator.startContinuousMonitoring();
     
     return () => {
