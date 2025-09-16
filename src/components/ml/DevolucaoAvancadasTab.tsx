@@ -141,6 +141,47 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     return 'N/A';
   }, []);
 
+  // Função para extrair texto detalhado do motivo
+  const getTextoMotivoDetalhado = useCallback((devolucao: DevolucaoAvancada) => {
+    // Buscar texto mais detalhado nos dados JSON
+    if (devolucao.dados_claim) {
+      const claim = devolucao.dados_claim;
+      if (claim.reason_description) return claim.reason_description;
+      if (claim.resolution?.description) return claim.resolution.description;
+      if (claim.resolution?.comments) return claim.resolution.comments;
+      if (claim.reason_detail) return claim.reason_detail;
+      if (claim.description) return claim.description;
+      if (claim.comments) return claim.comments;
+      if (claim.explanation) return claim.explanation;
+    }
+    
+    if (devolucao.dados_return) {
+      const returnData = devolucao.dados_return;
+      if (returnData.reason_description) return returnData.reason_description;
+      if (returnData.description) return returnData.description;
+      if (returnData.comments) return returnData.comments;
+      if (returnData.explanation) return returnData.explanation;
+      if (returnData.details) return returnData.details;
+    }
+
+    if (devolucao.dados_order) {
+      const order = devolucao.dados_order;
+      if (order.cancel_description) return order.cancel_description;
+      if (order.cancellation_description) return order.cancellation_description;
+      if (order.cancel_detail) return order.cancel_detail;
+      if (order.comments) return order.comments;
+    }
+
+    // Buscar em mensagens se disponível
+    if (devolucao.dados_mensagens && Array.isArray(devolucao.dados_mensagens)) {
+      const ultimaMensagem = devolucao.dados_mensagens[devolucao.dados_mensagens.length - 1];
+      if (ultimaMensagem?.text) return ultimaMensagem.text;
+      if (ultimaMensagem?.message) return ultimaMensagem.message;
+    }
+    
+    return 'Sem detalhes disponíveis';
+  }, []);
+
   // Tempo real para demonstração
   useDevolucoesDemostracao(
     advancedFilters.buscarEmTempoReal,
@@ -604,6 +645,12 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                        </th>
                        <th className="text-left p-3 font-medium">
                          <div className="flex items-center gap-2">
+                           <FileText className="h-4 w-4" />
+                           Descrição do Motivo
+                         </div>
+                       </th>
+                       <th className="text-left p-3 font-medium">
+                         <div className="flex items-center gap-2">
                            <Wrench className="h-4 w-4" />
                            Comprador
                          </div>
@@ -692,8 +739,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                               {new Date(devolucao.data_criacao).toLocaleDateString()}
                             </span>
                           </div>
-                        </td>
-                        <td className="p-3">
+                         </td>
+                         <td className="p-3 max-w-xs">
+                           <div className="flex items-center gap-2">
+                             <FileText className="h-4 w-4 text-blue-600" />
+                             <span className="truncate text-sm" title={getTextoMotivoDetalhado(devolucao)}>
+                               {getTextoMotivoDetalhado(devolucao)}
+                             </span>
+                           </div>
+                         </td>
+                         <td className="p-3">
                           <Button
                             variant="outline"
                             size="sm"
@@ -787,6 +842,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             <div>
                               <span className="text-gray-500 block">Comprador</span>
                               <p className="font-medium truncate">{devolucao.comprador_nickname || 'N/A'}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-blue-600" />
+                            <div>
+                              <span className="text-gray-500 block">Descrição</span>
+                              <p className="font-medium text-sm truncate" title={getTextoMotivoDetalhado(devolucao)}>
+                                {getTextoMotivoDetalhado(devolucao)}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -990,6 +1055,26 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       <div>
                         <Label className="text-sm text-gray-500">Motivo do Cancelamento</Label>
                         <p className="font-medium">{getMotivoCancelamento(selectedDevolucao)}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 text-blue-600 mt-1" />
+                      <div className="flex-1">
+                        <Label className="text-sm text-gray-500">Descrição Detalhada do Motivo</Label>
+                        <p className="font-medium text-sm leading-relaxed">
+                          {getTextoMotivoDetalhado(selectedDevolucao)}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 text-blue-600 mt-1" />
+                      <div className="flex-1">
+                        <Label className="text-sm text-gray-500">Descrição Detalhada do Motivo</Label>
+                        <p className="font-medium text-sm leading-relaxed">
+                          {getTextoMotivoDetalhado(selectedDevolucao)}
+                        </p>
                       </div>
                     </div>
                     

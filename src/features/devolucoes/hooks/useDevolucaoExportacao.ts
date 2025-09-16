@@ -230,6 +230,20 @@ function processDataForExport(data: any[], options: ExportOptions) {
       return 'N/A';
     };
 
+    // Extrair descrição detalhada do motivo
+    const getTextoMotivoDetalhado = (devolucao: any) => {
+      if (devolucao.dados_claim?.reason_description) return devolucao.dados_claim.reason_description;
+      if (devolucao.dados_claim?.resolution?.description) return devolucao.dados_claim.resolution.description;
+      if (devolucao.dados_claim?.description) return devolucao.dados_claim.description;
+      if (devolucao.dados_return?.reason_description) return devolucao.dados_return.reason_description;
+      if (devolucao.dados_return?.description) return devolucao.dados_return.description;
+      if (devolucao.dados_order?.cancel_description) return devolucao.dados_order.cancel_description;
+      if (devolucao.dados_mensagens?.[devolucao.dados_mensagens.length - 1]?.text) {
+        return devolucao.dados_mensagens[devolucao.dados_mensagens.length - 1].text;
+      }
+      return 'Sem detalhes disponíveis';
+    };
+
     const baseData = {
       'Order ID': item.order_id,
       'Claim ID': item.claim_id || '-',
@@ -239,6 +253,7 @@ function processDataForExport(data: any[], options: ExportOptions) {
       'Valor Retido': item.valor_retido || 0,
       'Status': item.status_devolucao || '-',
       'Motivo': getMotivoCancelamento(item),
+      'Descrição do Motivo': getTextoMotivoDetalhado(item),
       'Comprador': item.comprador_nickname || '-',
       'Data Criação': item.data_criacao ? format(new Date(item.data_criacao), 'dd/MM/yyyy HH:mm') : '-',
       'Conta': item.account_name || '-'
