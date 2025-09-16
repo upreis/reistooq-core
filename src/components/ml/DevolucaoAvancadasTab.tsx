@@ -9,6 +9,10 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { translateCancelReason } from '@/lib/translations';
 import { usePersistentMLOrdersState } from '@/hooks/usePersistentMLOrdersState';
+import { MetricCard } from '@/components/shared/MetricCard';
+import { FilterSection } from '@/components/shared/FilterSection';
+import { DevolucaoCard } from '@/components/shared/DevolucaoCard';
+import { VirtualTable } from '@/components/shared/VirtualTable';
 import { 
   RefreshCw, 
   Download, 
@@ -25,7 +29,11 @@ import {
   Search,
   Wrench,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Users,
+  Grid,
+  Table2,
+  Calendar
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -91,6 +99,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   // PAGINAÇÃO
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
+  
+  // VIEW MODE
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
 
   // HOOK DE PERSISTÊNCIA
   const persistentState = usePersistentMLOrdersState();
@@ -750,111 +761,15 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header com estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Package className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-2xl font-bold">{devolucoesFiltradas.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Clock className="h-4 w-4 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Pendentes</p>
-                <p className="text-2xl font-bold">
-                  {devolucoesFiltradas.filter(d => d.status_devolucao === 'with_claims').length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Concluídas</p>
-                <p className="text-2xl font-bold">
-                  {devolucoesFiltradas.filter(d => d.status_devolucao === 'completed').length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <XCircle className="h-4 w-4 text-red-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Canceladas</p>
-                <p className="text-2xl font-bold">
-                  {devolucoesFiltradas.filter(d => d.status_devolucao === 'cancelled').length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Controles de ação */}
-      <div className="flex justify-between items-center">
-        <div className="flex gap-2">
-          <Button 
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              sincronizarDevolucoes();
-            }}
-            disabled={loading}
-            className="flex items-center gap-2"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            Sincronizar Devoluções (BD)
-          </Button>
-
-          <Button 
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              buscarComFiltros();
-            }}
-            disabled={loading}
-            variant="secondary"
-            className="flex items-center gap-2"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            {filtrosAvancados.buscarEmTempoReal ? 'Buscar API ML' : 'Atualizar BD'}
-          </Button>
-          
+      {/* HEADER DA PÁGINA */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Devoluções Avançadas</h1>
+          <p className="text-muted-foreground">
+            Gerenciamento de devoluções e cancelamentos do Mercado Livre
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
             onClick={exportarCSV}
@@ -863,412 +778,261 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             <Download className="h-4 w-4" />
             Exportar CSV
           </Button>
+          <Button 
+            onClick={buscarComFiltros}
+            disabled={loading}
+            className="flex items-center gap-2"
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Atualizar da API
+          </Button>
         </div>
       </div>
 
-      {/* COMPONENTE DE FILTROS AVANÇADOS */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filtros Avançados - Busca em Tempo Real
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Toggle para busca em tempo real */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="tempo-real"
-                checked={filtrosAvancados.buscarEmTempoReal}
-                onChange={(e) => setFiltrosAvancados(prev => ({
-                  ...prev,
-                  buscarEmTempoReal: e.target.checked
-                }))}
-              />
-              <label htmlFor="tempo-real" className="text-sm font-medium">
-                🔴 Buscar em tempo real da API ML (mais lento, dados atuais)
-              </label>
-            </div>
+      {/* MÉTRICAS DASHBOARD */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <MetricCard
+          title="Total"
+          value={devolucoesFiltradas.length}
+          icon={Package}
+          variant="default"
+        />
+        <MetricCard
+          title="Pendentes"
+          value={devolucoesFiltradas.filter(d => d.status_devolucao === 'with_claims').length}
+          icon={Clock}
+          variant="warning"
+        />
+        <MetricCard
+          title="Concluídas"
+          value={devolucoesFiltradas.filter(d => d.status_devolucao === 'completed').length}
+          icon={CheckCircle}
+          variant="success"
+        />
+        <MetricCard
+          title="Canceladas"
+          value={devolucoesFiltradas.filter(d => d.status_devolucao === 'cancelled').length}
+          icon={XCircle}
+          variant="error"
+        />
+        <MetricCard
+          title="Valor Total"
+          value={`R$ ${devolucoesFiltradas.reduce((acc, d) => acc + (d.valor_retido || 0), 0).toFixed(2)}`}
+          icon={DollarSign}
+          variant="default"
+        />
+      </div>
 
-            {/* Seleção de contas */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Contas ML</label>
-              <div className="grid grid-cols-2 gap-2">
-                {mlAccounts?.map((account) => (
-                  <div key={account.id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={account.id}
-                      checked={filtrosAvancados.contasSelecionadas.includes(account.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFiltrosAvancados(prev => ({
-                            ...prev,
-                            contasSelecionadas: [...prev.contasSelecionadas, account.id]
-                          }));
-                        } else {
-                          setFiltrosAvancados(prev => ({
-                            ...prev,
-                            contasSelecionadas: prev.contasSelecionadas.filter(id => id !== account.id)
-                          }));
-                        }
-                      }}
-                    />
-                    <label htmlFor={account.id} className="text-sm">
-                      {account.name}
-                    </label>
+      {/* FILTROS AVANÇADOS */}
+      <FilterSection
+        title="Filtros Avançados - API Mercado Livre"
+        basicFilters={[
+          {
+            id: 'contas',
+            label: 'Contas ML',
+            type: 'multi-select',
+            value: filtrosAvancados.contasSelecionadas,
+            onChange: (value) => setFiltrosAvancados(prev => ({ ...prev, contasSelecionadas: value })),
+            options: mlAccounts?.map(acc => ({ value: acc.id, label: acc.name })) || [],
+            icon: Users
+          },
+          {
+            id: 'busca-tempo-real',
+            label: 'Buscar em Tempo Real',
+            type: 'select',
+            value: filtrosAvancados.buscarEmTempoReal ? 'true' : 'false',
+            onChange: (value) => setFiltrosAvancados(prev => ({ ...prev, buscarEmTempoReal: value === 'true' })),
+            options: [
+              { value: 'false', label: 'Banco de Dados (Rápido)' },
+              { value: 'true', label: 'API ML (Atual, mais lento)' }
+            ]
+          }
+        ]}
+        advancedFilters={[
+          {
+            id: 'data-inicio-api',
+            label: 'Data Início',
+            type: 'date',
+            value: filtrosAvancados.dataInicio,
+            onChange: (value) => setFiltrosAvancados(prev => ({ ...prev, dataInicio: value }))
+          },
+          {
+            id: 'data-fim-api',
+            label: 'Data Fim',
+            type: 'date',
+            value: filtrosAvancados.dataFim,
+            onChange: (value) => setFiltrosAvancados(prev => ({ ...prev, dataFim: value }))
+          },
+          {
+            id: 'status-claim',
+            label: 'Status',
+            type: 'select',
+            value: filtrosAvancados.statusClaim,
+            onChange: (value) => setFiltrosAvancados(prev => ({ ...prev, statusClaim: value })),
+            options: [
+              { value: '', label: 'Todos' },
+              { value: 'opened', label: 'Aberto' },
+              { value: 'closed', label: 'Fechado' },
+              { value: 'cancelled', label: 'Cancelado' },
+              { value: 'in_process', label: 'Em Processo' }
+            ]
+          }
+        ]}
+        onSearch={buscarComFiltros}
+        searchLabel={filtrosAvancados.buscarEmTempoReal ? 'Buscar na API ML' : 'Buscar no Banco'}
+        defaultExpanded={true}
+      />
+
+      {/* FILTROS BÁSICOS */}
+      <FilterSection
+        title="Filtros de Busca Local"
+        basicFilters={[
+          {
+            id: 'search',
+            label: 'Buscar',
+            type: 'text',
+            placeholder: 'Order ID, SKU, Produto...',
+            value: filtros.searchTerm,
+            onChange: (value) => setFiltros(prev => ({ ...prev, searchTerm: value })),
+            icon: Search
+          },
+          {
+            id: 'status',
+            label: 'Status',
+            type: 'select',
+            placeholder: 'Todos os status',
+            value: filtros.status,
+            onChange: (value) => setFiltros(prev => ({ ...prev, status: value })),
+            options: [
+              { value: '', label: 'Todos' },
+              { value: 'cancelled', label: 'Canceladas' },
+              { value: 'with_claims', label: 'Com Claims' },
+              { value: 'completed', label: 'Concluídas' }
+            ]
+          },
+          {
+            id: 'data-inicio',
+            label: 'Data Início',
+            type: 'date',
+            value: filtros.dataInicio,
+            onChange: (value) => setFiltros(prev => ({ ...prev, dataInicio: value }))
+          },
+          {
+            id: 'data-fim',
+            label: 'Data Fim',
+            type: 'date',
+            value: filtros.dataFim,
+            onChange: (value) => setFiltros(prev => ({ ...prev, dataFim: value }))
+          }
+        ]}
+        onClear={() => {
+          setFiltros({
+            searchTerm: '',
+            status: '',
+            dataInicio: '',
+            dataFim: ''
+          });
+          setCurrentPage(1);
+          persistentState.clearPersistedState();
+        }}
+      />
+
+      {/* CONTROLES DE VISUALIZAÇÃO */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button
+            variant={viewMode === 'cards' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('cards')}
+            className="flex items-center gap-2"
+          >
+            <Grid className="h-4 w-4" />
+            Cards
+          </Button>
+          <Button
+            variant={viewMode === 'table' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('table')}
+            className="flex items-center gap-2"
+          >
+            <Table2 className="h-4 w-4" />
+            Tabela
+          </Button>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {devolucoesFiltradas.length} de {devolucoes.length} resultados
+        </div>
+      </div>
+
+      {/* ÁREA DE CONTEÚDO PRINCIPAL */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="h-4 bg-muted rounded animate-pulse" />
+                  <div className="h-6 bg-muted rounded animate-pulse" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="h-4 bg-muted rounded animate-pulse" />
+                    <div className="h-4 bg-muted rounded animate-pulse" />
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Filtros de data */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Data Início</label>
-                <Input
-                  type="date"
-                  value={filtrosAvancados.dataInicio}
-                  onChange={(e) => setFiltrosAvancados(prev => ({
-                    ...prev,
-                    dataInicio: e.target.value
-                  }))}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Data Fim</label>
-                <Input
-                  type="date"
-                  value={filtrosAvancados.dataFim}
-                  onChange={(e) => setFiltrosAvancados(prev => ({
-                    ...prev,
-                    dataFim: e.target.value
-                  }))}
-                />
-              </div>
-            </div>
-
-            {/* Status do claim */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Status</label>
-              <Select value={filtrosAvancados.statusClaim} onValueChange={(value) => 
-                setFiltrosAvancados(prev => ({ ...prev, statusClaim: value }))
-              }>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value="opened">Aberto</SelectItem>
-                  <SelectItem value="closed">Fechado</SelectItem>
-                  <SelectItem value="cancelled">Cancelado</SelectItem>
-                  <SelectItem value="in_process">Em Processo</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Botão de busca */}
-            <Button 
-              onClick={buscarComFiltros}
-              disabled={loading}
-              className="w-full gap-2"
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Search className="w-4 h-4" />
-              )}
-              {filtrosAvancados.buscarEmTempoReal ? 'Buscar na API ML' : 'Buscar no Banco'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-
-      {/* Filtros Simples */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Filtros de Busca (Dados Locais)</span>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                setFiltros({
-                  searchTerm: '',
-                  status: '',
-                  dataInicio: '',
-                  dataFim: ''
-                });
-                setCurrentPage(1);
-                persistentState.clearPersistedState();
-              }}
-            >
-              Limpar Filtros
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="search">Buscar</Label>
-              <Input
-                id="search"
-                placeholder="Order ID, SKU, Produto..."
-                value={filtros.searchTerm}
-                onChange={(e) => setFiltros(prev => ({ ...prev, searchTerm: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="status-filter">Status</Label>
-              <Select value={filtros.status} onValueChange={(value) => setFiltros(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value="cancelled">Canceladas</SelectItem>
-                  <SelectItem value="with_claims">Com Claims</SelectItem>
-                  <SelectItem value="completed">Concluídas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="data-inicio">Data Início</Label>
-              <Input
-                id="data-inicio"
-                type="date"
-                value={filtros.dataInicio}
-                onChange={(e) => setFiltros(prev => ({ ...prev, dataInicio: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="data-fim">Data Fim</Label>
-              <Input
-                id="data-fim"
-                type="date"
-                value={filtros.dataFim}
-                onChange={(e) => setFiltros(prev => ({ ...prev, dataFim: e.target.value }))}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabela de devoluções */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Devoluções do Mercado Livre</span>
-            <div className="text-sm text-muted-foreground">
-              Total carregado: {devolucoes.length} | Filtrado: {devolucoesFiltradas.length}
-            </div>
-          </CardTitle>
-          <CardDescription>
-            {devolucoesFiltradas.length} devoluções encontradas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Order ID</th>
-                  <th className="text-left p-2">Produto</th>
-                  <th className="text-left p-2">SKU</th>
-                  <th className="text-left p-2">Comprador</th>
-                  <th className="text-left p-2">Qtd</th>
-                  <th className="text-left p-2">Valor Retido</th>
-                  <th className="text-left p-2">Status</th>
-                  <th className="text-left p-2">📋 Claim</th>
-                  <th className="text-left p-2">📦 Return</th>
-                  <th className="text-left p-2">⚖️ Mediação</th>
-                  <th className="text-left p-2">📎 Anexos</th>
-                  <th className="text-left p-2">Data Criação</th>
-                  <th className="text-left p-2">Data Última Atualização</th>
-                  <th className="text-left p-2">Tipo</th>
-                  <th className="text-left p-2">Motivo Cancelamento</th>
-                  <th className="text-left p-2">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {devolucoesFiltradas
-                  .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                  .map((devolucao, index) => {
-                  // Mapear campos da tabela real para campos esperados pela interface
-                  const orderData = devolucao.dados_order || {};
-                  const claimData = devolucao.dados_claim || {};
-                  const returnData = devolucao.dados_return || {};
-                  const mensagensData = devolucao.dados_mensagens || {};
-                  const buyerNickname = orderData?.buyer?.nickname || 'N/A';
-                  const cancelReason = claimData?.reason?.description || orderData?.cancel_detail?.description || 'N/A';
-                  
-                  // Verificar tipos de dados disponíveis baseado na estrutura real
-                  const temClaimData = !!(
-                    claimData && Object.keys(claimData).length > 0 ||
-                    orderData?.mediations && orderData.mediations.length > 0
-                  );
-                  
-                  const temReturnData = !!(
-                    returnData && Object.keys(returnData).length > 0 ||
-                    orderData?.order_request?.return ||
-                    orderData?.tags?.includes('return') ||
-                    orderData?.tags?.includes('refund')
-                  );
-                  
-                  const temMediationData = !!(
-                    orderData?.mediations && orderData.mediations.length > 0 ||
-                    claimData?.mediation_details ||
-                    claimData?.reason?.code === 'buyer_cancel_express'
-                  );
-                  
-                  const temAttachmentsData = !!(
-                    claimData?.attachments ||
-                    claimData?.claim_attachments ||
-                    mensagensData && Object.keys(mensagensData).length > 0
-                  );
-                  
-                  const temMensagensData = !!(
-                    mensagensData && Object.keys(mensagensData).length > 0
-                  );
-                  
-                  return (
-                    <tr key={devolucao.id || index} className="border-b hover:bg-gray-50">
-                      <td className="p-2">
-                        <span className="font-mono text-sm">{devolucao.order_id}</span>
-                      </td>
-                      <td className="p-2">
-                        <div className="max-w-xs truncate" title={devolucao.produto_titulo}>
-                          {devolucao.produto_titulo || 'N/A'}
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        <span className="font-mono text-sm">{devolucao.sku || 'N/A'}</span>
-                      </td>
-                      <td className="p-2">
-                        <span className="text-sm">{buyerNickname}</span>
-                      </td>
-                      <td className="p-2">{devolucao.quantidade || 0}</td>
-                      <td className="p-2">
-                        R$ {Number(devolucao.valor_retido || 0).toFixed(2)}
-                      </td>
-                      <td className="p-2">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          devolucao.status_devolucao === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          devolucao.status_devolucao === 'with_claims' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {devolucao.status_devolucao || 'N/A'}
-                        </span>
-                      </td>
-                      {/* Novas colunas indicadoras */}
-                      <td className="p-2 text-center">
-                        {temClaimData ? (
-                          <span className="text-blue-600 text-lg" title={`Dados de Claim: ${claimData?.type || 'Sim'}`}>
-                            📋
-                          </span>
-                        ) : (
-                          <span className="text-gray-300" title="Sem dados de claim">-</span>
-                        )}
-                      </td>
-                      <td className="p-2 text-center">
-                        {temReturnData ? (
-                          <span className="text-green-600 text-lg" title="Dados de Return/Devolução disponíveis">
-                            📦
-                          </span>
-                        ) : (
-                          <span className="text-gray-300" title="Sem dados de return">-</span>
-                        )}
-                      </td>
-                      <td className="p-2 text-center">
-                        {temMediationData ? (
-                          <span className="text-orange-600 text-lg" title={`Mediação: ${orderData?.mediations?.length || 1} ativa(s)`}>
-                            ⚖️
-                          </span>
-                        ) : (
-                          <span className="text-gray-300" title="Sem mediação">-</span>
-                        )}
-                      </td>
-                      <td className="p-2 text-center">
-                        {temAttachmentsData ? (
-                          <span className="text-gray-600 text-lg" title="Mensagens/Anexos disponíveis">
-                            📎
-                          </span>
-                        ) : temMensagensData ? (
-                          <span className="text-blue-600 text-lg" title="Mensagens disponíveis">
-                            💬
-                          </span>
-                        ) : (
-                          <span className="text-gray-300" title="Sem anexos ou mensagens">-</span>
-                        )}
-                      </td>
-                      <td className="p-2">
-                        {devolucao.data_criacao ? 
-                          new Date(devolucao.data_criacao).toLocaleDateString('pt-BR') : 
-                          'N/A'
-                        }
-                      </td>
-                      <td className="p-2">
-                        {devolucao.updated_at ? 
-                          new Date(devolucao.updated_at).toLocaleDateString('pt-BR') : 
-                          'N/A'
-                        }
-                      </td>
-                      <td className="p-2">
-                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                          {claimData.type || 'N/A'}
-                        </span>
-                      </td>
-                      <td className="p-2">
-                        <div className="max-w-xs truncate text-xs" title={translateCancelReason(cancelReason)}>
-                          {translateCancelReason(cancelReason)}
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedDevolucao(devolucao);
-                            setShowDetails(true);
-                          }}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            
-            {devolucoesFiltradas.length === 0 && !loading && (
-              <div className="text-center py-8 text-gray-500">
-                <div className="space-y-2">
-                  <p>Nenhuma devolução encontrada</p>
-                  <p className="text-sm">Total de dados carregados: {devolucoes.length}</p>
-                  {devolucoes.length > 0 && (
-                    <p className="text-sm text-blue-600">
-                      💡 Verifique os filtros aplicados - há dados disponíveis mas podem estar filtrados
-                    </p>
-                  )}
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : devolucoesFiltradas.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Nenhuma devolução encontrada</h3>
+            <p className="text-muted-foreground mb-4">
+              {devolucoes.length > 0 
+                ? "Verifique os filtros aplicados - há dados disponíveis mas podem estar filtrados"
+                : "Não há dados carregados. Use os filtros avançados para buscar da API"
+              }
+            </p>
+            {devolucoes.length === 0 && (
+              <Button onClick={buscarComFiltros} className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Buscar Devoluções
+              </Button>
             )}
-            
-            {loading && (
-              <div className="text-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
-                <p className="text-gray-500 mt-2">Carregando devoluções...</p>
-              </div>
-            )}
+          </CardContent>
+        </Card>
+      ) : viewMode === 'cards' ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {devolucoesFiltradas
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .map((devolucao) => {
+                const orderData = devolucao.dados_order || {};
+                const buyerNickname = orderData?.buyer?.nickname || devolucao.comprador_nickname || 'N/A';
+                
+                return (
+                  <DevolucaoCard
+                    key={devolucao.id}
+                    devolucao={{
+                      ...devolucao,
+                      comprador_nickname: buyerNickname
+                    }}
+                    onClick={() => {
+                      setSelectedDevolucao(devolucao);
+                      setShowDetails(true);
+                    }}
+                  />
+                );
+              })}
           </div>
           
-          {/* PAGINAÇÃO */}
+          {/* Paginação para cards */}
           {devolucoesFiltradas.length > itemsPerPage && (
-            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+            <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
                 Mostrando {Math.min((currentPage - 1) * itemsPerPage + 1, devolucoesFiltradas.length)} a {Math.min(currentPage * itemsPerPage, devolucoesFiltradas.length)} de {devolucoesFiltradas.length} resultados
               </div>
@@ -1311,8 +1075,51 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </>
+      ) : (
+        <VirtualTable
+          title="Devoluções do Mercado Livre"
+          data={devolucoesFiltradas.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)}
+          columns={[
+            { key: 'order_id', label: 'Order ID', width: '120px', render: (value) => <span className="font-mono text-sm">{value}</span> },
+            { key: 'produto_titulo', label: 'Produto', render: (value) => <div className="max-w-xs truncate" title={value}>{value || 'N/A'}</div> },
+            { key: 'sku', label: 'SKU', width: '100px', render: (value) => <span className="font-mono text-sm">{value || 'N/A'}</span> },
+            { key: 'comprador_nickname', label: 'Comprador', width: '120px', render: (value, row) => {
+              const orderData = row.dados_order || {};
+              const buyerNickname = orderData?.buyer?.nickname || value || 'N/A';
+              return <span className="text-sm">{buyerNickname}</span>;
+            }},
+            { key: 'quantidade', label: 'Qtd', width: '60px' },
+            { key: 'valor_retido', label: 'Valor', width: '100px', render: (value) => `R$ ${Number(value || 0).toFixed(2)}` },
+            { key: 'status_devolucao', label: 'Status', width: '120px', render: (value) => {
+              const variant = value === 'cancelled' ? 'destructive' : value === 'with_claims' ? 'warning' : 'default';
+              return (
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  value === 'cancelled' ? 'bg-red-100 text-red-800' :
+                  value === 'with_claims' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {value || 'N/A'}
+                </span>
+              );
+            }},
+            { key: 'data_criacao', label: 'Data Criação', width: '120px', render: (value) => value ? new Date(value).toLocaleDateString('pt-BR') : 'N/A' }
+          ]}
+          loading={loading}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          totalItems={devolucoesFiltradas.length}
+          onPageChange={(page) => {
+            setCurrentPage(page);
+            persistentState.saveOrdersData(devolucoes, devolucoes.length, page);
+          }}
+          onRowClick={(row) => {
+            setSelectedDevolucao(row);
+            setShowDetails(true);
+          }}
+          emptyMessage="Nenhuma devolução encontrada"
+        />
+      )}
 
       {/* Modal de Detalhes */}
       {selectedDevolucao && (
