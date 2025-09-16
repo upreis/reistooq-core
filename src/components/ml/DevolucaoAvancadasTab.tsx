@@ -109,34 +109,79 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const analytics = useDevolucaoAnalytics(devolucoesFiltradas);
   const exportacao = useDevolucaoExportacao();
 
-  // Função para extrair motivo do cancelamento (garantindo string)
+  // Função para extrair motivo do cancelamento completo (garantindo string)
   const getMotivoCancelamento = useCallback((devolucao: DevolucaoAvancada) => {
     try {
-      // Tentar extrair o motivo dos dados JSON
+      // Buscar primeiro a descrição completa do motivo
       if (devolucao.dados_claim) {
         const claim = devolucao.dados_claim;
+        
+        // Buscar descrição detalhada primeiro
+        if (claim.reason?.description && typeof claim.reason.description === 'string') {
+          return claim.reason.description;
+        }
+        if (claim.resolution?.description && typeof claim.resolution.description === 'string') {
+          return claim.resolution.description;
+        }
+        if (claim.cancel_detail?.description && typeof claim.cancel_detail.description === 'string') {
+          return claim.cancel_detail.description;
+        }
+        if (claim.cancellation_description && typeof claim.cancellation_description === 'string') {
+          return claim.cancellation_description;
+        }
+        if (claim.reason_description && typeof claim.reason_description === 'string') {
+          return claim.reason_description;
+        }
+        if (claim.description && typeof claim.description === 'string') {
+          return claim.description;
+        }
+        
+        // Se não tiver descrição, usar o código/motivo simples
         if (claim.reason && typeof claim.reason === 'string') return claim.reason;
         if (claim.cancel_reason && typeof claim.cancel_reason === 'string') return claim.cancel_reason;
         if (claim.cancellation_reason && typeof claim.cancellation_reason === 'string') return claim.cancellation_reason;
         if (claim.resolution?.reason && typeof claim.resolution.reason === 'string') return claim.resolution.reason;
       }
       
+      if (devolucao.dados_order) {
+        const order = devolucao.dados_order;
+        
+        // Buscar descrição detalhada primeiro
+        if (order.cancel_detail?.description && typeof order.cancel_detail.description === 'string') {
+          return order.cancel_detail.description;
+        }
+        if (order.cancellation_description && typeof order.cancellation_description === 'string') {
+          return order.cancellation_description;
+        }
+        if (order.cancel_description && typeof order.cancel_description === 'string') {
+          return order.cancel_description;
+        }
+        
+        // Se não tiver descrição, usar o código simples
+        if (order.cancel_reason && typeof order.cancel_reason === 'string') return order.cancel_reason;
+        if (order.cancellation_reason && typeof order.cancellation_reason === 'string') return order.cancellation_reason;
+      }
+      
       if (devolucao.dados_return) {
         const returnData = devolucao.dados_return;
+        
+        // Buscar descrição detalhada primeiro
+        if (returnData.reason_description && typeof returnData.reason_description === 'string') {
+          return returnData.reason_description;
+        }
+        if (returnData.description && typeof returnData.description === 'string') {
+          return returnData.description;
+        }
+        
+        // Se não tiver descrição, usar o código simples
         if (returnData.reason && typeof returnData.reason === 'string') return returnData.reason;
         if (returnData.cancel_reason && typeof returnData.cancel_reason === 'string') return returnData.cancel_reason;
         if (returnData.cancellation_reason && typeof returnData.cancellation_reason === 'string') return returnData.cancellation_reason;
       }
 
-      if (devolucao.dados_order) {
-        const order = devolucao.dados_order;
-        if (order.cancel_reason && typeof order.cancel_reason === 'string') return order.cancel_reason;
-        if (order.cancellation_reason && typeof order.cancellation_reason === 'string') return order.cancellation_reason;
-      }
-
       // Se não tiver motivo específico mas estiver cancelado
       if (devolucao.status_devolucao === 'cancelled') {
-        return 'Cancelado';
+        return 'Cancelado - motivo não especificado';
       }
       
       return 'N/A';
