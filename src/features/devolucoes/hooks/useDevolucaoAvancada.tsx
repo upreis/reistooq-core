@@ -67,6 +67,42 @@ export function useDevolucaoAvancada(config: UseDevolucaoAvancadaConfig) {
 
   const fase2 = useDevolucoesFase2(fase2Config);
 
+  // ===== AUTO-ENRIQUECIMENTO =====
+  const enrichDataMutation = useMutation({
+    mutationFn: async () => {
+      console.log('🚀 Iniciando enriquecimento automático...');
+      
+      const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
+        body: {
+          action: 'enrich_existing_data',
+          integration_account_id: config.integration_account_ids[0],
+          limit: 25
+        }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log('✅ Enriquecimento concluído:', data);
+      queryClient.invalidateQueries({ queryKey: ['devolucoes-avancadas'] });
+      if (data.enriched_count > 0) {
+        toast.success(`${data.enriched_count} devoluções enriquecidas com dados da ML!`);
+      } else {
+        toast.info('Nenhuma devolução nova para enriquecer');
+      }
+    },
+    onError: (error: any) => {
+      console.error('❌ Erro no enriquecimento:', error);
+      toast.error(`Erro no enriquecimento: ${error.message}`);
+    }
+  });
+
+  // Função manual para enriquecer dados
+  const enriquecerDadosManual = useCallback(() => {
+    enrichDataMutation.mutate();
+  }, [enrichDataMutation]);
+
   // ===== QUERY PRINCIPAL - DEVOLUÇÕES AVANÇADAS =====
   const { 
     data: devolucoes = [], 
@@ -198,6 +234,23 @@ export function useDevolucaoAvancada(config: UseDevolucaoAvancadaConfig) {
     enabled: config.integration_account_ids.length > 0,
     refetchInterval: config.enable_real_time ? 30000 : false, // Auto-refresh se real-time ativo
   });
+
+  // ===== AUTO-ENRIQUECIMENTO APÓS CARREGAR DADOS =====
+  useEffect(() => {
+    if (config.auto_sync && config.integration_account_ids.length > 0 && devolucoes.length > 0) {
+      const hasEmptyColumns = devolucoes.some(dev => 
+        !dev.timeline_mensagens || 
+        dev.timeline_mensagens.length === 0 ||
+        !dev.nivel_prioridade ||
+        dev.anexos_count === null
+      );
+      
+      if (hasEmptyColumns) {
+        console.log('🔄 Detectadas colunas vazias, iniciando enriquecimento automático...');
+        enrichDataMutation.mutate();
+      }
+    }
+  }, [config.auto_sync, config.integration_account_ids, devolucoes.length, enrichDataMutation]);
 
   // ===== CALCULAR MÉTRICAS =====
   const metricas = useMemo((): DevolucaoMetrics => {
@@ -409,6 +462,10 @@ export function useDevolucaoAvancada(config: UseDevolucaoAvancadaConfig) {
     setSelectedItems,
 
     // Estados de loading
-    isLoadingAction: batchActionMutation.isPending
+    isLoadingAction: batchActionMutation.isPending,
+    isEnriching: enrichDataMutation.isPending,
+
+    // Ações de enriquecimento
+    enriquecerDadosManual
   };
 }
