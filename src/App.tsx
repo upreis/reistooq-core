@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -62,8 +62,6 @@ const queryClient = new QueryClient({
 function App() {
   // 🛡️ Sistema de validação automática - Temporarily disabled to fix React hook error
   // const validator = useSystemValidator();
-  
-  console.log('✅ App.tsx carregado - React importado corretamente:', typeof React);
   
   return (
     <QueryClientProvider client={queryClient}>

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -14,13 +14,13 @@ interface MobileContextType {
   showNotification: (title: string, body: string) => void;
 }
 
-const MobileContext = React.createContext<MobileContextType | null>(null);
+const MobileContext = createContext<MobileContextType | null>(null);
 
-export function MobileProvider({ children }: { children: React.ReactNode }) {
-  const [isNative] = React.useState(Capacitor.isNativePlatform());
-  const [platform] = React.useState(Capacitor.getPlatform());
+export function MobileProvider({ children }: { children: ReactNode }) {
+  const [isNative] = useState(Capacitor.isNativePlatform());
+  const [platform] = useState(Capacitor.getPlatform());
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isNative) {
       initializeNativeFeatures();
     }
@@ -147,7 +147,7 @@ export function MobileProvider({ children }: { children: React.ReactNode }) {
 }
 
 export const useMobile = () => {
-  const context = React.useContext(MobileContext);
+  const context = useContext(MobileContext);
   if (!context) {
     throw new Error('useMobile must be used within a MobileProvider');
   }
