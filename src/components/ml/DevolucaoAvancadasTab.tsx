@@ -744,30 +744,15 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               /* Visualização em Tabela Detalhada */
               <div className="overflow-x-auto border rounded-lg">
                 <table className="w-full border-collapse text-sm">
-                   <thead className="bg-muted/50 sticky top-0 z-10">
-                     <tr>
-                        {/* === IDENTIFICAÇÃO === */}
-                        <th className="text-left px-2 py-2 font-semibold text-xs text-muted-foreground min-w-[100px] bg-blue-50/50 dark:bg-blue-900/20 border-r border-blue-200">
-                          🆔 Order ID
-                        </th>
-                        <th className="text-left px-2 py-2 font-semibold text-xs text-muted-foreground min-w-[150px] bg-blue-50/50 dark:bg-blue-900/20">
-                          📦 Produto
-                        </th>
-                        <th className="text-left px-2 py-2 font-semibold text-xs text-muted-foreground min-w-[90px] bg-blue-50/50 dark:bg-blue-900/20">
-                          📋 Claim ID
-                        </th>
-                        <th className="text-left px-2 py-2 font-semibold text-xs text-muted-foreground min-w-[80px] bg-blue-50/50 dark:bg-blue-900/20">
-                          🔖 SKU
-                        </th>
-                        <th className="text-left px-2 py-2 font-semibold text-xs text-muted-foreground min-w-[100px] bg-blue-50/50 dark:bg-blue-900/20">
-                          👤 Comprador
-                        </th>
-                        <th className="text-center px-2 py-2 font-semibold text-xs text-muted-foreground min-w-[50px] bg-blue-50/50 dark:bg-blue-900/20">
-                          📊 Qtd
-                        </th>
-                        <th className="text-right px-2 py-2 font-semibold text-xs text-muted-foreground min-w-[80px] bg-blue-50/50 dark:bg-blue-900/20 border-r-2 border-blue-300">
-                          💰 Valor
-                        </th>
+                  <thead>
+                    <tr className="bg-muted/50 dark:bg-muted border-b">
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Claim ID</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
+                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
                        
                        {/* COLUNAS ORIGINAIS MANTIDAS */}
