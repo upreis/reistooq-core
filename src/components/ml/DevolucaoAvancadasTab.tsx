@@ -71,6 +71,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 }) => {
   const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoAvancada | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showTableView, setShowTableView] = useState(false);
 
   // Hook principal consolidado
   const {
@@ -425,39 +426,182 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Lista de devoluções */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Devoluções Encontradas ({devolucoesFiltradas.length})</CardTitle>
-          {hasPersistedData && (
-            <CardDescription>
-              🔄 Dados restaurados do cache. Use os botões de sincronização para atualizar.
-            </CardDescription>
-          )}
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : devolucoes.length === 0 ? (
-            <div className="text-center p-8">
-              <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">Nenhuma devolução encontrada</p>
-              <p className="text-sm text-gray-400 mt-2">
-                Use os filtros avançados para buscar da API ML ou sincronize com o banco de dados
-              </p>
-            </div>
-          ) : (
+        {/* Lista de devoluções - Cards ou Tabela */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Devoluções Encontradas ({devolucoesFiltradas.length})</CardTitle>
+            {hasPersistedData && (
+              <CardDescription>
+                🔄 Dados restaurados do cache. Use os botões de sincronização para atualizar.
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : devolucoes.length === 0 ? (
+              <div className="text-center p-8">
+                <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">Nenhuma devolução encontrada</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Use os filtros avançados para buscar da API ML ou sincronize com o banco de dados
+                </p>
+              </div>
+            ) : showTableView ? (
+              /* Visualização em Tabela Detalhada */
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left p-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4" />
+                          Order ID
+                        </div>
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Claim ID
+                        </div>
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <Search className="h-4 w-4" />
+                          SKU
+                        </div>
+                      </th>
+                      <th className="text-left p-3 font-medium">Produto</th>
+                      <th className="text-left p-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="h-4 w-4" />
+                          Qtd
+                        </div>
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          Valor
+                        </div>
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4" />
+                          Status
+                        </div>
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <Wrench className="h-4 w-4" />
+                          Comprador
+                        </div>
+                      </th>
+                      <th className="text-left p-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          Data
+                        </div>
+                      </th>
+                      <th className="text-left p-3 font-medium">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {devolucoes.map((devolucao, index) => (
+                      <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium">{devolucao.order_id}</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-purple-600" />
+                            <span>{devolucao.claim_id || 'N/A'}</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <Search className="h-4 w-4 text-gray-600" />
+                            <span>{devolucao.sku || 'N/A'}</span>
+                          </div>
+                        </td>
+                        <td className="p-3 max-w-xs">
+                          <div className="truncate font-medium" title={devolucao.produto_titulo}>
+                            {devolucao.produto_titulo}
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <CheckSquare className="h-4 w-4 text-indigo-600" />
+                            <span>{devolucao.quantidade || 1}</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-green-600" />
+                            <span className="font-medium text-green-600">
+                              R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <span className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium ${
+                            devolucao.status_devolucao === 'completed' 
+                              ? 'bg-green-100 text-green-800'
+                              : devolucao.status_devolucao === 'cancelled'
+                              ? 'bg-red-100 text-red-800' 
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            <CheckCircle className="h-3 w-3" />
+                            {devolucao.status_devolucao}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <Wrench className="h-4 w-4 text-orange-600" />
+                            <span className="truncate max-w-24" title={devolucao.comprador_nickname}>
+                              {devolucao.comprador_nickname || 'N/A'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm">
+                              {new Date(devolucao.data_criacao).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedDevolucao(devolucao);
+                              setShowDetails(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
             <div className="space-y-4">
               {devolucoes.map((devolucao, index) => (
                 <Card key={`${devolucao.order_id}-${index}`} className="border-l-4 border-l-blue-500">
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold">{devolucao.produto_titulo}</h3>
-                          <span className={`px-2 py-1 rounded text-xs ${
+                      <div className="space-y-3 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-lg">{devolucao.produto_titulo}</h3>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             devolucao.status_devolucao === 'completed' 
                               ? 'bg-green-100 text-green-800'
                               : devolucao.status_devolucao === 'cancelled'
@@ -468,28 +612,104 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                           </span>
                         </div>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-500">Order ID:</span>
-                            <p className="font-medium">{devolucao.order_id}</p>
+                        {/* Grid com ícones - todas as colunas importantes */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4 text-blue-600" />
+                            <div>
+                              <span className="text-gray-500 block">Order ID</span>
+                              <p className="font-medium">{devolucao.order_id}</p>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-gray-500">SKU:</span>
-                            <p className="font-medium">{devolucao.sku || 'N/A'}</p>
+                          
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-purple-600" />
+                            <div>
+                              <span className="text-gray-500 block">Claim ID</span>
+                              <p className="font-medium">{devolucao.claim_id || 'N/A'}</p>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-gray-500">Valor:</span>
-                            <p className="font-medium">R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}</p>
+                          
+                          <div className="flex items-center gap-2">
+                            <Search className="h-4 w-4 text-gray-600" />
+                            <div>
+                              <span className="text-gray-500 block">SKU</span>
+                              <p className="font-medium">{devolucao.sku || 'N/A'}</p>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-gray-500">Comprador:</span>
-                            <p className="font-medium">{devolucao.comprador_nickname || 'N/A'}</p>
+                          
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-green-600" />
+                            <div>
+                              <span className="text-gray-500 block">Valor</span>
+                              <p className="font-medium">R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <CheckSquare className="h-4 w-4 text-indigo-600" />
+                            <div>
+                              <span className="text-gray-500 block">Quantidade</span>
+                              <p className="font-medium">{devolucao.quantidade || 1}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Wrench className="h-4 w-4 text-orange-600" />
+                            <div>
+                              <span className="text-gray-500 block">Comprador</span>
+                              <p className="font-medium truncate">{devolucao.comprador_nickname || 'N/A'}</p>
+                            </div>
                           </div>
                         </div>
                         
-                        <div className="text-xs text-gray-500">
-                          <p>Criado em: {new Date(devolucao.data_criacao).toLocaleString()}</p>
-                          <p>Conta: {devolucao.account_name || 'N/A'}</p>
+                        {/* Informações adicionais com ícones */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                          <div className="flex items-center gap-2 bg-gray-50 p-2 rounded">
+                            <Clock className="h-3 w-3 text-gray-500" />
+                            <div>
+                              <span className="text-gray-500">Criado em:</span>
+                              <p className="font-medium">{new Date(devolucao.data_criacao).toLocaleString()}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 bg-gray-50 p-2 rounded">
+                            <Wrench className="h-3 w-3 text-gray-500" />
+                            <div>
+                              <span className="text-gray-500">Conta:</span>
+                              <p className="font-medium truncate">{devolucao.account_name || 'N/A'}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 bg-gray-50 p-2 rounded">
+                            <Clock className="h-3 w-3 text-gray-500" />
+                            <div>
+                              <span className="text-gray-500">Atualizado:</span>
+                              <p className="font-medium">{new Date(devolucao.updated_at).toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Status badges com ícones */}
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {devolucao.dados_claim && Object.keys(devolucao.dados_claim).length > 0 && (
+                            <span className="flex items-center gap-1 bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
+                              <FileText className="h-3 w-3" />
+                              Com Claim
+                            </span>
+                          )}
+                          {devolucao.dados_return && Object.keys(devolucao.dados_return).length > 0 && (
+                            <span className="flex items-center gap-1 bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">
+                              <Package className="h-3 w-3" />
+                              Com Return
+                            </span>
+                          )}
+                          {devolucao.dados_mensagens && Object.keys(devolucao.dados_mensagens).length > 0 && (
+                            <span className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                              <Wrench className="h-3 w-3" />
+                              Com Mensagens
+                            </span>
+                          )}
                         </div>
                       </div>
                       
@@ -500,8 +720,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                           setSelectedDevolucao(devolucao);
                           setShowDetails(true);
                         }}
+                        className="ml-4 flex items-center gap-2"
                       >
-                        <Eye className="h-4 w-4 mr-2" />
+                        <Eye className="h-4 w-4" />
                         Detalhes
                       </Button>
                     </div>
@@ -509,9 +730,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 </Card>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
 
       {/* Paginação */}
       {totalPages > 1 && (
@@ -554,36 +775,113 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           
           {selectedDevolucao && (
             <div className="space-y-6">
-              {/* Informações básicas */}
+              {/* Informações básicas com ícones */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Informações Básicas</CardTitle>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Informações Básicas
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Produto</Label>
-                      <p className="font-medium">{selectedDevolucao.produto_titulo}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div className="flex items-center gap-3">
+                      <Package className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <Label className="text-sm text-gray-500">Order ID</Label>
+                        <p className="font-medium text-lg">{selectedDevolucao.order_id}</p>
+                      </div>
                     </div>
-                    <div>
-                      <Label>Status</Label>
-                      <p className="font-medium">{selectedDevolucao.status_devolucao}</p>
+                    
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-purple-600" />
+                      <div>
+                        <Label className="text-sm text-gray-500">Claim ID</Label>
+                        <p className="font-medium">{selectedDevolucao.claim_id || 'N/A'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <Label>SKU</Label>
-                      <p className="font-medium">{selectedDevolucao.sku || 'N/A'}</p>
+                    
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <div>
+                        <Label className="text-sm text-gray-500">Status</Label>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          selectedDevolucao.status_devolucao === 'completed' 
+                            ? 'bg-green-100 text-green-800'
+                            : selectedDevolucao.status_devolucao === 'cancelled'
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {selectedDevolucao.status_devolucao}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <Label>Quantidade</Label>
-                      <p className="font-medium">{selectedDevolucao.quantidade}</p>
+                    
+                    <div className="flex items-center gap-3">
+                      <Search className="h-5 w-5 text-gray-600" />
+                      <div>
+                        <Label className="text-sm text-gray-500">SKU</Label>
+                        <p className="font-medium">{selectedDevolucao.sku || 'N/A'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <Label>Valor Retido</Label>
-                      <p className="font-medium">R$ {selectedDevolucao.valor_retido?.toFixed(2) || '0.00'}</p>
+                    
+                    <div className="flex items-center gap-3">
+                      <CheckSquare className="h-5 w-5 text-indigo-600" />
+                      <div>
+                        <Label className="text-sm text-gray-500">Quantidade</Label>
+                        <p className="font-medium">{selectedDevolucao.quantidade}</p>
+                      </div>
                     </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-5 w-5 text-green-600" />
+                      <div>
+                        <Label className="text-sm text-gray-500">Valor Retido</Label>
+                        <p className="font-medium text-lg text-green-600">R$ {selectedDevolucao.valor_retido?.toFixed(2) || '0.00'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Wrench className="h-5 w-5 text-orange-600" />
+                      <div>
+                        <Label className="text-sm text-gray-500">Comprador</Label>
+                        <p className="font-medium">{selectedDevolucao.comprador_nickname}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-gray-500" />
+                      <div>
+                        <Label className="text-sm text-gray-500">Data Criação</Label>
+                        <p className="font-medium">{new Date(selectedDevolucao.data_criacao).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Wrench className="h-5 w-5 text-blue-500" />
+                      <div>
+                        <Label className="text-sm text-gray-500">Conta ML</Label>
+                        <p className="font-medium">{selectedDevolucao.account_name || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Produto com ícone */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Produto
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+                    <Package className="h-8 w-8 text-blue-600" />
                     <div>
-                      <Label>Comprador</Label>
-                      <p className="font-medium">{selectedDevolucao.comprador_nickname}</p>
+                      <h3 className="font-semibold text-lg">{selectedDevolucao.produto_titulo}</h3>
+                      <p className="text-gray-600">SKU: {selectedDevolucao.sku || 'N/A'}</p>
                     </div>
                   </div>
                 </CardContent>
