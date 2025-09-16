@@ -57,10 +57,11 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
-        <TooltipProvider>
+  try {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
+          <TooltipProvider>
           <AuthProvider>
             <MobileProvider>
               <SidebarUIProvider>
@@ -310,6 +311,36 @@ function App() {
       </ThemeProvider>
     </QueryClientProvider>
   );
+  } catch (error) {
+    console.error('App rendering error:', error);
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        backgroundColor: '#1a1a1a', 
+        color: '#ffffff',
+        padding: '2rem',
+        textAlign: 'center',
+        fontFamily: 'Inter, system-ui, sans-serif'
+      }}>
+        <h1>⚠️ Erro no Sistema</h1>
+        <p>Ocorreu um erro ao carregar o sistema principal.</p>
+        <button 
+          onClick={() => window.location.reload()}
+          style={{ 
+            padding: '0.5rem 1rem', 
+            marginTop: '1rem',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Recarregar Sistema
+        </button>
+      </div>
+    );
+  }
 }
 
 export default App;

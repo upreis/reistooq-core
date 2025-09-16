@@ -26,15 +26,19 @@ const root = createRoot(container);
 // Create error boundary wrapper with progressive loading
 function AppWithErrorBoundary() {
   try {
-    // First, try to load the simple app to test React hooks
+    // Now that React hooks work, try the full app
+    return (
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    );
+  } catch (error) {
+    console.error('Full app failed, using simple app:', error);
     return (
       <BrowserRouter>
         <SimpleApp />
       </BrowserRouter>
     );
-  } catch (error) {
-    console.error('Simple app failed, trying fallback:', error);
-    return <FallbackApp />;
   }
 }
 
