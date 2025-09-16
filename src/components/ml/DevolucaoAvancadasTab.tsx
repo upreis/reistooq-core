@@ -9,6 +9,10 @@ import { toast } from 'sonner';
 import { translateCancelReason } from '@/lib/translations';
 import { useDevolucoes } from '@/features/devolucoes/hooks/useDevolucoes';
 import { useDevolucoesDemostracao } from '@/features/devolucoes/hooks/useDevolucoesDemostracao';
+import { useDevolucaoAnalytics } from '@/features/devolucoes/hooks/useDevolucaoAnalytics';
+import { useDevolucaoExportacao } from '@/features/devolucoes/hooks/useDevolucaoExportacao';
+import DevolucaoAnalyticsDashboard from '@/features/devolucoes/components/DevolucaoAnalyticsDashboard';
+import DevolucaoExportDialog from '@/features/devolucoes/components/DevolucaoExportDialog';
 import { 
   RefreshCw, 
   Download, 
@@ -25,7 +29,10 @@ import {
   Search,
   Wrench,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BarChart3,
+  TrendingUp,
+  FileDown
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -72,6 +79,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoAvancada | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [showTableView, setShowTableView] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
 
   // Hook principal consolidado com otimizações
   const {
@@ -81,6 +89,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     loading,
     currentPage,
     totalPages,
+    showAnalytics,
     filters,
     advancedFilters,
     performanceSettings,
@@ -91,10 +100,15 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     buscarComFiltros,
     sincronizarDevolucoes,
     setCurrentPage,
+    toggleAnalytics,
     hasPersistedData,
     autoRefresh,
     lazyLoading
   } = useDevolucoes(mlAccounts);
+
+  // Analytics e exportação
+  const analytics = useDevolucaoAnalytics(devolucoesFiltradas);
+  const exportacao = useDevolucaoExportacao();
 
   // Tempo real para demonstração
   useDevolucoesDemostracao(

@@ -33,6 +33,7 @@ export function useDevolucoes(mlAccounts: any[]) {
   // Estados principais
   const [devolucoes, setDevolucoes] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   
   // Filtros básicos
   const [filters, setFilters] = useState<DevolucaoFilters>({
@@ -247,6 +248,11 @@ export function useDevolucoes(mlAccounts: any[]) {
     visible: devolucoesPaginadas.length
   }), [devolucoesFiltradas, devolucoes.length, devolucoesPaginadas.length]);
 
+  // Toggle analytics
+  const toggleAnalytics = useCallback(() => {
+    setShowAnalytics(prev => !prev);
+  }, []);
+
   return {
     // Dados
     devolucoes: devolucoesPaginadas,
@@ -257,6 +263,7 @@ export function useDevolucoes(mlAccounts: any[]) {
     loading: busca.loading,
     currentPage,
     totalPages,
+    showAnalytics,
     
     // Filtros
     filters,
@@ -271,6 +278,7 @@ export function useDevolucoes(mlAccounts: any[]) {
     buscarComFiltros,
     sincronizarDevolucoes,
     setCurrentPage,
+    toggleAnalytics,
     
     // Performance & Auto-refresh
     autoRefresh,
