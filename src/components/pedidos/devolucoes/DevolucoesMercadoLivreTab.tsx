@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ContasMLSelector } from '../ContasMLSelector';
 import { MLConnectionTester } from './MLConnectionTester';
+import DevolucoesMelhoradas from '@/components/devolucoes/DevolucoesMelhoradas';
 interface MLConnectionStatusProps {
   accountsStats?: {
     total: number;
@@ -97,6 +98,8 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
   const [showDetails, setShowDetails] = useState(false);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [usarVersaoMelhorada, setUsarVersaoMelhorada] = useState(false);
+  const [mlAccounts, setMlAccounts] = useState<any[]>([]);
 
   // Estatísticas
   const totalDevolucoes = devolucoes.length;
@@ -129,6 +132,8 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
         console.log('🔍 [Devoluções] Contas ML encontradas:', accounts);
         
         if (accounts && accounts.length > 0) {
+          setMlAccounts(accounts); // Guardar para passar para o componente melhorado
+          
           // Selecionar apenas contas ativas
           const activeAccountIds = accounts
             .filter(acc => acc.is_active)
@@ -317,6 +322,30 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
         selectedAccounts={selectedAccounts}
         onAccountsChange={setSelectedAccounts}
       />
+
+      {/* Toggle para Versão Melhorada */}
+      <div className="mb-4 flex items-center justify-between bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <div className="flex items-center space-x-2">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={usarVersaoMelhorada}
+              onChange={(e) => setUsarVersaoMelhorada(e.target.checked)}
+              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span className="text-sm font-medium text-blue-900">Usar versão melhorada (BETA)</span>
+          </label>
+        </div>
+        <div className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
+          Interface aprimorada com métricas e filtros avançados
+        </div>
+      </div>
+
+      {usarVersaoMelhorada ? (
+        <DevolucoesMelhoradas mlAccounts={mlAccounts} refetch={loadDevolucoes} />
+      ) : (
+        <>
+        <div className="space-y-6">
       {/* Header com estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -753,6 +782,8 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
           onUpdatePriority={handleUpdatePriority}
           onRefresh={loadDevolucoes}
         />
+        </div>
+        </>
       )}
     </div>
   );
