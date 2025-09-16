@@ -440,10 +440,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       </div>
 
       {/* FILTROS E FERRAMENTAS DE ANÁLISE */}
-      <Card className="bg-slate-900 border-slate-700">
+      <Card className="bg-card border-border">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-white">
+            <div className="flex items-center gap-2 text-foreground">
               <Filter className="w-5 h-5" />
               <span className="font-medium">Filtros e Ferramentas de Análise</span>
             </div>
@@ -453,14 +453,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           <div className="flex items-center gap-3 flex-wrap">
             {/* Campo de busca */}
             <div className="flex items-center relative min-w-[250px]">
-              <Search className="absolute left-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por Order ID, comprador..."
                 value={advancedFilters.searchTerm || ''}
                 onChange={(e) => updateAdvancedFilters({
                   searchTerm: e.target.value
                 })}
-                className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-gray-400 focus:border-slate-500"
+                className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-ring"
               />
             </div>
 
@@ -471,10 +471,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 statusClaim: value
               })}
             >
-              <SelectTrigger className="w-[160px] bg-slate-800 border-slate-600 text-white">
+              <SelectTrigger className="w-[160px] bg-background border-border text-foreground">
                 <SelectValue placeholder="Todos os Status" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
+              <SelectContent className="bg-popover border-border">
                 <SelectItem value="">Todos os Status</SelectItem>
                 <SelectItem value="cancelled">Cancelado</SelectItem>
                 <SelectItem value="with_claims">Com Claims</SelectItem>
@@ -489,16 +489,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                        advancedFilters.contasSelecionadas.length === mlAccounts?.length ? "todas" : "multiplas"}
                 onValueChange={() => {}} // Controlado via menu customizado
               >
-                <SelectTrigger className="min-w-[200px] bg-slate-800 border-slate-600 text-white">
+                <SelectTrigger className="min-w-[200px] bg-background border-border text-foreground">
                   <SelectValue>
                     {advancedFilters.contasSelecionadas.length === 0 ? "Nenhuma conta" :
                      advancedFilters.contasSelecionadas.length === mlAccounts?.length ? "Todas as contas" :
                      `${advancedFilters.contasSelecionadas.length} conta${advancedFilters.contasSelecionadas.length > 1 ? 's' : ''} selecionada${advancedFilters.contasSelecionadas.length > 1 ? 's' : ''}`}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600 min-w-[300px] z-50">
+                <SelectContent className="bg-popover border-border min-w-[300px] z-50">
                   <div className="p-2">
-                    <div className="flex items-center space-x-2 p-2 hover:bg-slate-700 rounded">
+                    <div className="flex items-center space-x-2 p-2 hover:bg-muted rounded">
                       <input
                         type="checkbox"
                         id="todas-contas"
@@ -516,13 +516,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                         }}
                         className="rounded"
                       />
-                      <label htmlFor="todas-contas" className="text-sm text-white font-medium cursor-pointer">
+                      <label htmlFor="todas-contas" className="text-sm text-foreground font-medium cursor-pointer">
                         Todas as contas
                       </label>
                     </div>
-                    <div className="h-px bg-slate-600 my-2"></div>
+                    <div className="h-px bg-border my-2"></div>
                     {mlAccounts?.map((account) => (
-                      <div key={account.id} className="flex items-center space-x-2 p-2 hover:bg-slate-700 rounded">
+                      <div key={account.id} className="flex items-center space-x-2 p-2 hover:bg-muted rounded">
                         <input
                           type="checkbox"
                           id={`conta-${account.id}`}
@@ -539,7 +539,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                           }}
                           className="rounded"
                         />
-                        <label htmlFor={`conta-${account.id}`} className="text-sm text-white cursor-pointer">
+                        <label htmlFor={`conta-${account.id}`} className="text-sm text-foreground cursor-pointer">
                           {account.name}
                         </label>
                       </div>
@@ -556,7 +556,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               onChange={(e) => updateAdvancedFilters({
                 dataInicio: e.target.value
               })}
-              className="w-[140px] bg-slate-800 border-slate-600 text-white [&::-webkit-calendar-picker-indicator]:invert"
+              className="w-[140px] bg-background border-border text-foreground [&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:invert-0"
             />
 
             {/* Data Fim */}
@@ -566,14 +566,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               onChange={(e) => updateAdvancedFilters({
                 dataFim: e.target.value
               })}
-              className="w-[140px] bg-slate-800 border-slate-600 text-white [&::-webkit-calendar-picker-indicator]:invert"
+              className="w-[140px] bg-background border-border text-foreground [&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:invert-0"
             />
 
             {/* Botão Atualizar */}
             <Button 
               onClick={buscarComFiltros}
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -587,7 +587,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             <Button 
               variant="outline"
               onClick={toggleAnalytics}
-              className="border-slate-600 text-white hover:bg-slate-700 flex items-center gap-2"
+              className="border-border text-foreground hover:bg-muted flex items-center gap-2"
             >
               <BarChart3 className="h-4 w-4" />
               Análise API
@@ -595,9 +595,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           </div>
 
           {/* Auto-refresh personalizado - compacto */}
-          <div className="mt-4 p-3 bg-slate-800 rounded-lg">
+          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
             <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-white">🔄 Auto-refresh:</label>
+              <label className="text-sm font-medium text-foreground">🔄 Auto-refresh:</label>
               <Input
                 type="number"
                 min="1"
@@ -612,9 +612,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   });
                 }}
                 placeholder="Minutos"
-                className="w-20 bg-slate-700 border-slate-600 text-white text-sm"
+                className="w-20 bg-background border-border text-foreground text-sm"
               />
-              <span className="text-sm text-gray-400">min</span>
+              <span className="text-sm text-muted-foreground">min</span>
               <Button
                 variant="outline"
                 size="sm"
