@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { useTheme } from '@/components/ui/theme-provider';
+import { useTheme } from '@/theme/ThemeProvider';
 
 // Types
 interface Column {
@@ -53,7 +53,8 @@ export function PedidosTableVirtual({
   height = 600,
   className
 }: PedidosTableVirtualProps) {
-  const { actualTheme } = useTheme();
+  const { theme } = useTheme();
+  const actualTheme = theme === 'materialm-dark' ? 'dark' : 'light';
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [sortState, setSortState] = useState<SortState>({ column: null, direction: null });
   
