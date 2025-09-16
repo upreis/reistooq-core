@@ -331,9 +331,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <div>
                 <p className="text-sm font-medium text-gray-600">Pendentes</p>
                 <p className="text-2xl font-bold">{stats.pendentes}</p>
-                {advancedFilters.autoRefreshEnabled && autoRefresh.timeUntilRefresh && (
-                  <p className="text-xs text-gray-500">Refresh: {autoRefresh.timeUntilRefresh}s</p>
-                )}
               </div>
             </div>
           </CardContent>
@@ -370,23 +367,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <div className={`p-2 rounded-lg ${
-                advancedFilters.buscarEmTempoReal ? 'bg-purple-100' : 'bg-gray-100'
-              }`}>
-                <Wrench className={`h-4 w-4 ${
-                  advancedFilters.buscarEmTempoReal ? 'text-purple-600' : 'text-gray-600'
-                }`} />
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Wrench className="h-4 w-4 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">
-                  {advancedFilters.buscarEmTempoReal ? 'API ML' : 'Banco'}
-                </p>
+                <p className="text-sm font-medium text-gray-600">API ML</p>
                 <p className="text-2xl font-bold">{stats.totalLoaded}</p>
-                {autoRefresh.lastRefresh && (
-                  <p className="text-xs text-gray-500">
-                    {autoRefresh.lastRefresh.toLocaleTimeString()}
-                  </p>
-                )}
+                <p className="text-xs text-gray-500">Dados em tempo real</p>
               </div>
             </div>
           </CardContent>
@@ -398,23 +385,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         <div className="flex flex-wrap gap-2">
           <Button 
             type="button"
-            onClick={sincronizarDevolucoes}
-            disabled={loading}
-            className="flex items-center gap-2"
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            Sincronizar BD
-          </Button>
-
-          <Button 
-            type="button"
             onClick={buscarComFiltros}
             disabled={loading}
-            variant="secondary"
             className="flex items-center gap-2"
           >
             {loading ? (
@@ -422,29 +394,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            {advancedFilters.buscarEmTempoReal ? 'Buscar API ML' : 'Atualizar BD'}
+            Buscar da API ML
           </Button>
-          
-          {/* Auto-refresh manual */}
-          {advancedFilters.autoRefreshEnabled && (
-            <Button 
-              type="button"
-              onClick={autoRefresh.manualRefresh}
-              disabled={autoRefresh.isRefreshing}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              {autoRefresh.isRefreshing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Clock className="h-4 w-4" />
-              )}
-              Refresh Manual
-              {autoRefresh.timeUntilRefresh && (
-                <span className="text-xs">({autoRefresh.timeUntilRefresh}s)</span>
-              )}
-            </Button>
-          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -667,7 +618,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                 <p className="text-gray-500">Nenhuma devolução encontrada</p>
                 <p className="text-sm text-gray-400 mt-2">
-                  Use os filtros avançados para buscar da API ML ou sincronize com o banco de dados
+                  Use os filtros para buscar da API ML
                 </p>
               </div>
             ) : showTableView ? (
