@@ -1115,76 +1115,66 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                     <div className="flex items-center gap-3">
                       <Search className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                       <div>
-                        <Label className="text-sm text-gray-500">SKU</Label>
-                        <p className="font-medium">{selectedDevolucao.sku || 'N/A'}</p>
+                        <Label className="text-sm text-muted-foreground">SKU</Label>
+                        <p className="font-medium text-foreground">{selectedDevolucao.sku || 'N/A'}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <CheckSquare className="h-5 w-5 text-indigo-600" />
+                      <CheckSquare className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                       <div>
-                        <Label className="text-sm text-gray-500">Quantidade</Label>
-                        <p className="font-medium">{selectedDevolucao.quantidade}</p>
+                        <Label className="text-sm text-muted-foreground">Quantidade</Label>
+                        <p className="font-medium text-foreground">{selectedDevolucao.quantidade}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <DollarSign className="h-5 w-5 text-green-600" />
+                      <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
                       <div>
-                        <Label className="text-sm text-gray-500">Valor Retido</Label>
-                        <p className="font-medium text-lg text-green-600">R$ {selectedDevolucao.valor_retido?.toFixed(2) || '0.00'}</p>
+                        <Label className="text-sm text-muted-foreground">Valor Retido</Label>
+                        <p className="font-medium text-lg text-green-600 dark:text-green-400">R$ {selectedDevolucao.valor_retido?.toFixed(2) || '0.00'}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <Wrench className="h-5 w-5 text-orange-600" />
+                      <Wrench className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                       <div>
-                        <Label className="text-sm text-gray-500">Comprador</Label>
-                        <p className="font-medium">{selectedDevolucao.comprador_nickname}</p>
+                        <Label className="text-sm text-muted-foreground">Comprador</Label>
+                        <p className="font-medium text-foreground">{selectedDevolucao.comprador_nickname}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-gray-500" />
+                      <Clock className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <Label className="text-sm text-gray-500">Data Criação</Label>
-                        <p className="font-medium">{new Date(selectedDevolucao.data_criacao).toLocaleString()}</p>
+                        <Label className="text-sm text-muted-foreground">Data Criação</Label>
+                        <p className="font-medium text-foreground">{new Date(selectedDevolucao.data_criacao).toLocaleString()}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <XCircle className="h-5 w-5 text-red-600" />
+                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
                       <div>
-                        <Label className="text-sm text-gray-500">Motivo do Cancelamento</Label>
-                        <p className="font-medium">{String(getMotivoCancelamento(selectedDevolucao))}</p>
+                        <Label className="text-sm text-muted-foreground">Motivo do Cancelamento</Label>
+                        <p className="font-medium text-foreground">{String(getMotivoCancelamento(selectedDevolucao))}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-start gap-3">
-                      <FileText className="h-5 w-5 text-blue-600 mt-1" />
+                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-1" />
                       <div className="flex-1">
-                        <Label className="text-sm text-gray-500">Descrição Detalhada do Motivo</Label>
-                        <p className="font-medium text-sm leading-relaxed">
+                        <Label className="text-sm text-muted-foreground">Descrição Detalhada do Motivo</Label>
+                        <p className="font-medium text-sm leading-relaxed text-foreground">
                           {String(getTextoMotivoDetalhado(selectedDevolucao))}
                         </p>
                       </div>
                     </div>
                     
-                    <div className="flex items-start gap-3">
-                      <FileText className="h-5 w-5 text-blue-600 mt-1" />
-                      <div className="flex-1">
-                        <Label className="text-sm text-gray-500">Descrição Detalhada do Motivo</Label>
-                        <p className="font-medium text-sm leading-relaxed">
-                          {getTextoMotivoDetalhado(selectedDevolucao)}
-                        </p>
-                      </div>
-                    </div>
-                    
                     <div className="flex items-center gap-3">
-                      <Wrench className="h-5 w-5 text-blue-500" />
+                      <Wrench className="h-5 w-5 text-blue-500 dark:text-blue-400" />
                       <div>
-                        <Label className="text-sm text-gray-500">Conta ML</Label>
-                        <p className="font-medium">{selectedDevolucao.account_name || 'N/A'}</p>
+                        <Label className="text-sm text-muted-foreground">Conta ML</Label>
+                        <p className="font-medium text-foreground">{selectedDevolucao.account_name || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
@@ -1200,11 +1190,11 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <Package className="h-8 w-8 text-blue-600" />
+                  <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
+                    <Package className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                     <div>
-                      <h3 className="font-semibold text-lg">{selectedDevolucao.produto_titulo}</h3>
-                      <p className="text-gray-600">SKU: {selectedDevolucao.sku || 'N/A'}</p>
+                      <h3 className="font-semibold text-lg text-foreground">{selectedDevolucao.produto_titulo}</h3>
+                      <p className="text-muted-foreground">SKU: {selectedDevolucao.sku || 'N/A'}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -1217,7 +1207,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                     <CardTitle className="text-lg">Dados do Pedido</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="bg-gray-50 p-4 rounded-lg text-xs overflow-auto max-h-60">
+                    <pre className="bg-muted/30 p-4 rounded-lg text-xs overflow-auto max-h-60 text-foreground">
                       {JSON.stringify(selectedDevolucao.dados_order, null, 2)}
                     </pre>
                   </CardContent>
@@ -1231,7 +1221,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                     <CardTitle className="text-lg">Dados do Claim</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <pre className="bg-gray-50 p-4 rounded-lg text-xs overflow-auto max-h-60">
+                    <pre className="bg-muted/30 p-4 rounded-lg text-xs overflow-auto max-h-60 text-foreground">
                       {JSON.stringify(selectedDevolucao.dados_claim, null, 2)}
                     </pre>
                   </CardContent>
