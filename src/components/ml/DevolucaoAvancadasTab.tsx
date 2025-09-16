@@ -15,6 +15,7 @@ import { useDevolucoesFase2 } from '@/features/devolucoes/hooks/useDevolucoesFas
 import DevolucaoAnalyticsDashboard from '@/features/devolucoes/components/DevolucaoAnalyticsDashboard';
 import DevolucaoExportDialog from '@/features/devolucoes/components/DevolucaoExportDialog';
 import { auditarLoteIndicadores, debugIndicadores } from '@/dev/auditIndicadoresDevoluções';
+import { rodarAuditoriaCompleta } from '@/dev/auditoriaCompleta';
 import { 
   RefreshCw, 
   Download, 
@@ -748,7 +749,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               Métricas Avançadas
             </Button>
 
-            {/* 🔍 BOTÃO AUDITORIA INDICADORES */}
+            {/* 🔍 BOTÃO AUDITORIA COMPLETA ATUALIZADA */}
             <Button
               variant="outline"
               onClick={() => {
@@ -757,20 +758,25 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   return;
                 }
                 
-                const auditResult = auditarLoteIndicadores(devolucoesFiltradas);
-                console.log('🔍 AUDITORIA COMPLETA:', auditResult);
+                // Executar auditoria completa baseada no PDF atualizado
+                const auditoriaCompleta = rodarAuditoriaCompleta(devolucoesFiltradas);
                 
-                // Debug individual das primeiras 3 devoluções
-                devolucoesFiltradas.slice(0, 3).forEach((dev, index) => {
-                  console.log(`🔍 DEBUG DEVOLUÇÃO ${index + 1}:`, debugIndicadores(dev));
-                });
-                
-                toast.success(`Auditoria completa! Claims: ${auditResult.summary.claim_detected}/${auditResult.summary.total}, Returns: ${auditResult.summary.return_detected}/${auditResult.summary.total}. Veja o console para detalhes.`);
+                // Mostrar resumo como toast
+                const resumo = `🔍 AUDITORIA COMPLETA EXECUTADA:
+📊 Sucesso geral: ${auditoriaCompleta.estatisticas_atuais.percentual_sucesso}%
+📋 Claims: ${auditoriaCompleta.estatisticas_atuais.claims_detectados}/${auditoriaCompleta.total_registros_analisados}
+📦 Returns: ${auditoriaCompleta.estatisticas_atuais.returns_detectados}/${auditoriaCompleta.total_registros_analisados}
+⚖️ Mediações: ${auditoriaCompleta.estatisticas_atuais.mediacoes_detectadas}/${auditoriaCompleta.total_registros_analisados}
+📎 Anexos: ${auditoriaCompleta.estatisticas_atuais.anexos_detectados}/${auditoriaCompleta.total_registros_analisados}
+❌ ${auditoriaCompleta.problemas_identificados.length} problemas críticos identificados`;
+
+                console.log(resumo);
+                toast.success(`Auditoria completa! ${auditoriaCompleta.problemas_identificados.length} problemas identificados. Veja o console para detalhes completos.`);
               }}
-              className="border-purple-500 text-purple-600 hover:bg-purple-50 flex items-center gap-2"
+              className="border-red-500 text-red-600 hover:bg-red-50 flex items-center gap-2"
             >
               <Wrench className="h-4 w-4" />
-              Auditar Indicadores
+              Auditoria Completa
             </Button>
           </div>
 
