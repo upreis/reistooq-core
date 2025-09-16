@@ -32,9 +32,7 @@ import {
   ChevronRight,
   BarChart3,
   TrendingUp,
-  FileDown,
-  ChevronDown,
-  ChevronUp
+  FileDown
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -82,7 +80,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [showDetails, setShowDetails] = useState(false);
   const [showTableView, setShowTableView] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   // Hook principal consolidado com otimizações
   const {
@@ -98,7 +95,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     performanceSettings,
     updateFilters,
     updateAdvancedFilters,
-    updatePerformanceSettings,
     clearFilters,
     buscarComFiltros,
     sincronizarDevolucoes,
@@ -488,122 +484,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             </div>
           </div>
         </CardContent>
-      </Card>
-
-      {/* CONFIGURAÇÕES AVANÇADAS (Colapsável) */}
-      <Card>
-        <CardHeader>
-          <CardTitle 
-            className="flex items-center justify-between cursor-pointer"
-            onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-          >
-            <div className="flex items-center gap-2">
-              <Wrench className="w-5 h-5" />
-              Configurações Avançadas
-            </div>
-            {showAdvancedSettings ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
-          </CardTitle>
-        </CardHeader>
-        {showAdvancedSettings && (
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="lazy-loading"
-                checked={performanceSettings.enableLazyLoading}
-                onChange={(e) => updatePerformanceSettings({
-                  enableLazyLoading: e.target.checked
-                })}
-              />
-              <label htmlFor="lazy-loading" className="text-sm font-medium">
-                📦 Lazy Loading
-              </label>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Items por chunk</label>
-              <Input
-                type="number"
-                min="10"
-                max="100"
-                value={performanceSettings.chunkSize}
-                onChange={(e) => updatePerformanceSettings({
-                  chunkSize: parseInt(e.target.value) || 20
-                })}
-                className="h-8"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Debounce (ms)</label>
-              <Input
-                type="number"
-                min="100"
-                max="2000"
-                value={performanceSettings.debounceDelay}
-                onChange={(e) => updatePerformanceSettings({
-                  debounceDelay: parseInt(e.target.value) || 500
-                })}
-                className="h-8"
-              />
-            </div>
-          </div>
-
-          {/* Performance Stats */}
-          {performanceSettings.enableLazyLoading && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">Total:</span>
-                  <p className="font-medium">{lazyLoading.stats.totalItems}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500">Visível:</span>
-                  <p className="font-medium">{lazyLoading.stats.visibleItems}</p>
-                </div>
-                <div>
-                  <span className="text-gray-500">Progresso:</span>
-                  <p className="font-medium">{lazyLoading.stats.loadingProgress.toFixed(1)}%</p>
-                </div>
-                <div>
-                  <span className="text-gray-500">Chunks:</span>
-                  <p className="font-medium">{lazyLoading.stats.loadedChunks}/{lazyLoading.stats.totalChunks}</p>
-                </div>
-              </div>
-              
-              {lazyLoading.hasMore && (
-                <div className="mt-2 flex gap-2">
-                  <Button
-                    onClick={lazyLoading.loadMore}
-                    disabled={lazyLoading.isLoading}
-                    size="sm"
-                    variant="outline"
-                  >
-                    {lazyLoading.isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 mr-2" />
-                    )}
-                    Carregar Mais
-                  </Button>
-                  <Button
-                    onClick={lazyLoading.loadAll}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    Carregar Todos
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-        )}
       </Card>
 
       {/* FILTROS BÁSICOS */}

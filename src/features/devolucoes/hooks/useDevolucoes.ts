@@ -54,12 +54,12 @@ export function useDevolucoes(mlAccounts: any[]) {
     autoRefreshInterval: 30 // 30 segundos por padrão
   });
 
-  // Configurações de performance
-  const [performanceSettings, setPerformanceSettings] = useState<PerformanceSettings>({
+  // Configurações de performance otimizadas (fixas)
+  const performanceSettings: PerformanceSettings = {
     enableLazyLoading: true,
-    chunkSize: 20,
-    debounceDelay: 500
-  });
+    chunkSize: 25, // Tamanho otimizado para boa performance
+    debounceDelay: 300 // Delay otimizado para responsividade
+  };
 
   // Hooks
   const persistence = useDevolucoesPersistence();
@@ -209,10 +209,7 @@ export function useDevolucoes(mlAccounts: any[]) {
     }
   }, [persistence]);
 
-  // Atualizar configurações de performance
-  const updatePerformanceSettings = useCallback((newSettings: Partial<PerformanceSettings>) => {
-    setPerformanceSettings(prev => ({ ...prev, ...newSettings }));
-  }, []);
+  // Atualizar configurações de performance removido - valores fixos otimizados
 
   // Limpar filtros
   const clearFilters = useCallback(() => {
@@ -271,7 +268,6 @@ export function useDevolucoes(mlAccounts: any[]) {
     performanceSettings,
     updateFilters,
     updateAdvancedFilters,
-    updatePerformanceSettings,
     clearFilters,
     
     // Ações
