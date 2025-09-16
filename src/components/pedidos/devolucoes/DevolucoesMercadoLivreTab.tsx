@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale';
 import { ContasMLSelector } from '../ContasMLSelector';
 import { MLConnectionTester } from './MLConnectionTester';
 import DevolucoesMelhoradas from '@/components/devolucoes/DevolucoesMelhoradas';
+import DevolucoesMercadoLivreModerno from '@/components/devolucoes/DevolucoesMercadoLivreModerno';
 interface MLConnectionStatusProps {
   accountsStats?: {
     total: number;
@@ -99,6 +100,7 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [usarVersaoMelhorada, setUsarVersaoMelhorada] = useState(false);
+  const [usarVersaoModerna, setUsarVersaoModerna] = useState(false);
   const [mlAccounts, setMlAccounts] = useState<any[]>([]);
 
   // Estatísticas
@@ -323,25 +325,47 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
         onAccountsChange={setSelectedAccounts}
       />
 
-      {/* Toggle para Versão Melhorada */}
-      <div className="mb-4 flex items-center justify-between bg-blue-50 p-4 rounded-lg border border-blue-200">
+      {/* Toggle para Interface Moderna */}
+      <div className="mb-4 flex items-center justify-between bg-blue-50 p-4 rounded-lg">
+        <div className="flex items-center space-x-3">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={usarVersaoModerna}
+              onChange={(e) => setUsarVersaoModerna(e.target.checked)}
+              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span className="text-sm font-medium text-blue-900">
+              🚀 Usar Interface Moderna (NOVA)
+            </span>
+          </label>
+        </div>
+        <div className="text-xs text-blue-700">
+          ✨ Design melhorado, filtros avançados, métricas e paginação
+        </div>
+      </div>
+
+      {/* Toggle para Versão Melhorada (mantido para compatibilidade) */}
+      <div className="mb-4 flex items-center justify-between bg-green-50 p-4 rounded-lg border border-green-200">
         <div className="flex items-center space-x-2">
           <label className="flex items-center">
             <input
               type="checkbox"
               checked={usarVersaoMelhorada}
               onChange={(e) => setUsarVersaoMelhorada(e.target.checked)}
-              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              className="mr-2 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
             />
-            <span className="text-sm font-medium text-blue-900">Usar versão melhorada (BETA)</span>
+            <span className="text-sm font-medium text-green-900">Usar versão melhorada (BETA)</span>
           </label>
         </div>
-        <div className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">
-          Interface aprimorada com métricas e filtros avançados
+        <div className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded">
+          Interface aprimorada com tradução e filtros
         </div>
       </div>
 
-      {usarVersaoMelhorada ? (
+      {usarVersaoModerna ? (
+        <DevolucoesMercadoLivreModerno mlAccounts={mlAccounts} refetch={loadDevolucoes} />
+      ) : usarVersaoMelhorada ? (
         <DevolucoesMelhoradas mlAccounts={mlAccounts} refetch={loadDevolucoes} />
       ) : (
         <>
