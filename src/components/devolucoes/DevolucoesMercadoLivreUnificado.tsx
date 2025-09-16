@@ -113,7 +113,7 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
     status: 'all',
     tipo: 'all',
     prioridade: 'all',
-    dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dateFrom: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 90 dias atrás
     dateTo: new Date().toISOString().split('T')[0],
     accountIds: [],
     processedStatus: 'all'
@@ -138,14 +138,16 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
         .eq('provider', 'mercadolivre')
         .eq('is_active', true);
 
-      if (error) throw error;
+    console.log('🔄 [Devolucoes] Query executada para:', { ...filtros, search: debouncedSearch }, 'Resultado:', data?.length || 0);
       return data;
     }
   });
 
   // Auto-selecionar todas as contas ativas
   useEffect(() => {
+    console.log('🔍 [Devolucoes] ML Accounts carregadas:', mlAccounts?.length || 0);
     if (mlAccounts.length > 0 && filtros.accountIds.length === 0) {
+      console.log('🔄 [Devolucoes] Auto-selecionando contas:', mlAccounts.map(acc => acc.id));
       setFiltros(prev => ({ 
         ...prev, 
         accountIds: mlAccounts.map(acc => acc.id) 
@@ -157,6 +159,8 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-ml', { ...filtros, search: debouncedSearch }],
     queryFn: async () => {
+      console.log('🔍 [Devolucoes] Executando query com filtros:', { ...filtros, search: debouncedSearch });
+      
       let query = supabase
         .from('ml_devolucoes_reclamacoes')
         .select('*');
