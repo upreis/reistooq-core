@@ -652,26 +652,21 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </div>
             ) : showTableView ? (
               /* Visualização em Tabela Detalhada */
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border rounded-lg">
                 <table className="w-full border-collapse text-sm">
                   <thead>
-                    <tr className="border-b bg-muted/50 dark:bg-muted">
-                       <th className="text-left p-2 font-medium text-muted-foreground">Order ID</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Produto</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">SKU</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Comprador</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Qtd</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Valor Retido</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Status</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">📋 Claim</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">📦 Return</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">⚖️ Mediação</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">📎 Anexos</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Data Criação</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Data Última Atualização</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Tipo</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Motivo Cancelamento</th>
-                       <th className="text-left p-2 font-medium text-muted-foreground">Ações</th>
+                    <tr className="bg-muted/50 dark:bg-muted border-b">
+                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
+                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
+                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
+                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
+                       <th className="text-center px-4 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
+                       <th className="text-right px-4 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor</th>
+                       <th className="text-center px-4 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
+                       <th className="text-center px-4 py-3 font-semibold text-muted-foreground min-w-[70px]">Dados</th>
+                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[140px]">Datas</th>
+                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo</th>
+                       <th className="text-center px-4 py-3 font-semibold text-muted-foreground min-w-[80px]">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -708,20 +703,46 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
                       return (
                         <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-muted/50 dark:border-border">
-                          <td className="p-2 font-medium text-blue-600 dark:text-blue-400">{devolucao.order_id}</td>
-                          <td className="p-2 max-w-xs">
-                            <div className="truncate dark:text-white" title={devolucao.produto_titulo}>
-                              {devolucao.produto_titulo}
+                          {/* Order ID */}
+                          <td className="px-4 py-3 font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                            {devolucao.order_id}
+                          </td>
+                          
+                          {/* Produto */}
+                          <td className="px-4 py-3">
+                            <div className="space-y-1">
+                              <div className="font-medium text-foreground line-clamp-2" title={devolucao.produto_titulo}>
+                                {devolucao.produto_titulo || 'N/A'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Claim: {devolucao.claim_id || 'N/A'}
+                              </div>
                             </div>
                           </td>
-                          <td className="p-2 dark:text-white">{devolucao.sku || 'N/A'}</td>
-                          <td className="p-2 dark:text-white">{devolucao.comprador_nickname || 'N/A'}</td>
-                          <td className="p-2 text-center dark:text-white">{devolucao.quantidade || 1}</td>
-                          <td className="p-2 text-green-600 dark:text-green-400 font-medium">
+                          
+                          {/* SKU */}
+                          <td className="px-4 py-3 text-foreground font-mono text-sm whitespace-nowrap">
+                            {devolucao.sku || 'N/A'}
+                          </td>
+                          
+                          {/* Comprador */}
+                          <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                            {devolucao.comprador_nickname || 'N/A'}
+                          </td>
+                          
+                          {/* Quantidade */}
+                          <td className="px-4 py-3 text-center text-foreground font-medium">
+                            {devolucao.quantidade || 1}
+                          </td>
+                          
+                          {/* Valor */}
+                          <td className="px-4 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
                             R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}
                           </td>
-                          <td className="p-2">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          
+                          {/* Status */}
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                               devolucao.status_devolucao === 'completed' 
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                                 : devolucao.status_devolucao === 'cancelled'
@@ -731,47 +752,66 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                               {devolucao.status_devolucao}
                             </span>
                           </td>
-                          <td className="p-2 text-center">
-                            {temClaimData ? (
-                              <span className="text-blue-600 dark:text-blue-400">📋</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="p-2 text-center">
-                            {temReturnData ? (
-                              <span className="text-orange-600 dark:text-orange-400">📦</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="p-2 text-center">
-                            {temMediationData ? (
-                              <span className="text-purple-600 dark:text-purple-400">⚖️</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="p-2 text-center">
-                            {temAttachmentsData ? (
-                              <span className="text-green-600 dark:text-green-400">📎</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          <td className="p-2 text-sm dark:text-white">
-                            {new Date(devolucao.data_criacao).toLocaleDateString()}
-                          </td>
-                          <td className="p-2 text-sm dark:text-white">
-                            {new Date(devolucao.updated_at).toLocaleDateString()}
-                          </td>
-                          <td className="p-2 dark:text-white">{claimData.type || 'N/A'}</td>
-                          <td className="p-2 max-w-xs">
-                            <div className="truncate text-sm dark:text-white" title={String(getMotivoCancelamento(devolucao))}>
-                              {String(getMotivoCancelamento(devolucao))}
+                          
+                          {/* Indicadores de Dados */}
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-2">
+                              {temClaimData && (
+                                <span className="text-blue-600 dark:text-blue-400" title="Tem dados de Claim">📋</span>
+                              )}
+                              {temReturnData && (
+                                <span className="text-orange-600 dark:text-orange-400" title="Tem dados de Return">📦</span>
+                              )}
+                              {temMediationData && (
+                                <span className="text-purple-600 dark:text-purple-400" title="Tem Mediação">⚖️</span>
+                              )}
+                              {temAttachmentsData && (
+                                <span className="text-green-600 dark:text-green-400" title="Tem Anexos">📎</span>
+                              )}
+                              {!temClaimData && !temReturnData && !temMediationData && !temAttachmentsData && (
+                                <span className="text-muted-foreground">-</span>
+                              )}
                             </div>
                           </td>
-                          <td className="p-2">
+                          
+                          {/* Datas */}
+                          <td className="px-4 py-3">
+                            <div className="space-y-1 text-sm">
+                              <div className="text-foreground">
+                                <span className="text-muted-foreground">Criado:</span><br />
+                                {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                })}
+                              </div>
+                              <div className="text-foreground">
+                                <span className="text-muted-foreground">Atualizado:</span><br />
+                                {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                })}
+                              </div>
+                            </div>
+                          </td>
+                          
+                          {/* Motivo */}
+                          <td className="px-4 py-3">
+                            <div className="space-y-1">
+                              <div className="text-sm text-foreground line-clamp-3" title={String(getMotivoCancelamento(devolucao))}>
+                                {String(getMotivoCancelamento(devolucao))}
+                              </div>
+                              {claimData.type && (
+                                <div className="text-xs text-muted-foreground">
+                                  Tipo: {claimData.type}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          
+                          {/* Ações */}
+                          <td className="px-4 py-3 text-center">
                             <Button
                               variant="outline"
                               size="sm"
@@ -779,7 +819,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                                 setSelectedDevolucao(devolucao);
                                 setShowDetails(true);
                               }}
-                              className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+                              className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -881,29 +921,47 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                           </div>
                         </div>
                         
-                        {/* Informações adicionais com ícones */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-                          <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                            <Clock className="h-3 w-3 text-muted-foreground" />
-                            <div>
-                              <span className="text-muted-foreground">Criado em:</span>
-                              <p className="font-medium">{new Date(devolucao.data_criacao).toLocaleString()}</p>
+                         {/* Informações adicionais reorganizadas */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                          <div className="flex items-start gap-3 bg-muted/30 p-3 rounded-lg">
+                            <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-muted-foreground font-medium block mb-1">Criado em:</span>
+                              <p className="font-semibold text-foreground text-sm">
+                                {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                            <Wrench className="h-3 w-3 text-muted-foreground" />
-                            <div>
-                              <span className="text-muted-foreground">Conta:</span>
-                              <p className="font-medium truncate">{devolucao.account_name || 'N/A'}</p>
+                          <div className="flex items-start gap-3 bg-muted/30 p-3 rounded-lg">
+                            <Wrench className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-muted-foreground font-medium block mb-1">Conta:</span>
+                              <p className="font-semibold text-foreground text-sm break-words">
+                                {devolucao.account_name || 'N/A'}
+                              </p>
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                            <Clock className="h-3 w-3 text-muted-foreground" />
-                            <div>
-                              <span className="text-muted-foreground">Atualizado:</span>
-                              <p className="font-medium">{new Date(devolucao.updated_at).toLocaleString()}</p>
+                          <div className="flex items-start gap-3 bg-muted/30 p-3 rounded-lg">
+                            <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-muted-foreground font-medium block mb-1">Atualizado:</span>
+                              <p className="font-semibold text-foreground text-sm">
+                                {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
                             </div>
                           </div>
                         </div>
