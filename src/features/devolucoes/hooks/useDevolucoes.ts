@@ -21,6 +21,7 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   buscarEmTempoReal: boolean;
   autoRefreshEnabled: boolean;
   autoRefreshInterval: number; // em segundos
+  searchTerm: string; // Campo de busca
 }
 
 export interface PerformanceSettings {
@@ -35,20 +36,13 @@ export function useDevolucoes(mlAccounts: any[]) {
   const [currentPage, setCurrentPage] = useState(1);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
-  // Filtros básicos
-  const [filters, setFilters] = useState<DevolucaoFilters>({
-    searchTerm: '',
-    status: '',
-    dataInicio: '',
-    dataFim: ''
-  });
-
-  // Filtros avançados com auto-refresh
+  // Filtros avançados unificados
   const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>({
     contasSelecionadas: [],
     dataInicio: '',
     dataFim: '',
     statusClaim: '',
+    searchTerm: '', // Campo de busca unificado
     buscarEmTempoReal: false,
     autoRefreshEnabled: false,
     autoRefreshInterval: 30 // 30 segundos por padrão
@@ -65,11 +59,11 @@ export function useDevolucoes(mlAccounts: any[]) {
   const persistence = useDevolucoesPersistence();
   const busca = useDevolucoesBusca();
 
-  // Debounce otimizado para busca
+  // Debounce otimizado para busca unificada
   const { 
     debouncedValue: debouncedSearchTerm, 
     flushDebounce 
-  } = useDebounce(filters.searchTerm, performanceSettings.debounceDelay);
+  } = useDebounce(advancedFilters.searchTerm, performanceSettings.debounceDelay);
 
   // Busca principal com debounce
   const executarBusca = useCallback(async () => {
@@ -81,9 +75,9 @@ export function useDevolucoes(mlAccounts: any[]) {
     } else {
       const dadosBanco = await busca.buscarDoBanco();
       setDevolucoes(dadosBanco);
-      persistence.saveDatabaseData(dadosBanco, filters);
+      persistence.saveDatabaseData(dadosBanco, advancedFilters);
     }
-  }, [advancedFilters, busca, mlAccounts, persistence, filters]);
+  }, [advancedFilters, busca, mlAccounts, persistence]);
 
   // Auto-refresh configurável
   const autoRefresh = useAutoRefresh({
@@ -108,24 +102,24 @@ export function useDevolucoes(mlAccounts: any[]) {
       );
     }
 
-    if (filters.status) {
-      resultados = resultados.filter(dev => dev.status_devolucao === filters.status);
+    if (advancedFilters.statusClaim) {
+      resultados = resultados.filter(dev => dev.status_devolucao === advancedFilters.statusClaim);
     }
 
-    if (filters.dataInicio) {
+    if (advancedFilters.dataInicio) {
       resultados = resultados.filter(dev => 
-        new Date(dev.data_criacao) >= new Date(filters.dataInicio)
+        new Date(dev.data_criacao) >= new Date(advancedFilters.dataInicio)
       );
     }
 
-    if (filters.dataFim) {
+    if (advancedFilters.dataFim) {
       resultados = resultados.filter(dev => 
-        new Date(dev.data_criacao) <= new Date(filters.dataFim)
+        new Date(dev.data_criacao) <= new Date(advancedFilters.dataFim)
       );
     }
 
     return resultados;
-  }, [devolucoes, debouncedSearchTerm, filters]);
+  }, [devolucoes, debouncedSearchTerm, advancedFilters]);
 
   // Lazy loading para grandes datasets
   const lazyLoading = useLazyLoading({
@@ -161,7 +155,7 @@ export function useDevolucoes(mlAccounts: any[]) {
           buscarEmTempoReal: true
         }));
       } else {
-        setFilters(state.filters || filters);
+        setAdvancedFilters(prev => ({ ...prev, ...state.filters }));
       }
       
       console.log(`🔄 ${state.data.length} devoluções restauradas (${state.dataSource})`);
@@ -176,9 +170,9 @@ export function useDevolucoes(mlAccounts: any[]) {
     const dadosBanco = await busca.buscarDoBanco();
     if (dadosBanco.length > 0) {
       setDevolucoes(dadosBanco);
-      persistence.saveDatabaseData(dadosBanco, filters);
+      persistence.saveDatabaseData(dadosBanco, advancedFilters);
     }
-  }, [busca, persistence, filters]);
+  }, [busca, persistence, advancedFilters]);
 
   // Buscar com filtros (flush debounce para busca imediata)
   const buscarComFiltros = useCallback(async () => {
@@ -191,15 +185,11 @@ export function useDevolucoes(mlAccounts: any[]) {
     const dadosAtualizados = await busca.sincronizarDevolucoes(mlAccounts);
     if (dadosAtualizados.length > 0) {
       setDevolucoes(dadosAtualizados);
-      persistence.saveDatabaseData(dadosAtualizados, filters);
+      persistence.saveDatabaseData(dadosAtualizados, advancedFilters);
     }
-  }, [busca, mlAccounts, persistence, filters]);
+  }, [busca, mlAccounts, persistence, advancedFilters]);
 
-  // Atualizar filtros com otimização
-  const updateFilters = useCallback((newFilters: Partial<DevolucaoFilters>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-  }, []);
-
+  // Atualizar filtros unificados
   const updateAdvancedFilters = useCallback((newFilters: Partial<DevolucaoAdvancedFilters>) => {
     setAdvancedFilters(prev => ({ ...prev, ...newFilters }));
     
@@ -211,17 +201,21 @@ export function useDevolucoes(mlAccounts: any[]) {
 
   // Atualizar configurações de performance removido - valores fixos otimizados
 
-  // Limpar filtros
+  // Limpar filtros unificados
   const clearFilters = useCallback(() => {
-    setFilters({
+    setAdvancedFilters({
+      contasSelecionadas: mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [],
       searchTerm: '',
-      status: '',
+      statusClaim: '',
       dataInicio: '',
-      dataFim: ''
+      dataFim: '',
+      buscarEmTempoReal: false,
+      autoRefreshEnabled: false,
+      autoRefreshInterval: 30
     });
     lazyLoading.reset();
     persistence.clearPersistedState();
-  }, [persistence, lazyLoading]);
+  }, [persistence, lazyLoading, mlAccounts]);
 
   // Paginação otimizada
   const itemsPerPage = performanceSettings.chunkSize;
@@ -262,11 +256,11 @@ export function useDevolucoes(mlAccounts: any[]) {
     totalPages,
     showAnalytics,
     
-    // Filtros
-    filters,
+    // Filtros unificados
+    filters: advancedFilters, // Compatibilidade
     advancedFilters,
     performanceSettings,
-    updateFilters,
+    updateFilters: updateAdvancedFilters, // Compatibilidade  
     updateAdvancedFilters,
     clearFilters,
     

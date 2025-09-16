@@ -12,6 +12,7 @@ export interface DevolucaoBuscaFilters {
   dataInicio?: string;
   dataFim?: string;
   statusClaim?: string;
+  searchTerm?: string; // Adicionado campo de busca
 }
 
 export function useDevolucoesBusca() {

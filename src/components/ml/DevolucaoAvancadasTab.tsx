@@ -438,6 +438,18 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </div>
             </div>
 
+            {/* Campo de busca unificado */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Buscar</label>
+              <Input
+                placeholder="Produto, SKU, Order ID, Comprador..."
+                value={advancedFilters.searchTerm || ''}
+                onChange={(e) => updateAdvancedFilters({
+                  searchTerm: e.target.value
+                })}
+              />
+            </div>
+
             {/* Filtros de data */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -464,7 +476,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
             {/* Status do claim */}
             <div>
-              <label className="block text-sm font-medium mb-2">Status do Claim</label>
+              <label className="block text-sm font-medium mb-2">Status</label>
               <Select 
                 value={advancedFilters.statusClaim || ''} 
                 onValueChange={(value) => updateAdvancedFilters({
