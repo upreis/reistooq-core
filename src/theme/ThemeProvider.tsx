@@ -30,12 +30,19 @@ export function ThemeProvider({
   storageKey = "reistoq.theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<ThemeName>(
-    () => {
+  const [theme, setTheme] = useState<ThemeName>(() => {
+    // Safe localStorage access for SSR/hydration
+    if (typeof window === 'undefined') {
+      return defaultTheme;
+    }
+    
+    try {
       const stored = localStorage.getItem(storageKey) as ThemeName;
       return THEME_OPTIONS.includes(stored) ? stored : defaultTheme;
+    } catch {
+      return defaultTheme;
     }
-  );
+  });
 
   useEffect(() => {
     const root = document.documentElement;
@@ -57,7 +64,11 @@ export function ThemeProvider({
   }, [theme]);
 
   const handleSetTheme = (newTheme: ThemeName) => {
-    localStorage.setItem(storageKey, newTheme);
+    try {
+      localStorage.setItem(storageKey, newTheme);
+    } catch (error) {
+      console.warn('Failed to save theme to localStorage:', error);
+    }
     setTheme(newTheme);
   };
 
