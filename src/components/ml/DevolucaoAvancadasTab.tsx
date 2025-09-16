@@ -417,6 +417,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </>
             )}
           </Button>
+
+          {/* Auto Refresh Toggle */}
+          <Button
+            variant={advancedFilters.autoRefreshEnabled ? "default" : "outline"}
+            onClick={() => updateAdvancedFilters({ autoRefreshEnabled: !advancedFilters.autoRefreshEnabled })}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${advancedFilters.autoRefreshEnabled ? 'animate-spin' : ''}`} />
+            Auto Refresh
+          </Button>
           
           <Button 
             variant="outline" 
