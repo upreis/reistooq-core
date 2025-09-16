@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Eye, Filter, Download, Wrench, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
+import DevolucoesMercadoLivreUnificado from "@/components/devolucoes/DevolucoesMercadoLivreUnificado";
 import { toast } from "sonner";
 
 interface MLOrder {
@@ -321,13 +321,13 @@ export default function MLOrdersCompletas() {
         </TabsList>
 
         <TabsContent value="devolucoes" className="space-y-6">
-          <DevolucaoAvancadasTab 
+          <DevolucoesMercadoLivreUnificado 
             mlAccounts={mlAccounts || []}
             refetch={async () => { 
               // Buscar devoluções atualizadas sem reload da página
               try {
                 const { data: devolucoes, error } = await supabase
-                  .from('devolucoes_avancadas')
+                  .from('ml_devolucoes_reclamacoes')
                   .select('*')
                   .order('created_at', { ascending: false });
                 
@@ -341,7 +341,6 @@ export default function MLOrdersCompletas() {
                 console.error('Erro no refetch:', error);
               }
             }}
-            existingDevolucoes={[]}
           />
         </TabsContent>
 
