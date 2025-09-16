@@ -117,7 +117,7 @@ const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, i
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtros da API ML
+            Filtros de Devoluções
           </CardTitle>
           <Button 
             variant="ghost" 
@@ -187,7 +187,7 @@ const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, i
             className="flex items-center gap-2"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            Buscar API
+            Buscar
           </Button>
         </div>
 
@@ -363,64 +363,61 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
     }
   }, [mlAccounts]);
 
-  // Query otimizada para buscar diretamente da API ML
+  // Query otimizada para buscar da tabela (dados já sincronizados)
   const { data: devolucoes = [], isLoading, error } = useQuery<DevolucaoML[]>({
-    queryKey: ['devolucoes-api', { selectedAccountId: filtros.selectedAccountId, dateFrom: filtros.dateFrom, dateTo: filtros.dateTo, search: debouncedSearch }],
+    queryKey: ['devolucoes-otimizada', { selectedAccountId: filtros.selectedAccountId, dateFrom: filtros.dateFrom, dateTo: filtros.dateTo, search: debouncedSearch, status: filtros.status, tipo: filtros.tipo }],
     queryFn: async () => {
       if (!filtros.selectedAccountId) {
         return [];
       }
 
-      console.log('🔍 Buscando devoluções da API ML para conta:', filtros.selectedAccountId);
+      console.log('🔍 Buscando devoluções da tabela para conta:', filtros.selectedAccountId);
       
-      try {
-        const { data, error } = await supabase.functions.invoke('ml-devolucoes-sync', {
-          body: {
-            integration_account_id: filtros.selectedAccountId,
-            mode: 'enriched',
-            date_from: filtros.dateFrom,
-            date_to: filtros.dateTo,
-            enrich_level: 'complete'
-          }
-        });
+      let query = supabase
+        .from('ml_devolucoes_reclamacoes')
+        .select('*');
 
-        if (error) {
-          console.error('❌ Erro na busca de devoluções:', error);
-          throw new Error(error.message || 'Erro ao buscar devoluções');
-        }
-
-        console.log('✅ Devoluções carregadas:', data?.items?.length || 0);
-        
-        let items = data?.items || [];
-        
-        // Aplicar filtros locais
-        if (debouncedSearch) {
-          items = items.filter((item: any) => 
-            item.order_id?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-            item.buyer_nickname?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-            item.item_title?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-            item.sku?.toLowerCase().includes(debouncedSearch.toLowerCase())
-          );
-        }
-
-        if (filtros.status !== 'all') {
-          items = items.filter((item: any) => item.claim_status === filtros.status);
-        }
-
-        if (filtros.tipo !== 'all') {
-          items = items.filter((item: any) => item.claim_type === filtros.tipo);
-        }
-
-        return items;
-      } catch (error: any) {
+      // Filtrar por conta selecionada
+      query = query.eq('integration_account_id', filtros.selectedAccountId);
+      
+      // Aplicar filtros de busca
+      if (debouncedSearch) {
+        query = query.or(`order_id.ilike.%${debouncedSearch}%,buyer_nickname.ilike.%${debouncedSearch}%,item_title.ilike.%${debouncedSearch}%,sku.ilike.%${debouncedSearch}%`);
+      }
+      
+      // Filtros de status e tipo
+      if (filtros.status !== 'all') {
+        query = query.eq('claim_status', filtros.status);
+      }
+      
+      if (filtros.tipo !== 'all') {
+        query = query.eq('claim_type', filtros.tipo);
+      }
+      
+      // Filtros de data
+      if (filtros.dateFrom) {
+        query = query.gte('date_created', filtros.dateFrom);
+      }
+      
+      if (filtros.dateTo) {
+        query = query.lte('date_created', filtros.dateTo + 'T23:59:59.999Z');
+      }
+      
+      const { data, error } = await query
+        .order('date_created', { ascending: false })
+        .limit(1000);
+      
+      if (error) {
         console.error('❌ Erro ao buscar devoluções:', error);
-        toast.error(`Erro ao buscar devoluções: ${error.message}`);
         throw error;
       }
+
+      console.log('✅ Devoluções carregadas da tabela:', data?.length || 0);
+      return data as DevolucaoML[];
     },
     enabled: !!filtros.selectedAccountId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
   });
 
   // Mutation para sincronização
@@ -467,7 +464,7 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
   // Handlers otimizados
   const handleSearch = React.useCallback(() => {
     setCurrentPage(1);
-    queryClient.invalidateQueries({ queryKey: ['devolucoes-api'] });
+    queryClient.invalidateQueries({ queryKey: ['devolucoes-otimizada'] });
   }, [queryClient]);
 
   const handleExport = React.useCallback(() => {
@@ -674,7 +671,7 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhuma devolução encontrada</h3>
             <p className="text-muted-foreground">
-              {filtros.selectedAccountId ? 'Selecione uma conta e ajuste os filtros ou sincronize os dados' : 'Selecione uma conta ML para começar'}
+              {filtros.selectedAccountId ? 'Ajuste os filtros ou sincronize os dados da API' : 'Selecione uma conta ML para começar'}
             </p>
           </CardContent>
         </Card>
