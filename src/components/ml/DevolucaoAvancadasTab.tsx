@@ -429,174 +429,155 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </div>
       </div>
 
-      {/* FILTROS AVANÇADOS */}
-      <Card>
-        <CardHeader>
-           <CardTitle className="flex items-center gap-2">
-             <Filter className="w-5 h-5" />
-             Filtros Avançados
-           </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Informação sobre a fonte de dados */}
-            <div className="text-sm text-blue-600 font-medium">
-              🔴 Buscando sempre da API ML em tempo real
+      {/* FILTROS E FERRAMENTAS DE ANÁLISE */}
+      <Card className="bg-slate-900 border-slate-700">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-white">
+              <Filter className="w-5 h-5" />
+              <span className="font-medium">Filtros e Ferramentas de Análise</span>
             </div>
-
-            {/* Auto-refresh personalizado */}
-            <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
-              <label className="block text-sm font-medium text-gray-700">
-                🔄 Atualização Automática Personalizada
-              </label>
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Input
-                    type="number"
-                    min="1"
-                    max="86400"
-                    value={advancedFilters.autoRefreshEnabled ? Math.floor(advancedFilters.autoRefreshInterval / 60) : ""}
-                    onChange={(e) => {
-                      const minutes = parseInt(e.target.value) || 0;
-                      const seconds = minutes * 60;
-                      updateAdvancedFilters({
-                        autoRefreshEnabled: minutes > 0,
-                        autoRefreshInterval: seconds > 0 ? seconds : 3600
-                      });
-                    }}
-                    placeholder="Minutos (1-1440)"
-                    className="w-full"
-                  />
-                </div>
-                <div className="text-sm text-gray-600">minutos</div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => updateAdvancedFilters({ autoRefreshEnabled: false })}
-                  disabled={!advancedFilters.autoRefreshEnabled}
-                >
-                  Desativar
-                </Button>
-              </div>
-              <div className="text-xs text-gray-500">
-                {advancedFilters.autoRefreshEnabled ? (
-                  <>
-                    ⏰ Próxima atualização em: {autoRefresh?.timeUntilRefresh || 0}s
-                    {autoRefresh?.isRefreshing && " (atualizando...)"}
-                  </>
-                ) : (
-                  "Auto-refresh desativado"
-                )}
-              </div>
-
-              
-              {advancedFilters.autoRefreshEnabled && (
-                <div className="text-xs text-gray-600 mt-2">
-                  {autoRefresh.isRefreshing && (
-                    <div className="flex items-center gap-2 text-blue-600">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Atualizando...
-                    </div>
-                  )}
-                  {autoRefresh.timeUntilRefresh && !autoRefresh.isRefreshing && (
-                    <div>
-                      Próxima atualização em: {Math.floor(autoRefresh.timeUntilRefresh / 3600)}h {Math.floor((autoRefresh.timeUntilRefresh % 3600) / 60)}min
-                    </div>
-                  )}
-                  {autoRefresh.lastRefresh && (
-                    <div className="text-gray-500">
-                      Última atualização: {autoRefresh.lastRefresh.toLocaleTimeString()}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Seleção de contas */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Contas ML</label>
-              <div className="grid grid-cols-2 gap-2">
-                {mlAccounts?.map((account) => (
-                  <div key={account.id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={account.id}
-                      checked={advancedFilters.contasSelecionadas.includes(account.id)}
-                      onChange={(e) => {
-                        const currentAccounts = advancedFilters.contasSelecionadas;
-                        const newAccounts = e.target.checked
-                          ? [...currentAccounts, account.id]
-                          : currentAccounts.filter(id => id !== account.id);
-                        
-                        updateAdvancedFilters({
-                          contasSelecionadas: newAccounts
-                        });
-                      }}
-                    />
-                    <label htmlFor={account.id} className="text-sm">
-                      {account.name}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Campo de busca unificado */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Buscar</label>
+          </div>
+          
+          {/* Linha de filtros horizontais */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Campo de busca */}
+            <div className="flex items-center relative min-w-[250px]">
+              <Search className="absolute left-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Produto, SKU, Order ID, Comprador..."
+                placeholder="Buscar por Order ID, comprador..."
                 value={advancedFilters.searchTerm || ''}
                 onChange={(e) => updateAdvancedFilters({
                   searchTerm: e.target.value
                 })}
+                className="pl-10 bg-slate-800 border-slate-600 text-white placeholder:text-gray-400 focus:border-slate-500"
               />
             </div>
 
-            {/* Filtros de data */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Data Início</label>
-                <Input
-                  type="date"
-                  value={advancedFilters.dataInicio || ''}
-                  onChange={(e) => updateAdvancedFilters({
-                    dataInicio: e.target.value
-                  })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Data Fim</label>
-                <Input
-                  type="date"
-                  value={advancedFilters.dataFim || ''}
-                  onChange={(e) => updateAdvancedFilters({
-                    dataFim: e.target.value
-                  })}
-                />
-              </div>
-            </div>
+            {/* Status */}
+            <Select 
+              value={advancedFilters.statusClaim || ''} 
+              onValueChange={(value) => updateAdvancedFilters({
+                statusClaim: value
+              })}
+            >
+              <SelectTrigger className="w-[160px] bg-slate-800 border-slate-600 text-white">
+                <SelectValue placeholder="Todos os Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-600">
+                <SelectItem value="">Todos os Status</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+                <SelectItem value="with_claims">Com Claims</SelectItem>
+                <SelectItem value="completed">Concluído</SelectItem>
+              </SelectContent>
+            </Select>
 
-            {/* Status do claim */}
-            <div>
-              <label className="block text-sm font-medium mb-2">Status</label>
-              <Select 
-                value={advancedFilters.statusClaim || ''} 
-                onValueChange={(value) => updateAdvancedFilters({
-                  statusClaim: value
-                })}
+            {/* Contas ML */}
+            <Select 
+              value={advancedFilters.contasSelecionadas.length === mlAccounts?.length ? "todas" : 
+                     advancedFilters.contasSelecionadas.length === 1 ? advancedFilters.contasSelecionadas[0] : "multiplas"}
+              onValueChange={(value) => {
+                if (value === "todas") {
+                  updateAdvancedFilters({
+                    contasSelecionadas: mlAccounts?.map(acc => acc.id) || []
+                  });
+                }
+              }}
+            >
+              <SelectTrigger className="w-[120px] bg-slate-800 border-slate-600 text-white">
+                <SelectValue placeholder="Todas" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-800 border-slate-600">
+                <SelectItem value="todas">Todas</SelectItem>
+                {mlAccounts?.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Data Início */}
+            <Input
+              type="date"
+              value={advancedFilters.dataInicio || ''}
+              onChange={(e) => updateAdvancedFilters({
+                dataInicio: e.target.value
+              })}
+              className="w-[140px] bg-slate-800 border-slate-600 text-white"
+            />
+
+            {/* Data Fim */}
+            <Input
+              type="date"
+              value={advancedFilters.dataFim || ''}
+              onChange={(e) => updateAdvancedFilters({
+                dataFim: e.target.value
+              })}
+              className="w-[140px] bg-slate-800 border-slate-600 text-white"
+            />
+
+            {/* Botão Atualizar */}
+            <Button 
+              onClick={buscarComFiltros}
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Atualizar
+            </Button>
+
+            {/* Botão Análise API */}
+            <Button 
+              variant="outline"
+              onClick={toggleAnalytics}
+              className="border-slate-600 text-white hover:bg-slate-700 flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Análise API
+            </Button>
+          </div>
+
+          {/* Auto-refresh personalizado - compacto */}
+          <div className="mt-4 p-3 bg-slate-800 rounded-lg">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-white">🔄 Auto-refresh:</label>
+              <Input
+                type="number"
+                min="1"
+                max="1440"
+                value={advancedFilters.autoRefreshEnabled ? Math.floor(advancedFilters.autoRefreshInterval / 60) : ""}
+                onChange={(e) => {
+                  const minutes = parseInt(e.target.value) || 0;
+                  const seconds = minutes * 60;
+                  updateAdvancedFilters({
+                    autoRefreshEnabled: minutes > 0,
+                    autoRefreshInterval: seconds > 0 ? seconds : 3600
+                  });
+                }}
+                placeholder="Minutos"
+                className="w-20 bg-slate-700 border-slate-600 text-white text-sm"
+              />
+              <span className="text-sm text-gray-400">min</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => updateAdvancedFilters({ autoRefreshEnabled: false })}
+                disabled={!advancedFilters.autoRefreshEnabled}
+                className="border-slate-600 text-white hover:bg-slate-700"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos os status</SelectItem>
-                  <SelectItem value="cancelled">Cancelado</SelectItem>
-                  <SelectItem value="with_claims">Com Claims</SelectItem>
-                  <SelectItem value="completed">Concluído</SelectItem>
-                </SelectContent>
-              </Select>
+                Desativar
+              </Button>
+              {advancedFilters.autoRefreshEnabled && (
+                <div className="text-xs text-gray-400">
+                  Próxima: {autoRefresh?.timeUntilRefresh || 0}s
+                  {autoRefresh?.isRefreshing && " (atualizando...)"}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
