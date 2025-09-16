@@ -658,6 +658,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                     <tr className="bg-muted/50 dark:bg-muted border-b">
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Claim ID</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
@@ -667,8 +668,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📦 Return</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">⚖️ Mediação</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📎 Anexos</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Criação</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[140px]">Datas</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo Cancelamento</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Ações</th>
@@ -719,10 +719,12 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                               <div className="font-medium text-foreground truncate" title={devolucao.produto_titulo}>
                                 {devolucao.produto_titulo || 'N/A'}
                               </div>
-                              <div className="text-xs text-muted-foreground truncate">
-                                Claim: {devolucao.claim_id || 'N/A'}
-                              </div>
                             </div>
+                          </td>
+
+                          {/* Claim ID */}
+                          <td className="px-3 py-3 font-medium text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                            {devolucao.claim_id || 'N/A'}
                           </td>
                           
                           {/* SKU */}
@@ -794,22 +796,26 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             )}
                           </td>
                           
-                          {/* Data Criação */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </td>
-                          
-                          {/* Data Atualização */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
+                          {/* Datas Combinadas */}
+                          <td className="px-3 py-3">
+                            <div className="space-y-1 text-sm">
+                              <div className="text-foreground">
+                                <span className="text-muted-foreground text-xs">Criado:</span><br />
+                                {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                })}
+                              </div>
+                              <div className="text-foreground">
+                                <span className="text-muted-foreground text-xs">Atualizado:</span><br />
+                                {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                })}
+                              </div>
+                            </div>
                           </td>
                           
                           {/* Tipo */}
