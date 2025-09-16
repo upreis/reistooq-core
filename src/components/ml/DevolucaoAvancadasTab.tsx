@@ -55,6 +55,78 @@ interface DevolucaoAvancada {
   dados_return?: any;
   created_at: string;
   updated_at: string;
+  
+  // Novas colunas PHASE 1 - Mensagens e Comunicação
+  timeline_mensagens?: any;
+  ultima_mensagem_data?: string;
+  ultima_mensagem_remetente?: string;
+  mensagens_nao_lidas?: number;
+  numero_interacoes?: number;
+  anexos_count?: number;
+  anexos_comprador?: any;
+  anexos_vendedor?: any;
+  anexos_ml?: any;
+  
+  // Datas e Prazos
+  data_inicio_mediacao?: string;
+  data_primeira_acao?: string;
+  data_estimada_troca?: string;
+  data_limite_troca?: string;
+  data_vencimento_acao?: string;
+  dias_restantes_acao?: number;
+  prazo_revisao_dias?: number;
+  
+  // Rastreamento e Logística
+  codigo_rastreamento?: string;
+  transportadora?: string;
+  status_rastreamento?: string;
+  url_rastreamento?: string;
+  endereco_destino?: any;
+  
+  // Custos e Financeiro
+  moeda_custo?: string;
+  custo_envio_devolucao?: number;
+  valor_compensacao?: number;
+  valor_diferenca_troca?: number;
+  descricao_custos?: any;
+  responsavel_custo?: string;
+  
+  // Classificação e Resolução
+  tipo_claim?: string;
+  subtipo_claim?: string;
+  motivo_categoria?: string;
+  nivel_prioridade?: string;
+  tags_automaticas?: string[];
+  metodo_resolucao?: string;
+  resultado_final?: string;
+  resultado_mediacao?: string;
+  status_moderacao?: string;
+  impacto_reputacao?: string;
+  
+  // Métricas e KPIs
+  tempo_resposta_medio?: number;
+  tempo_total_resolucao?: number;
+  total_evidencias?: number;
+  taxa_satisfacao?: number;
+  satisfacao_comprador?: string;
+  seller_reputation?: any;
+  buyer_reputation?: any;
+  
+  // Estados e Flags
+  escalado_para_ml?: boolean;
+  em_mediacao?: boolean;
+  acao_seller_necessaria?: boolean;
+  eh_troca?: boolean;
+  
+  // Dados Detalhados
+  detalhes_mediacao?: any;
+  historico_status?: any;
+  proxima_acao_requerida?: string;
+  produto_troca_id?: string;
+  status_produto_novo?: string;
+  mediador_ml?: string;
+  usuario_ultima_acao?: string;
+  marketplace_origem?: string;
 }
 
 interface MLAccount {
@@ -263,7 +335,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       'Tipo',
       'Data Criação',
       'Data Fechamento',
-      'Última Atualização'
+      'Última Atualização',
+      'Número Mensagens',
+      'Mensagens Não Lidas',
+      'Dias Restantes Ação',
+      'Código Rastreamento',
+      'Transportadora',
+      'Anexos Count',
+      'Em Mediação',
+      'Nível Prioridade',
+      'Método Resolução'
     ];
 
     const csvData = devolucoesFiltradas.map(dev => [
@@ -275,10 +356,19 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       dev.valor_retido || '',
       dev.status_devolucao || '',
       'N/A',
-      'N/A',
+      dev.tipo_claim || 'N/A',
       dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString() : '',
       'N/A',
-      dev.updated_at ? new Date(dev.updated_at).toLocaleDateString() : ''
+      dev.updated_at ? new Date(dev.updated_at).toLocaleDateString() : '',
+      dev.numero_interacoes || 0,
+      dev.mensagens_nao_lidas || 0,
+      dev.dias_restantes_acao || '',
+      dev.codigo_rastreamento || '',
+      dev.transportadora || '',
+      dev.anexos_count || 0,
+      dev.em_mediacao ? 'Sim' : 'Não',
+      dev.nivel_prioridade || '',
+      dev.metodo_resolucao || ''
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -668,6 +758,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📦 Return</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">⚖️ Mediação</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📎 Anexos</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[70px]">💬 Msgs</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔔 Não Lidas</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Dias Rest.</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">🚛 Rastreio</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Criação</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo</th>
@@ -797,6 +891,57 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             )}
                           </td>
                           
+                          {/* Mensagens */}
+                          <td className="px-3 py-3 text-center">
+                            <span className="text-blue-600 dark:text-blue-400 font-medium">
+                              {devolucao.numero_interacoes || 0}
+                            </span>
+                          </td>
+                          
+                          {/* Mensagens Não Lidas */}
+                          <td className="px-3 py-3 text-center">
+                            {(devolucao.mensagens_nao_lidas && devolucao.mensagens_nao_lidas > 0) ? (
+                              <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-1 rounded-full text-xs font-semibold">
+                                {devolucao.mensagens_nao_lidas}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Dias Restantes */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.dias_restantes_acao !== null && devolucao.dias_restantes_acao !== undefined ? (
+                              <span className={`font-medium ${
+                                devolucao.dias_restantes_acao <= 3 
+                                  ? 'text-red-600 dark:text-red-400' 
+                                  : devolucao.dias_restantes_acao <= 7 
+                                  ? 'text-yellow-600 dark:text-yellow-400' 
+                                  : 'text-green-600 dark:text-green-400'
+                              }`}>
+                                {devolucao.dias_restantes_acao}d
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Rastreamento */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.codigo_rastreamento ? (
+                              <div className="text-xs">
+                                <div className="font-mono text-blue-600 dark:text-blue-400" title={devolucao.codigo_rastreamento}>
+                                  {devolucao.codigo_rastreamento.substring(0, 8)}...
+                                </div>
+                                <div className="text-muted-foreground">
+                                  {devolucao.transportadora || 'N/A'}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
                           {/* Data Criação */}
                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
                             {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
@@ -918,6 +1063,67 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                                 </p>
                               </div>
                             </div>
+                            
+                            {/* Novas colunas - Mensagens */}
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-blue-600" />
+                              <div>
+                                <span className="text-gray-500 dark:text-gray-400 block">Mensagens</span>
+                                <p className="font-medium dark:text-white">{devolucao.numero_interacoes || 0}</p>
+                              </div>
+                            </div>
+                            
+                            {/* Mensagens Não Lidas */}
+                            {(devolucao.mensagens_nao_lidas && devolucao.mensagens_nao_lidas > 0) && (
+                              <div className="flex items-center gap-2">
+                                <div className="h-4 w-4 bg-red-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs font-bold">{devolucao.mensagens_nao_lidas}</span>
+                                </div>
+                                <div>
+                                  <span className="text-gray-500 dark:text-gray-400 block">Não Lidas</span>
+                                  <p className="font-medium text-red-600 dark:text-red-400">{devolucao.mensagens_nao_lidas}</p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Dias Restantes */}
+                            {devolucao.dias_restantes_acao !== null && devolucao.dias_restantes_acao !== undefined && (
+                              <div className="flex items-center gap-2">
+                                <Clock className={`h-4 w-4 ${
+                                  devolucao.dias_restantes_acao <= 3 
+                                    ? 'text-red-600' 
+                                    : devolucao.dias_restantes_acao <= 7 
+                                    ? 'text-yellow-600' 
+                                    : 'text-green-600'
+                                }`} />
+                                <div>
+                                  <span className="text-gray-500 dark:text-gray-400 block">Dias Rest.</span>
+                                  <p className={`font-medium ${
+                                    devolucao.dias_restantes_acao <= 3 
+                                      ? 'text-red-600 dark:text-red-400' 
+                                      : devolucao.dias_restantes_acao <= 7 
+                                      ? 'text-yellow-600 dark:text-yellow-400' 
+                                      : 'text-green-600 dark:text-green-400'
+                                  }`}>
+                                    {devolucao.dias_restantes_acao}d
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Rastreamento */}
+                            {devolucao.codigo_rastreamento && (
+                              <div className="flex items-center gap-2">
+                                <Package className="h-4 w-4 text-blue-600" />
+                                <div>
+                                  <span className="text-gray-500 dark:text-gray-400 block">Rastreio</span>
+                                  <p className="font-medium dark:text-white font-mono text-xs" title={devolucao.codigo_rastreamento}>
+                                    {devolucao.codigo_rastreamento.substring(0, 8)}...
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">{devolucao.transportadora || 'N/A'}</p>
+                                </div>
+                              </div>
+                            )}
                            
                            <div className="flex items-center gap-2">
                             <Wrench className="h-4 w-4 text-orange-600" />
