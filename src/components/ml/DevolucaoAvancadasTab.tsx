@@ -109,77 +109,87 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const analytics = useDevolucaoAnalytics(devolucoesFiltradas);
   const exportacao = useDevolucaoExportacao();
 
-  // Função para extrair motivo do cancelamento
+  // Função para extrair motivo do cancelamento (garantindo string)
   const getMotivoCancelamento = useCallback((devolucao: DevolucaoAvancada) => {
-    // Tentar extrair o motivo dos dados JSON
-    if (devolucao.dados_claim) {
-      const claim = devolucao.dados_claim;
-      if (claim.reason) return claim.reason;
-      if (claim.cancel_reason) return claim.cancel_reason;
-      if (claim.cancellation_reason) return claim.cancellation_reason;
-      if (claim.resolution && claim.resolution.reason) return claim.resolution.reason;
-    }
-    
-    if (devolucao.dados_return) {
-      const returnData = devolucao.dados_return;
-      if (returnData.reason) return returnData.reason;
-      if (returnData.cancel_reason) return returnData.cancel_reason;
-      if (returnData.cancellation_reason) return returnData.cancellation_reason;
-    }
+    try {
+      // Tentar extrair o motivo dos dados JSON
+      if (devolucao.dados_claim) {
+        const claim = devolucao.dados_claim;
+        if (claim.reason && typeof claim.reason === 'string') return claim.reason;
+        if (claim.cancel_reason && typeof claim.cancel_reason === 'string') return claim.cancel_reason;
+        if (claim.cancellation_reason && typeof claim.cancellation_reason === 'string') return claim.cancellation_reason;
+        if (claim.resolution?.reason && typeof claim.resolution.reason === 'string') return claim.resolution.reason;
+      }
+      
+      if (devolucao.dados_return) {
+        const returnData = devolucao.dados_return;
+        if (returnData.reason && typeof returnData.reason === 'string') return returnData.reason;
+        if (returnData.cancel_reason && typeof returnData.cancel_reason === 'string') return returnData.cancel_reason;
+        if (returnData.cancellation_reason && typeof returnData.cancellation_reason === 'string') return returnData.cancellation_reason;
+      }
 
-    if (devolucao.dados_order) {
-      const order = devolucao.dados_order;
-      if (order.cancel_reason) return order.cancel_reason;
-      if (order.cancellation_reason) return order.cancellation_reason;
-    }
+      if (devolucao.dados_order) {
+        const order = devolucao.dados_order;
+        if (order.cancel_reason && typeof order.cancel_reason === 'string') return order.cancel_reason;
+        if (order.cancellation_reason && typeof order.cancellation_reason === 'string') return order.cancellation_reason;
+      }
 
-    // Se não tiver motivo específico mas estiver cancelado
-    if (devolucao.status_devolucao === 'cancelled') {
-      return 'Cancelado';
+      // Se não tiver motivo específico mas estiver cancelado
+      if (devolucao.status_devolucao === 'cancelled') {
+        return 'Cancelado';
+      }
+      
+      return 'N/A';
+    } catch (error) {
+      console.error('Erro ao extrair motivo:', error);
+      return 'N/A';
     }
-    
-    return 'N/A';
   }, []);
 
-  // Função para extrair texto detalhado do motivo
+  // Função para extrair texto detalhado do motivo (garantindo string)
   const getTextoMotivoDetalhado = useCallback((devolucao: DevolucaoAvancada) => {
-    // Buscar texto mais detalhado nos dados JSON
-    if (devolucao.dados_claim) {
-      const claim = devolucao.dados_claim;
-      if (claim.reason_description) return claim.reason_description;
-      if (claim.resolution?.description) return claim.resolution.description;
-      if (claim.resolution?.comments) return claim.resolution.comments;
-      if (claim.reason_detail) return claim.reason_detail;
-      if (claim.description) return claim.description;
-      if (claim.comments) return claim.comments;
-      if (claim.explanation) return claim.explanation;
-    }
-    
-    if (devolucao.dados_return) {
-      const returnData = devolucao.dados_return;
-      if (returnData.reason_description) return returnData.reason_description;
-      if (returnData.description) return returnData.description;
-      if (returnData.comments) return returnData.comments;
-      if (returnData.explanation) return returnData.explanation;
-      if (returnData.details) return returnData.details;
-    }
+    try {
+      // Buscar texto mais detalhado nos dados JSON
+      if (devolucao.dados_claim) {
+        const claim = devolucao.dados_claim;
+        if (claim.reason_description && typeof claim.reason_description === 'string') return claim.reason_description;
+        if (claim.resolution?.description && typeof claim.resolution.description === 'string') return claim.resolution.description;
+        if (claim.resolution?.comments && typeof claim.resolution.comments === 'string') return claim.resolution.comments;
+        if (claim.reason_detail && typeof claim.reason_detail === 'string') return claim.reason_detail;
+        if (claim.description && typeof claim.description === 'string') return claim.description;
+        if (claim.comments && typeof claim.comments === 'string') return claim.comments;
+        if (claim.explanation && typeof claim.explanation === 'string') return claim.explanation;
+      }
+      
+      if (devolucao.dados_return) {
+        const returnData = devolucao.dados_return;
+        if (returnData.reason_description && typeof returnData.reason_description === 'string') return returnData.reason_description;
+        if (returnData.description && typeof returnData.description === 'string') return returnData.description;
+        if (returnData.comments && typeof returnData.comments === 'string') return returnData.comments;
+        if (returnData.explanation && typeof returnData.explanation === 'string') return returnData.explanation;
+        if (returnData.details && typeof returnData.details === 'string') return returnData.details;
+      }
 
-    if (devolucao.dados_order) {
-      const order = devolucao.dados_order;
-      if (order.cancel_description) return order.cancel_description;
-      if (order.cancellation_description) return order.cancellation_description;
-      if (order.cancel_detail) return order.cancel_detail;
-      if (order.comments) return order.comments;
-    }
+      if (devolucao.dados_order) {
+        const order = devolucao.dados_order;
+        if (order.cancel_description && typeof order.cancel_description === 'string') return order.cancel_description;
+        if (order.cancellation_description && typeof order.cancellation_description === 'string') return order.cancellation_description;
+        if (order.cancel_detail && typeof order.cancel_detail === 'string') return order.cancel_detail;
+        if (order.comments && typeof order.comments === 'string') return order.comments;
+      }
 
-    // Buscar em mensagens se disponível
-    if (devolucao.dados_mensagens && Array.isArray(devolucao.dados_mensagens)) {
-      const ultimaMensagem = devolucao.dados_mensagens[devolucao.dados_mensagens.length - 1];
-      if (ultimaMensagem?.text) return ultimaMensagem.text;
-      if (ultimaMensagem?.message) return ultimaMensagem.message;
+      // Buscar em mensagens se disponível
+      if (devolucao.dados_mensagens && Array.isArray(devolucao.dados_mensagens) && devolucao.dados_mensagens.length > 0) {
+        const ultimaMensagem = devolucao.dados_mensagens[devolucao.dados_mensagens.length - 1];
+        if (ultimaMensagem?.text && typeof ultimaMensagem.text === 'string') return ultimaMensagem.text;
+        if (ultimaMensagem?.message && typeof ultimaMensagem.message === 'string') return ultimaMensagem.message;
+      }
+      
+      return 'Sem detalhes disponíveis';
+    } catch (error) {
+      console.error('Erro ao extrair texto detalhado:', error);
+      return 'Sem detalhes disponíveis';
     }
-    
-    return 'Sem detalhes disponíveis';
   }, []);
 
   // Tempo real para demonstração
@@ -719,8 +729,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                          <td className="p-3 max-w-xs">
                            <div className="flex items-center gap-2">
                              <XCircle className="h-4 w-4 text-red-600" />
-                             <span className="truncate" title={getMotivoCancelamento(devolucao)}>
-                               {getMotivoCancelamento(devolucao)}
+                             <span className="truncate" title={String(getMotivoCancelamento(devolucao))}>
+                               {String(getMotivoCancelamento(devolucao))}
                              </span>
                            </div>
                          </td>
@@ -743,8 +753,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                          <td className="p-3 max-w-xs">
                            <div className="flex items-center gap-2">
                              <FileText className="h-4 w-4 text-blue-600" />
-                             <span className="truncate text-sm" title={getTextoMotivoDetalhado(devolucao)}>
-                               {getTextoMotivoDetalhado(devolucao)}
+                             <span className="truncate text-sm" title={String(getTextoMotivoDetalhado(devolucao))}>
+                               {String(getTextoMotivoDetalhado(devolucao))}
                              </span>
                            </div>
                          </td>
@@ -829,13 +839,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                            
                            <div className="flex items-center gap-2">
                              <XCircle className="h-4 w-4 text-red-600" />
-                             <div>
-                               <span className="text-gray-500 block">Motivo</span>
-                               <p className="font-medium truncate" title={getMotivoCancelamento(devolucao)}>
-                                 {getMotivoCancelamento(devolucao)}
-                               </p>
-                             </div>
-                           </div>
+                              <div>
+                                <span className="text-gray-500 block">Motivo</span>
+                                <p className="font-medium truncate" title={String(getMotivoCancelamento(devolucao))}>
+                                  {String(getMotivoCancelamento(devolucao))}
+                                </p>
+                              </div>
+                            </div>
                            
                            <div className="flex items-center gap-2">
                             <Wrench className="h-4 w-4 text-orange-600" />
@@ -849,8 +859,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             <FileText className="h-4 w-4 text-blue-600" />
                             <div>
                               <span className="text-gray-500 block">Descrição</span>
-                              <p className="font-medium text-sm truncate" title={getTextoMotivoDetalhado(devolucao)}>
-                                {getTextoMotivoDetalhado(devolucao)}
+                              <p className="font-medium text-sm truncate" title={String(getTextoMotivoDetalhado(devolucao))}>
+                                {String(getTextoMotivoDetalhado(devolucao))}
                               </p>
                             </div>
                           </div>
@@ -1054,7 +1064,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       <XCircle className="h-5 w-5 text-red-600" />
                       <div>
                         <Label className="text-sm text-gray-500">Motivo do Cancelamento</Label>
-                        <p className="font-medium">{getMotivoCancelamento(selectedDevolucao)}</p>
+                        <p className="font-medium">{String(getMotivoCancelamento(selectedDevolucao))}</p>
                       </div>
                     </div>
                     
@@ -1063,7 +1073,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       <div className="flex-1">
                         <Label className="text-sm text-gray-500">Descrição Detalhada do Motivo</Label>
                         <p className="font-medium text-sm leading-relaxed">
-                          {getTextoMotivoDetalhado(selectedDevolucao)}
+                          {String(getTextoMotivoDetalhado(selectedDevolucao))}
                         </p>
                       </div>
                     </div>

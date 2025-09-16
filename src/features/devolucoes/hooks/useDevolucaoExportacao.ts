@@ -220,28 +220,36 @@ export function useDevolucaoExportacao() {
 // Funções auxiliares
 function processDataForExport(data: any[], options: ExportOptions) {
   return data.map(item => {
-    // Extrair motivo do cancelamento
-    const getMotivoCancelamento = (devolucao: any) => {
-      if (devolucao.dados_claim?.reason) return devolucao.dados_claim.reason;
-      if (devolucao.dados_claim?.cancel_reason) return devolucao.dados_claim.cancel_reason;
-      if (devolucao.dados_return?.reason) return devolucao.dados_return.reason;
-      if (devolucao.dados_order?.cancel_reason) return devolucao.dados_order.cancel_reason;
-      if (devolucao.status_devolucao === 'cancelled') return 'Cancelado';
-      return 'N/A';
+    // Extrair motivo do cancelamento (garantindo string)
+    const getMotivoCancelamento = (devolucao: any): string => {
+      try {
+        if (devolucao.dados_claim?.reason && typeof devolucao.dados_claim.reason === 'string') return devolucao.dados_claim.reason;
+        if (devolucao.dados_claim?.cancel_reason && typeof devolucao.dados_claim.cancel_reason === 'string') return devolucao.dados_claim.cancel_reason;
+        if (devolucao.dados_return?.reason && typeof devolucao.dados_return.reason === 'string') return devolucao.dados_return.reason;
+        if (devolucao.dados_order?.cancel_reason && typeof devolucao.dados_order.cancel_reason === 'string') return devolucao.dados_order.cancel_reason;
+        if (devolucao.status_devolucao === 'cancelled') return 'Cancelado';
+        return 'N/A';
+      } catch {
+        return 'N/A';
+      }
     };
 
-    // Extrair descrição detalhada do motivo
-    const getTextoMotivoDetalhado = (devolucao: any) => {
-      if (devolucao.dados_claim?.reason_description) return devolucao.dados_claim.reason_description;
-      if (devolucao.dados_claim?.resolution?.description) return devolucao.dados_claim.resolution.description;
-      if (devolucao.dados_claim?.description) return devolucao.dados_claim.description;
-      if (devolucao.dados_return?.reason_description) return devolucao.dados_return.reason_description;
-      if (devolucao.dados_return?.description) return devolucao.dados_return.description;
-      if (devolucao.dados_order?.cancel_description) return devolucao.dados_order.cancel_description;
-      if (devolucao.dados_mensagens?.[devolucao.dados_mensagens.length - 1]?.text) {
-        return devolucao.dados_mensagens[devolucao.dados_mensagens.length - 1].text;
+    // Extrair descrição detalhada do motivo (garantindo string)
+    const getTextoMotivoDetalhado = (devolucao: any): string => {
+      try {
+        if (devolucao.dados_claim?.reason_description && typeof devolucao.dados_claim.reason_description === 'string') return devolucao.dados_claim.reason_description;
+        if (devolucao.dados_claim?.resolution?.description && typeof devolucao.dados_claim.resolution.description === 'string') return devolucao.dados_claim.resolution.description;
+        if (devolucao.dados_claim?.description && typeof devolucao.dados_claim.description === 'string') return devolucao.dados_claim.description;
+        if (devolucao.dados_return?.reason_description && typeof devolucao.dados_return.reason_description === 'string') return devolucao.dados_return.reason_description;
+        if (devolucao.dados_return?.description && typeof devolucao.dados_return.description === 'string') return devolucao.dados_return.description;
+        if (devolucao.dados_order?.cancel_description && typeof devolucao.dados_order.cancel_description === 'string') return devolucao.dados_order.cancel_description;
+        if (devolucao.dados_mensagens?.[devolucao.dados_mensagens.length - 1]?.text && typeof devolucao.dados_mensagens[devolucao.dados_mensagens.length - 1].text === 'string') {
+          return devolucao.dados_mensagens[devolucao.dados_mensagens.length - 1].text;
+        }
+        return 'Sem detalhes disponíveis';
+      } catch {
+        return 'Sem detalhes disponíveis';
       }
-      return 'Sem detalhes disponíveis';
     };
 
     const baseData = {
