@@ -48,3 +48,27 @@ export function fail(message: string, status: number = 400) {
     }
   );
 }
+
+export async function getMlConfig(supabase: any, accountId: string) {
+  try {
+    const { data, error } = await supabase.functions.invoke('get-ml-token', {
+      body: {
+        integration_account_id: accountId,
+        provider: 'mercadolivre'
+      }
+    });
+
+    if (error || !data?.access_token) {
+      console.error('❌ Erro ao obter token ML:', error);
+      return null;
+    }
+
+    return {
+      access_token: data.access_token,
+      account_identifier: data.account_identifier
+    };
+  } catch (error) {
+    console.error('❌ Erro ao buscar config ML:', error);
+    return null;
+  }
+}
