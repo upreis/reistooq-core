@@ -380,11 +380,11 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           if (apiResponse?.success && apiResponse?.data) {
             const devolucoesDaAPI = apiResponse.data;
             
-            // Processar dados vindos diretamente da API
+            // Processar dados vindos diretamente da API com enriquecimento completo
             const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => ({
               id: `api_${item.order_id}_${accountId}_${index}`, // ID único para API
               order_id: item.order_id.toString(),
-              claim_id: item.claim_id || null,
+              claim_id: item.claim_details?.id || null,
               data_criacao: item.date_created,
               status_devolucao: item.status || 'cancelled', // Definir como cancelado por padrão
               valor_retido: parseFloat(item.amount || 0),
@@ -392,10 +392,11 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               sku: item.resource_data?.sku || '',
               quantidade: item.resource_data?.quantity || 1,
               comprador_nickname: item.buyer?.nickname || 'Desconhecido',
+              // DADOS ENRIQUECIDOS: mapear corretamente da resposta da API
               dados_order: item.order_data || {},
-              dados_claim: item.claim_data || {},
-              dados_mensagens: item.messages || null,
-              dados_return: item.return_data || null,
+              dados_claim: item.claim_details || {},
+              dados_mensagens: item.claim_messages || {},
+              dados_return: item.return_details_v2 || item.return_details_v1 || {},
               integration_account_id: accountId,
               account_name: account.name,
               created_at: new Date().toISOString(),
