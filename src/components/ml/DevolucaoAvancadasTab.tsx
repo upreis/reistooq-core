@@ -803,19 +803,65 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   if (dadosEnriquecidos.length > 0) {
                     console.log('🎉 Dados enriquecidos obtidos:', dadosEnriquecidos);
                     
-                    // Aplicar dados diretamente no estado (temporário para visualização)
-                    const dadosComEnriquecimento = dadosEnriquecidos.map(dev => ({
-                      ...dev,
-                      // Garantir que todos os campos enriquecidos estejam presentes
-                      dados_completos: true,
-                      enriquecimento_fonte: 'api_tempo_real'
-                    }));
+                    // Criar modal para exibir dados enriquecidos
+                    const primeiraDevol = dadosEnriquecidos[0];
                     
-                    console.log('📊 Primeira devolução enriquecida:', dadosComEnriquecimento[0]);
-                    toast.success(`✅ ${dadosEnriquecidos.length} devoluções enriquecidas carregadas na tela!`);
+                    // Preparar dados estruturados para exibição
+                    const dadosParaExibir = {
+                      'Dados Básicos': {
+                        'Order ID': primeiraDevol.order_id,
+                        'Claim ID': primeiraDevol.claim_id || 'N/A',
+                        'Produto': primeiraDevol.produto_titulo,
+                        'SKU': primeiraDevol.sku,
+                        'Quantidade': primeiraDevol.quantidade,
+                        'Valor': `R$ ${primeiraDevol.valor_retido}`
+                      },
+                      'Classificação': {
+                        'Tipo Claim': primeiraDevol.tipo_claim,
+                        'Subtipo': primeiraDevol.subtipo_claim,
+                        'Status': primeiraDevol.status_devolucao,
+                        'Em Mediação': primeiraDevol.em_mediacao ? 'Sim' : 'Não',
+                        'Prioridade': primeiraDevol.nivel_prioridade
+                      },
+                      'Comunicação': {
+                        'Interações': primeiraDevol.numero_interacoes || 0,
+                        'Mensagens Não Lidas': primeiraDevol.mensagens_nao_lidas || 0,
+                        'Anexos': primeiraDevol.anexos_count || 0,
+                        'Última Mensagem': primeiraDevol.ultima_mensagem_data || 'N/A'
+                      },
+                      'Logística': {
+                        'Código Rastreamento': primeiraDevol.codigo_rastreamento || 'N/A',
+                        'Transportadora': primeiraDevol.transportadora || 'N/A',
+                        'Status Entrega': primeiraDevol.status_rastreamento || 'N/A'
+                      },
+                      'Financeiro': {
+                        'Custo Envio': primeiraDevol.custo_envio_devolucao ? `R$ ${primeiraDevol.custo_envio_devolucao}` : 'N/A',
+                        'Compensação': primeiraDevol.valor_compensacao ? `R$ ${primeiraDevol.valor_compensacao}` : 'N/A',
+                        'Responsável Custo': primeiraDevol.responsavel_custo || 'N/A'
+                      },
+                      'Controle': {
+                        'Dados Completos': primeiraDevol.dados_completos ? 'Sim' : 'Não',
+                        'Ação Seller Necessária': primeiraDevol.acao_seller_necessaria ? 'Sim' : 'Não',
+                        'Escalado para ML': primeiraDevol.escalado_para_ml ? 'Sim' : 'Não'
+                      }
+                    };
                     
-                    // Forçar refresh para mostrar os dados
-                    updateFilters({ searchTerm: '' }); // Trigger do sistema de filtros
+                    // Criar conteúdo estruturado
+                    let conteudoModal = `📊 DADOS ENRIQUECIDOS (${dadosEnriquecidos.length} devoluções carregadas)\n\n`;
+                    
+                    Object.entries(dadosParaExibir).forEach(([categoria, dados]) => {
+                      conteudoModal += `🔹 ${categoria.toUpperCase()}\n`;
+                      Object.entries(dados).forEach(([campo, valor]) => {
+                        conteudoModal += `   ${campo}: ${valor}\n`;
+                      });
+                      conteudoModal += '\n';
+                    });
+                    
+                    // Exibir em alert para teste (depois pode ser um modal)
+                    alert(conteudoModal);
+                    
+                    console.log('📊 Primeira devolução enriquecida:', primeiraDevol);
+                    toast.success(`✅ ${dadosEnriquecidos.length} devoluções enriquecidas carregadas!`);
                     
                   } else {
                     toast.warning('⚠️ Nenhuma devolução enriquecida encontrada');
