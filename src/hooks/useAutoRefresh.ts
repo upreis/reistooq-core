@@ -27,6 +27,12 @@ export function useAutoRefresh({
 
   const intervalRef = useRef<NodeJS.Timeout>();
   const retryTimeoutRef = useRef<NodeJS.Timeout>();
+  const onRefreshRef = useRef(onRefresh);
+
+  // Atualizar ref quando onRefresh mudar
+  useEffect(() => {
+    onRefreshRef.current = onRefresh;
+  }, [onRefresh]);
 
   // Função de refresh com retry
   const performRefresh = useCallback(async () => {
@@ -35,7 +41,7 @@ export function useAutoRefresh({
     setIsRefreshing(true);
     try {
       console.log('🔄 Auto-refresh executando...');
-      await onRefresh();
+      await onRefreshRef.current();
       setLastRefresh(new Date());
       setRetryCount(0);
       console.log('✅ Auto-refresh concluído');
@@ -57,7 +63,7 @@ export function useAutoRefresh({
     } finally {
       setIsRefreshing(false);
     }
-  }, [onRefresh, isRefreshing, retryCount, maxRetries, retryDelay]);
+  }, [isRefreshing, retryCount, maxRetries, retryDelay]);
 
   // Configurar intervalo
   useEffect(() => {
@@ -97,7 +103,7 @@ export function useAutoRefresh({
         clearTimeout(retryTimeoutRef.current);
       }
     };
-  }, [enabled, interval, performRefresh]);
+  }, [enabled, interval]); // Remover performRefresh das dependências
 
   // Refresh manual
   const manualRefresh = useCallback(async () => {
@@ -117,7 +123,7 @@ export function useAutoRefresh({
         performRefresh();
       }, interval * 1000);
     }
-  }, [enabled, interval, performRefresh]);
+  }, [enabled, interval]);
 
   // Pausar/retomar
   const pauseRefresh = useCallback(() => {
@@ -134,7 +140,7 @@ export function useAutoRefresh({
         performRefresh();
       }, interval * 1000);
     }
-  }, [enabled, interval, performRefresh]);
+  }, [enabled, interval]);
 
   // Tempo até próximo refresh
   const getTimeUntilRefresh = useCallback(() => {
