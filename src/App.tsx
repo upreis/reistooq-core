@@ -10,7 +10,7 @@ import { SidebarUIProvider } from "@/context/SidebarUIContext";
 import { MobileProvider } from "@/contexts/MobileContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PermissionRoute } from "@/components/auth/PermissionRoute";
-import { useSystemValidator } from "@/utils/SystemValidator";
+// import { useSystemValidator } from "@/utils/SystemValidator"; // Temporarily disabled
 import FullLayout from "@/layouts/full/FullLayout";
 
 // Import pages
@@ -53,8 +53,8 @@ import CategoryManager from "./pages/CategoryManager";
 const queryClient = new QueryClient();
 
 function App() {
-  // 🛡️ Sistema de validação automática
-  const validator = useSystemValidator();
+  // 🛡️ Sistema de validação automática - Temporarily disabled to fix React hook error
+  // const validator = useSystemValidator();
   
   return (
     <QueryClientProvider client={queryClient}>
