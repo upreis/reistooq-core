@@ -749,34 +749,26 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               Métricas Avançadas
             </Button>
 
-            {/* 🔍 BOTÃO AUDITORIA COMPLETA ATUALIZADA */}
+            {/* 🔍 BOTÃO AUDITORIA COMPLETA - FIXO E VISÍVEL */}
             <Button
               variant="outline"
               onClick={() => {
+                console.log('🔍 Clicou no botão Auditoria Completa');
+                
                 if (devolucoesFiltradas.length === 0) {
                   toast.error('Nenhuma devolução para auditar. Faça uma busca primeiro.');
                   return;
                 }
                 
-                // Executar auditoria completa baseada no PDF atualizado
+                console.log('🔍 Executando auditoria completa...');
                 const auditoriaCompleta = rodarAuditoriaCompleta(devolucoesFiltradas);
                 
-                // Mostrar resumo como toast
-                const resumo = `🔍 AUDITORIA COMPLETA EXECUTADA:
-📊 Sucesso geral: ${auditoriaCompleta.estatisticas_atuais.percentual_sucesso}%
-📋 Claims: ${auditoriaCompleta.estatisticas_atuais.claims_detectados}/${auditoriaCompleta.total_registros_analisados}
-📦 Returns: ${auditoriaCompleta.estatisticas_atuais.returns_detectados}/${auditoriaCompleta.total_registros_analisados}
-⚖️ Mediações: ${auditoriaCompleta.estatisticas_atuais.mediacoes_detectadas}/${auditoriaCompleta.total_registros_analisados}
-📎 Anexos: ${auditoriaCompleta.estatisticas_atuais.anexos_detectados}/${auditoriaCompleta.total_registros_analisados}
-❌ ${auditoriaCompleta.problemas_identificados.length} problemas críticos identificados`;
-
-                console.log(resumo);
-                toast.success(`Auditoria completa! ${auditoriaCompleta.problemas_identificados.length} problemas identificados. Veja o console para detalhes completos.`);
+                toast.success(`🔍 Auditoria completa! ${auditoriaCompleta.problemas_identificados.length} problemas identificados. Veja o console para detalhes.`);
               }}
-              className="border-red-500 text-red-600 hover:bg-red-50 flex items-center gap-2"
+              className="bg-red-500 text-white hover:bg-red-600 flex items-center gap-2 px-4 py-2"
             >
               <Wrench className="h-4 w-4" />
-              Auditoria Completa
+              🔍 Auditoria Completa
             </Button>
           </div>
 
