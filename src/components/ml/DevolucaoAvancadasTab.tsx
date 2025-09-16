@@ -884,26 +884,26 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                         {/* Informações adicionais com ícones */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
                           <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                            <Clock className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                            <Clock className="h-3 w-3 text-muted-foreground" />
                             <div>
-                              <span className="text-gray-500 dark:text-gray-400">Criado em:</span>
-                              <p className="font-medium dark:text-white">{new Date(devolucao.data_criacao).toLocaleString()}</p>
+                              <span className="text-muted-foreground">Criado em:</span>
+                              <p className="font-medium">{new Date(devolucao.data_criacao).toLocaleString()}</p>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                            <Wrench className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                            <Wrench className="h-3 w-3 text-muted-foreground" />
                             <div>
-                              <span className="text-gray-500 dark:text-gray-400">Conta:</span>
-                              <p className="font-medium dark:text-white truncate">{devolucao.account_name || 'N/A'}</p>
+                              <span className="text-muted-foreground">Conta:</span>
+                              <p className="font-medium truncate">{devolucao.account_name || 'N/A'}</p>
                             </div>
                           </div>
                           
                           <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-                            <Clock className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+                            <Clock className="h-3 w-3 text-muted-foreground" />
                             <div>
-                              <span className="text-gray-500 dark:text-gray-400">Atualizado:</span>
-                              <p className="font-medium dark:text-white">{new Date(devolucao.updated_at).toLocaleString()}</p>
+                              <span className="text-muted-foreground">Atualizado:</span>
+                              <p className="font-medium">{new Date(devolucao.updated_at).toLocaleString()}</p>
                             </div>
                           </div>
                         </div>
