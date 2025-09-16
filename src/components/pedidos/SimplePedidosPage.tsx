@@ -66,7 +66,7 @@ import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
 
-import { DevolucoesMercadoLivreTab } from './devolucoes/DevolucoesMercadoLivreTab';
+import DevolucoesMercadoLivreUnificado from '@/components/devolucoes/DevolucoesMercadoLivreUnificado';
 
 
 
@@ -1219,7 +1219,7 @@ useEffect(() => {
 
 
       <TabsContent value="devolucoes" className="flex-1 overflow-auto m-0 p-6">
-        <DevolucoesMercadoLivreTab />
+        <DevolucoesMercadoLivreUnificado />
       </TabsContent>
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
