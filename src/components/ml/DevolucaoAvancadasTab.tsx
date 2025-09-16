@@ -472,30 +472,72 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </SelectContent>
             </Select>
 
-            {/* Contas ML */}
-            <Select 
-              value={advancedFilters.contasSelecionadas.length === mlAccounts?.length ? "todas" : 
-                     advancedFilters.contasSelecionadas.length === 1 ? advancedFilters.contasSelecionadas[0] : "multiplas"}
-              onValueChange={(value) => {
-                if (value === "todas") {
-                  updateAdvancedFilters({
-                    contasSelecionadas: mlAccounts?.map(acc => acc.id) || []
-                  });
-                }
-              }}
-            >
-              <SelectTrigger className="w-[120px] bg-slate-800 border-slate-600 text-white">
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600">
-                <SelectItem value="todas">Todas</SelectItem>
-                {mlAccounts?.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    {account.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Contas ML - Seleção múltipla */}
+            <div className="relative">
+              <Select 
+                value={advancedFilters.contasSelecionadas.length === 0 ? "nenhuma" : 
+                       advancedFilters.contasSelecionadas.length === mlAccounts?.length ? "todas" : "multiplas"}
+                onValueChange={() => {}} // Controlado via menu customizado
+              >
+                <SelectTrigger className="min-w-[200px] bg-slate-800 border-slate-600 text-white">
+                  <SelectValue>
+                    {advancedFilters.contasSelecionadas.length === 0 ? "Nenhuma conta" :
+                     advancedFilters.contasSelecionadas.length === mlAccounts?.length ? "Todas as contas" :
+                     `${advancedFilters.contasSelecionadas.length} conta${advancedFilters.contasSelecionadas.length > 1 ? 's' : ''} selecionada${advancedFilters.contasSelecionadas.length > 1 ? 's' : ''}`}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-600 min-w-[300px] z-50">
+                  <div className="p-2">
+                    <div className="flex items-center space-x-2 p-2 hover:bg-slate-700 rounded">
+                      <input
+                        type="checkbox"
+                        id="todas-contas"
+                        checked={advancedFilters.contasSelecionadas.length === mlAccounts?.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            updateAdvancedFilters({
+                              contasSelecionadas: mlAccounts?.map(acc => acc.id) || []
+                            });
+                          } else {
+                            updateAdvancedFilters({
+                              contasSelecionadas: []
+                            });
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <label htmlFor="todas-contas" className="text-sm text-white font-medium cursor-pointer">
+                        Todas as contas
+                      </label>
+                    </div>
+                    <div className="h-px bg-slate-600 my-2"></div>
+                    {mlAccounts?.map((account) => (
+                      <div key={account.id} className="flex items-center space-x-2 p-2 hover:bg-slate-700 rounded">
+                        <input
+                          type="checkbox"
+                          id={`conta-${account.id}`}
+                          checked={advancedFilters.contasSelecionadas.includes(account.id)}
+                          onChange={(e) => {
+                            const currentAccounts = advancedFilters.contasSelecionadas;
+                            const newAccounts = e.target.checked
+                              ? [...currentAccounts, account.id]
+                              : currentAccounts.filter(id => id !== account.id);
+                            
+                            updateAdvancedFilters({
+                              contasSelecionadas: newAccounts
+                            });
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor={`conta-${account.id}`} className="text-sm text-white cursor-pointer">
+                          {account.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Data Início */}
             <Input
