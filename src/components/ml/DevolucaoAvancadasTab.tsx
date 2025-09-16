@@ -12,6 +12,7 @@ import { useDevolucoesDemostracao } from '@/features/devolucoes/hooks/useDevoluc
 import { useDevolucaoAnalytics } from '@/features/devolucoes/hooks/useDevolucaoAnalytics';
 import { useDevolucaoExportacao } from '@/features/devolucoes/hooks/useDevolucaoExportacao';
 import { useDevolucoesFase2 } from '@/features/devolucoes/hooks/useDevolucoesFase2';
+import { useDevolucoesBusca } from '@/features/devolucoes/hooks/useDevolucoesBusca';
 import DevolucaoAnalyticsDashboard from '@/features/devolucoes/components/DevolucaoAnalyticsDashboard';
 import DevolucaoExportDialog from '@/features/devolucoes/components/DevolucaoExportDialog';
 import { auditarLoteIndicadores, debugIndicadores } from '@/dev/auditIndicadoresDevoluções';
@@ -182,6 +183,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   // Analytics e exportação
   const analytics = useDevolucaoAnalytics(devolucoesFiltradas);
   const exportacao = useDevolucaoExportacao();
+
+  // 🔍 HOOK DE BUSCA AVANÇADA
+  const devolucoesBusca = useDevolucoesBusca();
 
   // 🚀 FASE 2: HOOK PARA AS 42 NOVAS COLUNAS
   const fase2 = useDevolucoesFase2({
@@ -769,6 +773,42 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             >
               <Wrench className="h-4 w-4" />
               🔍 Auditoria Completa
+            </Button>
+
+            {/* 🚀 BOTÃO TESTE ENRIQUECIMENTO */}
+            <Button
+              variant="outline"
+              onClick={async () => {
+                console.log('🚀 Testando enriquecimento automático...');
+                
+                if (!mlAccounts || mlAccounts.length === 0) {
+                  toast.error('Nenhuma conta ML configurada para teste');
+                  return;
+                }
+                
+                toast.info('🔄 Iniciando teste de enriquecimento...');
+                
+                try {
+                  const resultados = await devolucoesBusca.sincronizarDevolucoes(mlAccounts);
+                  console.log('🎉 Resultados do enriquecimento:', resultados);
+                  toast.success(`✅ Teste concluído! ${resultados.length} devoluções processadas`);
+                  
+                  // Recarregar dados do banco
+                  const dadosAtualizados = await devolucoesBusca.buscarDoBanco();
+                  console.log(`✅ ${dadosAtualizados.length} devoluções recarregadas`);
+                  
+                  // Força refresh do componente
+                  await buscarComFiltros();
+                } catch (error) {
+                  console.error('❌ Erro no teste:', error);
+                  toast.error('Erro no teste de enriquecimento');
+                }
+              }}
+              className="bg-blue-500 text-white hover:bg-blue-600 flex items-center gap-2 px-4 py-2"
+              disabled={devolucoesBusca.loading}
+            >
+              <RefreshCw className={`h-4 w-4 ${devolucoesBusca.loading ? 'animate-spin' : ''}`} />
+              🚀 Teste Enriquecimento
             </Button>
           </div>
 
