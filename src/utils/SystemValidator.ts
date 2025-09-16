@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 // 🔧 SISTEMA DE VALIDAÇÃO AUTOMÁTICA REISTOQ
 // Detecta problemas em tempo real durante desenvolvimento

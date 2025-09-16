@@ -782,6 +782,7 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
           onUpdatePriority={handleUpdatePriority}
           onRefresh={loadDevolucoes}
         />
+      )}
         </div>
         </>
       )}
