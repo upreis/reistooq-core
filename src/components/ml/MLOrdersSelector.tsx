@@ -24,14 +24,45 @@ interface MLOrder {
   order_id?: string;
   status: string;
   date_created: string;
+  date_closed?: string;
+  last_updated?: string;
   total_amount: number;
   currency?: string;
   buyer_id?: string;
   buyer_nickname?: string;
+  buyer_email?: string;
+  buyer_phone?: string;
   item_title?: string;
+  item_id?: string;
+  variation_id?: string;
   quantity: number;
+  unit_price?: number;
   has_claims?: boolean;
   claims_count?: number;
+  seller_id?: string;
+  seller_nickname?: string;
+  payment_status?: string;
+  payment_method?: string;
+  installments?: number;
+  shipping_id?: string;
+  shipping_status?: string;
+  shipping_mode?: string;
+  shipping_method?: string;
+  tracking_number?: string;
+  estimated_delivery?: string;
+  pack_id?: string;
+  shipping_cost?: number;
+  marketplace_fee?: number;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  address?: string;
+  receiver_name?: string;
+  receiver_phone?: string;
+  tags?: string[];
+  order_items?: any[];
+  payments?: any[];
+  shipping?: any;
   raw_data?: any;
 }
 
@@ -237,11 +268,66 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  // Extrair pedidos dos dados
+  // Extrair pedidos dos dados e mapear campos
   const orders = React.useMemo(() => {
     const results = ordersData?.results || [];
     console.log('📊 Pedidos processados:', results.length);
-    return results;
+    
+    // Mapear dados completos da API
+    return results.map((order: any) => {
+      const firstPayment = order.payments?.[0] || {};
+      const firstItem = order.order_items?.[0] || {};
+      const shipping = order.shipping || order.detailed_shipping || {};
+      const destination = shipping.destination || {};
+      const shippingAddress = destination.shipping_address || {};
+      
+      return {
+        id: order.id?.toString() || order.order_id?.toString(),
+        order_id: order.id?.toString() || order.order_id?.toString(),
+        status: order.status || 'unknown',
+        date_created: order.date_created || order.date_closed || new Date().toISOString(),
+        date_closed: order.date_closed,
+        last_updated: order.last_updated,
+        total_amount: firstPayment.transaction_amount || order.total_amount || 0,
+        currency: firstPayment.currency_id || 'BRL',
+        buyer_id: firstPayment.payer_id?.toString(),
+        buyer_nickname: destination.receiver_name || order.buyer_nickname,
+        buyer_email: order.buyer_email,
+        buyer_phone: destination.receiver_phone || order.buyer_phone,
+        item_title: firstItem?.item?.title || order.item_title || 'Produto não identificado',
+        item_id: firstItem?.item?.id,
+        variation_id: firstItem?.item?.variation_id,
+        quantity: firstItem?.quantity || order.quantity || 1,
+        unit_price: firstItem?.unit_price || firstPayment.transaction_amount || 0,
+        has_claims: order.has_claims || false,
+        claims_count: order.claims_count || 0,
+        seller_id: firstPayment?.collector?.id?.toString(),
+        seller_nickname: order.seller_nickname,
+        payment_status: firstPayment.status,
+        payment_method: firstPayment.payment_method_id,
+        installments: firstPayment.installments,
+        shipping_id: shipping.id?.toString(),
+        shipping_status: shipping.status,
+        shipping_mode: shipping.logistic?.mode,
+        shipping_method: shipping.lead_time?.shipping_method?.name,
+        tracking_number: shipping.tracking_number,
+        estimated_delivery: shipping.lead_time?.estimated_delivery_time?.date,
+        pack_id: order.pack_id,
+        shipping_cost: shipping.costs?.receiver?.cost || 0,
+        marketplace_fee: firstPayment.marketplace_fee || 0,
+        city: shippingAddress.city?.name,
+        state: shippingAddress.state?.name,
+        zip_code: shippingAddress.zip_code,
+        address: shippingAddress.address_line,
+        receiver_name: destination.receiver_name,
+        receiver_phone: destination.receiver_phone,
+        tags: order.tags || [],
+        order_items: order.order_items || [],
+        payments: order.payments || [],
+        shipping: shipping,
+        raw_data: order
+      };
+    });
   }, [ordersData]);
 
   // Notificar callback quando orders mudarem
@@ -251,15 +337,23 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
     }
   }, [orders, onOrdersLoaded]);
 
-  // Métricas calculadas
+  // Métricas calculadas expandidas
   const metrics = React.useMemo(() => {
     const total = orders.length;
-    const paid = orders.filter(o => o.status?.toLowerCase() === 'paid').length;
-    const shipped = orders.filter(o => o.status?.toLowerCase() === 'shipped').length;
+    const paid = orders.filter(o => o.payment_status === 'approved').length;
+    const shipped = orders.filter(o => o.shipping_status === 'shipped' || o.shipping_status === 'ready_to_ship').length;
+    const delivered = orders.filter(o => o.shipping_status === 'delivered').length;
     const cancelled = orders.filter(o => o.status?.toLowerCase() === 'cancelled').length;
+    const pending = orders.filter(o => o.payment_status === 'pending').length;
     const totalValue = orders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
+    const totalShippingCost = orders.reduce((acc, o) => acc + (o.shipping_cost || 0), 0);
+    const totalMarketplaceFee = orders.reduce((acc, o) => acc + (o.marketplace_fee || 0), 0);
+    const averageValue = total > 0 ? totalValue / total : 0;
 
-    return { total, paid, shipped, cancelled, totalValue };
+    return { 
+      total, paid, shipped, delivered, cancelled, pending, 
+      totalValue, totalShippingCost, totalMarketplaceFee, averageValue 
+    };
   }, [orders]);
 
   // Handlers
@@ -274,14 +368,31 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
     }
 
     const csvContent = [
-      ['Order ID', 'Status', 'Comprador', 'Produto', 'Valor', 'Data'],
+      [
+        'Order ID', 'Status', 'Status Pagamento', 'Comprador', 'Produto', 'Quantidade', 
+        'Valor Unitário', 'Valor Total', 'Método Pagamento', 'Cidade', 'Estado', 
+        'CEP', 'Status Envio', 'Método Envio', 'Código Rastreamento', 'Data Criação', 
+        'Data Fechamento', 'Estimativa Entrega'
+      ],
       ...orders.map(o => [
         o.id || o.order_id || '',
         o.status || '',
+        o.payment_status || '',
         o.buyer_nickname || '',
         o.item_title || '',
+        o.quantity || 0,
+        o.unit_price || 0,
         o.total_amount || 0,
-        new Date(o.date_created).toLocaleDateString('pt-BR')
+        o.payment_method || '',
+        o.city || '',
+        o.state || '',
+        o.zip_code || '',
+        o.shipping_status || '',
+        o.shipping_method || '',
+        o.tracking_number || '',
+        new Date(o.date_created).toLocaleDateString('pt-BR'),
+        o.date_closed ? new Date(o.date_closed).toLocaleDateString('pt-BR') : '',
+        o.estimated_delivery ? new Date(o.estimated_delivery).toLocaleDateString('pt-BR') : ''
       ])
     ].map(row => row.join(',')).join('\n');
 
@@ -461,8 +572,8 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
         )}
       </div>
 
-      {/* Métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* Métricas expandidas */}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
         <MetricCard
           title="Total"
           value={metrics.total}
@@ -482,10 +593,22 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
           color="default"
         />
         <MetricCard
+          title="Entregues"
+          value={metrics.delivered}
+          icon={CheckCircle}
+          color="success"
+        />
+        <MetricCard
           title="Cancelados"
           value={metrics.cancelled}
           icon={AlertTriangle}
           color="error"
+        />
+        <MetricCard
+          title="Pendentes"
+          value={metrics.pending}
+          icon={AlertTriangle}
+          color="warning"
         />
         <MetricCard
           title="Valor Total"
@@ -566,13 +689,19 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
             <div className="border rounded-lg overflow-hidden">
               <div className="max-h-[600px] overflow-auto">
                 <table className="w-full">
-                  <thead className="bg-muted">
+                  <thead className="bg-muted sticky top-0">
                     <tr>
                       <th className="text-left p-3 text-sm font-medium">Order ID</th>
                       <th className="text-left p-3 text-sm font-medium">Status</th>
+                      <th className="text-left p-3 text-sm font-medium">Pagamento</th>
                       <th className="text-left p-3 text-sm font-medium">Comprador</th>
                       <th className="text-left p-3 text-sm font-medium">Produto</th>
-                      <th className="text-left p-3 text-sm font-medium">Valor</th>
+                      <th className="text-left p-3 text-sm font-medium">Qtd</th>
+                      <th className="text-left p-3 text-sm font-medium">Valor Unit.</th>
+                      <th className="text-left p-3 text-sm font-medium">Valor Total</th>
+                      <th className="text-left p-3 text-sm font-medium">Cidade/UF</th>
+                      <th className="text-left p-3 text-sm font-medium">Envio</th>
+                      <th className="text-left p-3 text-sm font-medium">Rastreamento</th>
                       <th className="text-left p-3 text-sm font-medium">Data</th>
                       <th className="text-left p-3 text-sm font-medium">Ações</th>
                     </tr>
@@ -580,16 +709,36 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
                   <tbody>
                     {orders.map((order) => (
                       <tr key={order.id || order.order_id} className="border-b hover:bg-muted/50">
-                        <td className="p-3 text-sm">{order.id || order.order_id}</td>
+                        <td className="p-3 text-sm font-mono">{order.id || order.order_id}</td>
                         <td className="p-3">
                           <Badge variant="outline">{order.status}</Badge>
+                        </td>
+                        <td className="p-3">
+                          <Badge variant={order.payment_status === 'approved' ? 'default' : 'secondary'}>
+                            {order.payment_status || 'N/A'}
+                          </Badge>
                         </td>
                         <td className="p-3 text-sm">{order.buyer_nickname || 'N/A'}</td>
                         <td className="p-3 text-sm truncate max-w-[200px]" title={order.item_title}>
                           {order.item_title || 'N/A'}
                         </td>
+                        <td className="p-3 text-sm text-center">{order.quantity || 1}</td>
+                        <td className="p-3 text-sm font-medium">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.unit_price || 0)}
+                        </td>
                         <td className="p-3 text-sm font-medium">
                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(order.total_amount || 0)}
+                        </td>
+                        <td className="p-3 text-sm">
+                          {order.city && order.state ? `${order.city}/${order.state}` : 'N/A'}
+                        </td>
+                        <td className="p-3">
+                          <Badge variant="outline" className="text-xs">
+                            {order.shipping_status || 'N/A'}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-sm font-mono">
+                          {order.tracking_number || '-'}
                         </td>
                         <td className="p-3 text-sm">
                           {new Date(order.date_created).toLocaleDateString('pt-BR')}
@@ -620,11 +769,12 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
             <DialogTitle>Detalhes do Pedido</DialogTitle>
           </DialogHeader>
           {selectedOrder && (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Informações básicas */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Order ID</label>
-                  <p className="text-sm">{selectedOrder.id || selectedOrder.order_id}</p>
+                  <p className="text-sm font-mono">{selectedOrder.id || selectedOrder.order_id}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Status</label>
@@ -633,8 +783,20 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Comprador</label>
-                  <p className="text-sm">{selectedOrder.buyer_nickname || 'N/A'}</p>
+                  <label className="text-sm font-medium text-muted-foreground">Status Pagamento</label>
+                  <p className="text-sm">
+                    <Badge variant={selectedOrder.payment_status === 'approved' ? 'default' : 'secondary'}>
+                      {selectedOrder.payment_status || 'N/A'}
+                    </Badge>
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Método Pagamento</label>
+                  <p className="text-sm">{selectedOrder.payment_method || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Parcelas</label>
+                  <p className="text-sm">{selectedOrder.installments || 1}x</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Valor Total</label>
@@ -644,20 +806,171 @@ const MLOrdersSelector: React.FC<Props> = ({ mlAccounts, onOrdersLoaded }) => {
                 </div>
               </div>
               
+              {/* Informações do comprador */}
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Produto</label>
-                <p className="text-sm">{selectedOrder.item_title || 'N/A'}</p>
+                <h4 className="text-lg font-semibold mb-3">Informações do Comprador</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Nome/Nickname</label>
+                    <p className="text-sm">{selectedOrder.buyer_nickname || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">ID do Comprador</label>
+                    <p className="text-sm font-mono">{selectedOrder.buyer_id || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Telefone</label>
+                    <p className="text-sm">{selectedOrder.buyer_phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Email</label>
+                    <p className="text-sm">{selectedOrder.buyer_email || 'N/A'}</p>
+                  </div>
+                </div>
               </div>
 
+              {/* Informações do produto */}
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Data de Criação</label>
-                <p className="text-sm">{new Date(selectedOrder.date_created).toLocaleString('pt-BR')}</p>
+                <h4 className="text-lg font-semibold mb-3">Produto</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Título</label>
+                    <p className="text-sm">{selectedOrder.item_title || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">ID do Item</label>
+                    <p className="text-sm font-mono">{selectedOrder.item_id || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Quantidade</label>
+                    <p className="text-sm">{selectedOrder.quantity || 1}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Valor Unitário</label>
+                    <p className="text-sm font-medium">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOrder.unit_price || 0)}
+                    </p>
+                  </div>
+                </div>
               </div>
 
+              {/* Informações de envio */}
+              <div>
+                <h4 className="text-lg font-semibold mb-3">Envio</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Status</label>
+                    <p className="text-sm">
+                      <Badge variant="outline">{selectedOrder.shipping_status || 'N/A'}</Badge>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Método</label>
+                    <p className="text-sm">{selectedOrder.shipping_method || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Código Rastreamento</label>
+                    <p className="text-sm font-mono">{selectedOrder.tracking_number || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Custo Envio</label>
+                    <p className="text-sm font-medium">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOrder.shipping_cost || 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Estimativa Entrega</label>
+                    <p className="text-sm">
+                      {selectedOrder.estimated_delivery ? new Date(selectedOrder.estimated_delivery).toLocaleDateString('pt-BR') : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Destinatário</label>
+                    <p className="text-sm">{selectedOrder.receiver_name || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Endereço de entrega */}
+              <div>
+                <h4 className="text-lg font-semibold mb-3">Endereço de Entrega</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Endereço</label>
+                    <p className="text-sm">{selectedOrder.address || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">CEP</label>
+                    <p className="text-sm font-mono">{selectedOrder.zip_code || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Cidade</label>
+                    <p className="text-sm">{selectedOrder.city || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Estado</label>
+                    <p className="text-sm">{selectedOrder.state || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Datas */}
+              <div>
+                <h4 className="text-lg font-semibold mb-3">Datas</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Data de Criação</label>
+                    <p className="text-sm">{new Date(selectedOrder.date_created).toLocaleString('pt-BR')}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Data de Fechamento</label>
+                    <p className="text-sm">
+                      {selectedOrder.date_closed ? new Date(selectedOrder.date_closed).toLocaleString('pt-BR') : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Financeiro */}
+              <div>
+                <h4 className="text-lg font-semibold mb-3">Informações Financeiras</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Taxa Marketplace</label>
+                    <p className="text-sm font-medium">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedOrder.marketplace_fee || 0)}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Valor Líquido</label>
+                    <p className="text-sm font-medium">
+                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                        (selectedOrder.total_amount || 0) - (selectedOrder.marketplace_fee || 0)
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tags */}
+              {selectedOrder.tags && selectedOrder.tags.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">Tags</label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {selectedOrder.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Dados completos em JSON */}
               {selectedOrder.raw_data && (
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Dados Completos (JSON)</label>
-                  <ScrollArea className="h-40 w-full border rounded p-3 bg-muted">
+                  <ScrollArea className="h-40 w-full border rounded p-3 bg-muted mt-2">
                     <pre className="text-xs">
                       {JSON.stringify(selectedOrder.raw_data, null, 2)}
                     </pre>
