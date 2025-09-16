@@ -21,21 +21,9 @@ if (!container) throw new Error('Failed to find the root element');
 
 const root = createRoot(container);
 
-// Add error boundary and better error handling
-try {
-  root.render(
-    <React.StrictMode>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </React.StrictMode>
-  );
-} catch (error) {
-  console.error('Failed to render app:', error);
-  // Fallback render without StrictMode
-  root.render(
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  );
-}
+// Render without StrictMode to avoid React duplicate instance issues
+root.render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);
