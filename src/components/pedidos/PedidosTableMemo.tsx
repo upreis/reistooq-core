@@ -55,7 +55,7 @@ export const PedidosTableMemo = memo<PedidosTableMemoProps>(({
     [visibleColumns]
   );
 
-  const memoizedMappings = useMemo(() =>
+  const memoizedMappings = useMemo(() => 
     mapeamentosVerificacao || new Map(), 
     [mapeamentosVerificacao]
   );

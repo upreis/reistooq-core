@@ -1,4 +1,4 @@
-import * as React from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 type SidebarUIState = {
   isSidebarCollapsed: boolean;          // desktop
@@ -7,23 +7,23 @@ type SidebarUIState = {
   setIsMobileSidebarOpen: (v: boolean) => void;
 };
 
-const SidebarUIContext = React.createContext<SidebarUIState | null>(null);
+const SidebarUIContext = createContext<SidebarUIState | null>(null);
 const LS_KEY = "ui.sidebar.collapsed";
 
-export function SidebarUIProvider({ children }: { children: React.ReactNode }) {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState<boolean>(() => {
+export function SidebarUIProvider({ children }: { children: ReactNode }) {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
       return raw === "true";
     } catch { return false; }
   });
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     try { localStorage.setItem(LS_KEY, String(isSidebarCollapsed)); } catch {}
   }, [isSidebarCollapsed]);
 
-  const value = React.useMemo(() => ({
+  const value = useMemo(() => ({
     isSidebarCollapsed,
     setIsSidebarCollapsed,
     isMobileSidebarOpen,
@@ -34,7 +34,7 @@ export function SidebarUIProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useSidebarUI() {
-  const ctx = React.useContext(SidebarUIContext);
+  const ctx = useContext(SidebarUIContext);
   if (!ctx) throw new Error("useSidebarUI must be used within SidebarUIProvider");
   return ctx;
 }

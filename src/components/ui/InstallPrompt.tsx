@@ -2,7 +2,7 @@
 // INSTALL PROMPT COMPONENT - PWA Installation banner
 // ============================================================================
 
-import * as React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,8 +19,8 @@ export const InstallPrompt: React.FC<InstallPromptProps> = ({
   className = ''
 }) => {
   const [pwaState, pwaActions] = usePWA();
-  const [showInstructions, setShowInstructions] = React.useState(false);
-  const [dismissed, setDismissed] = React.useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const installInfo = PWAUtils.getInstallInfo();
   const instructions = PWAUtils.getInstallInstructions();
