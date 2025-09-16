@@ -589,57 +589,228 @@ export type Database = {
       }
       devolucoes_avancadas: {
         Row: {
+          acao_seller_necessaria: boolean | null
+          account_name: string | null
+          anexos_comprador: Json | null
+          anexos_count: number | null
+          anexos_ml: Json | null
+          anexos_vendedor: Json | null
+          buyer_reputation: Json | null
           claim_id: string | null
+          codigo_rastreamento: string | null
           created_at: string | null
+          custo_envio_devolucao: number | null
           dados_claim: Json | null
           dados_mensagens: Json | null
           dados_order: Json | null
           dados_return: Json | null
           data_criacao: string | null
+          data_estimada_troca: string | null
+          data_inicio_mediacao: string | null
+          data_limite_troca: string | null
+          data_primeira_acao: string | null
+          data_vencimento_acao: string | null
+          descricao_custos: Json | null
+          detalhes_mediacao: Json | null
+          dias_restantes_acao: number | null
+          eh_troca: boolean | null
+          em_mediacao: boolean | null
+          endereco_destino: Json | null
+          escalado_para_ml: boolean | null
+          historico_status: Json | null
           id: string
+          impacto_reputacao: string | null
           integration_account_id: string | null
+          marketplace_origem: string | null
+          mediador_ml: string | null
+          mensagens_nao_lidas: number | null
+          metodo_resolucao: string | null
+          moeda_custo: string | null
+          motivo_categoria: string | null
+          nivel_prioridade: string | null
+          numero_interacoes: number | null
           order_id: string
+          prazo_revisao_dias: number | null
           produto_titulo: string | null
+          produto_troca_id: string | null
+          proxima_acao_requerida: string | null
           quantidade: number | null
+          responsavel_custo: string | null
+          resultado_final: string | null
+          resultado_mediacao: string | null
+          satisfacao_comprador: string | null
+          seller_reputation: Json | null
           sku: string | null
           status_devolucao: string | null
+          status_moderacao: string | null
+          status_produto_novo: string | null
+          status_rastreamento: string | null
+          subtipo_claim: string | null
+          tags_automaticas: string[] | null
+          taxa_satisfacao: number | null
+          tempo_resposta_medio: number | null
+          tempo_total_resolucao: number | null
+          timeline_mensagens: Json | null
+          tipo_claim: string | null
+          total_evidencias: number | null
+          transportadora: string | null
+          ultima_mensagem_data: string | null
+          ultima_mensagem_remetente: string | null
           updated_at: string | null
+          url_rastreamento: string | null
+          usuario_ultima_acao: string | null
+          valor_compensacao: number | null
+          valor_diferenca_troca: number | null
           valor_retido: number | null
         }
         Insert: {
+          acao_seller_necessaria?: boolean | null
+          account_name?: string | null
+          anexos_comprador?: Json | null
+          anexos_count?: number | null
+          anexos_ml?: Json | null
+          anexos_vendedor?: Json | null
+          buyer_reputation?: Json | null
           claim_id?: string | null
+          codigo_rastreamento?: string | null
           created_at?: string | null
+          custo_envio_devolucao?: number | null
           dados_claim?: Json | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
           data_criacao?: string | null
+          data_estimada_troca?: string | null
+          data_inicio_mediacao?: string | null
+          data_limite_troca?: string | null
+          data_primeira_acao?: string | null
+          data_vencimento_acao?: string | null
+          descricao_custos?: Json | null
+          detalhes_mediacao?: Json | null
+          dias_restantes_acao?: number | null
+          eh_troca?: boolean | null
+          em_mediacao?: boolean | null
+          endereco_destino?: Json | null
+          escalado_para_ml?: boolean | null
+          historico_status?: Json | null
           id?: string
+          impacto_reputacao?: string | null
           integration_account_id?: string | null
+          marketplace_origem?: string | null
+          mediador_ml?: string | null
+          mensagens_nao_lidas?: number | null
+          metodo_resolucao?: string | null
+          moeda_custo?: string | null
+          motivo_categoria?: string | null
+          nivel_prioridade?: string | null
+          numero_interacoes?: number | null
           order_id: string
+          prazo_revisao_dias?: number | null
           produto_titulo?: string | null
+          produto_troca_id?: string | null
+          proxima_acao_requerida?: string | null
           quantidade?: number | null
+          responsavel_custo?: string | null
+          resultado_final?: string | null
+          resultado_mediacao?: string | null
+          satisfacao_comprador?: string | null
+          seller_reputation?: Json | null
           sku?: string | null
           status_devolucao?: string | null
+          status_moderacao?: string | null
+          status_produto_novo?: string | null
+          status_rastreamento?: string | null
+          subtipo_claim?: string | null
+          tags_automaticas?: string[] | null
+          taxa_satisfacao?: number | null
+          tempo_resposta_medio?: number | null
+          tempo_total_resolucao?: number | null
+          timeline_mensagens?: Json | null
+          tipo_claim?: string | null
+          total_evidencias?: number | null
+          transportadora?: string | null
+          ultima_mensagem_data?: string | null
+          ultima_mensagem_remetente?: string | null
           updated_at?: string | null
+          url_rastreamento?: string | null
+          usuario_ultima_acao?: string | null
+          valor_compensacao?: number | null
+          valor_diferenca_troca?: number | null
           valor_retido?: number | null
         }
         Update: {
+          acao_seller_necessaria?: boolean | null
+          account_name?: string | null
+          anexos_comprador?: Json | null
+          anexos_count?: number | null
+          anexos_ml?: Json | null
+          anexos_vendedor?: Json | null
+          buyer_reputation?: Json | null
           claim_id?: string | null
+          codigo_rastreamento?: string | null
           created_at?: string | null
+          custo_envio_devolucao?: number | null
           dados_claim?: Json | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
           data_criacao?: string | null
+          data_estimada_troca?: string | null
+          data_inicio_mediacao?: string | null
+          data_limite_troca?: string | null
+          data_primeira_acao?: string | null
+          data_vencimento_acao?: string | null
+          descricao_custos?: Json | null
+          detalhes_mediacao?: Json | null
+          dias_restantes_acao?: number | null
+          eh_troca?: boolean | null
+          em_mediacao?: boolean | null
+          endereco_destino?: Json | null
+          escalado_para_ml?: boolean | null
+          historico_status?: Json | null
           id?: string
+          impacto_reputacao?: string | null
           integration_account_id?: string | null
+          marketplace_origem?: string | null
+          mediador_ml?: string | null
+          mensagens_nao_lidas?: number | null
+          metodo_resolucao?: string | null
+          moeda_custo?: string | null
+          motivo_categoria?: string | null
+          nivel_prioridade?: string | null
+          numero_interacoes?: number | null
           order_id?: string
+          prazo_revisao_dias?: number | null
           produto_titulo?: string | null
+          produto_troca_id?: string | null
+          proxima_acao_requerida?: string | null
           quantidade?: number | null
+          responsavel_custo?: string | null
+          resultado_final?: string | null
+          resultado_mediacao?: string | null
+          satisfacao_comprador?: string | null
+          seller_reputation?: Json | null
           sku?: string | null
           status_devolucao?: string | null
+          status_moderacao?: string | null
+          status_produto_novo?: string | null
+          status_rastreamento?: string | null
+          subtipo_claim?: string | null
+          tags_automaticas?: string[] | null
+          taxa_satisfacao?: number | null
+          tempo_resposta_medio?: number | null
+          tempo_total_resolucao?: number | null
+          timeline_mensagens?: Json | null
+          tipo_claim?: string | null
+          total_evidencias?: number | null
+          transportadora?: string | null
+          ultima_mensagem_data?: string | null
+          ultima_mensagem_remetente?: string | null
           updated_at?: string | null
+          url_rastreamento?: string | null
+          usuario_ultima_acao?: string | null
+          valor_compensacao?: number | null
+          valor_diferenca_troca?: number | null
           valor_retido?: number | null
         }
         Relationships: []
