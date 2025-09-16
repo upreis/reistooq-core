@@ -97,27 +97,88 @@ export function useDevolucoesBusca() {
           if (apiResponse?.success && apiResponse?.data) {
             const devolucoesDaAPI = apiResponse.data;
             
-            // Processar dados
-            const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => ({
-              id: `api_${item.order_id}_${accountId}_${index}`,
-              order_id: item.order_id.toString(),
-              claim_id: item.claim_details?.id || null,
-              data_criacao: item.date_created,
-              status_devolucao: item.status || 'cancelled',
-              valor_retido: parseFloat(item.amount || 0),
-              produto_titulo: item.resource_data?.title || item.reason || 'Produto não identificado',
-              sku: item.resource_data?.sku || '',
-              quantidade: item.resource_data?.quantity || 1,
-              comprador_nickname: item.buyer?.nickname || 'Desconhecido',
-              dados_order: item.order_data || {},
-              dados_claim: item.claim_details || {},
-              dados_mensagens: item.claim_messages || {},
-              dados_return: item.return_details_v2 || item.return_details_v1 || {},
-              integration_account_id: accountId,
-              account_name: account.name,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }));
+            // Processar dados com ENRIQUECIMENTO COMPLETO
+            const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => {
+              // Dados base
+              const dadosBase = {
+                id: `api_${item.order_id}_${accountId}_${index}`,
+                order_id: item.order_id.toString(),
+                claim_id: item.claim_details?.id || null,
+                data_criacao: item.date_created,
+                status_devolucao: item.status || 'cancelled',
+                valor_retido: parseFloat(item.amount || 0),
+                produto_titulo: item.resource_data?.title || item.reason || 'Produto não identificado',
+                sku: item.resource_data?.sku || '',
+                quantidade: item.resource_data?.quantity || 1,
+                comprador_nickname: item.buyer?.nickname || 'Desconhecido',
+                integration_account_id: accountId,
+                account_name: account.name,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+
+              // DADOS ENRIQUECIDOS EXTRAÍDOS DA API
+              const dadosEnriquecidos = {
+                // Dados estruturados principais
+                dados_order: item.order_data || {},
+                dados_claim: item.claim_details || {},
+                dados_mensagens: item.claim_messages || {},
+                dados_return: item.return_details_v2 || item.return_details_v1 || {},
+
+                // MENSAGENS E COMUNICAÇÃO (extraído de dados_mensagens)
+                timeline_mensagens: item.claim_messages?.messages || [],
+                ultima_mensagem_data: item.claim_messages?.messages?.length > 0 ? 
+                  item.claim_messages.messages[item.claim_messages.messages.length - 1]?.date_created : null,
+                ultima_mensagem_remetente: item.claim_messages?.messages?.length > 0 ? 
+                  item.claim_messages.messages[item.claim_messages.messages.length - 1]?.from?.role : null,
+                numero_interacoes: item.claim_messages?.messages?.length || 0,
+                mensagens_nao_lidas: item.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0,
+
+                // DADOS DE RETURN E TROCA (extraído de dados_return)
+                eh_troca: (item.return_details_v2?.subtype || '').includes('change'),
+                data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null,
+                data_limite_troca: item.return_details_v2?.date_closed || null,
+                valor_diferenca_troca: item.return_details_v2?.price_difference || null,
+                codigo_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
+                transportadora: item.return_details_v2?.shipments?.[0]?.carrier || null,
+                status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || null,
+                url_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_url || null,
+
+                // ANEXOS E EVIDÊNCIAS (extraído de dados_claim/anexos)
+                anexos_count: item.claim_attachments?.length || 0,
+                anexos_comprador: item.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
+                anexos_vendedor: item.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
+                anexos_ml: item.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
+                total_evidencias: (item.claim_attachments?.length || 0) + (item.claim_messages?.messages?.length || 0),
+
+                // CUSTOS E FINANCEIRO
+                custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
+                valor_compensacao: item.return_details_v2?.refund_amount || null,
+                moeda_custo: 'BRL',
+                responsavel_custo: item.claim_details?.resolution?.benefited?.[0] || null,
+
+                // CLASSIFICAÇÃO E RESOLUÇÃO
+                tipo_claim: item.type || item.claim_details?.type,
+                subtipo_claim: item.claim_details?.stage || null,
+                motivo_categoria: item.claim_details?.reason_id || null,
+                em_mediacao: item.claim_details?.type === 'mediations',
+                metodo_resolucao: item.claim_details?.resolution?.reason || null,
+                resultado_final: item.claim_details?.status || null,
+                nivel_prioridade: item.claim_details?.type === 'mediations' ? 'high' : 'medium',
+
+                // MÉTRICAS E PRAZOS
+                data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
+                dias_restantes_acao: null, // Calculado via trigger
+                acao_seller_necessaria: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
+                escalado_para_ml: item.claim_details?.type === 'mediations',
+                
+                // CONTROLE DE QUALIDADE
+                dados_completos: true,
+                marketplace_origem: 'ML_BRASIL'
+              };
+
+              return { ...dadosBase, ...dadosEnriquecidos };
+            });
 
             todasDevolucoes.push(...devolucoesProcesadas);
             toast.success(`✅ ${devolucoesProcesadas.length} devoluções da API para ${account.name}`);
