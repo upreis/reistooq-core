@@ -444,31 +444,51 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               🔴 Buscando sempre da API ML em tempo real
             </div>
 
-            {/* Auto-refresh com intervalos predefinidos */}
+            {/* Auto-refresh personalizado */}
             <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
               <label className="block text-sm font-medium text-gray-700">
-                🔄 Atualização Automática
+                🔄 Atualização Automática Personalizada
               </label>
-              <Select
-                value={advancedFilters.autoRefreshInterval?.toString() || "0"}
-                onValueChange={(value) => {
-                  const interval = parseInt(value);
-                  updateAdvancedFilters({
-                    autoRefreshEnabled: interval > 0,
-                    autoRefreshInterval: interval
-                  });
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione o intervalo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Desativado</SelectItem>
-                  <SelectItem value="3600">A cada 1 hora</SelectItem>
-                  <SelectItem value="7200">A cada 2 horas</SelectItem>
-                  <SelectItem value="21600">A cada 6 horas</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="86400"
+                    value={advancedFilters.autoRefreshEnabled ? Math.floor(advancedFilters.autoRefreshInterval / 60) : ""}
+                    onChange={(e) => {
+                      const minutes = parseInt(e.target.value) || 0;
+                      const seconds = minutes * 60;
+                      updateAdvancedFilters({
+                        autoRefreshEnabled: minutes > 0,
+                        autoRefreshInterval: seconds > 0 ? seconds : 3600
+                      });
+                    }}
+                    placeholder="Minutos (1-1440)"
+                    className="w-full"
+                  />
+                </div>
+                <div className="text-sm text-gray-600">minutos</div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => updateAdvancedFilters({ autoRefreshEnabled: false })}
+                  disabled={!advancedFilters.autoRefreshEnabled}
+                >
+                  Desativar
+                </Button>
+              </div>
+              <div className="text-xs text-gray-500">
+                {advancedFilters.autoRefreshEnabled ? (
+                  <>
+                    ⏰ Próxima atualização em: {autoRefresh?.timeUntilRefresh || 0}s
+                    {autoRefresh?.isRefreshing && " (atualizando...)"}
+                  </>
+                ) : (
+                  "Auto-refresh desativado"
+                )}
+              </div>
 
               
               {advancedFilters.autoRefreshEnabled && (
