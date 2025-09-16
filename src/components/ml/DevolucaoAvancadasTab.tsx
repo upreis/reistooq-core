@@ -418,15 +418,46 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             )}
           </Button>
 
-          {/* Auto Refresh Toggle */}
-          <Button
-            variant={advancedFilters.autoRefreshEnabled ? "default" : "outline"}
-            onClick={() => updateAdvancedFilters({ autoRefreshEnabled: !advancedFilters.autoRefreshEnabled })}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${advancedFilters.autoRefreshEnabled ? 'animate-spin' : ''}`} />
-            Auto Refresh
-          </Button>
+          {/* Auto Refresh Control - Enhanced */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={advancedFilters.autoRefreshEnabled ? "default" : "outline"}
+              onClick={() => updateAdvancedFilters({ autoRefreshEnabled: !advancedFilters.autoRefreshEnabled })}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${advancedFilters.autoRefreshEnabled ? 'animate-spin' : ''}`} />
+              Auto-refresh
+            </Button>
+            
+            {/* Minutos Input */}
+            <Input
+              type="number"
+              min="1"
+              max="1440"
+              value={advancedFilters.autoRefreshEnabled ? Math.floor(advancedFilters.autoRefreshInterval / 60) : ""}
+              onChange={(e) => {
+                const minutes = parseInt(e.target.value) || 0;
+                const seconds = minutes * 60;
+                updateAdvancedFilters({
+                  autoRefreshEnabled: minutes > 0,
+                  autoRefreshInterval: seconds > 0 ? seconds : 3600
+                });
+              }}
+              placeholder="Minutos"
+              className="w-20 text-sm"
+            />
+            <span className="text-sm text-muted-foreground">min</span>
+            
+            {/* Desativar Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => updateAdvancedFilters({ autoRefreshEnabled: false })}
+              disabled={!advancedFilters.autoRefreshEnabled}
+            >
+              Desativar
+            </Button>
+          </div>
           
           <Button 
             variant="outline" 
@@ -594,44 +625,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             </Button>
           </div>
 
-          {/* Auto-refresh personalizado - compacto */}
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-foreground">🔄 Auto-refresh:</label>
-              <Input
-                type="number"
-                min="1"
-                max="1440"
-                value={advancedFilters.autoRefreshEnabled ? Math.floor(advancedFilters.autoRefreshInterval / 60) : ""}
-                onChange={(e) => {
-                  const minutes = parseInt(e.target.value) || 0;
-                  const seconds = minutes * 60;
-                  updateAdvancedFilters({
-                    autoRefreshEnabled: minutes > 0,
-                    autoRefreshInterval: seconds > 0 ? seconds : 3600
-                  });
-                }}
-                placeholder="Minutos"
-                className="w-20 bg-background border-border text-foreground text-sm"
-              />
-              <span className="text-sm text-muted-foreground">min</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => updateAdvancedFilters({ autoRefreshEnabled: false })}
-                disabled={!advancedFilters.autoRefreshEnabled}
-                className="border-slate-600 text-white hover:bg-slate-700"
-              >
-                Desativar
-              </Button>
-              {advancedFilters.autoRefreshEnabled && autoRefresh && (
-                <div className="text-xs text-gray-400">
-                  Próxima: {autoRefresh.timeUntilRefresh || 0}s
-                  {autoRefresh.isRefreshing && " (atualizando...)"}
-                </div>
-              )}
-            </div>
-          </div>
         </CardContent>
       </Card>
 
