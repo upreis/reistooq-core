@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -47,9 +47,9 @@ interface Props {
 
 // Hooks customizados memoizados
 const useDebounce = (value: string, delay: number) => {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+  const [debouncedValue, setDebouncedValue] = React.useState(value);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handler = setTimeout(() => setDebouncedValue(value), delay);
     return () => clearTimeout(handler);
   }, [value, delay]);
@@ -58,7 +58,7 @@ const useDebounce = (value: string, delay: number) => {
 };
 
 // Componentes memoizados para performance
-const MetricCard = memo(({ title, value, icon: Icon, color = "default", trend }: {
+const MetricCard = React.memo(({ title, value, icon: Icon, color = "default", trend }: {
   title: string;
   value: string | number;
   icon: any;
@@ -96,14 +96,14 @@ const MetricCard = memo(({ title, value, icon: Icon, color = "default", trend }:
   </Card>
 ));
 
-const FilterSection = memo(({ filtros, setFiltros, mlAccounts, onSearch, isLoading }: {
+const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, isLoading }: {
   filtros: any;
   setFiltros: (filtros: any) => void;
   mlAccounts: any[];
   onSearch: () => void;
   isLoading: boolean;
 }) => {
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   return (
     <Card>
@@ -253,7 +253,7 @@ const FilterSection = memo(({ filtros, setFiltros, mlAccounts, onSearch, isLoadi
   );
 });
 
-const DevolucaoCard = memo(({ devolucao, onClick }: { devolucao: DevolucaoML; onClick: () => void }) => (
+const DevolucaoCard = React.memo(({ devolucao, onClick }: { devolucao: DevolucaoML; onClick: () => void }) => (
   <Card className="hover-scale transition-all duration-200 cursor-pointer" onClick={onClick}>
     <CardContent className="p-4">
       <div className="flex justify-between items-start mb-3">
@@ -300,7 +300,7 @@ const DevolucaoCard = memo(({ devolucao, onClick }: { devolucao: DevolucaoML; on
 // Componente principal otimizado
 const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) => {
   // Estados otimizados
-  const [filtros, setFiltros] = useState({
+  const [filtros, setFiltros] = React.useState({
     search: '',
     status: 'all',
     tipo: 'all',
@@ -311,15 +311,15 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
     processedStatus: 'all'
   });
 
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
-  const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoML | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = React.useState<'cards' | 'table'>('cards');
+  const [selectedDevolucao, setSelectedDevolucao] = React.useState<DevolucaoML | null>(null);
+  const [currentPage, setCurrentPage] = React.useState(1);
   
   const queryClient = useQueryClient();
   const debouncedSearch = useDebounce(filtros.search, 500);
 
   // Auto-selecionar contas ativas
-  useEffect(() => {
+  React.useEffect(() => {
     if (mlAccounts?.length > 0 && filtros.accountIds.length === 0) {
       setFiltros(prev => ({ ...prev, accountIds: mlAccounts.map(acc => acc.id) }));
     }
@@ -397,7 +397,7 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
   });
 
   // Métricas calculadas otimizadas
-  const metricas = useMemo(() => {
+  const metricas = React.useMemo(() => {
     const total = devolucoes.length;
     const pendentes = devolucoes.filter(d => d.processed_status === 'pending' || !d.processed_status).length;
     const urgentes = devolucoes.filter(d => d.priority === 'urgent').length;
@@ -408,12 +408,12 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
   }, [devolucoes]);
 
   // Handlers otimizados
-  const handleSearch = useCallback(() => {
+  const handleSearch = React.useCallback(() => {
     setCurrentPage(1);
     queryClient.invalidateQueries({ queryKey: ['devolucoes-otimizada'] });
   }, [queryClient]);
 
-  const handleExport = useCallback(() => {
+  const handleExport = React.useCallback(() => {
     if (devolucoes.length === 0) {
       toast.error('Nenhum dado para exportar');
       return;
@@ -442,7 +442,7 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
   }, [devolucoes]);
 
   // Colunas para tabela virtual
-  const tableColumns = useMemo(() => [
+  const tableColumns = React.useMemo(() => [
     { key: 'order_id', label: 'Order ID', width: 120, render: (item: DevolucaoML) => item.order_id },
     { key: 'claim_status', label: 'Status', width: 100, render: (item: DevolucaoML) => (
       <Badge variant="outline">{item.claim_status}</Badge>
@@ -671,4 +671,4 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
   );
 };
 
-export default memo(DevolucaoAvancadasOptimizada);
+export default React.memo(DevolucaoAvancadasOptimizada);
