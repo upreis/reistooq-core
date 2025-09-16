@@ -73,7 +73,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [showDetails, setShowDetails] = useState(false);
   const [showTableView, setShowTableView] = useState(false);
 
-  // Hook principal consolidado
+  // Hook principal consolidado com otimizações
   const {
     devolucoes,
     devolucoesFiltradas,
@@ -83,13 +83,17 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     totalPages,
     filters,
     advancedFilters,
+    performanceSettings,
     updateFilters,
     updateAdvancedFilters,
+    updatePerformanceSettings,
     clearFilters,
     buscarComFiltros,
     sincronizarDevolucoes,
     setCurrentPage,
-    hasPersistedData
+    hasPersistedData,
+    autoRefresh,
+    lazyLoading
   } = useDevolucoes(mlAccounts);
 
   // Tempo real para demonstração
@@ -158,8 +162,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header com estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Header com estatísticas melhoradas */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -169,6 +173,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <div>
                 <p className="text-sm font-medium text-gray-600">Total</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-xs text-gray-500">
+                  {performanceSettings.enableLazyLoading && `${stats.visible} visíveis`}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -183,6 +190,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <div>
                 <p className="text-sm font-medium text-gray-600">Pendentes</p>
                 <p className="text-2xl font-bold">{stats.pendentes}</p>
+                {advancedFilters.autoRefreshEnabled && autoRefresh.timeUntilRefresh && (
+                  <p className="text-xs text-gray-500">Refresh: {autoRefresh.timeUntilRefresh}s</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -211,6 +221,31 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <div>
                 <p className="text-sm font-medium text-gray-600">Canceladas</p>
                 <p className="text-2xl font-bold">{stats.canceladas}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <div className={`p-2 rounded-lg ${
+                advancedFilters.buscarEmTempoReal ? 'bg-purple-100' : 'bg-gray-100'
+              }`}>
+                <Wrench className={`h-4 w-4 ${
+                  advancedFilters.buscarEmTempoReal ? 'text-purple-600' : 'text-gray-600'
+                }`} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">
+                  {advancedFilters.buscarEmTempoReal ? 'API ML' : 'Banco'}
+                </p>
+                <p className="text-2xl font-bold">{stats.totalLoaded}</p>
+                {autoRefresh.lastRefresh && (
+                  <p className="text-xs text-gray-500">
+                    {autoRefresh.lastRefresh.toLocaleTimeString()}
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -249,6 +284,27 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             {advancedFilters.buscarEmTempoReal ? 'Buscar API ML' : 'Atualizar BD'}
           </Button>
           
+          {/* Auto-refresh manual */}
+          {advancedFilters.autoRefreshEnabled && (
+            <Button 
+              type="button"
+              onClick={autoRefresh.manualRefresh}
+              disabled={autoRefresh.isRefreshing}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              {autoRefresh.isRefreshing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Clock className="h-4 w-4" />
+              )}
+              Refresh Manual
+              {autoRefresh.timeUntilRefresh && (
+                <span className="text-xs">({autoRefresh.timeUntilRefresh}s)</span>
+              )}
+            </Button>
+          )}
+          
           <Button 
             variant="outline" 
             onClick={exportarCSV}
@@ -284,6 +340,61 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 🔴 Buscar em tempo real da API ML (mais lento, dados atuais)
               </label>
             </div>
+
+            {/* Auto-refresh configuration */}
+            {advancedFilters.buscarEmTempoReal && (
+              <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="auto-refresh"
+                    checked={advancedFilters.autoRefreshEnabled}
+                    onChange={(e) => updateAdvancedFilters({
+                      autoRefreshEnabled: e.target.checked
+                    })}
+                  />
+                  <label htmlFor="auto-refresh" className="text-sm font-medium">
+                    🔄 Auto-refresh automático
+                  </label>
+                </div>
+
+                {advancedFilters.autoRefreshEnabled && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium mb-1">Intervalo (segundos)</label>
+                      <Input
+                        type="number"
+                        min="10"
+                        max="300"
+                        value={advancedFilters.autoRefreshInterval}
+                        onChange={(e) => updateAdvancedFilters({
+                          autoRefreshInterval: parseInt(e.target.value) || 30
+                        })}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="flex flex-col justify-center">
+                      {autoRefresh.isRefreshing && (
+                        <div className="flex items-center gap-2 text-xs text-blue-600">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Atualizando...
+                        </div>
+                      )}
+                      {autoRefresh.timeUntilRefresh && !autoRefresh.isRefreshing && (
+                        <div className="text-xs text-gray-600">
+                          Próximo em: {autoRefresh.timeUntilRefresh}s
+                        </div>
+                      )}
+                      {autoRefresh.lastRefresh && (
+                        <div className="text-xs text-gray-500">
+                          Último: {autoRefresh.lastRefresh.toLocaleTimeString()}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Seleção de contas */}
             <div>
@@ -359,6 +470,110 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </Select>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* CONFIGURAÇÕES DE PERFORMANCE */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wrench className="w-5 h-5" />
+            Configurações de Performance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="lazy-loading"
+                checked={performanceSettings.enableLazyLoading}
+                onChange={(e) => updatePerformanceSettings({
+                  enableLazyLoading: e.target.checked
+                })}
+              />
+              <label htmlFor="lazy-loading" className="text-sm font-medium">
+                📦 Lazy Loading
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Items por chunk</label>
+              <Input
+                type="number"
+                min="10"
+                max="100"
+                value={performanceSettings.chunkSize}
+                onChange={(e) => updatePerformanceSettings({
+                  chunkSize: parseInt(e.target.value) || 20
+                })}
+                className="h-8"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Debounce (ms)</label>
+              <Input
+                type="number"
+                min="100"
+                max="2000"
+                value={performanceSettings.debounceDelay}
+                onChange={(e) => updatePerformanceSettings({
+                  debounceDelay: parseInt(e.target.value) || 500
+                })}
+                className="h-8"
+              />
+            </div>
+          </div>
+
+          {/* Performance Stats */}
+          {performanceSettings.enableLazyLoading && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-500">Total:</span>
+                  <p className="font-medium">{lazyLoading.stats.totalItems}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Visível:</span>
+                  <p className="font-medium">{lazyLoading.stats.visibleItems}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Progresso:</span>
+                  <p className="font-medium">{lazyLoading.stats.loadingProgress.toFixed(1)}%</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Chunks:</span>
+                  <p className="font-medium">{lazyLoading.stats.loadedChunks}/{lazyLoading.stats.totalChunks}</p>
+                </div>
+              </div>
+              
+              {lazyLoading.hasMore && (
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    onClick={lazyLoading.loadMore}
+                    disabled={lazyLoading.isLoading}
+                    size="sm"
+                    variant="outline"
+                  >
+                    {lazyLoading.isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 mr-2" />
+                    )}
+                    Carregar Mais
+                  </Button>
+                  <Button
+                    onClick={lazyLoading.loadAll}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Carregar Todos
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
