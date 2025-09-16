@@ -97,7 +97,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     updateAdvancedFilters,
     clearFilters,
     buscarComFiltros,
-    sincronizarDevolucoes,
     setCurrentPage,
     toggleAnalytics,
     hasPersistedData,

@@ -120,7 +120,7 @@ export function useDevolucoes(mlAccounts: any[]) {
     enabled: performanceSettings.enableLazyLoading
   });
 
-  // Inicialização otimizada
+  // Inicialização sem busca automática do banco
   useEffect(() => {
     if (!persistence.isStateLoaded || !mlAccounts?.length) return;
 
@@ -133,39 +133,28 @@ export function useDevolucoes(mlAccounts: any[]) {
       }));
     }
 
-    // Restaurar dados se existirem
+    // Restaurar apenas dados da API se existirem
     if (persistence.hasValidData()) {
       const state = persistence.persistedState!;
-      setDevolucoes(state.data);
-      setCurrentPage(state.currentPage);
       
+      // Só restaurar se for dados da API
       if (state.dataSource === 'api') {
+        setDevolucoes(state.data);
+        setCurrentPage(state.currentPage);
         setAdvancedFilters(prev => ({
           ...prev,
           ...state.searchFilters,
           buscarEmTempoReal: true
         }));
-      } else {
-        setAdvancedFilters(prev => ({ ...prev, ...state.filters }));
+        console.log(`🔄 ${state.data.length} devoluções restauradas da API`);
       }
-      
-      console.log(`🔄 ${state.data.length} devoluções restauradas (${state.dataSource})`);
-    } else if (contasAtivas.length > 0) {
-      // Carregar dados inicial do banco
-      carregarDadosIniciais();
     }
+    
+    // Não buscar dados iniciais do banco automaticamente
   }, [persistence.isStateLoaded, mlAccounts]);
 
-  // Carregar dados iniciais do banco
-  const carregarDadosIniciais = useCallback(async () => {
-    const dadosBanco = await busca.buscarDoBanco();
-    if (dadosBanco.length > 0) {
-      setDevolucoes(dadosBanco);
-      persistence.saveDatabaseData(dadosBanco, advancedFilters);
-    }
-  }, [busca, persistence, advancedFilters]);
 
-  // Buscar com filtros (flush debounce para busca imediata)
+  // Buscar com filtros (SOMENTE da API quando acionada)
   const buscarComFiltros = useCallback(async () => {
     flushDebounce(); // Aplicar busca imediatamente
     const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
@@ -174,14 +163,8 @@ export function useDevolucoes(mlAccounts: any[]) {
     persistence.saveApiData(dadosAPI, advancedFilters);
   }, [flushDebounce, busca, advancedFilters, mlAccounts, persistence]);
 
-  // Sincronizar devoluções
-  const sincronizarDevolucoes = useCallback(async () => {
-    const dadosAtualizados = await busca.sincronizarDevolucoes(mlAccounts);
-    if (dadosAtualizados.length > 0) {
-      setDevolucoes(dadosAtualizados);
-      persistence.saveDatabaseData(dadosAtualizados, advancedFilters);
-    }
-  }, [busca, mlAccounts, persistence, advancedFilters]);
+  // Remover sincronização automática com banco
+  // const sincronizarDevolucoes = ...
 
   // Atualizar filtros unificados
   const updateAdvancedFilters = useCallback((newFilters: Partial<DevolucaoAdvancedFilters>) => {
@@ -258,9 +241,8 @@ export function useDevolucoes(mlAccounts: any[]) {
     updateAdvancedFilters,
     clearFilters,
     
-    // Ações
+    // Ações (somente API)
     buscarComFiltros,
-    sincronizarDevolucoes,
     setCurrentPage,
     toggleAnalytics,
     
