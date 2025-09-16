@@ -656,17 +656,22 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="bg-muted/50 dark:bg-muted border-b">
-                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
-                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
-                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
-                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
-                       <th className="text-center px-4 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
-                       <th className="text-right px-4 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor</th>
-                       <th className="text-center px-4 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
-                       <th className="text-center px-4 py-3 font-semibold text-muted-foreground min-w-[70px]">Dados</th>
-                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[140px]">Datas</th>
-                       <th className="text-left px-4 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo</th>
-                       <th className="text-center px-4 py-3 font-semibold text-muted-foreground min-w-[80px]">Ações</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
+                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📋 Claim</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📦 Return</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">⚖️ Mediação</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📎 Anexos</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Criação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo Cancelamento</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -704,45 +709,45 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       return (
                         <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-muted/50 dark:border-border">
                           {/* Order ID */}
-                          <td className="px-4 py-3 font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                          <td className="px-3 py-3 font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
                             {devolucao.order_id}
                           </td>
                           
                           {/* Produto */}
-                          <td className="px-4 py-3">
-                            <div className="space-y-1">
-                              <div className="font-medium text-foreground line-clamp-2" title={devolucao.produto_titulo}>
+                          <td className="px-3 py-3">
+                            <div className="max-w-[200px]">
+                              <div className="font-medium text-foreground truncate" title={devolucao.produto_titulo}>
                                 {devolucao.produto_titulo || 'N/A'}
                               </div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-xs text-muted-foreground truncate">
                                 Claim: {devolucao.claim_id || 'N/A'}
                               </div>
                             </div>
                           </td>
                           
                           {/* SKU */}
-                          <td className="px-4 py-3 text-foreground font-mono text-sm whitespace-nowrap">
+                          <td className="px-3 py-3 text-foreground font-mono text-sm whitespace-nowrap">
                             {devolucao.sku || 'N/A'}
                           </td>
                           
                           {/* Comprador */}
-                          <td className="px-4 py-3 text-foreground whitespace-nowrap">
+                          <td className="px-3 py-3 text-foreground whitespace-nowrap">
                             {devolucao.comprador_nickname || 'N/A'}
                           </td>
                           
                           {/* Quantidade */}
-                          <td className="px-4 py-3 text-center text-foreground font-medium">
+                          <td className="px-3 py-3 text-center text-foreground font-medium">
                             {devolucao.quantidade || 1}
                           </td>
                           
-                          {/* Valor */}
-                          <td className="px-4 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
+                          {/* Valor Retido */}
+                          <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
                             R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}
                           </td>
                           
                           {/* Status */}
-                          <td className="px-4 py-3 text-center">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                          <td className="px-3 py-3 text-center">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                               devolucao.status_devolucao === 'completed' 
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                                 : devolucao.status_devolucao === 'cancelled'
@@ -753,65 +758,74 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             </span>
                           </td>
                           
-                          {/* Indicadores de Dados */}
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center gap-2">
-                              {temClaimData && (
-                                <span className="text-blue-600 dark:text-blue-400" title="Tem dados de Claim">📋</span>
-                              )}
-                              {temReturnData && (
-                                <span className="text-orange-600 dark:text-orange-400" title="Tem dados de Return">📦</span>
-                              )}
-                              {temMediationData && (
-                                <span className="text-purple-600 dark:text-purple-400" title="Tem Mediação">⚖️</span>
-                              )}
-                              {temAttachmentsData && (
-                                <span className="text-green-600 dark:text-green-400" title="Tem Anexos">📎</span>
-                              )}
-                              {!temClaimData && !temReturnData && !temMediationData && !temAttachmentsData && (
-                                <span className="text-muted-foreground">-</span>
-                              )}
-                            </div>
+                          {/* Claim */}
+                          <td className="px-3 py-3 text-center">
+                            {temClaimData ? (
+                              <span className="text-blue-600 dark:text-blue-400" title="Tem dados de Claim">📋</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
                           </td>
                           
-                          {/* Datas */}
-                          <td className="px-4 py-3">
-                            <div className="space-y-1 text-sm">
-                              <div className="text-foreground">
-                                <span className="text-muted-foreground">Criado:</span><br />
-                                {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                })}
-                              </div>
-                              <div className="text-foreground">
-                                <span className="text-muted-foreground">Atualizado:</span><br />
-                                {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                })}
-                              </div>
-                            </div>
+                          {/* Return */}
+                          <td className="px-3 py-3 text-center">
+                            {temReturnData ? (
+                              <span className="text-orange-600 dark:text-orange-400" title="Tem dados de Return">📦</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
                           </td>
                           
-                          {/* Motivo */}
-                          <td className="px-4 py-3">
-                            <div className="space-y-1">
-                              <div className="text-sm text-foreground line-clamp-3" title={String(getMotivoCancelamento(devolucao))}>
-                                {String(getMotivoCancelamento(devolucao))}
-                              </div>
-                              {claimData.type && (
-                                <div className="text-xs text-muted-foreground">
-                                  Tipo: {claimData.type}
-                                </div>
-                              )}
+                          {/* Mediação */}
+                          <td className="px-3 py-3 text-center">
+                            {temMediationData ? (
+                              <span className="text-purple-600 dark:text-purple-400" title="Tem Mediação">⚖️</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Anexos */}
+                          <td className="px-3 py-3 text-center">
+                            {temAttachmentsData ? (
+                              <span className="text-green-600 dark:text-green-400" title="Tem Anexos">📎</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Data Criação */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </td>
+                          
+                          {/* Data Atualização */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </td>
+                          
+                          {/* Tipo */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {claimData.type || 'N/A'}
+                          </td>
+                          
+                          {/* Motivo Cancelamento */}
+                          <td className="px-3 py-3">
+                            <div className="max-w-[200px] text-sm text-foreground line-clamp-2" title={String(getMotivoCancelamento(devolucao))}>
+                              {String(getMotivoCancelamento(devolucao))}
                             </div>
                           </td>
                           
                           {/* Ações */}
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-3 py-3 text-center">
                             <Button
                               variant="outline"
                               size="sm"
