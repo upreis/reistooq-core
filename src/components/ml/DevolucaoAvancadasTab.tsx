@@ -109,6 +109,38 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const analytics = useDevolucaoAnalytics(devolucoesFiltradas);
   const exportacao = useDevolucaoExportacao();
 
+  // Função para extrair motivo do cancelamento
+  const getMotivoCancelamento = useCallback((devolucao: DevolucaoAvancada) => {
+    // Tentar extrair o motivo dos dados JSON
+    if (devolucao.dados_claim) {
+      const claim = devolucao.dados_claim;
+      if (claim.reason) return claim.reason;
+      if (claim.cancel_reason) return claim.cancel_reason;
+      if (claim.cancellation_reason) return claim.cancellation_reason;
+      if (claim.resolution && claim.resolution.reason) return claim.resolution.reason;
+    }
+    
+    if (devolucao.dados_return) {
+      const returnData = devolucao.dados_return;
+      if (returnData.reason) return returnData.reason;
+      if (returnData.cancel_reason) return returnData.cancel_reason;
+      if (returnData.cancellation_reason) return returnData.cancellation_reason;
+    }
+
+    if (devolucao.dados_order) {
+      const order = devolucao.dados_order;
+      if (order.cancel_reason) return order.cancel_reason;
+      if (order.cancellation_reason) return order.cancellation_reason;
+    }
+
+    // Se não tiver motivo específico mas estiver cancelado
+    if (devolucao.status_devolucao === 'cancelled') {
+      return 'Cancelado';
+    }
+    
+    return 'N/A';
+  }, []);
+
   // Tempo real para demonstração
   useDevolucoesDemostracao(
     advancedFilters.buscarEmTempoReal,
@@ -539,44 +571,50 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                           Claim ID
                         </div>
                       </th>
-                      <th className="text-left p-3 font-medium">
-                        <div className="flex items-center gap-2">
-                          <Search className="h-4 w-4" />
-                          SKU
-                        </div>
-                      </th>
-                      <th className="text-left p-3 font-medium">Produto</th>
-                      <th className="text-left p-3 font-medium">
-                        <div className="flex items-center gap-2">
-                          <CheckSquare className="h-4 w-4" />
-                          Qtd
-                        </div>
-                      </th>
-                      <th className="text-left p-3 font-medium">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4" />
-                          Valor
-                        </div>
-                      </th>
-                      <th className="text-left p-3 font-medium">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4" />
-                          Status
-                        </div>
-                      </th>
-                      <th className="text-left p-3 font-medium">
-                        <div className="flex items-center gap-2">
-                          <Wrench className="h-4 w-4" />
-                          Comprador
-                        </div>
-                      </th>
-                      <th className="text-left p-3 font-medium">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          Data
-                        </div>
-                      </th>
-                      <th className="text-left p-3 font-medium">Ações</th>
+                       <th className="text-left p-3 font-medium">
+                         <div className="flex items-center gap-2">
+                           <Search className="h-4 w-4" />
+                           SKU
+                         </div>
+                       </th>
+                       <th className="text-left p-3 font-medium">Produto</th>
+                       <th className="text-left p-3 font-medium">
+                         <div className="flex items-center gap-2">
+                           <CheckSquare className="h-4 w-4" />
+                           Qtd
+                         </div>
+                       </th>
+                       <th className="text-left p-3 font-medium">
+                         <div className="flex items-center gap-2">
+                           <DollarSign className="h-4 w-4" />
+                           Valor
+                         </div>
+                       </th>
+                       <th className="text-left p-3 font-medium">
+                         <div className="flex items-center gap-2">
+                           <CheckCircle className="h-4 w-4" />
+                           Status
+                         </div>
+                       </th>
+                       <th className="text-left p-3 font-medium">
+                         <div className="flex items-center gap-2">
+                           <XCircle className="h-4 w-4" />
+                           Motivo
+                         </div>
+                       </th>
+                       <th className="text-left p-3 font-medium">
+                         <div className="flex items-center gap-2">
+                           <Wrench className="h-4 w-4" />
+                           Comprador
+                         </div>
+                       </th>
+                       <th className="text-left p-3 font-medium">
+                         <div className="flex items-center gap-2">
+                           <Clock className="h-4 w-4" />
+                           Data
+                         </div>
+                       </th>
+                       <th className="text-left p-3 font-medium">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -630,15 +668,23 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             <CheckCircle className="h-3 w-3" />
                             {devolucao.status_devolucao}
                           </span>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <Wrench className="h-4 w-4 text-orange-600" />
-                            <span className="truncate max-w-24" title={devolucao.comprador_nickname}>
-                              {devolucao.comprador_nickname || 'N/A'}
-                            </span>
-                          </div>
-                        </td>
+                         </td>
+                         <td className="p-3 max-w-xs">
+                           <div className="flex items-center gap-2">
+                             <XCircle className="h-4 w-4 text-red-600" />
+                             <span className="truncate" title={getMotivoCancelamento(devolucao)}>
+                               {getMotivoCancelamento(devolucao)}
+                             </span>
+                           </div>
+                         </td>
+                         <td className="p-3">
+                           <div className="flex items-center gap-2">
+                             <Wrench className="h-4 w-4 text-orange-600" />
+                             <span className="truncate max-w-24" title={devolucao.comprador_nickname}>
+                               {devolucao.comprador_nickname || 'N/A'}
+                             </span>
+                           </div>
+                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-gray-500" />
@@ -724,9 +770,19 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                               <span className="text-gray-500 block">Quantidade</span>
                               <p className="font-medium">{devolucao.quantidade || 1}</p>
                             </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
+                           </div>
+                           
+                           <div className="flex items-center gap-2">
+                             <XCircle className="h-4 w-4 text-red-600" />
+                             <div>
+                               <span className="text-gray-500 block">Motivo</span>
+                               <p className="font-medium truncate" title={getMotivoCancelamento(devolucao)}>
+                                 {getMotivoCancelamento(devolucao)}
+                               </p>
+                             </div>
+                           </div>
+                           
+                           <div className="flex items-center gap-2">
                             <Wrench className="h-4 w-4 text-orange-600" />
                             <div>
                               <span className="text-gray-500 block">Comprador</span>
@@ -926,6 +982,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       <div>
                         <Label className="text-sm text-gray-500">Data Criação</Label>
                         <p className="font-medium">{new Date(selectedDevolucao.data_criacao).toLocaleString()}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <XCircle className="h-5 w-5 text-red-600" />
+                      <div>
+                        <Label className="text-sm text-gray-500">Motivo do Cancelamento</Label>
+                        <p className="font-medium">{getMotivoCancelamento(selectedDevolucao)}</p>
                       </div>
                     </div>
                     

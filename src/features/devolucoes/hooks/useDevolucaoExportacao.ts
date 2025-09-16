@@ -220,6 +220,16 @@ export function useDevolucaoExportacao() {
 // Funções auxiliares
 function processDataForExport(data: any[], options: ExportOptions) {
   return data.map(item => {
+    // Extrair motivo do cancelamento
+    const getMotivoCancelamento = (devolucao: any) => {
+      if (devolucao.dados_claim?.reason) return devolucao.dados_claim.reason;
+      if (devolucao.dados_claim?.cancel_reason) return devolucao.dados_claim.cancel_reason;
+      if (devolucao.dados_return?.reason) return devolucao.dados_return.reason;
+      if (devolucao.dados_order?.cancel_reason) return devolucao.dados_order.cancel_reason;
+      if (devolucao.status_devolucao === 'cancelled') return 'Cancelado';
+      return 'N/A';
+    };
+
     const baseData = {
       'Order ID': item.order_id,
       'Claim ID': item.claim_id || '-',
@@ -228,6 +238,7 @@ function processDataForExport(data: any[], options: ExportOptions) {
       'Quantidade': item.quantidade || 0,
       'Valor Retido': item.valor_retido || 0,
       'Status': item.status_devolucao || '-',
+      'Motivo': getMotivoCancelamento(item),
       'Comprador': item.comprador_nickname || '-',
       'Data Criação': item.data_criacao ? format(new Date(item.data_criacao), 'dd/MM/yyyy HH:mm') : '-',
       'Conta': item.account_name || '-'
