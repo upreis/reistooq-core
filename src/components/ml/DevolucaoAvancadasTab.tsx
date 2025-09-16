@@ -755,51 +755,59 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
                        
-                       {/* MENSAGENS E COMUNICAÇÃO */}
+                       {/* COLUNAS ORIGINAIS MANTIDAS */}
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📋 Claim</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📦 Return</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">⚖️ Mediação</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📎 Anexos</th>
+                       
+                       {/* MENSAGENS E COMUNICAÇÃO (novas) */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[70px]">💬 Msgs</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔔 Não Lidas</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📎 Anexos</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">👮 Moderação</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Msg</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">👤 Remetente</th>
                        
-                       {/* DATAS E PRAZOS */}
+                       {/* DATAS E PRAZOS (novas) */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Dias Rest.</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Venc. Ação</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Est. Troca</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Lim. Troca</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📝 Prazo Rev.</th>
                        
-                       {/* RASTREAMENTO E LOGÍSTICA */}
+                       {/* RASTREAMENTO E LOGÍSTICA (novas) */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">🚛 Rastreio</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Transport.</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📍 Status Env.</th>
                        
-                       {/* CUSTOS E FINANCEIRO */}
+                       {/* CUSTOS E FINANCEIRO (novas) */}
                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💰 Custo Env.</th>
                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Compensação</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">💱 Moeda</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏢 Resp. Custo</th>
                        
-                       {/* CLASSIFICAÇÃO E RESOLUÇÃO */}
+                       {/* CLASSIFICAÇÃO E RESOLUÇÃO (novas) */}
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Tipo</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Subtipo</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚖️ Mediação</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Resolução</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🚨 Prioridade</th>
                        
-                       {/* MÉTRICAS E KPIS */}
+                       {/* MÉTRICAS E KPIS (novas) */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏱️ Resp (min)</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏁 Total (min)</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📊 Evidências</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">😊 Satisfação</th>
                        
-                       {/* ESTADOS E FLAGS */}
+                       {/* ESTADOS E FLAGS (novas) */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🔄 Troca</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🚀 ML</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">✋ Ação Req.</th>
                        
+                       {/* COLUNAS ORIGINAIS MANTIDAS */}
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Criação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo Original</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo Cancelamento</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Ações</th>
                     </tr>
                   </thead>
@@ -889,7 +897,45 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             </span>
                           </td>
                           
-                          {/* MENSAGENS E COMUNICAÇÃO (6 colunas) */}
+                          {/* COLUNAS ORIGINAIS MANTIDAS */}
+                          
+                          {/* Claim */}
+                          <td className="px-3 py-3 text-center">
+                            {temClaimData ? (
+                              <span className="text-blue-600 dark:text-blue-400" title="Tem dados de Claim">📋</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Return */}
+                          <td className="px-3 py-3 text-center">
+                            {temReturnData ? (
+                              <span className="text-orange-600 dark:text-orange-400" title="Tem dados de Return">📦</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Mediação Original */}
+                          <td className="px-3 py-3 text-center">
+                            {temMediationData ? (
+                              <span className="text-purple-600 dark:text-purple-400" title="Tem Mediação">⚖️</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Anexos Original */}
+                          <td className="px-3 py-3 text-center">
+                            {temAttachmentsData ? (
+                              <span className="text-green-600 dark:text-green-400" title="Tem Anexos">📎</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* MENSAGENS E COMUNICAÇÃO (novas colunas) */}
                           
                           {/* Mensagens */}
                           <td className="px-3 py-3 text-center">
@@ -1151,6 +1197,27 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                               month: '2-digit',
                               year: 'numeric'
                             })}
+                          </td>
+                          
+                          {/* Data Atualização (ORIGINAL RESTAURADA) */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </td>
+                          
+                          {/* Tipo Original (ORIGINAL RESTAURADA) */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {claimData.type || 'N/A'}
+                          </td>
+                          
+                          {/* Motivo Cancelamento (ORIGINAL RESTAURADA) */}
+                          <td className="px-3 py-3">
+                            <div className="max-w-[200px] text-sm text-foreground line-clamp-2" title={String(getMotivoCancelamento(devolucao))}>
+                              {String(getMotivoCancelamento(devolucao))}
+                            </div>
                           </td>
                           
                           {/* Ações */}
