@@ -1,7 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from "react-router-dom"
-import App from './App-minimal'
+import App from './App'
 
 import { setupGlobalToast } from "@/utils/toast-bridge";
 import { toast } from "sonner";
