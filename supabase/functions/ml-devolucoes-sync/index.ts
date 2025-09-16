@@ -212,6 +212,236 @@ async function fetchReturnsFromClaims(claims, opts) {
   return allReturns;
 }
 
+// ===== ENRIQUECIMENTO DE DADOS =====
+
+async function enrichOrder(orderId, accessToken, opts) {
+  const { integration_account_id, supabaseUrl, authHeader, internalToken, include_messages = true, include_shipping = true, include_buyer_details = true } = opts;
+  
+  console.log(`🔍 [ML Devoluções] Enriquecendo order ${orderId}...`);
+  
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: "application/json"
+  };
+
+  const enriched_data = {
+    mediations: [],
+    claims: [],
+    messages: [],
+    shipping_details: {},
+    buyer_details: {},
+    timeline: [],
+    return_analysis: {
+      has_mediation: false,
+      has_refund: false,
+      refund_amount: 0,
+      refund_date: null,
+      cancel_reason: null,
+      cancel_date: null,
+      days_to_cancel: 0,
+      return_window_days: 0,
+      can_return: false,
+      total_timeline_events: 0
+    }
+  };
+
+  try {
+    // 1) Buscar detalhes do pedido primeiro
+    const orderUrl = `${API_BASE}/orders/${orderId}`;
+    const orderResp = await fetchWithRetry(orderUrl, { headers, method: "GET" }, integration_account_id, supabaseUrl, authHeader, internalToken);
+    
+    let orderData = {};
+    if (orderResp.ok) {
+      orderData = await orderResp.json().catch(() => ({}));
+      console.log(`📞 [ML Devoluções] Buscando detalhes do pedido: ${orderId}`);
+      
+      // Adicionar eventos do pedido à timeline
+      if (orderData.date_created) {
+        enriched_data.timeline.push({
+          date: orderData.date_created,
+          event: 'order_created',
+          description: 'Pedido criado',
+          data: { status: orderData.status }
+        });
+      }
+      
+      if (orderData.payments?.[0]?.date_approved) {
+        enriched_data.timeline.push({
+          date: orderData.payments[0].date_approved,
+          event: 'payment_approved',
+          description: 'Pagamento aprovado',
+          data: { amount: orderData.payments[0].transaction_amount }
+        });
+      }
+
+      // Calcular análises automáticas
+      if (orderData.date_created) {
+        const createdDate = new Date(orderData.date_created);
+        const now = new Date();
+        enriched_data.return_analysis.return_window_days = Math.max(0, 30 - Math.floor((now - createdDate) / (1000 * 60 * 60 * 24)));
+        enriched_data.return_analysis.can_return = enriched_data.return_analysis.return_window_days > 0;
+      }
+
+      if (orderData.status === 'cancelled') {
+        enriched_data.return_analysis.cancel_date = orderData.date_closed || orderData.last_updated;
+        if (orderData.date_created && enriched_data.return_analysis.cancel_date) {
+          const created = new Date(orderData.date_created);
+          const cancelled = new Date(enriched_data.return_analysis.cancel_date);
+          enriched_data.return_analysis.days_to_cancel = Math.floor((cancelled - created) / (1000 * 60 * 60 * 24));
+        }
+        enriched_data.return_analysis.cancel_reason = orderData.tags?.find(tag => tag.startsWith('cancel_reason_'))?.replace('cancel_reason_', '') || 'unknown';
+      }
+    }
+
+    // 2) Buscar mediações se existirem
+    if (orderData.mediations?.length > 0) {
+      console.log(`🔍 [ML Devoluções] Encontradas ${orderData.mediations.length} mediações para o pedido ${orderId}`);
+      
+      for (const mediation of orderData.mediations) {
+        if (mediation.id) {
+          try {
+            const mediationUrl = `${API_BASE}/mediations/${mediation.id}`;
+            const mediationResp = await fetchWithRetry(mediationUrl, { headers, method: "GET" }, integration_account_id, supabaseUrl, authHeader, internalToken);
+            
+            if (mediationResp.ok) {
+              const mediationData = await mediationResp.json().catch(() => ({}));
+              enriched_data.mediations.push(mediationData);
+              enriched_data.return_analysis.has_mediation = true;
+              
+              console.log(`🔍 [ML Devoluções] Buscando dados completos do claim - Mediation ID: ${mediation.id}`);
+              
+              // Adicionar evento de mediação à timeline
+              if (mediationData.date_created) {
+                enriched_data.timeline.push({
+                  date: mediationData.date_created,
+                  event: 'mediation_created',
+                  description: 'Mediação criada',
+                  data: { mediation_id: mediation.id, status: mediationData.status }
+                });
+              }
+            }
+          } catch (e) {
+            console.warn(`⚠️ [ML Devoluções] Erro ao buscar mediação ${mediation.id}:`, e.message);
+          }
+        }
+      }
+    }
+
+    // 3) Buscar claims se existir claim_id
+    if (orderData.claim_id) {
+      try {
+        const claimUrl = `${API_BASE}/claims/${orderData.claim_id}`;
+        const claimResp = await fetchWithRetry(claimUrl, { headers, method: "GET" }, integration_account_id, supabaseUrl, authHeader, internalToken);
+        
+        if (claimResp.ok) {
+          const claimData = await claimResp.json().catch(() => ({}));
+          enriched_data.claims.push(claimData);
+          
+          console.log(`✅ [ML Devoluções] Dados completos do claim obtidos para mediação ${orderData.claim_id}`);
+          
+          // Buscar mensagens do claim se solicitado
+          if (include_messages) {
+            try {
+              const messagesUrl = `${API_BASE}/claims/${orderData.claim_id}/messages`;
+              const messagesResp = await fetchWithRetry(messagesUrl, { headers, method: "GET" }, integration_account_id, supabaseUrl, authHeader, internalToken);
+              
+              if (messagesResp.ok) {
+                const messagesData = await messagesResp.json().catch(() => ({ results: [] }));
+                enriched_data.messages = messagesData.results || messagesData.data || [];
+                console.log(`💬 [ML Devoluções] ${enriched_data.messages.length} mensagens obtidas para claim ${orderData.claim_id}`);
+                
+                // Adicionar mensagens à timeline
+                enriched_data.messages.forEach(msg => {
+                  if (msg.date_created) {
+                    enriched_data.timeline.push({
+                      date: msg.date_created,
+                      event: 'message_sent',
+                      description: `Mensagem de ${msg.sender_role}`,
+                      data: { message_id: msg.id, sender: msg.sender_role }
+                    });
+                  }
+                });
+              }
+            } catch (e) {
+              console.warn(`⚠️ [ML Devoluções] Erro ao buscar mensagens do claim ${orderData.claim_id}:`, e.message);
+            }
+          }
+
+          // Analisar dados do claim para refund
+          if (claimData.amount_refunded > 0) {
+            enriched_data.return_analysis.has_refund = true;
+            enriched_data.return_analysis.refund_amount = claimData.amount_refunded;
+            enriched_data.return_analysis.refund_date = claimData.date_last_update;
+          }
+        }
+      } catch (e) {
+        console.warn(`⚠️ [ML Devoluções] Erro ao buscar claim ${orderData.claim_id}:`, e.message);
+      }
+    }
+
+    // 4) Buscar detalhes de envio se solicitado
+    if (include_shipping && orderData.shipping?.id) {
+      try {
+        const shipmentUrl = `${API_BASE}/shipments/${orderData.shipping.id}`;
+        const shipmentResp = await fetchWithRetry(shipmentUrl, { headers, method: "GET" }, integration_account_id, supabaseUrl, authHeader, internalToken);
+        
+        if (shipmentResp.ok) {
+          enriched_data.shipping_details = await shipmentResp.json().catch(() => ({}));
+          console.log(`🚚 [ML Devoluções] Envio ${orderData.shipping.id} obtido com sucesso`);
+          
+          // Adicionar eventos de envio à timeline
+          if (enriched_data.shipping_details.status_history) {
+            enriched_data.shipping_details.status_history.forEach(status => {
+              if (status.date_created) {
+                enriched_data.timeline.push({
+                  date: status.date_created,
+                  event: 'shipping_status_update',
+                  description: `Status do envio: ${status.status}`,
+                  data: { status: status.status, substatus: status.substatus }
+                });
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.warn(`⚠️ [ML Devoluções] Erro ao buscar envio ${orderData.shipping.id}:`, e.message);
+      }
+    }
+
+    // 5) Buscar detalhes do comprador se solicitado
+    if (include_buyer_details && orderData.buyer?.id) {
+      try {
+        const buyerUrl = `${API_BASE}/users/${orderData.buyer.id}`;
+        const buyerResp = await fetchWithRetry(buyerUrl, { headers, method: "GET" }, integration_account_id, supabaseUrl, authHeader, internalToken);
+        
+        if (buyerResp.ok) {
+          enriched_data.buyer_details = await buyerResp.json().catch(() => ({}));
+          console.log(`👤 [ML Devoluções] Dados do comprador ${orderData.buyer.id} obtidos com sucesso`);
+        }
+      } catch (e) {
+        console.warn(`⚠️ [ML Devoluções] Erro ao buscar comprador ${orderData.buyer.id}:`, e.message);
+      }
+    }
+
+    // 6) Ordenar timeline por data e calcular estatísticas finais
+    enriched_data.timeline.sort((a, b) => new Date(a.date) - new Date(b.date));
+    enriched_data.return_analysis.total_timeline_events = enriched_data.timeline.length;
+
+    console.log(`✅ [ML Devoluções] Order ${orderId} enriquecida com sucesso`);
+    
+    return {
+      ...orderData,
+      devolution_details: enriched_data
+    };
+
+  } catch (e) {
+    console.error(`❌ [ML Devoluções] Erro ao enriquecer order ${orderId}:`, e.message);
+    return null;
+  }
+}
+
+// ===== FUNÇÃO PRINCIPAL =====
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", {
     headers: corsHeaders
@@ -221,7 +451,20 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { integration_account_id, date_from, date_to, dateFrom, dateTo, sellerId, status, mode = "both" } = body || {};
+    const { 
+      integration_account_id, 
+      date_from, 
+      date_to, 
+      dateFrom, 
+      dateTo, 
+      sellerId, 
+      status, 
+      mode = "enriched",  // 'basic' | 'enriched' | 'full'
+      include_messages = true,
+      include_shipping = true,
+      include_buyer_details = true,
+      enrich_level = "complete"  // 'light' | 'complete'
+    } = body || {};
 
     if (!integration_account_id) return fail("integration_account_id é obrigatório", 400);
 
@@ -236,7 +479,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization") || "";
     const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
 
-    console.log(`🔍 [ML Devoluções] Processando conta: ${integration_account_id}, modo: ${mode}`);
+    console.log(`🔍 [ML Devoluções] Processando conta: ${integration_account_id}, modo: ${mode}, enriquecimento: ${enrich_level}`);
 
     // 1) Conta
     const { data: account, error: accErr } = await sb.from("integration_accounts").select("*").eq("id", integration_account_id).eq("is_active", true).single();
@@ -291,7 +534,7 @@ serve(async (req) => {
 
     // 4) Buscar Claims (sempre necessário para buscar returns)
     let claims = [];
-    if (mode === "both" || mode === "claims" || mode === "returns") {
+    if (mode === "both" || mode === "claims" || mode === "returns" || mode === "enriched" || mode === "full") {
       claims = await fetchClaimsData({
         accessToken,
         sellerId: sellerParam,
@@ -316,7 +559,7 @@ serve(async (req) => {
     }
 
     // 5) Buscar Returns baseado nos Claims encontrados
-    if ((mode === "both" || mode === "returns") && claims.length > 0) {
+    if ((mode === "both" || mode === "returns" || mode === "enriched" || mode === "full") && claims.length > 0) {
       const returns = await fetchReturnsFromClaims(claims, {
         accessToken,
         integration_account_id,
@@ -331,11 +574,77 @@ serve(async (req) => {
           data: r
         });
       }
-    } else if (mode === "returns" && claims.length === 0) {
-      console.log("⚠️ [ML Devoluções] Modo 'returns' solicitado mas nenhum claim encontrado. Returns requerem claims.");
+    } else if ((mode === "returns" || mode === "enriched" || mode === "full") && claims.length === 0) {
+      console.log("⚠️ [ML Devoluções] Modo com returns solicitado mas nenhum claim encontrado. Returns requerem claims.");
     }
 
-    // 6) Persistir dados
+    // 6) ENRIQUECIMENTO DE DADOS (novo)
+    if ((mode === "enriched" || mode === "full") && enrich_level === "complete") {
+      console.log(`🔍 [ML Devoluções] Iniciando enriquecimento de ${all.length} itens...`);
+      
+      const enrichmentOpts = {
+        integration_account_id,
+        supabaseUrl,
+        authHeader,
+        internalToken: INTERNAL_TOKEN,
+        include_messages,
+        include_shipping,
+        include_buyer_details
+      };
+
+      // Coletar order_ids únicos para enriquecimento
+      const orderIds = new Set();
+      all.forEach(item => {
+        if (item.data?.order_id) {
+          orderIds.add(item.data.order_id);
+        }
+        if (item.data?._source_claim?.order_id) {
+          orderIds.add(item.data._source_claim.order_id);
+        }
+      });
+
+      console.log(`🔍 [ML Devoluções] Enriquecendo ${orderIds.size} pedidos únicos...`);
+
+      // Enriquecer cada pedido (máximo 100 para performance)
+      const orderIdsArray = Array.from(orderIds).slice(0, 100);
+      const enrichedOrders = {};
+
+      // Processar em lotes para evitar sobrecarga
+      const batchSize = 10;
+      for (let i = 0; i < orderIdsArray.length; i += batchSize) {
+        const batch = orderIdsArray.slice(i, i + batchSize);
+        
+        const enrichmentPromises = batch.map(async orderId => {
+          try {
+            const enriched = await enrichOrder(orderId, accessToken, enrichmentOpts);
+            if (enriched) {
+              enrichedOrders[orderId] = enriched;
+            }
+          } catch (e) {
+            console.warn(`⚠️ [ML Devoluções] Falha no enriquecimento do pedido ${orderId}:`, e.message);
+          }
+        });
+
+        await Promise.all(enrichmentPromises);
+        
+        // Pausa entre lotes para evitar rate limiting
+        if (i + batchSize < orderIdsArray.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      // Aplicar dados enriquecidos aos itens
+      all.forEach(item => {
+        const orderId = item.data?.order_id || item.data?._source_claim?.order_id;
+        if (orderId && enrichedOrders[orderId]) {
+          item.enriched_order = enrichedOrders[orderId];
+        }
+      });
+
+      console.log(`✅ [ML Devoluções] Enriquecimento concluído: ${Object.keys(enrichedOrders).length} pedidos enriquecidos`);
+    }
+
+    // 7) Persistir dados (incluindo enriquecimento)
     let persisted = 0;
     let errors = 0;
 
@@ -376,6 +685,10 @@ serve(async (req) => {
             last_message: c.last_message,
             seller_response: c.seller_response,
             resolution: c.resolution,
+            // Adicionar dados enriquecidos
+            dados_claim: it.enriched_order?.devolution_details?.claims || null,
+            dados_mensagens: it.enriched_order?.devolution_details?.messages || null,
+            dados_return: it.enriched_order?.devolution_details || null,
             updated_at: new Date().toISOString()
           };
 
@@ -421,6 +734,10 @@ serve(async (req) => {
             unit_price: r?.unit_price ?? claimItem?.unit_price ?? 0,
             reason_code: r?.reason_code ?? sourceClaim?.reason_code,
             reason_description: r?.reason_description ?? sourceClaim?.reason_description,
+            // Adicionar dados enriquecidos
+            dados_claim: it.enriched_order?.devolution_details?.claims || null,
+            dados_mensagens: it.enriched_order?.devolution_details?.messages || null,
+            dados_return: it.enriched_order?.devolution_details || null,
             updated_at: new Date().toISOString()
           };
 
@@ -440,6 +757,7 @@ serve(async (req) => {
     }
 
     console.log(`🚀 [ML Devoluções] Processamento concluído: ${all.length} devoluções encontradas`);
+    console.log(`🎉 [ML Devoluções] Total de devoluções processadas: ${persisted}`);
 
     return ok({
       ok: true,
@@ -447,6 +765,8 @@ serve(async (req) => {
       persisted,
       errors,
       mode,
+      enrich_level,
+      enrichment_enabled: mode === "enriched" || mode === "full",
       range: {
         from: dateFromISO,
         to: dateToISO
