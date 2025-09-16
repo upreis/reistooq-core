@@ -29,10 +29,15 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.ml-token-refresh-cron]
-verify_jwt = true
+verify_jwt = false
+
+# CONFIGURAÇÃO CRÍTICA: CRON automático para refresh preventivo
+# Executa a cada 2 horas para verificar tokens que expiram em 4 horas
+[functions.ml-token-refresh-cron.cron]
+schedule = "0 */2 * * *"
 
 [functions.integrations-get-secret]
-verify_jwt = true
+verify_jwt = false
 
 [functions.integrations-store-secret]
 verify_jwt = true

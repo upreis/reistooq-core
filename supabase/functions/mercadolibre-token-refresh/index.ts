@@ -55,30 +55,34 @@ Deno.serve(async (req) => {
 
     const supabase = makeClient(req.headers.get("Authorization"));
 
-    // ✅ 1. SISTEMA BLINDADO: Buscar secrets via função segura
+    // ✅ 1. SISTEMA BLINDADO: Buscar secrets via função segura (com headers corretos)
     const { data: secretData, error: secretsError } = await supabase.functions.invoke(
       'integrations-get-secret',
       {
         body: {
           integration_account_id,
           provider: 'mercadolivre'
+        },
+        headers: {
+          'x-internal-call': 'true',
+          'x-internal-token': INTERNAL_TOKEN
         }
       }
     );
 
-    if (secretsError || !secretData?.decrypted_data) {
+    if (secretsError || !secretData?.secret) {
       console.error('[ML Token Refresh] Erro ao buscar secrets:', secretsError);
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Failed to fetch secrets',
-        details: secretsError 
+        details: secretsError || 'Secret not found'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const secrets = secretData.decrypted_data;
+    const secrets = secretData.secret;
 
     // Tokens já decriptados automaticamente pela função
     let refreshToken = secrets.refresh_token as string | null;
