@@ -299,6 +299,8 @@ const DevolucaoCard = React.memo(({ devolucao, onClick }: { devolucao: Devolucao
 
 // Componente principal otimizado
 const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) => {
+  console.log('✅ DevolucaoAvancadasOptimizada carregado - mlAccounts:', mlAccounts?.length);
+  
   // Estados otimizados
   const [filtros, setFiltros] = React.useState({
     search: '',
