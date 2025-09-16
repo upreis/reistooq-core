@@ -1,25 +1,9 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Order, OrderFilters } from '../../types/Orders.types';
 import { useOrdersQuery } from '../../hooks/queries/useOrdersQuery';
 import { useOrdersMutations } from '../../hooks/mutations/useOrdersMutations';
 import { useOrdersRealtime } from '../../hooks/realtime/useOrdersRealtime';
 import { useOrdersUI } from '../../hooks/ui/useOrdersUI';
-
-// Create a dedicated QueryClient for orders
-const ordersQueryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30 * 1000, // 30 seconds
-      gcTime: 5 * 60 * 1000, // 5 minutes
-      retry: 2,
-      refetchOnWindowFocus: false,
-    },
-    mutations: {
-      retry: 1,
-    },
-  },
-});
 
 interface OrdersContextValue {
   // Data
@@ -115,11 +99,7 @@ function OrdersProviderInner({
 }
 
 export function OrdersProvider(props: OrdersProviderProps) {
-  return (
-    <QueryClientProvider client={ordersQueryClient}>
-      <OrdersProviderInner {...props} />
-    </QueryClientProvider>
-  );
+  return <OrdersProviderInner {...props} />;
 }
 
 export function useOrdersContext(): OrdersContextValue {
