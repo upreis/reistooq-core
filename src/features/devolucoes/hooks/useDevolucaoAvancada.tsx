@@ -67,41 +67,44 @@ export function useDevolucaoAvancada(config: UseDevolucaoAvancadaConfig) {
 
   const fase2 = useDevolucoesFase2(fase2Config);
 
-  // ===== AUTO-ENRIQUECIMENTO =====
-  const enrichDataMutation = useMutation({
-    mutationFn: async () => {
-      console.log('🚀 Iniciando enriquecimento automático...');
+  // ===== SISTEMA DE ENRIQUECIMENTO REAL =====
+  const realEnrichmentMutation = useMutation({
+    mutationFn: async (action: 'auto' | 'manual' | 'check') => {
+      console.log(`🚀 Enriquecimento REAL - Ação: ${action}`);
       
-      const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
+      const { data, error } = await supabase.functions.invoke('ml-enrichment-real', {
         body: {
-          action: 'enrich_existing_data',
+          action: action === 'check' ? 'check_missing_data' : 'real_enrich_claims',
           integration_account_id: config.integration_account_ids[0],
-          limit: 25
+          limit: action === 'manual' ? 10 : 25
         }
       });
 
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
-      console.log('✅ Enriquecimento concluído:', data);
+    onSuccess: (data, action) => {
+      console.log(`✅ Enriquecimento REAL concluído (${action}):`, data);
       queryClient.invalidateQueries({ queryKey: ['devolucoes-avancadas'] });
-      if (data.enriched_count > 0) {
-        toast.success(`${data.enriched_count} devoluções enriquecidas com dados da ML!`);
-      } else {
-        toast.info('Nenhuma devolução nova para enriquecer');
+      
+      if (action !== 'check') {
+        if (data.enriched_count > 0) {
+          toast.success(`🎉 ${data.enriched_count} devoluções enriquecidas com dados REAIS da ML!`);
+        } else {
+          toast.info('ℹ️ Todas as devoluções já estão atualizadas');
+        }
       }
     },
-    onError: (error: any) => {
-      console.error('❌ Erro no enriquecimento:', error);
+    onError: (error: any, action) => {
+      console.error(`❌ Erro no enriquecimento REAL (${action}):`, error);
       toast.error(`Erro no enriquecimento: ${error.message}`);
     }
   });
 
-  // Função manual para enriquecer dados
-  const enriquecerDadosManual = useCallback(() => {
-    enrichDataMutation.mutate();
-  }, [enrichDataMutation]);
+  // Função para enriquecimento manual
+  const enriquecerDadosReal = useCallback(() => {
+    realEnrichmentMutation.mutate('manual');
+  }, [realEnrichmentMutation]);
 
   // ===== QUERY PRINCIPAL - DEVOLUÇÕES AVANÇADAS =====
   const { 
@@ -231,8 +234,6 @@ export function useDevolucaoAvancada(config: UseDevolucaoAvancadaConfig) {
       console.log('✅ Devoluções carregadas:', data?.length);
       return (data || []) as any[];
     },
-    enabled: config.integration_account_ids.length > 0,
-    refetchInterval: config.enable_real_time ? 30000 : false, // Auto-refresh se real-time ativo
   });
 
   // ===== AUTO-ENRIQUECIMENTO APÓS CARREGAR DADOS =====
@@ -246,11 +247,11 @@ export function useDevolucaoAvancada(config: UseDevolucaoAvancadaConfig) {
       );
       
       if (hasEmptyColumns) {
-        console.log('🔄 Detectadas colunas vazias, iniciando enriquecimento automático...');
-        enrichDataMutation.mutate();
+        console.log('🔄 Detectadas colunas vazias, iniciando enriquecimento REAL automático...');
+        realEnrichmentMutation.mutate('auto');
       }
     }
-  }, [config.auto_sync, config.integration_account_ids, devolucoes.length, enrichDataMutation]);
+  }, [config.auto_sync, config.integration_account_ids, devolucoes.length, realEnrichmentMutation]);
 
   // ===== CALCULAR MÉTRICAS =====
   const metricas = useMemo((): DevolucaoMetrics => {
@@ -463,9 +464,9 @@ export function useDevolucaoAvancada(config: UseDevolucaoAvancadaConfig) {
 
     // Estados de loading
     isLoadingAction: batchActionMutation.isPending,
-    isEnriching: enrichDataMutation.isPending,
+    isEnrichingReal: realEnrichmentMutation.isPending,
 
-    // Ações de enriquecimento
-    enriquecerDadosManual
+    // Ações de enriquecimento REAL
+    enriquecerDadosReal
   };
 }

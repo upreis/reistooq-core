@@ -76,3 +76,6 @@ verify_jwt = true
 [functions.devolucoes-real-time-processor]
 verify_jwt = false
 
+[functions.ml-enrichment-real]
+verify_jwt = false
+
