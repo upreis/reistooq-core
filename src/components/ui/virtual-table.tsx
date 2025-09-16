@@ -3,7 +3,7 @@
  * Performance optimization for large datasets (>500 items)
  */
 
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import * as React from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
 
@@ -33,8 +33,8 @@ export function VirtualTable<T>({
   enableVirtualization = true,
   threshold = 500
 }: VirtualTableProps<T>) {
-  const parentRef = useRef<HTMLDivElement>(null);
-  const [tableWidth, setTableWidth] = useState<number>(0);
+  const parentRef = React.useRef<HTMLDivElement>(null);
+  const [tableWidth, setTableWidth] = React.useState<number>(0);
 
   // Decidir se usar virtualização baseado no tamanho dos dados
   const shouldVirtualize = enableVirtualization && data.length > threshold;
@@ -49,7 +49,7 @@ export function VirtualTable<T>({
   });
 
   // Observar largura da tabela para ajuste responsivo
-  useEffect(() => {
+  React.useEffect(() => {
     const resizeObserver = new ResizeObserver((entries) => {
       const [entry] = entries;
       if (entry) {
@@ -65,7 +65,7 @@ export function VirtualTable<T>({
   }, []);
 
   // Calcular larguras das colunas
-  const columnWidths = useMemo(() => {
+  const columnWidths = React.useMemo(() => {
     const totalFixedWidth = columns.reduce((acc, col) => acc + (col.width || 0), 0);
     const flexColumns = columns.filter(col => !col.width);
     const remainingWidth = Math.max(0, tableWidth - totalFixedWidth);

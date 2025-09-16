@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import * as React from "react";
 import { THEMES, type ThemeName } from "./materialm/tokens";
 
 type ThemeProviderProps = {
@@ -22,7 +22,7 @@ const initialState: ThemeProviderState = {
   toggleTheme: () => null,
 };
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+const ThemeProviderContext = React.createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
@@ -30,7 +30,7 @@ export function ThemeProvider({
   storageKey = "reistoq.theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<ThemeName>(() => {
+  const [theme, setTheme] = React.useState<ThemeName>(() => {
     // Safe localStorage access for SSR/hydration
     if (typeof window === 'undefined') {
       return defaultTheme;
@@ -44,7 +44,7 @@ export function ThemeProvider({
     }
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     const root = document.documentElement;
     
     // Remove all theme classes
@@ -92,7 +92,7 @@ export function ThemeProvider({
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
+  const context = React.useContext(ThemeProviderContext);
 
   if (context === undefined)
     throw new Error("useTheme must be used within a ThemeProvider");
