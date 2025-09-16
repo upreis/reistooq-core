@@ -14,6 +14,7 @@ import { useDevolucaoExportacao } from '@/features/devolucoes/hooks/useDevolucao
 import { useDevolucoesFase2 } from '@/features/devolucoes/hooks/useDevolucoesFase2';
 import DevolucaoAnalyticsDashboard from '@/features/devolucoes/components/DevolucaoAnalyticsDashboard';
 import DevolucaoExportDialog from '@/features/devolucoes/components/DevolucaoExportDialog';
+import { auditarLoteIndicadores, debugIndicadores } from '@/dev/auditIndicadoresDevoluções';
 import { 
   RefreshCw, 
   Download, 
@@ -746,6 +747,31 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <BarChart3 className="h-4 w-4" />
               Métricas Avançadas
             </Button>
+
+            {/* 🔍 BOTÃO AUDITORIA INDICADORES */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (devolucoesFiltradas.length === 0) {
+                  toast.error('Nenhuma devolução para auditar. Faça uma busca primeiro.');
+                  return;
+                }
+                
+                const auditResult = auditarLoteIndicadores(devolucoesFiltradas);
+                console.log('🔍 AUDITORIA COMPLETA:', auditResult);
+                
+                // Debug individual das primeiras 3 devoluções
+                devolucoesFiltradas.slice(0, 3).forEach((dev, index) => {
+                  console.log(`🔍 DEBUG DEVOLUÇÃO ${index + 1}:`, debugIndicadores(dev));
+                });
+                
+                toast.success(`Auditoria completa! Claims: ${auditResult.summary.claim_detected}/${auditResult.summary.total}, Returns: ${auditResult.summary.return_detected}/${auditResult.summary.total}. Veja o console para detalhes.`);
+              }}
+              className="border-purple-500 text-purple-600 hover:bg-purple-50 flex items-center gap-2"
+            >
+              <Wrench className="h-4 w-4" />
+              Auditar Indicadores
+            </Button>
           </div>
 
         </CardContent>
@@ -853,30 +879,95 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                       const returnData = devolucao.dados_return || {};
                       const mensagensData = devolucao.dados_mensagens || {};
 
-                      // Verificações para cada coluna
+                      // 🔍 VERIFICAÇÕES CORRIGIDAS BASEADAS NO PDF E DADOS REAIS
+                      
+                      // 📋 CLAIM (Azul) - Baseado na análise do PDF
                       const temClaimData = !!(
-                        claimData && Object.keys(claimData).length > 0 ||
-                        orderData?.mediations && orderData.mediations.length > 0
+                        // Dados primários de claim
+                        (claimData && Object.keys(claimData).length > 0) ||
+                        // Mediações do order (confirmado nos dados reais)
+                        (orderData?.mediations && Array.isArray(orderData.mediations) && orderData.mediations.length > 0) ||
+                        // Claim ID presente
+                        devolucao.claim_id ||
+                        // Status de cancelamento com reason
+                        (claimData?.reason?.code) ||
+                        // Cancellation type
+                        (claimData?.type === 'cancellation') ||
+                        // Cancel detail presente
+                        (orderData?.cancel_detail?.code)
                       );
 
+                      // 📦 RETURN (Verde) - Baseado nos endpoints do PDF
                       const temReturnData = !!(
-                        returnData && Object.keys(returnData).length > 0 ||
-                        orderData?.order_request?.return ||
-                        orderData?.tags?.includes('return') ||
-                        orderData?.tags?.includes('refund')
+                        // Dados primários de return
+                        (returnData && Object.keys(returnData).length > 0) ||
+                        // Order request return (confirmado no PDF)
+                        (orderData?.order_request?.return) ||
+                        // Tags relacionadas a devolução/reembolso
+                        (orderData?.tags && Array.isArray(orderData.tags) && (
+                          orderData.tags.includes('return') ||
+                          orderData.tags.includes('refund') ||
+                          orderData.tags.includes('not_delivered') ||
+                          orderData.tags.includes('fraud_risk_detected')
+                        )) ||
+                        // Status indicando devolução
+                        (devolucao.status_devolucao && devolucao.status_devolucao !== 'N/A') ||
+                        // Dados de rastreamento de devolução
+                        devolucao.codigo_rastreamento
                       );
 
+                      // ⚖️ MEDIAÇÃO (Laranja) - Baseado na estrutura do PDF
                       const temMediationData = !!(
-                        orderData?.mediations && orderData.mediations.length > 0 ||
-                        claimData?.mediation_details ||
-                        claimData?.reason?.code === 'buyer_cancel_express'
+                        // Mediações no order (confirmado nos dados reais)
+                        (orderData?.mediations && Array.isArray(orderData.mediations) && orderData.mediations.length > 0) ||
+                        // Detalhes de mediação no claim
+                        (claimData?.mediation_details) ||
+                        // Códigos específicos de mediação do PDF
+                        (claimData?.reason?.code === 'buyer_cancel_express') ||
+                        (claimData?.reason?.code === 'fraud') ||
+                        (claimData?.reason?.group === 'buyer') ||
+                        // Flag de mediação
+                        devolucao.em_mediacao ||
+                        // Status de moderação
+                        devolucao.status_moderacao
                       );
 
+                      // 📎 ANEXOS/MENSAGENS (Cinza/Azul) - Baseado nos endpoints do PDF
                       const temAttachmentsData = !!(
-                        claimData?.attachments ||
-                        claimData?.claim_attachments ||
-                        mensagensData && Object.keys(mensagensData).length > 0
+                        // Attachments no claim (endpoint /claims/{claim_id}/attachments)
+                        (claimData?.attachments && Array.isArray(claimData.attachments) && claimData.attachments.length > 0) ||
+                        (claimData?.claim_attachments && Array.isArray(claimData.claim_attachments) && claimData.claim_attachments.length > 0) ||
+                        // Mensagens (endpoint /claims/{claim_id}/messages)
+                        (mensagensData && Object.keys(mensagensData).length > 0) ||
+                        (devolucao.timeline_mensagens && Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0) ||
+                        // Contadores de anexos/mensagens
+                        (devolucao.anexos_count && devolucao.anexos_count > 0) ||
+                        (devolucao.numero_interacoes && devolucao.numero_interacoes > 0) ||
+                        // Anexos específicos por tipo
+                        (devolucao.anexos_comprador && Array.isArray(devolucao.anexos_comprador) && devolucao.anexos_comprador.length > 0) ||
+                        (devolucao.anexos_vendedor && Array.isArray(devolucao.anexos_vendedor) && devolucao.anexos_vendedor.length > 0) ||
+                        (devolucao.anexos_ml && Array.isArray(devolucao.anexos_ml) && devolucao.anexos_ml.length > 0)
                       );
+
+                      // 🔍 DEBUG: Log dos dados para verificação
+                      if (index === 0) {
+                        console.log('🔍 DEBUG PRIMEIRA DEVOLUÇÃO:', {
+                          order_id: devolucao.order_id,
+                          claim_id: devolucao.claim_id,
+                          temClaimData,
+                          temReturnData, 
+                          temMediationData,
+                          temAttachmentsData,
+                          dados_claim_keys: Object.keys(claimData),
+                          dados_return_keys: Object.keys(returnData),
+                          dados_order_keys: Object.keys(orderData),
+                          dados_mensagens_keys: Object.keys(mensagensData),
+                          claimData: claimData,
+                          orderData_mediations: orderData?.mediations,
+                          orderData_tags: orderData?.tags,
+                          status_devolucao: devolucao.status_devolucao
+                        });
+                      }
 
                       return (
                         <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-muted/50 dark:border-border">
