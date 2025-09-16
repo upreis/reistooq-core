@@ -185,7 +185,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           }));
 
           try {
-            const devolucoesDaAPI = await buscarDevolucoesDaAPI({
+            const devolucoesDaAPI = await buscarDevolucoesDaAPIReal({
               contasSelecionadas: contasAtivas.map(acc => acc.id),
             });
             
@@ -314,8 +314,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
   };
 
-  // BUSCA DIRETA DA API DO MERCADO LIVRE (SEM BANCO DE DADOS)
-  const buscarDevolucoesDaAPI = async (filtros: {
+  // NOVA FUNÇÃO: BUSCAR DIRETAMENTE DA API VIA EDGE FUNCTION ml-devolucoes-sync
+  const buscarDevolucoesDaAPIReal = async (filtros: {
     contasSelecionadas: string[];
     dataInicio?: string;
     dataFim?: string;
@@ -335,7 +335,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     const todasDevolucoes: DevolucaoAvancada[] = [];
     
     try {
-      console.log('🔍 Buscando devoluções DIRETAMENTE da API do Mercado Livre...');
+      console.log('🔍 Buscando devoluções via edge function ml-devolucoes-sync...');
       
       for (const accountId of filtros.contasSelecionadas) {
         const account = mlAccounts?.find(acc => acc.id === accountId);
@@ -344,59 +344,49 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         console.log(`🔍 Conta: ${account.name} (${account.account_identifier})`);
         
         try {
-          // Obter token da conta
-          const token = await obterTokenML(accountId, account.name);
-          if (!token) {
-            toast.error(`Token não disponível para ${account.name}`);
-            continue;
-          }
-
-          // ============ BUSCAR DEVOLUÇÕES VIA API MERCADO LIVRE ============
-          console.log(`📞 Fazendo requisição DIRETA para API do Mercado Livre...`);
+          // ============ USAR EDGE FUNCTION ml-devolucoes-sync ============
+          console.log(`📞 Chamando edge function ml-devolucoes-sync...`);
           
-          // Usar edge function que faz a requisição para a API ML e retorna os dados diretamente
-          const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
+          const { data: syncResponse, error: syncError } = await supabase.functions.invoke('ml-devolucoes-sync', {
             body: {
-              action: 'get_claims_and_returns',
               integration_account_id: accountId,
               seller_id: account.account_identifier,
-              access_token: token,
-              filters: {
-                date_from: filtros.dataInicio,
-                date_to: filtros.dataFim,
-                status: filtros.statusClaim
-              }
+              mode: 'full', // Modo completo com enrichment
+              enrich_level: 'complete', // Máximo enriquecimento
+              date_from: filtros.dataInicio,
+              date_to: filtros.dataFim
             }
           });
 
-          if (apiError) {
-            console.error(`❌ Erro na requisição da API para ${account.name}:`, apiError);
-            toast.error(`Erro na API para ${account.name}: ${apiError.message}`);
+          if (syncError) {
+            console.error(`❌ Erro na edge function para ${account.name}:`, syncError);
+            toast.error(`Erro na sincronização para ${account.name}: ${syncError.message}`);
             continue;
           }
 
-          console.log(`📋 Resposta da API ML para ${account.name}:`, apiResponse);
+          console.log(`📋 Resposta da edge function para ${account.name}:`, syncResponse);
 
-          if (apiResponse?.success && apiResponse?.data) {
-            const devolucoesDaAPI = apiResponse.data;
+          if (syncResponse?.ok && syncResponse?.data) {
+            const devolucoesDaAPI = syncResponse.data;
             
-            // Processar dados vindos diretamente da API com enriquecimento completo
+            // Processar dados vindos da edge function ml-devolucoes-sync
             const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => ({
-              id: `api_${item.order_id}_${accountId}_${index}`, // ID único para API
-              order_id: item.order_id.toString(),
-              claim_id: item.claim_details?.id || null,
-              data_criacao: item.date_created,
-              status_devolucao: item.status || 'cancelled', // Definir como cancelado por padrão
-              valor_retido: parseFloat(item.amount || 0),
-              produto_titulo: item.resource_data?.title || item.reason || 'Produto não identificado',
-              sku: item.resource_data?.sku || '',
-              quantidade: item.resource_data?.quantity || 1,
-              comprador_nickname: item.buyer?.nickname || 'Desconhecido',
-              // DADOS ENRIQUECIDOS: mapear corretamente da resposta da API
-              dados_order: item.order_data || {},
-              dados_claim: item.claim_details || {},
-              dados_mensagens: item.claim_messages || {},
-              dados_return: item.return_details_v2 || item.return_details_v1 || {},
+              id: `sync_${item.order_id}_${accountId}_${index}`, // ID único
+              order_id: item.order_id?.toString() || '',
+              claim_id: item.claim_id || null,
+              data_criacao: item.date_created || item.data_criacao || new Date().toISOString(),
+              status_devolucao: item.status || item.status_devolucao || 'unknown',
+              claim_status: item.claim_status || null,
+              valor_retido: parseFloat(item.amount || item.valor_retido || 0),
+              produto_titulo: item.produto_titulo || item.item_title || 'Produto não identificado',
+              sku: item.sku || item.seller_sku || '',
+              quantidade: parseInt(item.quantidade || item.quantity || 1),
+              comprador_nickname: item.comprador_nickname || item.buyer_nickname || 'Desconhecido',
+              // DADOS ENRIQUECIDOS da edge function
+              dados_order: item.dados_order || item.order_data || {},
+              dados_claim: item.dados_claim || item.claim_data || {},
+              dados_mensagens: item.dados_mensagens || item.messages || {},
+              dados_return: item.dados_return || item.return_data || {},
               integration_account_id: accountId,
               account_name: account.name,
               created_at: new Date().toISOString(),
@@ -404,14 +394,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             }));
 
             todasDevolucoes.push(...devolucoesProcesadas);
-            toast.success(`✅ ${devolucoesProcesadas.length} devoluções encontradas via API para ${account.name}`);
+            toast.success(`✅ ${devolucoesProcesadas.length} devoluções sincronizadas para ${account.name}`);
             
-          } else if (apiResponse?.success && (!apiResponse?.data || apiResponse?.data?.length === 0)) {
-            console.log(`ℹ️ Nenhuma devolução encontrada na API para ${account.name}`);
-            toast.info(`ℹ️ Nenhuma devolução encontrada na API para ${account.name}`);
+          } else if (syncResponse?.ok && (!syncResponse?.data || syncResponse?.data?.length === 0)) {
+            console.log(`ℹ️ Nenhuma devolução encontrada para ${account.name}`);
+            toast.info(`ℹ️ Nenhuma devolução encontrada para ${account.name}`);
           } else {
-            console.log(`❌ Resposta inválida da API para ${account.name}:`, apiResponse);
-            toast.error(`Resposta inválida da API para ${account.name}`);
+            console.log(`❌ Resposta inválida da edge function para ${account.name}:`, syncResponse);
+            toast.error(`Resposta inválida da sincronização para ${account.name}`);
           }
 
         } catch (accountError) {
@@ -420,22 +410,22 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         }
       }
 
-      console.log(`🎉 Total de devoluções encontradas na API: ${todasDevolucoes.length}`);
+      console.log(`🎉 Total de devoluções sincronizadas: ${todasDevolucoes.length}`);
       
       if (todasDevolucoes.length > 0) {
         // Salvar no estado persistido
         persistentState.saveOrdersData(todasDevolucoes, todasDevolucoes.length, 1);
         setCurrentPage(1);
-        toast.success(`✅ API: ${todasDevolucoes.length} devoluções encontradas em tempo real`);
+        toast.success(`✅ ${todasDevolucoes.length} devoluções carregadas via API`);
       } else {
-        toast.info('ℹ️ Nenhuma devolução encontrada na API no período selecionado');
+        toast.info('ℹ️ Nenhuma devolução encontrada no período selecionado');
       }
       
       return todasDevolucoes;
 
     } catch (error) {
-      console.error('❌ Erro geral na busca da API:', error);
-      toast.error(`Erro na busca da API: ${error.message}`);
+      console.error('❌ Erro geral na sincronização:', error);
+      toast.error(`Erro na sincronização: ${error.message}`);
       return [];
     } finally {
       setLoading(false);
@@ -629,7 +619,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     const contasSelecionadas = mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [];
     
     try {
-      const devolucoesDaAPI = await buscarDevolucoesDaAPI({
+      const devolucoesDaAPI = await buscarDevolucoesDaAPIReal({
         contasSelecionadas,
         dataInicio: filtros.dataInicio,
         dataFim: filtros.dataFim,
@@ -648,47 +638,39 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
   };
 
-  // FUNÇÃO PARA BUSCAR COM FILTROS
+  // FUNÇÃO PARA BUSCAR COM FILTROS - SEMPRE DA API
   const buscarComFiltros = async () => {
-    if (filtrosAvancados.buscarEmTempoReal) {
-      // Buscar da API ML em tempo real
-      try {
-        const devolucoesDaAPI = await buscarDevolucoesDaAPI({
-          contasSelecionadas: filtrosAvancados.contasSelecionadas,
-          dataInicio: filtrosAvancados.dataInicio,
-          dataFim: filtrosAvancados.dataFim,
-          statusClaim: filtrosAvancados.statusClaim
-        });
-        
-        console.log('📊 Dados da API ML (buscarComFiltros):', devolucoesDaAPI);
-        setDevolucoes(devolucoesDaAPI);
-        
-        // Limpar filtros básicos para mostrar todos os dados da API
-        setFiltros({
-          searchTerm: '',
-          status: '',
-          dataInicio: '',
-          dataFim: ''
-        });
-        
-        toast.success(`✅ ${devolucoesDaAPI.length} devoluções encontradas na API ML`);
-      } catch (error) {
-        console.error('❌ Erro na busca da API:', error);
-        toast.error('Erro ao buscar da API ML');
-      }
-    } else {
-      // Buscar do banco local (comportamento atual)
-      const { data: novasDevolucoes, error } = await supabase
-        .from('devolucoes_avancadas')
-        .select('*')
-        .order('created_at', { ascending: false });
+    // Buscar SEMPRE da API usando edge function
+    try {
+      const devolucoesDaAPI = await buscarDevolucoesDaAPIReal({
+        contasSelecionadas: filtrosAvancados.contasSelecionadas,
+        dataInicio: filtrosAvancados.dataInicio,
+        dataFim: filtrosAvancados.dataFim,
+        statusClaim: filtrosAvancados.statusClaim
+      });
       
-      if (!error && novasDevolucoes) {
-        setDevolucoes(novasDevolucoes as DevolucaoAvancada[]);
-        toast.success('✅ Dados atualizados do banco local');
+      console.log('📊 Dados da API ML (buscarComFiltros):', devolucoesDaAPI);
+      setDevolucoes(devolucoesDaAPI);
+      
+      // Limpar filtros básicos para mostrar todos os dados da API
+      setFiltros({
+        searchTerm: '',
+        status: '',
+        dataInicio: '',
+        dataFim: ''
+      });
+      
+      if (devolucoesDaAPI.length > 0) {
+        // Salvar no estado persistido
+        persistentState.saveOrdersData(devolucoesDaAPI, devolucoesDaAPI.length, 1);
+        setCurrentPage(1);
+        toast.success(`✅ ${devolucoesDaAPI.length} devoluções encontradas na API`);
       } else {
-        toast.error('Erro ao atualizar dados do banco');
+        toast.info('ℹ️ Nenhuma devolução encontrada com os filtros aplicados');
       }
+    } catch (error) {
+      console.error('❌ Erro na busca da API:', error);
+      toast.error('Erro ao buscar da API');
     }
   };
 
