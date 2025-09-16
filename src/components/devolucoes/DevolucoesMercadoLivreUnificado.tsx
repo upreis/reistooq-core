@@ -155,57 +155,120 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
     }
   }, [mlAccounts]);
 
-  // Query principal para devoluções
+  // Query principal para devoluções - BUSCA DIRETA NA API ML
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-ml', { ...filtros, search: debouncedSearch }],
+    queryKey: ['devolucoes-ml-api', { ...filtros, search: debouncedSearch }],
     queryFn: async () => {
-      console.log('🔍 [Devolucoes] Executando query com filtros:', { ...filtros, search: debouncedSearch });
+      console.log('🔍 [Devolucoes] Buscando na API ML com filtros:', { ...filtros, search: debouncedSearch });
       
-      let query = supabase
-        .from('ml_devolucoes_reclamacoes')
-        .select('*');
+      if (filtros.accountIds.length === 0) {
+        console.log('⚠️ [Devolucoes] Nenhuma conta selecionada');
+        return [];
+      }
 
-      // Aplicar filtros
-      if (filtros.accountIds.length > 0) {
-        query = query.in('integration_account_id', filtros.accountIds);
+      const allDevolucoes: DevolucaoEnriquecida[] = [];
+
+      // Buscar para cada conta selecionada
+      for (const accountId of filtros.accountIds) {
+        try {
+          console.log(`🔍 [Devolucoes] Buscando dados para conta: ${accountId}`);
+          
+          // Buscar dados da conta
+          const { data: account } = await supabase
+            .from('integration_accounts')
+            .select('account_identifier')
+            .eq('id', accountId)
+            .single();
+
+          if (!account) {
+            console.log(`⚠️ [Devolucoes] Conta não encontrada: ${accountId}`);
+            continue;
+          }
+
+          // Buscar token de acesso
+          const { data: secretData } = await supabase.functions.invoke('integrations-get-secret', {
+            body: { 
+              integration_account_id: accountId,
+              provider: 'mercadolivre'
+            }
+          });
+
+          if (!secretData?.found || !secretData?.secret?.access_token) {
+            console.log(`⚠️ [Devolucoes] Token não encontrado para conta: ${accountId}`);
+            continue;
+          }
+
+          // Chamar API ML diretamente
+          const { data: apiResponse } = await supabase.functions.invoke('ml-api-direct', {
+            body: {
+              action: 'get_claims_and_returns',
+              integration_account_id: accountId,
+              seller_id: account.account_identifier,
+              access_token: secretData.secret.access_token,
+              filters: {
+                date_from: filtros.dateFrom,
+                date_to: filtros.dateTo
+              }
+            }
+          });
+
+          if (apiResponse?.success && apiResponse?.data) {
+            console.log(`✅ [Devolucoes] ${apiResponse.data.length} registros encontrados para conta ${accountId}`);
+            
+            // Aplicar filtros locais nos dados da API
+            let filteredData = apiResponse.data;
+
+            // Filtro de busca
+            if (debouncedSearch) {
+              const searchLower = debouncedSearch.toLowerCase();
+              filteredData = filteredData.filter((item: any) => 
+                (item.order_id && item.order_id.toLowerCase().includes(searchLower)) ||
+                (item.buyer_nickname && item.buyer_nickname.toLowerCase().includes(searchLower)) ||
+                (item.item_title && item.item_title.toLowerCase().includes(searchLower)) ||
+                (item.sku && item.sku.toLowerCase().includes(searchLower))
+              );
+            }
+
+            // Filtro de status
+            if (filtros.status !== 'all') {
+              filteredData = filteredData.filter((item: any) => item.claim_status === filtros.status);
+            }
+
+            // Filtro de tipo
+            if (filtros.tipo !== 'all') {
+              filteredData = filteredData.filter((item: any) => item.claim_type === filtros.tipo);
+            }
+
+            // Filtro de prioridade
+            if (filtros.prioridade !== 'all') {
+              filteredData = filteredData.filter((item: any) => item.priority === filtros.prioridade);
+            }
+
+            // Filtro de status processado
+            if (filtros.processedStatus !== 'all') {
+              filteredData = filteredData.filter((item: any) => item.processed_status === filtros.processedStatus);
+            }
+
+            allDevolucoes.push(...filteredData);
+          }
+        } catch (error) {
+          console.error(`❌ [Devolucoes] Erro ao buscar dados para conta ${accountId}:`, error);
+        }
       }
+
+      console.log(`📊 [Devolucoes] Total de registros após filtros: ${allDevolucoes.length}`);
       
-      if (debouncedSearch) {
-        query = query.or(`order_id.ilike.%${debouncedSearch}%,buyer_nickname.ilike.%${debouncedSearch}%,item_title.ilike.%${debouncedSearch}%,sku.ilike.%${debouncedSearch}%`);
-      }
-      
-      if (filtros.status !== 'all') {
-        query = query.eq('claim_status', filtros.status);
-      }
-      
-      if (filtros.tipo !== 'all') {
-        query = query.eq('claim_type', filtros.tipo);
-      }
-      
-      if (filtros.prioridade !== 'all') {
-        query = query.eq('priority', filtros.prioridade);
-      }
-      
-      if (filtros.processedStatus !== 'all') {
-        query = query.eq('processed_status', filtros.processedStatus);
-      }
-      
-      if (filtros.dateFrom) {
-        query = query.gte('date_created', filtros.dateFrom);
-      }
-      
-      if (filtros.dateTo) {
-        query = query.lte('date_created', filtros.dateTo + 'T23:59:59.999Z');
-      }
-      
-      const { data, error } = await query
-        .order('date_created', { ascending: false })
-        .limit(1000);
-      
-      if (error) throw error;
-      return data as DevolucaoEnriquecida[];
+      // Ordenar por data mais recente
+      allDevolucoes.sort((a, b) => {
+        const dateA = new Date(a.date_created || 0);
+        const dateB = new Date(b.date_created || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      return allDevolucoes;
     },
-    enabled: filtros.accountIds.length > 0
+    enabled: filtros.accountIds.length > 0,
+    staleTime: 0 // Sempre buscar dados frescos da API
   });
 
   // Realtime updates
@@ -267,12 +330,13 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
 
   // Métricas calculadas
   const metricas = useMemo(() => {
-    const total = devolucoes.length;
-    const pendentes = devolucoes.filter(d => d.processed_status === 'pending').length;
-    const revisados = devolucoes.filter(d => d.processed_status === 'reviewed').length;
-    const resolvidos = devolucoes.filter(d => d.processed_status === 'resolved').length;
-    const urgentes = devolucoes.filter(d => d.priority === 'urgent').length;
-    const valorTotal = devolucoes.reduce((acc, d) => acc + (d.amount_refunded || 0), 0);
+    const devolucoesArray = Array.isArray(devolucoes) ? devolucoes : [];
+    const total = devolucoesArray.length;
+    const pendentes = devolucoesArray.filter(d => d.processed_status === 'pending').length;
+    const revisados = devolucoesArray.filter(d => d.processed_status === 'reviewed').length;
+    const resolvidos = devolucoesArray.filter(d => d.processed_status === 'resolved').length;
+    const urgentes = devolucoesArray.filter(d => d.priority === 'urgent').length;
+    const valorTotal = devolucoesArray.reduce((acc, d) => acc + (d.amount_refunded || 0), 0);
     const valorMedio = total > 0 ? valorTotal / total : 0;
 
     return {
@@ -288,11 +352,12 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
 
   // Paginação
   const paginatedDevolucoes = useMemo(() => {
+    const devolucoesArray = Array.isArray(devolucoes) ? devolucoes : [];
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return devolucoes.slice(startIndex, startIndex + itemsPerPage);
+    return devolucoesArray.slice(startIndex, startIndex + itemsPerPage);
   }, [devolucoes, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(devolucoes.length / itemsPerPage);
+  const totalPages = Math.ceil((Array.isArray(devolucoes) ? devolucoes.length : 0) / itemsPerPage);
 
   // Componente de Métricas
   const MetricasCards = () => (
@@ -640,7 +705,7 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-600">
-            {isLoading ? 'Carregando...' : `${devolucoes.length} devoluções encontradas`}
+            {isLoading ? 'Carregando...' : `${Array.isArray(devolucoes) ? devolucoes.length : 0} devoluções encontradas`}
           </span>
         </div>
         
@@ -677,7 +742,7 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
             <span className="text-red-800">Erro ao carregar devoluções: {error.message}</span>
           </div>
         </div>
-      ) : devolucoes.length === 0 ? (
+      ) : (Array.isArray(devolucoes) ? devolucoes.length : 0) === 0 ? (
         <div className="bg-gray-50 border border-gray-200 rounded-md p-8 text-center">
           <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma devolução encontrada</h3>
@@ -695,7 +760,7 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
         <>
           {viewMode === 'cards' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {paginatedDevolucoes.map(devolucao => (
+              {Array.isArray(paginatedDevolucoes) && paginatedDevolucoes.map(devolucao => (
                 <DevolucaoCard key={devolucao.id} devolucao={devolucao} />
               ))}
             </div>
@@ -734,7 +799,7 @@ const DevolucoesMercadoLivreUnificado: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {paginatedDevolucoes.map(devolucao => (
+                    {Array.isArray(paginatedDevolucoes) && paginatedDevolucoes.map(devolucao => (
                       <tr key={devolucao.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           #{devolucao.order_id}
