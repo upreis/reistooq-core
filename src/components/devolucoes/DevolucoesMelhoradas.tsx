@@ -42,6 +42,7 @@ interface Props {
 const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
   // Função de tradução para motivos de cancelamento
   const traduzirMotivoCancelamento = (motivo: string | null | undefined): string => {
+    console.log('🔤 Traduzindo motivo:', motivo);
     if (!motivo) return 'N/A';
     
     // Primeiro, substitui underscores por espaços e converte para lowercase
@@ -236,7 +237,10 @@ const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
     
     // Buscar tradução exata
     const traducaoExata = traducoes[motivoLimpo];
-    if (traducaoExata) return traducaoExata;
+    if (traducaoExata) {
+      console.log('✅ Tradução encontrada:', motivoLimpo, '->', traducaoExata);
+      return traducaoExata;
+    }
     
     // Buscar traduções parciais (palavras-chave)
     for (const [chaveIngles, traducaoPortugues] of Object.entries(traducoes)) {
@@ -281,6 +285,7 @@ const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
   const { data: devolucoes = [], isLoading, error } = useQuery({
     queryKey: ['devolucoes-melhoradas', filtros],
     queryFn: async () => {
+      console.log('🔍 Carregando devoluções melhoradas...');
       let query = supabase
         .from('ml_devolucoes_reclamacoes')
         .select('*');
@@ -315,6 +320,7 @@ const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
         .limit(500);
       
       if (error) throw error;
+      console.log('📊 Devoluções carregadas:', data?.length, 'primeiros dados:', data?.slice(0, 3));
       return data as DevolucaoML[];
     },
     enabled: filtros.accountIds.length > 0
