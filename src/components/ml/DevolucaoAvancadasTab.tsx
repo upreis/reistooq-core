@@ -432,82 +432,66 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       {/* FILTROS AVANÇADOS */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filtros Avançados - Busca em Tempo Real
-          </CardTitle>
+           <CardTitle className="flex items-center gap-2">
+             <Filter className="w-5 h-5" />
+             Filtros Avançados
+           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Toggle para busca em tempo real */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="tempo-real"
-                checked={advancedFilters.buscarEmTempoReal}
-                onChange={(e) => updateAdvancedFilters({
-                  buscarEmTempoReal: e.target.checked
-                })}
-              />
-              <label htmlFor="tempo-real" className="text-sm font-medium">
-                🔴 Buscar em tempo real da API ML (mais lento, dados atuais)
-              </label>
+            {/* Informação sobre a fonte de dados */}
+            <div className="text-sm text-blue-600 font-medium">
+              🔴 Buscando sempre da API ML em tempo real
             </div>
 
-            {/* Auto-refresh configuration */}
-            {advancedFilters.buscarEmTempoReal && (
-              <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="auto-refresh"
-                    checked={advancedFilters.autoRefreshEnabled}
-                    onChange={(e) => updateAdvancedFilters({
-                      autoRefreshEnabled: e.target.checked
-                    })}
-                  />
-                  <label htmlFor="auto-refresh" className="text-sm font-medium">
-                    🔄 Auto-refresh automático
-                  </label>
-                </div>
+            {/* Auto-refresh com intervalos predefinidos */}
+            <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700">
+                🔄 Atualização Automática
+              </label>
+              <Select
+                value={advancedFilters.autoRefreshInterval?.toString() || "0"}
+                onValueChange={(value) => {
+                  const interval = parseInt(value);
+                  updateAdvancedFilters({
+                    autoRefreshEnabled: interval > 0,
+                    autoRefreshInterval: interval
+                  });
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione o intervalo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Desativado</SelectItem>
+                  <SelectItem value="3600">A cada 1 hora</SelectItem>
+                  <SelectItem value="7200">A cada 2 horas</SelectItem>
+                  <SelectItem value="21600">A cada 6 horas</SelectItem>
+                </SelectContent>
+              </Select>
 
-                {advancedFilters.autoRefreshEnabled && (
-                  <div className="grid grid-cols-2 gap-4">
+              
+              {advancedFilters.autoRefreshEnabled && (
+                <div className="text-xs text-gray-600 mt-2">
+                  {autoRefresh.isRefreshing && (
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Atualizando...
+                    </div>
+                  )}
+                  {autoRefresh.timeUntilRefresh && !autoRefresh.isRefreshing && (
                     <div>
-                      <label className="block text-xs font-medium mb-1">Intervalo (segundos)</label>
-                      <Input
-                        type="number"
-                        min="10"
-                        max="300"
-                        value={advancedFilters.autoRefreshInterval}
-                        onChange={(e) => updateAdvancedFilters({
-                          autoRefreshInterval: parseInt(e.target.value) || 30
-                        })}
-                        className="h-8 text-sm"
-                      />
+                      Próxima atualização em: {Math.floor(autoRefresh.timeUntilRefresh / 3600)}h {Math.floor((autoRefresh.timeUntilRefresh % 3600) / 60)}min
                     </div>
-                    <div className="flex flex-col justify-center">
-                      {autoRefresh.isRefreshing && (
-                        <div className="flex items-center gap-2 text-xs text-blue-600">
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                          Atualizando...
-                        </div>
-                      )}
-                      {autoRefresh.timeUntilRefresh && !autoRefresh.isRefreshing && (
-                        <div className="text-xs text-gray-600">
-                          Próximo em: {autoRefresh.timeUntilRefresh}s
-                        </div>
-                      )}
-                      {autoRefresh.lastRefresh && (
-                        <div className="text-xs text-gray-500">
-                          Último: {autoRefresh.lastRefresh.toLocaleTimeString()}
-                        </div>
-                      )}
+                  )}
+                  {autoRefresh.lastRefresh && (
+                    <div className="text-gray-500">
+                      Última atualização: {autoRefresh.lastRefresh.toLocaleTimeString()}
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Seleção de contas */}
             <div>
