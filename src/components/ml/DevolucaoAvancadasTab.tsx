@@ -11,6 +11,7 @@ import { useDevolucoes } from '@/features/devolucoes/hooks/useDevolucoes';
 import { useDevolucoesDemostracao } from '@/features/devolucoes/hooks/useDevolucoesDemostracao';
 import { useDevolucaoAnalytics } from '@/features/devolucoes/hooks/useDevolucaoAnalytics';
 import { useDevolucaoExportacao } from '@/features/devolucoes/hooks/useDevolucaoExportacao';
+import { useDevolucoesFase2 } from '@/features/devolucoes/hooks/useDevolucoesFase2';
 import DevolucaoAnalyticsDashboard from '@/features/devolucoes/components/DevolucaoAnalyticsDashboard';
 import DevolucaoExportDialog from '@/features/devolucoes/components/DevolucaoExportDialog';
 import { 
@@ -179,6 +180,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   // Analytics e exportação
   const analytics = useDevolucaoAnalytics(devolucoesFiltradas);
   const exportacao = useDevolucaoExportacao();
+
+  // 🚀 FASE 2: HOOK PARA AS 42 NOVAS COLUNAS
+  const fase2 = useDevolucoesFase2({
+    integration_account_id: mlAccounts?.[0]?.id || '',
+    auto_enrich: false, // Desabilitado por padrão para não interferir no sistema atual
+    batch_size: 25,
+    enable_real_time: false
+  });
 
   // Função para extrair motivo do cancelamento completo (garantindo string)
   const getMotivoCancelamento = useCallback((devolucao: DevolucaoAvancada) => {
@@ -711,6 +720,31 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             >
               <BarChart3 className="h-4 w-4" />
               Análise API
+            </Button>
+
+            {/* 🚀 BOTÕES FASE 2: 42 NOVAS COLUNAS */}
+            <Button
+              variant="outline"
+              onClick={() => fase2.enrichExistingData(50)}
+              disabled={fase2.loading}
+              className="border-blue-500 text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+            >
+              {fase2.loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <TrendingUp className="h-4 w-4" />
+              )}
+              Enriquecer Fase 2
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => fase2.fetchAdvancedMetrics()}
+              disabled={fase2.loading}
+              className="border-green-500 text-green-600 hover:bg-green-50 flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Métricas Avançadas
             </Button>
           </div>
 
