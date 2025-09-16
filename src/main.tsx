@@ -2,6 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from "react-router-dom"
 import App from './App'
+import SimpleApp from './App.simple'
 import FallbackApp from './App.fallback'
 
 import { setupGlobalToast } from "@/utils/toast-bridge";
@@ -22,14 +23,57 @@ if (!container) throw new Error('Failed to find the root element');
 
 const root = createRoot(container);
 
-// Render with error handling for React context issues
+// Create error boundary wrapper with progressive loading
+function AppWithErrorBoundary() {
+  try {
+    // First, try to load the simple app to test React hooks
+    return (
+      <BrowserRouter>
+        <SimpleApp />
+      </BrowserRouter>
+    );
+  } catch (error) {
+    console.error('Simple app failed, trying fallback:', error);
+    return <FallbackApp />;
+  }
+}
+
+// Render with multiple fallback levels
 try {
-  root.render(
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  );
+  root.render(<AppWithErrorBoundary />);
 } catch (error) {
-  console.error('Failed to render main App, using fallback:', error);
-  root.render(<FallbackApp />);
+  console.error('Failed to render AppWithErrorBoundary, using direct fallback:', error);
+  try {
+    root.render(<FallbackApp />);
+  } catch (fallbackError) {
+    console.error('Even fallback failed:', fallbackError);
+    // Last resort: render minimal HTML
+    root.render(
+      <div style={{ 
+        padding: '2rem', 
+        textAlign: 'center', 
+        fontFamily: 'Arial, sans-serif',
+        backgroundColor: '#1a1a1a',
+        color: '#ffffff',
+        minHeight: '100vh'
+      }}>
+        <h1>Sistema Temporariamente Indisponível</h1>
+        <p>Ocorreu um erro crítico. Recarregue a página.</p>
+        <button 
+          onClick={() => window.location.reload()}
+          style={{ 
+            padding: '0.5rem 1rem', 
+            marginTop: '1rem',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Recarregar
+        </button>
+      </div>
+    );
+  }
 }
