@@ -40,6 +40,217 @@ interface Props {
 }
 
 const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
+  // Função de tradução para motivos de cancelamento
+  const traduzirMotivoCancelamento = (motivo: string | null | undefined): string => {
+    if (!motivo) return 'N/A';
+    
+    // Primeiro, substitui underscores por espaços e converte para lowercase
+    const motivoLimpo = motivo.replace(/_/g, ' ').toLowerCase();
+    
+    // Dicionário de traduções
+    const traducoes: { [key: string]: string } = {
+      // Motivos de cancelamento mais comuns
+      'new order': 'Novo Pedido',
+      'buyer request': 'Solicitação do Comprador',
+      'seller request': 'Solicitação do Vendedor',
+      'payment issue': 'Problema de Pagamento',
+      'stock issue': 'Problema de Estoque',
+      'shipping issue': 'Problema de Envio',
+      'product defect': 'Produto Defeituoso',
+      'wrong product': 'Produto Errado',
+      'damaged product': 'Produto Danificado',
+      'not delivered': 'Não Entregue',
+      'late delivery': 'Entrega Atrasada',
+      'buyer not found': 'Comprador Não Encontrado',
+      'address issue': 'Problema de Endereço',
+      'price error': 'Erro de Preço',
+      'out of stock': 'Fora de Estoque',
+      'quality issue': 'Problema de Qualidade',
+      'size issue': 'Problema de Tamanho',
+      'color issue': 'Problema de Cor',
+      'description mismatch': 'Descrição Não Confere',
+      'buyer regret': 'Arrependimento do Comprador',
+      'duplicate order': 'Pedido Duplicado',
+      'fraud': 'Fraude',
+      'chargeback': 'Estorno',
+      'refund': 'Reembolso',
+      'return': 'Devolução',
+      'exchange': 'Troca',
+      'warranty': 'Garantia',
+      'technical issue': 'Problema Técnico',
+      'system error': 'Erro do Sistema',
+      'policy violation': 'Violação de Política',
+      'terms violation': 'Violação de Termos',
+      'cancelled by ml': 'Cancelado pelo ML',
+      'cancelled by system': 'Cancelado pelo Sistema',
+      'cancelled by admin': 'Cancelado pelo Admin',
+      'payment rejected': 'Pagamento Rejeitado',
+      'payment failed': 'Pagamento Falhou',
+      'payment expired': 'Pagamento Expirado',
+      'card declined': 'Cartão Recusado',
+      'insufficient funds': 'Saldo Insuficiente',
+      'invalid payment': 'Pagamento Inválido',
+      'shipping cost': 'Custo de Envio',
+      'shipping delay': 'Atraso no Envio',
+      'shipping error': 'Erro no Envio',
+      'logistics issue': 'Problema de Logística',
+      'courier issue': 'Problema do Correio',
+      'lost package': 'Pacote Perdido',
+      'damaged package': 'Pacote Danificado',
+      'wrong address': 'Endereço Errado',
+      'incomplete address': 'Endereço Incompleto',
+      'no answer': 'Não Atendeu',
+      'refused delivery': 'Recusou Entrega',
+      'unavailable': 'Indisponível',
+      'closed business': 'Estabelecimento Fechado',
+      'holiday': 'Feriado',
+      'weekend': 'Final de Semana',
+      'business hours': 'Horário Comercial',
+      'contact failed': 'Falha no Contato',
+      'phone issue': 'Problema de Telefone',
+      'communication error': 'Erro de Comunicação',
+      'language barrier': 'Barreira de Idioma',
+      'misunderstanding': 'Mal Entendido',
+      'customer service': 'Atendimento ao Cliente',
+      'complaint': 'Reclamação',
+      'dissatisfaction': 'Insatisfação',
+      'expectation mismatch': 'Expectativa Não Atendida',
+      'poor quality': 'Qualidade Ruim',
+      'expired product': 'Produto Vencido',
+      'counterfeit': 'Produto Falsificado',
+      'missing parts': 'Peças Faltando',
+      'incomplete product': 'Produto Incompleto',
+      'wrong size': 'Tamanho Errado',
+      'wrong color': 'Cor Errada',
+      'wrong model': 'Modelo Errado',
+      'wrong brand': 'Marca Errada',
+      'not as described': 'Não Conforme Descrito',
+      'false advertising': 'Propaganda Enganosa',
+      'misleading info': 'Informação Enganosa',
+      'incomplete info': 'Informação Incompleta',
+      'wrong info': 'Informação Errada',
+      'missing info': 'Informação Faltando',
+      'unclear info': 'Informação Não Clara',
+      'confusing info': 'Informação Confusa',
+      'outdated info': 'Informação Desatualizada',
+      'incorrect specs': 'Especificações Incorretas',
+      'compatibility issue': 'Problema de Compatibilidade',
+      'installation issue': 'Problema de Instalação',
+      'usage issue': 'Problema de Uso',
+      'performance issue': 'Problema de Performance',
+      'functionality issue': 'Problema de Funcionalidade',
+      'design issue': 'Problema de Design',
+      'aesthetic issue': 'Problema Estético',
+      'comfort issue': 'Problema de Conforto',
+      'fit issue': 'Problema de Ajuste',
+      'durability issue': 'Problema de Durabilidade',
+      'reliability issue': 'Problema de Confiabilidade',
+      'safety issue': 'Problema de Segurança',
+      'health issue': 'Problema de Saúde',
+      'allergy': 'Alergia',
+      'skin reaction': 'Reação na Pele',
+      'medical reason': 'Motivo Médico',
+      'doctor recommendation': 'Recomendação Médica',
+      'prescription change': 'Mudança de Prescrição',
+      'treatment change': 'Mudança de Tratamento',
+      'personal reason': 'Motivo Pessoal',
+      'family reason': 'Motivo Familiar',
+      'work reason': 'Motivo Profissional',
+      'financial reason': 'Motivo Financeiro',
+      'budget change': 'Mudança de Orçamento',
+      'priority change': 'Mudança de Prioridade',
+      'need change': 'Mudança de Necessidade',
+      'preference change': 'Mudança de Preferência',
+      'mind change': 'Mudança de Ideia',
+      'second thoughts': 'Repensou',
+      'impulse buy': 'Compra por Impulso',
+      'accidental purchase': 'Compra Acidental',
+      'duplicate purchase': 'Compra Duplicada',
+      'wrong purchase': 'Compra Errada',
+      'gift issue': 'Problema com Presente',
+      'recipient issue': 'Problema com Destinatário',
+      'occasion change': 'Mudança de Ocasião',
+      'event cancelled': 'Evento Cancelado',
+      'travel cancelled': 'Viagem Cancelada',
+      'move cancelled': 'Mudança Cancelada',
+      'renovation cancelled': 'Reforma Cancelada',
+      'project cancelled': 'Projeto Cancelado',
+      'plan change': 'Mudança de Planos',
+      'circumstance change': 'Mudança de Circunstâncias',
+      'emergency': 'Emergência',
+      'urgent matter': 'Assunto Urgente',
+      'unforeseen event': 'Evento Imprevisto',
+      'force majeure': 'Força Maior',
+      'natural disaster': 'Desastre Natural',
+      'pandemic': 'Pandemia',
+      'quarantine': 'Quarentena',
+      'lockdown': 'Lockdown',
+      'restriction': 'Restrição',
+      'regulation change': 'Mudança de Regulamentação',
+      'law change': 'Mudança de Lei',
+      'policy change': 'Mudança de Política',
+      'terms change': 'Mudança de Termos',
+      'condition change': 'Mudança de Condições',
+      'contract change': 'Mudança de Contrato',
+      'agreement change': 'Mudança de Acordo',
+      'negotiation failed': 'Negociação Falhou',
+      'deal cancelled': 'Negócio Cancelado',
+      'partnership ended': 'Parceria Encerrada',
+      'supplier change': 'Mudança de Fornecedor',
+      'vendor change': 'Mudança de Vendedor',
+      'provider change': 'Mudança de Provedor',
+      'service change': 'Mudança de Serviço',
+      'plan upgrade': 'Upgrade de Plano',
+      'plan downgrade': 'Downgrade de Plano',
+      'subscription change': 'Mudança de Assinatura',
+      'membership change': 'Mudança de Associação',
+      'account change': 'Mudança de Conta',
+      'profile change': 'Mudança de Perfil',
+      'setting change': 'Mudança de Configuração',
+      'preference update': 'Atualização de Preferência',
+      'requirement change': 'Mudança de Requisito',
+      'specification change': 'Mudança de Especificação',
+      'feature change': 'Mudança de Funcionalidade',
+      'version change': 'Mudança de Versão',
+      'update issue': 'Problema de Atualização',
+      'upgrade issue': 'Problema de Upgrade',
+      'migration issue': 'Problema de Migração',
+      'integration issue': 'Problema de Integração',
+      'sync issue': 'Problema de Sincronização',
+      'backup issue': 'Problema de Backup',
+      'restore issue': 'Problema de Restauração',
+      'recovery issue': 'Problema de Recuperação',
+      'maintenance': 'Manutenção',
+      'scheduled maintenance': 'Manutenção Programada',
+      'emergency maintenance': 'Manutenção de Emergência',
+      'system maintenance': 'Manutenção do Sistema',
+      'server maintenance': 'Manutenção do Servidor',
+      'database maintenance': 'Manutenção do Banco de Dados',
+      'network maintenance': 'Manutenção da Rede',
+      'security update': 'Atualização de Segurança',
+      'security patch': 'Correção de Segurança',
+      'vulnerability fix': 'Correção de Vulnerabilidade',
+      'bug fix': 'Correção de Bug',
+      'error fix': 'Correção de Erro'
+    };
+    
+    // Buscar tradução exata
+    const traducaoExata = traducoes[motivoLimpo];
+    if (traducaoExata) return traducaoExata;
+    
+    // Buscar traduções parciais (palavras-chave)
+    for (const [chaveIngles, traducaoPortugues] of Object.entries(traducoes)) {
+      if (motivoLimpo.includes(chaveIngles) || chaveIngles.includes(motivoLimpo)) {
+        return traducaoPortugues;
+      }
+    }
+    
+    // Se não encontrou tradução, retorna formatado (primeira letra maiúscula, sem underscores)
+    return motivoLimpo.split(' ').map(palavra => 
+      palavra.charAt(0).toUpperCase() + palavra.slice(1)
+    ).join(' ');
+  };
+
   // Estados básicos (mantendo compatibilidade)
   const [filtros, setFiltros] = useState({
     search: '',
@@ -281,6 +492,11 @@ const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
           <span>Tipo: {devolucao.claim_type}</span>
           <span>Status: {devolucao.claim_status}</span>
         </div>
+        {devolucao.reason_description && (
+          <div className="text-sm text-gray-600">
+            <span className="font-medium">Motivo:</span> {traduzirMotivoCancelamento(devolucao.reason_description)}
+          </div>
+        )}
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Qtd: {devolucao.quantity}</span>
           <span className="font-semibold text-green-600">
@@ -420,6 +636,9 @@ const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
                         Status
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Motivo
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Valor
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -445,16 +664,19 @@ const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <span className="capitalize">{devolucao.claim_type}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            devolucao.processed_status === 'resolved' ? 'bg-green-100 text-green-800' :
-                            devolucao.processed_status === 'reviewed' ? 'bg-blue-100 text-blue-800' :
-                            'bg-orange-100 text-orange-800'
-                          }`}>
-                            {devolucao.processed_status || 'pending'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                         <td className="px-6 py-4 whitespace-nowrap">
+                           <span className={`px-2 py-1 text-xs rounded-full ${
+                             devolucao.processed_status === 'resolved' ? 'bg-green-100 text-green-800' :
+                             devolucao.processed_status === 'reviewed' ? 'bg-blue-100 text-blue-800' :
+                             'bg-orange-100 text-orange-800'
+                           }`}>
+                             {devolucao.processed_status || 'pending'}
+                           </span>
+                         </td>
+                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                           {traduzirMotivoCancelamento(devolucao.reason_description)}
+                         </td>
+                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
                           R$ {(devolucao.amount_refunded || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -529,9 +751,14 @@ const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
                 
                 {selectedDevolucao.reason_description && (
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Motivo</h3>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-sm">{selectedDevolucao.reason_description}</p>
+                    <h3 className="font-semibold text-gray-900 mb-2">Motivo do Cancelamento</h3>
+                    <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                      <p className="text-sm font-medium text-gray-900">
+                        {traduzirMotivoCancelamento(selectedDevolucao.reason_description)}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Original: {selectedDevolucao.reason_description}
+                      </p>
                     </div>
                   </div>
                 )}
