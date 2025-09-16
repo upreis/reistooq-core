@@ -363,92 +363,47 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
     }
   }, [mlAccounts]);
 
-  // Query otimizada para buscar da tabela (dados já sincronizados)
-  const { data: devolucoes = [], isLoading, error } = useQuery<DevolucaoML[]>({
-    queryKey: ['devolucoes-otimizada', { selectedAccountId: filtros.selectedAccountId, dateFrom: filtros.dateFrom, dateTo: filtros.dateTo, search: debouncedSearch, status: filtros.status, tipo: filtros.tipo }],
+  // Query para buscar diretamente da API do ML
+  const { data: devolucoes = [], isLoading, error, refetch: refetchDevolucoes } = useQuery<DevolucaoML[]>({
+    queryKey: ['devolucoes-api', { selectedAccountId: filtros.selectedAccountId, dateFrom: filtros.dateFrom, dateTo: filtros.dateTo, search: debouncedSearch, status: filtros.status, tipo: filtros.tipo }],
     queryFn: async () => {
       if (!filtros.selectedAccountId) {
         return [];
       }
 
-      console.log('🔍 Buscando devoluções da tabela para conta:', filtros.selectedAccountId);
+      console.log('🚀 Buscando devoluções da API do ML para conta:', filtros.selectedAccountId);
       
-      let query = supabase
-        .from('ml_devolucoes_reclamacoes')
-        .select('*');
-
-      // Filtrar por conta selecionada
-      query = query.eq('integration_account_id', filtros.selectedAccountId);
-      
-      // Aplicar filtros de busca
-      if (debouncedSearch) {
-        query = query.or(`order_id.ilike.%${debouncedSearch}%,buyer_nickname.ilike.%${debouncedSearch}%,item_title.ilike.%${debouncedSearch}%,sku.ilike.%${debouncedSearch}%`);
-      }
-      
-      // Filtros de status e tipo
-      if (filtros.status !== 'all') {
-        query = query.eq('claim_status', filtros.status);
-      }
-      
-      if (filtros.tipo !== 'all') {
-        query = query.eq('claim_type', filtros.tipo);
-      }
-      
-      // Filtros de data
-      if (filtros.dateFrom) {
-        query = query.gte('date_created', filtros.dateFrom);
-      }
-      
-      if (filtros.dateTo) {
-        query = query.lte('date_created', filtros.dateTo + 'T23:59:59.999Z');
-      }
-      
-      const { data, error } = await query
-        .order('date_created', { ascending: false })
-        .limit(1000);
-      
-      if (error) {
-        console.error('❌ Erro ao buscar devoluções:', error);
-        throw error;
-      }
-
-      console.log('✅ Devoluções carregadas da tabela:', data?.length || 0);
-      return data as DevolucaoML[];
-    },
-    enabled: !!filtros.selectedAccountId,
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos
-  });
-
-  // Mutation para sincronização
-  const syncMutation = useMutation({
-    mutationFn: async () => {
-      if (!filtros.selectedAccountId) {
-        throw new Error('Nenhuma conta selecionada');
-      }
-
       const { data, error } = await supabase.functions.invoke('ml-devolucoes-sync', {
         body: {
           integration_account_id: filtros.selectedAccountId,
           mode: 'enriched',
           date_from: filtros.dateFrom,
           date_to: filtros.dateTo,
-          enrich_level: 'complete'
+          enrich_level: 'complete',
+          search: debouncedSearch,
+          status: filtros.status,
+          tipo: filtros.tipo
         }
       });
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error('❌ Erro ao buscar devoluções da API:', error);
+        throw error;
+      }
+
+      console.log('✅ Devoluções carregadas da API:', data?.items?.length || 0);
+      return data?.items || [];
     },
-    onSuccess: (data) => {
-      toast.success(`Sincronização concluída! ${data?.found || 0} itens encontrados`);
-      queryClient.invalidateQueries({ queryKey: ['devolucoes-api'] });
-      refetch?.();
-    },
-    onError: (error: any) => {
-      toast.error(`Erro na sincronização: ${error.message}`);
-    }
+    enabled: !!filtros.selectedAccountId,
+    staleTime: 1 * 60 * 1000, // 1 minuto para dados da API
+    gcTime: 3 * 60 * 1000, // 3 minutos
   });
+
+  // Handler para atualizar dados
+  const handleRefresh = React.useCallback(() => {
+    refetchDevolucoes();
+    toast.success('Dados atualizados!');
+  }, [refetchDevolucoes]);
 
   // Métricas calculadas otimizadas
   const metricas = React.useMemo(() => {
@@ -464,8 +419,8 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
   // Handlers otimizados
   const handleSearch = React.useCallback(() => {
     setCurrentPage(1);
-    queryClient.invalidateQueries({ queryKey: ['devolucoes-otimizada'] });
-  }, [queryClient]);
+    refetchDevolucoes();
+  }, [refetchDevolucoes]);
 
   const handleExport = React.useCallback(() => {
     if (devolucoes.length === 0) {
@@ -569,13 +524,13 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
             <Download className="h-4 w-4 mr-2" />
             Exportar CSV
           </Button>
-          <Button onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
-            {syncMutation.isPending ? (
+          <Button onClick={handleRefresh} disabled={isLoading}>
+            {isLoading ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            Sincronizar
+            Atualizar da API
           </Button>
         </div>
       </div>
