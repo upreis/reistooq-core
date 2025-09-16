@@ -753,9 +753,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
-                       
-                       {/* COLUNAS ORIGINAIS MANTIDAS */}
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Conta ML</th>
+                        
+                        {/* COLUNAS ORIGINAIS MANTIDAS */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📋 Claim</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📦 Return</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">⚖️ Mediação</th>
