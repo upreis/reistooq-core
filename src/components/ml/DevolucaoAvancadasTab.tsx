@@ -445,6 +445,27 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               )}
             </Button>
           )}
+        </div>
+
+        <div className="flex gap-2">
+          {/* Botão para alternar entre visualizações */}
+          <Button 
+            variant="outline"
+            onClick={() => setShowTableView(!showTableView)}
+            className="flex items-center gap-2"
+          >
+            {showTableView ? (
+              <>
+                <Package className="h-4 w-4" />
+                Cards
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4" />
+                Tabela
+              </>
+            )}
+          </Button>
           
           <Button 
             variant="outline" 
@@ -652,171 +673,139 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             ) : showTableView ? (
               /* Visualização em Tabela Detalhada */
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
+                <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr className="border-b bg-gray-50">
-                      <th className="text-left p-3 font-medium">
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4" />
-                          Order ID
-                        </div>
-                      </th>
-                      <th className="text-left p-3 font-medium">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Claim ID
-                        </div>
-                      </th>
-                       <th className="text-left p-3 font-medium">
-                         <div className="flex items-center gap-2">
-                           <Search className="h-4 w-4" />
-                           SKU
-                         </div>
-                       </th>
-                       <th className="text-left p-3 font-medium">Produto</th>
-                       <th className="text-left p-3 font-medium">
-                         <div className="flex items-center gap-2">
-                           <CheckSquare className="h-4 w-4" />
-                           Qtd
-                         </div>
-                       </th>
-                       <th className="text-left p-3 font-medium">
-                         <div className="flex items-center gap-2">
-                           <DollarSign className="h-4 w-4" />
-                           Valor
-                         </div>
-                       </th>
-                       <th className="text-left p-3 font-medium">
-                         <div className="flex items-center gap-2">
-                           <CheckCircle className="h-4 w-4" />
-                           Status
-                         </div>
-                       </th>
-                       <th className="text-left p-3 font-medium">
-                         <div className="flex items-center gap-2">
-                           <XCircle className="h-4 w-4" />
-                           Motivo
-                         </div>
-                       </th>
-                       <th className="text-left p-3 font-medium">
-                         <div className="flex items-center gap-2">
-                           <FileText className="h-4 w-4" />
-                           Descrição do Motivo
-                         </div>
-                       </th>
-                       <th className="text-left p-3 font-medium">
-                         <div className="flex items-center gap-2">
-                           <Wrench className="h-4 w-4" />
-                           Comprador
-                         </div>
-                       </th>
-                       <th className="text-left p-3 font-medium">
-                         <div className="flex items-center gap-2">
-                           <Clock className="h-4 w-4" />
-                           Data
-                         </div>
-                       </th>
-                       <th className="text-left p-3 font-medium">Ações</th>
+                      <th className="text-left p-2 font-medium">Order ID</th>
+                      <th className="text-left p-2 font-medium">Produto</th>
+                      <th className="text-left p-2 font-medium">SKU</th>
+                      <th className="text-left p-2 font-medium">Comprador</th>
+                      <th className="text-left p-2 font-medium">Qtd</th>
+                      <th className="text-left p-2 font-medium">Valor Retido</th>
+                      <th className="text-left p-2 font-medium">Status</th>
+                      <th className="text-left p-2 font-medium">📋 Claim</th>
+                      <th className="text-left p-2 font-medium">📦 Return</th>
+                      <th className="text-left p-2 font-medium">⚖️ Mediação</th>
+                      <th className="text-left p-2 font-medium">📎 Anexos</th>
+                      <th className="text-left p-2 font-medium">Data Criação</th>
+                      <th className="text-left p-2 font-medium">Data Última Atualização</th>
+                      <th className="text-left p-2 font-medium">Tipo</th>
+                      <th className="text-left p-2 font-medium">Motivo Cancelamento</th>
+                      <th className="text-left p-2 font-medium">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {devolucoes.map((devolucao, index) => (
-                      <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-gray-50">
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <Package className="h-4 w-4 text-blue-600" />
-                            <span className="font-medium">{devolucao.order_id}</span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-purple-600" />
-                            <span>{devolucao.claim_id || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <Search className="h-4 w-4 text-gray-600" />
-                            <span>{devolucao.sku || 'N/A'}</span>
-                          </div>
-                        </td>
-                        <td className="p-3 max-w-xs">
-                          <div className="truncate font-medium" title={devolucao.produto_titulo}>
-                            {devolucao.produto_titulo}
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <CheckSquare className="h-4 w-4 text-indigo-600" />
-                            <span>{devolucao.quantidade || 1}</span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="h-4 w-4 text-green-600" />
-                            <span className="font-medium text-green-600">
-                              R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}
+                    {devolucoes.map((devolucao, index) => {
+                      const claimData = devolucao.dados_claim || {};
+                      const orderData = devolucao.dados_order || {};
+                      const returnData = devolucao.dados_return || {};
+                      const mensagensData = devolucao.dados_mensagens || {};
+
+                      // Verificações para cada coluna
+                      const temClaimData = !!(
+                        claimData && Object.keys(claimData).length > 0 ||
+                        orderData?.mediations && orderData.mediations.length > 0
+                      );
+
+                      const temReturnData = !!(
+                        returnData && Object.keys(returnData).length > 0 ||
+                        orderData?.order_request?.return ||
+                        orderData?.tags?.includes('return') ||
+                        orderData?.tags?.includes('refund')
+                      );
+
+                      const temMediationData = !!(
+                        orderData?.mediations && orderData.mediations.length > 0 ||
+                        claimData?.mediation_details ||
+                        claimData?.reason?.code === 'buyer_cancel_express'
+                      );
+
+                      const temAttachmentsData = !!(
+                        claimData?.attachments ||
+                        claimData?.claim_attachments ||
+                        mensagensData && Object.keys(mensagensData).length > 0
+                      );
+
+                      return (
+                        <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-gray-50">
+                          <td className="p-2 font-medium text-blue-600">{devolucao.order_id}</td>
+                          <td className="p-2 max-w-xs">
+                            <div className="truncate" title={devolucao.produto_titulo}>
+                              {devolucao.produto_titulo}
+                            </div>
+                          </td>
+                          <td className="p-2">{devolucao.sku || 'N/A'}</td>
+                          <td className="p-2">{devolucao.comprador_nickname || 'N/A'}</td>
+                          <td className="p-2 text-center">{devolucao.quantidade || 1}</td>
+                          <td className="p-2 text-green-600 font-medium">
+                            R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}
+                          </td>
+                          <td className="p-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              devolucao.status_devolucao === 'completed' 
+                                ? 'bg-green-100 text-green-800'
+                                : devolucao.status_devolucao === 'cancelled'
+                                ? 'bg-red-100 text-red-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {devolucao.status_devolucao}
                             </span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <span className={`flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium ${
-                            devolucao.status_devolucao === 'completed' 
-                              ? 'bg-green-100 text-green-800'
-                              : devolucao.status_devolucao === 'cancelled'
-                              ? 'bg-red-100 text-red-800' 
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
-                            <CheckCircle className="h-3 w-3" />
-                            {devolucao.status_devolucao}
-                          </span>
-                         </td>
-                         <td className="p-3 max-w-xs">
-                           <div className="flex items-center gap-2">
-                             <XCircle className="h-4 w-4 text-red-600" />
-                             <span className="truncate" title={String(getMotivoCancelamento(devolucao))}>
-                               {String(getMotivoCancelamento(devolucao))}
-                             </span>
-                           </div>
-                         </td>
-                         <td className="p-3">
-                           <div className="flex items-center gap-2">
-                             <Wrench className="h-4 w-4 text-orange-600" />
-                             <span className="truncate max-w-24" title={devolucao.comprador_nickname}>
-                               {devolucao.comprador_nickname || 'N/A'}
-                             </span>
-                           </div>
-                         </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm">
-                              {new Date(devolucao.data_criacao).toLocaleDateString()}
-                            </span>
-                          </div>
-                         </td>
-                         <td className="p-3 max-w-xs">
-                           <div className="flex items-center gap-2">
-                             <FileText className="h-4 w-4 text-blue-600" />
-                             <span className="truncate text-sm" title={String(getTextoMotivoDetalhado(devolucao))}>
-                               {String(getTextoMotivoDetalhado(devolucao))}
-                             </span>
-                           </div>
-                         </td>
-                         <td className="p-3">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedDevolucao(devolucao);
-                              setShowDetails(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="p-2 text-center">
+                            {temClaimData ? (
+                              <span className="text-blue-600">📋</span>
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
+                          </td>
+                          <td className="p-2 text-center">
+                            {temReturnData ? (
+                              <span className="text-orange-600">📦</span>
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
+                          </td>
+                          <td className="p-2 text-center">
+                            {temMediationData ? (
+                              <span className="text-purple-600">⚖️</span>
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
+                          </td>
+                          <td className="p-2 text-center">
+                            {temAttachmentsData ? (
+                              <span className="text-green-600">📎</span>
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
+                          </td>
+                          <td className="p-2 text-sm">
+                            {new Date(devolucao.data_criacao).toLocaleDateString()}
+                          </td>
+                          <td className="p-2 text-sm">
+                            {new Date(devolucao.updated_at).toLocaleDateString()}
+                          </td>
+                          <td className="p-2">{claimData.type || 'N/A'}</td>
+                          <td className="p-2 max-w-xs">
+                            <div className="truncate text-sm" title={String(getMotivoCancelamento(devolucao))}>
+                              {String(getMotivoCancelamento(devolucao))}
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedDevolucao(devolucao);
+                                setShowDetails(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
