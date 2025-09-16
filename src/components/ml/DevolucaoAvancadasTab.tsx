@@ -668,7 +668,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📦 Return</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">⚖️ Mediação</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📎 Anexos</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[140px]">Datas</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Criação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo Cancelamento</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Ações</th>
@@ -796,26 +797,22 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             )}
                           </td>
                           
-                          {/* Datas Combinadas */}
-                          <td className="px-3 py-3">
-                            <div className="space-y-1 text-sm">
-                              <div className="text-foreground">
-                                <span className="text-muted-foreground text-xs">Criado:</span><br />
-                                {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                })}
-                              </div>
-                              <div className="text-foreground">
-                                <span className="text-muted-foreground text-xs">Atualizado:</span><br />
-                                {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric'
-                                })}
-                              </div>
-                            </div>
+                          {/* Data Criação */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </td>
+                          
+                          {/* Data Atualização */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
                           </td>
                           
                           {/* Tipo */}
