@@ -43,9 +43,9 @@ export function useDevolucoes(mlAccounts: any[]) {
     dataFim: '',
     statusClaim: '',
     searchTerm: '', // Campo de busca unificado
-    buscarEmTempoReal: false,
+    buscarEmTempoReal: true, // Sempre buscar da API
     autoRefreshEnabled: false,
-    autoRefreshInterval: 30 // 30 segundos por padrão
+    autoRefreshInterval: 3600 // 1 hora por padrão
   });
 
   // Configurações de performance otimizadas (fixas)
@@ -65,23 +65,18 @@ export function useDevolucoes(mlAccounts: any[]) {
     flushDebounce 
   } = useDebounce(advancedFilters.searchTerm, performanceSettings.debounceDelay);
 
-  // Busca principal com debounce
+  // Busca principal - SEMPRE da API ML 
   const executarBusca = useCallback(async () => {
-    if (advancedFilters.buscarEmTempoReal) {
-      const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
-      setDevolucoes(dadosAPI);
-      setCurrentPage(1);
-      persistence.saveApiData(dadosAPI, advancedFilters);
-    } else {
-      const dadosBanco = await busca.buscarDoBanco();
-      setDevolucoes(dadosBanco);
-      persistence.saveDatabaseData(dadosBanco, advancedFilters);
-    }
+    // Forçar busca sempre da API ML
+    const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
+    setDevolucoes(dadosAPI);
+    setCurrentPage(1);
+    persistence.saveApiData(dadosAPI, advancedFilters);
   }, [advancedFilters, busca, mlAccounts, persistence]);
 
-  // Auto-refresh configurável
+  // Auto-refresh configurável - sempre habilitado quando autoRefresh está ativo
   const autoRefresh = useAutoRefresh({
-    enabled: advancedFilters.autoRefreshEnabled && advancedFilters.buscarEmTempoReal,
+    enabled: advancedFilters.autoRefreshEnabled, // Removido dependência de buscarEmTempoReal
     interval: advancedFilters.autoRefreshInterval,
     onRefresh: executarBusca,
     maxRetries: 3,
@@ -209,9 +204,9 @@ export function useDevolucoes(mlAccounts: any[]) {
       statusClaim: '',
       dataInicio: '',
       dataFim: '',
-      buscarEmTempoReal: false,
+      buscarEmTempoReal: true, // Sempre true
       autoRefreshEnabled: false,
-      autoRefreshInterval: 30
+      autoRefreshInterval: 3600 // 1 hora por padrão
     });
     lazyLoading.reset();
     persistence.clearPersistedState();
