@@ -443,7 +443,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           <div className="flex items-center gap-3 flex-wrap">
             {/* Campo de busca */}
             <div className="flex items-center relative min-w-[250px]">
-              <Search className="absolute left-3 h-4 w-4 text-gray-400 z-10" />
+              <Search className="absolute left-3 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Buscar por Order ID, comprador..."
                 value={advancedFilters.searchTerm || ''}
@@ -464,11 +464,11 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <SelectTrigger className="w-[160px] bg-slate-800 border-slate-600 text-white">
                 <SelectValue placeholder="Todos os Status" />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600 z-50">
-                <SelectItem value="" className="text-white hover:bg-slate-700">Todos os Status</SelectItem>
-                <SelectItem value="cancelled" className="text-white hover:bg-slate-700">Cancelado</SelectItem>
-                <SelectItem value="with_claims" className="text-white hover:bg-slate-700">Com Claims</SelectItem>
-                <SelectItem value="completed" className="text-white hover:bg-slate-700">Concluído</SelectItem>
+              <SelectContent className="bg-slate-800 border-slate-600">
+                <SelectItem value="">Todos os Status</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+                <SelectItem value="with_claims">Com Claims</SelectItem>
+                <SelectItem value="completed">Concluído</SelectItem>
               </SelectContent>
             </Select>
 
@@ -504,7 +504,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                             });
                           }
                         }}
-                        className="rounded border-slate-500 bg-slate-700"
+                        className="rounded"
                       />
                       <label htmlFor="todas-contas" className="text-sm text-white font-medium cursor-pointer">
                         Todas as contas
@@ -527,7 +527,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                               contasSelecionadas: newAccounts
                             });
                           }}
-                          className="rounded border-slate-500 bg-slate-700"
+                          className="rounded"
                         />
                         <label htmlFor={`conta-${account.id}`} className="text-sm text-white cursor-pointer">
                           {account.name}
@@ -540,34 +540,30 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             </div>
 
             {/* Data Início */}
-            <div className="relative">
-              <Input
-                type="date"
-                value={advancedFilters.dataInicio || ''}
-                onChange={(e) => updateAdvancedFilters({
-                  dataInicio: e.target.value
-                })}
-                className="w-[140px] bg-slate-800 border-slate-600 text-white [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
-              />
-            </div>
+            <Input
+              type="date"
+              value={advancedFilters.dataInicio || ''}
+              onChange={(e) => updateAdvancedFilters({
+                dataInicio: e.target.value
+              })}
+              className="w-[140px] bg-slate-800 border-slate-600 text-white"
+            />
 
             {/* Data Fim */}
-            <div className="relative">
-              <Input
-                type="date"
-                value={advancedFilters.dataFim || ''}
-                onChange={(e) => updateAdvancedFilters({
-                  dataFim: e.target.value
-                })}
-                className="w-[140px] bg-slate-800 border-slate-600 text-white [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:contrast-100"
-              />
-            </div>
+            <Input
+              type="date"
+              value={advancedFilters.dataFim || ''}
+              onChange={(e) => updateAdvancedFilters({
+                dataFim: e.target.value
+              })}
+              className="w-[140px] bg-slate-800 border-slate-600 text-white"
+            />
 
             {/* Botão Atualizar */}
             <Button 
               onClick={buscarComFiltros}
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 border-0"
+              className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -581,7 +577,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             <Button 
               variant="outline"
               onClick={toggleAnalytics}
-              className="border-slate-600 text-white hover:bg-slate-700 bg-transparent flex items-center gap-2"
+              className="border-slate-600 text-white hover:bg-slate-700 flex items-center gap-2"
             >
               <BarChart3 className="h-4 w-4" />
               Análise API
@@ -589,7 +585,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           </div>
 
           {/* Auto-refresh personalizado - compacto */}
-          <div className="mt-4 p-3 bg-slate-800 rounded-lg border border-slate-700">
+          <div className="mt-4 p-3 bg-slate-800 rounded-lg">
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium text-white">🔄 Auto-refresh:</label>
               <Input
@@ -606,7 +602,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   });
                 }}
                 placeholder="Minutos"
-                className="w-20 bg-slate-700 border-slate-600 text-white text-sm placeholder:text-gray-400"
+                className="w-20 bg-slate-700 border-slate-600 text-white text-sm"
               />
               <span className="text-sm text-gray-400">min</span>
               <Button
@@ -614,7 +610,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 size="sm"
                 onClick={() => updateAdvancedFilters({ autoRefreshEnabled: false })}
                 disabled={!advancedFilters.autoRefreshEnabled}
-                className="border-slate-600 text-white hover:bg-slate-700 bg-transparent"
+                className="border-slate-600 text-white hover:bg-slate-700"
               >
                 Desativar
               </Button>
