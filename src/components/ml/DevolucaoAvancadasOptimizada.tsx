@@ -117,7 +117,7 @@ const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, i
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtros Inteligentes
+            Filtros da API ML
           </CardTitle>
           <Button 
             variant="ghost" 
@@ -133,6 +133,32 @@ const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, i
       <CardContent className="space-y-4">
         {/* Filtros básicos sempre visíveis */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              <Users className="h-4 w-4 inline mr-1" />
+              Conta ML
+            </label>
+            <Select 
+              value={filtros.selectedAccountId} 
+              onValueChange={(value) => setFiltros(prev => ({ 
+                ...prev, 
+                selectedAccountId: value,
+                accountIds: [value]
+              }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar conta" />
+              </SelectTrigger>
+              <SelectContent>
+                {mlAccounts.map(account => (
+                  <SelectItem key={account.id} value={account.id}>
+                    {account.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -155,25 +181,13 @@ const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, i
             </SelectContent>
           </Select>
 
-          <Select value={filtros.tipo} onValueChange={(value) => setFiltros(prev => ({ ...prev, tipo: value }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Tipos</SelectItem>
-              <SelectItem value="claim">Reclamação</SelectItem>
-              <SelectItem value="return">Devolução</SelectItem>
-              <SelectItem value="cancellation">Cancelamento</SelectItem>
-            </SelectContent>
-          </Select>
-
           <Button 
             onClick={onSearch} 
-            disabled={isLoading}
+            disabled={isLoading || !filtros.selectedAccountId}
             className="flex items-center gap-2"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            Buscar
+            Buscar API
           </Button>
         </div>
 
@@ -181,6 +195,18 @@ const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, i
         {showAdvanced && (
           <div className="animate-fade-in space-y-4 border-t pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Select value={filtros.tipo} onValueChange={(value) => setFiltros(prev => ({ ...prev, tipo: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os Tipos</SelectItem>
+                  <SelectItem value="claim">Reclamação</SelectItem>
+                  <SelectItem value="return">Devolução</SelectItem>
+                  <SelectItem value="cancellation">Cancelamento</SelectItem>
+                </SelectContent>
+              </Select>
+              
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-2 block">
                   <Calendar className="h-4 w-4 inline mr-1" />
@@ -204,33 +230,6 @@ const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, i
                   onChange={(e) => setFiltros(prev => ({ ...prev, dateTo: e.target.value }))}
                 />
               </div>
-
-              <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                  <Users className="h-4 w-4 inline mr-1" />
-                  Contas ML
-                </label>
-                <Select 
-                  value={filtros.accountIds.length === mlAccounts.length ? 'all' : 'custom'} 
-                  onValueChange={(value) => {
-                    if (value === 'all') {
-                      setFiltros(prev => ({ ...prev, accountIds: mlAccounts.map(acc => acc.id) }));
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar contas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as Contas</SelectItem>
-                    {mlAccounts.map(account => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="flex gap-2">
@@ -242,10 +241,11 @@ const FilterSection = React.memo(({ filtros, setFiltros, mlAccounts, onSearch, i
                   status: 'all',
                   tipo: 'all',
                   prioridade: 'all',
-                  dateFrom: '',
-                  dateTo: '',
-                  accountIds: mlAccounts.map(acc => acc.id),
-                  processedStatus: 'all'
+                  dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                  dateTo: new Date().toISOString().split('T')[0],
+                  accountIds: mlAccounts.length > 0 ? [mlAccounts[0].id] : [],
+                  processedStatus: 'all',
+                  selectedAccountId: mlAccounts.length > 0 ? mlAccounts[0].id : ''
                 })}
               >
                 <X className="h-4 w-4 mr-1" />
@@ -341,7 +341,8 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
     dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     dateTo: new Date().toISOString().split('T')[0],
     accountIds: [] as string[],
-    processedStatus: 'all'
+    processedStatus: 'all',
+    selectedAccountId: '' as string // Novo: conta única selecionada
   });
 
   const [viewMode, setViewMode] = React.useState<'cards' | 'table'>('cards');
@@ -351,77 +352,100 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
   const queryClient = useQueryClient();
   const debouncedSearch = useDebounce(filtros.search, 500);
 
-  // Auto-selecionar contas ativas
+  // Auto-selecionar primeira conta ativa
   React.useEffect(() => {
-    if (mlAccounts?.length > 0 && filtros.accountIds.length === 0) {
-      setFiltros(prev => ({ ...prev, accountIds: mlAccounts.map(acc => acc.id) }));
+    if (mlAccounts?.length > 0 && !filtros.selectedAccountId) {
+      setFiltros(prev => ({ 
+        ...prev, 
+        selectedAccountId: mlAccounts[0].id,
+        accountIds: [mlAccounts[0].id]
+      }));
     }
   }, [mlAccounts]);
 
-  // Query otimizada com React Query
+  // Query otimizada para buscar diretamente da API ML
   const { data: devolucoes = [], isLoading, error } = useQuery<DevolucaoML[]>({
-    queryKey: ['devolucoes-otimizada', { ...filtros, search: debouncedSearch }],
+    queryKey: ['devolucoes-api', { selectedAccountId: filtros.selectedAccountId, dateFrom: filtros.dateFrom, dateTo: filtros.dateTo, search: debouncedSearch }],
     queryFn: async () => {
-      let query = supabase
-        .from('ml_devolucoes_reclamacoes')
-        .select('*');
+      if (!filtros.selectedAccountId) {
+        return [];
+      }
 
-      if (filtros.accountIds.length > 0) {
-        query = query.in('integration_account_id', filtros.accountIds);
+      console.log('🔍 Buscando devoluções da API ML para conta:', filtros.selectedAccountId);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('ml-devolucoes-sync', {
+          body: {
+            integration_account_id: filtros.selectedAccountId,
+            mode: 'enriched',
+            date_from: filtros.dateFrom,
+            date_to: filtros.dateTo,
+            enrich_level: 'complete'
+          }
+        });
+
+        if (error) {
+          console.error('❌ Erro na busca de devoluções:', error);
+          throw new Error(error.message || 'Erro ao buscar devoluções');
+        }
+
+        console.log('✅ Devoluções carregadas:', data?.items?.length || 0);
+        
+        let items = data?.items || [];
+        
+        // Aplicar filtros locais
+        if (debouncedSearch) {
+          items = items.filter((item: any) => 
+            item.order_id?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+            item.buyer_nickname?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+            item.item_title?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+            item.sku?.toLowerCase().includes(debouncedSearch.toLowerCase())
+          );
+        }
+
+        if (filtros.status !== 'all') {
+          items = items.filter((item: any) => item.claim_status === filtros.status);
+        }
+
+        if (filtros.tipo !== 'all') {
+          items = items.filter((item: any) => item.claim_type === filtros.tipo);
+        }
+
+        return items;
+      } catch (error: any) {
+        console.error('❌ Erro ao buscar devoluções:', error);
+        toast.error(`Erro ao buscar devoluções: ${error.message}`);
+        throw error;
       }
-      
-      if (debouncedSearch) {
-        query = query.or(`order_id.ilike.%${debouncedSearch}%,buyer_nickname.ilike.%${debouncedSearch}%,item_title.ilike.%${debouncedSearch}%,sku.ilike.%${debouncedSearch}%`);
-      }
-      
-      if (filtros.status !== 'all') {
-        query = query.eq('claim_status', filtros.status);
-      }
-      
-      if (filtros.tipo !== 'all') {
-        query = query.eq('claim_type', filtros.tipo);
-      }
-      
-      if (filtros.dateFrom) {
-        query = query.gte('date_created', filtros.dateFrom);
-      }
-      
-      if (filtros.dateTo) {
-        query = query.lte('date_created', filtros.dateTo + 'T23:59:59.999Z');
-      }
-      
-      const { data, error } = await query
-        .order('date_created', { ascending: false })
-        .limit(1000);
-      
-      if (error) throw error;
-      return data as DevolucaoML[];
     },
-    enabled: filtros.accountIds.length > 0,
+    enabled: !!filtros.selectedAccountId,
     staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos (cacheTime foi renomeado para gcTime)
+    gcTime: 10 * 60 * 1000, // 10 minutos
   });
 
   // Mutation para sincronização
   const syncMutation = useMutation({
     mutationFn: async () => {
-      const results = await Promise.allSettled(
-        filtros.accountIds.map(accountId =>
-          supabase.functions.invoke('ml-devolucoes-sync', {
-            body: {
-              integration_account_id: accountId,
-              mode: 'enriched',
-              date_from: filtros.dateFrom,
-              date_to: filtros.dateTo
-            }
-          })
-        )
-      );
-      return results;
+      if (!filtros.selectedAccountId) {
+        throw new Error('Nenhuma conta selecionada');
+      }
+
+      const { data, error } = await supabase.functions.invoke('ml-devolucoes-sync', {
+        body: {
+          integration_account_id: filtros.selectedAccountId,
+          mode: 'enriched',
+          date_from: filtros.dateFrom,
+          date_to: filtros.dateTo,
+          enrich_level: 'complete'
+        }
+      });
+
+      if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
-      toast.success('Sincronização concluída!');
-      queryClient.invalidateQueries({ queryKey: ['devolucoes-otimizada'] });
+    onSuccess: (data) => {
+      toast.success(`Sincronização concluída! ${data?.found || 0} itens encontrados`);
+      queryClient.invalidateQueries({ queryKey: ['devolucoes-api'] });
       refetch?.();
     },
     onError: (error: any) => {
@@ -443,7 +467,7 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
   // Handlers otimizados
   const handleSearch = React.useCallback(() => {
     setCurrentPage(1);
-    queryClient.invalidateQueries({ queryKey: ['devolucoes-otimizada'] });
+    queryClient.invalidateQueries({ queryKey: ['devolucoes-api'] });
   }, [queryClient]);
 
   const handleExport = React.useCallback(() => {
@@ -649,7 +673,9 @@ const DevolucaoAvancadasOptimizada: React.FC<Props> = ({ mlAccounts, refetch }) 
           <CardContent className="p-8 text-center">
             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhuma devolução encontrada</h3>
-            <p className="text-muted-foreground">Ajuste os filtros ou sincronize os dados</p>
+            <p className="text-muted-foreground">
+              {filtros.selectedAccountId ? 'Selecione uma conta e ajuste os filtros ou sincronize os dados' : 'Selecione uma conta ML para começar'}
+            </p>
           </CardContent>
         </Card>
       ) : viewMode === 'cards' ? (
