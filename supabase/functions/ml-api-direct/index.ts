@@ -235,7 +235,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               }
             }
             
-            // Processar como devolução/cancelamento
+            // Processar como devolução/cancelamento com DADOS ENRIQUECIDOS COMPLETOS
             const devolucao = {
               type: 'cancellation',
               order_id: orderDetail.id,
@@ -251,8 +251,72 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               order_data: orderDetail,
               buyer: orderDetail.buyer,
               cancel_detail: orderDetail.cancel_detail,
-              // Adicionar dados completos do claim
-              ...claimData
+              
+              // DADOS DE CLAIM ESTRUTURADOS
+              claim_details: claimData?.claim_details || null,
+              claim_messages: claimData?.claim_messages || null,
+              mediation_details: claimData?.mediation_details || null,
+              claim_attachments: claimData?.claim_attachments || null,
+              return_details_v2: claimData?.return_details_v2 || null,
+              return_details_v1: claimData?.return_details_v1 || null,
+              return_reviews: claimData?.return_reviews || null,
+              
+              // CAMPOS ENRIQUECIDOS EXTRAÍDOS
+              claim_status: claimData?.claim_status || null,
+              return_status: claimData?.return_status || null,
+              return_tracking: claimData?.return_tracking || null,
+              resolution_date: claimData?.resolution_date || null,
+              resolution_reason: claimData?.resolution_reason || null,
+              messages_count: claimData?.messages_count || 0,
+              review_score: claimData?.review_score || null,
+              
+              // DADOS DE COMUNICAÇÃO
+              timeline_mensagens: claimData?.claim_messages?.messages || [],
+              numero_interacoes: claimData?.claim_messages?.messages?.length || 0,
+              ultima_mensagem_data: claimData?.claim_messages?.messages?.length > 0 ? 
+                claimData.claim_messages.messages[claimData.claim_messages.messages.length - 1]?.date_created : null,
+              ultima_mensagem_remetente: claimData?.claim_messages?.messages?.length > 0 ? 
+                claimData.claim_messages.messages[claimData.claim_messages.messages.length - 1]?.from?.role : null,
+              mensagens_nao_lidas: claimData?.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0,
+              
+              // DADOS DE RETORNO/TROCA
+              eh_troca: (claimData?.return_details_v2?.subtype || '').includes('change'),
+              data_estimada_troca: claimData?.return_details_v2?.estimated_exchange_date || null,
+              codigo_rastreamento: claimData?.return_details_v2?.shipments?.[0]?.tracking_number || 
+                                  claimData?.return_details_v1?.shipments?.[0]?.tracking_number || null,
+              transportadora: claimData?.return_details_v2?.shipments?.[0]?.carrier || 
+                             claimData?.return_details_v1?.shipments?.[0]?.carrier || null,
+              status_rastreamento: claimData?.return_details_v2?.shipments?.[0]?.status || 
+                                  claimData?.return_details_v1?.shipments?.[0]?.status || null,
+              
+              // DADOS DE ANEXOS
+              anexos_count: claimData?.claim_attachments?.length || 0,
+              anexos_comprador: claimData?.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
+              anexos_vendedor: claimData?.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
+              anexos_ml: claimData?.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
+              
+              // DADOS FINANCEIROS
+              custo_envio_devolucao: claimData?.return_details_v2?.shipping_cost || 
+                                    claimData?.return_details_v1?.shipping_cost || null,
+              valor_compensacao: claimData?.return_details_v2?.refund_amount || 
+                                claimData?.return_details_v1?.refund_amount || null,
+              responsavel_custo: claimData?.claim_details?.resolution?.benefited?.[0] || null,
+              
+              // CLASSIFICAÇÃO
+              tipo_claim: claimData?.claim_details?.type || orderDetail.status,
+              subtipo_claim: claimData?.claim_details?.stage || claimData?.claim_details?.subtype || null,
+              motivo_categoria: claimData?.claim_details?.reason_id || null,
+              em_mediacao: claimData?.claim_details?.type === 'mediations' || claimData?.mediation_details !== null,
+              nivel_prioridade: claimData?.claim_details?.type === 'mediations' ? 'high' : 'medium',
+              
+              // CONTROLE DE AÇÃO
+              acao_seller_necessaria: (claimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
+              escalado_para_ml: claimData?.claim_details?.type === 'mediations',
+              data_vencimento_acao: claimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
+              
+              // MARCADORES DE QUALIDADE
+              dados_completos: claimData?.dados_completos || false,
+              marketplace_origem: 'ML_BRASIL'
             }
             
             ordersCancelados.push(devolucao)

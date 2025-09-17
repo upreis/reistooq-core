@@ -803,65 +803,80 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   if (dadosEnriquecidos.length > 0) {
                     console.log('🎉 Dados enriquecidos obtidos:', dadosEnriquecidos);
                     
-                    // Criar modal para exibir dados enriquecidos
-                    const primeiraDevol = dadosEnriquecidos[0];
-                    
-                    // Preparar dados estruturados para exibição
-                    const dadosParaExibir = {
-                      'Dados Básicos': {
-                        'Order ID': primeiraDevol.order_id,
-                        'Claim ID': primeiraDevol.claim_id || 'N/A',
-                        'Produto': primeiraDevol.produto_titulo,
-                        'SKU': primeiraDevol.sku,
-                        'Quantidade': primeiraDevol.quantidade,
-                        'Valor': `R$ ${primeiraDevol.valor_retido}`
-                      },
-                      'Classificação': {
-                        'Tipo Claim': primeiraDevol.tipo_claim,
-                        'Subtipo': primeiraDevol.subtipo_claim,
-                        'Status': primeiraDevol.status_devolucao,
-                        'Em Mediação': primeiraDevol.em_mediacao ? 'Sim' : 'Não',
-                        'Prioridade': primeiraDevol.nivel_prioridade
-                      },
-                      'Comunicação': {
-                        'Interações': primeiraDevol.numero_interacoes || 0,
-                        'Mensagens Não Lidas': primeiraDevol.mensagens_nao_lidas || 0,
-                        'Anexos': primeiraDevol.anexos_count || 0,
-                        'Última Mensagem': primeiraDevol.ultima_mensagem_data || 'N/A'
-                      },
-                      'Logística': {
-                        'Código Rastreamento': primeiraDevol.codigo_rastreamento || 'N/A',
-                        'Transportadora': primeiraDevol.transportadora || 'N/A',
-                        'Status Entrega': primeiraDevol.status_rastreamento || 'N/A'
-                      },
-                      'Financeiro': {
-                        'Custo Envio': primeiraDevol.custo_envio_devolucao ? `R$ ${primeiraDevol.custo_envio_devolucao}` : 'N/A',
-                        'Compensação': primeiraDevol.valor_compensacao ? `R$ ${primeiraDevol.valor_compensacao}` : 'N/A',
-                        'Responsável Custo': primeiraDevol.responsavel_custo || 'N/A'
-                      },
-                      'Controle': {
-                        'Dados Completos': primeiraDevol.dados_completos ? 'Sim' : 'Não',
-                        'Ação Seller Necessária': primeiraDevol.acao_seller_necessaria ? 'Sim' : 'Não',
-                        'Escalado para ML': primeiraDevol.escalado_para_ml ? 'Sim' : 'Não'
-                      }
+                    // AUDITORIA COMPLETA DOS DADOS ENRIQUECIDOS
+                    const auditoria = {
+                      total_devolucoes: dadosEnriquecidos.length,
+                      contas_processadas: [...new Set(dadosEnriquecidos.map(d => d.account_name))],
+                      campos_enriquecidos: {},
+                      campos_faltando: {},
+                      problemas_identificados: []
                     };
                     
-                    // Criar conteúdo estruturado
-                    let conteudoModal = `📊 DADOS ENRIQUECIDOS (${dadosEnriquecidos.length} devoluções carregadas)\n\n`;
-                    
-                    Object.entries(dadosParaExibir).forEach(([categoria, dados]) => {
-                      conteudoModal += `🔹 ${categoria.toUpperCase()}\n`;
-                      Object.entries(dados).forEach(([campo, valor]) => {
-                        conteudoModal += `   ${campo}: ${valor}\n`;
-                      });
-                      conteudoModal += '\n';
+                    // Analisar cada devolução para auditoria
+                    dadosEnriquecidos.forEach((dev, idx) => {
+                      const camposPresentes = Object.keys(dev).filter(key => 
+                        dev[key] !== null && dev[key] !== undefined && dev[key] !== ''
+                      );
+                      
+                      const camposFaltando = [
+                        'claim_id', 'tipo_claim', 'subtipo_claim', 'dados_mensagens',
+                        'anexos_count', 'codigo_rastreamento', 'em_mediacao', 
+                        'acao_seller_necessaria', 'nivel_prioridade', 'transportadora',
+                        'custo_envio_devolucao', 'valor_compensacao', 'responsavel_custo'
+                      ].filter(campo => !dev[campo] || dev[campo] === null);
+                      
+                      auditoria.campos_enriquecidos[`devolucao_${idx}`] = camposPresentes.length;
+                      auditoria.campos_faltando[`devolucao_${idx}`] = camposFaltando;
+                      
+                      // Identificar problemas específicos
+                      if (!dev.claim_id) auditoria.problemas_identificados.push(`Devolução ${idx}: Sem claim_id`);
+                      if (!dev.dados_claim || Object.keys(dev.dados_claim).length === 0) {
+                        auditoria.problemas_identificados.push(`Devolução ${idx}: Sem dados_claim estruturados`);
+                      }
+                      if (!dev.dados_mensagens || Object.keys(dev.dados_mensagens).length === 0) {
+                        auditoria.problemas_identificados.push(`Devolução ${idx}: Sem dados_mensagens`);
+                      }
                     });
                     
-                    // Exibir em alert para teste (depois pode ser um modal)
-                    alert(conteudoModal);
+                    // Criar relatório de auditoria
+                    const primeiraDevol = dadosEnriquecidos[0];
+                    const relatorioAuditoria = `
+📊 AUDITORIA COMPLETA DOS DADOS DE ENRIQUECIMENTO
+
+🎯 RESUMO GERAL:
+• Total de devoluções: ${auditoria.total_devolucoes}
+• Contas processadas: ${auditoria.contas_processadas.join(', ')}
+
+🔍 PRIMEIRA DEVOLUÇÃO (EXEMPLO):
+• Order ID: ${primeiraDevol.order_id}
+• Claim ID: ${primeiraDevol.claim_id || '❌ FALTANDO'}
+• Tem dados_claim: ${primeiraDevol.dados_claim && Object.keys(primeiraDevol.dados_claim).length > 0 ? '✅ SIM' : '❌ NÃO'}
+• Tem dados_mensagens: ${primeiraDevol.dados_mensagens && Object.keys(primeiraDevol.dados_mensagens).length > 0 ? '✅ SIM' : '❌ NÃO'}
+• Tem dados_return: ${primeiraDevol.dados_return && Object.keys(primeiraDevol.dados_return).length > 0 ? '✅ SIM' : '❌ NÃO'}
+
+📋 CAMPOS PRESENTES NA PRIMEIRA DEVOLUÇÃO:
+${Object.keys(primeiraDevol).filter(k => primeiraDevol[k] !== null && primeiraDevol[k] !== undefined && primeiraDevol[k] !== '').join(', ')}
+
+❌ PROBLEMAS IDENTIFICADOS:
+${auditoria.problemas_identificados.slice(0, 10).join('\n')}
+
+🔧 PRÓXIMOS PASSOS:
+1. Verificar por que alguns claims não têm claim_id
+2. Melhorar extração de dados_mensagens
+3. Otimizar mapeamento de campos enriquecidos
+4. Implementar fallbacks para dados faltantes
+                    `;
                     
-                    console.log('📊 Primeira devolução enriquecida:', primeiraDevol);
-                    toast.success(`✅ ${dadosEnriquecidos.length} devoluções enriquecidas carregadas!`);
+                    console.log('📊 AUDITORIA COMPLETA:', auditoria);
+                    console.log('🔍 PRIMEIRA DEVOLUÇÃO COMPLETA:', primeiraDevol);
+                    
+                    // Exibir auditoria
+                    alert(relatorioAuditoria);
+                    
+                    // Log estruturado para análise técnica
+                    console.log('🧩 ESTRUTURA COMPLETA DA PRIMEIRA DEVOLUÇÃO:', JSON.stringify(primeiraDevol, null, 2));
+                    
+                    toast.success(`✅ Auditoria concluída: ${dadosEnriquecidos.length} devoluções analisadas`);
                     
                   } else {
                     toast.warning('⚠️ Nenhuma devolução enriquecida encontrada');
@@ -876,7 +891,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               disabled={devolucoesBusca.loading}
             >
               <RefreshCw className={`h-4 w-4 ${devolucoesBusca.loading ? 'animate-spin' : ''}`} />
-              🚀 Exibir Dados Enriquecidos
+              📊 Auditoria de Enriquecimento
             </Button>
           </div>
 
