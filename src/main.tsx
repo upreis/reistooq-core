@@ -26,18 +26,30 @@ const root = createRoot(container);
 // Create error boundary wrapper with progressive loading
 function AppWithErrorBoundary() {
   try {
-    // Now that React hooks work, try the full app
+    // Import minimal app for testing
+    const MinimalApp = React.lazy(() => import('./App.minimal'));
+    
     return (
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <React.Suspense fallback={<div>Carregando...</div>}>
+        <BrowserRouter>
+          <MinimalApp />
+        </BrowserRouter>
+      </React.Suspense>
     );
   } catch (error) {
-    console.error('Full app failed, using simple app:', error);
+    console.error('Minimal app failed:', error);
     return (
-      <BrowserRouter>
-        <SimpleApp />
-      </BrowserRouter>
+      <div style={{ 
+        padding: '2rem', 
+        textAlign: 'center',
+        backgroundColor: '#1a1a1a',
+        color: '#ffffff',
+        minHeight: '100vh'
+      }}>
+        <h1>Sistema Indisponível</h1>
+        <p>Erro crítico detectado. Recarregue a página.</p>
+        <button onClick={() => window.location.reload()}>Recarregar</button>
+      </div>
     );
   }
 }
