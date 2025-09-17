@@ -1124,13 +1124,28 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📊 Evidências</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">😊 Satisfação</th>
                        
-                       {/* ESTADOS E FLAGS (novas) */}
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🔄 Troca</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🚀 ML</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">✋ Ação Req.</th>
-                       
-                       {/* COLUNAS ORIGINAIS MANTIDAS */}
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data da Venda</th>
+                        {/* ESTADOS E FLAGS (novas) */}
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🔄 Troca</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🚀 ML</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">✋ Ação Req.</th>
+                        
+                        {/* 📊 MÉTRICAS ADICIONAIS (13 colunas) */}
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Tempo 1ª Resp</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏁 Tempo Total</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Dias Resolução</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">✅ SLA</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📈 Eficiência</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⭐ Score</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💰 Reemb. Total</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Reemb. Produto</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Reemb. Frete</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏦 Taxa ML</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Custo Log.</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Impacto Vend.</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Reemb.</th>
+                        
+                        {/* COLUNAS ORIGINAIS MANTIDAS */}
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data da Venda</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo Original</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo Cancelamento</th>
@@ -1677,16 +1692,109 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             )}
                           </td>
                           
-                          {/* Ação Seller Necessária */}
-                          <td className="px-3 py-3 text-center">
-                            {devolucao.acao_seller_necessaria ? (
-                              <span className="text-orange-600 dark:text-orange-400">✋</span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
-                          
-                           {/* Data da Venda */}
+                           {/* Ação Seller Necessária */}
+                           <td className="px-3 py-3 text-center">
+                             {devolucao.acao_seller_necessaria ? (
+                               <span className="text-orange-600 dark:text-orange-400">✋</span>
+                             ) : (
+                               <span className="text-muted-foreground">-</span>
+                             )}
+                           </td>
+                           
+                           {/* === 📊 MÉTRICAS ADICIONAIS (13 colunas) === */}
+                           
+                           {/* Tempo 1ª Resposta Vendedor */}
+                           <td className="px-3 py-3 text-center text-sm">
+                             {devolucao.tempo_primeira_resposta_vendedor ? `${devolucao.tempo_primeira_resposta_vendedor}min` : '-'}
+                           </td>
+                           
+                           {/* Tempo Total Resolução */}
+                           <td className="px-3 py-3 text-center text-sm">
+                             {devolucao.tempo_total_resolucao ? `${Math.round(devolucao.tempo_total_resolucao / 60)}h` : '-'}
+                           </td>
+                           
+                           {/* Dias até Resolução */}
+                           <td className="px-3 py-3 text-center text-sm">
+                             {devolucao.dias_ate_resolucao ? `${devolucao.dias_ate_resolucao}d` : '-'}
+                           </td>
+                           
+                           {/* SLA Cumprido */}
+                           <td className="px-3 py-3 text-center">
+                             {devolucao.sla_cumprido !== null && devolucao.sla_cumprido !== undefined ? (
+                               <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                 devolucao.sla_cumprido ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                               }`}>
+                                 {devolucao.sla_cumprido ? '✅' : '❌'}
+                               </span>
+                             ) : (
+                               <span className="text-muted-foreground">-</span>
+                             )}
+                           </td>
+                           
+                           {/* Eficiência Resolução */}
+                           <td className="px-3 py-3 text-center text-sm">
+                             {devolucao.eficiencia_resolucao || '-'}
+                           </td>
+                           
+                           {/* Score Qualidade */}
+                           <td className="px-3 py-3 text-center">
+                             {devolucao.score_qualidade ? (
+                               <span className={`font-medium ${
+                                 devolucao.score_qualidade >= 80 ? 'text-green-600' :
+                                 devolucao.score_qualidade >= 60 ? 'text-yellow-600' :
+                                 'text-red-600'
+                               }`}>
+                                 {devolucao.score_qualidade}/100
+                               </span>
+                             ) : '-'}
+                           </td>
+                           
+                           {/* Valor Reembolso Total */}
+                           <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
+                             {devolucao.valor_reembolso_total ? `R$ ${devolucao.valor_reembolso_total.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Valor Reembolso Produto */}
+                           <td className="px-3 py-3 text-right text-blue-600 dark:text-blue-400 font-semibold whitespace-nowrap">
+                             {devolucao.valor_reembolso_produto ? `R$ ${devolucao.valor_reembolso_produto.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Valor Reembolso Frete */}
+                           <td className="px-3 py-3 text-right text-orange-600 dark:text-orange-400 font-semibold whitespace-nowrap">
+                             {devolucao.valor_reembolso_frete ? `R$ ${devolucao.valor_reembolso_frete.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Taxa ML Reembolso */}
+                           <td className="px-3 py-3 text-right text-purple-600 dark:text-purple-400 font-semibold whitespace-nowrap">
+                             {devolucao.taxa_ml_reembolso ? `R$ ${devolucao.taxa_ml_reembolso.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Custo Logístico Total */}
+                           <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 font-semibold whitespace-nowrap">
+                             {devolucao.custo_logistico_total ? `R$ ${devolucao.custo_logistico_total.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Impacto Financeiro Vendedor */}
+                           <td className="px-3 py-3 text-right text-gray-600 dark:text-gray-400 font-semibold whitespace-nowrap">
+                             {devolucao.impacto_financeiro_vendedor ? `R$ ${devolucao.impacto_financeiro_vendedor.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Data Processamento Reembolso */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.data_processamento_reembolso ? (() => {
+                               try {
+                                 return new Date(devolucao.data_processamento_reembolso).toLocaleDateString('pt-BR', {
+                                   day: '2-digit',
+                                   month: '2-digit',
+                                   year: 'numeric'
+                                 });
+                               } catch {
+                                 return devolucao.data_processamento_reembolso;
+                               }
+                             })() : '-'}
+                           </td>
+                           
+                            {/* Data da Venda */}
                            <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
                              {(() => {
                                try {
