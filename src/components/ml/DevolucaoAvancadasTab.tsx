@@ -305,7 +305,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         const order = devolucao.dados_order;
         if (order.cancel_description && typeof order.cancel_description === 'string') return order.cancel_description;
         if (order.cancellation_description && typeof order.cancellation_description === 'string') return order.cancellation_description;
-        if (order.cancel_detail && typeof order.cancel_detail === 'string') return order.cancel_detail;
+         if (order.cancel_detail && typeof order.cancel_detail === 'string') return order.cancel_detail;
         if (order.comments && typeof order.comments === 'string') return order.comments;
       }
 
@@ -1034,8 +1034,9 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
 
                       // ⚖️ MEDIAÇÃO (Laranja) - Baseado na estrutura do PDF
                       const temMediationData = !!(
-                        // Mediações no order (confirmado nos dados reais)
-                        (orderData?.mediations && Array.isArray(orderData.mediations) && orderData.mediations.length > 0) ||
+                         (orderData?.mediations && Array.isArray(orderData.mediations) && 
+                          orderData.mediations.length > 0 && 
+                          orderData.mediations.every(m => typeof m === 'object' && m.id)) ||
                         // Detalhes de mediação no claim
                         (claimData?.mediation_details) ||
                         // Códigos específicos de mediação do PDF
@@ -1065,25 +1066,24 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                         (devolucao.anexos_ml && Array.isArray(devolucao.anexos_ml) && devolucao.anexos_ml.length > 0)
                       );
 
-                      // 🔍 DEBUG: Log dos dados para verificação
-                      if (index === 0) {
-                        console.log('🔍 DEBUG PRIMEIRA DEVOLUÇÃO:', {
-                          order_id: devolucao.order_id,
-                          claim_id: devolucao.claim_id,
-                          temClaimData,
-                          temReturnData, 
-                          temMediationData,
-                          temAttachmentsData,
-                          dados_claim_keys: Object.keys(claimData),
-                          dados_return_keys: Object.keys(returnData),
-                          dados_order_keys: Object.keys(orderData),
-                          dados_mensagens_keys: Object.keys(mensagensData),
-                          claimData: claimData,
-                          orderData_mediations: orderData?.mediations,
-                          orderData_tags: orderData?.tags,
-                          status_devolucao: devolucao.status_devolucao
-                        });
-                      }
+                       // 🔍 DEBUG: Log simplificado para evitar renderização de objetos
+                       if (index === 0) {
+                         console.log('🔍 DEBUG PRIMEIRA DEVOLUÇÃO:', {
+                           order_id: devolucao.order_id,
+                           claim_id: devolucao.claim_id,
+                           temClaimData,
+                           temReturnData, 
+                           temMediationData,
+                           temAttachmentsData,
+                           dados_claim_keys: Object.keys(claimData),
+                           dados_return_keys: Object.keys(returnData),
+                           dados_order_keys: Object.keys(orderData),
+                           dados_mensagens_keys: Object.keys(mensagensData),
+                           orderData_mediations_count: orderData?.mediations?.length || 0,
+                           orderData_tags_count: orderData?.tags?.length || 0,
+                           status_devolucao: devolucao.status_devolucao
+                         });
+                       }
 
                       return (
                         <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-muted/50 dark:border-border">
@@ -1197,7 +1197,8 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             {temMediationData ? (
                               <div className="text-sm">
                                 <div className="text-purple-600 dark:text-purple-400 font-medium">
-                                  {orderData?.mediations?.length > 0 ? `${orderData.mediations.length} Mediação(ões)` : 'Em mediação'}
+                                   {(orderData?.mediations && Array.isArray(orderData.mediations) && orderData.mediations.length > 0) 
+                                     ? `${orderData.mediations.length} Mediação(ões)` : 'Em mediação'}
                                 </div>
                                 {devolucao.em_mediacao && (
                                   <div className="text-muted-foreground text-xs">Ativa</div>
