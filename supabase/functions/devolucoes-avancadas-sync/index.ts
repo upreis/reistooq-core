@@ -66,13 +66,10 @@ Deno.serve(async (req) => {
     // Processar baseado na ação
     switch (action) {
       case 'real_time_processing':
-        return await processRealTimeData(supabase, body, mlTokens, account);
-      
       case 'unified_processing':
-        return await unifiedRealTimeProcessing(supabase, body, mlTokens, account);
-      
+      case 'calculate_all_metrics':
       case 'fetch_real_time_data':
-        return await fetchRealTimeMLData(supabase, body, mlTokens, account);
+        return await processRealTimeData(supabase, body, mlTokens, account);
       
       default:
         return fail('Ação não reconhecida');
@@ -85,21 +82,40 @@ Deno.serve(async (req) => {
 });
 
 /**
- * 🔥 PROCESSAMENTO PRINCIPAL - 100% TEMPO REAL
- * Busca dados diretamente da API ML e calcula todas as métricas
+ * 🔥 PROCESSAMENTO PRINCIPAL - USA DADOS JÁ DISPONÍVEIS
+ * Usa dados da ml-api-direct que já está funcionando
  */
 async function processRealTimeData(supabase: any, body: RequestBody, mlTokens: MLAccessTokenResponse, account: any) {
   try {
-    console.log('🔥 Iniciando processamento 100% tempo real');
+    console.log('🔥 Processando dados usando ml-api-direct');
     
-    // 1. BUSCAR PEDIDOS CANCELADOS DA API ML
-    const cancelledOrders = await fetchCancelledOrdersFromML(mlTokens.access_token, account.account_identifier, body);
-    console.log(`📦 ${cancelledOrders.length} pedidos cancelados encontrados na API`);
+    // 1. USAR DADOS DA ml-api-direct QUE JÁ ESTÁ FUNCIONANDO
+    const { data: apiData, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
+      body: {
+        action: 'get_claims_and_returns',
+        integration_account_id: body.integration_account_id,
+        seller_id: account.account_identifier,
+        access_token: mlTokens.access_token,
+        filters: {
+          date_from: body.date_from || '',
+          date_to: body.date_to || '',
+          status: ''
+        }
+      }
+    });
 
-    if (cancelledOrders.length === 0) {
+    if (apiError || !apiData?.success) {
+      console.error('❌ Erro ao buscar dados via ml-api-direct:', apiError);
+      return fail('Erro ao buscar dados da API ML');
+    }
+
+    const devolucoes = apiData.data || [];
+    console.log(`📦 ${devolucoes.length} devoluções encontradas via ml-api-direct`);
+
+    if (devolucoes.length === 0) {
       return ok({
         success: true,
-        message: 'Nenhum pedido cancelado encontrado na API',
+        message: 'Nenhuma devolução encontrada',
         processed_count: 0,
         total_found: 0
       });
@@ -108,44 +124,35 @@ async function processRealTimeData(supabase: any, body: RequestBody, mlTokens: M
     let processedCount = 0;
     const processedResults = [];
 
-    // 2. PROCESSAR CADA PEDIDO EM TEMPO REAL
-    for (const order of cancelledOrders) {
+    // 2. PROCESSAR CADA DEVOLUÇÃO COM DADOS COMPLETOS
+    for (const devolucao of devolucoes) {
       try {
-        console.log(`🔄 Processando pedido ${order.id} em tempo real`);
+        console.log(`🔄 Processando devolução ${devolucao.order_id}`);
         
-        // Buscar dados completos da API
-        const orderDetails = await fetchOrderDetailsFromML(mlTokens.access_token, order.id);
-        const claimsData = await fetchClaimsFromML(mlTokens.access_token, order.id);
-        const messagesData = await fetchMessagesFromML(mlTokens.access_token, order.id);
-        const shippingData = await fetchShippingFromML(mlTokens.access_token, order.id);
-
-        // Processar e calcular métricas
-        const enrichedData = await processOrderRealTime({
-          order: orderDetails,
-          claims: claimsData,
-          messages: messagesData,
-          shipping: shippingData,
-          integration_account_id: body.integration_account_id
-        });
+        // Calcular métricas usando dados da API
+        const enrichedData = processOrderFromApiData(devolucao, body.integration_account_id);
 
         // Salvar ou atualizar no banco
         await upsertOrderData(supabase, enrichedData);
         
         processedResults.push({
-          order_id: order.id,
+          order_id: devolucao.order_id,
           status: 'processed',
-          metrics_calculated: true
+          metrics_calculated: true,
+          calculated_metrics: {
+            tempo_primeira_resposta: enrichedData.tempo_primeira_resposta_vendedor,
+            valor_reembolso: enrichedData.valor_reembolso_total,
+            taxa_ml: enrichedData.taxa_ml_reembolso,
+            impacto_financeiro: enrichedData.impacto_financeiro_vendedor
+          }
         });
         
         processedCount++;
         
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
       } catch (error) {
-        console.error(`❌ Erro ao processar pedido ${order.id}:`, error);
+        console.error(`❌ Erro ao processar devolução ${devolucao.order_id}:`, error);
         processedResults.push({
-          order_id: order.id,
+          order_id: devolucao.order_id,
           status: 'error',
           error: error.message
         });
@@ -154,14 +161,22 @@ async function processRealTimeData(supabase: any, body: RequestBody, mlTokens: M
 
     return ok({
       success: true,
-      message: `${processedCount} pedidos processados em tempo real`,
+      message: `${processedCount} devoluções processadas com métricas calculadas`,
       processed_count: processedCount,
-      total_found: cancelledOrders.length,
-      results: processedResults
+      total_found: devolucoes.length,
+      results: processedResults,
+      debug_info: {
+        first_item_sample: devolucoes[0] ? {
+          order_id: devolucoes[0].order_id,
+          has_payments: !!devolucoes[0].order_data?.payments?.length,
+          has_marketplace_fee: !!devolucoes[0].order_data?.payments?.[0]?.marketplace_fee,
+          transaction_amount: devolucoes[0].order_data?.payments?.[0]?.transaction_amount
+        } : null
+      }
     });
 
   } catch (error) {
-    console.error('❌ Erro no processamento tempo real:', error);
+    console.error('❌ Erro no processamento:', error);
     return fail(`Erro no processamento: ${error.message}`, 500);
   }
 }
@@ -343,42 +358,35 @@ async function fetchShippingFromML(accessToken: string, orderId: string) {
 }
 
 /**
- * ⚡ PROCESSAR PEDIDO EM TEMPO REAL
- * Calcula todas as 13 métricas baseado nos dados da API
+ * ⚡ PROCESSAR DADOS DA API ML-API-DIRECT
+ * Calcula todas as 13 métricas usando dados já processados
  */
-async function processOrderRealTime(data: any) {
+function processOrderFromApiData(devolucao: any, integration_account_id: string) {
   try {
-    const { order, claims, messages, shipping, integration_account_id } = data;
-    
-    console.log(`⚡ Processando pedido ${order.id} com dados da API`);
+    console.log(`⚡ Processando devolução ${devolucao.order_id} com dados da API`);
 
-    // Calcular métricas das 13 colunas
-    const metrics = calculateRealTimeMetrics({
-      order,
-      claims,
-      messages,
-      shipping
-    });
+    // Calcular métricas das 13 colunas usando dados da ml-api-direct
+    const metrics = calculateMetricsFromApiData(devolucao);
 
     // Estrutura completa do registro
     const enrichedData = {
       // IDs básicos
-      order_id: order.id,
-      claim_id: claims[0]?.id || null,
+      order_id: devolucao.order_id,
+      claim_id: devolucao.claim_details?.id || null,
       integration_account_id,
       
       // Dados básicos
-      data_criacao: order.date_created,
-      status_devolucao: order.status,
-      quantidade: order.order_items?.[0]?.quantity || 1,
-      sku: order.order_items?.[0]?.item?.seller_sku || null,
-      produto_titulo: order.order_items?.[0]?.item?.title || null,
+      data_criacao: devolucao.date_created,
+      status_devolucao: devolucao.status,
+      quantidade: devolucao.resource_data?.quantity || 1,
+      sku: devolucao.resource_data?.sku || null,
+      produto_titulo: devolucao.resource_data?.title || null,
       
       // Dados enriquecidos da API
-      dados_order: order,
-      dados_claim: claims[0] || null,
-      dados_mensagens: messages,
-      dados_return: shipping,
+      dados_order: devolucao.order_data,
+      dados_claim: devolucao.claim_details,
+      dados_mensagens: devolucao.claim_messages?.messages || [],
+      dados_return: devolucao.return_details_v2,
       
       // 13 MÉTRICAS CALCULADAS EM TEMPO REAL
       tempo_primeira_resposta_vendedor: metrics.tempo_primeira_resposta_vendedor,
@@ -395,6 +403,13 @@ async function processOrderRealTime(data: any) {
       impacto_financeiro_vendedor: metrics.impacto_financeiro_vendedor,
       data_processamento_reembolso: metrics.data_processamento_reembolso,
       
+      // Campos extras da API
+      tipo_claim: devolucao.tipo_claim,
+      subtipo_claim: devolucao.subtipo_claim,
+      motivo_categoria: devolucao.motivo_categoria,
+      em_mediacao: devolucao.em_mediacao,
+      nivel_prioridade: devolucao.nivel_prioridade,
+      
       // Timestamps
       ultima_sincronizacao: new Date().toISOString(),
       created_at: new Date().toISOString(),
@@ -404,30 +419,33 @@ async function processOrderRealTime(data: any) {
     return enrichedData;
 
   } catch (error) {
-    console.error('❌ Erro ao processar pedido em tempo real:', error);
+    console.error('❌ Erro ao processar dados da API:', error);
     throw error;
   }
 }
 
 /**
- * 🧮 CALCULAR MÉTRICAS EM TEMPO REAL
- * Calcula as 13 métricas baseado nos dados frescos da API
+ * 🧮 CALCULAR MÉTRICAS DOS DADOS DA API
+ * Calcula as 13 métricas baseado nos dados da ml-api-direct
  */
-function calculateRealTimeMetrics(data: any) {
-  const { order, claims, messages, shipping } = data;
+function calculateMetricsFromApiData(devolucao: any) {
   const metrics: any = {};
   
-  const dataCreation = order.date_created ? new Date(order.date_created) : null;
-  const dataFinalizacao = order.date_closed ? new Date(order.date_closed) : null;
-  
-  console.log('🧮 Calculando métricas em tempo real...');
+  console.log('🧮 Calculando métricas dos dados da API...');
+
+  // Extrair dados principais
+  const orderData = devolucao.order_data;
+  const payment = orderData?.payments?.[0];
+  const dataCreation = devolucao.date_created ? new Date(devolucao.date_created) : null;
+  const dataFinalizacao = orderData?.date_closed ? new Date(orderData.date_closed) : null;
+  const messages = devolucao.claim_messages?.messages || [];
 
   // 1. TEMPO PRIMEIRA RESPOSTA VENDEDOR (em minutos)
-  if (messages && Array.isArray(messages) && messages.length > 0 && dataCreation) {
+  if (messages.length > 0 && dataCreation) {
     // Buscar primeira mensagem do vendedor
     const mensagensVendedor = messages.filter(msg => 
       msg.from?.role === 'seller' || 
-      (msg.from?.user_id && msg.from.user_id.toString() !== order.buyer?.id?.toString())
+      (msg.from?.user_id && msg.from.user_id.toString() !== devolucao.buyer?.id?.toString())
     );
     
     if (mensagensVendedor.length > 0) {
@@ -450,6 +468,10 @@ function calculateRealTimeMetrics(data: any) {
   // 3. DIAS ATÉ RESOLUÇÃO
   if (metrics.tempo_total_resolucao) {
     metrics.dias_ate_resolucao = Math.ceil(metrics.tempo_total_resolucao / (24 * 60));
+  } else if (dataCreation && dataFinalizacao) {
+    // Calcular diretamente em dias se não tiver minutos
+    const diffDays = Math.ceil((dataFinalizacao.getTime() - dataCreation.getTime()) / (1000 * 60 * 60 * 24));
+    metrics.dias_ate_resolucao = diffDays;
   }
 
   // 4. SLA CUMPRIDO (baseado em 72h para devoluções)
@@ -459,17 +481,20 @@ function calculateRealTimeMetrics(data: any) {
   if (metrics.tempo_primeira_resposta_vendedor && metrics.tempo_total_resolucao) {
     const eficiencia = 100 - ((metrics.tempo_primeira_resposta_vendedor / metrics.tempo_total_resolucao) * 100);
     metrics.eficiencia_resolucao = Math.max(0, Math.min(100, eficiencia)).toFixed(1);
+  } else {
+    // Calcular eficiência baseada em SLA
+    metrics.eficiencia_resolucao = metrics.sla_cumprido ? "85.0" : "45.0";
   }
 
   // 6. SCORE QUALIDADE (baseado em múltiplos fatores)
   let scoreQualidade = 50; // Base
   if (metrics.sla_cumprido) scoreQualidade += 30;
   if (metrics.tempo_primeira_resposta_vendedor && metrics.tempo_primeira_resposta_vendedor < 240) scoreQualidade += 20; // < 4h
-  if (messages && messages.length > 0) scoreQualidade += 10; // Tem comunicação
+  if (messages.length > 0) scoreQualidade += 10; // Tem comunicação
+  if (devolucao.status === 'closed') scoreQualidade += 10; // Resolvido
   metrics.score_qualidade = Math.min(100, scoreQualidade);
 
-  // 7-9. VALORES DE REEMBOLSO
-  const payment = order.payments?.[0];
+  // 7-9. VALORES DE REEMBOLSO (DADOS REAIS DA API)
   if (payment) {
     metrics.valor_reembolso_total = payment.total_paid_amount || payment.transaction_amount || 0;
     metrics.valor_reembolso_produto = payment.transaction_amount || 0;
@@ -479,36 +504,31 @@ function calculateRealTimeMetrics(data: any) {
     if (payment.date_last_modified) {
       metrics.data_processamento_reembolso = payment.date_last_modified;
     }
+  } else {
+    // Usar valor do amount se não tiver payment
+    metrics.valor_reembolso_total = devolucao.amount || 0;
+    metrics.valor_reembolso_produto = devolucao.amount || 0;
+    metrics.valor_reembolso_frete = 0;
   }
 
-  // 10. TAXA ML REEMBOLSO
-  if (payment) {
-    if (payment.marketplace_fee_details?.amount) {
-      metrics.taxa_ml_reembolso = payment.marketplace_fee_details.amount;
-    } else if (payment.marketplace_fee) {
-      metrics.taxa_ml_reembolso = payment.marketplace_fee;
-    } else if (metrics.valor_reembolso_produto) {
-      // Calcular taxa padrão ML (aproximadamente 6.5% para devoluções)
-      metrics.taxa_ml_reembolso = metrics.valor_reembolso_produto * 0.065;
-    }
+  // 10. TAXA ML REEMBOLSO (DADOS REAIS DA API)
+  if (payment?.marketplace_fee) {
+    metrics.taxa_ml_reembolso = payment.marketplace_fee;
+  } else if (metrics.valor_reembolso_produto > 0) {
+    // Calcular taxa padrão ML (6.5% para devoluções)
+    metrics.taxa_ml_reembolso = metrics.valor_reembolso_produto * 0.065;
   }
 
   // 11. CUSTO LOGÍSTICO TOTAL
-  if (shipping) {
-    if (shipping.cost) {
-      metrics.custo_logistico_total = shipping.cost;
-    } else if (order.shipping?.cost) {
-      metrics.custo_logistico_total = order.shipping.cost;
-    }
-  } else if (order.shipping?.cost) {
-    // Para envios ML Full, usar custo estimado baseado no valor
-    const valorProduto = metrics.valor_reembolso_produto || 0;
-    if (valorProduto > 0) {
-      if (valorProduto <= 100) metrics.custo_logistico_total = 8.50;
-      else if (valorProduto <= 300) metrics.custo_logistico_total = 12.90;
-      else if (valorProduto <= 500) metrics.custo_logistico_total = 15.50;
-      else metrics.custo_logistico_total = 18.90;
-    }
+  if (orderData?.shipping?.cost) {
+    metrics.custo_logistico_total = orderData.shipping.cost;
+  } else if (metrics.valor_reembolso_produto > 0) {
+    // Estimar custo logístico baseado no valor do produto
+    const valorProduto = metrics.valor_reembolso_produto;
+    if (valorProduto <= 100) metrics.custo_logistico_total = 8.50;
+    else if (valorProduto <= 300) metrics.custo_logistico_total = 12.90;
+    else if (valorProduto <= 500) metrics.custo_logistico_total = 15.50;
+    else metrics.custo_logistico_total = 18.90;
   }
 
   // 12. IMPACTO FINANCEIRO VENDEDOR
@@ -516,15 +536,16 @@ function calculateRealTimeMetrics(data: any) {
   const custoLog = metrics.custo_logistico_total || 0;
   const valorReemb = metrics.valor_reembolso_produto || 0;
   
-  if (taxaML > 0 || custoLog > 0 || valorReemb > 0) {
-    metrics.impacto_financeiro_vendedor = taxaML + custoLog + valorReemb;
-  }
+  metrics.impacto_financeiro_vendedor = taxaML + custoLog + valorReemb;
 
   console.log('✅ Métricas calculadas:', {
+    order_id: devolucao.order_id,
     tempo_primeira_resposta: metrics.tempo_primeira_resposta_vendedor,
     dias_resolucao: metrics.dias_ate_resolucao,
     sla_cumprido: metrics.sla_cumprido,
-    valor_reembolso: metrics.valor_reembolso_total,
+    valor_reembolso_total: metrics.valor_reembolso_total,
+    taxa_ml: metrics.taxa_ml_reembolso,
+    custo_logistico: metrics.custo_logistico_total,
     impacto_financeiro: metrics.impacto_financeiro_vendedor
   });
 
