@@ -224,9 +224,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   refetch,
   existingDevolucoes
 }) => {
-  const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoAvancada | null>(null);
-  const [showDetails, setShowDetails] = useState(false);
-  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [selectedDevolucao, setSelectedDevolucao] = React.useState<DevolucaoAvancada | null>(null);
+  const [showDetails, setShowDetails] = React.useState(false);
+  const [showExportDialog, setShowExportDialog] = React.useState(false);
 
   // Hook principal consolidado com otimizações
   const {
