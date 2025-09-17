@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { translateCancelReason } from '@/lib/translations';
 import { useDevolucoes } from '@/features/devolucoes/hooks/useDevolucoes';
+import TimelineVisualization from '@/components/ml/TimelineVisualization';
 import { useDevolucoesDemostracao } from '@/features/devolucoes/hooks/useDevolucoesDemostracao';
 import { useDevolucaoAnalytics } from '@/features/devolucoes/hooks/useDevolucaoAnalytics';
 import { useDevolucaoExportacao } from '@/features/devolucoes/hooks/useDevolucaoExportacao';
@@ -36,7 +38,11 @@ import {
   ChevronRight,
   BarChart3,
   TrendingUp,
-  FileDown
+  FileDown,
+  Calendar,
+  MessageCircle,
+  Truck,
+  Calculator
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -131,6 +137,69 @@ interface DevolucaoAvancada {
   mediador_ml?: string;
   usuario_ultima_acao?: string;
   marketplace_origem?: string;
+
+  // === 42 NOVAS COLUNAS IMPLEMENTADAS ===
+  // Timeline e Eventos
+  timeline_events?: any[];
+  timeline_consolidado?: any;
+  data_criacao_claim?: string;
+  data_inicio_return?: string;
+  data_finalizacao_timeline?: string;
+  eventos_sistema?: any[];
+  marcos_temporais?: any;
+  
+  // Tracking e Logística Avançada
+  tracking_history?: any[];
+  shipment_costs?: any;
+  shipment_delays?: any[];
+  carrier_info?: any;
+  tracking_events?: any[];
+  data_ultima_movimentacao?: string;
+  previsao_entrega_vendedor?: string;
+  historico_localizacoes?: any[];
+  tempo_transito_dias?: number;
+  
+  // Análise de Qualidade e Review
+  problemas_encontrados?: any[];
+  acoes_necessarias_review?: any[];
+  data_inicio_review?: string;
+  score_qualidade?: number;
+  necessita_acao_manual?: boolean;
+  revisor_responsavel?: string;
+  observacoes_review?: string;
+  review_result?: string;
+  review_status?: string;
+  review_id?: string;
+  
+  // Análise Temporal e Performance
+  tempo_primeira_resposta_vendedor?: number;
+  tempo_resposta_comprador?: number;
+  tempo_analise_ml?: number;
+  dias_ate_resolucao?: number;
+  sla_cumprido?: boolean;
+  tempo_limite_acao?: string;
+  score_satisfacao_final?: number;
+  eficiencia_resolucao?: string;
+  
+  // Dados Financeiros Expandidos
+  valor_reembolso_total?: number;
+  valor_reembolso_produto?: number;
+  valor_reembolso_frete?: number;
+  taxa_ml_reembolso?: number;
+  custo_logistico_total?: number;
+  impacto_financeiro_vendedor?: number;
+  data_processamento_reembolso?: string;
+  moeda_reembolso?: string;
+  metodo_reembolso?: string;
+  
+  // Metadados e Controle
+  dados_incompletos?: boolean;
+  ultima_sincronizacao?: string;
+  shipment_id?: string;
+  fonte_dados_primaria?: string;
+  confiabilidade_dados?: string;
+  versao_api_utilizada?: string;
+  hash_verificacao?: string;
 }
 
 interface MLAccount {
@@ -1865,6 +1934,161 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                     <pre className="bg-muted/30 p-4 rounded-lg text-xs overflow-auto max-h-60 text-foreground">
                       {JSON.stringify(selectedDevolucao.dados_order, null, 2)}
                     </pre>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Timeline Visualização */}
+              {selectedDevolucao.timeline_consolidado && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Timeline Completo
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <TimelineVisualization timelineData={selectedDevolucao.timeline_consolidado} />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Novas Colunas - Métricas Temporais */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Análise Temporal
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Tempo Primeira Resposta</Label>
+                      <p className="font-medium">{selectedDevolucao.tempo_primeira_resposta_vendedor || 'N/A'} min</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Tempo Total Resolução</Label>
+                      <p className="font-medium">{selectedDevolucao.tempo_total_resolucao || 'N/A'} min</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Dias para Resolução</Label>
+                      <p className="font-medium">{selectedDevolucao.dias_ate_resolucao || 'N/A'} dias</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">SLA Cumprido</Label>
+                      <Badge variant={selectedDevolucao.sla_cumprido ? "default" : "destructive"}>
+                        {selectedDevolucao.sla_cumprido ? "Sim" : "Não"}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Eficiência Resolução</Label>
+                      <p className="font-medium">{selectedDevolucao.eficiencia_resolucao || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Score Qualidade</Label>
+                      <p className="font-medium">{selectedDevolucao.score_qualidade || 'N/A'}/100</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tracking e Logística */}
+              {selectedDevolucao.tracking_history && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Truck className="h-5 w-5" />
+                      Histórico de Rastreamento
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-sm text-muted-foreground">Transportadora</Label>
+                          <p className="font-medium">{selectedDevolucao.transportadora || 'N/A'}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-sm text-muted-foreground">Código Rastreamento</Label>
+                          <p className="font-medium">{selectedDevolucao.codigo_rastreamento || 'N/A'}</p>
+                        </div>
+                      </div>
+                      <pre className="bg-muted/30 p-4 rounded-lg text-xs overflow-auto max-h-40 text-foreground">
+                        {JSON.stringify(selectedDevolucao.tracking_history, null, 2)}
+                      </pre>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Análise Financeira Expandida */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Calculator className="h-5 w-5" />
+                    Análise Financeira Detalhada
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Reembolso Total</Label>
+                      <p className="font-medium">{selectedDevolucao.valor_reembolso_total ? `R$ ${selectedDevolucao.valor_reembolso_total}` : 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Reembolso Produto</Label>
+                      <p className="font-medium">{selectedDevolucao.valor_reembolso_produto ? `R$ ${selectedDevolucao.valor_reembolso_produto}` : 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Reembolso Frete</Label>
+                      <p className="font-medium">{selectedDevolucao.valor_reembolso_frete ? `R$ ${selectedDevolucao.valor_reembolso_frete}` : 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Taxa ML</Label>
+                      <p className="font-medium">{selectedDevolucao.taxa_ml_reembolso ? `R$ ${selectedDevolucao.taxa_ml_reembolso}` : 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Custo Logístico</Label>
+                      <p className="font-medium">{selectedDevolucao.custo_logistico_total ? `R$ ${selectedDevolucao.custo_logistico_total}` : 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-sm text-muted-foreground">Impacto Vendedor</Label>
+                      <p className="font-medium">{selectedDevolucao.impacto_financeiro_vendedor ? `R$ ${selectedDevolucao.impacto_financeiro_vendedor}` : 'N/A'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Mensagens e Comunicação */}
+              {selectedDevolucao.timeline_mensagens && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <MessageCircle className="h-5 w-5" />
+                      Timeline de Mensagens
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="space-y-1">
+                          <Label className="text-sm text-muted-foreground">Total Interações</Label>
+                          <p className="font-medium">{selectedDevolucao.numero_interacoes || 0}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-sm text-muted-foreground">Não Lidas</Label>
+                          <p className="font-medium">{selectedDevolucao.mensagens_nao_lidas || 0}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-sm text-muted-foreground">Total Evidências</Label>
+                          <p className="font-medium">{selectedDevolucao.total_evidencias || 0}</p>
+                        </div>
+                      </div>
+                      <pre className="bg-muted/30 p-4 rounded-lg text-xs overflow-auto max-h-40 text-foreground">
+                        {JSON.stringify(selectedDevolucao.timeline_mensagens, null, 2)}
+                      </pre>
+                    </div>
                   </CardContent>
                 </Card>
               )}
