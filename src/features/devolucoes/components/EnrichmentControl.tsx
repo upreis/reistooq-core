@@ -60,7 +60,7 @@ export function EnrichmentControl({ integrationAccountIds, onEnrichmentComplete 
     setStatus(prev => ({ ...prev, connectionStatus: 'checking' }));
 
     try {
-      const { data, error } = await supabase.functions.invoke('ml-enrichment-real', {
+      const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
         body: {
           action: 'test_ml_connection',
           integration_account_id: integrationAccountIds[0]
@@ -91,7 +91,7 @@ export function EnrichmentControl({ integrationAccountIds, onEnrichmentComplete 
     if (integrationAccountIds.length === 0) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke('ml-enrichment-real', {
+      const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
         body: {
           action: 'check_missing_data',
           integration_account_id: integrationAccountIds[0]
@@ -134,7 +134,7 @@ export function EnrichmentControl({ integrationAccountIds, onEnrichmentComplete 
     try {
       toast.info('🚀 Iniciando enriquecimento real com ML API...');
 
-      const { data, error } = await supabase.functions.invoke('ml-enrichment-real', {
+      const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
         body: {
           action: 'batch_enrich',
           integration_account_id: integrationAccountIds[0],
@@ -180,12 +180,11 @@ export function EnrichmentControl({ integrationAccountIds, onEnrichmentComplete 
     setStatus(prev => ({ ...prev, isRunning: true }));
 
     try {
-      const { data, error } = await supabase.functions.invoke('ml-enrichment-real', {
+      const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
         body: {
           action: 'real_enrich_claims',
           integration_account_id: integrationAccountIds[0],
-          limit: 10,
-          force_refresh: false
+          limit: 10
         }
       });
 

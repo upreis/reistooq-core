@@ -72,7 +72,7 @@ export function useDevolucaoAvancada(config: UseDevolucaoAvancadaConfig) {
     mutationFn: async (action: 'auto' | 'manual' | 'check') => {
       console.log(`🚀 Enriquecimento REAL - Ação: ${action}`);
       
-      const { data, error } = await supabase.functions.invoke('ml-enrichment-real', {
+      const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
         body: {
           action: action === 'check' ? 'check_missing_data' : 'real_enrich_claims',
           integration_account_id: config.integration_account_ids[0],
