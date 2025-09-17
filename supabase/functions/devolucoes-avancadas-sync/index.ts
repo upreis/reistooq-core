@@ -491,22 +491,42 @@ function calculateMetricsFromApiData(devolucao: any) {
 
   // 1. TEMPO PRIMEIRA RESPOSTA VENDEDOR (em minutos)
   if (messages.length > 0 && dataCreation) {
-    // Buscar primeira mensagem do vendedor
-    const mensagensVendedor = messages.filter(msg => 
-      msg.from?.role === 'seller' || 
-      msg.from?.role === 'respondent' ||
-      (msg.from?.user_id && devolucao.buyer?.id && 
-       msg.from.user_id.toString() !== devolucao.buyer.id.toString())
-    );
+    console.log(`🔍 Analisando ${messages.length} mensagens para primeira resposta do vendedor`);
+    
+    // Buscar primeira mensagem do vendedor com diferentes critérios
+    const mensagensVendedor = messages.filter(msg => {
+      const isSellerByRole = msg.from?.role === 'seller' || msg.from?.role === 'respondent';
+      const isSellerByUserId = msg.from?.user_id && devolucao.buyer?.id && 
+        msg.from.user_id.toString() !== devolucao.buyer.id.toString();
+      const isSellerByReceiver = msg.receiver_role === 'buyer' || msg.to?.role === 'buyer';
+      
+      return isSellerByRole || isSellerByUserId || isSellerByReceiver;
+    });
+    
+    console.log(`📊 Encontradas ${mensagensVendedor.length} mensagens do vendedor`);
     
     if (mensagensVendedor.length > 0) {
+      // Ordenar por data para pegar a primeira
+      mensagensVendedor.sort((a, b) => new Date(a.date_created).getTime() - new Date(b.date_created).getTime());
+      
       const primeiraMensagem = new Date(mensagensVendedor[0].date_created);
       const diffMinutes = Math.floor((primeiraMensagem.getTime() - dataCreation.getTime()) / (1000 * 60));
-      if (diffMinutes > 0 && diffMinutes < 10080) { // Max 1 semana
+      
+      console.log(`⏰ Primeira mensagem do vendedor: ${mensagensVendedor[0].date_created}`);
+      console.log(`⏰ Data criação claim: ${dataCreation.toISOString()}`);
+      console.log(`⏰ Diferença calculada: ${diffMinutes} minutos`);
+      
+      if (diffMinutes >= 0 && diffMinutes < 10080) { // Max 1 semana, incluindo 0
         metrics.tempo_primeira_resposta_vendedor = diffMinutes;
-        console.log(`✅ Tempo primeira resposta: ${diffMinutes} minutos`);
+        console.log(`✅ Tempo primeira resposta definido: ${diffMinutes} minutos`);
+      } else {
+        console.log(`⚠️ Tempo primeira resposta fora do range válido: ${diffMinutes} minutos`);
       }
+    } else {
+      console.log(`⚠️ Nenhuma mensagem do vendedor encontrada`);
     }
+  } else {
+    console.log(`⚠️ Sem mensagens (${messages.length}) ou data criação (${dataCreation})`);
   }
 
   // 2. TEMPO TOTAL RESOLUÇÃO (em minutos)
@@ -625,36 +645,19 @@ function calculateMetricsFromApiData(devolucao: any) {
  */
 async function upsertOrderData(supabase: any, enrichedData: any) {
   try {
-    // Verificar se já existe
-    const { data: existing } = await supabase
+    // Usar UPSERT diretamente com ON CONFLICT
+    const { error } = await supabase
       .from('devolucoes_avancadas')
-      .select('id')
-      .eq('order_id', enrichedData.order_id)
-      .eq('integration_account_id', enrichedData.integration_account_id)
-      .single();
-
-    if (existing) {
-      // Atualizar
-      const { error } = await supabase
-        .from('devolucoes_avancadas')
-        .update(enrichedData)
-        .eq('id', existing.id);
-      
-      if (error) throw error;
-      console.log(`✅ Pedido ${enrichedData.order_id} atualizado`);
-    } else {
-      // Inserir
-      const { error } = await supabase
-        .from('devolucoes_avancadas')
-        .insert(enrichedData);
-      
-      if (error) throw error;
-      console.log(`✅ Pedido ${enrichedData.order_id} inserido`);
-    }
+      .upsert(enrichedData, {
+        onConflict: 'order_id'
+      });
+    
+    if (error) throw error;
+    console.log(`✅ Pedido ${enrichedData.order_id} processado (upsert)`);
 
   } catch (error) {
-    console.error(`❌ Erro ao salvar pedido ${enrichedData.order_id}:`, error);
-    throw error;
+    console.error(`❌ Erro ao processar pedido ${enrichedData.order_id}:`, error);
+    // Continue processando outros pedidos mesmo se um falhar
   }
 }
 
