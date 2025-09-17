@@ -934,17 +934,17 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Conta ML</th>
+                         <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
+                         <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Conta ML</th>
+                         
+                         {/* COLUNAS ORIGINAIS MANTIDAS */}
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📋 Claim</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📦 Return</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚖️ Mediação</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📎 Anexos</th>
                         
-                        {/* COLUNAS ORIGINAIS MANTIDAS */}
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📋 Claim</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📦 Return</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">⚖️ Mediação</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[50px]">📎 Anexos</th>
-                       
-                       {/* MENSAGENS E COMUNICAÇÃO (novas) */}
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[70px]">💬 Msgs</th>
+                        {/* MENSAGENS E COMUNICAÇÃO (novas) */}
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💬 Msgs</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔔 Não Lidas</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">👮 Moderação</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Msg</th>
@@ -1144,51 +1144,136 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             </span>
                           </td>
                           
+                          {/* Conta ML */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.account_name || 'N/A'}
+                          </td>
+                          
                           {/* COLUNAS ORIGINAIS MANTIDAS */}
                           
                           {/* Claim */}
-                          <td className="px-3 py-3 text-center">
+                          <td className="px-3 py-3 text-left">
                             {temClaimData ? (
-                              <span className="text-blue-600 dark:text-blue-400" title="Tem dados de Claim">📋</span>
+                              <div className="text-sm">
+                                <div className="text-blue-600 dark:text-blue-400 font-medium">
+                                  Ativo: {claimData?.status || 'closed'}
+                                </div>
+                                <div className="text-muted-foreground text-xs">
+                                  Tipo: {claimData?.type || 'cancel_purchase'}
+                                </div>
+                                {claimData?.reason_id && (
+                                  <div className="text-muted-foreground text-xs">
+                                    Código: {claimData.reason_id}
+                                  </div>
+                                )}
+                              </div>
                             ) : (
-                              <span className="text-muted-foreground">-</span>
+                              <span className="text-muted-foreground">Sem dados</span>
                             )}
                           </td>
                           
                           {/* Return */}
-                          <td className="px-3 py-3 text-center">
+                          <td className="px-3 py-3 text-left">
                             {temReturnData ? (
-                              <span className="text-orange-600 dark:text-orange-400" title="Tem dados de Return">📦</span>
+                              <div className="text-sm">
+                                <div className="text-orange-600 dark:text-orange-400 font-medium">
+                                  {Object.keys(returnData).length > 0 ? 'Dados Return' : 'Tags/Status'}
+                                </div>
+                                {orderData?.tags && (
+                                  <div className="text-muted-foreground text-xs">
+                                    {orderData.tags.filter(tag => 
+                                      ['return', 'refund', 'not_delivered', 'fraud_risk_detected'].includes(tag)
+                                    ).join(', ') || 'Outros'}
+                                  </div>
+                                )}
+                                {devolucao.codigo_rastreamento && (
+                                  <div className="text-muted-foreground text-xs">
+                                    Rastreio ativo
+                                  </div>
+                                )}
+                              </div>
                             ) : (
-                              <span className="text-muted-foreground">-</span>
+                              <span className="text-muted-foreground">Sem dados</span>
                             )}
                           </td>
                           
                           {/* Mediação Original */}
-                          <td className="px-3 py-3 text-center">
+                          <td className="px-3 py-3 text-left">
                             {temMediationData ? (
-                              <span className="text-purple-600 dark:text-purple-400" title="Tem Mediação">⚖️</span>
+                              <div className="text-sm">
+                                <div className="text-purple-600 dark:text-purple-400 font-medium">
+                                  {orderData?.mediations?.length > 0 ? `${orderData.mediations.length} Mediação(ões)` : 'Em mediação'}
+                                </div>
+                                {devolucao.em_mediacao && (
+                                  <div className="text-muted-foreground text-xs">Ativa</div>
+                                )}
+                                {devolucao.status_moderacao && (
+                                  <div className="text-muted-foreground text-xs">
+                                    Mod: {devolucao.status_moderacao}
+                                  </div>
+                                )}
+                              </div>
                             ) : (
-                              <span className="text-muted-foreground">-</span>
+                              <span className="text-muted-foreground">Sem mediação</span>
                             )}
                           </td>
                           
                           {/* Anexos Original */}
-                          <td className="px-3 py-3 text-center">
+                          <td className="px-3 py-3 text-left">
                             {temAttachmentsData ? (
-                              <span className="text-green-600 dark:text-green-400" title="Tem Anexos">📎</span>
+                              <div className="text-sm">
+                                <div className="text-green-600 dark:text-green-400 font-medium">
+                                  {devolucao.anexos_count || 0} Anexo(s)
+                                </div>
+                                {devolucao.anexos_comprador?.length > 0 && (
+                                  <div className="text-muted-foreground text-xs">
+                                    {devolucao.anexos_comprador.length} do comprador
+                                  </div>
+                                )}
+                                {devolucao.anexos_vendedor?.length > 0 && (
+                                  <div className="text-muted-foreground text-xs">
+                                    {devolucao.anexos_vendedor.length} do vendedor
+                                  </div>
+                                )}
+                                {devolucao.anexos_ml?.length > 0 && (
+                                  <div className="text-muted-foreground text-xs">
+                                    {devolucao.anexos_ml.length} do ML
+                                  </div>
+                                )}
+                              </div>
                             ) : (
-                              <span className="text-muted-foreground">-</span>
+                              <span className="text-muted-foreground">Sem anexos</span>
                             )}
                           </td>
                           
                           {/* MENSAGENS E COMUNICAÇÃO (novas colunas) */}
                           
                           {/* Mensagens */}
-                          <td className="px-3 py-3 text-center">
-                            <span className="text-blue-600 dark:text-blue-400 font-medium">
-                              {devolucao.numero_interacoes || 0}
-                            </span>
+                          <td className="px-3 py-3 text-left">
+                            {(devolucao.numero_interacoes && devolucao.numero_interacoes > 0) ? (
+                              <div className="text-sm">
+                                <div className="text-blue-600 dark:text-blue-400 font-medium">
+                                  {devolucao.numero_interacoes} Mensagem(ns)
+                                </div>
+                                {devolucao.ultima_mensagem_remetente && (
+                                  <div className="text-muted-foreground text-xs">
+                                    Última: {devolucao.ultima_mensagem_remetente}
+                                  </div>
+                                )}
+                                {mensagensData?.conversation_status && (
+                                  <div className="text-muted-foreground text-xs">
+                                    Status: {mensagensData.conversation_status}
+                                  </div>
+                                )}
+                                {mensagensData?.messages?.length > 0 && (
+                                  <div className="text-muted-foreground text-xs">
+                                    {mensagensData.messages.length} na conversa
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Sem mensagens</span>
+                            )}
                           </td>
                           
                           {/* Mensagens Não Lidas */}
