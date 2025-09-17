@@ -1465,7 +1465,7 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                              {devolucao.codigo_rastreamento ? (
                               <div className="text-xs">
                                 <div className="font-mono text-blue-600 dark:text-blue-400" title={String(devolucao.codigo_rastreamento)}>
-                                  {String(devolucao.codigo_rastreamento).substring(0, 8)}...
+                                  {String(devolucao.codigo_rastreamento)}
                                 </div>
                                 <div className="text-muted-foreground">
                                   {String(devolucao.transportadora || 'N/A')}
