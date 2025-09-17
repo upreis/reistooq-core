@@ -1021,11 +1021,12 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">💱 Moeda</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏢 Resp. Custo</th>
                        
-                       {/* CLASSIFICAÇÃO E RESOLUÇÃO (novas) */}
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Tipo</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Subtipo</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Resolução</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🚨 Prioridade</th>
+                        {/* CLASSIFICAÇÃO E RESOLUÇÃO (novas) */}
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Tipo</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Subtipo</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚖️ Em Mediação</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Método Resolução</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🚨 Prioridade</th>
                        
                        {/* MÉTRICAS E KPIS (novas) */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏱️ Resp (min)</th>
@@ -1340,27 +1341,20 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             )}
                           </td>
                           
-                          {/* Anexos Count */}
-                          <td className="px-3 py-3 text-center">
-                            <span className="text-purple-600 dark:text-purple-400 font-medium">
-                              {devolucao.anexos_count || 0}
-                            </span>
-                          </td>
-                          
-                          {/* Status Moderação */}
-                          <td className="px-3 py-3 text-center">
-                            {devolucao.status_moderacao ? (
-                              <span className={`px-2 py-1 rounded text-xs ${
-                                String(devolucao.status_moderacao) === 'approved' ? 'bg-green-100 text-green-800' :
-                                String(devolucao.status_moderacao) === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {String(devolucao.status_moderacao)}
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </td>
+                           {/* Status Moderação */}
+                           <td className="px-3 py-3 text-center">
+                             {devolucao.status_moderacao ? (
+                               <span className={`px-2 py-1 rounded text-xs ${
+                                 String(devolucao.status_moderacao) === 'approved' ? 'bg-green-100 text-green-800' :
+                                 String(devolucao.status_moderacao) === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                 'bg-red-100 text-red-800'
+                               }`}>
+                                 {String(devolucao.status_moderacao)}
+                               </span>
+                             ) : (
+                               <span className="text-muted-foreground">-</span>
+                             )}
+                           </td>
                           
                            {/* Última Mensagem Data */}
                            <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
