@@ -52,7 +52,8 @@ export class MLApiService {
 
   async getMessages(packId: string, sellerId: string) {
     try {
-      return await this.makeRequest(`/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`);
+      // Endpoint correto sem parâmetro tag=post_sale (conforme análise do usuário)
+      return await this.makeRequest(`/messages/packs/${packId}/sellers/${sellerId}`);
     } catch (error) {
       console.warn(`Erro ao buscar mensagens para pack ${packId}:`, error);
       return null;
@@ -97,7 +98,8 @@ export class MLApiService {
 
   async getClaimMessages(packId: string, sellerId: string) {
     try {
-      return await this.makeRequest(`/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`);
+      // Endpoint correto sem parâmetro tag=post_sale (conforme análise do usuário)
+      return await this.makeRequest(`/messages/packs/${packId}/sellers/${sellerId}`);
     } catch (error) {
       console.warn(`Erro ao buscar mensagens do claim para pack ${packId}:`, error);
       return null;
@@ -141,11 +143,68 @@ export class MLApiService {
     }
   }
 
-  async getReturnReviews(returnId: string) {
+  // NOVOS MÉTODOS BASEADOS NA ANÁLISE DE ENDPOINTS CORRETOS
+
+  // Endpoint correto: /shipments/{shipment_id}/history (não /tracking)
+  async getShipmentHistory(shipmentId: string) {
     try {
-      return await this.makeRequest(`/post-purchase/v1/returns/${returnId}/reviews`);
+      return await this.makeRequest(`/shipments/${shipmentId}/history`);
     } catch (error) {
-      console.warn(`Erro ao buscar reviews do return ${returnId}:`, error);
+      console.warn(`Erro ao buscar histórico do shipment ${shipmentId}:`, error);
+      return null;
+    }
+  }
+
+  // Endpoint correto: /shipments/{shipment_id}/costs
+  async getShipmentCosts(shipmentId: string) {
+    try {
+      return await this.makeRequest(`/shipments/${shipmentId}/costs`);
+    } catch (error) {
+      console.warn(`Erro ao buscar custos do shipment ${shipmentId}:`, error);
+      return null;
+    }
+  }
+
+  // Endpoint correto: /shipments/{shipment_id}/delays
+  async getShipmentDelays(shipmentId: string) {
+    try {
+      return await this.makeRequest(`/shipments/${shipmentId}/delays`);
+    } catch (error) {
+      console.warn(`Erro ao buscar atrasos do shipment ${shipmentId}:`, error);
+      return null;
+    }
+  }
+
+  // Endpoint correto: /shipments/{shipment_id}/carrier
+  async getShipmentCarrier(shipmentId: string) {
+    try {
+      return await this.makeRequest(`/shipments/${shipmentId}/carrier`);
+    } catch (error) {
+      console.warn(`Erro ao buscar transportadora do shipment ${shipmentId}:`, error);
+      return null;
+    }
+  }
+
+  // Método auxiliar para buscar dados completos de shipment
+  async getShipmentCompleto(shipmentId: string) {
+    try {
+      const [history, costs, delays, carrier] = await Promise.all([
+        this.getShipmentHistory(shipmentId),
+        this.getShipmentCosts(shipmentId),
+        this.getShipmentDelays(shipmentId),
+        this.getShipmentCarrier(shipmentId)
+      ]);
+
+      return {
+        shipment_id: shipmentId,
+        history,
+        costs,
+        delays,
+        carrier,
+        dados_completos: !!(history || costs || delays || carrier)
+      };
+    } catch (error) {
+      console.warn(`Erro ao buscar dados completos do shipment ${shipmentId}:`, error);
       return null;
     }
   }
@@ -346,5 +405,210 @@ export class MLApiService {
   async initialize(): Promise<void> {
     // Método vazio para compatibilidade
     return Promise.resolve();
+  }
+
+  // NOVO MÉTODO: Timeline completo baseado nos endpoints corretos
+  async buscarTimelineCompletoML(orderId: string, sellerId: string): Promise<any> {
+    const timeline: any[] = [];
+    let dadosCompletos: any = {};
+
+    try {
+      console.log(`🔍 Iniciando busca completa de timeline para order ${orderId}`);
+
+      // 1. Buscar dados básicos da order
+      try {
+        const orderData = await this.makeRequest(`/orders/${orderId}`);
+        dadosCompletos.order = orderData;
+        
+        // Extrair descontos e mediações do objeto principal (conforme análise do usuário)
+        if (orderData.discounts) {
+          dadosCompletos.discounts = orderData.discounts;
+        }
+        if (orderData.mediations) {
+          dadosCompletos.mediations = orderData.mediations;
+        }
+
+        timeline.push({
+          data: orderData.date_created,
+          tipo: 'order_criado',
+          descricao: `Pedido criado - Status: ${orderData.status}`,
+          fonte: 'order_api',
+          metadados: { status: orderData.status, valor: orderData.total_amount }
+        });
+      } catch (err) {
+        console.warn(`⚠️ Erro ao buscar dados da order ${orderId}:`, err);
+      }
+
+      // 2. Buscar claims relacionadas (endpoint correto)
+      try {
+        const claimsResp = await this.makeRequest(`/post-purchase/v1/claims/search?resource_id=${orderId}&resource=order`);
+        if (claimsResp?.results?.length > 0) {
+          dadosCompletos.claims = claimsResp.results;
+          
+          for (const claim of claimsResp.results) {
+            timeline.push({
+              data: claim.date_created,
+              tipo: 'claim_criado',
+              descricao: `Reclamação criada: ${claim.reason_id}`,
+              fonte: 'claims_api',
+              metadados: { claim_id: claim.id, stage: claim.stage }
+            });
+
+            // 3. Para cada claim, buscar returns (endpoint correto: /post-purchase/v2/claims/{claim_id}/returns)
+            if (claim.id) {
+              try {
+                const returnsData = await this.getClaimReturnsV2(claim.id);
+                if (returnsData?.results?.length > 0) {
+                  dadosCompletos.returns = returnsData.results;
+                  
+                  for (const returnItem of returnsData.results) {
+                    timeline.push({
+                      data: returnItem.date_created,
+                      tipo: 'return_criado',
+                      descricao: `Devolução iniciada`,
+                      fonte: 'returns_api',
+                      metadados: { 
+                        return_id: returnItem.id, 
+                        status: returnItem.status,
+                        // Reviews incluídos nos dados de return (conforme análise do usuário)
+                        reviews: returnItem.reviews || returnItem.result?.reviews
+                      }
+                    });
+
+                    // 4. Se tem shipment_id, buscar dados de rastreamento (endpoints corretos)
+                    if (returnItem.shipment_id) {
+                      try {
+                        const shipmentCompleto = await this.getShipmentCompleto(returnItem.shipment_id);
+                        if (shipmentCompleto) {
+                          dadosCompletos.tracking_history = shipmentCompleto.history;
+                          dadosCompletos.shipment_costs = shipmentCompleto.costs;
+                          dadosCompletos.shipment_delays = shipmentCompleto.delays;
+                          dadosCompletos.carrier_info = shipmentCompleto.carrier;
+
+                          // Adicionar eventos de rastreamento ao timeline
+                          if (shipmentCompleto.history?.tracking_events) {
+                            shipmentCompleto.history.tracking_events.forEach((event: any) => {
+                              timeline.push({
+                                data: event.date_created,
+                                tipo: 'movimentacao_produto',
+                                descricao: event.description,
+                                fonte: 'shipment_history',
+                                metadados: { 
+                                  location: event.location,
+                                  tracking_number: event.tracking_number 
+                                }
+                              });
+                            });
+                          }
+                        }
+                      } catch (shipErr) {
+                        console.warn(`⚠️ Erro ao buscar dados de shipment ${returnItem.shipment_id}:`, shipErr);
+                      }
+                    }
+                  }
+                }
+              } catch (returnErr) {
+                console.warn(`⚠️ Erro ao buscar returns do claim ${claim.id}:`, returnErr);
+              }
+            }
+          }
+        }
+      } catch (claimsErr) {
+        console.warn(`⚠️ Erro ao buscar claims da order ${orderId}:`, claimsErr);
+      }
+
+      // 5. Buscar mensagens do sistema (endpoint correto sem tag)
+      try {
+        if (dadosCompletos.order?.pack_id) {
+          const messages = await this.getMessages(dadosCompletos.order.pack_id, sellerId);
+          if (messages?.messages) {
+            dadosCompletos.messages = messages.messages;
+            
+            // Filtrar mensagens do sistema e adicionar ao timeline
+            messages.messages
+              .filter((msg: any) => msg.sender_role === 'system')
+              .forEach((msg: any) => {
+                timeline.push({
+                  data: msg.date_created,
+                  tipo: 'sistema_message',
+                  descricao: msg.message,
+                  fonte: 'messages_api',
+                  metadados: { message_id: msg.id }
+                });
+              });
+          }
+        }
+      } catch (msgErr) {
+        console.warn(`⚠️ Erro ao buscar mensagens:`, msgErr);
+      }
+
+      // 6. Ordenar timeline cronologicamente
+      timeline.sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+
+      // 7. Calcular métricas temporais
+      const metricas = this.calcularMetricasTimeline(timeline);
+
+      const resultado = {
+        timeline_events: timeline,
+        timeline_consolidado: {
+          total_eventos: timeline.length,
+          periodo_total: this.calcularPeriodoTotal(timeline),
+          marcos_principais: this.identificarMarcosPrincipais(timeline)
+        },
+        dados_completos: dadosCompletos,
+        metricas_temporais: metricas,
+        origem_timeline: 'automatico',
+        versao_api_utilizada: 'v2_correto',
+        ultima_sincronizacao: new Date().toISOString(),
+        confiabilidade_dados: timeline.length > 5 ? 'alta' : timeline.length > 2 ? 'media' : 'baixa'
+      };
+
+      console.log(`✅ Timeline completo criado com ${timeline.length} eventos`);
+      return resultado;
+
+    } catch (error) {
+      console.error(`❌ Erro ao buscar timeline completo:`, error);
+      return {
+        timeline_events: [],
+        erro: error.message,
+        origem_timeline: 'falha',
+        dados_incompletos: true,
+        ultima_sincronizacao: new Date().toISOString()
+      };
+    }
+  }
+
+  // Métodos auxiliares para cálculos de métricas
+  private calcularMetricasTimeline(timeline: any[]) {
+    if (timeline.length < 2) return {};
+
+    const primeiroEvento = new Date(timeline[0].data);
+    const ultimoEvento = new Date(timeline[timeline.length - 1].data);
+    const tempoTotalMs = ultimoEvento.getTime() - primeiroEvento.getTime();
+
+    return {
+      tempo_total_resolucao: Math.round(tempoTotalMs / (1000 * 60 * 60)), // horas
+      dias_ate_resolucao: Math.round(tempoTotalMs / (1000 * 60 * 60 * 24)),
+      numero_eventos: timeline.length,
+      eficiencia_resolucao: tempoTotalMs < 24 * 60 * 60 * 1000 ? 'rapida' : 
+                           tempoTotalMs < 72 * 60 * 60 * 1000 ? 'normal' : 'lenta'
+    };
+  }
+
+  private calcularPeriodoTotal(timeline: any[]) {
+    if (timeline.length < 2) return 0;
+    const inicio = new Date(timeline[0].data);
+    const fim = new Date(timeline[timeline.length - 1].data);
+    return Math.round((fim.getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  private identificarMarcosPrincipais(timeline: any[]) {
+    return timeline
+      .filter(evento => ['order_criado', 'claim_criado', 'return_criado'].includes(evento.tipo))
+      .map(evento => ({
+        tipo: evento.tipo,
+        data: evento.data,
+        descricao: evento.descricao
+      }));
   }
 }
