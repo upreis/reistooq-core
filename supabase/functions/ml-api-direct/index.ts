@@ -112,6 +112,12 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       
       for (const order of data.results) {
         try {
+          // Proteção contra orders inválidos
+          if (!order || !order.id) {
+            console.warn(`⚠️ Order inválido encontrado:`, order)
+            continue
+          }
+          
           // Buscar detalhes completos do pedido
           const orderDetailUrl = `https://api.mercadolibre.com/orders/${order.id}`
           console.log(`📞 Buscando detalhes do pedido: ${order.id}`)
@@ -188,6 +194,15 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               try {
                 const [claimDetails, claimMessages, mediationDetails, claimAttachments, returnsV2, returnsV1] = await Promise.all(claimPromises)
                 
+                console.log(`📋 Dados obtidos para mediação ${mediationId}:`, {
+                  claimDetails: !!claimDetails,
+                  claimMessages: !!claimMessages,
+                  mediationDetails: !!mediationDetails,
+                  claimAttachments: !!claimAttachments,
+                  returnsV2: !!returnsV2,
+                  returnsV1: !!returnsV1
+                })
+                
                 // Buscar reviews dos returns se existirem
                 let returnReviews = []
                 if (returnsV2?.results?.length > 0) {
@@ -231,91 +246,163 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 
                 console.log(`✅ Dados completos do claim obtidos para mediação ${mediationId}`)
               } catch (claimError) {
-                console.warn(`⚠️ Erro ao buscar dados do claim ${mediationId}:`, claimError)
+                console.error(`❌ Erro crítico ao buscar dados do claim ${mediationId}:`, claimError)
+                // Definir claimData como null em caso de erro crítico
+                claimData = null
               }
             }
             
             // Processar como devolução/cancelamento com DADOS ENRIQUECIDOS COMPLETOS
+            // Proteção contra dados nulos
+            const safeClaimData = claimData || {}
+            const safeOrderDetail = orderDetail || {}
+            
             const devolucao = {
               type: 'cancellation',
-              order_id: orderDetail.id,
-              date_created: orderDetail.date_created,
-              status: orderDetail.status,
-              reason: orderDetail.cancel_detail?.description || 'Pedido cancelado',
-              amount: orderDetail.total_amount || 0,
+              order_id: safeOrderDetail.id || 'N/A',
+              date_created: safeOrderDetail.date_created || new Date().toISOString(),
+              status: safeOrderDetail.status || 'unknown',
+              reason: safeOrderDetail.cancel_detail?.description || 'Pedido cancelado',
+              amount: safeOrderDetail.total_amount || 0,
               resource_data: {
-                title: orderDetail.order_items?.[0]?.item?.title || 'Produto não identificado',
-                sku: orderDetail.order_items?.[0]?.item?.seller_sku || '',
-                quantity: orderDetail.order_items?.[0]?.quantity || 1
+                title: safeOrderDetail.order_items?.[0]?.item?.title || 'Produto não identificado',
+                sku: safeOrderDetail.order_items?.[0]?.item?.seller_sku || '',
+                quantity: safeOrderDetail.order_items?.[0]?.quantity || 1
               },
-              order_data: orderDetail,
-              buyer: orderDetail.buyer,
-              cancel_detail: orderDetail.cancel_detail,
+              order_data: safeOrderDetail,
+              buyer: safeOrderDetail.buyer || {},
+              cancel_detail: safeOrderDetail.cancel_detail || {},
               
               // DADOS DE CLAIM ESTRUTURADOS
-              claim_details: claimData?.claim_details || null,
-              claim_messages: claimData?.claim_messages || null,
-              mediation_details: claimData?.mediation_details || null,
-              claim_attachments: claimData?.claim_attachments || null,
-              return_details_v2: claimData?.return_details_v2 || null,
-              return_details_v1: claimData?.return_details_v1 || null,
-              return_reviews: claimData?.return_reviews || null,
+              claim_details: safeClaimData?.claim_details || null,
+              claim_messages: safeClaimData?.claim_messages || null,
+              mediation_details: safeClaimData?.mediation_details || null,
+              claim_attachments: safeClaimData?.claim_attachments || null,
+              return_details_v2: safeClaimData?.return_details_v2 || null,
+              return_details_v1: safeClaimData?.return_details_v1 || null,
+              return_reviews: safeClaimData?.return_reviews || null,
               
               // CAMPOS ENRIQUECIDOS EXTRAÍDOS
-              claim_status: claimData?.claim_status || null,
-              return_status: claimData?.return_status || null,
-              return_tracking: claimData?.return_tracking || null,
-              resolution_date: claimData?.resolution_date || null,
-              resolution_reason: claimData?.resolution_reason || null,
-              messages_count: claimData?.messages_count || 0,
-              review_score: claimData?.review_score || null,
+              claim_status: safeClaimData?.claim_status || null,
+              return_status: safeClaimData?.return_status || null,
+              return_tracking: safeClaimData?.return_tracking || null,
+              resolution_date: safeClaimData?.resolution_date || null,
+              resolution_reason: safeClaimData?.resolution_reason || null,
+              messages_count: safeClaimData?.messages_count || 0,
+              review_score: safeClaimData?.review_score || null,
               
-              // DADOS DE COMUNICAÇÃO
-              timeline_mensagens: claimData?.claim_messages?.messages || [],
-              numero_interacoes: claimData?.claim_messages?.messages?.length || 0,
-              ultima_mensagem_data: claimData?.claim_messages?.messages?.length > 0 ? 
-                claimData.claim_messages.messages[claimData.claim_messages.messages.length - 1]?.date_created : null,
-              ultima_mensagem_remetente: claimData?.claim_messages?.messages?.length > 0 ? 
-                claimData.claim_messages.messages[claimData.claim_messages.messages.length - 1]?.from?.role : null,
-              mensagens_nao_lidas: claimData?.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0,
+              // DADOS DE COMUNICAÇÃO - MÚLTIPLAS FONTES DE MENSAGENS
+              timeline_mensagens: safeClaimData?.claim_messages?.messages || 
+                                  safeClaimData?.mediation_details?.messages || [],
+              numero_interacoes: (safeClaimData?.claim_messages?.messages?.length || 0) + 
+                                (safeClaimData?.mediation_details?.messages?.length || 0),
               
-              // DADOS DE RETORNO/TROCA
-              eh_troca: (claimData?.return_details_v2?.subtype || '').includes('change'),
-              data_estimada_troca: claimData?.return_details_v2?.estimated_exchange_date || null,
-              codigo_rastreamento: claimData?.return_details_v2?.shipments?.[0]?.tracking_number || 
-                                  claimData?.return_details_v1?.shipments?.[0]?.tracking_number || null,
-              transportadora: claimData?.return_details_v2?.shipments?.[0]?.carrier || 
-                             claimData?.return_details_v1?.shipments?.[0]?.carrier || null,
-              status_rastreamento: claimData?.return_details_v2?.shipments?.[0]?.status || 
-                                  claimData?.return_details_v1?.shipments?.[0]?.status || null,
+              // ÚLTIMA MENSAGEM - EXTRAIR DE TODAS AS FONTES
+              ultima_mensagem_data: (() => {
+                const allMessages = [
+                  ...(safeClaimData?.claim_messages?.messages || []),
+                  ...(safeClaimData?.mediation_details?.messages || [])
+                ].sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime())
+                return allMessages.length > 0 ? allMessages[0].date_created : null
+              })(),
+              
+              ultima_mensagem_remetente: (() => {
+                const allMessages = [
+                  ...(safeClaimData?.claim_messages?.messages || []),
+                  ...(safeClaimData?.mediation_details?.messages || [])
+                ].sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime())
+                return allMessages.length > 0 ? allMessages[0]?.from?.role : null
+              })(),
+              
+              mensagens_nao_lidas: (safeClaimData?.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0) +
+                                  (safeClaimData?.mediation_details?.messages?.filter((m: any) => !m.read)?.length || 0),
+              
+              // DADOS DE RETORNO/TROCA - MÚLTIPLAS FONTES
+              eh_troca: (safeClaimData?.return_details_v2?.results?.[0]?.subtype || 
+                        safeClaimData?.return_details_v1?.results?.[0]?.subtype || 
+                        safeClaimData?.claim_details?.type || '').toLowerCase().includes('change'),
+              
+              // DATAS CRÍTICAS - EXTRAIR DE MÚLTIPLAS FONTES
+              data_estimada_troca: safeClaimData?.return_details_v2?.results?.[0]?.estimated_exchange_date || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.estimated_exchange_date ||
+                                  safeClaimData?.claim_details?.estimated_delivery_date ||
+                                  safeClaimData?.mediation_details?.estimated_resolution_date || null,
+              
+              data_limite_troca: safeClaimData?.return_details_v2?.results?.[0]?.expiration_date ||
+                                safeClaimData?.return_details_v1?.results?.[0]?.expiration_date ||
+                                safeClaimData?.claim_details?.expiration_date ||
+                                safeClaimData?.mediation_details?.expiration_date || null,
+              
+              // RASTREAMENTO
+              codigo_rastreamento: safeClaimData?.return_details_v2?.results?.[0]?.tracking_number || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.tracking_number ||
+                                  safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.tracking_number || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.tracking_number || null,
+              
+              transportadora: safeClaimData?.return_details_v2?.results?.[0]?.carrier || 
+                             safeClaimData?.return_details_v1?.results?.[0]?.carrier ||
+                             safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.carrier || 
+                             safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.carrier || null,
+              
+              status_rastreamento: safeClaimData?.return_details_v2?.results?.[0]?.status || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.status ||
+                                  safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.status || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.status || null,
               
               // DADOS DE ANEXOS
-              anexos_count: claimData?.claim_attachments?.length || 0,
-              anexos_comprador: claimData?.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
-              anexos_vendedor: claimData?.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
-              anexos_ml: claimData?.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
+              anexos_count: safeClaimData?.claim_attachments?.length || 0,
+              anexos_comprador: safeClaimData?.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
+              anexos_vendedor: safeClaimData?.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
+              anexos_ml: safeClaimData?.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
               
-              // DADOS FINANCEIROS
-              custo_envio_devolucao: claimData?.return_details_v2?.shipping_cost || 
-                                    claimData?.return_details_v1?.shipping_cost || null,
-              valor_compensacao: claimData?.return_details_v2?.refund_amount || 
-                                claimData?.return_details_v1?.refund_amount || null,
-              responsavel_custo: claimData?.claim_details?.resolution?.benefited?.[0] || null,
+              // DADOS FINANCEIROS - MÚLTIPLAS FONTES
+              custo_envio_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipping_cost || 
+                                    safeClaimData?.return_details_v1?.results?.[0]?.shipping_cost ||
+                                    safeClaimData?.return_details_v2?.shipping_cost || 
+                                    safeClaimData?.return_details_v1?.shipping_cost || null,
+              
+              valor_compensacao: safeClaimData?.return_details_v2?.results?.[0]?.refund_amount || 
+                                safeClaimData?.return_details_v1?.results?.[0]?.refund_amount ||
+                                safeClaimData?.return_details_v2?.refund_amount || 
+                                safeClaimData?.return_details_v1?.refund_amount ||
+                                safeClaimData?.claim_details?.resolution?.compensation?.amount || null,
+              
+              responsavel_custo: safeClaimData?.claim_details?.resolution?.benefited?.[0] || 
+                                safeClaimData?.mediation_details?.resolution?.benefited?.[0] ||
+                                safeClaimData?.claim_details?.resolution?.responsible || null,
               
               // CLASSIFICAÇÃO
-              tipo_claim: claimData?.claim_details?.type || orderDetail.status,
-              subtipo_claim: claimData?.claim_details?.stage || claimData?.claim_details?.subtype || null,
-              motivo_categoria: claimData?.claim_details?.reason_id || null,
-              em_mediacao: claimData?.claim_details?.type === 'mediations' || claimData?.mediation_details !== null,
-              nivel_prioridade: claimData?.claim_details?.type === 'mediations' ? 'high' : 'medium',
+              tipo_claim: safeClaimData?.claim_details?.type || safeOrderDetail.status,
+              subtipo_claim: safeClaimData?.claim_details?.stage || safeClaimData?.claim_details?.subtype || null,
+              motivo_categoria: safeClaimData?.claim_details?.reason_id || null,
+              em_mediacao: safeClaimData?.claim_details?.type === 'mediations' || safeClaimData?.mediation_details !== null,
+              nivel_prioridade: safeClaimData?.claim_details?.type === 'mediations' ? 'high' : 'medium',
               
-              // CONTROLE DE AÇÃO
-              acao_seller_necessaria: (claimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
-              escalado_para_ml: claimData?.claim_details?.type === 'mediations',
-              data_vencimento_acao: claimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
+              // CONTROLE DE AÇÃO - MÚLTIPLAS FONTES
+              acao_seller_necessaria: (safeClaimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0 ||
+                                     (safeClaimData?.mediation_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
+              
+              escalado_para_ml: safeClaimData?.claim_details?.type === 'mediations' || 
+                               safeClaimData?.mediation_details !== null,
+              
+              // DATA DE VENCIMENTO - MÚLTIPLAS FONTES
+              data_vencimento_acao: safeClaimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date ||
+                                   safeClaimData?.mediation_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date ||
+                                   safeClaimData?.claim_details?.due_date ||
+                                   safeClaimData?.mediation_details?.due_date || null,
+              
+              dias_restantes_acao: (() => {
+                const dueDate = safeClaimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date ||
+                               safeClaimData?.mediation_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date ||
+                               safeClaimData?.claim_details?.due_date ||
+                               safeClaimData?.mediation_details?.due_date
+                if (!dueDate) return null
+                const diffTime = new Date(dueDate).getTime() - new Date().getTime()
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+              })(),
               
               // MARCADORES DE QUALIDADE
-              dados_completos: claimData?.dados_completos || false,
+              dados_completos: safeClaimData?.dados_completos || false,
               marketplace_origem: 'ML_BRASIL'
             }
             
