@@ -1,4 +1,4 @@
-import { makeClient, makeUserClient, makeServiceClient, corsHeaders, ok, fail, getMlConfig } from "../_shared/client.ts";
+import { makeServiceClient, corsHeaders, ok, fail, getMlConfig } from "../_shared/client.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
@@ -175,68 +175,22 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         }
 
-        // 5. Enriquecer com descontos aplicados
-        if (order.id) {
-          try {
-            const discountsResp = await fetch(
-              `https://api.mercadolibre.com/orders/${order.id}/discounts`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'x-format-new': 'true'
-                }
-              }
-            );
-            if (discountsResp.ok) {
-              const discountsData = await discountsResp.json();
-              (enrichedOrder as any).discounts = discountsData;
-            }
-          } catch (err) {
-            console.warn(`[unified-orders:${cid}] Aviso ao buscar discounts ${order.id}:`, (err as any)?.message || err);
-          }
+        // 5. Descontos já incluídos no objeto principal da order (conforme análise do usuário)
+        // Não fazemos chamada separada, apenas extraímos do objeto principal
+        if (order.discounts || enrichedOrder.discounts) {
+          (enrichedOrder as any).discounts = order.discounts || enrichedOrder.discounts;
+          console.log(`[unified-orders:${cid}] ✅ Descontos extraídos do objeto principal ${order.id}`);
         }
 
-        // 6. Enriquecer com mediações
-        if (order.id) {
-          try {
-            const mediationsResp = await fetch(
-              `https://api.mercadolibre.com/orders/${order.id}/mediations`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'x-format-new': 'true'
-                }
-              }
-            );
-            if (mediationsResp.ok) {
-              const mediationsData = await mediationsResp.json();
-              (enrichedOrder as any).mediations = mediationsData;
-            }
-          } catch (err) {
-            console.warn(`[unified-orders:${cid}] Aviso ao buscar mediations ${order.id}:`, (err as any)?.message || err);
-          }
+        // 6. Mediações já incluídas no objeto principal da order (conforme análise do usuário)
+        // Não fazemos chamada separada, apenas extraímos do campo order.mediations
+        if (order.mediations || enrichedOrder.mediations) {
+          (enrichedOrder as any).mediations = order.mediations || enrichedOrder.mediations;
+          console.log(`[unified-orders:${cid}] ✅ Mediações extraídas do objeto principal ${order.id}`);
         }
 
-        // 7. Enriquecer com dados de devoluções (returns)
-        if (order.id) {
-          try {
-            const returnsResp = await fetch(
-              `https://api.mercadolibre.com/orders/${order.id}/returns`,
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  'x-format-new': 'true'
-                }
-              }
-            );
-            if (returnsResp.ok) {
-              const returnsData = await returnsResp.json();
-              (enrichedOrder as any).returns = returnsData;
-            }
-          } catch (err) {
-            console.warn(`[unified-orders:${cid}] Aviso ao buscar returns ${order.id}:`, (err as any)?.message || err);
-          }
-        }
+        // 7. Returns são acessados via claim_id (conforme análise do usuário)
+        // Implementado na seção de claims abaixo
 
         // TESTE: Verificar se token tem acesso à Claims API
         try {
@@ -398,28 +352,19 @@ async function enrichWithReturnDetails(order: any, claimId: string, accessToken:
   }
 }
 
-// Função para enriquecer com reviews de devolução
-async function enrichWithReturnReviews(order: any, returnId: string, accessToken: string, cid: string) {
+// Função para enriquecer com reviews de devolução - ATUALIZADA conforme análise do usuário
+async function enrichWithReturnReviews(order: any, returnData: any, accessToken: string, cid: string) {
   try {
-    const reviewsResp = await fetch(
-      `https://api.mercadolibre.com/post-purchase/v1/returns/${returnId}/reviews`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'x-format-new': 'true'
-        }
-      }
-    );
-
-    if (reviewsResp.ok) {
-      const reviewsData = await reviewsResp.json();
+    // Reviews estão incluídos nos dados de return (conforme análise do usuário)
+    // Não fazemos chamada separada, apenas extraímos do objeto
+    if (returnData.reviews || returnData.result?.reviews) {
       if (!order.return_reviews) order.return_reviews = [];
-      order.return_reviews.push(reviewsData);
+      order.return_reviews.push(returnData.reviews || returnData.result.reviews);
       
-      console.log(`[unified-orders:${cid}] ✅ Reviews de devolução obtidas para return ${returnId}`);
+      console.log(`[unified-orders:${cid}] ✅ Reviews extraídas dos dados de return`);
     }
   } catch (err) {
-    console.warn(`[unified-orders:${cid}] Erro ao buscar reviews da devolução ${returnId}:`, err);
+    console.warn(`[unified-orders:${cid}] Erro ao extrair reviews da devolução:`, err);
   }
 }
 
