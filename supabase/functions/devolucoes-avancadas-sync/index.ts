@@ -30,7 +30,6 @@ interface RequestBody {
   resource_id?: string;
   data?: any;
 }
-}
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
