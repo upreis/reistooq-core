@@ -1022,15 +1022,10 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                       const temReturnData = !!(
                         // Dados primários de return
                         (returnData && Object.keys(returnData).length > 0) ||
-                        // Order request return (confirmado no PDF)
-                        (orderData?.order_request?.return) ||
-                        // Tags relacionadas a devolução/reembolso
-                        (orderData?.tags && Array.isArray(orderData.tags) && (
-                          orderData.tags.includes('return') ||
-                          orderData.tags.includes('refund') ||
-                          orderData.tags.includes('not_delivered') ||
-                          orderData.tags.includes('fraud_risk_detected')
-                        )) ||
+                         (orderData?.order_request?.return && typeof orderData.order_request.return === 'object') ||
+                         (orderData?.tags && Array.isArray(orderData.tags) && (
+                           orderData.tags.some(tag => typeof tag === 'string' && ['return', 'refund', 'not_delivered', 'fraud_risk_detected'].includes(tag))
+                         )) ||
                         // Status indicando devolução
                         (devolucao.status_devolucao && devolucao.status_devolucao !== 'N/A') ||
                         // Dados de rastreamento de devolução
@@ -1179,13 +1174,13 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                                 <div className="text-orange-600 dark:text-orange-400 font-medium">
                                   {Object.keys(returnData).length > 0 ? 'Dados Return' : 'Tags/Status'}
                                 </div>
-                                {orderData?.tags && (
-                                  <div className="text-muted-foreground text-xs">
-                                    {orderData.tags.filter(tag => 
-                                      ['return', 'refund', 'not_delivered', 'fraud_risk_detected'].includes(tag)
-                                    ).join(', ') || 'Outros'}
-                                  </div>
-                                )}
+                                 {orderData?.tags && Array.isArray(orderData.tags) && (
+                                   <div className="text-muted-foreground text-xs">
+                                     {orderData.tags.filter(tag => 
+                                       typeof tag === 'string' && ['return', 'refund', 'not_delivered', 'fraud_risk_detected'].includes(tag)
+                                     ).join(', ') || 'Outros'}
+                                   </div>
+                                 )}
                                 {devolucao.codigo_rastreamento && (
                                   <div className="text-muted-foreground text-xs">
                                     Rastreio ativo
@@ -1970,7 +1965,7 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                       <Clock className="h-5 w-5 text-muted-foreground" />
                       <div>
                         <Label className="text-sm text-muted-foreground">Data Criação</Label>
-                        <p className="font-medium text-foreground">{new Date(selectedDevolucao.data_criacao).toLocaleString()}</p>
+                        <p className="font-medium text-foreground">{(() => { try { return new Date(selectedDevolucao.data_criacao).toLocaleString(); } catch { return selectedDevolucao.data_criacao; } })()}</p>
                       </div>
                     </div>
                     
