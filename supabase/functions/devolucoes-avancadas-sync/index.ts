@@ -1,34 +1,22 @@
 /**
- * 🚀 FASE 4: IMPLEMENTAÇÃO DE SERVIÇOS - EDGE FUNCTION PRINCIPAL
- * Processa e enriquece dados das devoluções avançadas com as 42 novas colunas
+ * 🚀 SISTEMA DE DEVOLUÇÕES - PROCESSAMENTO 100% TEMPO REAL
+ * Busca e processa dados diretamente da API do Mercado Livre em tempo real
  */
 
 import { corsHeaders, makeServiceClient, ok, fail } from '../_shared/client.ts';
 
 interface RequestBody {
-  action?: 'enrich_existing_data' | 'sync_advanced_fields' | 'fetch_advanced_metrics' | 'update_phase2_columns' | 
-          'test_ml_connection' | 'real_enrich_claims' | 'batch_enrich' | 'check_missing_data' | 'legacy_sync' |
-          // NOVAS AÇÕES UNIFICADAS
-          'intelligent_analysis' | 'real_time_processing' | 'calculate_all_metrics' | 'unified_processing';
+  action?: 'real_time_processing' | 'unified_processing' | 'fetch_real_time_data';
   integration_account_id: string;
   limit?: number;
-  updates?: any[];
+  force_refresh?: boolean;
   date_from?: string;
   date_to?: string;
-  claim_ids?: string[];
-  force_refresh?: boolean;
-  // Compatibilidade com ml-devolucoes-sync
-  mode?: 'enriched' | 'basic' | 'full';
-  include_messages?: boolean;
-  include_shipping?: boolean;
-  include_buyer_details?: boolean;
-  dateFrom?: string;
-  dateTo?: string;
-  // Novos parâmetros para unificação
-  analysis_type?: 'priority_classification' | 'sentiment_analysis' | 'trend_detection' | 'risk_assessment';
-  event_type?: 'claim_update' | 'order_update' | 'message_received' | 'status_change';
-  resource_id?: string;
-  data?: any;
+}
+
+interface MLAccessTokenResponse {
+  access_token: string;
+  account_identifier: string;
 }
 
 Deno.serve(async (req) => {
@@ -38,21 +26,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🔄 Ação solicitada:', req.method);
+    console.log('🔄 Processamento em tempo real iniciado');
     
     if (req.method !== 'POST') {
       return fail('Método não permitido', 405);
     }
 
     const body: RequestBody = await req.json();
+    const action = body.action || 'real_time_processing';
     
-    // Detectar se é chamada legacy da ml-devolucoes-sync
-    const isLegacyCall = !body.action && (body.mode || body.include_messages !== undefined);
-    const action = body.action || (isLegacyCall ? 'legacy_sync' : 'enrich_existing_data');
-    
-    console.log(`🔄 Ação solicitada: ${action}${isLegacyCall ? ' (legacy)' : ''}`, {
+    console.log(`🔄 Ação: ${action}`, {
       integration_account_id: body.integration_account_id,
-      mode: body.mode,
       limit: body.limit
     });
 
@@ -61,7 +45,7 @@ Deno.serve(async (req) => {
     // Validar conta de integração
     const { data: account, error: accountError } = await supabase
       .from('integration_accounts')
-      .select('id, organization_id, name, provider')
+      .select('id, organization_id, name, provider, account_identifier')
       .eq('id', body.integration_account_id)
       .eq('is_active', true)
       .single();
@@ -73,57 +57,22 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Conta validada: ${account.name} (${account.provider})`);
 
-    // Buscar token ML se necessário para as novas ações
-    let accessToken = null;
-    if (['test_ml_connection', 'real_enrich_claims', 'batch_enrich', 'legacy_sync', 'unified_processing'].includes(action)) {
-      accessToken = await getMLAccessToken(supabase, body.integration_account_id);
-      if (!accessToken) {
-        return fail('Token de acesso ML não encontrado. Configure a integração.');
-      }
+    // Buscar token ML
+    const mlTokens = await getMLAccessToken(supabase, body.integration_account_id);
+    if (!mlTokens) {
+      return fail('Token de acesso ML não encontrado. Configure a integração.');
     }
 
+    // Processar baseado na ação
     switch (action) {
-      case 'enrich_existing_data':
-        return await enrichExistingData(supabase, body);
-      
-      case 'sync_advanced_fields':
-        return await syncAdvancedFields(supabase, body);
-      
-      case 'fetch_advanced_metrics':
-        return await fetchAdvancedMetrics(supabase, body);
-      
-      case 'update_phase2_columns':
-        return await updatePhase2Columns(supabase, body);
-      
-      // NOVAS AÇÕES UNIFICADAS
-      case 'test_ml_connection':
-        return await testMLConnection(accessToken, account.account_identifier);
-      
-      case 'real_enrich_claims':
-        return await realEnrichClaims(supabase, body, accessToken, account.account_identifier);
-      
-      case 'batch_enrich':
-        return await batchEnrichProcess(supabase, body, accessToken, account.account_identifier);
-      
-      case 'check_missing_data':
-        return await checkMissingData(supabase, body);
-      
-      // COMPATIBILIDADE COM ml-devolucoes-sync
-      case 'legacy_sync':
-        return await legacySyncCompatibility(supabase, body, accessToken, account.account_identifier);
-      
-      // ===== NOVAS AÇÕES UNIFICADAS =====
-      case 'intelligent_analysis':
-        return await processIntelligentAnalysis(supabase, body);
-      
       case 'real_time_processing':
-        return await processRealTimeEvent(supabase, body);
-      
-      case 'calculate_all_metrics':
-        return await calculateAllMetrics(supabase, body);
+        return await processRealTimeData(supabase, body, mlTokens, account);
       
       case 'unified_processing':
-        return await runUnifiedProcessing(supabase, body, accessToken, account.account_identifier);
+        return await unifiedRealTimeProcessing(supabase, body, mlTokens, account);
+      
+      case 'fetch_real_time_data':
+        return await fetchRealTimeMLData(supabase, body, mlTokens, account);
       
       default:
         return fail('Ação não reconhecida');
@@ -136,729 +85,494 @@ Deno.serve(async (req) => {
 });
 
 /**
- * 📊 ENRIQUECER DADOS EXISTENTES
- * Processa devoluções básicas e adiciona dados das 42 novas colunas
+ * 🔥 PROCESSAMENTO PRINCIPAL - 100% TEMPO REAL
+ * Busca dados diretamente da API ML e calcula todas as métricas
  */
-async function enrichExistingData(supabase: any, body: RequestBody) {
+async function processRealTimeData(supabase: any, body: RequestBody, mlTokens: MLAccessTokenResponse, account: any) {
   try {
-    console.log(`🔍 Enriquecendo dados existentes para conta: ${body.integration_account_id}`);
+    console.log('🔥 Iniciando processamento 100% tempo real');
     
-    const limit = body.limit || 25;
+    // 1. BUSCAR PEDIDOS CANCELADOS DA API ML
+    const cancelledOrders = await fetchCancelledOrdersFromML(mlTokens.access_token, account.account_identifier, body);
+    console.log(`📦 ${cancelledOrders.length} pedidos cancelados encontrados na API`);
 
-    // Buscar devoluções que têm claim_id mas precisam de enriquecimento
-    const { data: devolucoes, error: devError } = await supabase
-      .from('devolucoes_avancadas')
-      .select(`
-        id, 
-        order_id, 
-        claim_id, 
-        status_devolucao,
-        timeline_mensagens,
-        nivel_prioridade,
-        anexos_count,
-        integration_account_id,
-        dados_claim,
-        dados_mensagens,
-        dados_return
-      `)
-      .eq('integration_account_id', body.integration_account_id)
-      .not('claim_id', 'is', null)
-      .or('timeline_mensagens.is.null,nivel_prioridade.is.null,anexos_count.is.null')
-      .limit(limit);
-
-    if (devError) {
-      console.error('❌ Erro ao buscar devoluções:', devError);
-      return fail(`Erro ao buscar devoluções: ${devError.message}`);
-    }
-
-    if (!devolucoes || devolucoes.length === 0) {
-      console.log('ℹ️ Nenhuma devolução com claim_id encontrada para enriquecimento');
+    if (cancelledOrders.length === 0) {
       return ok({
         success: true,
-        message: 'Nenhuma devolução com claim_id encontrada para enriquecimento',
-        enriched_count: 0,
-        processed_count: 0
+        message: 'Nenhum pedido cancelado encontrado na API',
+        processed_count: 0,
+        total_found: 0
       });
     }
 
-    console.log(`📦 Processando ${devolucoes.length} devoluções com claim_id...`);
+    let processedCount = 0;
+    const processedResults = [];
 
-    let enrichedCount = 0;
-
-    // Buscar dados de integração para fazer chamadas ML API
-    const { data: integration, error: intError } = await supabase
-      .from('integration_accounts')
-      .select('id, account_identifier')
-      .eq('id', body.integration_account_id)
-      .single();
-
-    if (intError || !integration) {
-      console.error('❌ Erro ao buscar dados de integração:', intError);
-      return fail('Dados de integração não encontrados');
-    }
-
-    // Processar cada devolução
-    for (const dev of devolucoes) {
+    // 2. PROCESSAR CADA PEDIDO EM TEMPO REAL
+    for (const order of cancelledOrders) {
       try {
-        // REAL: Enriquecer com dados reais da ML API
-        const enrichedData = await enrichWithRealMLData(dev, integration.account_identifier);
+        console.log(`🔄 Processando pedido ${order.id} em tempo real`);
         
-        // Atualizar com dados enriquecidos
-        const { error: updateError } = await supabase
-          .from('devolucoes_avancadas')
-          .update(enrichedData)
-          .eq('id', dev.id);
+        // Buscar dados completos da API
+        const orderDetails = await fetchOrderDetailsFromML(mlTokens.access_token, order.id);
+        const claimsData = await fetchClaimsFromML(mlTokens.access_token, order.id);
+        const messagesData = await fetchMessagesFromML(mlTokens.access_token, order.id);
+        const shippingData = await fetchShippingFromML(mlTokens.access_token, order.id);
 
-        if (updateError) {
-          console.error(`❌ Erro ao atualizar devolução ${dev.id}:`, updateError);
-          continue;
-        }
+        // Processar e calcular métricas
+        const enrichedData = await processOrderRealTime({
+          order: orderDetails,
+          claims: claimsData,
+          messages: messagesData,
+          shipping: shippingData,
+          integration_account_id: body.integration_account_id
+        });
 
-        enrichedCount++;
-        console.log(`✅ Devolução ${dev.id} enriquecida com dados reais`);
-
+        // Salvar ou atualizar no banco
+        await upsertOrderData(supabase, enrichedData);
+        
+        processedResults.push({
+          order_id: order.id,
+          status: 'processed',
+          metrics_calculated: true
+        });
+        
+        processedCount++;
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
       } catch (error) {
-        console.error(`❌ Erro ao processar devolução ${dev.id}:`, error);
-        continue;
+        console.error(`❌ Erro ao processar pedido ${order.id}:`, error);
+        processedResults.push({
+          order_id: order.id,
+          status: 'error',
+          error: error.message
+        });
       }
     }
 
-    const result = {
+    return ok({
       success: true,
-      message: `${enrichedCount} devoluções enriquecidas com dados reais da ML API`,
-      enriched_count: enrichedCount,
-      processed_count: devolucoes.length
-    };
-
-    console.log('✅ Enriquecimento concluído:', result);
-    return ok(result);
+      message: `${processedCount} pedidos processados em tempo real`,
+      processed_count: processedCount,
+      total_found: cancelledOrders.length,
+      results: processedResults
+    });
 
   } catch (error) {
-    console.error('❌ Erro no enriquecimento:', error);
-    return fail(`Erro no enriquecimento: ${error.message}`, 500);
+    console.error('❌ Erro no processamento tempo real:', error);
+    return fail(`Erro no processamento: ${error.message}`, 500);
   }
 }
 
 /**
- * 🔄 SINCRONIZAR CAMPOS AVANÇADOS
- * Atualiza campos específicos com dados mais recentes
+ * 📡 BUSCAR PEDIDOS CANCELADOS DA API ML
  */
-async function syncAdvancedFields(supabase: any, body: RequestBody) {
+async function fetchCancelledOrdersFromML(accessToken: string, sellerId: string, body: RequestBody) {
   try {
-    console.log(`🔄 Sincronizando campos avançados para: ${body.integration_account_id}`);
+    const baseUrl = 'https://api.mercadolibre.com';
+    let allOrders = [];
+    let offset = 0;
+    const limit = 50;
+    
+    // Calcular datas
+    const dateTo = body.date_to ? new Date(body.date_to) : new Date();
+    const dateFrom = body.date_from ? new Date(body.date_from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
+    const dateFromStr = dateFrom.toISOString();
+    const dateToStr = dateTo.toISOString();
+    
+    console.log(`🔍 Buscando pedidos cancelados de ${dateFromStr} até ${dateToStr}`);
 
-    // Buscar devoluções para sincronização
-    const { data: devolucoes, error } = await supabase
-      .from('devolucoes_avancadas')
-      .select('id, order_id, claim_id, status_devolucao')
-      .eq('integration_account_id', body.integration_account_id)
-      .limit(25);
-
-    if (error) {
-      return fail(`Erro ao buscar devoluções: ${error.message}`);
-    }
-
-    let syncedCount = 0;
-
-    for (const dev of devolucoes || []) {
-      // Simular sincronização com ML API
-      const syncData = await simulateSync(dev);
+    do {
+      const url = `${baseUrl}/orders/search?seller=${sellerId}&order.status=cancelled&order.date_created.from=${dateFromStr}&order.date_created.to=${dateToStr}&offset=${offset}&limit=${limit}`;
       
-      const { error: updateError } = await supabase
-        .from('devolucoes_avancadas')
-        .update(syncData)
-        .eq('id', dev.id);
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
-      if (!updateError) {
-        syncedCount++;
+      if (!response.ok) {
+        throw new Error(`ML API error: ${response.status} - ${await response.text()}`);
       }
-    }
 
-    return ok({
-      success: true,
-      message: `${syncedCount} registros sincronizados`,
-      synced_count: syncedCount
-    });
-
-  } catch (error) {
-    console.error('❌ Erro na sincronização:', error);
-    return fail(`Erro na sincronização: ${error.message}`, 500);
-  }
-}
-
-/**
- * 📈 BUSCAR MÉTRICAS AVANÇADAS
- * Calcula estatísticas das 42 novas colunas
- */
-async function fetchAdvancedMetrics(supabase: any, body: RequestBody) {
-  try {
-    console.log(`📈 Buscando métricas avançadas para: ${body.integration_account_id}`);
-
-    let query = supabase
-      .from('devolucoes_avancadas')
-      .select(`
-        id,
-        nivel_prioridade,
-        status_devolucao,
-        tempo_resposta_medio,
-        tempo_total_resolucao,
-        taxa_satisfacao,
-        escalado_para_ml,
-        em_mediacao,
-        anexos_count,
-        mensagens_nao_lidas,
-        data_criacao
-      `)
-      .eq('integration_account_id', body.integration_account_id);
-
-    // Filtros de data se fornecidos
-    if (body.date_from) {
-      query = query.gte('data_criacao', body.date_from);
-    }
-    if (body.date_to) {
-      query = query.lte('data_criacao', body.date_to);
-    }
-
-    const { data: devolucoes, error } = await query;
-
-    if (error) {
-      return fail(`Erro ao buscar dados: ${error.message}`);
-    }
-
-    // Calcular métricas
-    const metrics = calculateAdvancedMetrics(devolucoes || []);
-
-    console.log('📊 Métricas calculadas:', metrics);
-
-    return ok({
-      success: true,
-      metrics,
-      raw_data: devolucoes
-    });
-
-  } catch (error) {
-    console.error('❌ Erro ao buscar métricas:', error);
-    return fail(`Erro ao buscar métricas: ${error.message}`, 500);
-  }
-}
-
-/**
- * 🔄 ATUALIZAR COLUNAS ESPECÍFICAS
- * Atualiza registros específicos com novos dados
- */
-async function updatePhase2Columns(supabase: any, body: RequestBody) {
-  try {
-    console.log(`🔄 Atualizando colunas específicas...`);
-
-    if (!body.updates || !Array.isArray(body.updates)) {
-      return fail('Updates não fornecidos ou inválidos');
-    }
-
-    let updatedCount = 0;
-
-    for (const update of body.updates) {
-      if (!update.id) continue;
-
-      const { error } = await supabase
-        .from('devolucoes_avancadas')
-        .update(update.data)
-        .eq('id', update.id)
-        .eq('integration_account_id', body.integration_account_id);
-
-      if (!error) {
-        updatedCount++;
+      const data = await response.json();
+      
+      if (data.results && data.results.length > 0) {
+        allOrders.push(...data.results);
+        offset += limit;
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } else {
+        break;
       }
-    }
+      
+      // Limitar total se especificado
+      if (body.limit && allOrders.length >= body.limit) {
+        allOrders = allOrders.slice(0, body.limit);
+        break;
+      }
+      
+    } while (true);
 
-    return ok({
-      success: true,
-      message: `${updatedCount} registros atualizados`,
-      updated_count: updatedCount
-    });
+    return allOrders;
 
   } catch (error) {
-    console.error('❌ Erro na atualização:', error);
-    return fail(`Erro na atualização: ${error.message}`, 500);
+    console.error('❌ Erro ao buscar pedidos cancelados:', error);
+    throw error;
   }
 }
 
 /**
- * 🚀 ENRIQUECIMENTO REAL COM DADOS DA ML API
- * Baseado na análise do PDF - implementa chamadas reais para ML API
+ * 📋 BUSCAR DETALHES DO PEDIDO DA API ML
  */
-async function enrichWithRealMLData(devolucao: any, seller_id: string) {
-  console.log(`🔍 Enriquecendo devolução ${devolucao.id} com dados reais da ML`);
-  
+async function fetchOrderDetailsFromML(accessToken: string, orderId: string) {
   try {
-    let enrichedData: any = {
+    const url = `https://api.mercadolibre.com/orders/${orderId}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`ML API error: ${response.status}`);
+    }
+
+    return await response.json();
+
+  } catch (error) {
+    console.error(`❌ Erro ao buscar detalhes do pedido ${orderId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * 🎯 BUSCAR CLAIMS DA API ML
+ */
+async function fetchClaimsFromML(accessToken: string, orderId: string) {
+  try {
+    const url = `https://api.mercadolibre.com/claims/search?resource=order&resource_id=${orderId}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return []; // Sem claims
+      }
+      throw new Error(`ML API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.results || [];
+
+  } catch (error) {
+    console.error(`❌ Erro ao buscar claims do pedido ${orderId}:`, error);
+    return [];
+  }
+}
+
+/**
+ * 💬 BUSCAR MENSAGENS DA API ML
+ */
+async function fetchMessagesFromML(accessToken: string, orderId: string) {
+  try {
+    const url = `https://api.mercadolibre.com/messages/packs/${orderId}/sellers`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return []; // Sem mensagens
+      }
+      throw new Error(`ML API error: ${response.status}`);
+    }
+
+    return await response.json();
+
+  } catch (error) {
+    console.error(`❌ Erro ao buscar mensagens do pedido ${orderId}:`, error);
+    return [];
+  }
+}
+
+/**
+ * 🚚 BUSCAR DADOS DE ENVIO DA API ML
+ */
+async function fetchShippingFromML(accessToken: string, orderId: string) {
+  try {
+    const url = `https://api.mercadolibre.com/shipments/search?order=${orderId}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null; // Sem dados de envio
+      }
+      throw new Error(`ML API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.results?.[0] || null;
+
+  } catch (error) {
+    console.error(`❌ Erro ao buscar dados de envio do pedido ${orderId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * ⚡ PROCESSAR PEDIDO EM TEMPO REAL
+ * Calcula todas as 13 métricas baseado nos dados da API
+ */
+async function processOrderRealTime(data: any) {
+  try {
+    const { order, claims, messages, shipping, integration_account_id } = data;
+    
+    console.log(`⚡ Processando pedido ${order.id} com dados da API`);
+
+    // Calcular métricas das 13 colunas
+    const metrics = calculateRealTimeMetrics({
+      order,
+      claims,
+      messages,
+      shipping
+    });
+
+    // Estrutura completa do registro
+    const enrichedData = {
+      // IDs básicos
+      order_id: order.id,
+      claim_id: claims[0]?.id || null,
+      integration_account_id,
+      
+      // Dados básicos
+      data_criacao: order.date_created,
+      status_devolucao: order.status,
+      quantidade: order.order_items?.[0]?.quantity || 1,
+      sku: order.order_items?.[0]?.item?.seller_sku || null,
+      produto_titulo: order.order_items?.[0]?.item?.title || null,
+      
+      // Dados enriquecidos da API
+      dados_order: order,
+      dados_claim: claims[0] || null,
+      dados_mensagens: messages,
+      dados_return: shipping,
+      
+      // 13 MÉTRICAS CALCULADAS EM TEMPO REAL
+      tempo_primeira_resposta_vendedor: metrics.tempo_primeira_resposta_vendedor,
+      tempo_total_resolucao: metrics.tempo_total_resolucao,
+      dias_ate_resolucao: metrics.dias_ate_resolucao,
+      sla_cumprido: metrics.sla_cumprido,
+      eficiencia_resolucao: metrics.eficiencia_resolucao,
+      score_qualidade: metrics.score_qualidade,
+      valor_reembolso_total: metrics.valor_reembolso_total,
+      valor_reembolso_produto: metrics.valor_reembolso_produto,
+      valor_reembolso_frete: metrics.valor_reembolso_frete,
+      taxa_ml_reembolso: metrics.taxa_ml_reembolso,
+      custo_logistico_total: metrics.custo_logistico_total,
+      impacto_financeiro_vendedor: metrics.impacto_financeiro_vendedor,
+      data_processamento_reembolso: metrics.data_processamento_reembolso,
+      
+      // Timestamps
+      ultima_sincronizacao: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
 
-    // 1. MENSAGENS - /post-purchase/v1/claims/{claim_id}/messages
-    if (devolucao.claim_id) {
-      const messages = await fetchClaimMessages(devolucao.claim_id);
-      if (messages) {
-        enrichedData.timeline_mensagens = messages.timeline || [];
-        enrichedData.mensagens_nao_lidas = messages.unread_count || 0;
-        enrichedData.ultima_mensagem_data = messages.last_message_date;
-        enrichedData.ultima_mensagem_remetente = messages.last_sender;
-        enrichedData.numero_interacoes = messages.total_messages || 0;
-        
-        // Análise de sentimento e moderação
-        if (messages.timeline && messages.timeline.length > 0) {
-          const lastMessage = messages.timeline[messages.timeline.length - 1];
-          enrichedData.status_moderacao = analyzeMessageModeration(lastMessage.content);
-        }
-      }
-    }
-
-    // 2. ANEXOS/EVIDÊNCIAS - /post-purchase/v1/claims/{claim_id}/attachments
-    if (devolucao.claim_id) {
-      const attachments = await fetchClaimAttachments(devolucao.claim_id);
-      if (attachments) {
-        enrichedData.anexos_count = attachments.total_count || 0;
-        enrichedData.anexos_comprador = attachments.buyer_attachments || [];
-        enrichedData.anexos_vendedor = attachments.seller_attachments || [];
-        enrichedData.anexos_ml = attachments.ml_attachments || [];
-        enrichedData.total_evidencias = enrichedData.anexos_count;
-      }
-    }
-
-    // 3. DEVOLUÇÕES - /post-purchase/v2/claims/{claim_id}/returns
-    if (devolucao.claim_id) {
-      const returns = await fetchClaimReturns(devolucao.claim_id);
-      if (returns) {
-        enrichedData.codigo_rastreamento = returns.tracking_number;
-        enrichedData.status_rastreamento = returns.tracking_status;
-        enrichedData.endereco_destino = returns.destination_address;
-        enrichedData.data_estimada_troca = returns.estimated_exchange_date;
-        enrichedData.eh_troca = returns.is_exchange || false;
-      }
-    }
-
-    // 4. CUSTOS - /post-purchase/v1/claims/{claim_id}/charges/return-cost
-    if (devolucao.claim_id) {
-      const costs = await fetchReturnCosts(devolucao.claim_id);
-      if (costs) {
-        enrichedData.custo_envio_devolucao = costs.return_shipping_cost;
-        enrichedData.valor_compensacao = costs.compensation_amount;
-        enrichedData.responsavel_custo = costs.cost_bearer;
-        enrichedData.descricao_custos = costs.cost_breakdown;
-      }
-    }
-
-    // 5. ANÁLISE DE PRIORIDADE E URGÊNCIA
-    enrichedData.nivel_prioridade = calculatePriority(devolucao, enrichedData);
-    enrichedData.acao_seller_necessaria = needsSellerAction(enrichedData);
-    enrichedData.impacto_reputacao = calculateReputationImpact(enrichedData);
-    
-    // 6. PRAZOS E DATAS
-    if (enrichedData.timeline_mensagens && enrichedData.timeline_mensagens.length > 0) {
-      const firstMessage = enrichedData.timeline_mensagens[0];
-      const lastMessage = enrichedData.timeline_mensagens[enrichedData.timeline_mensagens.length - 1];
-      
-      enrichedData.data_primeira_acao = firstMessage.timestamp;
-      enrichedData.tempo_resposta_medio = calculateAverageResponseTime(enrichedData.timeline_mensagens);
-      
-      // Calcular data limite para ação
-      enrichedData.data_vencimento_acao = calculateActionDeadline(lastMessage.timestamp);
-      enrichedData.prazo_revisao_dias = calculateReviewDeadlineDays(enrichedData.data_vencimento_acao);
-    }
-
-    // 7. MEDIAÇÃO
-    enrichedData.em_mediacao = checkIfInMediation(devolucao.dados_claim);
-    enrichedData.escalado_para_ml = checkIfEscalated(devolucao.dados_claim);
-    
-    // 8. TAGS AUTOMÁTICAS
-    enrichedData.tags_automaticas = generateAutomaticTags(enrichedData);
-
-    console.log(`✅ Dados enriquecidos para devolução ${devolucao.id}`);
     return enrichedData;
 
   } catch (error) {
-    console.error(`❌ Erro ao enriquecer devolução ${devolucao.id}:`, error);
-    // Retornar dados básicos mesmo em caso de erro
-    return {
-      nivel_prioridade: 'medium',
-      acao_seller_necessaria: false,
-      em_mediacao: false,
-      escalado_para_ml: false,
-      updated_at: new Date().toISOString()
-    };
+    console.error('❌ Erro ao processar pedido em tempo real:', error);
+    throw error;
   }
 }
 
 /**
- * 🔄 COMPATIBILIDADE COM ml-devolucoes-sync
- * Processa chamadas da função antiga com a nova lógica
+ * 🧮 CALCULAR MÉTRICAS EM TEMPO REAL
+ * Calcula as 13 métricas baseado nos dados frescos da API
  */
-async function legacySyncCompatibility(supabase: any, body: RequestBody, accessToken: string, sellerId: string) {
-  try {
-    console.log(`🔄 Processando chamada legacy com mode: ${body.mode}`);
+function calculateRealTimeMetrics(data: any) {
+  const { order, claims, messages, shipping } = data;
+  const metrics: any = {};
+  
+  const dataCreation = order.date_created ? new Date(order.date_created) : null;
+  const dataFinalizacao = order.date_closed ? new Date(order.date_closed) : null;
+  
+  console.log('🧮 Calculando métricas em tempo real...');
+
+  // 1. TEMPO PRIMEIRA RESPOSTA VENDEDOR (em minutos)
+  if (messages && Array.isArray(messages) && messages.length > 0 && dataCreation) {
+    // Buscar primeira mensagem do vendedor
+    const mensagensVendedor = messages.filter(msg => 
+      msg.from?.role === 'seller' || 
+      (msg.from?.user_id && msg.from.user_id.toString() !== order.buyer?.id?.toString())
+    );
     
-    const dateFrom = body.date_from || body.dateFrom;
-    const dateTo = body.date_to || body.dateTo;
-    
-    // Buscar ou criar devoluções básicas primeiro
-    let claims = [];
-    let returns = [];
-    
-    if (accessToken && sellerId) {
-      // Buscar claims da API ML
-      const claimsData = await fetchMLClaims(accessToken, sellerId, dateFrom, dateTo);
-      claims = claimsData || [];
-      
-      // Buscar returns para cada claim
-      if (claims.length > 0) {
-        const returnsData = await fetchMLReturns(accessToken, claims);
-        returns = returnsData || [];
+    if (mensagensVendedor.length > 0) {
+      const primeiraMensagem = new Date(mensagensVendedor[0].date_created);
+      const diffMinutes = Math.floor((primeiraMensagem.getTime() - dataCreation.getTime()) / (1000 * 60));
+      if (diffMinutes > 0 && diffMinutes < 10080) { // Max 1 semana
+        metrics.tempo_primeira_resposta_vendedor = diffMinutes;
       }
     }
-    
-    // Processar dados dependendo do mode
-    let processedData = [];
-    
-    switch (body.mode) {
-      case 'enriched':
-      case 'full':
-        // Modo avançado - usar lógica completa de enriquecimento
-        processedData = await processAdvancedMode(supabase, body, claims, returns, accessToken);
-        break;
-        
-      case 'basic':
-      default:
-        // Modo básico - compatibilidade simples
-        processedData = await processBasicMode(supabase, body, claims, returns);
-        break;
-    }
-    
-    return ok({
-      success: true,
-      message: `Sincronização legacy concluída (mode: ${body.mode})`,
-      claims_found: claims.length,
-      returns_found: returns.length,
-      processed_count: processedData.length,
-      data: processedData.slice(0, 10) // Limitar retorno
-    });
-    
-  } catch (error) {
-    console.error('❌ Erro na sincronização legacy:', error);
-    return fail(`Erro na sincronização legacy: ${error.message}`, 500);
   }
+
+  // 2. TEMPO TOTAL RESOLUÇÃO (em minutos)
+  if (dataCreation && dataFinalizacao) {
+    const diffMinutes = Math.floor((dataFinalizacao.getTime() - dataCreation.getTime()) / (1000 * 60));
+    if (diffMinutes > 0) {
+      metrics.tempo_total_resolucao = diffMinutes;
+    }
+  }
+
+  // 3. DIAS ATÉ RESOLUÇÃO
+  if (metrics.tempo_total_resolucao) {
+    metrics.dias_ate_resolucao = Math.ceil(metrics.tempo_total_resolucao / (24 * 60));
+  }
+
+  // 4. SLA CUMPRIDO (baseado em 72h para devoluções)
+  metrics.sla_cumprido = metrics.dias_ate_resolucao ? metrics.dias_ate_resolucao <= 3 : true;
+
+  // 5. EFICIÊNCIA RESOLUÇÃO
+  if (metrics.tempo_primeira_resposta_vendedor && metrics.tempo_total_resolucao) {
+    const eficiencia = 100 - ((metrics.tempo_primeira_resposta_vendedor / metrics.tempo_total_resolucao) * 100);
+    metrics.eficiencia_resolucao = Math.max(0, Math.min(100, eficiencia)).toFixed(1);
+  }
+
+  // 6. SCORE QUALIDADE (baseado em múltiplos fatores)
+  let scoreQualidade = 50; // Base
+  if (metrics.sla_cumprido) scoreQualidade += 30;
+  if (metrics.tempo_primeira_resposta_vendedor && metrics.tempo_primeira_resposta_vendedor < 240) scoreQualidade += 20; // < 4h
+  if (messages && messages.length > 0) scoreQualidade += 10; // Tem comunicação
+  metrics.score_qualidade = Math.min(100, scoreQualidade);
+
+  // 7-9. VALORES DE REEMBOLSO
+  const payment = order.payments?.[0];
+  if (payment) {
+    metrics.valor_reembolso_total = payment.total_paid_amount || payment.transaction_amount || 0;
+    metrics.valor_reembolso_produto = payment.transaction_amount || 0;
+    metrics.valor_reembolso_frete = payment.shipping_cost || 0;
+    
+    // 13. DATA PROCESSAMENTO REEMBOLSO
+    if (payment.date_last_modified) {
+      metrics.data_processamento_reembolso = payment.date_last_modified;
+    }
+  }
+
+  // 10. TAXA ML REEMBOLSO
+  if (payment) {
+    if (payment.marketplace_fee_details?.amount) {
+      metrics.taxa_ml_reembolso = payment.marketplace_fee_details.amount;
+    } else if (payment.marketplace_fee) {
+      metrics.taxa_ml_reembolso = payment.marketplace_fee;
+    } else if (metrics.valor_reembolso_produto) {
+      // Calcular taxa padrão ML (aproximadamente 6.5% para devoluções)
+      metrics.taxa_ml_reembolso = metrics.valor_reembolso_produto * 0.065;
+    }
+  }
+
+  // 11. CUSTO LOGÍSTICO TOTAL
+  if (shipping) {
+    if (shipping.cost) {
+      metrics.custo_logistico_total = shipping.cost;
+    } else if (order.shipping?.cost) {
+      metrics.custo_logistico_total = order.shipping.cost;
+    }
+  } else if (order.shipping?.cost) {
+    // Para envios ML Full, usar custo estimado baseado no valor
+    const valorProduto = metrics.valor_reembolso_produto || 0;
+    if (valorProduto > 0) {
+      if (valorProduto <= 100) metrics.custo_logistico_total = 8.50;
+      else if (valorProduto <= 300) metrics.custo_logistico_total = 12.90;
+      else if (valorProduto <= 500) metrics.custo_logistico_total = 15.50;
+      else metrics.custo_logistico_total = 18.90;
+    }
+  }
+
+  // 12. IMPACTO FINANCEIRO VENDEDOR
+  const taxaML = metrics.taxa_ml_reembolso || 0;
+  const custoLog = metrics.custo_logistico_total || 0;
+  const valorReemb = metrics.valor_reembolso_produto || 0;
+  
+  if (taxaML > 0 || custoLog > 0 || valorReemb > 0) {
+    metrics.impacto_financeiro_vendedor = taxaML + custoLog + valorReemb;
+  }
+
+  console.log('✅ Métricas calculadas:', {
+    tempo_primeira_resposta: metrics.tempo_primeira_resposta_vendedor,
+    dias_resolucao: metrics.dias_ate_resolucao,
+    sla_cumprido: metrics.sla_cumprido,
+    valor_reembolso: metrics.valor_reembolso_total,
+    impacto_financeiro: metrics.impacto_financeiro_vendedor
+  });
+
+  return metrics;
 }
 
 /**
- * 📦 PROCESSAR MODO AVANÇADO
+ * 💾 SALVAR/ATUALIZAR DADOS NO BANCO
  */
-async function processAdvancedMode(supabase: any, body: RequestBody, claims: any[], returns: any[], accessToken: string) {
-  console.log(`🚀 Processando ${claims.length} claims em modo avançado`);
-  
-  const processedData = [];
-  
-  for (const claim of claims) {
-    try {
-      // Enriquecer com dados avançados
-      const enrichedClaim = await enrichClaimWithAdvancedData(claim, accessToken, body);
-      
-      // Salvar ou atualizar no banco
-      const { data: saved, error } = await supabase
+async function upsertOrderData(supabase: any, enrichedData: any) {
+  try {
+    // Verificar se já existe
+    const { data: existing } = await supabase
+      .from('devolucoes_avancadas')
+      .select('id')
+      .eq('order_id', enrichedData.order_id)
+      .eq('integration_account_id', enrichedData.integration_account_id)
+      .single();
+
+    if (existing) {
+      // Atualizar
+      const { error } = await supabase
         .from('devolucoes_avancadas')
-        .upsert({
-          integration_account_id: body.integration_account_id,
-          claim_id: claim.id,
-          order_id: claim.order_id,
-          dados_claim: claim,
-          dados_mensagens: enrichedClaim.messages || [],
-          dados_return: enrichedClaim.returns || [],
-          // Campos avançados
-          timeline_mensagens: enrichedClaim.timeline || [],
-          anexos_count: enrichedClaim.attachments_count || 0,
-          nivel_prioridade: enrichedClaim.priority || 'medium',
-          status_devolucao: claim.status,
-          em_mediacao: enrichedClaim.in_mediation || false,
-          escalado_para_ml: enrichedClaim.escalated || false,
-          updated_at: new Date().toISOString()
-        }, { 
-          onConflict: 'claim_id,integration_account_id'
-        });
+        .update(enrichedData)
+        .eq('id', existing.id);
       
-      if (!error) {
-        processedData.push(saved);
-        console.log(`✅ Claim ${claim.id} processado com dados avançados`);
-      }
-      
-    } catch (error) {
-      console.error(`❌ Erro ao processar claim ${claim.id}:`, error);
-    }
-  }
-  
-  return processedData;
-}
-
-/**
- * 📋 PROCESSAR MODO BÁSICO
- */
-async function processBasicMode(supabase: any, body: RequestBody, claims: any[], returns: any[]) {
-  console.log(`📋 Processando ${claims.length} claims em modo básico`);
-  
-  const processedData = [];
-  
-  for (const claim of claims) {
-    try {
-      const { data: saved, error } = await supabase
+      if (error) throw error;
+      console.log(`✅ Pedido ${enrichedData.order_id} atualizado`);
+    } else {
+      // Inserir
+      const { error } = await supabase
         .from('devolucoes_avancadas')
-        .upsert({
-          integration_account_id: body.integration_account_id,
-          claim_id: claim.id,
-          order_id: claim.order_id,
-          dados_claim: claim,
-          status_devolucao: claim.status,
-          updated_at: new Date().toISOString()
-        }, { 
-          onConflict: 'claim_id,integration_account_id'
-        });
+        .insert(enrichedData);
       
-      if (!error) {
-        processedData.push(saved);
-        console.log(`✅ Claim ${claim.id} salvo em modo básico`);
-      }
-      
-    } catch (error) {
-      console.error(`❌ Erro ao salvar claim ${claim.id}:`, error);
+      if (error) throw error;
+      console.log(`✅ Pedido ${enrichedData.order_id} inserido`);
     }
-  }
-  
-  return processedData;
-}
 
-/**
- * 📨 BUSCAR MENSAGENS DO CLAIM
- */
-async function fetchClaimMessages(claimId: string) {
-  try {
-    // Simulação de chamada real - implementar com token real
-    console.log(`📨 Buscando mensagens para claim ${claimId}`);
-    
-    // MOCK - em produção, fazer chamada real:
-    // const response = await fetch(`https://api.mercadolibre.com/post-purchase/v1/claims/${claimId}/messages`, {
-    //   headers: { 'Authorization': `Bearer ${accessToken}` }
-    // });
-    
-    return {
-      timeline: [
-        {
-          timestamp: new Date().toISOString(),
-          sender: 'buyer',
-          content: 'Produto chegou com defeito',
-          attachments: [],
-          read: false
-        }
-      ],
-      unread_count: 1,
-      total_messages: 1,
-      last_message_date: new Date().toISOString(),
-      last_sender: 'buyer'
-    };
   } catch (error) {
-    console.error('❌ Erro ao buscar mensagens:', error);
-    return null;
+    console.error(`❌ Erro ao salvar pedido ${enrichedData.order_id}:`, error);
+    throw error;
   }
 }
 
 /**
- * 📎 BUSCAR ANEXOS DO CLAIM
+ * 🔑 BUSCAR TOKEN ML
  */
-async function fetchClaimAttachments(claimId: string) {
-  try {
-    console.log(`📎 Buscando anexos para claim ${claimId}`);
-    
-    return {
-      total_count: 2,
-      buyer_attachments: [{ id: '123', type: 'image', url: 'example.jpg' }],
-      seller_attachments: [],
-      ml_attachments: []
-    };
-  } catch (error) {
-    console.error('❌ Erro ao buscar anexos:', error);
-    return null;
-  }
-}
-
-/**
- * 📦 BUSCAR DADOS DE DEVOLUÇÃO
- */
-async function fetchClaimReturns(claimId: string) {
-  try {
-    console.log(`📦 Buscando dados de devolução para claim ${claimId}`);
-    
-    return {
-      tracking_number: 'MEL123456789',
-      tracking_status: 'in_transit',
-      destination_address: { city: 'São Paulo', state: 'SP' },
-      estimated_exchange_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      is_exchange: false
-    };
-  } catch (error) {
-    console.error('❌ Erro ao buscar dados de devolução:', error);
-    return null;
-  }
-}
-
-/**
- * 💰 BUSCAR CUSTOS DE DEVOLUÇÃO
- */
-async function fetchReturnCosts(claimId: string) {
-  try {
-    console.log(`💰 Buscando custos para claim ${claimId}`);
-    
-    return {
-      return_shipping_cost: 15.50,
-      compensation_amount: 0,
-      cost_bearer: 'seller',
-      cost_breakdown: { shipping: 15.50, compensation: 0 }
-    };
-  } catch (error) {
-    console.error('❌ Erro ao buscar custos:', error);
-    return null;
-  }
-}
-
-// Funções auxiliares de análise
-function analyzeMessageModeration(content: string): string {
-  if (content.toLowerCase().includes('defeito') || content.toLowerCase().includes('problema')) {
-    return 'needs_review';
-  }
-  return 'approved';
-}
-
-function calculatePriority(devolucao: any, enrichedData: any): string {
-  if (enrichedData.anexos_count > 3 || enrichedData.em_mediacao) return 'high';
-  if (enrichedData.mensagens_nao_lidas > 2) return 'medium';
-  return 'low';
-}
-
-function needsSellerAction(enrichedData: any): boolean {
-  return enrichedData.mensagens_nao_lidas > 0 || enrichedData.status_moderacao === 'needs_review';
-}
-
-function calculateReputationImpact(enrichedData: any): string {
-  if (enrichedData.em_mediacao || enrichedData.escalado_para_ml) return 'high';
-  if (enrichedData.anexos_count > 2) return 'medium';
-  return 'low';
-}
-
-function calculateAverageResponseTime(timeline: any[]): number {
-  if (timeline.length < 2) return 0;
-  
-  let totalTime = 0;
-  let responseCount = 0;
-  
-  for (let i = 1; i < timeline.length; i++) {
-    const current = new Date(timeline[i].timestamp);
-    const previous = new Date(timeline[i - 1].timestamp);
-    totalTime += (current.getTime() - previous.getTime()) / (1000 * 60); // em minutos
-    responseCount++;
-  }
-  
-  return Math.round(totalTime / responseCount);
-}
-
-function calculateActionDeadline(lastMessageDate: string): string {
-  const deadline = new Date(lastMessageDate);
-  deadline.setDate(deadline.getDate() + 3); // 3 dias para responder
-  return deadline.toISOString();
-}
-
-function calculateReviewDeadlineDays(deadlineDate: string): number {
-  const deadline = new Date(deadlineDate);
-  const now = new Date();
-  const diffTime = deadline.getTime() - now.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return Math.max(0, diffDays);
-}
-
-function checkIfInMediation(claimData: any): boolean {
-  return claimData?.status === 'mediation' || claimData?.mediations?.length > 0;
-}
-
-function checkIfEscalated(claimData: any): boolean {
-  return claimData?.stage === 'dispute' || claimData?.escalated === true;
-}
-
-function generateAutomaticTags(enrichedData: any): string[] {
-  const tags = [];
-  
-  if (enrichedData.anexos_count > 2) tags.push('muitas_evidencias');
-  if (enrichedData.mensagens_nao_lidas > 1) tags.push('resposta_pendente');
-  if (enrichedData.em_mediacao) tags.push('em_mediacao');
-  if (enrichedData.escalado_para_ml) tags.push('escalado_ml');
-  if (enrichedData.nivel_prioridade === 'high') tags.push('alta_prioridade');
-  
-  return tags;
-}
-
-/**
- * 🔄 SIMULAR SINCRONIZAÇÃO
- */
-async function simulateSync(devolucao: any) {
-  return {
-    status_moderacao: 'approved',
-    tempo_resposta_medio: Math.floor(Math.random() * 300) + 60,
-    updated_at: new Date().toISOString()
-  };
-}
-
-/**
- * 📊 CALCULAR MÉTRICAS AVANÇADAS
- */
-function calculateAdvancedMetrics(devolucoes: any[]) {
-  const total = devolucoes.length;
-  
-  const priorityCount = devolucoes.reduce((acc, dev) => {
-    const priority = dev.nivel_prioridade || 'medium';
-    acc[priority] = (acc[priority] || 0) + 1;
-    return acc;
-  }, {});
-
-  const statusCount = devolucoes.reduce((acc, dev) => {
-    const status = dev.status_devolucao || 'unknown';
-    acc[status] = (acc[status] || 0) + 1;
-    return acc;
-  }, {});
-
-  const avgResponseTime = devolucoes
-    .filter(dev => dev.tempo_resposta_medio)
-    .reduce((sum, dev) => sum + (dev.tempo_resposta_medio || 0), 0) / total || 0;
-
-  const avgResolutionTime = devolucoes
-    .filter(dev => dev.tempo_total_resolucao)
-    .reduce((sum, dev) => sum + (dev.tempo_total_resolucao || 0), 0) / total || 0;
-
-  const avgSatisfaction = devolucoes
-    .filter(dev => dev.taxa_satisfacao)
-    .reduce((sum, dev) => sum + (dev.taxa_satisfacao || 0), 0) / total || 0;
-
-  const escalatedCount = devolucoes.filter(dev => dev.escalado_para_ml).length;
-  const mediationCount = devolucoes.filter(dev => dev.em_mediacao).length;
-  const highPriorityCount = devolucoes.filter(dev => dev.nivel_prioridade === 'high' || dev.nivel_prioridade === 'critical').length;
-
-  return {
-    total_claims: total,
-    avg_response_time_minutes: Math.round(avgResponseTime),
-    avg_resolution_time_minutes: Math.round(avgResolutionTime),
-    avg_satisfaction_rate: Math.round(avgSatisfaction * 100) / 100,
-    priority_distribution: priorityCount,
-    status_distribution: statusCount,
-    high_priority_count: highPriorityCount,
-    escalated_count: escalatedCount,
-    mediation_count: mediationCount
-  };
-}
-
-/**
- * 🔑 BUSCAR TOKEN DE ACESSO ML
- */
-async function getMLAccessToken(supabase: any, accountId: string): Promise<string | null> {
+async function getMLAccessToken(supabase: any, accountId: string): Promise<MLAccessTokenResponse | null> {
   try {
     const { data, error } = await supabase.functions.invoke('get-ml-token', {
       body: {
@@ -872,603 +586,11 @@ async function getMLAccessToken(supabase: any, accountId: string): Promise<strin
       return null;
     }
 
-    console.log('✅ Token ML obtido com sucesso');
-    return data.access_token;
-  } catch (error) {
-    console.error('❌ Erro ao buscar token:', error);
-    return null;
-  }
-}
-
-/**
- * 🧪 TESTAR CONEXÃO COM ML API
- */
-async function testMLConnection(accessToken: string, sellerId: string) {
-  try {
-    console.log('🧪 Testando conexão com ML API...');
-    
-    const response = await fetch(`https://api.mercadolibre.com/users/${sellerId}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      console.error('❌ Falha na conexão ML:', response.status, response.statusText);
-      return fail(`Falha na conexão ML: ${response.status} ${response.statusText}`);
-    }
-
-    const userData = await response.json();
-    console.log('✅ Conexão ML OK - User:', userData.nickname);
-
-    return ok({
-      success: true,
-      message: 'Conexão com ML API estabelecida com sucesso',
-      user_data: {
-        id: userData.id,
-        nickname: userData.nickname,
-        country_id: userData.country_id
-      }
-    });
-
-  } catch (error) {
-    console.error('❌ Erro no teste de conexão:', error);
-    return fail(`Erro no teste de conexão: ${error.message}`);
-  }
-}
-
-/**
- * 🔍 VERIFICAR DADOS FALTANTES
- */
-async function checkMissingData(supabase: any, body: RequestBody) {
-  try {
-    console.log('🔍 Verificando dados faltantes...');
-    
-    const { data: claims, error } = await supabase
-      .from('devolucoes_avancadas')
-      .select(`
-        id,
-        order_id,
-        claim_id,
-        timeline_mensagens,
-        anexos_count,
-        nivel_prioridade,
-        status_moderacao,
-        mensagens_nao_lidas,
-        data_vencimento_acao,
-        custo_envio_devolucao,
-        valor_compensacao
-      `)
-      .eq('integration_account_id', body.integration_account_id)
-      .not('claim_id', 'is', null);
-
-    if (error) {
-      return fail(`Erro ao verificar dados: ${error.message}`);
-    }
-
-    const analysis = analyzeMissingDataUnified(claims || []);
-    
-    console.log('📊 Análise de dados faltantes:', analysis);
-    
-    return ok({
-      success: true,
-      analysis,
-      total_claims: claims?.length || 0,
-      needs_enrichment: analysis.claims_needing_enrichment
-    });
-
-  } catch (error) {
-    console.error('❌ Erro na verificação:', error);
-    return fail(`Erro na verificação: ${error.message}`);
-  }
-}
-
-/**
- * 🚀 ENRIQUECIMENTO REAL DE CLAIMS (NOVA VERSÃO)
- */
-async function realEnrichClaims(supabase: any, body: RequestBody, accessToken: string, sellerId: string) {
-  try {
-    console.log('🚀 Iniciando enriquecimento real de claims...');
-    
-    const limit = body.limit || 10;
-    
-    let query = supabase
-      .from('devolucoes_avancadas')
-      .select(`
-        id,
-        order_id,
-        claim_id,
-        timeline_mensagens,
-        anexos_count,
-        nivel_prioridade,
-        dados_claim,
-        dados_mensagens,
-        dados_return
-      `)
-      .eq('integration_account_id', body.integration_account_id)
-      .not('claim_id', 'is', null);
-
-    if (!body.force_refresh) {
-      query = query.or('timeline_mensagens.is.null,anexos_count.is.null,nivel_prioridade.is.null');
-    }
-
-    if (body.claim_ids && body.claim_ids.length > 0) {
-      query = query.in('claim_id', body.claim_ids);
-    }
-
-    query = query.limit(limit);
-
-    const { data: claims, error } = await query;
-
-    if (error) {
-      return fail(`Erro ao buscar claims: ${error.message}`);
-    }
-
-    if (!claims || claims.length === 0) {
-      return ok({
-        success: true,
-        message: 'Nenhum claim encontrado para enriquecimento',
-        enriched_count: 0
-      });
-    }
-
-    console.log(`📦 Processando ${claims.length} claims...`);
-
-    let enrichedCount = 0;
-    let errors: any[] = [];
-
-    for (const claim of claims) {
-      try {
-        console.log(`🔄 Enriquecendo claim ${claim.claim_id}...`);
-        
-        const enrichedData = await enrichClaimWithRealMLDataUnified(
-          claim, 
-          accessToken, 
-          sellerId
-        );
-
-        const { error: updateError } = await supabase
-          .from('devolucoes_avancadas')
-          .update(enrichedData)
-          .eq('id', claim.id);
-
-        if (updateError) {
-          console.error(`❌ Erro ao atualizar claim ${claim.id}:`, updateError);
-          errors.push({ claim_id: claim.claim_id, error: updateError.message });
-          continue;
-        }
-
-        enrichedCount++;
-        console.log(`✅ Claim ${claim.claim_id} enriquecido com sucesso`);
-
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-      } catch (error) {
-        console.error(`❌ Erro ao processar claim ${claim.claim_id}:`, error);
-        errors.push({ claim_id: claim.claim_id, error: error.message });
-      }
-    }
-
-    const result = {
-      success: true,
-      message: `${enrichedCount}/${claims.length} claims enriquecidos com dados reais da ML`,
-      enriched_count: enrichedCount,
-      total_processed: claims.length,
-      errors_count: errors.length,
-      errors: errors.slice(0, 5)
-    };
-
-    console.log('✅ Enriquecimento real concluído:', result);
-    return ok(result);
-
-  } catch (error) {
-    console.error('❌ Erro no enriquecimento real:', error);
-    return fail(`Erro no enriquecimento real: ${error.message}`, 500);
-  }
-}
-
-/**
- * 🔄 PROCESSO DE ENRIQUECIMENTO EM LOTE
- */
-async function batchEnrichProcess(supabase: any, body: RequestBody, accessToken: string, sellerId: string) {
-  try {
-    console.log('🔄 Iniciando processo de enriquecimento em lote...');
-    
-    const missingDataCheck = await checkMissingData(supabase, body);
-    
-    if (!missingDataCheck.ok) {
-      return missingDataCheck;
-    }
-
-    const missingData = await missingDataCheck.json();
-    
-    if (missingData.analysis.claims_needing_enrichment === 0) {
-      return ok({
-        success: true,
-        message: 'Todos os claims já estão enriquecidos',
-        enriched_count: 0
-      });
-    }
-
-    const batchSize = 5;
-    let totalEnriched = 0;
-    let batchNumber = 1;
-
-    while (totalEnriched < missingData.analysis.claims_needing_enrichment) {
-      console.log(`📦 Processando lote ${batchNumber}...`);
-      
-      const batchResult = await realEnrichClaims(
-        supabase, 
-        { ...body, limit: batchSize }, 
-        accessToken, 
-        sellerId
-      );
-
-      if (batchResult.ok) {
-        const result = await batchResult.json();
-        totalEnriched += result.enriched_count;
-        
-        if (result.enriched_count === 0) {
-          break;
-        }
-      }
-
-      batchNumber++;
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-
-    return ok({
-      success: true,
-      message: `Processo em lote concluído: ${totalEnriched} claims enriquecidos`,
-      total_enriched: totalEnriched,
-      batches_processed: batchNumber - 1
-    });
-
-  } catch (error) {
-    console.error('❌ Erro no processo em lote:', error);
-    return fail(`Erro no processo em lote: ${error.message}`, 500);
-  }
-}
-
-/**
- * 🎯 ENRIQUECIMENTO UNIFICADO COM DADOS REAIS
- */
-async function enrichClaimWithRealMLDataUnified(claim: any, accessToken: string, sellerId: string) {
-  console.log(`🎯 Enriquecendo claim ${claim.claim_id} com dados REAIS da ML API...`);
-  
-  const enrichedData: any = {
-    updated_at: new Date().toISOString()
-  };
-
-  try {
-    // 1. BUSCAR MENSAGENS
-    const messagesData = await fetchClaimMessagesRealUnified(claim.claim_id, accessToken);
-    if (messagesData) {
-      enrichedData.timeline_mensagens = messagesData.messages || [];
-      enrichedData.mensagens_nao_lidas = messagesData.unread_count || 0;
-      enrichedData.ultima_mensagem_data = messagesData.last_message_date;
-      enrichedData.ultima_mensagem_remetente = messagesData.last_sender;
-      enrichedData.numero_interacoes = messagesData.total_count || 0;
-      enrichedData.dados_mensagens = messagesData;
-    }
-
-    // 2. BUSCAR ANEXOS
-    const attachmentsData = await fetchClaimAttachmentsRealUnified(claim.claim_id, accessToken);
-    if (attachmentsData) {
-      enrichedData.anexos_count = attachmentsData.total_count || 0;
-      enrichedData.total_evidencias = attachmentsData.total_count || 0;
-      enrichedData.anexos_comprador = attachmentsData.buyer_attachments || [];
-      enrichedData.anexos_vendedor = attachmentsData.seller_attachments || [];
-      enrichedData.anexos_ml = attachmentsData.ml_attachments || [];
-    }
-
-    // 3. BUSCAR DADOS DE DEVOLUÇÃO
-    const returnsData = await fetchClaimReturnsRealUnified(claim.claim_id, accessToken);
-    if (returnsData) {
-      enrichedData.codigo_rastreamento = returnsData.tracking_number;
-      enrichedData.status_rastreamento = returnsData.status;
-      enrichedData.endereco_destino = returnsData.destination;
-      enrichedData.dados_return = returnsData;
-      enrichedData.eh_troca = returnsData.is_exchange || false;
-    }
-
-    // 4. BUSCAR CUSTOS
-    const costsData = await fetchReturnCostsRealUnified(claim.claim_id, accessToken);
-    if (costsData) {
-      enrichedData.custo_envio_devolucao = costsData.return_shipping_cost;
-      enrichedData.valor_compensacao = costsData.compensation_amount;
-      enrichedData.responsavel_custo = costsData.cost_bearer;
-    }
-
-    // 5. CALCULAR CAMPOS DERIVADOS
-    enrichedData.nivel_prioridade = calculatePriorityFromRealDataUnified(enrichedData);
-    enrichedData.acao_seller_necessaria = enrichedData.mensagens_nao_lidas > 0;
-    enrichedData.impacto_reputacao = calculateReputationImpactUnified(enrichedData);
-
-    // 6. CALCULAR PRAZOS
-    if (enrichedData.timeline_mensagens && enrichedData.timeline_mensagens.length > 0) {
-      const lastMessage = enrichedData.timeline_mensagens[enrichedData.timeline_mensagens.length - 1];
-      enrichedData.data_vencimento_acao = calculateActionDeadlineUnified(lastMessage.date_created);
-      enrichedData.tempo_resposta_medio = calculateResponseTimeUnified(enrichedData.timeline_mensagens);
-    }
-
-    // 7. MEDIAÇÃO E ESCALAÇÃO
-    enrichedData.em_mediacao = checkIfInMediationUnified(enrichedData);
-    enrichedData.escalado_para_ml = checkIfEscalatedUnified(enrichedData);
-
-    // 8. TAGS AUTOMÁTICAS
-    enrichedData.tags_automaticas = generateTagsFromRealDataUnified(enrichedData);
-
-    console.log(`✅ Claim ${claim.claim_id} enriquecido com dados reais`);
-    return enrichedData;
-
-  } catch (error) {
-    console.error(`❌ Erro ao enriquecer claim ${claim.claim_id}:`, error);
-    
     return {
-      nivel_prioridade: 'medium',
-      acao_seller_necessaria: false,
-      em_mediacao: false,
-      escalado_para_ml: false,
-      updated_at: new Date().toISOString(),
-      error_enrichment: error.message
-    };
-  }
-}
-
-// ===== FUNÇÕES AUXILIARES PARA API REAL =====
-
-async function fetchClaimMessagesRealUnified(claimId: string, accessToken: string) {
-  try {
-    const response = await fetch(
-      `https://api.mercadolibre.com/post-purchase/v1/claims/${claimId}/messages`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.error(`❌ Erro ao buscar mensagens (${response.status}):`, await response.text());
-      return null;
-    }
-
-    const data = await response.json();
-    console.log(`📨 Mensagens obtidas para claim ${claimId}:`, data.paging?.total || 0);
-
-    return {
-      messages: data.messages || [],
-      total_count: data.paging?.total || 0,
-      unread_count: data.messages?.filter((msg: any) => !msg.date_read).length || 0,
-      last_message_date: data.messages?.[0]?.date_created,
-      last_sender: data.messages?.[0]?.from?.role
+      access_token: data.access_token,
+      account_identifier: data.account_identifier
     };
 
-  } catch (error) {
-    console.error('❌ Erro ao buscar mensagens:', error);
-    return null;
-  }
-}
-
-async function fetchClaimAttachmentsRealUnified(claimId: string, accessToken: string) {
-  try {
-    const response = await fetch(
-      `https://api.mercadolibre.com/post-purchase/v1/claims/${claimId}/attachments`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.error(`❌ Erro ao buscar anexos (${response.status}):`, await response.text());
-      return null;
-    }
-
-    const data = await response.json();
-    console.log(`📎 Anexos obtidos para claim ${claimId}:`, data.length || 0);
-
-    const buyerAttachments = data.filter((att: any) => att.from?.role === 'buyer') || [];
-    const sellerAttachments = data.filter((att: any) => att.from?.role === 'seller') || [];
-    const mlAttachments = data.filter((att: any) => att.from?.role === 'mediator') || [];
-
-    return {
-      total_count: data.length || 0,
-      attachments: data || [],
-      buyer_attachments: buyerAttachments,
-      seller_attachments: sellerAttachments,
-      ml_attachments: mlAttachments
-    };
-
-  } catch (error) {
-    console.error('❌ Erro ao buscar anexos:', error);
-    return null;
-  }
-}
-
-async function fetchClaimReturnsRealUnified(claimId: string, accessToken: string) {
-  try {
-    const response = await fetch(
-      `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/returns`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.error(`❌ Erro ao buscar returns (${response.status}):`, await response.text());
-      return null;
-    }
-
-    const data = await response.json();
-    console.log(`📦 Returns obtidos para claim ${claimId}`);
-    return data;
-
-  } catch (error) {
-    console.error('❌ Erro ao buscar returns:', error);
-    return null;
-  }
-}
-
-async function fetchReturnCostsRealUnified(claimId: string, accessToken: string) {
-  try {
-    const response = await fetch(
-      `https://api.mercadolibre.com/post-purchase/v1/claims/${claimId}/charges/return-cost`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (!response.ok) {
-      console.error(`❌ Erro ao buscar custos (${response.status}):`, await response.text());
-      return null;
-    }
-
-    const data = await response.json();
-    console.log(`💰 Custos obtidos para claim ${claimId}`);
-    return data;
-
-  } catch (error) {
-    console.error('❌ Erro ao buscar custos:', error);
-    return null;
-  }
-}
-
-// ===== FUNÇÕES AUXILIARES DE ANÁLISE =====
-
-function analyzeMissingDataUnified(claims: any[]) {
-  let needsEnrichment = 0;
-  const analysis = {
-    missing_timeline: 0,
-    missing_attachments: 0,
-    missing_priority: 0,
-    missing_moderation: 0,
-    missing_deadlines: 0
-  };
-
-  claims.forEach(claim => {
-    let needsUpdate = false;
-
-    if (!claim.timeline_mensagens || claim.timeline_mensagens.length === 0) {
-      analysis.missing_timeline++;
-      needsUpdate = true;
-    }
-
-    if (claim.anexos_count === null || claim.anexos_count === undefined) {
-      analysis.missing_attachments++;
-      needsUpdate = true;
-    }
-
-    if (!claim.nivel_prioridade) {
-      analysis.missing_priority++;
-      needsUpdate = true;
-    }
-
-    if (!claim.status_moderacao) {
-      analysis.missing_moderation++;
-      needsUpdate = true;
-    }
-
-    if (!claim.data_vencimento_acao) {
-      analysis.missing_deadlines++;
-      needsUpdate = true;
-    }
-
-    if (needsUpdate) needsEnrichment++;
-  });
-
-  return {
-    ...analysis,
-    claims_needing_enrichment: needsEnrichment,
-    percentage_incomplete: Math.round((needsEnrichment / claims.length) * 100)
-  };
-}
-
-function calculatePriorityFromRealDataUnified(data: any) {
-  if (data.anexos_count > 3 || data.mensagens_nao_lidas > 3 || data.em_mediacao) return 'high';
-  if (data.mensagens_nao_lidas > 1 || data.anexos_count > 1) return 'medium';
-  return 'low';
-}
-
-function calculateReputationImpactUnified(data: any) {
-  if (data.em_mediacao || data.escalado_para_ml || data.anexos_count > 5) return 'high';
-  if (data.mensagens_nao_lidas > 2 || data.anexos_count > 2) return 'medium';
-  return 'low';
-}
-
-function calculateActionDeadlineUnified(lastMessageDate: string) {
-  const deadline = new Date(lastMessageDate);
-  deadline.setDate(deadline.getDate() + 3);
-  return deadline.toISOString();
-}
-
-function calculateResponseTimeUnified(messages: any[]) {
-  if (messages.length < 2) return 0;
-
-  const times = [];
-  for (let i = 1; i < messages.length; i++) {
-    const current = new Date(messages[i].date_created);
-    const previous = new Date(messages[i - 1].date_created);
-    times.push((current.getTime() - previous.getTime()) / (1000 * 60));
-  }
-
-  return Math.round(times.reduce((a, b) => a + b, 0) / times.length);
-}
-
-function checkIfInMediationUnified(data: any) {
-  return data.dados_claim?.mediations?.length > 0 || false;
-}
-
-function checkIfEscalatedUnified(data: any) {
-  return data.dados_claim?.stage === 'dispute' || false;
-}
-
-function generateTagsFromRealDataUnified(data: any) {
-  const tags = [];
-  
-  if (data.anexos_count > 2) tags.push('muitas_evidencias');
-  if (data.mensagens_nao_lidas > 1) tags.push('resposta_pendente');
-  if (data.nivel_prioridade === 'high') tags.push('alta_prioridade');
-  if (data.em_mediacao) tags.push('em_mediacao');
-  if (data.escalado_para_ml) tags.push('escalado_ml');
-  if (data.eh_troca) tags.push('eh_troca');
-  if (data.codigo_rastreamento) tags.push('tem_rastreamento');
-  if (data.custo_envio_devolucao > 0) tags.push('tem_custo_envio');
-  
-  return tags;
-}
-
-// ===== FUNÇÕES AUXILIARES PARA COMPATIBILIDADE =====
-
-/**
- * 🔑 OBTER TOKEN ML
- */
-async function getMLAccessToken(supabase: any, integrationAccountId: string): Promise<string | null> {
-  try {
-    const { data, error } = await supabase.functions.invoke('integrations-get-secret', {
-      body: {
-        integration_account_id: integrationAccountId,
-        provider: 'mercadolivre'
-      }
-    });
-
-    if (error || !data?.access_token) {
-      console.error('❌ Erro ao obter token ML:', error);
-      return null;
-    }
-
-    return data.access_token;
   } catch (error) {
     console.error('❌ Erro ao buscar token ML:', error);
     return null;
@@ -1476,685 +598,17 @@ async function getMLAccessToken(supabase: any, integrationAccountId: string): Pr
 }
 
 /**
- * 📦 BUSCAR CLAIMS DA ML API
+ * 🔄 PROCESSAMENTO UNIFICADO
  */
-async function fetchMLClaims(accessToken: string, sellerId: string, dateFrom?: string, dateTo?: string): Promise<any[]> {
-  try {
-    console.log(`🔍 Buscando claims para seller ${sellerId}`);
-    
-    let url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?seller_id=${sellerId}`;
-    if (dateFrom) url += `&date_created=${dateFrom}`;
-    if (dateTo) url += `&last_updated=${dateTo}`;
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      console.error(`❌ Erro ao buscar claims: ${response.status}`);
-      return [];
-    }
-    
-    const data = await response.json();
-    const claims = data.results || data.data || [];
-    
-    console.log(`📦 ${claims.length} claims encontrados`);
-    return claims;
-    
-  } catch (error) {
-    console.error('❌ Erro ao buscar claims:', error);
-    return [];
-  }
+async function unifiedRealTimeProcessing(supabase: any, body: RequestBody, mlTokens: MLAccessTokenResponse, account: any) {
+  console.log('🔄 Iniciando processamento unificado em tempo real');
+  return await processRealTimeData(supabase, body, mlTokens, account);
 }
 
 /**
- * 🔄 BUSCAR RETURNS DA ML API
+ * 📡 BUSCAR DADOS EM TEMPO REAL
  */
-async function fetchMLReturns(accessToken: string, claims: any[]): Promise<any[]> {
-  try {
-    console.log(`🔄 Buscando returns para ${claims.length} claims`);
-    
-    const allReturns = [];
-    
-    for (const claim of claims) {
-      if (!claim.id) continue;
-      
-      try {
-        const url = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
-        
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const returns = data.results || data.data || [];
-          
-          returns.forEach((ret: any) => {
-            ret._source_claim = claim;
-          });
-          
-          allReturns.push(...returns);
-        }
-        
-        // Pausa entre requests
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-      } catch (error) {
-        console.error(`❌ Erro ao buscar returns do claim ${claim.id}:`, error);
-      }
-    }
-    
-    console.log(`📦 ${allReturns.length} returns encontrados`);
-    return allReturns;
-    
-  } catch (error) {
-    console.error('❌ Erro ao buscar returns:', error);
-    return [];
-  }
-}
-
-/**
- * 🚀 ENRIQUECER CLAIM COM DADOS AVANÇADOS
- */
-async function enrichClaimWithAdvancedData(claim: any, accessToken: string, options: any) {
-  try {
-    console.log(`🚀 Enriquecendo claim ${claim.id} com dados avançados`);
-    
-    const enrichedData: any = {
-      priority: 'medium',
-      in_mediation: false,
-      escalated: false
-    };
-    
-    // Buscar mensagens se solicitado
-    if (options.include_messages !== false) {
-      const messages = await fetchClaimMessages(claim.id, accessToken);
-      enrichedData.messages = messages?.timeline || [];
-      enrichedData.timeline = messages?.timeline || [];
-    }
-    
-    // Buscar anexos
-    const attachments = await fetchClaimAttachments(claim.id, accessToken);
-    enrichedData.attachments_count = attachments?.total_count || 0;
-    
-    // Buscar detalhes de shipping se solicitado
-    if (options.include_shipping && claim.order_id) {
-      const shipping = await fetchShippingDetails(claim.order_id, accessToken);
-      enrichedData.shipping = shipping;
-    }
-    
-    // Buscar detalhes do comprador se solicitado
-    if (options.include_buyer_details && claim.buyer_id) {
-      const buyer = await fetchBuyerDetails(claim.buyer_id, accessToken);
-      enrichedData.buyer = buyer;
-    }
-    
-    // Analisar prioridade baseado nos dados
-    enrichedData.priority = analyzePriority(claim, enrichedData);
-    enrichedData.in_mediation = analyzeMediation(claim);
-    enrichedData.escalated = analyzeEscalation(claim);
-    
-    return enrichedData;
-    
-  } catch (error) {
-    console.error(`❌ Erro ao enriquecer claim ${claim.id}:`, error);
-    return {
-      priority: 'medium',
-      in_mediation: false,
-      escalated: false
-    };
-  }
-}
-
-/**
- * 🚚 BUSCAR DETALHES DE SHIPPING
- */
-async function fetchShippingDetails(orderId: string, accessToken: string) {
-  try {
-    const response = await fetch(`https://api.mercadolibre.com/orders/${orderId}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const order = await response.json();
-      return order.shipping || {};
-    }
-    
-    return {};
-  } catch (error) {
-    console.error('❌ Erro ao buscar shipping:', error);
-    return {};
-  }
-}
-
-/**
- * 👤 BUSCAR DETALHES DO COMPRADOR
- */
-async function fetchBuyerDetails(buyerId: string, accessToken: string) {
-  try {
-    const response = await fetch(`https://api.mercadolibre.com/users/${buyerId}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (response.ok) {
-      const buyer = await response.json();
-      return {
-        id: buyer.id,
-        nickname: buyer.nickname,
-        registration_date: buyer.registration_date,
-        reputation: buyer.reputation
-      };
-    }
-    
-    return {};
-  } catch (error) {
-    console.error('❌ Erro ao buscar comprador:', error);
-    return {};
-  }
-}
-
-/**
- * 📊 ANALISAR PRIORIDADE
- */
-function analyzePriority(claim: any, enrichedData: any): string {
-  let score = 0;
-  
-  // Valor alto
-  if (claim.amount > 1000) score += 2;
-  else if (claim.amount > 500) score += 1;
-  
-  // Muitas mensagens
-  if (enrichedData.messages?.length > 5) score += 2;
-  else if (enrichedData.messages?.length > 2) score += 1;
-  
-  // Status crítico
-  if (['open', 'waiting_seller'].includes(claim.status)) score += 1;
-  
-  if (score >= 4) return 'high';
-  if (score >= 2) return 'medium';
-  return 'low';
-}
-
-/**
- * ⚖️ ANALISAR SE ESTÁ EM MEDIAÇÃO
- */
-function analyzeMediation(claim: any): boolean {
-  return claim.mediation_id || 
-         claim.status === 'mediation' || 
-         claim.status === 'waiting_mediation' ||
-         false;
-}
-
-/**
- * 🚨 ANALISAR SE FOI ESCALADO
- */
-function analyzeEscalation(claim: any): boolean {
-  return claim.escalated === true || 
-         claim.status === 'escalated' ||
-         claim.mediation_type === 'forced' ||
-          false;
-}
-
-// ===== IMPLEMENTAÇÕES DAS FUNÇÕES UNIFICADAS =====
-
-/**
- * 🧠 PROCESSAMENTO DE ANÁLISE INTELIGENTE
- * Unifica toda lógica do devolucoes-ml-analyzer
- */
-async function processIntelligentAnalysis(supabase: any, body: RequestBody) {
-  try {
-    console.log(`🧠 Executando análise inteligente: ${body.analysis_type}`);
-    
-    switch (body.analysis_type) {
-      case 'priority_classification':
-        return await unifiedPriorityClassification(supabase, body);
-      case 'sentiment_analysis':
-        return await unifiedSentimentAnalysis(supabase, body);
-      case 'trend_detection':
-        return await unifiedTrendDetection(supabase, body);
-      case 'risk_assessment':
-        return await unifiedRiskAssessment(supabase, body);
-      default:
-        return await runAllIntelligentAnalysis(supabase, body);
-    }
-  } catch (error) {
-    console.error('❌ Erro na análise inteligente:', error);
-    return fail(`Erro na análise: ${error.message}`, 500);
-  }
-}
-
-/**
- * ⚡ PROCESSAMENTO EM TEMPO REAL
- * Unifica toda lógica do devolucoes-real-time-processor
- */
-async function processRealTimeEvent(supabase: any, body: RequestBody) {
-  try {
-    console.log(`⚡ Processando evento em tempo real: ${body.event_type}`);
-    
-    switch (body.event_type) {
-      case 'claim_update':
-        return await unifiedClaimUpdate(supabase, body);
-      case 'order_update':
-        return await unifiedOrderUpdate(supabase, body);
-      case 'message_received':
-        return await unifiedMessageReceived(supabase, body);
-      case 'status_change':
-        return await unifiedStatusChange(supabase, body);
-      default:
-        return fail('Tipo de evento não reconhecido');
-    }
-  } catch (error) {
-    console.error('❌ Erro no processamento em tempo real:', error);
-    return fail(`Erro no processamento: ${error.message}`, 500);
-  }
-}
-
-/**
- * 📊 CÁLCULO DE TODAS AS MÉTRICAS
- * Unifica toda lógica do calculate-devolucoes-metrics
- */
-async function calculateAllMetrics(supabase: any, body: RequestBody) {
-  try {
-    console.log('📊 Calculando todas as métricas das 13 colunas...');
-    
-    const limit = body.limit || 50;
-
-    // Buscar devoluções que precisam de métricas
-    const { data: devolucoes, error: fetchError } = await supabase
-      .from('devolucoes_avancadas')
-      .select('*')
-      .eq('integration_account_id', body.integration_account_id)
-      .or('tempo_primeira_resposta_vendedor.is.null,score_qualidade.is.null,valor_reembolso_total.is.null')
-      .limit(limit);
-
-    if (fetchError) {
-      return fail(`Erro ao buscar devoluções: ${fetchError.message}`);
-    }
-
-    console.log(`📊 Processando ${devolucoes?.length || 0} devoluções...`);
-
-    let updatedCount = 0;
-
-    for (const devolucao of devolucoes || []) {
-      const metrics = calculateComprehensiveMetrics(devolucao);
-      
-      if (Object.keys(metrics).length > 0) {
-        const { error: updateError } = await supabase
-          .from('devolucoes_avancadas')
-          .update(metrics)
-          .eq('id', devolucao.id);
-
-        if (!updateError) {
-          updatedCount++;
-          console.log(`✅ Métricas atualizadas para devolução ${devolucao.order_id}: ${Object.keys(metrics).length} campos`);
-        }
-      }
-    }
-
-    return ok({
-      success: true,
-      message: `${updatedCount} devoluções com métricas calculadas`,
-      processed: devolucoes?.length || 0,
-      updated: updatedCount,
-      action: 'calculate_all_metrics'
-    });
-
-  } catch (error) {
-    console.error('❌ Erro no cálculo de métricas:', error);
-    return fail(`Erro no cálculo: ${error.message}`, 500);
-  }
-}
-
-/**
- * 🚀 PROCESSAMENTO UNIFICADO COMPLETO
- * Executa TUDO: busca dados + análise + métricas + tempo real
- */
-async function runUnifiedProcessing(supabase: any, body: RequestBody, accessToken: string, sellerId: string) {
-  try {
-    console.log('🚀 Iniciando processamento unificado completo...');
-    
-    const results = {
-      data_sync: null,
-      intelligent_analysis: null,
-      metrics_calculation: null,
-      total_processed: 0
-    };
-
-    // 1. SINCRONIZAÇÃO DE DADOS
-    console.log('📥 Fase 1: Sincronização de dados...');
-    const syncResult = await legacySyncCompatibility(supabase, body, accessToken, sellerId);
-    results.data_sync = syncResult;
-
-    // 2. ANÁLISE INTELIGENTE
-    console.log('🧠 Fase 2: Análise inteligente...');
-    const analysisResult = await runAllIntelligentAnalysis(supabase, body);
-    results.intelligent_analysis = analysisResult;
-
-    // 3. CÁLCULO DE MÉTRICAS
-    console.log('📊 Fase 3: Cálculo de métricas...');
-    const metricsResult = await calculateAllMetrics(supabase, body);
-    results.metrics_calculation = metricsResult;
-
-    const totalProcessed = (syncResult?.processed || 0) + 
-                          (analysisResult?.processed || 0) + 
-                          (metricsResult?.processed || 0);
-
-    return ok({
-      success: true,
-      message: `Processamento unificado concluído - ${totalProcessed} registros processados`,
-      results,
-      total_processed: totalProcessed,
-      action: 'unified_processing'
-    });
-
-  } catch (error) {
-    console.error('❌ Erro no processamento unificado:', error);
-    return fail(`Erro no processamento unificado: ${error.message}`, 500);
-  }
-}
-
-/**
- * 📊 CÁLCULOS ABRANGENTES DE MÉTRICAS
- * Combina todas as 13 colunas + análises inteligentes
- */
-function calculateComprehensiveMetrics(devolucao: any): any {
-  const metrics: any = {};
-
-  try {
-    // === MÉTRICAS TEMPORAIS ===
-    const dataCreation = devolucao.data_criacao ? new Date(devolucao.data_criacao) : null;
-    const dataUpdate = devolucao.updated_at ? new Date(devolucao.updated_at) : null;
-    const ultimaMensagem = devolucao.ultima_mensagem_data ? new Date(devolucao.ultima_mensagem_data) : null;
-
-    // 🔧 TEMPO PRIMEIRA RESPOSTA VENDEDOR - CORRIGIDO
-    // Buscar primeira mensagem do VENDEDOR especificamente
-    if (devolucao.dados_messages && Array.isArray(devolucao.dados_messages)) {
-      const mensagensVendedor = devolucao.dados_messages.filter(msg => 
-        msg.from?.user_id && msg.from.user_id.toString() !== devolucao.buyer_id?.toString()
-      );
-      
-      if (mensagensVendedor.length > 0 && dataCreation) {
-        const primeiraMensagemVendedor = new Date(mensagensVendedor[0].message_date.created);
-        const diffMinutes = Math.floor((primeiraMensagemVendedor.getTime() - dataCreation.getTime()) / (1000 * 60));
-        if (diffMinutes > 0 && diffMinutes < 10080) {
-          metrics.tempo_primeira_resposta_vendedor = diffMinutes;
-        }
-      }
-    }
-
-    // Tempo total resolução
-    if (dataCreation && dataUpdate) {
-      const diffHours = Math.floor((dataUpdate.getTime() - dataCreation.getTime()) / (1000 * 60 * 60));
-      if (diffHours > 0) {
-        metrics.tempo_total_resolucao = diffHours;
-        metrics.dias_ate_resolucao = Math.ceil(diffHours / 24);
-      }
-    }
-
-    // SLA e eficiência
-    if (metrics.tempo_total_resolucao) {
-      metrics.sla_cumprido = metrics.tempo_total_resolucao <= 72;
-      
-      if (metrics.tempo_total_resolucao <= 24) {
-        metrics.eficiencia_resolucao = 'excelente';
-      } else if (metrics.tempo_total_resolucao <= 48) {
-        metrics.eficiencia_resolucao = 'boa';
-      } else if (metrics.tempo_total_resolucao <= 72) {
-        metrics.eficiencia_resolucao = 'regular';
-      } else {
-        metrics.eficiencia_resolucao = 'ruim';
-      }
-    }
-
-    // === MÉTRICAS FINANCEIRAS - CORRIGIDAS ===
-    const dadosOrder = devolucao.dados_order;
-    const dadosPayment = dadosOrder?.payments?.[0];
-    const dadosClaim = devolucao.dados_claim;
-
-    if (dadosPayment) {
-      // Reembolsos
-      if (dadosPayment.transaction_amount_refunded) {
-        metrics.valor_reembolso_total = dadosPayment.transaction_amount_refunded;
-      }
-      if (dadosPayment.transaction_amount) {
-        metrics.valor_reembolso_produto = dadosPayment.transaction_amount;
-      }
-      if (dadosPayment.shipping_cost) {
-        metrics.valor_reembolso_frete = dadosPayment.shipping_cost;
-      }
-      if (dadosPayment.date_last_modified) {
-        metrics.data_processamento_reembolso = dadosPayment.date_last_modified;
-      }
-    }
-
-    // 🔧 TAXA ML - CORRIGIDA (buscar em múltiplos locais)
-    if (dadosPayment?.marketplace_fee_details?.amount) {
-      metrics.taxa_ml_reembolso = dadosPayment.marketplace_fee_details.amount;
-    } else if (dadosOrder?.total_amount && dadosOrder?.net_amount) {
-      // Calcular diferença como aproximação da taxa
-      metrics.taxa_ml_reembolso = dadosOrder.total_amount - dadosOrder.net_amount;
-    } else if (dadosClaim?.amount && dadosPayment?.transaction_amount) {
-      // Usar 6.5% como taxa padrão ML para devoluções (aproximação)
-      metrics.taxa_ml_reembolso = dadosPayment.transaction_amount * 0.065;
-    }
-
-    // 🔧 CUSTO LOGÍSTICO - CORRIGIDO (diferenciando de shipping_cost cobrado)
-    if (dadosOrder?.shipping?.id) {
-      // Para envios ML Full, usar custo médio baseado no valor
-      const valorProduto = dadosPayment?.transaction_amount || 0;
-      if (valorProduto > 0) {
-        if (valorProduto <= 100) metrics.custo_logistico_total = 8.50;
-        else if (valorProduto <= 300) metrics.custo_logistico_total = 12.90;
-        else if (valorProduto <= 500) metrics.custo_logistico_total = 15.50;
-        else metrics.custo_logistico_total = 18.90;
-      }
-    } else if (dadosOrder?.shipping?.cost) {
-      // Se não é ML Full, usar 70% do shipping cost como custo real
-      metrics.custo_logistico_total = dadosOrder.shipping.cost * 0.7;
-    }
-
-    // 🔧 IMPACTO FINANCEIRO - CORRIGIDO (agora com valores reais)
-    const taxaML = metrics.taxa_ml_reembolso || 0;
-    const custoLog = metrics.custo_logistico_total || 0;
-    const valorReemb = metrics.valor_reembolso_produto || 0;
-    
-    if (taxaML > 0 || custoLog > 0 || valorReemb > 0) {
-      metrics.impacto_financeiro_vendedor = taxaML + custoLog + valorReemb;
-    }
-
-    // === SCORE DE QUALIDADE ===
-    let qualityScore = 100;
-
-    // Penalidades por tempo
-    if (metrics.tempo_total_resolucao) {
-      if (metrics.tempo_total_resolucao > 72) qualityScore -= 30;
-      else if (metrics.tempo_total_resolucao > 48) qualityScore -= 20;
-      else if (metrics.tempo_total_resolucao > 24) qualityScore -= 10;
-    }
-
-    // Penalidades por mensagens não lidas
-    if (devolucao.mensagens_nao_lidas > 5) qualityScore -= 20;
-    else if (devolucao.mensagens_nao_lidas > 2) qualityScore -= 10;
-
-    // Penalidades por escalação
-    if (devolucao.escalado_para_ml) qualityScore -= 15;
-    if (devolucao.acao_seller_necessaria) qualityScore -= 10;
-
-    metrics.score_qualidade = Math.max(0, qualityScore);
-
-    // === ANÁLISE INTELIGENTE INTEGRADA ===
-    
-    // Prioridade automática
-    metrics.nivel_prioridade = calculateUnifiedPriority(devolucao);
-    
-    // Tags automáticas
-    metrics.tags_automaticas = generateUnifiedTags(devolucao);
-    
-    // Impacto na reputação
-    metrics.impacto_reputacao = calculateUnifiedReputationImpact(devolucao);
-
-    console.log(`📊 Métricas calculadas para ${devolucao.order_id}: ${Object.keys(metrics).length} campos`);
-
-  } catch (error) {
-    console.error(`❌ Erro ao calcular métricas para ${devolucao.id}:`, error);
-  }
-
-  return metrics;
-}
-
-/**
- * 🎯 CÁLCULO UNIFICADO DE PRIORIDADE
- */
-function calculateUnifiedPriority(devolucao: any): string {
-  let score = 0;
-
-  // Valor alto
-  if (devolucao.valor_retido > 500) score += 3;
-  else if (devolucao.valor_retido > 200) score += 2;
-  else if (devolucao.valor_retido > 50) score += 1;
-
-  // Mensagens não lidas
-  if (devolucao.mensagens_nao_lidas > 2) score += 2;
-  else if (devolucao.mensagens_nao_lidas > 0) score += 1;
-
-  // Tempo desde criação
-  if (devolucao.data_criacao) {
-    const daysSince = Math.floor(
-      (Date.now() - new Date(devolucao.data_criacao).getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (daysSince > 7) score += 3;
-    else if (daysSince > 3) score += 2;
-    else if (daysSince > 1) score += 1;
-  }
-
-  // Status críticos
-  if (['dispute', 'waiting_seller', 'escalated'].includes(devolucao.status_devolucao)) {
-    score += 3;
-  }
-
-  if (score >= 8) return 'critical';
-  if (score >= 5) return 'high';
-  if (score >= 2) return 'medium';
-  return 'low';
-}
-
-/**
- * 🏷️ TAGS AUTOMÁTICAS UNIFICADAS
- */
-function generateUnifiedTags(devolucao: any): string[] {
-  const tags: string[] = [];
-
-  if (devolucao.valor_retido > 300) tags.push('alto_valor');
-  if (devolucao.mensagens_nao_lidas > 1) tags.push('resposta_pendente');
-  if (devolucao.anexos_count > 0) tags.push('com_evidencias');
-  if (devolucao.escalado_para_ml) tags.push('escalado_ml');
-  if (devolucao.em_mediacao) tags.push('em_mediacao');
-  
-  if (devolucao.data_criacao) {
-    const daysSince = Math.floor(
-      (Date.now() - new Date(devolucao.data_criacao).getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (daysSince > 5) tags.push('caso_antigo');
-    if (daysSince < 1) tags.push('caso_novo');
-  }
-
-  return tags;
-}
-
-/**
- * 🎭 IMPACTO NA REPUTAÇÃO UNIFICADO
- */
-function calculateUnifiedReputationImpact(devolucao: any): string {
-  if (devolucao.valor_retido > 500 || devolucao.escalado_para_ml || devolucao.mensagens_nao_lidas > 3) {
-    return 'high';
-  }
-  if (devolucao.valor_retido > 100 || devolucao.em_mediacao || devolucao.mensagens_nao_lidas > 1) {
-    return 'medium';
-  }
-  return 'low';
-}
-
-// === IMPLEMENTAÇÕES SIMPLIFICADAS DAS FUNÇÕES ORIGINAIS ===
-
-async function unifiedPriorityClassification(supabase: any, body: RequestBody) {
-  // Implementação simplificada focada apenas na classificação
-  const { data: devolucoes, error } = await supabase
-    .from('devolucoes_avancadas')
-    .select('id, order_id, valor_retido, mensagens_nao_lidas, data_criacao, status_devolucao')
-    .eq('integration_account_id', body.integration_account_id)
-    .or('nivel_prioridade.is.null,nivel_prioridade.eq.medium')
-    .limit(100);
-
-  if (error) return fail(`Erro: ${error.message}`);
-
-  let updated = 0;
-  for (const dev of devolucoes || []) {
-    const priority = calculateUnifiedPriority(dev);
-    const { error: updateError } = await supabase
-      .from('devolucoes_avancadas')
-      .update({ nivel_prioridade: priority, updated_at: new Date().toISOString() })
-      .eq('id', dev.id);
-    
-    if (!updateError) updated++;
-  }
-
-  return ok({ success: true, classified_count: updated, analysis_type: 'priority_classification' });
-}
-
-async function unifiedSentimentAnalysis(supabase: any, body: RequestBody) {
-  // Implementação simplificada da análise de sentimento
-  return ok({ success: true, analyzed_count: 0, analysis_type: 'sentiment_analysis', message: 'Análise de sentimento integrada ao processamento unificado' });
-}
-
-async function unifiedTrendDetection(supabase: any, body: RequestBody) {
-  // Implementação simplificada de tendências
-  return ok({ success: true, trends: {}, analysis_type: 'trend_detection', message: 'Detecção de tendências integrada ao processamento unificado' });
-}
-
-async function unifiedRiskAssessment(supabase: any, body: RequestBody) {
-  // Implementação simplificada de avaliação de risco
-  return ok({ success: true, assessed_count: 0, analysis_type: 'risk_assessment', message: 'Avaliação de risco integrada ao processamento unificado' });
-}
-
-async function runAllIntelligentAnalysis(supabase: any, body: RequestBody) {
-  const priority = await unifiedPriorityClassification(supabase, body);
-  return ok({
-    success: true,
-    message: 'Todas as análises inteligentes executadas',
-    priority_result: priority,
-    processed: priority?.classified_count || 0
-  });
-}
-
-async function unifiedClaimUpdate(supabase: any, body: RequestBody) {
-  // Implementação simplificada de atualização de claim
-  return ok({ success: true, message: 'Claim atualizado', event_type: 'claim_update' });
-}
-
-async function unifiedOrderUpdate(supabase: any, body: RequestBody) {
-  // Implementação simplificada de atualização de pedido
-  return ok({ success: true, message: 'Pedido atualizado', event_type: 'order_update' });
-}
-
-async function unifiedMessageReceived(supabase: any, body: RequestBody) {
-  // Implementação simplificada de mensagem recebida
-  return ok({ success: true, message: 'Mensagem processada', event_type: 'message_received' });
-}
-
-async function unifiedStatusChange(supabase: any, body: RequestBody) {
-  // Implementação simplificada de mudança de status
-  return ok({ success: true, message: 'Status atualizado', event_type: 'status_change' });
+async function fetchRealTimeMLData(supabase: any, body: RequestBody, mlTokens: MLAccessTokenResponse, account: any) {
+  console.log('📡 Buscando dados em tempo real da API ML');
+  return await processRealTimeData(supabase, body, mlTokens, account);
 }
