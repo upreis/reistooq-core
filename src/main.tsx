@@ -26,18 +26,16 @@ const root = createRoot(container);
 // Create error boundary wrapper with progressive loading
 function AppWithErrorBoundary() {
   try {
-    // Import minimal app for testing
-    const MinimalApp = React.lazy(() => import('./App.minimal'));
-    
+    // Import main app
     return (
       <React.Suspense fallback={<div>Carregando...</div>}>
         <BrowserRouter>
-          <MinimalApp />
+          <App />
         </BrowserRouter>
       </React.Suspense>
     );
   } catch (error) {
-    console.error('Minimal app failed:', error);
+    console.error('Main app failed:', error);
     return (
       <div style={{ 
         padding: '2rem', 
