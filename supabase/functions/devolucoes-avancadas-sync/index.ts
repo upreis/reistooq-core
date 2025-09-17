@@ -279,43 +279,54 @@ function calculateMetrics(messages: any[], dataCreated: Date, dataResolution: Da
 
 async function upsertOrderData(supabase: any, processedClaim: any) {
   try {
-    const { error } = await supabase
-      .from('ml_devolucoes_avancadas')
+    console.log(`💾 Tentando salvar dados para order: ${processedClaim.order_id}`);
+    console.log('📋 Dados para salvar:', {
+      order_id: processedClaim.order_id,
+      claim_id: processedClaim.claim_id,
+      integration_account_id: processedClaim.integration_account_id,
+      tempo_primeira_resposta_vendedor: processedClaim.tempo_primeira_resposta_vendedor,
+      tempo_total_resolucao: processedClaim.tempo_total_resolucao,
+      dias_ate_resolucao: processedClaim.dias_resolucao
+    });
+    
+    const { data, error } = await supabase
+      .from('devolucoes_avancadas')
       .upsert({
         order_id: processedClaim.order_id,
         claim_id: processedClaim.claim_id,
         integration_account_id: processedClaim.integration_account_id,
-        organization_id: processedClaim.organization_id,
         
         // 13 métricas calculadas
         tempo_primeira_resposta_vendedor: processedClaim.tempo_primeira_resposta_vendedor,
         tempo_total_resolucao: processedClaim.tempo_total_resolucao,
-        dias_resolucao: processedClaim.dias_resolucao,
+        dias_ate_resolucao: processedClaim.dias_resolucao,
         sla_cumprido: processedClaim.sla_cumprido,
-        eficiencia: processedClaim.eficiencia,
+        eficiencia_resolucao: processedClaim.eficiencia,
         score_qualidade: processedClaim.score_qualidade,
         valor_reembolso_total: processedClaim.valor_reembolso_total,
         valor_reembolso_produto: processedClaim.valor_reembolso_produto,
         valor_reembolso_frete: processedClaim.valor_reembolso_frete,
-        taxa_ml: processedClaim.taxa_ml,
-        custo_logistico: processedClaim.custo_logistico,
-        impacto_vendedor: processedClaim.impacto_vendedor,
-        data_reembolso: processedClaim.data_reembolso,
+        taxa_ml_reembolso: processedClaim.taxa_ml,
+        custo_logistico_total: processedClaim.custo_logistico,
+        impacto_financeiro_vendedor: processedClaim.impacto_vendedor,
+        data_processamento_reembolso: processedClaim.data_reembolso,
         
-        data_created: processedClaim.data_created,
-        data_updated: processedClaim.data_updated,
-        raw_data: processedClaim.raw_data,
+        data_criacao: processedClaim.data_created,
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'order_id'
-      });
+      })
+      .select();
 
     if (error) {
       console.error(`❌ Erro ao salvar ${processedClaim.order_id}:`, error);
+      console.error('🔍 Detalhes completos do erro:', JSON.stringify(error, null, 2));
     } else {
-      console.log(`✅ Dados salvos para order ${processedClaim.order_id}`);
+      console.log(`✅ Dados salvos com sucesso para order ${processedClaim.order_id}`);
+      console.log('📊 Registro salvo:', data?.[0]?.id || 'ID não retornado');
     }
   } catch (error) {
     console.error(`❌ Erro crítico ao salvar ${processedClaim.order_id}:`, error);
+    console.error('🚨 Stack trace:', error.stack);
   }
 }
