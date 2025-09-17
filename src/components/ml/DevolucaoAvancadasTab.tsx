@@ -372,9 +372,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       dev.status_devolucao || '',
       'N/A',
       dev.tipo_claim || 'N/A',
-      dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString() : '',
+      dev.data_criacao ? (() => { try { return new Date(dev.data_criacao).toLocaleDateString(); } catch { return dev.data_criacao; } })() : '',
       'N/A',
-      dev.updated_at ? new Date(dev.updated_at).toLocaleDateString() : '',
+      dev.updated_at ? (() => { try { return new Date(dev.updated_at).toLocaleDateString(); } catch { return dev.updated_at; } })() : '',
       dev.numero_interacoes || 0,
       dev.mensagens_nao_lidas || 0,
       dev.dias_restantes_acao || '',
@@ -1309,16 +1309,22 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             )}
                           </td>
                           
-                          {/* Última Mensagem Data */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {devolucao.ultima_mensagem_data ? new Date(devolucao.ultima_mensagem_data).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            }) : '-'}
-                          </td>
+                           {/* Última Mensagem Data */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.ultima_mensagem_data ? (() => {
+                               try {
+                                 return new Date(devolucao.ultima_mensagem_data).toLocaleDateString('pt-BR', {
+                                   day: '2-digit',
+                                   month: '2-digit',
+                                   year: 'numeric',
+                                   hour: '2-digit',
+                                   minute: '2-digit'
+                                 });
+                               } catch (error) {
+                                 return devolucao.ultima_mensagem_data;
+                               }
+                             })() : '-'}
+                           </td>
                           
                           {/* Última Mensagem Remetente */}
                           <td className="px-3 py-3 text-foreground text-sm">
@@ -1344,20 +1350,26 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             )}
                           </td>
                           
-                          {/* Data Vencimento Ação */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {devolucao.data_vencimento_acao ? new Date(devolucao.data_vencimento_acao).toLocaleDateString('pt-BR') : '-'}
-                          </td>
+                           {/* Data Vencimento Ação */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.data_vencimento_acao ? (() => {
+                               try {
+                                 return new Date(devolucao.data_vencimento_acao).toLocaleDateString('pt-BR');
+                               } catch (error) {
+                                 return devolucao.data_vencimento_acao;
+                               }
+                             })() : '-'}
+                           </td>
                           
-                          {/* Data Estimada Troca */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {devolucao.data_estimada_troca ? new Date(devolucao.data_estimada_troca).toLocaleDateString('pt-BR') : '-'}
-                          </td>
+                           {/* Data Estimada Troca */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.data_estimada_troca ? (() => { try { return new Date(devolucao.data_estimada_troca).toLocaleDateString('pt-BR'); } catch { return devolucao.data_estimada_troca; } })() : '-'}
+                           </td>
                           
-                          {/* Data Limite Troca */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {devolucao.data_limite_troca ? new Date(devolucao.data_limite_troca).toLocaleDateString('pt-BR') : '-'}
-                          </td>
+                           {/* Data Limite Troca */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.data_limite_troca ? (() => { try { return new Date(devolucao.data_limite_troca).toLocaleDateString('pt-BR'); } catch { return devolucao.data_limite_troca; } })() : '-'}
+                           </td>
                           
                           {/* Prazo Revisão Dias */}
                           <td className="px-3 py-3 text-center">
@@ -1522,23 +1534,35 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             )}
                           </td>
                           
-                          {/* Data Criação */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </td>
+                           {/* Data Criação */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {(() => {
+                               try {
+                                 return new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
+                                   day: '2-digit',
+                                   month: '2-digit',
+                                   year: 'numeric'
+                                 });
+                               } catch {
+                                 return devolucao.data_criacao;
+                               }
+                             })()}
+                           </td>
                           
-                          {/* Data Atualização (ORIGINAL RESTAURADA) */}
-                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-                            {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
-                          </td>
+                           {/* Data Atualização (ORIGINAL RESTAURADA) */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {(() => {
+                               try {
+                                 return new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
+                                   day: '2-digit',
+                                   month: '2-digit',
+                                   year: 'numeric'
+                                 });
+                               } catch {
+                                 return devolucao.updated_at;
+                               }
+                             })()}
+                           </td>
                           
                           {/* Tipo Original (ORIGINAL RESTAURADA) */}
                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
@@ -1731,14 +1755,20 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             <div className="flex-1 min-w-0">
                               <span className="text-muted-foreground font-medium block mb-1">Criado em:</span>
                               <p className="font-semibold text-foreground text-sm">
-                                {new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
+                                 {(() => {
+                                   try {
+                                     return new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
+                                       day: '2-digit',
+                                       month: '2-digit',
+                                       year: 'numeric',
+                                       hour: '2-digit',
+                                       minute: '2-digit'
+                                     });
+                                   } catch {
+                                     return devolucao.data_criacao;
+                                   }
+                                 })()}
+                               </p>
                             </div>
                           </div>
                           
@@ -1757,14 +1787,20 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             <div className="flex-1 min-w-0">
                               <span className="text-muted-foreground font-medium block mb-1">Atualizado:</span>
                               <p className="font-semibold text-foreground text-sm">
-                                {new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </p>
+                                 {(() => {
+                                   try {
+                                     return new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
+                                       day: '2-digit',
+                                       month: '2-digit',
+                                       year: 'numeric',
+                                       hour: '2-digit',
+                                       minute: '2-digit'
+                                     });
+                                   } catch {
+                                     return devolucao.updated_at;
+                                   }
+                                 })()}
+                               </p>
                             </div>
                           </div>
                         </div>
