@@ -43,7 +43,8 @@ import {
   Calendar,
   MessageCircle,
   Truck,
-  Calculator
+  Calculator,
+  Zap
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -1038,17 +1039,63 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
               📊 Auditoria de Enriquecimento
             </Button>
 
-            {/* 🧮 BOTÃO CALCULAR MÉTRICAS */}
+            {/* 🚀 BOTÃO PROCESSAMENTO UNIFICADO */}
             <Button
               variant="outline"
               onClick={async () => {
-                console.log('🧮 Calculando métricas financeiras e temporais...');
+                console.log('🚀 Executando processamento unificado completo...');
+                
+                toast.info('🔄 Iniciando processamento unificado (dados + análise + métricas)...');
+                
+                try {
+                  const response = await supabase.functions.invoke('devolucoes-avancadas-sync', {
+                    body: { 
+                      action: 'unified_processing',
+                      integration_account_id: mlAccounts?.[0]?.id || '',
+                      mode: 'enriched',
+                      include_messages: true,
+                      include_shipping: true,
+                      include_buyer_details: true,
+                      limit: 50
+                    }
+                  });
+                  
+                  if (response.data?.success) {
+                    const result = response.data;
+                    toast.success(`🚀 Processamento unificado concluído: ${result.total_processed} registros processados`);
+                    
+                    // Recarregar dados após processamento
+                    await buscarComFiltros();
+                  } else {
+                    toast.error('❌ Erro no processamento unificado');
+                  }
+                  
+                } catch (error) {
+                  console.error('❌ Erro no processamento unificado:', error);
+                  toast.error('Erro no processamento unificado');
+                }
+              }}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 flex items-center gap-2 px-4 py-2"
+            >
+              <Zap className="h-4 w-4" />
+              🚀 Processamento Unificado
+            </Button>
+
+            {/* 🧮 BOTÃO CALCULAR MÉTRICAS (Mantido para compatibilidade) */}
+            <Button
+              variant="outline"
+              onClick={async () => {
+                console.log('🧮 Calculando métricas das 13 colunas via função unificada...');
                 
                 toast.info('🔄 Calculando métricas das 13 colunas...');
                 
                 try {
-                  const response = await supabase.functions.invoke('calculate-devolucoes-metrics', {
-                    body: { trigger: 'manual' }
+                  const response = await supabase.functions.invoke('devolucoes-avancadas-sync', {
+                    body: { 
+                      action: 'calculate_all_metrics',
+                      integration_account_id: mlAccounts?.[0]?.id || '',
+                      limit: 100
+                    }
                   });
                   
                   if (response.data?.success) {
@@ -1064,10 +1111,10 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                   toast.error('Erro ao calcular métricas');
                 }
               }}
-              className="bg-purple-500 text-white hover:bg-purple-600 flex items-center gap-2 px-4 py-2"
+              className="bg-blue-500 text-white hover:bg-blue-600 flex items-center gap-2 px-4 py-2"
             >
               <Calculator className="h-4 w-4" />
-              🧮 Calcular Métricas
+              🧮 Métricas Rápidas
             </Button>
           </div>
 
