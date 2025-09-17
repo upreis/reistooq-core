@@ -47,16 +47,16 @@ import AcceptInvite from "./pages/AcceptInvite";
 import ResetPassword from "./pages/ResetPassword";
 import CategoryManager from "./pages/CategoryManager";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 5 * 60 * 1000,
-    },
-  },
-});
-
 function App() {
+  const queryClient = React.useMemo(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        staleTime: 5 * 60 * 1000,
+      },
+    },
+  }), []);
+
   try {
     return (
       <QueryClientProvider client={queryClient}>
