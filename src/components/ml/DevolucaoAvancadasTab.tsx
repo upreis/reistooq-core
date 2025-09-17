@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
+  // Campos existentes básicos
   id: string;
   integration_account_id: string;
   claim_id?: string;
