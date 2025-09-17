@@ -326,13 +326,17 @@ const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
     enabled: filtros.accountIds.length > 0
   });
 
-  // Mutation para sincronização (mantendo função existente)
+  // Mutation para sincronização (usando função unificada)
   const syncMutation = useMutation({
     mutationFn: async () => {
       const syncPromises = filtros.accountIds.map(accountId =>
-        supabase.functions.invoke('ml-devolucoes-sync', {
+        supabase.functions.invoke('devolucoes-avancadas-sync', {
           body: {
             integration_account_id: accountId,
+            mode: 'enriched',
+            include_messages: true,
+            include_shipping: true,
+            include_buyer_details: true,
             date_from: filtros.dateFrom,
             date_to: filtros.dateTo
           }

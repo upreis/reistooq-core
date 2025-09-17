@@ -64,6 +64,7 @@ verify_jwt = false
 [functions.ml-test-connection]
 verify_jwt = false
 
+# DEPRECATED: Use devolucoes-avancadas-sync instead
 [functions.ml-devolucoes-sync]
 verify_jwt = true
 

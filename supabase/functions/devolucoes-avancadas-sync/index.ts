@@ -6,8 +6,8 @@
 import { corsHeaders, makeServiceClient, ok, fail } from '../_shared/client.ts';
 
 interface RequestBody {
-  action: 'enrich_existing_data' | 'sync_advanced_fields' | 'fetch_advanced_metrics' | 'update_phase2_columns' | 
-          'test_ml_connection' | 'real_enrich_claims' | 'batch_enrich' | 'check_missing_data';
+  action?: 'enrich_existing_data' | 'sync_advanced_fields' | 'fetch_advanced_metrics' | 'update_phase2_columns' | 
+          'test_ml_connection' | 'real_enrich_claims' | 'batch_enrich' | 'check_missing_data' | 'legacy_sync';
   integration_account_id: string;
   limit?: number;
   updates?: any[];
@@ -15,6 +15,13 @@ interface RequestBody {
   date_to?: string;
   claim_ids?: string[];
   force_refresh?: boolean;
+  // Compatibilidade com ml-devolucoes-sync
+  mode?: 'enriched' | 'basic' | 'full';
+  include_messages?: boolean;
+  include_shipping?: boolean;
+  include_buyer_details?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 Deno.serve(async (req) => {
@@ -31,8 +38,14 @@ Deno.serve(async (req) => {
     }
 
     const body: RequestBody = await req.json();
-    console.log(`🔄 Ação solicitada: ${body.action}`, {
+    
+    // Detectar se é chamada legacy da ml-devolucoes-sync
+    const isLegacyCall = !body.action && (body.mode || body.include_messages !== undefined);
+    const action = body.action || (isLegacyCall ? 'legacy_sync' : 'enrich_existing_data');
+    
+    console.log(`🔄 Ação solicitada: ${action}${isLegacyCall ? ' (legacy)' : ''}`, {
       integration_account_id: body.integration_account_id,
+      mode: body.mode,
       limit: body.limit
     });
 
@@ -55,14 +68,14 @@ Deno.serve(async (req) => {
 
     // Buscar token ML se necessário para as novas ações
     let accessToken = null;
-    if (['test_ml_connection', 'real_enrich_claims', 'batch_enrich'].includes(body.action)) {
+    if (['test_ml_connection', 'real_enrich_claims', 'batch_enrich', 'legacy_sync'].includes(action)) {
       accessToken = await getMLAccessToken(supabase, body.integration_account_id);
       if (!accessToken) {
         return fail('Token de acesso ML não encontrado. Configure a integração.');
       }
     }
 
-    switch (body.action) {
+    switch (action) {
       case 'enrich_existing_data':
         return await enrichExistingData(supabase, body);
       
@@ -87,6 +100,10 @@ Deno.serve(async (req) => {
       
       case 'check_missing_data':
         return await checkMissingData(supabase, body);
+      
+      // COMPATIBILIDADE COM ml-devolucoes-sync
+      case 'legacy_sync':
+        return await legacySyncCompatibility(supabase, body, accessToken, account.account_identifier);
       
       default:
         return fail('Ação não reconhecida');
@@ -449,6 +466,149 @@ async function enrichWithRealMLData(devolucao: any, seller_id: string) {
       updated_at: new Date().toISOString()
     };
   }
+}
+
+/**
+ * 🔄 COMPATIBILIDADE COM ml-devolucoes-sync
+ * Processa chamadas da função antiga com a nova lógica
+ */
+async function legacySyncCompatibility(supabase: any, body: RequestBody, accessToken: string, sellerId: string) {
+  try {
+    console.log(`🔄 Processando chamada legacy com mode: ${body.mode}`);
+    
+    const dateFrom = body.date_from || body.dateFrom;
+    const dateTo = body.date_to || body.dateTo;
+    
+    // Buscar ou criar devoluções básicas primeiro
+    let claims = [];
+    let returns = [];
+    
+    if (accessToken && sellerId) {
+      // Buscar claims da API ML
+      const claimsData = await fetchMLClaims(accessToken, sellerId, dateFrom, dateTo);
+      claims = claimsData || [];
+      
+      // Buscar returns para cada claim
+      if (claims.length > 0) {
+        const returnsData = await fetchMLReturns(accessToken, claims);
+        returns = returnsData || [];
+      }
+    }
+    
+    // Processar dados dependendo do mode
+    let processedData = [];
+    
+    switch (body.mode) {
+      case 'enriched':
+      case 'full':
+        // Modo avançado - usar lógica completa de enriquecimento
+        processedData = await processAdvancedMode(supabase, body, claims, returns, accessToken);
+        break;
+        
+      case 'basic':
+      default:
+        // Modo básico - compatibilidade simples
+        processedData = await processBasicMode(supabase, body, claims, returns);
+        break;
+    }
+    
+    return ok({
+      success: true,
+      message: `Sincronização legacy concluída (mode: ${body.mode})`,
+      claims_found: claims.length,
+      returns_found: returns.length,
+      processed_count: processedData.length,
+      data: processedData.slice(0, 10) // Limitar retorno
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro na sincronização legacy:', error);
+    return fail(`Erro na sincronização legacy: ${error.message}`, 500);
+  }
+}
+
+/**
+ * 📦 PROCESSAR MODO AVANÇADO
+ */
+async function processAdvancedMode(supabase: any, body: RequestBody, claims: any[], returns: any[], accessToken: string) {
+  console.log(`🚀 Processando ${claims.length} claims em modo avançado`);
+  
+  const processedData = [];
+  
+  for (const claim of claims) {
+    try {
+      // Enriquecer com dados avançados
+      const enrichedClaim = await enrichClaimWithAdvancedData(claim, accessToken, body);
+      
+      // Salvar ou atualizar no banco
+      const { data: saved, error } = await supabase
+        .from('devolucoes_avancadas')
+        .upsert({
+          integration_account_id: body.integration_account_id,
+          claim_id: claim.id,
+          order_id: claim.order_id,
+          dados_claim: claim,
+          dados_mensagens: enrichedClaim.messages || [],
+          dados_return: enrichedClaim.returns || [],
+          // Campos avançados
+          timeline_mensagens: enrichedClaim.timeline || [],
+          anexos_count: enrichedClaim.attachments_count || 0,
+          nivel_prioridade: enrichedClaim.priority || 'medium',
+          status_devolucao: claim.status,
+          em_mediacao: enrichedClaim.in_mediation || false,
+          escalado_para_ml: enrichedClaim.escalated || false,
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'claim_id,integration_account_id'
+        });
+      
+      if (!error) {
+        processedData.push(saved);
+        console.log(`✅ Claim ${claim.id} processado com dados avançados`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Erro ao processar claim ${claim.id}:`, error);
+    }
+  }
+  
+  return processedData;
+}
+
+/**
+ * 📋 PROCESSAR MODO BÁSICO
+ */
+async function processBasicMode(supabase: any, body: RequestBody, claims: any[], returns: any[]) {
+  console.log(`📋 Processando ${claims.length} claims em modo básico`);
+  
+  const processedData = [];
+  
+  for (const claim of claims) {
+    try {
+      const { data: saved, error } = await supabase
+        .from('devolucoes_avancadas')
+        .upsert({
+          integration_account_id: body.integration_account_id,
+          claim_id: claim.id,
+          order_id: claim.order_id,
+          dados_claim: claim,
+          status_devolucao: claim.status,
+          updated_at: new Date().toISOString()
+        }, { 
+          onConflict: 'claim_id,integration_account_id'
+        });
+      
+      if (!error) {
+        processedData.push(saved);
+        console.log(`✅ Claim ${claim.id} salvo em modo básico`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Erro ao salvar claim ${claim.id}:`, error);
+    }
+  }
+  
+  return processedData;
 }
 
 /**
@@ -1267,4 +1427,263 @@ function generateTagsFromRealDataUnified(data: any) {
   if (data.custo_envio_devolucao > 0) tags.push('tem_custo_envio');
   
   return tags;
+}
+
+// ===== FUNÇÕES AUXILIARES PARA COMPATIBILIDADE =====
+
+/**
+ * 🔑 OBTER TOKEN ML
+ */
+async function getMLAccessToken(supabase: any, integrationAccountId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke('integrations-get-secret', {
+      body: {
+        integration_account_id: integrationAccountId,
+        provider: 'mercadolivre'
+      }
+    });
+
+    if (error || !data?.access_token) {
+      console.error('❌ Erro ao obter token ML:', error);
+      return null;
+    }
+
+    return data.access_token;
+  } catch (error) {
+    console.error('❌ Erro ao buscar token ML:', error);
+    return null;
+  }
+}
+
+/**
+ * 📦 BUSCAR CLAIMS DA ML API
+ */
+async function fetchMLClaims(accessToken: string, sellerId: string, dateFrom?: string, dateTo?: string): Promise<any[]> {
+  try {
+    console.log(`🔍 Buscando claims para seller ${sellerId}`);
+    
+    let url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?seller_id=${sellerId}`;
+    if (dateFrom) url += `&date_created=${dateFrom}`;
+    if (dateTo) url += `&last_updated=${dateTo}`;
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error(`❌ Erro ao buscar claims: ${response.status}`);
+      return [];
+    }
+    
+    const data = await response.json();
+    const claims = data.results || data.data || [];
+    
+    console.log(`📦 ${claims.length} claims encontrados`);
+    return claims;
+    
+  } catch (error) {
+    console.error('❌ Erro ao buscar claims:', error);
+    return [];
+  }
+}
+
+/**
+ * 🔄 BUSCAR RETURNS DA ML API
+ */
+async function fetchMLReturns(accessToken: string, claims: any[]): Promise<any[]> {
+  try {
+    console.log(`🔄 Buscando returns para ${claims.length} claims`);
+    
+    const allReturns = [];
+    
+    for (const claim of claims) {
+      if (!claim.id) continue;
+      
+      try {
+        const url = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const returns = data.results || data.data || [];
+          
+          returns.forEach((ret: any) => {
+            ret._source_claim = claim;
+          });
+          
+          allReturns.push(...returns);
+        }
+        
+        // Pausa entre requests
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (error) {
+        console.error(`❌ Erro ao buscar returns do claim ${claim.id}:`, error);
+      }
+    }
+    
+    console.log(`📦 ${allReturns.length} returns encontrados`);
+    return allReturns;
+    
+  } catch (error) {
+    console.error('❌ Erro ao buscar returns:', error);
+    return [];
+  }
+}
+
+/**
+ * 🚀 ENRIQUECER CLAIM COM DADOS AVANÇADOS
+ */
+async function enrichClaimWithAdvancedData(claim: any, accessToken: string, options: any) {
+  try {
+    console.log(`🚀 Enriquecendo claim ${claim.id} com dados avançados`);
+    
+    const enrichedData: any = {
+      priority: 'medium',
+      in_mediation: false,
+      escalated: false
+    };
+    
+    // Buscar mensagens se solicitado
+    if (options.include_messages !== false) {
+      const messages = await fetchClaimMessages(claim.id, accessToken);
+      enrichedData.messages = messages?.timeline || [];
+      enrichedData.timeline = messages?.timeline || [];
+    }
+    
+    // Buscar anexos
+    const attachments = await fetchClaimAttachments(claim.id, accessToken);
+    enrichedData.attachments_count = attachments?.total_count || 0;
+    
+    // Buscar detalhes de shipping se solicitado
+    if (options.include_shipping && claim.order_id) {
+      const shipping = await fetchShippingDetails(claim.order_id, accessToken);
+      enrichedData.shipping = shipping;
+    }
+    
+    // Buscar detalhes do comprador se solicitado
+    if (options.include_buyer_details && claim.buyer_id) {
+      const buyer = await fetchBuyerDetails(claim.buyer_id, accessToken);
+      enrichedData.buyer = buyer;
+    }
+    
+    // Analisar prioridade baseado nos dados
+    enrichedData.priority = analyzePriority(claim, enrichedData);
+    enrichedData.in_mediation = analyzeMediation(claim);
+    enrichedData.escalated = analyzeEscalation(claim);
+    
+    return enrichedData;
+    
+  } catch (error) {
+    console.error(`❌ Erro ao enriquecer claim ${claim.id}:`, error);
+    return {
+      priority: 'medium',
+      in_mediation: false,
+      escalated: false
+    };
+  }
+}
+
+/**
+ * 🚚 BUSCAR DETALHES DE SHIPPING
+ */
+async function fetchShippingDetails(orderId: string, accessToken: string) {
+  try {
+    const response = await fetch(`https://api.mercadolibre.com/orders/${orderId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const order = await response.json();
+      return order.shipping || {};
+    }
+    
+    return {};
+  } catch (error) {
+    console.error('❌ Erro ao buscar shipping:', error);
+    return {};
+  }
+}
+
+/**
+ * 👤 BUSCAR DETALHES DO COMPRADOR
+ */
+async function fetchBuyerDetails(buyerId: string, accessToken: string) {
+  try {
+    const response = await fetch(`https://api.mercadolibre.com/users/${buyerId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      const buyer = await response.json();
+      return {
+        id: buyer.id,
+        nickname: buyer.nickname,
+        registration_date: buyer.registration_date,
+        reputation: buyer.reputation
+      };
+    }
+    
+    return {};
+  } catch (error) {
+    console.error('❌ Erro ao buscar comprador:', error);
+    return {};
+  }
+}
+
+/**
+ * 📊 ANALISAR PRIORIDADE
+ */
+function analyzePriority(claim: any, enrichedData: any): string {
+  let score = 0;
+  
+  // Valor alto
+  if (claim.amount > 1000) score += 2;
+  else if (claim.amount > 500) score += 1;
+  
+  // Muitas mensagens
+  if (enrichedData.messages?.length > 5) score += 2;
+  else if (enrichedData.messages?.length > 2) score += 1;
+  
+  // Status crítico
+  if (['open', 'waiting_seller'].includes(claim.status)) score += 1;
+  
+  if (score >= 4) return 'high';
+  if (score >= 2) return 'medium';
+  return 'low';
+}
+
+/**
+ * ⚖️ ANALISAR SE ESTÁ EM MEDIAÇÃO
+ */
+function analyzeMediation(claim: any): boolean {
+  return claim.mediation_id || 
+         claim.status === 'mediation' || 
+         claim.status === 'waiting_mediation' ||
+         false;
+}
+
+/**
+ * 🚨 ANALISAR SE FOI ESCALADO
+ */
+function analyzeEscalation(claim: any): boolean {
+  return claim.escalated === true || 
+         claim.status === 'escalated' ||
+         claim.mediation_type === 'forced' ||
+         false;
 }

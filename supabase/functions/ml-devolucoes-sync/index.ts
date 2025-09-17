@@ -449,6 +449,42 @@ serve(async (req) => {
 
   if (req.method !== "POST") return fail("Method not allowed", 405);
 
+  // ⚠️ FUNÇÃO DEPRECIADA - REDIRECIONAR PARA devolucoes-avancadas-sync
+  console.log("⚠️ [DEPRECATED] ml-devolucoes-sync está sendo usada. Redirecionando para devolucoes-avancadas-sync");
+  
+  try {
+    const body = await req.json();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const authHeader = req.headers.get("authorization") || "";
+    
+    // Redirecionar para a função unificada
+    const redirectResponse = await fetch(`${supabaseUrl}/functions/v1/devolucoes-avancadas-sync`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authHeader,
+        ...corsHeaders
+      },
+      body: JSON.stringify({
+        ...body,
+        // Não definir action para ativar modo legacy
+        mode: body.mode || 'enriched'
+      })
+    });
+    
+    const result = await redirectResponse.json();
+    
+    return ok({
+      ...result,
+      deprecated_warning: "⚠️ Esta função está depreciada. Use 'devolucoes-avancadas-sync' diretamente.",
+      redirected_from: "ml-devolucoes-sync"
+    });
+    
+  } catch (error) {
+    console.error("❌ Erro no redirecionamento:", error);
+    return fail(`Erro no redirecionamento: ${error.message}`, 500);
+  }
+
   try {
     const body = await req.json();
     const { 

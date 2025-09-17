@@ -200,9 +200,10 @@ export function DevolucoesMercadoLivreTab({}: DevolucoesMercadoLivreTabProps) {
       toast.loading('Iniciando sincronização das devoluções...', { duration: 2000 });
 
       const syncPromises = selectedAccounts.map(accountId =>
-        supabase.functions.invoke('ml-devolucoes-sync', {
+        supabase.functions.invoke('devolucoes-avancadas-sync', {
           body: {
             integration_account_id: accountId,
+            mode: 'basic',
             date_from: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 dias atrás
             date_to: new Date().toISOString()
           }
