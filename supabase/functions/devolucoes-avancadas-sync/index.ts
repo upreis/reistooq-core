@@ -82,12 +82,13 @@ Deno.serve(async (req) => {
 
       if (mlError || !mlData?.success) {
         console.error('❌ Erro ao buscar dados via ml-api-direct:', mlError);
-        throw new Error(`Erro ML API: ${mlError?.message || 'Unknown error'}`);
+        console.log('🔄 Continuando sem dados da API ML (modo graceful)');
+        claims = [];
+      } else {
+        claims = mlData.data || [];
+        // Armazenar no cache
+        cache.set(cacheKey, { data: claims, timestamp: Date.now() });
       }
-
-      claims = mlData.data || [];
-      // Armazenar no cache
-      cache.set(cacheKey, { data: claims, timestamp: Date.now() });
     }
 
     console.log(`📊 Processando ${claims.length} claims/returns`);
@@ -142,7 +143,15 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Erro na edge function:', error);
-    return fail(`Erro interno: ${error.message}`, 500);
+    
+    // Return success even with errors to avoid breaking the UI
+    return ok({
+      success: false,
+      error: error.message,
+      message: `Erro interno: ${error.message}`,
+      processed_count: 0,
+      total_found: 0
+    });
   }
 });
 

@@ -197,12 +197,18 @@ export default function MLOrdersCompletas() {
       
       if (error) {
         console.error("❌ [MLOrdersCompletas] Erro ao buscar orders:", error);
-        throw error;
+        // Não lançar erro para manter a interface funcionando
+        toast.error("Erro ao carregar pedidos: " + error.message);
+        return [];
       }
       
       console.log("✅ [MLOrdersCompletas] Orders encontradas:", data?.length || 0);
       return data as MLOrder[];
     },
+    // Configurações do React Query para maior tolerância a falhas
+    retry: 2,
+    retryDelay: 1000,
+    staleTime: 30000, // 30 segundos
   });
 
   const getStatusColor = (status: string) => {
@@ -233,7 +239,7 @@ export default function MLOrdersCompletas() {
   };
 
   const exportToCSV = () => {
-    if (!orders || orders.length === 0) return;
+    if (!orders || !Array.isArray(orders) || orders.length === 0) return;
 
     const headers = [
       "Order ID",
@@ -254,7 +260,7 @@ export default function MLOrdersCompletas() {
       "Qtd Claims"
     ];
 
-    const csvData = orders.map(order => {
+    const csvData = (orders as MLOrder[])?.map(order => {
       const rawData = order.raw_data || {};
       const dateClosed = rawData.date_closed ? format(new Date(rawData.date_closed), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-";
       const paidAmount = rawData.paid_amount || 0;
@@ -907,7 +913,7 @@ export default function MLOrdersCompletas() {
           <CardContent>
             <div className="text-2xl font-bold">
               {orders ? formatCurrency(
-                orders.reduce((sum, order) => sum + (order.total_amount || 0), 0),
+                (orders as MLOrder[])?.reduce((sum, order) => sum + (order.total_amount || 0), 0),
                 'BRL'
               ) : 'R$ 0,00'}
             </div>
@@ -923,7 +929,7 @@ export default function MLOrdersCompletas() {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-8">Carregando orders...</div>
-          ) : !orders || orders.length === 0 ? (
+          ) : !orders || !Array.isArray(orders) || orders.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               Nenhuma order encontrada com os filtros aplicados.
             </div>
@@ -951,7 +957,7 @@ export default function MLOrdersCompletas() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order) => {
+                  {(orders as MLOrder[])?.map((order) => {
                     const rawData = order.raw_data || {};
                     const dateClosed = rawData.date_closed ? format(new Date(rawData.date_closed), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-";
                     const paidAmount = rawData.paid_amount || 0;

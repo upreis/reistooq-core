@@ -90,7 +90,8 @@ export function useDevolucoesBusca() {
 
           if (apiError) {
             console.error(`❌ Erro API para ${account.name}:`, apiError);
-            toast.error(`Erro na API para ${account.name}`);
+            toast.warning(`Falha na API ML para ${account.name}. Continuando...`);
+            // Continue com próxima conta em vez de falhar
             continue;
           }
 
