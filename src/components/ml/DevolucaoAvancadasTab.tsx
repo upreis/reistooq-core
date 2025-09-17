@@ -439,7 +439,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       'Status Claim',
       'Estágio',
       'Tipo',
-      'Data Criação',
+      'Data da Venda',
       'Data Fechamento',
       'Última Atualização',
       'Número Mensagens',
@@ -1060,7 +1060,7 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">✋ Ação Req.</th>
                        
                        {/* COLUNAS ORIGINAIS MANTIDAS */}
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Criação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data da Venda</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo Original</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo Cancelamento</th>
@@ -1616,7 +1616,7 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             )}
                           </td>
                           
-                           {/* Data Criação */}
+                           {/* Data da Venda */}
                            <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
                              {(() => {
                                try {
@@ -1802,7 +1802,7 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                     <div className="flex items-center gap-3">
                       <Clock className="h-5 w-5 text-muted-foreground" />
                       <div>
-                        <Label className="text-sm text-muted-foreground">Data Criação</Label>
+                        <Label className="text-sm text-muted-foreground">Data da Venda</Label>
                         <p className="font-medium text-foreground">{(() => { try { return new Date(selectedDevolucao.data_criacao).toLocaleString(); } catch { return selectedDevolucao.data_criacao; } })()}</p>
                       </div>
                     </div>
