@@ -322,6 +322,78 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
   }, []);
 
+  // Função para extrair mensagens de texto das conversas
+  const getTextoMensagens = useCallback((devolucao: DevolucaoAvancada) => {
+    try {
+      const mensagens = [];
+      
+      // Buscar mensagens nos dados_mensagens
+      if (devolucao.dados_mensagens?.messages && Array.isArray(devolucao.dados_mensagens.messages)) {
+        for (const msg of devolucao.dados_mensagens.messages) {
+          if (msg.text && typeof msg.text === 'string') {
+            const remetente = msg.sender || msg.from || 'Não identificado';
+            const data = msg.date_created || msg.created_at || '';
+            mensagens.push(`[${remetente}]: ${msg.text.substring(0, 100)}...`);
+          }
+        }
+      }
+      
+      // Se não encontrou mensagens, buscar em outros lugares
+      if (mensagens.length === 0) {
+        // Buscar em dados_claim
+        if (devolucao.dados_claim?.messages && Array.isArray(devolucao.dados_claim.messages)) {
+          for (const msg of devolucao.dados_claim.messages) {
+            if (msg.text && typeof msg.text === 'string') {
+              const remetente = msg.sender || msg.from || 'Não identificado';
+              mensagens.push(`[${remetente}]: ${msg.text.substring(0, 100)}...`);
+            }
+          }
+        }
+        
+        // Buscar em dados_return
+        if (devolucao.dados_return?.messages && Array.isArray(devolucao.dados_return.messages)) {
+          for (const msg of devolucao.dados_return.messages) {
+            if (msg.text && typeof msg.text === 'string') {
+              const remetente = msg.sender || msg.from || 'Não identificado';
+              mensagens.push(`[${remetente}]: ${msg.text.substring(0, 100)}...`);
+            }
+          }
+        }
+      }
+      
+      return mensagens.length > 0 ? mensagens.join(' | ') : 'Sem mensagens de texto';
+    } catch (error) {
+      console.error('Erro ao extrair mensagens:', error);
+      return 'Erro ao carregar mensagens';
+    }
+  }, []);
+
+  // Função para extrair última mensagem completa
+  const getUltimaMensagemTexto = useCallback((devolucao: DevolucaoAvancada) => {
+    try {
+      // Buscar última mensagem nos dados_mensagens
+      if (devolucao.dados_mensagens?.messages && Array.isArray(devolucao.dados_mensagens.messages) && devolucao.dados_mensagens.messages.length > 0) {
+        const ultimaMensagem = devolucao.dados_mensagens.messages[devolucao.dados_mensagens.messages.length - 1];
+        if (ultimaMensagem.text && typeof ultimaMensagem.text === 'string') {
+          return ultimaMensagem.text.substring(0, 200) + (ultimaMensagem.text.length > 200 ? '...' : '');
+        }
+      }
+      
+      // Se não encontrou, buscar em timeline_mensagens
+      if (devolucao.timeline_mensagens && Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0) {
+        const ultimaMensagem = devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1];
+        if (ultimaMensagem.text && typeof ultimaMensagem.text === 'string') {
+          return ultimaMensagem.text.substring(0, 200) + (ultimaMensagem.text.length > 200 ? '...' : '');
+        }
+      }
+      
+      return 'Sem texto da última mensagem';
+    } catch (error) {
+      console.error('Erro ao extrair última mensagem:', error);
+      return 'Erro ao carregar última mensagem';
+    }
+  }, []);
+
   // Tempo real para demonstração - corrigir dependências
   useDevolucoesDemostracao(
     advancedFilters.buscarEmTempoReal,
@@ -925,11 +997,11 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                         <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📎 Anexos</th>
                         
                         {/* MENSAGENS E COMUNICAÇÃO (novas) */}
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💬 Msgs</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[300px]">💬 Mensagens (Texto)</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔔 Não Lidas</th>
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">👮 Moderação</th>
                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Msg</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">👤 Remetente</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[250px]">💬 Última Mensagem (Texto)</th>
                        
                        {/* DATAS E PRAZOS (novas) */}
                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Dias Rest.</th>
@@ -1236,33 +1308,26 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                           
                           {/* MENSAGENS E COMUNICAÇÃO (novas colunas) */}
                           
-                          {/* Mensagens */}
-                          <td className="px-3 py-3 text-left">
-                            {(devolucao.numero_interacoes && devolucao.numero_interacoes > 0) ? (
-                              <div className="text-sm">
-                                <div className="text-blue-600 dark:text-blue-400 font-medium">
-                                  {devolucao.numero_interacoes} Mensagem(ns)
-                                </div>
-                                {devolucao.ultima_mensagem_remetente && (
-                                  <div className="text-muted-foreground text-xs">
-                                    Última: {devolucao.ultima_mensagem_remetente}
-                                  </div>
-                                )}
-                                {mensagensData?.conversation_status && typeof mensagensData.conversation_status === 'string' && (
-                                  <div className="text-muted-foreground text-xs">
-                                    Status: {mensagensData.conversation_status}
-                                  </div>
-                                )}
-                                {mensagensData?.messages?.length > 0 && (
-                                  <div className="text-muted-foreground text-xs">
-                                    {mensagensData.messages.length} na conversa
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">Sem mensagens</span>
-                            )}
-                          </td>
+                           {/* Mensagens */}
+                           <td className="px-3 py-3 text-left">
+                             {(devolucao.numero_interacoes && devolucao.numero_interacoes > 0) ? (
+                               <div className="text-sm max-w-[300px]">
+                                 <div className="text-blue-600 dark:text-blue-400 font-medium mb-1">
+                                   {devolucao.numero_interacoes} Mensagem(ns)
+                                 </div>
+                                 <div className="text-foreground text-xs border-l-2 border-blue-200 pl-2 line-clamp-3">
+                                   {getTextoMensagens(devolucao)}
+                                 </div>
+                                 {devolucao.ultima_mensagem_remetente && (
+                                   <div className="text-muted-foreground text-xs mt-1">
+                                     Última por: {devolucao.ultima_mensagem_remetente}
+                                   </div>
+                                 )}
+                               </div>
+                             ) : (
+                               <span className="text-muted-foreground">Sem mensagens</span>
+                             )}
+                           </td>
                           
                           {/* Mensagens Não Lidas */}
                           <td className="px-3 py-3 text-center">
@@ -1314,10 +1379,17 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                              })() : '-'}
                            </td>
                           
-                          {/* Última Mensagem Remetente */}
-                          <td className="px-3 py-3 text-foreground text-sm">
-                            {devolucao.ultima_mensagem_remetente || '-'}
-                          </td>
+                           {/* Última Mensagem Texto */}
+                           <td className="px-3 py-3 text-foreground text-sm">
+                             <div className="max-w-[250px]">
+                               <div className="text-xs text-muted-foreground mb-1">
+                                 De: {devolucao.ultima_mensagem_remetente || 'N/A'}
+                               </div>
+                               <div className="text-foreground line-clamp-3 border-l-2 border-gray-200 pl-2">
+                                 {getUltimaMensagemTexto(devolucao)}
+                               </div>
+                             </div>
+                           </td>
                           
                           {/* DATAS E PRAZOS (5 colunas) */}
                           
