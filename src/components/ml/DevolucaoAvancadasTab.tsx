@@ -19,6 +19,7 @@ import DevolucaoAnalyticsDashboard from '@/features/devolucoes/components/Devolu
 import DevolucaoExportDialog from '@/features/devolucoes/components/DevolucaoExportDialog';
 import { auditarLoteIndicadores, debugIndicadores } from '@/dev/auditIndicadoresDevoluções';
 import { rodarAuditoriaCompleta } from '@/dev/auditoriaCompleta';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   RefreshCw, 
   Download, 
@@ -1035,6 +1036,38 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
             >
               <RefreshCw className={`h-4 w-4 ${devolucoesBusca.loading ? 'animate-spin' : ''}`} />
               📊 Auditoria de Enriquecimento
+            </Button>
+
+            {/* 🧮 BOTÃO CALCULAR MÉTRICAS */}
+            <Button
+              variant="outline"
+              onClick={async () => {
+                console.log('🧮 Calculando métricas financeiras e temporais...');
+                
+                toast.info('🔄 Calculando métricas das 13 colunas...');
+                
+                try {
+                  const response = await supabase.functions.invoke('calculate-devolucoes-metrics', {
+                    body: { trigger: 'manual' }
+                  });
+                  
+                  if (response.data?.success) {
+                    toast.success(`✅ Métricas calculadas: ${response.data.updated} devoluções atualizadas`);
+                    // Recarregar dados após calcular métricas
+                    await buscarComFiltros();
+                  } else {
+                    toast.error('❌ Erro ao calcular métricas');
+                  }
+                  
+                } catch (error) {
+                  console.error('❌ Erro no cálculo:', error);
+                  toast.error('Erro ao calcular métricas');
+                }
+              }}
+              className="bg-purple-500 text-white hover:bg-purple-600 flex items-center gap-2 px-4 py-2"
+            >
+              <Calculator className="h-4 w-4" />
+              🧮 Calcular Métricas
             </Button>
           </div>
 
