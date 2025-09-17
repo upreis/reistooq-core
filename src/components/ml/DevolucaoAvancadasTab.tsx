@@ -42,7 +42,8 @@ import {
   Calendar,
   MessageCircle,
   Truck,
-  Calculator
+  Calculator,
+  ArrowRight
 } from 'lucide-react';
 
 interface DevolucaoAvancada {
@@ -896,7 +897,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               Métricas Avançadas
             </Button>
 
-            {/* 🔍 BOTÃO AUDITORIA COMPLETA - FIXO E VISÍVEL */}
+              {/* 🔍 BOTÃO AUDITORIA COMPLETA - FIXO E VISÍVEL */}
             <Button
               variant="outline"
               onClick={() => {
@@ -916,6 +917,25 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             >
               <Wrench className="h-4 w-4" />
               🔍 Auditoria Completa
+            </Button>
+
+            {/* 🔧 BOTÃO VER TODAS AS COLUNAS */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                const tableContainer = document.querySelector('.overflow-x-auto');
+                if (tableContainer) {
+                  tableContainer.scrollTo({
+                    left: tableContainer.scrollWidth,
+                    behavior: 'smooth'
+                  });
+                  toast.info('📊 Tabela rolada para mostrar todas as colunas novas');
+                }
+              }}
+              className="bg-blue-500 text-white hover:bg-blue-600 flex items-center gap-2 px-4 py-2"
+            >
+              <ArrowRight className="h-4 w-4" />
+              📊 Ver Novas Colunas
             </Button>
 
             {/* 🚀 BOTÃO TESTE ENRIQUECIMENTO - ATUALIZADO */}
@@ -1050,6 +1070,11 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                 🔄 Dados restaurados do cache. Use os botões de sincronização para atualizar.
               </CardDescription>
             )}
+            <CardDescription className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+              📊 <strong>42 Novas Colunas Adicionadas!</strong> Role horizontalmente para ver:
+              <br />
+              💬 Mensagens | ⏰ Prazos | 🚛 Rastreamento | 💰 Financeiro | 🏷️ Classificação | ⏱️ Métricas | 🔄 Estados
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
