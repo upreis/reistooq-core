@@ -1047,7 +1047,7 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                         (devolucao.anexos_ml && Array.isArray(devolucao.anexos_ml) && devolucao.anexos_ml.length > 0)
                       );
 
-                       // 🔍 DEBUG: Log simplificado para evitar renderização de objetos
+                       // 🔍 DEBUG: Log simplificado para evitar renderização de objetos + verificação de shipping
                        if (index === 0) {
                          console.log('🔍 DEBUG PRIMEIRA DEVOLUÇÃO:', {
                            order_id: devolucao.order_id,
@@ -1064,6 +1064,17 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                            orderData_tags_count: orderData?.tags?.length || 0,
                            status_devolucao: devolucao.status_devolucao
                          });
+                         
+                         // 🚨 DEBUG ESPECÍFICO: Verificar dados de shipping que podem estar causando erro
+                         if (orderData?.shipping) {
+                           console.log('🚨 SHIPPING DATA FOUND:', typeof orderData.shipping, Object.keys(orderData.shipping));
+                         }
+                         if (orderData?.cancel_detail) {
+                           console.log('🚨 CANCEL DETAIL:', typeof orderData.cancel_detail, orderData.cancel_detail);
+                         }
+                         if (claimData?.status_detail) {
+                           console.log('🚨 CLAIM STATUS DETAIL:', typeof claimData.status_detail, claimData.status_detail);
+                         }
                        }
 
                       return (
@@ -1132,12 +1143,12 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                             {temClaimData ? (
                               <div className="text-sm">
                                 <div className="text-blue-600 dark:text-blue-400 font-medium">
-                                  Ativo: {claimData?.status || 'closed'}
+                                  Ativo: {typeof claimData?.status === 'string' ? claimData.status : 'closed'}
                                 </div>
                                 <div className="text-muted-foreground text-xs">
-                                  Tipo: {claimData?.type || 'cancel_purchase'}
+                                  Tipo: {typeof claimData?.type === 'string' ? claimData.type : 'cancel_purchase'}
                                 </div>
-                                {claimData?.reason_id && (
+                                {claimData?.reason_id && typeof claimData.reason_id === 'string' && (
                                   <div className="text-muted-foreground text-xs">
                                     Código: {claimData.reason_id}
                                   </div>
@@ -1237,7 +1248,7 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                                     Última: {devolucao.ultima_mensagem_remetente}
                                   </div>
                                 )}
-                                {mensagensData?.conversation_status && (
+                                {mensagensData?.conversation_status && typeof mensagensData.conversation_status === 'string' && (
                                   <div className="text-muted-foreground text-xs">
                                     Status: {mensagensData.conversation_status}
                                   </div>
@@ -1275,11 +1286,11 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                           <td className="px-3 py-3 text-center">
                             {devolucao.status_moderacao ? (
                               <span className={`px-2 py-1 rounded text-xs ${
-                                devolucao.status_moderacao === 'approved' ? 'bg-green-100 text-green-800' :
-                                devolucao.status_moderacao === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                String(devolucao.status_moderacao) === 'approved' ? 'bg-green-100 text-green-800' :
+                                String(devolucao.status_moderacao) === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-red-100 text-red-800'
                               }`}>
-                                {devolucao.status_moderacao}
+                                {String(devolucao.status_moderacao)}
                               </span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
@@ -1357,13 +1368,13 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                           
                           {/* Rastreamento */}
                           <td className="px-3 py-3 text-center">
-                            {devolucao.codigo_rastreamento ? (
+                             {devolucao.codigo_rastreamento ? (
                               <div className="text-xs">
-                                <div className="font-mono text-blue-600 dark:text-blue-400" title={devolucao.codigo_rastreamento}>
-                                  {devolucao.codigo_rastreamento.substring(0, 8)}...
+                                <div className="font-mono text-blue-600 dark:text-blue-400" title={String(devolucao.codigo_rastreamento)}>
+                                  {String(devolucao.codigo_rastreamento).substring(0, 8)}...
                                 </div>
                                 <div className="text-muted-foreground">
-                                  {devolucao.transportadora || 'N/A'}
+                                  {String(devolucao.transportadora || 'N/A')}
                                 </div>
                               </div>
                             ) : (
@@ -1372,20 +1383,20 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                           </td>
                           
                           {/* Transportadora */}
-                          <td className="px-3 py-3 text-foreground text-sm">
-                            {devolucao.transportadora || '-'}
-                          </td>
+                           <td className="px-3 py-3 text-foreground text-sm">
+                             {String(devolucao.transportadora || '-')}
+                           </td>
                           
                           {/* Status Rastreamento */}
                           <td className="px-3 py-3 text-center">
-                            {devolucao.status_rastreamento ? (
+                             {devolucao.status_rastreamento ? (
                               <span className={`px-2 py-1 rounded text-xs ${
-                                devolucao.status_rastreamento === 'delivered' ? 'bg-green-100 text-green-800' :
-                                devolucao.status_rastreamento === 'in_transit' ? 'bg-blue-100 text-blue-800' :
-                                devolucao.status_rastreamento === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                String(devolucao.status_rastreamento) === 'delivered' ? 'bg-green-100 text-green-800' :
+                                String(devolucao.status_rastreamento) === 'in_transit' ? 'bg-blue-100 text-blue-800' :
+                                String(devolucao.status_rastreamento) === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
-                                {devolucao.status_rastreamento}
+                                {String(devolucao.status_rastreamento)}
                               </span>
                             ) : (
                               <span className="text-muted-foreground">-</span>
