@@ -3,7 +3,7 @@
  * Busca e processa dados diretamente da API do Mercado Livre em tempo real
  */
 
-import { corsHeaders, makeServiceClient, ok, fail } from '../_shared/client.ts';
+import { corsHeaders, makeServiceClient, ok, fail, getMlConfig } from '../_shared/client.ts';
 
 interface RequestBody {
   action?: 'real_time_processing' | 'unified_processing' | 'fetch_real_time_data';
@@ -57,9 +57,9 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Conta validada: ${account.name} (${account.provider})`);
 
-    // Buscar token ML
-    const mlTokens = await getMLAccessToken(supabase, body.integration_account_id);
-    if (!mlTokens) {
+    // Buscar token ML usando função compartilhada
+    const mlConfig = await getMlConfig(supabase, body.integration_account_id);
+    if (!mlConfig) {
       return fail('Token de acesso ML não encontrado. Configure a integração.');
     }
 
@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       case 'unified_processing':
       case 'calculate_all_metrics':
       case 'fetch_real_time_data':
-        return await processRealTimeData(supabase, body, mlTokens, account);
+        return await processRealTimeData(supabase, body, mlConfig, account);
       
       default:
         return fail('Ação não reconhecida');
@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
  * 🔥 PROCESSAMENTO PRINCIPAL - USA DADOS JÁ DISPONÍVEIS
  * Usa dados da ml-api-direct que já está funcionando
  */
-async function processRealTimeData(supabase: any, body: RequestBody, mlTokens: MLAccessTokenResponse, account: any) {
+async function processRealTimeData(supabase: any, body: RequestBody, mlConfig: any, account: any) {
   try {
     console.log('🔥 Processando dados usando ml-api-direct');
     
@@ -95,7 +95,7 @@ async function processRealTimeData(supabase: any, body: RequestBody, mlTokens: M
         action: 'get_claims_and_returns',
         integration_account_id: body.integration_account_id,
         seller_id: account.account_identifier,
-        access_token: mlTokens.access_token,
+        access_token: mlConfig.access_token,
         filters: {
           date_from: body.date_from || '',
           date_to: body.date_to || '',
@@ -590,46 +590,3 @@ async function upsertOrderData(supabase: any, enrichedData: any) {
   }
 }
 
-/**
- * 🔑 BUSCAR TOKEN ML
- */
-async function getMLAccessToken(supabase: any, accountId: string): Promise<MLAccessTokenResponse | null> {
-  try {
-    const { data, error } = await supabase.functions.invoke('get-ml-token', {
-      body: {
-        integration_account_id: accountId,
-        provider: 'mercadolivre'
-      }
-    });
-
-    if (error || !data?.access_token) {
-      console.error('❌ Erro ao obter token ML:', error);
-      return null;
-    }
-
-    return {
-      access_token: data.access_token,
-      account_identifier: data.account_identifier
-    };
-
-  } catch (error) {
-    console.error('❌ Erro ao buscar token ML:', error);
-    return null;
-  }
-}
-
-/**
- * 🔄 PROCESSAMENTO UNIFICADO
- */
-async function unifiedRealTimeProcessing(supabase: any, body: RequestBody, mlTokens: MLAccessTokenResponse, account: any) {
-  console.log('🔄 Iniciando processamento unificado em tempo real');
-  return await processRealTimeData(supabase, body, mlTokens, account);
-}
-
-/**
- * 📡 BUSCAR DADOS EM TEMPO REAL
- */
-async function fetchRealTimeMLData(supabase: any, body: RequestBody, mlTokens: MLAccessTokenResponse, account: any) {
-  console.log('📡 Buscando dados em tempo real da API ML');
-  return await processRealTimeData(supabase, body, mlTokens, account);
-}
