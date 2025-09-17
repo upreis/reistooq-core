@@ -466,19 +466,37 @@ function calculateMetricsFromApiData(devolucao: any) {
   
   console.log('🧮 Calculando métricas dos dados da API...');
 
-  // Extrair dados principais
+  // Extrair dados principais das estruturas corretas
   const orderData = devolucao.order_data;
+  const claimData = devolucao.claim_details;
   const payment = orderData?.payments?.[0];
-  const dataCreation = devolucao.date_created ? new Date(devolucao.date_created) : null;
-  const dataFinalizacao = orderData?.date_closed ? new Date(orderData.date_closed) : null;
-  const messages = devolucao.claim_messages?.messages || [];
+  
+  // Datas corretas da estrutura
+  const dataCreation = claimData?.date_created ? new Date(claimData.date_created) : 
+                      (devolucao.date_created ? new Date(devolucao.date_created) : null);
+  const dataFinalizacao = claimData?.last_updated ? new Date(claimData.last_updated) : 
+                         (orderData?.date_closed ? new Date(orderData.date_closed) : null);
+  
+  // Mensagens de múltiplas fontes
+  const messages = devolucao.timeline_mensagens || 
+                  devolucao.claim_messages?.messages || 
+                  devolucao.dados_mensagens || [];
+
+  console.log(`📊 Dados para cálculo:`, {
+    dataCreation: dataCreation?.toISOString(),
+    dataFinalizacao: dataFinalizacao?.toISOString(),
+    messagesCount: messages.length,
+    orderAmount: orderData?.total_amount
+  });
 
   // 1. TEMPO PRIMEIRA RESPOSTA VENDEDOR (em minutos)
   if (messages.length > 0 && dataCreation) {
     // Buscar primeira mensagem do vendedor
     const mensagensVendedor = messages.filter(msg => 
       msg.from?.role === 'seller' || 
-      (msg.from?.user_id && msg.from.user_id.toString() !== devolucao.buyer?.id?.toString())
+      msg.from?.role === 'respondent' ||
+      (msg.from?.user_id && devolucao.buyer?.id && 
+       msg.from.user_id.toString() !== devolucao.buyer.id.toString())
     );
     
     if (mensagensVendedor.length > 0) {
@@ -486,6 +504,7 @@ function calculateMetricsFromApiData(devolucao: any) {
       const diffMinutes = Math.floor((primeiraMensagem.getTime() - dataCreation.getTime()) / (1000 * 60));
       if (diffMinutes > 0 && diffMinutes < 10080) { // Max 1 semana
         metrics.tempo_primeira_resposta_vendedor = diffMinutes;
+        console.log(`✅ Tempo primeira resposta: ${diffMinutes} minutos`);
       }
     }
   }
@@ -495,6 +514,7 @@ function calculateMetricsFromApiData(devolucao: any) {
     const diffMinutes = Math.floor((dataFinalizacao.getTime() - dataCreation.getTime()) / (1000 * 60));
     if (diffMinutes > 0) {
       metrics.tempo_total_resolucao = diffMinutes;
+      console.log(`✅ Tempo total resolução: ${diffMinutes} minutos`);
     }
   }
 
@@ -524,37 +544,52 @@ function calculateMetricsFromApiData(devolucao: any) {
   if (metrics.sla_cumprido) scoreQualidade += 30;
   if (metrics.tempo_primeira_resposta_vendedor && metrics.tempo_primeira_resposta_vendedor < 240) scoreQualidade += 20; // < 4h
   if (messages.length > 0) scoreQualidade += 10; // Tem comunicação
-  if (devolucao.status === 'closed') scoreQualidade += 10; // Resolvido
+  if (claimData?.status === 'closed') scoreQualidade += 10; // Resolvido
   metrics.score_qualidade = Math.min(100, scoreQualidade);
 
   // 7-9. VALORES DE REEMBOLSO (DADOS REAIS DA API)
-  if (payment) {
-    metrics.valor_reembolso_total = payment.total_paid_amount || payment.transaction_amount || 0;
-    metrics.valor_reembolso_produto = payment.transaction_amount || 0;
-    metrics.valor_reembolso_frete = payment.shipping_cost || 0;
+  // Usar pagamento do pedido que foi reembolsado
+  const refundedPayment = orderData?.payments?.find(p => 
+    p.status === 'refunded' || p.status_detail?.includes('refunded')
+  ) || payment;
+
+  if (refundedPayment) {
+    metrics.valor_reembolso_total = refundedPayment.transaction_amount_refunded || 
+                                   refundedPayment.total_paid_amount || 
+                                   refundedPayment.transaction_amount || 0;
+    metrics.valor_reembolso_produto = refundedPayment.transaction_amount || 0;
+    metrics.valor_reembolso_frete = refundedPayment.shipping_cost || 0;
     
     // 13. DATA PROCESSAMENTO REEMBOLSO
-    if (payment.date_last_modified) {
-      metrics.data_processamento_reembolso = payment.date_last_modified;
+    if (refundedPayment.date_last_modified) {
+      metrics.data_processamento_reembolso = refundedPayment.date_last_modified;
+    }
+    
+    // 10. TAXA ML REEMBOLSO (DADOS REAIS DA API)
+    if (refundedPayment.marketplace_fee) {
+      metrics.taxa_ml_reembolso = refundedPayment.marketplace_fee;
     }
   } else {
     // Usar valor do amount se não tiver payment
-    metrics.valor_reembolso_total = devolucao.amount || 0;
-    metrics.valor_reembolso_produto = devolucao.amount || 0;
+    const valorTotal = devolucao.amount || orderData?.total_amount || 0;
+    metrics.valor_reembolso_total = valorTotal;
+    metrics.valor_reembolso_produto = valorTotal;
     metrics.valor_reembolso_frete = 0;
-  }
-
-  // 10. TAXA ML REEMBOLSO (DADOS REAIS DA API)
-  if (payment?.marketplace_fee) {
-    metrics.taxa_ml_reembolso = payment.marketplace_fee;
-  } else if (metrics.valor_reembolso_produto > 0) {
-    // Calcular taxa padrão ML (6.5% para devoluções)
-    metrics.taxa_ml_reembolso = metrics.valor_reembolso_produto * 0.065;
+    
+    // Calcular taxa padrão ML se não tiver dados reais
+    if (valorTotal > 0) {
+      metrics.taxa_ml_reembolso = valorTotal * 0.065; // 6.5% padrão ML
+    }
   }
 
   // 11. CUSTO LOGÍSTICO TOTAL
-  if (orderData?.shipping?.cost) {
-    metrics.custo_logistico_total = orderData.shipping.cost;
+  // Usar dados de shipping se disponível
+  const shippingCost = orderData?.shipping?.cost || 
+                      devolucao.shipping_cost || 
+                      refundedPayment?.shipping_cost || 0;
+  
+  if (shippingCost > 0) {
+    metrics.custo_logistico_total = shippingCost;
   } else if (metrics.valor_reembolso_produto > 0) {
     // Estimar custo logístico baseado no valor do produto
     const valorProduto = metrics.valor_reembolso_produto;
