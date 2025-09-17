@@ -58,8 +58,13 @@ export async function getMlConfig(supabase: any, accountId: string) {
       }
     });
 
-    if (error || !data?.access_token) {
+    if (error) {
       console.error('❌ Erro ao obter token ML:', error);
+      return null;
+    }
+
+    if (!data?.success || !data?.access_token) {
+      console.error('❌ Token ML não encontrado nos dados:', data);
       return null;
     }
 

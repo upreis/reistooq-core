@@ -80,6 +80,13 @@ Deno.serve(async (req: Request) => {
     // Buscar o token real usando service client
     const serviceClient = makeServiceClient();
     
+    // Buscar account_identifier também
+    const { data: accountData, error: accountError } = await serviceClient
+      .from('integration_accounts')
+      .select('account_identifier')
+      .eq('id', integration_account_id)
+      .single();
+      
     const { data: secretRow, error: fetchError } = await serviceClient
       .from('integration_secrets')
       .select('secret_enc, provider, expires_at, simple_tokens, use_simple')
@@ -168,6 +175,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({
       success: true,
       access_token: secret.access_token,
+      account_identifier: accountData?.account_identifier || null,
       expires_at: secretRow.expires_at,
       provider: secretRow.provider
     }), {
