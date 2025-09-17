@@ -3,7 +3,7 @@
  * Busca e processa dados diretamente da API do Mercado Livre em tempo real
  */
 
-import { corsHeaders, makeServiceClient, ok, fail, getMlConfig } from '../_shared/client.ts';
+import { corsHeaders, makeServiceClient, ok, fail } from '../_shared/client.ts';
 
 interface RequestBody {
   action?: 'real_time_processing' | 'unified_processing' | 'fetch_real_time_data';
@@ -57,10 +57,43 @@ Deno.serve(async (req) => {
 
     console.log(`✅ Conta validada: ${account.name} (${account.provider})`);
 
-    // Buscar token ML usando função compartilhada
-    const mlConfig = await getMlConfig(supabase, body.integration_account_id);
-    if (!mlConfig) {
+    // Buscar token ML diretamente do banco (mesmo método que o frontend usa)
+    const { data: secretRow, error: fetchError } = await supabase
+      .from('integration_secrets')
+      .select('secret_enc, provider, expires_at, simple_tokens, use_simple')
+      .eq('integration_account_id', body.integration_account_id)
+      .eq('provider', 'mercadolivre')
+      .maybeSingle();
+
+    if (fetchError || !secretRow) {
+      console.error('❌ Token ML não encontrado:', fetchError);
       return fail('Token de acesso ML não encontrado. Configure a integração.');
+    }
+
+    // Decriptar token usando simple encryption (mesmo método do get-ml-token)
+    let mlConfig = null;
+    if (secretRow.simple_tokens && secretRow.use_simple) {
+      try {
+        const { data: decryptResult, error: decryptError } = await supabase
+          .rpc('decrypt_simple', { 
+            encrypted_data: secretRow.simple_tokens 
+          });
+        
+        if (!decryptError && decryptResult) {
+          const secret = JSON.parse(decryptResult);
+          mlConfig = {
+            access_token: secret.access_token,
+            account_identifier: account.account_identifier
+          };
+          console.log(`✅ Token ML decriptado com sucesso para conta ${account.name}`);
+        }
+      } catch (error) {
+        console.error('❌ Erro ao decriptar token:', error);
+      }
+    }
+
+    if (!mlConfig || !mlConfig.access_token) {
+      return fail('Falha ao obter token de acesso ML');
     }
 
     // Processar baseado na ação
