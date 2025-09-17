@@ -6,7 +6,7 @@
 import { corsHeaders, makeServiceClient, ok, fail } from '../_shared/client.ts';
 
 interface RequestBody {
-  action?: 'real_time_processing' | 'unified_processing' | 'fetch_real_time_data';
+  action?: 'real_time_processing' | 'unified_processing' | 'fetch_real_time_data' | 'calculate_all_metrics';
   integration_account_id: string;
   limit?: number;
   force_refresh?: boolean;
@@ -477,33 +477,77 @@ function calculateMetricsFromApiData(devolucao: any) {
   const dataFinalizacao = claimData?.last_updated ? new Date(claimData.last_updated) : 
                          (orderData?.date_closed ? new Date(orderData.date_closed) : null);
   
-  // Mensagens de múltiplas fontes
-  const messages = devolucao.timeline_mensagens || 
-                  devolucao.claim_messages?.messages || 
-                  devolucao.dados_mensagens || [];
+  // Mensagens de múltiplas fontes - expandir busca
+  let messages = [];
+  
+  // Buscar mensagens em todas as possíveis estruturas
+  if (devolucao.timeline_mensagens && Array.isArray(devolucao.timeline_mensagens)) {
+    messages = devolucao.timeline_mensagens;
+  } else if (devolucao.claim_messages?.messages && Array.isArray(devolucao.claim_messages.messages)) {
+    messages = devolucao.claim_messages.messages;
+  } else if (devolucao.dados_mensagens && Array.isArray(devolucao.dados_mensagens)) {
+    messages = devolucao.dados_mensagens;
+  } else if (claimData?.messages && Array.isArray(claimData.messages)) {
+    messages = claimData.messages;
+  } else if (devolucao.messages && Array.isArray(devolucao.messages)) {
+    messages = devolucao.messages;
+  }
 
-  console.log(`📊 Dados para cálculo:`, {
+  console.log(`📊 Dados para cálculo - Order ${devolucao.order_id}:`, {
     dataCreation: dataCreation?.toISOString(),
     dataFinalizacao: dataFinalizacao?.toISOString(),
     messagesCount: messages.length,
-    orderAmount: orderData?.total_amount
+    orderAmount: orderData?.total_amount,
+    hasClaimData: !!claimData,
+    hasOrderData: !!orderData,
+    claimDataKeys: claimData ? Object.keys(claimData) : [],
+    devolucaoKeys: Object.keys(devolucao)
   });
 
   // 1. TEMPO PRIMEIRA RESPOSTA VENDEDOR (em minutos)
+  
+  // Log detalhado para debug
+  console.log(`🔍 Analisando primeira resposta - Order ${devolucao.order_id}:`, {
+    messagesCount: messages.length,
+    dataCreation,
+    buyerId: devolucao.buyer?.id || orderData?.buyer?.id,
+    sellerId: orderData?.seller?.id,
+    sampleMessage: messages[0] ? {
+      from: messages[0].from,
+      to: messages[0].to,
+      date_created: messages[0].date_created,
+      text: messages[0].text?.substring(0, 50)
+    } : null
+  });
+  
   if (messages.length > 0 && dataCreation) {
     console.log(`🔍 Analisando ${messages.length} mensagens para primeira resposta do vendedor`);
     
-    // Buscar primeira mensagem do vendedor com diferentes critérios
+    // Buscar primeira mensagem do vendedor com critérios mais amplos
+    const buyerId = devolucao.buyer?.id || orderData?.buyer?.id;
+    const sellerId = orderData?.seller?.id;
+    
     const mensagensVendedor = messages.filter(msg => {
-      const isSellerByRole = msg.from?.role === 'seller' || msg.from?.role === 'respondent';
-      const isSellerByUserId = msg.from?.user_id && devolucao.buyer?.id && 
-        msg.from.user_id.toString() !== devolucao.buyer.id.toString();
+      if (!msg || !msg.from) return false;
+      
+      // Critério 1: Role seller/respondent  
+      const isSellerByRole = msg.from.role === 'seller' || msg.from.role === 'respondent';
+      
+      // Critério 2: User ID diferente do comprador
+      const isSellerByUserId = buyerId && msg.from.user_id && 
+        msg.from.user_id.toString() !== buyerId.toString();
+      
+      // Critério 3: Destinatário é comprador
       const isSellerByReceiver = msg.receiver_role === 'buyer' || msg.to?.role === 'buyer';
       
-      return isSellerByRole || isSellerByUserId || isSellerByReceiver;
+      // Critério 4: User ID igual ao seller_id
+      const isSellerById = sellerId && msg.from.user_id && 
+        msg.from.user_id.toString() === sellerId.toString();
+      
+      return isSellerByRole || isSellerByUserId || isSellerByReceiver || isSellerById;
     });
     
-    console.log(`📊 Encontradas ${mensagensVendedor.length} mensagens do vendedor`);
+    console.log(`📊 Encontradas ${mensagensVendedor.length} mensagens do vendedor de ${messages.length} total`);
     
     if (mensagensVendedor.length > 0) {
       // Ordenar por data para pegar a primeira
@@ -523,10 +567,13 @@ function calculateMetricsFromApiData(devolucao: any) {
         console.log(`⚠️ Tempo primeira resposta fora do range válido: ${diffMinutes} minutos`);
       }
     } else {
-      console.log(`⚠️ Nenhuma mensagem do vendedor encontrada`);
+      console.log(`⚠️ Nenhuma mensagem do vendedor encontrada - Critérios não atendidos`);
+      // Se não tem mensagens do vendedor, definir como NULL (sem resposta)
+      metrics.tempo_primeira_resposta_vendedor = null;
     }
   } else {
-    console.log(`⚠️ Sem mensagens (${messages.length}) ou data criação (${dataCreation})`);
+    console.log(`⚠️ Sem mensagens (${messages.length}) ou data criação (${dataCreation ? 'ok' : 'null'})`);
+    metrics.tempo_primeira_resposta_vendedor = null;
   }
 
   // 2. TEMPO TOTAL RESOLUÇÃO (em minutos)
@@ -551,21 +598,42 @@ function calculateMetricsFromApiData(devolucao: any) {
   metrics.sla_cumprido = metrics.dias_ate_resolucao ? metrics.dias_ate_resolucao <= 3 : true;
 
   // 5. EFICIÊNCIA RESOLUÇÃO
-  if (metrics.tempo_primeira_resposta_vendedor && metrics.tempo_total_resolucao) {
-    const eficiencia = 100 - ((metrics.tempo_primeira_resposta_vendedor / metrics.tempo_total_resolucao) * 100);
-    metrics.eficiencia_resolucao = Math.max(0, Math.min(100, eficiencia)).toFixed(1);
+  if (metrics.tempo_total_resolucao) {
+    if (metrics.tempo_total_resolucao <= 24 * 60) { // 1 dia
+      metrics.eficiencia_resolucao = 'excelente';
+    } else if (metrics.tempo_total_resolucao <= 72 * 60) { // 3 dias
+      metrics.eficiencia_resolucao = 'boa';
+    } else if (metrics.tempo_total_resolucao <= 168 * 60) { // 7 dias
+      metrics.eficiencia_resolucao = 'regular';
+    } else {
+      metrics.eficiencia_resolucao = 'ruim';
+    }
   } else {
-    // Calcular eficiência baseada em SLA
-    metrics.eficiencia_resolucao = metrics.sla_cumprido ? "85.0" : "45.0";
+    metrics.eficiencia_resolucao = 'indeterminada';
   }
 
   // 6. SCORE QUALIDADE (baseado em múltiplos fatores)
-  let scoreQualidade = 50; // Base
-  if (metrics.sla_cumprido) scoreQualidade += 30;
-  if (metrics.tempo_primeira_resposta_vendedor && metrics.tempo_primeira_resposta_vendedor < 240) scoreQualidade += 20; // < 4h
-  if (messages.length > 0) scoreQualidade += 10; // Tem comunicação
-  if (claimData?.status === 'closed') scoreQualidade += 10; // Resolvido
-  metrics.score_qualidade = Math.min(100, scoreQualidade);
+  let score = 50; // Score base
+  
+  // Bônus por tempo de resposta rápida
+  if (metrics.tempo_primeira_resposta_vendedor !== null) {
+    if (metrics.tempo_primeira_resposta_vendedor <= 60) score += 20; // 1h
+    else if (metrics.tempo_primeira_resposta_vendedor <= 240) score += 15; // 4h
+    else if (metrics.tempo_primeira_resposta_vendedor <= 1440) score += 10; // 24h
+  }
+  
+  // Bônus por SLA cumprido
+  if (metrics.sla_cumprido) score += 20;
+  
+  // Bônus por resolução rápida
+  if (metrics.eficiencia_resolucao === 'excelente') score += 20;
+  else if (metrics.eficiencia_resolucao === 'boa') score += 15;
+  else if (metrics.eficiencia_resolucao === 'regular') score += 5;
+  
+  // Garantir que está entre 0-100
+  metrics.score_qualidade = Math.max(0, Math.min(100, score));
+
+  console.log(`📊 Score calculado: ${metrics.score_qualidade}/100 para order ${devolucao.order_id}`);
 
   // 7-9. VALORES DE REEMBOLSO (DADOS REAIS DA API)
   // Usar pagamento do pedido que foi reembolsado
