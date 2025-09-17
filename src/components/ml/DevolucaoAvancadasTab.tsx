@@ -327,13 +327,20 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     try {
       const mensagens = [];
       
+      // Debug log para identificar o problema
+      console.log('🔍 DEBUG dados_mensagens structure:', {
+        type: typeof devolucao.dados_mensagens,
+        isArray: Array.isArray(devolucao.dados_mensagens),
+        keys: devolucao.dados_mensagens ? Object.keys(devolucao.dados_mensagens) : [],
+        value: devolucao.dados_mensagens
+      });
+      
       // Buscar mensagens nos dados_mensagens
       if (devolucao.dados_mensagens?.messages && Array.isArray(devolucao.dados_mensagens.messages)) {
         for (const msg of devolucao.dados_mensagens.messages) {
-          if (msg.text && typeof msg.text === 'string') {
+          if (msg && typeof msg === 'object' && msg.text && typeof msg.text === 'string') {
             const remetente = msg.sender || msg.from || 'Não identificado';
-            const data = msg.date_created || msg.created_at || '';
-            mensagens.push(`[${remetente}]: ${msg.text.substring(0, 100)}...`);
+            mensagens.push(`[${String(remetente)}]: ${String(msg.text).substring(0, 100)}...`);
           }
         }
       }
@@ -343,9 +350,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         // Buscar em dados_claim
         if (devolucao.dados_claim?.messages && Array.isArray(devolucao.dados_claim.messages)) {
           for (const msg of devolucao.dados_claim.messages) {
-            if (msg.text && typeof msg.text === 'string') {
+            if (msg && typeof msg === 'object' && msg.text && typeof msg.text === 'string') {
               const remetente = msg.sender || msg.from || 'Não identificado';
-              mensagens.push(`[${remetente}]: ${msg.text.substring(0, 100)}...`);
+              mensagens.push(`[${String(remetente)}]: ${String(msg.text).substring(0, 100)}...`);
             }
           }
         }
@@ -353,15 +360,17 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         // Buscar em dados_return
         if (devolucao.dados_return?.messages && Array.isArray(devolucao.dados_return.messages)) {
           for (const msg of devolucao.dados_return.messages) {
-            if (msg.text && typeof msg.text === 'string') {
+            if (msg && typeof msg === 'object' && msg.text && typeof msg.text === 'string') {
               const remetente = msg.sender || msg.from || 'Não identificado';
-              mensagens.push(`[${remetente}]: ${msg.text.substring(0, 100)}...`);
+              mensagens.push(`[${String(remetente)}]: ${String(msg.text).substring(0, 100)}...`);
             }
           }
         }
       }
       
-      return mensagens.length > 0 ? mensagens.join(' | ') : 'Sem mensagens de texto';
+      const resultado = mensagens.length > 0 ? String(mensagens.join(' | ')) : 'Sem mensagens de texto';
+      console.log('🔍 DEBUG resultado getTextoMensagens:', typeof resultado, resultado);
+      return resultado;
     } catch (error) {
       console.error('Erro ao extrair mensagens:', error);
       return 'Erro ao carregar mensagens';
@@ -371,19 +380,30 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   // Função para extrair última mensagem completa
   const getUltimaMensagemTexto = useCallback((devolucao: DevolucaoAvancada) => {
     try {
+      // Debug log
+      console.log('🔍 DEBUG getUltimaMensagemTexto entrada:', {
+        hasDados: !!devolucao.dados_mensagens,
+        hasMessages: !!(devolucao.dados_mensagens?.messages),
+        messagesCount: devolucao.dados_mensagens?.messages?.length || 0
+      });
+      
       // Buscar última mensagem nos dados_mensagens
       if (devolucao.dados_mensagens?.messages && Array.isArray(devolucao.dados_mensagens.messages) && devolucao.dados_mensagens.messages.length > 0) {
         const ultimaMensagem = devolucao.dados_mensagens.messages[devolucao.dados_mensagens.messages.length - 1];
-        if (ultimaMensagem.text && typeof ultimaMensagem.text === 'string') {
-          return ultimaMensagem.text.substring(0, 200) + (ultimaMensagem.text.length > 200 ? '...' : '');
+        console.log('🔍 DEBUG última mensagem:', typeof ultimaMensagem, ultimaMensagem);
+        
+        if (ultimaMensagem && typeof ultimaMensagem === 'object' && ultimaMensagem.text && typeof ultimaMensagem.text === 'string') {
+          const texto = String(ultimaMensagem.text);
+          return texto.substring(0, 200) + (texto.length > 200 ? '...' : '');
         }
       }
       
       // Se não encontrou, buscar em timeline_mensagens
       if (devolucao.timeline_mensagens && Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0) {
         const ultimaMensagem = devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1];
-        if (ultimaMensagem.text && typeof ultimaMensagem.text === 'string') {
-          return ultimaMensagem.text.substring(0, 200) + (ultimaMensagem.text.length > 200 ? '...' : '');
+        if (ultimaMensagem && typeof ultimaMensagem === 'object' && ultimaMensagem.text && typeof ultimaMensagem.text === 'string') {
+          const texto = String(ultimaMensagem.text);
+          return texto.substring(0, 200) + (texto.length > 200 ? '...' : '');
         }
       }
       
@@ -1316,9 +1336,13 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                                  <div className="text-blue-600 dark:text-blue-400 font-medium mb-1">
                                    {devolucao.numero_interacoes} Mensagem(ns)
                                  </div>
-                                 <div className="text-foreground text-xs border-l-2 border-blue-200 pl-2 line-clamp-3">
-                                   {getTextoMensagens(devolucao)}
-                                 </div>
+                                  <div className="text-foreground text-xs border-l-2 border-blue-200 pl-2 line-clamp-3">
+                                    {(() => {
+                                      const texto = getTextoMensagens(devolucao);
+                                      console.log('🔍 DEBUG TEXTO MENSAGENS:', typeof texto, texto);
+                                      return String(texto);
+                                    })()}
+                                  </div>
                                  {devolucao.ultima_mensagem_remetente && (
                                    <div className="text-muted-foreground text-xs mt-1">
                                      Última por: {devolucao.ultima_mensagem_remetente}
@@ -1379,9 +1403,13 @@ ${auditoria.problemas_identificados.slice(0, 10).join('\n')}
                                <div className="text-xs text-muted-foreground mb-1">
                                  De: {devolucao.ultima_mensagem_remetente || 'N/A'}
                                </div>
-                               <div className="text-foreground line-clamp-3 border-l-2 border-gray-200 pl-2">
-                                 {getUltimaMensagemTexto(devolucao)}
-                               </div>
+                                <div className="text-foreground line-clamp-3 border-l-2 border-gray-200 pl-2">
+                                  {(() => {
+                                    const texto = getUltimaMensagemTexto(devolucao);
+                                    console.log('🔍 DEBUG ÚLTIMA MENSAGEM:', typeof texto, texto);
+                                    return String(texto);
+                                  })()}
+                                </div>
                              </div>
                            </td>
                           
