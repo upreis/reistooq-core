@@ -24,22 +24,6 @@ export function makeServiceClient() {
   );
 }
 
-export function makeClient(authToken: string | null) {
-  return createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      },
-      global: {
-        headers: authToken ? { Authorization: authToken } : {}
-      }
-    }
-  );
-}
-
 export function ok(data: any) {
   return new Response(
     JSON.stringify(data),
