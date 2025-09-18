@@ -115,10 +115,6 @@ export const IntegrationsHub: React.FC = () => {
         </Button>
       </div>
 
-      {/* Health Overview */}
-      <HealthMini />
-
-      {/* Main Content Tabs */}
       <Tabs defaultValue="integrations" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="integrations" className="flex items-center gap-2">
