@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
+import { formatPt, formatSubstatus, formatLogisticType, formatShippingStatus } from '@/utils/orderFormatters';
 import { translateMLTags } from '@/lib/translations';
 import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, AlertCircle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search, Database } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -637,112 +638,11 @@ function SimplePedidosPage({ className }: Props) {
     return mapApiStatusToLabel(status);
   };
 
-  const formatPt = (val?: any) => {
-    if (val === undefined || val === null || val === '') return '-';
-    const s = String(val).replace(/_/g, ' ').toLowerCase();
-    const map: Record<string,string> = {
-      // Status gerais
-      'ready to ship': 'Pronto para envio',
-      'delivered': 'Entregue',
-      'delivery': 'Entrega',
-      'pickup': 'Retirada',
-      'standard': 'Padrão',
-      'express': 'Expresso',
-      'same day': 'Mesmo dia',
-      'next day': 'Dia seguinte',
-      'estimated': 'Estimado',
-      'fulfillment': 'Fulfillment',
-      'me2': 'Mercado Envios',
-      'custom': 'Personalizado',
-      'home delivery': 'Entrega domiciliar',
-      'branch office': 'Agência',
-      'cross docking': 'Cross docking',
-      'drop off': 'Ponto de entrega',
-      'flex': 'Flex',
-      'xd drop off': 'Ponto entrega XD',
-      'not specified': 'Não especificado',
-      // Velocidades de envio
-      'slow': 'Lento',
-      'fast': 'Rápido',
-      'three days': 'Três dias',
-      'two days': 'Dois dias',
-      'one day': 'Um dia',
-      'four days': 'Quatro dias',
-      'five days': 'Cinco dias',
-      'six days': 'Seis dias',
-      'seven days': 'Sete dias',
-      'meli delivery day': 'Dia entrega Meli',
-      'regular': 'Regular',
-      'economy': 'Econômico',
-      'premium': 'Premium',
-      // Tipos de logística
-      'self service': 'Flex',
-      'cross dock': 'Cross dock',
-      'drop ship': 'Drop ship',
-      'warehouse': 'Depósito',
-      'store': 'Loja',
-      // Tipos de entrega específicos
-      'carrier': 'Transportadora',
-      'mail': 'Correios',
-      'courier': 'Courier',
-      'freight': 'Frete',
-      'motorcycle': 'Moto',
-      'bike': 'Bicicleta',
-      'walking': 'Caminhada',
-      // Status específicos do ML
-      'pending payment': 'Pagamento pendente',
-      'payment required': 'Pagamento necessário',
-      'paid': 'Pago',
-      'approved': 'Aprovado',
-      'rejected': 'Rejeitado',
-      'cancelled': 'Cancelado',
-      'refunded': 'Reembolsado'
-    };
-    const translated = map[s] ?? s;
-    return translated.charAt(0).toUpperCase() + translated.slice(1);
-  };
+  // ✅ REMOVIDO: Usar formatadores centralizados do orderFormatters
 
-  const formatLogisticType = (val?: any) => {
-    if (val === undefined || val === null || val === '') return '-';
-    const s = String(val).toLowerCase();
-    if (s === 'self service') return 'Flex';
-    return formatPt(val);
-  };
+  // ✅ REMOVIDO: Usar formatLogisticType do orderFormatters
 
-  const formatSubstatus = (val?: any) => {
-    if (val === undefined || val === null || val === '') return '-';
-    const s = String(val).replace(/_/g, ' ').toLowerCase();
-    const map: Record<string,string> = {
-      'ready to ship': 'Pronto para envio',
-      'shipped': 'Enviado',
-      'in transit': 'Em trânsito',
-      'out for delivery': 'Saiu para entrega',
-      'delivered': 'Entregue',
-      'pending': 'Pendente',
-      'handling': 'Processando',
-      'ready to handle': 'Pronto para processar',
-      'not delivered': 'Não entregue',
-      'returned': 'Devolvido',
-      'cancelled': 'Cancelado',
-      'waiting for pickup': 'Aguardando retirada',
-      'stale shipped': 'Envio antigo',
-      'claim': 'Reclamação',
-      'ready to collect': 'Pronto para retirar',
-      'collected': 'Coletado',
-      'to be agreed': 'A combinar',
-      'receiver absent': 'Destinatário ausente',
-      'under review': 'Em análise',
-      'contact failed': 'Contato falhou',
-      'under customs review': 'Revisão alfandegária',
-      'sorting': 'Triagem',
-      'at destination': 'No destino',
-      'damaged': 'Danificado',
-      'lost': 'Perdido',
-      'stolen': 'Roubado'
-    };
-    const translated = map[s] ?? s;
-    return translated.charAt(0).toUpperCase() + translated.slice(1);
-  };
+  // ✅ REMOVIDO: Usar formatSubstatus do orderFormatters
 
   // Helper para testar contas - COM DEBUG DETALHADO
   const testAccount = async (accId: string) => {

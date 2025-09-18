@@ -102,8 +102,8 @@ export function usePedidosMappingsOptimized({
       let processedCount = 0;
       let failedCount = 0;
 
-      // ✅ OTIMIZAÇÃO 3: Processar em lotes pequenos para não bloquear UI
-      const batchSize = 10;
+      // ✅ OTIMIZAÇÃO 3: Processar em lotes dinâmicos baseados no volume
+      const batchSize = orders.length > 500 ? 5 : orders.length > 100 ? 10 : 20;
       for (let i = 0; i < orders.length; i += batchSize) {
         // Verificar se foi cancelado
         if (signal.aborted) {
@@ -175,8 +175,9 @@ export function usePedidosMappingsOptimized({
           failed: failedCount
         }));
 
-        // ✅ OTIMIZAÇÃO 6: Pequena pausa para não bloquear UI
-        await new Promise(resolve => setTimeout(resolve, 10));
+        // ✅ OTIMIZAÇÃO 6: Pausa adaptativa baseada no volume
+        const delay = orders.length > 500 ? 20 : orders.length > 100 ? 10 : 5;
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
 
       // ✅ Finalizar processamento

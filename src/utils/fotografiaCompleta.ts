@@ -8,6 +8,7 @@
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { mapApiStatusToLabel, getStatusBadgeVariant } from '@/utils/statusMapping';
 import { buildIdUnico } from '@/utils/idUnico';
+import { formatPt, formatSubstatus, formatLogisticType, formatShippingStatus } from '@/utils/orderFormatters';
 
 // Interface que representa EXATAMENTE os dados como aparecem na UI
 // EXPANDIDA para incluir TODAS as colunas da configuração de pedidos
@@ -97,49 +98,11 @@ export interface FotografiaPedido {
   raw_data: any; // backup dos dados originais
 }
 
-/**
- * Formata texto para português (remove underscores, capitaliza)
- */
-function formatPt(text: string): string {
-  if (!text) return '-';
-  return text.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-}
+// ✅ REMOVIDO: Usar formatPt do orderFormatters
 
-/**
- * Formata tipo logístico com tradução específica
- */
-function formatLogisticType(type: string): string {
-  if (!type) return '-';
-  
-  const translations: Record<string, string> = {
-    'fulfillment': 'Full',
-    'cross_docking': 'Cross Docking',
-    'drop_off': 'Drop Off',
-    'custom': 'Personalizado',
-    'self_service': 'Auto Atendimento'
-  };
-  
-  return translations[type] || formatPt(type);
-}
+// ✅ REMOVIDO: Usar formatLogisticType do orderFormatters
 
-/**
- * Formata substatus de envio
- */
-function formatSubstatus(substatus: string): string {
-  if (!substatus) return '-';
-  
-  const translations: Record<string, string> = {
-    'ready_to_print': 'Pronto p/ Imprimir',
-    'printed': 'Impresso', 
-    'stale': 'Atrasado',
-    'delayed': 'Atrasado',
-    'receiver_absent': 'Destinatário Ausente',
-    'returning_to_sender': 'Retornando',
-    'out_for_delivery': 'Saiu p/ Entrega'
-  };
-  
-  return translations[substatus] || formatPt(substatus);
-}
+// ✅ REMOVIDO: Usar formatSubstatus do orderFormatters
 
 /**
  * Traduz status de envio
