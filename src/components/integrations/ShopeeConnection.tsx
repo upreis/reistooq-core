@@ -1,119 +1,317 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'react-hot-toast';
-import { ShoppingBag, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Loader2, CheckCircle, AlertCircle, ExternalLink, Settings } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export function ShopeeConnection() {
-  const [loading, setLoading] = useState(false);
-  const [credentials, setCredentials] = useState({
-    partner_id: '',
-    partner_key: '',
-    shop_id: ''
-  });
-  const [connected, setConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [shopId, setShopId] = useState('');
+  const [showSetup, setShowSetup] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleConnect = async () => {
-    if (!credentials.partner_id || !credentials.partner_key) {
-      toast.error('Partner ID e Partner Key são obrigatórios');
-      return;
-    }
+  useEffect(() => {
+    loadShopeeAccounts();
+    handleOAuthCallback();
+  }, []);
 
-    setLoading(true);
+  const loadShopeeAccounts = async () => {
     try {
-      // 🛡️ SEGURO: Mock por enquanto - não quebra nada
-      console.log('🛒 [ShopeeConnection] MOCK: Simulando conexão');
-      
-      // Simular delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // TODO: Implementar validação real quando edge functions estiverem prontas
-      toast.success('🚧 Shopee configurado (modo desenvolvimento)');
-      setConnected(true);
+      const { data, error } = await supabase
+        .from('integration_accounts')
+        .select('*')
+        .eq('provider', 'shopee')
+        .eq('is_active', true);
 
-    } catch (error: any) {
-      console.error('Erro ao conectar Shopee:', error);
-      toast.error('Erro ao conectar com Shopee (desenvolvimento)');
+      if (error) throw error;
+
+      setAccounts(data || []);
+      console.log(`✅ Contas Shopee carregadas: ${data?.length || 0}`);
+    } catch (error) {
+      console.error('Erro ao carregar contas Shopee:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleOAuthCallback = async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+
+    if (code && state) {
+      console.log('🔄 Processando callback OAuth Shopee...');
+      
+      try {
+        const response = await supabase.functions.invoke('shopee-oauth', {
+          body: {
+            action: 'handle_callback',
+            code: code,
+            state: state
+          }
+        });
+
+        if (response.error) throw response.error;
+
+        if (response.data?.success) {
+          toast.success('🛍️ Shopee conectado com sucesso!');
+          
+          // Limpar parâmetros da URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          // Recarregar contas
+          loadShopeeAccounts();
+        } else {
+          toast.error('Erro ao processar autorização Shopee');
+        }
+      } catch (error: any) {
+        console.error('Erro no callback OAuth:', error);
+        toast.error(`Erro: ${error.message}`);
+      }
+    }
+  };
+
+  const handleConnect = async () => {
+    if (!shopId.trim()) {
+      toast.error('Por favor, informe o Shop ID');
+      return;
+    }
+
+    setIsConnecting(true);
+    
+    try {
+      console.log(`🚀 Iniciando OAuth Shopee para Shop ID: ${shopId}`);
+      
+      const response = await supabase.functions.invoke('shopee-oauth', {
+        body: {
+          action: 'get_auth_url',
+          shop_id: shopId.trim(),
+          redirect_uri: `${window.location.origin}${window.location.pathname}`
+        }
+      });
+
+      if (response.error) throw response.error;
+      
+      const { auth_url } = response.data;
+      
+      if (auth_url) {
+        toast.success('Redirecionando para autorização Shopee...');
+        
+        // Salvar contexto para o callback
+        localStorage.setItem('shopee_oauth_context', JSON.stringify({
+          shop_id: shopId,
+          timestamp: Date.now()
+        }));
+        
+        // Redirecionar para OAuth Shopee
+        window.location.href = auth_url;
+      } else {
+        throw new Error('URL de autorização não recebida');
+      }
+      
+    } catch (error: any) {
+      toast.error(`Erro ao conectar: ${error.message}`);
+      console.error('❌ Shopee OAuth error:', error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async (accountId: string) => {
+    try {
+      const { error } = await supabase
+        .from('integration_accounts')
+        .update({ is_active: false })
+        .eq('id', accountId);
+
+      if (error) throw error;
+
+      toast.success('Shopee desconectado');
+      loadShopeeAccounts();
+    } catch (error: any) {
+      toast.error(`Erro ao desconectar: ${error.message}`);
+    }
+  };
+
+  const handleTestConnection = async (accountId: string) => {
+    try {
+      const response = await supabase.functions.invoke('shopee-validate', {
+        body: { integration_account_id: accountId }
+      });
+
+      if (response.error) throw response.error;
+
+      if (response.data?.success) {
+        toast.success('✅ Conexão Shopee funcionando!');
+      } else {
+        toast.error('❌ Problema na conexão Shopee');
+      }
+    } catch (error: any) {
+      toast.error(`Erro no teste: ${error.message}`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="animate-pulse flex space-x-4">
+            <div className="rounded-full bg-slate-200 h-10 w-10"></div>
+            <div className="flex-1 space-y-2 py-1">
+              <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const hasConnections = accounts.length > 0;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <ShoppingBag className="h-5 w-5" />
-          Shopee
+          🛍️ Shopee
+          {hasConnections ? (
+            <Badge variant="default" className="bg-green-100 text-green-800">
+              <CheckCircle className="w-3 h-3 mr-1" />
+              {accounts.length} conta{accounts.length > 1 ? 's' : ''}
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+              <AlertCircle className="w-3 h-3 mr-1" />
+              Não conectado
+            </Badge>
+          )}
         </CardTitle>
         <CardDescription>
-          🚧 Conecte sua conta Shopee (em desenvolvimento)
+          {hasConnections 
+            ? '✅ Integração ativa - pedidos sendo importados'
+            : 'Configure sua integração com o Shopee'
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!connected ? (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="partner_id">Partner ID *</Label>
-              <Input
-                id="partner_id"
-                value={credentials.partner_id}
-                onChange={(e) => setCredentials(prev => ({ ...prev, partner_id: e.target.value }))}
-                placeholder="Seu Test Partner ID"
-                disabled={loading}
-              />
+        {hasConnections ? (
+          <div className="space-y-3">
+            {accounts.map((account) => (
+              <div key={account.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <div>
+                    <span className="text-green-800 text-sm font-medium">
+                      {account.name}
+                    </span>
+                    <p className="text-green-600 text-xs">
+                      Shop ID: {account.account_identifier}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleTestConnection(account.id)}
+                  >
+                    Testar
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={() => handleDisconnect(account.id)}
+                  >
+                    Desconectar
+                  </Button>
+                </div>
+              </div>
+            ))}
+            
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowSetup(!showSetup)}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Adicionar Conta
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => window.open('https://seller.shopee.com.br', '_blank')}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Shopee Seller
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="partner_key">Partner Key *</Label>
-              <Input
-                id="partner_key"
-                type="password"
-                value={credentials.partner_key}
-                onChange={(e) => setCredentials(prev => ({ ...prev, partner_key: e.target.value }))}
-                placeholder="Sua Test API Partner Key"
-                disabled={loading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="shop_id">Shop ID (opcional)</Label>
-              <Input
-                id="shop_id"
-                value={credentials.shop_id}
-                onChange={(e) => setCredentials(prev => ({ ...prev, shop_id: e.target.value }))}
-                placeholder="ID da sua loja (opcional)"
-                disabled={loading}
-              />
-            </div>
-
-            <Button onClick={handleConnect} disabled={loading} className="w-full">
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Conectando...
-                </>
-              ) : (
-                '🚧 Testar Conexão (Dev)'
-              )}
-            </Button>
-          </>
+          </div>
         ) : (
-          <div className="flex items-center gap-2 p-4 bg-green-50 rounded-lg">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-green-800 font-medium">Shopee configurado (desenvolvimento)!</span>
+          <Button 
+            onClick={() => setShowSetup(!showSetup)}
+            variant="outline"
+            className="w-full"
+          >
+            <ShoppingBag className="w-4 h-4 mr-2" />
+            Conectar com Shopee
+          </Button>
+        )}
+
+        {showSetup && (
+          <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
+            <div className="space-y-2">
+              <Label htmlFor="shopId">Shop ID do Shopee</Label>
+              <Input
+                id="shopId"
+                placeholder="Ex: 123456789"
+                value={shopId}
+                onChange={(e) => setShopId(e.target.value)}
+              />
+              <p className="text-sm text-gray-600">
+                Encontre seu Shop ID no painel do Shopee Seller Center
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleConnect}
+                disabled={isConnecting || !shopId.trim()}
+                className="flex-1"
+              >
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Conectando...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    Autorizar Shopee
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowSetup(false)}
+              >
+                Cancelar
+              </Button>
+            </div>
           </div>
         )}
 
         <div className="text-xs text-muted-foreground space-y-1">
-          <p><strong>Redirect URL:</strong> https://reistoq.com.br</p>
-          <p>Configure este URL no seu painel Shopee Partner</p>
-          <div className="flex items-center gap-2 p-2 bg-orange-50 rounded">
-            <AlertCircle className="h-4 w-4 text-orange-600" />
-            <span className="text-orange-800">Implementação em desenvolvimento</span>
+          <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
+            <CheckCircle className="h-4 w-4 text-blue-600" />
+            <span className="text-blue-800">✅ API Shopee real implementada</span>
           </div>
+          <p>Após autorizar, os pedidos serão importados automaticamente</p>
         </div>
       </CardContent>
     </Card>
