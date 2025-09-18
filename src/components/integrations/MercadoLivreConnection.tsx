@@ -439,31 +439,42 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {accounts.map((account) => (
-              <Card key={account.id} className="bg-green-50/50 border-green-200">
+              <Card key={account.id} className="bg-success/5 border-success/20 dark:bg-success/10 dark:border-success/30">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-green-600" />
-                      <span className="font-medium text-green-800">{account.nickname}</span>
+                      <User className="h-4 w-4 text-success" />
+                      <span className="font-medium text-success">{account.nickname}</span>
                     </div>
-                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                    <Badge variant="default" className="bg-success/10 text-success border-success/20">
                       Conectado
                     </Badge>
                   </div>
-                  <Badge variant="outline" className="text-xs w-fit">
-                    {account.site_id}
-                  </Badge>
+                  
+                  <div className="space-y-1 text-sm">
+                    <Badge variant="outline" className="text-xs w-fit">
+                      {account.site_id}
+                    </Badge>
+                    
+                    {/* Mostrar ID do usuário */}
+                    {account.user_id && (
+                      <p className="text-muted-foreground">
+                        <span className="font-medium">ID:</span> {account.user_id}
+                      </p>
+                    )}
+                    
+                    {/* Mostrar email */}
+                    {account.email && (
+                      <p className="text-muted-foreground break-all">
+                        <span className="font-medium">Email:</span> {account.email}
+                      </p>
+                    )}
+                  </div>
                 </CardHeader>
                 
                 <CardContent className="space-y-3">
-                  {account.email && (
-                    <p className="text-sm text-green-700">
-                      {account.email}
-                    </p>
-                  )}
-
                   {account.last_sync && (
-                    <div className="flex items-center gap-1 text-xs text-green-600">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Calendar className="h-3 w-3" />
                       Última sync: {new Date(account.last_sync).toLocaleDateString('pt-BR')}
                     </div>

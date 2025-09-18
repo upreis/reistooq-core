@@ -256,20 +256,38 @@ export function ShopeeConnection() {
         {hasConnections ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {accounts.map((account) => (
-              <Card key={account.id} className="bg-green-50/50 border-green-200">
+              <Card key={account.id} className="bg-success/5 border-success/20 dark:bg-success/10 dark:border-success/30">
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                      <span className="text-green-800 font-medium">{account.name}</span>
+                      <CheckCircle className="w-4 h-4 text-success" />
+                      <span className="text-success font-medium">{account.name}</span>
                     </div>
-                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                    <Badge variant="default" className="bg-success/10 text-success border-success/20">
                       Conectado
                     </Badge>
                   </div>
-                  <p className="text-green-600 text-sm">
-                    Shop ID: {account.account_identifier}
-                  </p>
+                  
+                  <div className="space-y-1 text-sm">
+                    {/* Mostrar Shop ID */}
+                    <p className="text-muted-foreground">
+                      <span className="font-medium">Shop ID:</span> {account.account_identifier}
+                    </p>
+                    
+                    {/* Mostrar ID do usuário se disponível */}
+                    {account.public_auth?.user_id && (
+                      <p className="text-muted-foreground">
+                        <span className="font-medium">ID:</span> {account.public_auth.user_id}
+                      </p>
+                    )}
+                    
+                    {/* Mostrar email se disponível */}
+                    {account.public_auth?.email && (
+                      <p className="text-muted-foreground break-all">
+                        <span className="font-medium">Email:</span> {account.public_auth.email}
+                      </p>
+                    )}
+                  </div>
                 </CardHeader>
                 
                 <CardContent className="space-y-2">
