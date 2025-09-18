@@ -195,7 +195,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           },
           { 
             id: 'ml-orders-completas', 
-            label: 'Todas as Orders - ML', 
+            label: 'Devoluções ML', 
             path: '/ml-orders-completas', 
             icon: 'Database' 
           }
