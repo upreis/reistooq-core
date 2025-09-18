@@ -267,161 +267,105 @@ export function ShopeeConnection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          🛍️ Shopee
-          {hasConnections ? (
-            <Badge variant="default" className="bg-green-100 text-green-800">
-              <CheckCircle className="w-3 h-3 mr-1" />
-              {accounts.length} conta{accounts.length > 1 ? 's' : ''}
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="bg-orange-100 text-orange-800">
-              <AlertCircle className="w-3 h-3 mr-1" />
-              Não conectado
-            </Badge>
-          )}
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">S</span>
+            </div>
+            Shopee
+          </div>
+          <span className="text-sm px-2 py-1 bg-muted rounded-full">
+            {hasConnections ? 'connected' : 'disconnected'}
+          </span>
         </CardTitle>
         <CardDescription>
-          {hasConnections 
-            ? '✅ Integração ativa - pedidos sendo importados'
-            : 'Configure sua integração com o Shopee'
-          }
+          Marketplace de vendas online
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {hasConnections ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {accounts.map((account) => (
-              <Card key={account.id} className="bg-success/5 border-success/20 dark:bg-success/10 dark:border-success/30">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-success" />
-                      <span className="text-success font-medium">{account.name}</span>
-                    </div>
-                    <Badge variant="default" className="bg-success/10 text-success border-success/20">
-                      Conectado
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-1 text-sm">
-                    {/* Mostrar Shop ID */}
-                    <p className="text-muted-foreground">
-                      <span className="font-medium">Shop ID:</span> {account.account_identifier}
-                    </p>
-                    
-                    {/* Mostrar ID do usuário se disponível */}
-                    {account.public_auth?.user_id && (
-                      <p className="text-muted-foreground">
-                        <span className="font-medium">ID:</span> {account.public_auth.user_id}
-                      </p>
-                    )}
-                    
-                    {/* Mostrar email se disponível */}
-                    {account.public_auth?.email && (
-                      <p className="text-muted-foreground break-all">
-                        <span className="font-medium">Email:</span> {account.public_auth.email}
-                      </p>
-                    )}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleConnect(account.id)}
-                      disabled={isConnecting}
-                    >
-                      {isConnecting ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          OAuth
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingBag className="w-4 h-4 mr-2" />
-                          Conectar via OAuth
-                        </>
-                      )}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleTestConnection(account.id)}
-                    >
-                      Testar
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-2">
-                    <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Settings className="w-4 h-4 mr-2" />
-                          Config
-                        </Button>
-                      </DialogTrigger>
-                    </Dialog>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={() => handleDisconnect(account.id)}
-                    >
-                      <Unplug className="w-4 h-4 mr-2" />
-                      Desconectar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            <div className="flex gap-2 pt-2">
-              <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Adicionar Conta
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => window.open('https://seller.shopee.com.br', '_blank')}
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Shopee Seller
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-2">
+        {!hasConnections ? (
+          <>
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800">
                 📝 Configure suas credenciais Shopee para conectar uma loja
               </p>
             </div>
-            <div className="flex gap-2">
-              <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="flex-1">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Adicionar Conta Shopee
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
-              <Button 
-                variant="outline" 
-                onClick={() => window.open('https://seller.shopee.com.br', '_blank')}
-                className="flex-1"
+
+            <Button 
+              onClick={() => setShowConfigModal(true)}
+              className="w-full"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Conectar
+            </Button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Shopee Seller
+                🧪 Testar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowConfigModal(true)}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Config
               </Button>
             </div>
-          </div>
+          </>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {accounts.map((account) => (
+                <div key={account.id} className="text-sm">
+                  <div className="flex items-center justify-between">
+                    <span>{account.name}</span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button 
+              onClick={() => accounts.length > 0 && handleConnect(accounts[0].id)}
+              className="w-full"
+              disabled={isConnecting}
+            >
+              {isConnecting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Conectando...
+                </>
+              ) : (
+                <>
+                  ⚡ Conectar via OAuth
+                </>
+              )}
+            </Button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => accounts.length > 0 && handleTestConnection(accounts[0].id)}
+              >
+                🧪 Testar
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowConfigModal(true)}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Config
+              </Button>
+            </div>
+          </>
         )}
 
         {/* Modal de Configuração */}
