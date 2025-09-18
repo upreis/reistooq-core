@@ -509,12 +509,21 @@ export function usePedidosManager(initialAccountId?: string) {
     }
     
     // 🔧 AUDITORIA: Lógica original para conta única
-    if (!integrationAccountId && !apiParams.integration_account_id && !apiParams.integration_account_ids) {
+    if (!apiParams?.integration_account_id && !apiParams?.integration_account_ids && !integrationAccountId) {
       throw new Error('integration_account_id ou integration_account_ids é obrigatório mas não foi fornecido');
     }
 
+    const finalAccountId = apiParams?.integration_account_id || integrationAccountId;
+    
+    // 🚨 VERIFICAÇÃO FINAL: Se não há integration_account_id e não há array, erro crítico
+    if (!finalAccountId && !apiParams?.integration_account_ids) {
+      console.error('❌ [loadOrders] Nenhum integration_account_id ou integration_account_ids válido');
+      throw new Error('integration_account_id ou integration_account_ids é obrigatório');
+    }
+
     const requestBody = {
-      integration_account_id: apiParams.integration_account_id || integrationAccountId,
+      ...(finalAccountId ? { integration_account_id: finalAccountId } : {}),
+      ...(apiParams?.integration_account_ids ? { integration_account_ids: apiParams.integration_account_ids } : {}),
       limit: pageSize,
       offset: (currentPage - 1) * pageSize,
       ...(rest.shipping_status ? { shipping_status: rest.shipping_status } : {}),
