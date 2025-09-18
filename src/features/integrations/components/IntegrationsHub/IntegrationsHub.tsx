@@ -142,12 +142,106 @@ export const IntegrationsHub: React.FC = () => {
             {/* Mercado Livre Integration - Layout completo para contas conectadas */}
             {FEATURES.MERCADO_LIVRE && <MercadoLivreConnection />}
             
-            {/* Grid compacto apenas para integrações não conectadas */}
+            {/* Grid compacto para todas as integrações */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Shopee Integration - Card compacto */}
               {FEATURES.SHOPEE && <ShopeeConnection />}
               
-              {/* Shopee Integration - Card compacto */}
+              {/* TinyERP - Card placeholder */}
+              <Card className="border-dashed border-2 border-muted-foreground/25">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+                        <span className="text-muted-foreground font-bold text-xs">T</span>
+                      </div>
+                      Tiny ERP
+                    </div>
+                    <span className="text-xs px-2 py-1 bg-muted rounded-full">disconnected</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground mb-3">Sistema de gestão empresarial</p>
+                  <Button variant="outline" size="sm" disabled className="w-full mb-2">
+                    <span className="mr-2">▷</span>
+                    Conectar
+                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" disabled>
+                      <span className="mr-2">🧪</span>
+                      Testar
+                    </Button>
+                    <Button variant="outline" size="sm" disabled>
+                      <span className="mr-2">⚙️</span>
+                      Config
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Amazon - Card placeholder */}
+              <Card className="border-dashed border-2 border-muted-foreground/25">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-xs">A</span>
+                      </div>
+                      Amazon
+                    </div>
+                    <span className="text-xs px-2 py-1 bg-muted rounded-full">disconnected</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground mb-3">Marketplace global</p>
+                  <Button variant="outline" size="sm" disabled className="w-full mb-2">
+                    <span className="mr-2">▷</span>
+                    Conectar
+                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" disabled>
+                      <span className="mr-2">🧪</span>
+                      Testar
+                    </Button>
+                    <Button variant="outline" size="sm" disabled>
+                      <span className="mr-2">⚙️</span>
+                      Config
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Telegram Bot - Card placeholder */}
+              <Card className="border-dashed border-2 border-muted-foreground/25">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-xs">T</span>
+                      </div>
+                      Telegram Bot
+                    </div>
+                    <span className="text-xs px-2 py-1 bg-muted rounded-full">disconnected</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground mb-3">Notificações via Telegram</p>
+                  <Button variant="outline" size="sm" disabled className="w-full mb-2">
+                    <span className="mr-2">▷</span>
+                    Conectar
+                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" disabled>
+                      <span className="mr-2">🧪</span>
+                      Testar
+                    </Button>
+                    <Button variant="outline" size="sm" disabled>
+                      <span className="mr-2">⚙️</span>
+                      Config
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
             
             {/* Outras integrações dinâmicas */}
