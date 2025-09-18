@@ -138,83 +138,116 @@ export const IntegrationsHub: React.FC = () => {
 
         {/* Integrações Tab */}
         <TabsContent value="integrations">
-          <div className="space-y-6">
-            {/* Mercado Livre Integration - Versão estável (v1) */}
-            {FEATURES.MERCADO_LIVRE ? (
-              <MercadoLivreConnection />
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Mercado Livre (v1)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="p-4 border rounded bg-muted/30">
-                    <p className="text-sm text-muted-foreground">
-                      🚧 Integração Mercado Livre v1 temporariamente desabilitada para manutenção.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {/* Shopee Integration - Custom Component */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Shopee Integration - Custom Component in grid */}
             {FEATURES.SHOPEE && <ShopeeConnection />}
             
-            {/* Other Integrations Placeholder */}
-            {!FEATURES.TINY_ERP && !FEATURES.AMAZON && (
-              <Card>
+            {/* Mercado Livre Integration */}
+            {FEATURES.MERCADO_LIVRE && <MercadoLivreConnection />}
+            
+            {/* Other Integrations */}
+            {integrations
+              .filter(integration => integration.provider !== 'shopee') 
+              .map((integration) => (
+              <IntegrationCard
+                key={integration.id}
+                integration={integration}
+                onConnect={handleConnect}
+                onDisconnect={handleDisconnect}
+                onTest={handleTest}
+                onConfigure={handleConfigure}
+                onOAuth={handleOAuth}
+              />
+            ))}
+            
+            {/* Placeholder cards for missing integrations */}
+            {!FEATURES.TINY_ERP && (
+              <Card className="border-dashed border-2 border-muted-foreground/25">
                 <CardHeader>
-                  <CardTitle>Outras Integrações</CardTitle>
+                  <CardTitle className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
+                        <span className="text-muted-foreground font-bold text-xs">T</span>
+                      </div>
+                      Tiny ERP
+                    </div>
+                    <span className="text-xs px-2 py-1 bg-muted rounded-full">em breve</span>
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="p-4 border rounded bg-muted/30">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      📋 Integrações adicionais em desenvolvimento:
-                    </p>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• Tiny ERP - Aguardando configuração</li>
-                      <li>• Amazon - Em análise</li>
-                    </ul>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground mb-3">Sistema de gestão empresarial</p>
+                  <Button variant="outline" size="sm" disabled className="w-full mb-2">
+                    Conectar
+                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" disabled>
+                      Testar
+                    </Button>
+                    <Button variant="outline" size="sm" disabled>
+                      Config
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             )}
             
-            {/* Integrations Grid */}
-            {integrations.length === 0 ? (
-              <Card>
+            {!FEATURES.AMAZON && (
+              <Card className="border-dashed border-2 border-muted-foreground/25">
                 <CardHeader>
-                  <CardTitle>Nenhuma integração encontrada</CardTitle>
+                  <CardTitle className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-xs">A</span>
+                      </div>
+                      Amazon
+                    </div>
+                    <span className="text-xs px-2 py-1 bg-muted rounded-full">em breve</span>
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">
-                    Configure suas primeiras integrações para sincronizar dados com sistemas externos.
-                  </p>
-                  <Button onClick={handleRefresh}>
-                    Recarregar Integrações
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground mb-3">Marketplace global</p>
+                  <Button variant="outline" size="sm" disabled className="w-full mb-2">
+                    Conectar
                   </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" disabled>
+                      Testar
+                    </Button>
+                    <Button variant="outline" size="sm" disabled>
+                      Config
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {integrations
-                  .filter(integration => integration.provider !== 'shopee') // Filtrar Shopee pois usa componente customizado
-                  .map((integration) => (
-                  <IntegrationCard
-                    key={integration.id}
-                    integration={integration}
-                    onConnect={handleConnect}
-                    onDisconnect={handleDisconnect}
-                    onTest={handleTest}
-                    onConfigure={handleConfigure}
-                    onOAuth={handleOAuth}
-                  />
-                ))}
-              </div>
             )}
+            
+            <Card className="border-dashed border-2 border-muted-foreground/25">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-xs">T</span>
+                    </div>
+                    Telegram Bot
+                  </div>
+                  <span className="text-xs px-2 py-1 bg-muted rounded-full">em breve</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-xs text-muted-foreground mb-3">Notificações via Telegram</p>
+                <Button variant="outline" size="sm" disabled className="w-full mb-2">
+                  Conectar
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" size="sm" disabled>
+                    Testar
+                  </Button>
+                  <Button variant="outline" size="sm" disabled>
+                    Config
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

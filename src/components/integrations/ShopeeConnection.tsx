@@ -275,229 +275,203 @@ export function ShopeeConnection() {
   const hasConnections = accounts.length > 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">S</span>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-xs">S</span>
+              </div>
+              Shopee
             </div>
-            Shopee
-          </div>
-          <span className="text-sm px-2 py-1 bg-muted rounded-full">
-            {hasConnections ? 'connected' : 'disconnected'}
-          </span>
-        </CardTitle>
-        <CardDescription>
-          Marketplace de vendas online
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!hasConnections ? (
-          <>
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                📝 Configure suas credenciais Shopee para conectar uma loja
-              </p>
-            </div>
-
-            <Button 
-              onClick={() => setShowConfigModal(true)}
-              className="w-full"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Conectar
-            </Button>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled
-              >
-                🧪 Testar
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
+            <span className="text-xs px-2 py-1 bg-muted rounded-full">
+              {hasConnections ? 'connected' : 'disconnected'}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <p className="text-xs text-muted-foreground mb-3">Marketplace de vendas online</p>
+          
+          {!hasConnections ? (
+            <>
+              <Button 
                 onClick={() => setShowConfigModal(true)}
+                className="w-full mb-2"
+                size="sm"
               >
                 <Settings className="w-4 h-4 mr-2" />
-                Config
+                Conectar
               </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="space-y-2">
-              {accounts.map((account) => (
-                <div key={account.id} className="text-sm">
-                  <div className="flex items-center justify-between">
-                    <span>{account.name}</span>
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <Button 
-              onClick={() => accounts.length > 0 && handleConnect(accounts[0].id)}
-              className="w-full"
-              disabled={isConnecting}
-            >
-              {isConnecting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Conectando...
-                </>
-              ) : (
-                <>
-                  ⚡ Conectar via OAuth
-                </>
-              )}
-            </Button>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => accounts.length > 0 && handleTestConnection(accounts[0].id)}
-              >
-                🧪 Testar
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowConfigModal(true)}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Config
-              </Button>
-            </div>
-          </>
-        )}
-
-        {/* Modal de Configuração */}
-        <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
-          <DialogContent className="max-w-2xl bg-background border">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-lg">
-                🛍️ Configurar Nova Conta Shopee
-              </DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Configure as credenciais da sua conta Shopee para autenticação e importação de pedidos.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="modal-shopId">Shop ID</Label>
-                <Input
-                  id="modal-shopId"
-                  placeholder="Ex: 225917626"
-                  value={shopId}
-                  onChange={(e) => setShopId(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Encontre no Shopee Seller Center
-                </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled
+                >
+                  🧪 Testar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowConfigModal(true)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Config
+                </Button>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="modal-partnerId">Partner ID</Label>
-                <Input
-                  id="modal-partnerId"
-                  placeholder="Ex: 1185587"
-                  value={partnerId}
-                  onChange={(e) => setPartnerId(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  ID do partner no Open Platform
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="modal-appId">App ID</Label>
-                <Input
-                  id="modal-appId"
-                  placeholder="Ex: 123456"
-                  value={appId}
-                  onChange={(e) => setAppId(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  ID da aplicação Shopee
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="modal-appSecret">App Secret</Label>
-                <Input
-                  id="modal-appSecret"
-                  type="password"
-                  placeholder="Ex: abcd1234..."
-                  value={appSecret}
-                  onChange={(e) => setAppSecret(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Secret da aplicação Shopee
-                </p>
-              </div>
-              
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="modal-partnerKey">Partner Key</Label>
-                <Input
-                  id="modal-partnerKey"
-                  type="password"
-                  placeholder="Ex: xyz789..."
-                  value={partnerKey}
-                  onChange={(e) => setPartnerKey(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Chave do partner para autenticação
-                </p>
-              </div>
-            </div>
-            
-            <DialogFooter>
+            </>
+          ) : (
+            <>
               <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowConfigModal(false);
-                  clearFormFields();
-                }}
+                onClick={() => accounts.length > 0 && handleConnect(accounts[0].id)}
+                className="w-full mb-2"
+                disabled={isConnecting}
+                size="sm"
               >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={saveShopeeConfig}
-                disabled={savingConfig || !shopId.trim() || !partnerId.trim() || !appId.trim() || !appSecret.trim() || !partnerKey.trim()}
-              >
-                {savingConfig ? (
+                {isConnecting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Salvando...
+                    Conectando...
                   </>
                 ) : (
                   <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Salvar e Configurar
+                    ⚡ Conectar via OAuth
                   </>
                 )}
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => accounts.length > 0 && handleTestConnection(accounts[0].id)}
+                >
+                  🧪 Testar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowConfigModal(true)}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Config
+                </Button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
-
-        <div className="text-xs text-muted-foreground space-y-1">
-          <div className="flex items-center gap-2 p-2 bg-blue-50 rounded">
-            <CheckCircle className="h-4 w-4 text-blue-600" />
-            <span className="text-blue-800">✅ API Shopee real implementada</span>
+      {/* Modal de Configuração */}
+      <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
+        <DialogContent className="max-w-2xl bg-background border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              🛍️ Configurar Nova Conta Shopee
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Configure as credenciais da sua conta Shopee para autenticação e importação de pedidos.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="modal-shopId">Shop ID</Label>
+              <Input
+                id="modal-shopId"
+                placeholder="Ex: 225917626"
+                value={shopId}
+                onChange={(e) => setShopId(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Encontre no Shopee Seller Center
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="modal-partnerId">Partner ID</Label>
+              <Input
+                id="modal-partnerId"
+                placeholder="Ex: 1185587"
+                value={partnerId}
+                onChange={(e) => setPartnerId(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                ID do partner no Open Platform
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="modal-appId">App ID</Label>
+              <Input
+                id="modal-appId"
+                placeholder="Ex: 123456"
+                value={appId}
+                onChange={(e) => setAppId(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                ID da aplicação Shopee
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="modal-appSecret">App Secret</Label>
+              <Input
+                id="modal-appSecret"
+                type="password"
+                placeholder="Ex: abcd1234..."
+                value={appSecret}
+                onChange={(e) => setAppSecret(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Secret da aplicação Shopee
+              </p>
+            </div>
+            
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="modal-partnerKey">Partner Key</Label>
+              <Input
+                id="modal-partnerKey"
+                type="password"
+                placeholder="Ex: xyz789..."
+                value={partnerKey}
+                onChange={(e) => setPartnerKey(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Chave do partner para autenticação
+              </p>
+            </div>
           </div>
-          <p>Após autorizar, os pedidos serão importados automaticamente</p>
-        </div>
-      </CardContent>
-    </Card>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowConfigModal(false);
+                clearFormFields();
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={saveShopeeConfig}
+              disabled={savingConfig || !shopId.trim() || !partnerId.trim() || !appId.trim() || !appSecret.trim() || !partnerKey.trim()}
+            >
+              {savingConfig ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar e Configurar
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
