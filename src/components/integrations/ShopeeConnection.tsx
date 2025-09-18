@@ -5,18 +5,22 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'react-hot-toast';
-import { ShoppingBag, Loader2, CheckCircle, AlertCircle, ExternalLink, Settings } from 'lucide-react';
+import { ShoppingBag, Loader2, CheckCircle, AlertCircle, ExternalLink, Settings, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export function ShopeeConnection() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [shopId, setShopId] = useState('');
+  const [partnerId, setPartnerId] = useState('');
   const [showSetup, setShowSetup] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [savingConfig, setSavingConfig] = useState(false);
 
   useEffect(() => {
     loadShopeeAccounts();
+    loadShopeeConfig();
     handleOAuthCallback();
   }, []);
 
@@ -36,6 +40,50 @@ export function ShopeeConnection() {
       console.error('Erro ao carregar contas Shopee:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadShopeeConfig = async () => {
+    try {
+      const { data } = await supabase
+        .from('configuracoes')
+        .select('valor')
+        .eq('chave', 'shopee_partner_id')
+        .single();
+
+      if (data?.valor) {
+        setPartnerId(data.valor);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configuração Shopee:', error);
+    }
+  };
+
+  const saveShopeeConfig = async () => {
+    if (!partnerId.trim()) {
+      toast.error('Partner ID é obrigatório');
+      return;
+    }
+
+    setSavingConfig(true);
+    try {
+      const { error } = await supabase
+        .from('configuracoes')
+        .upsert({
+          chave: 'shopee_partner_id',
+          valor: partnerId.trim(),
+          tipo: 'string',
+          descricao: 'Partner ID da Shopee para autenticação OAuth'
+        });
+
+      if (error) throw error;
+
+      toast.success('Configuração Shopee salva com sucesso!');
+      setShowConfig(false);
+    } catch (error: any) {
+      toast.error(`Erro ao salvar: ${error.message}`);
+    } finally {
+      setSavingConfig(false);
     }
   };
 
@@ -79,6 +127,12 @@ export function ShopeeConnection() {
   const handleConnect = async () => {
     if (!shopId.trim()) {
       toast.error('Por favor, informe o Shop ID');
+      return;
+    }
+
+    if (!partnerId.trim()) {
+      toast.error('Configure o Partner ID da Shopee primeiro');
+      setShowConfig(true);
       return;
     }
 
@@ -245,6 +299,14 @@ export function ShopeeConnection() {
               <Button 
                 variant="outline" 
                 size="sm"
+                onClick={() => setShowConfig(!showConfig)}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Configuração
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
                 onClick={() => window.open('https://seller.shopee.com.br', '_blank')}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
@@ -253,14 +315,77 @@ export function ShopeeConnection() {
             </div>
           </div>
         ) : (
-          <Button 
-            onClick={() => setShowSetup(!showSetup)}
-            variant="outline"
-            className="w-full"
-          >
-            <ShoppingBag className="w-4 h-4 mr-2" />
-            Conectar com Shopee
-          </Button>
+          <div className="space-y-2">
+            {!partnerId && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Configure o Partner ID da Shopee primeiro
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowConfig(!showConfig)}
+                variant="outline"
+                className="flex-1"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Configurar Shopee
+              </Button>
+              <Button 
+                onClick={() => setShowSetup(!showSetup)}
+                variant="outline"
+                className="flex-1"
+                disabled={!partnerId}
+              >
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                Conectar Loja
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {showConfig && (
+          <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
+            <div className="space-y-2">
+              <Label htmlFor="partnerId">Partner ID da Shopee</Label>
+              <Input
+                id="partnerId"
+                placeholder="Ex: 1185587"
+                value={partnerId}
+                onChange={(e) => setPartnerId(e.target.value)}
+              />
+              <p className="text-sm text-blue-600">
+                Encontre seu Partner ID no painel Shopee Open Platform
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={saveShopeeConfig}
+                disabled={savingConfig || !partnerId.trim()}
+                className="flex-1"
+              >
+                {savingConfig ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar Configuração
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowConfig(false)}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
         )}
 
         {showSetup && (
@@ -269,7 +394,7 @@ export function ShopeeConnection() {
               <Label htmlFor="shopId">Shop ID do Shopee</Label>
               <Input
                 id="shopId"
-                placeholder="Ex: 123456789"
+                placeholder="Ex: 225917626"
                 value={shopId}
                 onChange={(e) => setShopId(e.target.value)}
               />
@@ -281,7 +406,7 @@ export function ShopeeConnection() {
             <div className="flex gap-2">
               <Button 
                 onClick={handleConnect}
-                disabled={isConnecting || !shopId.trim()}
+                disabled={isConnecting || !shopId.trim() || !partnerId}
                 className="flex-1"
               >
                 {isConnecting ? (
