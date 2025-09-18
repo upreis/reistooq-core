@@ -1,4 +1,4 @@
-import { makeServiceClient, corsHeaders, ok, fail, getMlConfig } from "../_shared/client.ts";
+import { makeServiceClient, makeClient, corsHeaders, ok, fail, getMlConfig } from "../_shared/client.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
@@ -629,7 +629,7 @@ Deno.serve(async (req) => {
   }
 
   // Criar dois clients: serviço (bypass RLS) e usuário (contexto org)
-  const userClient = makeUserClient(req);
+  const userClient = makeClient(req.headers.get("Authorization"));
   const serviceClient = makeServiceClient();
   const cid = crypto.randomUUID().slice(0, 8);
 
