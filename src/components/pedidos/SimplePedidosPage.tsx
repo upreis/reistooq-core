@@ -68,6 +68,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
 
 import { DevolucoesMercadoLivreTab } from './devolucoes/DevolucoesMercadoLivreTab';
+import { FEATURES } from '@/config/features';
+import { ProviderSelector } from './components/ProviderSelector';
 
 
 
@@ -232,6 +234,9 @@ function SimplePedidosPage({ className }: Props) {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [showBaixaModal, setShowBaixaModal] = useState(false);
+  
+  // ✅ FASE 3: Estado para seleção de provider (Shopee + ML)
+  const [selectedProvider, setSelectedProvider] = useState<string>('all');
   
   // 🔗 Estado do modal de mapeamento
   const [showMapeamentoModal, setShowMapeamentoModal] = useState(false);
@@ -679,13 +684,21 @@ function SimplePedidosPage({ className }: Props) {
     }
   };
 
-  // Carregar contas ML
+  // ✅ FASE 3: Carregamento de contas unificado (ML + Shopee) - SEM QUEBRAR SISTEMA EXISTENTE
   const loadAccounts = async () => {
     try {
+      // 🛡️ SEGURANÇA: Garantir que ML sempre seja incluído
+      const providers = ['mercadolivre'];
+      
+      // ✅ EXPANSÃO SEGURA: Adicionar Shopee apenas se feature estiver ativa
+      if (FEATURES.SHOPEE) {
+        providers.push('shopee');
+      }
+
       const { data, error } = await supabase
         .from('integration_accounts')
         .select('*')
-        .eq('provider', 'mercadolivre')
+        .in('provider', providers as ('mercadolivre' | 'shopee')[])
         .eq('is_active', true)
         .order('updated_at', { ascending: false });
 
@@ -693,7 +706,12 @@ function SimplePedidosPage({ className }: Props) {
 
       const list = data || [];
       setAccounts(list);
-      console.log('📊 Contas ML carregadas:', list.length, list);
+      console.log('📊 Contas carregadas (ML + Shopee):', {
+        total: list.length,
+        mercadolivre: list.filter(a => a.provider === 'mercadolivre').length,
+        shopee: list.filter(a => a.provider === 'shopee').length,
+        accounts: list
+      });
     } catch (err: any) {
       console.error('Erro ao carregar contas:', err.message);
     }
@@ -910,6 +928,16 @@ useEffect(() => {
         }}
       />
 
+
+      {/* ✅ FASE 3: Seletor de Provider (Shopee + ML) */}
+      {FEATURES.SHOPEE && accounts.length > 0 && (
+        <ProviderSelector
+          selectedProvider={selectedProvider}
+          onProviderChange={setSelectedProvider}
+          accounts={accounts}
+          loading={loading}
+        />
+      )}
 
       {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
       <PedidosFiltersUnified
