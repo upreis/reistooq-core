@@ -19,6 +19,7 @@ import { HealthMini } from '../HealthDashboard/HealthMini';
 import { AnnouncementManager } from '../../../announcements/components/AnnouncementManager';
 import { AdminDashboard } from '../../../admin/components/AdminDashboard';
 import { MercadoLivreConnection } from '@/components/integrations/MercadoLivreConnection';
+import { ShopeeConnection } from '@/components/integrations/ShopeeConnection';
 import { FEATURES } from '@/config/features';
 
 export const IntegrationsHub: React.FC = () => {
@@ -155,8 +156,11 @@ export const IntegrationsHub: React.FC = () => {
               </Card>
             )}
             
+            {/* Shopee Integration - Custom Component */}
+            {FEATURES.SHOPEE && <ShopeeConnection />}
+            
             {/* Other Integrations Placeholder */}
-            {!FEATURES.SHOPEE && !FEATURES.TINY_ERP && !FEATURES.AMAZON && (
+            {!FEATURES.TINY_ERP && !FEATURES.AMAZON && (
               <Card>
                 <CardHeader>
                   <CardTitle>Outras Integrações</CardTitle>
@@ -167,7 +171,6 @@ export const IntegrationsHub: React.FC = () => {
                       📋 Integrações adicionais em desenvolvimento:
                     </p>
                     <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• Shopee - Em planejamento</li>
                       <li>• Tiny ERP - Aguardando configuração</li>
                       <li>• Amazon - Em análise</li>
                     </ul>
@@ -193,7 +196,9 @@ export const IntegrationsHub: React.FC = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {integrations.map((integration) => (
+                {integrations
+                  .filter(integration => integration.provider !== 'shopee') // Filtrar Shopee pois usa componente customizado
+                  .map((integration) => (
                   <IntegrationCard
                     key={integration.id}
                     integration={integration}
