@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'react-hot-toast';
-import { ShoppingBag, Loader2, CheckCircle, AlertCircle, ExternalLink, Settings, Save } from 'lucide-react';
+import { ShoppingBag, Loader2, CheckCircle, AlertCircle, ExternalLink, Settings, Save, Unplug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export function ShopeeConnection() {
@@ -254,37 +254,44 @@ export function ShopeeConnection() {
       </CardHeader>
       <CardContent className="space-y-4">
         {hasConnections ? (
-          <div className="space-y-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {accounts.map((account) => (
-              <div key={account.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <div>
-                    <span className="text-green-800 text-sm font-medium">
-                      {account.name}
-                    </span>
-                    <p className="text-green-600 text-xs">
-                      Shop ID: {account.account_identifier}
-                    </p>
+              <Card key={account.id} className="bg-green-50/50 border-green-200">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="text-green-800 font-medium">{account.name}</span>
+                    </div>
+                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                      Conectado
+                    </Badge>
                   </div>
-                </div>
-                <div className="flex gap-2">
+                  <p className="text-green-600 text-sm">
+                    Shop ID: {account.account_identifier}
+                  </p>
+                </CardHeader>
+                
+                <CardContent className="space-y-2">
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => handleTestConnection(account.id)}
+                    className="w-full"
                   >
-                    Testar
+                    Testar Conexão
                   </Button>
                   <Button 
                     variant="destructive" 
                     size="sm"
                     onClick={() => handleDisconnect(account.id)}
+                    className="w-full"
                   >
+                    <Unplug className="w-4 h-4 mr-2" />
                     Desconectar
                   </Button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
             
             <div className="flex gap-2 pt-2">

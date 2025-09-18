@@ -437,83 +437,91 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
 
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {accounts.map((account) => (
-              <div key={account.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <span className="font-medium">{account.nickname}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {account.site_id}
+              <Card key={account.id} className="bg-green-50/50 border-green-200">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-800">{account.nickname}</span>
+                    </div>
+                    <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                      Conectado
                     </Badge>
                   </div>
-                  <Badge variant="default" className="bg-green-100 text-green-800">
-                    Conectado
+                  <Badge variant="outline" className="text-xs w-fit">
+                    {account.site_id}
                   </Badge>
-                </div>
+                </CardHeader>
+                
+                <CardContent className="space-y-3">
+                  {account.email && (
+                    <p className="text-sm text-green-700">
+                      {account.email}
+                    </p>
+                  )}
 
-                {account.email && (
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {account.email}
-                  </p>
-                )}
+                  {account.last_sync && (
+                    <div className="flex items-center gap-1 text-xs text-green-600">
+                      <Calendar className="h-3 w-3" />
+                      Última sync: {new Date(account.last_sync).toLocaleDateString('pt-BR')}
+                    </div>
+                  )}
 
-                {account.last_sync && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
-                    <Calendar className="h-3 w-3" />
-                    Última sincronização: {new Date(account.last_sync).toLocaleString('pt-BR')}
-                  </div>
-                )}
-
-                <Separator className="my-3" />
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSyncOrders(account.id)}
-                    disabled={isSyncing === account.id}
-                    className="flex-1"
-                  >
-                    {isSyncing === account.id ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Sincronizando...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Sincronizar Pedidos
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDisconnect(account.id)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Unplug className="h-4 w-4 mr-2" />
-                    Desconectar
-                  </Button>
-                </div>
-
-                {account.permalink && (
-                  <div className="mt-2">
-                    <a
-                      href={account.permalink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSyncOrders(account.id)}
+                      disabled={isSyncing === account.id}
+                      className="w-full"
                     >
-                      <ExternalLink className="h-3 w-3" />
-                      Ver perfil no Mercado Livre
-                    </a>
+                      {isSyncing === account.id ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Sincronizando...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Sincronizar Pedidos
+                        </>
+                      )}
+                    </Button>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDisconnect(account.id)}
+                        className="flex-1 text-destructive hover:text-destructive"
+                      >
+                        <Unplug className="h-4 w-4 mr-1" />
+                        Desconectar
+                      </Button>
+                      
+                      {account.permalink && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          className="flex-1"
+                        >
+                          <a
+                            href={account.permalink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            Perfil
+                          </a>
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
+                </CardContent>
+              </Card>
             ))}
 
 
@@ -521,7 +529,7 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
               variant="outline"
               onClick={handleConnect}
               disabled={isConnecting || !session?.user}
-              className="w-full"
+              className="w-full mt-4"
             >
               {isConnecting ? (
                 <>
