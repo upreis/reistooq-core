@@ -516,12 +516,6 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
               </div>
             ))}
 
-            <Separator className="my-4" />
-            
-            <div>
-              <h4 className="font-medium mb-3">Pedidos Recentes</h4>
-              <MeliOrders integrationAccountId={accounts[0]?.id} />
-            </div>
 
             <Button 
               variant="outline"
