@@ -52,10 +52,6 @@ export const IntegrationsHub: React.FC = () => {
   }, [testConnection]);
 
   const handleConfigure = useCallback((provider: Provider) => {
-    // Skip ConfigurationPanel for Shopee since it has its own custom modal
-    if (provider === 'shopee') {
-      return; // ShopeeConnection component handles its own configuration modal
-    }
     setConfigProvider(provider);
     setShowConfigPanel(true);
   }, []);
@@ -230,8 +226,8 @@ export const IntegrationsHub: React.FC = () => {
 
       </Tabs>
 
-      {/* Configuration Panel - Skip for Shopee since it has custom modal */}
-      {configProvider && configProvider !== 'shopee' && (
+      {/* Configuration Panel */}
+      {configProvider && (
         <ConfigurationPanel
           provider={configProvider}
           open={showConfigPanel}
