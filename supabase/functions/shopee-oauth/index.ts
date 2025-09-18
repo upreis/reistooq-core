@@ -59,10 +59,12 @@ serve(async (req: Request) => {
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 min
       });
 
+      const callbackUrl = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/shopee-callback';
+      
       const authUrl = new URL(`${baseUrl}/api/v2/shop/auth_partner`);
       authUrl.searchParams.set('id', SHOPEE_APP_ID);
       authUrl.searchParams.set('token', authState);
-      authUrl.searchParams.set('redirect', redirect_uri || '');
+      authUrl.searchParams.set('redirect', callbackUrl);
 
       console.log(`[shopee-oauth:${requestId}] ✅ URL gerada: ${authUrl.toString()}`);
       
