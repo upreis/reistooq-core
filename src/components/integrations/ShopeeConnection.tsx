@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'react-hot-toast';
 import { ShoppingBag, Loader2, CheckCircle, AlertCircle, ExternalLink, Settings, Save, Unplug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,7 +18,7 @@ export function ShopeeConnection() {
   const [appSecret, setAppSecret] = useState('');
   const [partnerKey, setPartnerKey] = useState('');
   const [showSetup, setShowSetup] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
+  const [showConfigModal, setShowConfigModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -49,6 +50,14 @@ export function ShopeeConnection() {
   const loadShopeeConfig = async () => {
     // Não carrega mais configurações globais - cada conta terá suas próprias credenciais
     console.log('Configurações Shopee serão específicas por conta');
+  };
+
+  const clearFormFields = () => {
+    setShopId('');
+    setPartnerId('');
+    setAppId('');
+    setAppSecret('');
+    setPartnerKey('');
   };
 
   const saveShopeeConfig = async () => {
@@ -111,14 +120,10 @@ export function ShopeeConnection() {
       if (secretError) throw secretError;
 
       toast.success('Conta Shopee configurada com sucesso!');
-      setShowConfig(false);
+      setShowConfigModal(false);
       
       // Limpar campos
-      setShopId('');
-      setPartnerId('');
-      setAppId('');
-      setAppSecret('');
-      setPartnerKey('');
+      clearFormFields();
       
       // Recarregar contas
       loadShopeeAccounts();
@@ -322,55 +327,65 @@ export function ShopeeConnection() {
                 </CardHeader>
                 
                 <CardContent className="space-y-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleConnect(account.id)}
-                    className="w-full"
-                    disabled={isConnecting}
-                  >
-                    {isConnecting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Conectando...
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingBag className="w-4 h-4 mr-2" />
-                        Autorizar Shopee
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleTestConnection(account.id)}
-                    className="w-full"
-                  >
-                    Testar Conexão
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => handleDisconnect(account.id)}
-                    className="w-full"
-                  >
-                    <Unplug className="w-4 h-4 mr-2" />
-                    Desconectar
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleConnect(account.id)}
+                      disabled={isConnecting}
+                    >
+                      {isConnecting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          OAuth
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingBag className="w-4 h-4 mr-2" />
+                          Conectar via OAuth
+                        </>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleTestConnection(account.id)}
+                    >
+                      Testar
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Settings className="w-4 h-4 mr-2" />
+                          Config
+                        </Button>
+                      </DialogTrigger>
+                    </Dialog>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => handleDisconnect(account.id)}
+                    >
+                      <Unplug className="w-4 h-4 mr-2" />
+                      Desconectar
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
             
             <div className="flex gap-2 pt-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowConfig(!showConfig)}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Adicionar Conta
-              </Button>
+              <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Adicionar Conta
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
               <Button 
                 variant="outline" 
                 size="sm"
@@ -389,14 +404,14 @@ export function ShopeeConnection() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button 
-                onClick={() => setShowConfig(!showConfig)}
-                variant="outline"
-                className="flex-1"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Adicionar Conta Shopee
-              </Button>
+              <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="flex-1">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Adicionar Conta Shopee
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
               <Button 
                 variant="outline" 
                 onClick={() => window.open('https://seller.shopee.com.br', '_blank')}
@@ -409,84 +424,100 @@ export function ShopeeConnection() {
           </div>
         )}
 
-        {showConfig && (
-          <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
-            <h3 className="font-medium text-blue-800">Configurar Nova Conta Shopee</h3>
+        {/* Modal de Configuração */}
+        <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                🛍️ Configurar Nova Conta Shopee
+              </DialogTitle>
+              <DialogDescription>
+                Configure as credenciais da sua conta Shopee para autenticação e importação de pedidos.
+              </DialogDescription>
+            </DialogHeader>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="shopId">Shop ID</Label>
+                <Label htmlFor="modal-shopId">Shop ID</Label>
                 <Input
-                  id="shopId"
+                  id="modal-shopId"
                   placeholder="Ex: 225917626"
                   value={shopId}
                   onChange={(e) => setShopId(e.target.value)}
                 />
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-muted-foreground">
                   Encontre no Shopee Seller Center
                 </p>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="partnerId">Partner ID</Label>
+                <Label htmlFor="modal-partnerId">Partner ID</Label>
                 <Input
-                  id="partnerId"
+                  id="modal-partnerId"
                   placeholder="Ex: 1185587"
                   value={partnerId}
                   onChange={(e) => setPartnerId(e.target.value)}
                 />
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-muted-foreground">
                   ID do partner no Open Platform
                 </p>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="appId">App ID</Label>
+                <Label htmlFor="modal-appId">App ID</Label>
                 <Input
-                  id="appId"
+                  id="modal-appId"
                   placeholder="Ex: 123456"
                   value={appId}
                   onChange={(e) => setAppId(e.target.value)}
                 />
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-muted-foreground">
                   ID da aplicação Shopee
                 </p>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="appSecret">App Secret</Label>
+                <Label htmlFor="modal-appSecret">App Secret</Label>
                 <Input
-                  id="appSecret"
+                  id="modal-appSecret"
                   type="password"
                   placeholder="Ex: abcd1234..."
                   value={appSecret}
                   onChange={(e) => setAppSecret(e.target.value)}
                 />
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-muted-foreground">
                   Secret da aplicação Shopee
                 </p>
               </div>
               
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="partnerKey">Partner Key</Label>
+                <Label htmlFor="modal-partnerKey">Partner Key</Label>
                 <Input
-                  id="partnerKey"
+                  id="modal-partnerKey"
                   type="password"
                   placeholder="Ex: xyz789..."
                   value={partnerKey}
                   onChange={(e) => setPartnerKey(e.target.value)}
                 />
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-muted-foreground">
                   Chave do partner para autenticação
                 </p>
               </div>
             </div>
             
-            <div className="flex gap-2">
+            <DialogFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowConfigModal(false);
+                  clearFormFields();
+                }}
+              >
+                Cancelar
+              </Button>
               <Button 
                 onClick={saveShopeeConfig}
                 disabled={savingConfig || !shopId.trim() || !partnerId.trim() || !appId.trim() || !appSecret.trim() || !partnerKey.trim()}
-                className="flex-1"
               >
                 {savingConfig ? (
                   <>
@@ -500,22 +531,9 @@ export function ShopeeConnection() {
                   </>
                 )}
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowConfig(false);
-                  setShopId('');
-                  setPartnerId('');
-                  setAppId('');
-                  setAppSecret('');
-                  setPartnerKey('');
-                }}
-              >
-                Cancelar
-              </Button>
-            </div>
-          </div>
-        )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
 
         <div className="text-xs text-muted-foreground space-y-1">
