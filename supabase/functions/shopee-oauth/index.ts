@@ -77,7 +77,7 @@ serve(async (req: Request) => {
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 min
       });
 
-      const callbackUrl = `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/shopee-oauth`;
+      const callbackUrl = `https://reistoq.com.br/api/shopee-callback`;
       
       const authUrl = new URL(`${baseUrl}/api/v2/shop/auth_partner`);
       authUrl.searchParams.set('id', SHOPEE_APP_ID);
