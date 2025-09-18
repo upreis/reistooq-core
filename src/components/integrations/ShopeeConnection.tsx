@@ -249,13 +249,23 @@ export function ShopeeConnection() {
   if (loading) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse flex space-x-4">
-            <div className="rounded-full bg-slate-200 h-10 w-10"></div>
-            <div className="flex-1 space-y-2 py-1">
-              <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">S</span>
+              </div>
+              Shopee
             </div>
+            <span className="text-sm px-2 py-1 bg-muted rounded-full">disconnected</span>
+          </CardTitle>
+          <CardDescription>
+            Marketplace de vendas online
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
           </div>
         </CardContent>
       </Card>
