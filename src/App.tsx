@@ -46,6 +46,7 @@ import AdminPage from "./pages/AdminPage";
 import AcceptInvite from "./pages/AcceptInvite";
 import ResetPassword from "./pages/ResetPassword";
 import CategoryManager from "./pages/CategoryManager";
+import ShopeeCallbackPage from "./pages/ShopeeCallbackPage";
 
 // Create QueryClient instance outside component to avoid recreation
 const queryClient = new QueryClient({
@@ -75,6 +76,8 @@ function App() {
                   <Route path="/auth/reset-password" element={<ResetPassword />} />
                   {/* Rota pública para aceitar convites */}
                   <Route path="/convite/:token" element={<AcceptInvite />} />
+                  {/* Rota pública para callback da Shopee */}
+                  <Route path="/shopee-callback" element={<ShopeeCallbackPage />} />
                   
                   {/* Todas as outras rotas são protegidas com novo layout */}
                   <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
