@@ -380,12 +380,12 @@ export function ShopeeConnection() {
 
         {/* Modal de Configuração */}
         <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl bg-background border">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 text-lg">
                 🛍️ Configurar Nova Conta Shopee
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-muted-foreground">
                 Configure as credenciais da sua conta Shopee para autenticação e importação de pedidos.
               </DialogDescription>
             </DialogHeader>
