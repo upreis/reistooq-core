@@ -42,7 +42,7 @@ export function makeClient(authToken: string | null) {
 
 export function ok(data: any) {
   return new Response(
-    JSON.stringify(data),
+    JSON.stringify({ ok: true, ...data }),
     { 
       headers: { 
         ...corsHeaders, 
