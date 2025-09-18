@@ -16,9 +16,6 @@ enabled = true
 [functions.shopee-oauth]
 verify_jwt = false
 
-[functions.shopee-callback]
-verify_jwt = false
-
 [functions.mercadolibre-oauth-start]
 verify_jwt = false
 

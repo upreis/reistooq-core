@@ -28,9 +28,27 @@ serve(async (req: Request) => {
 
   try {
     const requestId = crypto.randomUUID().substring(0, 8);
-    console.log(`[shopee-oauth:${requestId}] 🚀 Iniciando OAuth Shopee`);
+    console.log(`[shopee-oauth:${requestId}] 🚀 Iniciando OAuth Shopee - Method: ${req.method}`);
 
-    const { action, shop_id, redirect_uri, code, state } = await req.json() as ShopeeOAuthRequest;
+    let action, shop_id, redirect_uri, code, state;
+
+    // Se for GET (redirect da Shopee), extrair parâmetros da URL
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      code = url.searchParams.get('code');
+      state = url.searchParams.get('token'); // Shopee usa 'token' como state
+      shop_id = url.searchParams.get('shop_id');
+      action = 'handle_callback';
+      console.log(`[shopee-oauth:${requestId}] 📥 GET Callback - code: ${code?.substring(0, 10)}..., state: ${state}`);
+    } else {
+      // Se for POST (chamada interna), extrair do JSON
+      const body = await req.json() as ShopeeOAuthRequest;
+      action = body.action;
+      shop_id = body.shop_id;
+      redirect_uri = body.redirect_uri;
+      code = body.code;
+      state = body.state;
+    }
     
     const SHOPEE_APP_ID = Deno.env.get('SHOPEE_APP_ID');
     const SHOPEE_APP_SECRET = Deno.env.get('SHOPEE_APP_SECRET');
@@ -59,7 +77,7 @@ serve(async (req: Request) => {
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 min
       });
 
-      const callbackUrl = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/shopee-callback';
+      const callbackUrl = 'https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/shopee-oauth';
       
       const authUrl = new URL(`${baseUrl}/api/v2/shop/auth_partner`);
       authUrl.searchParams.set('id', SHOPEE_APP_ID);
@@ -188,6 +206,40 @@ serve(async (req: Request) => {
       // Limpar state usado
       await supabase.from('oauth_states').delete().eq('state', state);
 
+      // Se for GET (redirect), retornar HTML
+      if (req.method === 'GET') {
+        return new Response(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Sucesso - Shopee OAuth</title>
+            <script>
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'SHOPEE_AUTH_SUCCESS',
+                  data: ${JSON.stringify({
+                    success: true,
+                    account_id: account?.id,
+                    shop_id: stateData.shop_id
+                  })}
+                }, '*');
+              }
+              setTimeout(() => window.close(), 2000);
+            </script>
+          </head>
+          <body>
+            <h1>✅ Conexão com Shopee realizada com sucesso!</h1>
+            <p>Conta conectada: Shop ${stateData.shop_id}</p>
+            <p>Esta janela será fechada automaticamente...</p>
+            <p><a href="javascript:window.close()">Fechar agora</a></p>
+          </body>
+          </html>
+        `, {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+
+      // Se for POST, retornar JSON
       return new Response(
         JSON.stringify({
           success: true,
