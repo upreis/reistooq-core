@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface ShopeeOAuthRequest {
   action: 'get_auth_url' | 'handle_callback';
+  integration_account_id?: string;
   shop_id?: string;
   redirect_uri?: string;
   code?: string;
@@ -30,7 +31,7 @@ serve(async (req: Request) => {
     const requestId = crypto.randomUUID().substring(0, 8);
     console.log(`[shopee-oauth:${requestId}] 🚀 Iniciando OAuth Shopee - Method: ${req.method}`);
 
-    let action, shop_id, redirect_uri, code, state;
+    let action, integration_account_id, shop_id, redirect_uri, code, state;
 
     // Se for GET (redirect da Shopee), extrair parâmetros da URL
     if (req.method === 'GET') {
@@ -44,26 +45,65 @@ serve(async (req: Request) => {
       // Se for POST (chamada interna), extrair do JSON
       const body = await req.json() as ShopeeOAuthRequest;
       action = body.action;
+      integration_account_id = body.integration_account_id;
       shop_id = body.shop_id;
       redirect_uri = body.redirect_uri;
       code = body.code;
       state = body.state;
     }
-    
-    const SHOPEE_APP_ID = Deno.env.get('SHOPEE_APP_ID');
-    const SHOPEE_APP_SECRET = Deno.env.get('SHOPEE_APP_SECRET');
-    
-    if (!SHOPEE_APP_ID || !SHOPEE_APP_SECRET) {
-      console.log(`[shopee-oauth:${requestId}] ❌ Credenciais Shopee não configuradas`);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Shopee credentials not configured' }),
-        { status: 500, headers: corsHeaders }
-      );
-    }
 
     if (action === 'get_auth_url') {
-      // 🔐 GERAR URL DE AUTORIZAÇÃO SHOPEE
-      console.log(`[shopee-oauth:${requestId}] 🔗 Gerando URL de autorização para shop: ${shop_id}`);
+      // 🔐 GERAR URL DE AUTORIZAÇÃO SHOPEE - Buscar credenciais da conta
+      console.log(`[shopee-oauth:${requestId}] 🔗 Gerando URL para account: ${integration_account_id}`);
+      
+      if (!integration_account_id) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'integration_account_id required' }),
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      // Buscar credenciais da conta
+      const { data: secretData, error: secretError } = await supabase.functions.invoke('integrations-get-secret', {
+        body: {
+          integration_account_id: integration_account_id,
+          provider: 'shopee'
+        }
+      });
+
+      if (secretError || !secretData?.success) {
+        console.log(`[shopee-oauth:${requestId}] ❌ Erro ao buscar credenciais:`, secretError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Shopee credentials not found for this account' }),
+          { status: 404, headers: corsHeaders }
+        );
+      }
+
+      const credentials = secretData.payload;
+      const SHOPEE_APP_ID = credentials.app_id;
+      const SHOPEE_APP_SECRET = credentials.app_secret;
+      
+      if (!SHOPEE_APP_ID || !SHOPEE_APP_SECRET) {
+        console.log(`[shopee-oauth:${requestId}] ❌ Credenciais incompletas para conta`);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Incomplete Shopee credentials for this account' }),
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      // Buscar dados da conta
+      const { data: accountData } = await supabase
+        .from('integration_accounts')
+        .select('account_identifier, public_auth, organization_id')
+        .eq('id', integration_account_id)
+        .single();
+
+      if (!accountData) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Integration account not found' }),
+          { status: 404, headers: corsHeaders }
+        );
+      }
       
       const authState = crypto.randomUUID();
       const baseUrl = 'https://partner.shopeemobile.com';
@@ -72,8 +112,9 @@ serve(async (req: Request) => {
       await supabase.from('oauth_states').insert({
         state: authState,
         provider: 'shopee',
-        shop_id: shop_id,
+        shop_id: accountData.account_identifier,
         redirect_uri: redirect_uri,
+        organization_id: accountData.organization_id,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() // 10 min
       });
 
@@ -84,7 +125,7 @@ serve(async (req: Request) => {
       authUrl.searchParams.set('token', authState);
       authUrl.searchParams.set('redirect', callbackUrl);
 
-      console.log(`[shopee-oauth:${requestId}] ✅ URL gerada: ${authUrl.toString()}`);
+      console.log(`[shopee-oauth:${requestId}] ✅ URL gerada para shop: ${accountData.account_identifier}`);
       
       return new Response(
         JSON.stringify({
@@ -123,12 +164,51 @@ serve(async (req: Request) => {
         );
       }
 
+      // Buscar credenciais para o callback - precisamos buscar pela organização do state
+      const { data: accountsData } = await supabase
+        .from('integration_accounts')
+        .select('id')
+        .eq('provider', 'shopee')
+        .eq('account_identifier', stateData.shop_id)
+        .eq('organization_id', stateData.organization_id);
+
+      if (!accountsData || accountsData.length === 0) {
+        console.log(`[shopee-oauth:${requestId}] ❌ Conta não encontrada para shop: ${stateData.shop_id}`);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Account not found' }),
+          { status: 404, headers: corsHeaders }
+        );
+      }
+
+      const accountId = accountsData[0].id;
+
+      // Buscar credenciais da conta
+      const { data: secretData, error: secretError } = await supabase.functions.invoke('integrations-get-secret', {
+        body: {
+          integration_account_id: accountId,
+          provider: 'shopee'
+        }
+      });
+
+      if (secretError || !secretData?.success) {
+        console.log(`[shopee-oauth:${requestId}] ❌ Erro ao buscar credenciais:`, secretError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Shopee credentials not found' }),
+          { status: 404, headers: corsHeaders }
+        );
+      }
+
+      const credentials = secretData.payload;
+      const SHOPEE_APP_ID = credentials.app_id;
+      const SHOPEE_APP_SECRET = credentials.app_secret;
+      const SHOPEE_PARTNER_ID = credentials.partner_id;
+      
       // Obter access token
       const timestamp = Math.floor(Date.now() / 1000);
-      const baseString = `${SHOPEE_APP_ID}${timestamp}`;
+      const baseString = `${SHOPEE_PARTNER_ID}${timestamp}`;
       
       const encoder = new TextEncoder();
-      const keyData = encoder.encode(SHOPEE_APP_SECRET);
+      const keyData = encoder.encode(credentials.partner_key);
       const messageData = encoder.encode(baseString);
       
       const cryptoKey = await crypto.subtle.importKey(
@@ -153,7 +233,7 @@ serve(async (req: Request) => {
         body: JSON.stringify({
           code: code,
           shop_id: parseInt(stateData.shop_id),
-          partner_id: parseInt(SHOPEE_APP_ID),
+          partner_id: parseInt(SHOPEE_PARTNER_ID),
           timestamp: timestamp,
           sign: sign
         })
@@ -171,37 +251,36 @@ serve(async (req: Request) => {
 
       console.log(`[shopee-oauth:${requestId}] ✅ Token obtido com sucesso`);
 
-      // 💾 SALVAR INTEGRAÇÃO
-      const { data: account } = await supabase
-        .from('integration_accounts')
-        .insert({
+      // 💾 ATUALIZAR TOKENS NA INTEGRAÇÃO EXISTENTE
+      // Atualizar tokens existentes
+      const { error: updateError } = await supabase.functions.invoke('integrations-store-secret', {
+        body: {
+          integration_account_id: accountId,
           provider: 'shopee',
-          name: `Shopee Shop ${stateData.shop_id}`,
-          account_identifier: stateData.shop_id,
-          organization_id: stateData.organization_id,
-          is_active: true
-        })
-        .select()
-        .single();
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_at: new Date(Date.now() + (tokenData.expire_in * 1000)).toISOString()
+        }
+      });
 
-      if (account) {
-        // Salvar tokens de forma segura
-        await supabase.from('integration_secrets').insert({
-          integration_account_id: account.id,
-          provider: 'shopee',
-          organization_id: account.organization_id,
-          simple_tokens: JSON.stringify({
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
-            expires_at: Date.now() + (tokenData.expire_in * 1000),
-            shop_id: stateData.shop_id
-          }),
-          expires_at: new Date(Date.now() + (tokenData.expire_in * 1000)).toISOString(),
-          use_simple: true
-        });
-
-        console.log(`[shopee-oauth:${requestId}] ✅ Integração salva: ${account.id}`);
+      if (updateError) {
+        console.log(`[shopee-oauth:${requestId}] ❌ Erro ao atualizar tokens:`, updateError);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Failed to update tokens' }),
+          { status: 500, headers: corsHeaders }
+        );
       }
+
+      // Atualizar status da conta
+      await supabase
+        .from('integration_accounts')
+        .update({ 
+          token_status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', accountId);
+
+      console.log(`[shopee-oauth:${requestId}] ✅ Tokens atualizados para conta: ${accountId}`);
 
       // Limpar state usado
       await supabase.from('oauth_states').delete().eq('state', state);
@@ -219,7 +298,7 @@ serve(async (req: Request) => {
                   type: 'SHOPEE_AUTH_SUCCESS',
                   data: ${JSON.stringify({
                     success: true,
-                    account_id: account?.id,
+                    account_id: accountId,
                     shop_id: stateData.shop_id
                   })}
                 }, '*');
@@ -243,7 +322,7 @@ serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           success: true,
-          account_id: account?.id,
+          account_id: accountId,
           shop_id: stateData.shop_id
         }),
         { headers: corsHeaders }
