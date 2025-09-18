@@ -7,7 +7,7 @@ export const FEATURES = {
   
   // Integrations - controlled activation
   MERCADO_LIVRE: true, // OAuth configurado e funcional
-  SHOPEE: false,        // Not implemented
+  SHOPEE: true,         // ✅ ATIVADO - Preparando implementação
   TINY_ERP: false,      // Disabled until credentials validated
   AMAZON: false,        // Not implemented
   
