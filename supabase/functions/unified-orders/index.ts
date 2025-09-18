@@ -629,7 +629,7 @@ Deno.serve(async (req) => {
   }
 
   // Criar dois clients: serviço (bypass RLS) e usuário (contexto org)
-  const userClient = makeUserClient(req);
+  const userClient = makeClient(req.headers.get("Authorization"));
   const serviceClient = makeServiceClient();
   const cid = crypto.randomUUID().slice(0, 8);
 
