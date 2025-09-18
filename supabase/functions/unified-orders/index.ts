@@ -680,7 +680,8 @@ Deno.serve(async (req) => {
     });
 
     if (!integration_account_id) {
-      return fail('integration_account_id é obrigatório', 400, null, cid);
+      console.error(`[unified-orders:${cid}] ❌ integration_account_id ausente no body`);
+      return fail('integration_account_id é obrigatório. Verifique se uma conta ML está selecionada.', 400, null, cid);
     }
 
     // ✅ 1. Busca account com validação de usuário (RLS ativo)

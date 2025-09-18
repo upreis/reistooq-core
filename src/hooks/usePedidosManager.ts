@@ -286,9 +286,18 @@ export function usePedidosManager(initialAccountId?: string) {
       params.integration_account_id = targetAccountId;
       console.log('🔗 [CONTAS] Parâmetro final: integration_account_id =', targetAccountId);
     } else if (!params.integration_account_ids) {
-      // Fallback para conta padrão se nenhuma específica foi selecionada
-      params.integration_account_id = integrationAccountId;
-      console.log('🔗 [CONTAS] Fallback para conta padrão:', integrationAccountId);
+      // 🚨 CORREÇÃO: Se não há integrationAccountId mas há contas disponíveis, usar a primeira
+      if (!integrationAccountId && availableMlAccounts.length > 0) {
+        params.integration_account_id = availableMlAccounts[0];
+        console.log('🔗 [CONTAS] Fallback para primeira conta disponível:', availableMlAccounts[0]);
+      } else if (integrationAccountId) {
+        params.integration_account_id = integrationAccountId;
+        console.log('🔗 [CONTAS] Fallback para conta padrão:', integrationAccountId);
+      } else {
+        // 🚨 CRÍTICO: Sem contas disponíveis - não fazer chamada
+        console.warn('🔗 [CONTAS] Nenhuma conta disponível para fazer a chamada');
+        return null;
+      }
     } else {
       console.log('🔗 [CONTAS] Usando múltiplas contas via integration_account_ids');
     }
@@ -500,8 +509,8 @@ export function usePedidosManager(initialAccountId?: string) {
     }
     
     // 🔧 AUDITORIA: Lógica original para conta única
-    if (!integrationAccountId && !apiParams.integration_account_id) {
-      throw new Error('integration_account_id é obrigatório mas não foi fornecido');
+    if (!integrationAccountId && !apiParams.integration_account_id && !apiParams.integration_account_ids) {
+      throw new Error('integration_account_id ou integration_account_ids é obrigatório mas não foi fornecido');
     }
 
     const requestBody = {
@@ -730,6 +739,13 @@ export function usePedidosManager(initialAccountId?: string) {
     
     const filtersKey = stableSerializeFilters(filtersToUse);
     const apiParams = buildApiParams(filtersToUse);
+    
+    // 🚨 CORREÇÃO: Se buildApiParams retorna null, não há contas disponíveis
+    if (!apiParams) {
+      console.log('[fetch:skip] buildApiParams retornou null - aguardando contas serem carregadas');
+      return;
+    }
+    
     const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
 
     // 🚨 FIX 2: Controle de concorrência com AbortController + requestId
@@ -751,18 +767,8 @@ export function usePedidosManager(initialAccountId?: string) {
     // Atualiza a última query com a chave completa (inclui paginação/conta)
     setLastQuery(cacheKey);
 
-    // Só bloquear se realmente não houver nenhuma conta definida (única ou múltiplas)
-    const hasAnyAccount = Boolean(
-      apiParams.integration_account_id ||
-      (Array.isArray(apiParams.integration_account_ids) && apiParams.integration_account_ids.length > 0) ||
-      integrationAccountId
-    );
-    if (!hasAnyAccount) {
-      console.log('[fetch:skip] nenhuma conta selecionada ainda');
-      // Não bloquear o próximo auto-load: o setIntegrationAccountId acontecerá em seguida
-      skipNextAutoLoadRef.current = false;
-      return;
-    }
+    // 🚨 CORREÇÃO: Agora que buildApiParams já validou, não precisamos verificar novamente
+    // A validação de contas já foi feita em buildApiParams
 
     
 
@@ -1189,6 +1195,9 @@ export function usePedidosManager(initialAccountId?: string) {
       
       // ✅ CORRIGIDO: Carregar todos os dados sem paginação usando filters atuais
       const apiParams = buildApiParams(filters);
+      if (!apiParams) {
+        throw new Error('Nenhuma conta disponível para exportação');
+      }
       const allData = await loadFromUnifiedOrders({ ...apiParams, limit: PAGINATION.EXPORT_LIMIT });
       
       if (format === 'csv') {
@@ -1408,6 +1417,10 @@ const actions: PedidosManagerActions = useMemo(() => ({
     
     // ✅ CRÍTICO: Usar filtros atuais, não debounced
     const apiParams = buildApiParams(filters);
+    if (!apiParams) {
+      console.log('[refetch:skip] buildApiParams retornou null - aguardando contas serem carregadas');
+      return;
+    }
     const filtersKey = stableSerializeFilters(filters);
     const cacheKey = getCacheKey({ ...apiParams, __filters_key: filtersKey });
     
