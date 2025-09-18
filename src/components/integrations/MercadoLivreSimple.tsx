@@ -242,6 +242,34 @@ export function MercadoLivreSimple() {
         </CardContent>
       </Card>
 
+      {orders.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Pedidos Recentes</CardTitle>
+            <CardDescription>
+              Últimos 20 pedidos da conta selecionada
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {orders.map((order) => (
+                <div key={order.id} className="flex items-center justify-between p-3 border rounded">
+                  <div>
+                    <p className="font-medium">#{order.id}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.buyer.nickname} • {new Date(order.date_created).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">R$ {order.total_amount?.toFixed(2)}</p>
+                    <Badge variant="secondary">{order.status}</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
