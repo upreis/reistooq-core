@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { IntelligentDashboard } from "@/features/dashboard";
+import { useShopeeCallback } from "@/hooks/useShopeeCallback";
 
 const Dashboard = () => {
+  // Detecta automaticamente callback da Shopee
+  useShopeeCallback();
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
