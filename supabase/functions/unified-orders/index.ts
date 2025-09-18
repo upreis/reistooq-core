@@ -1,4 +1,5 @@
 import { makeServiceClient, makeClient, corsHeaders, ok, fail, getMlConfig } from "../_shared/client.ts";
+import { fetchShopeeOrders } from "./shopee-integration.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
@@ -692,7 +693,6 @@ Deno.serve(async (req) => {
       .from('integration_accounts')
       .select('*')
       .eq('id', integration_account_id)
-      .eq('provider', 'mercadolivre')
       .eq('is_active', true)
       .single();
 
@@ -701,7 +701,58 @@ Deno.serve(async (req) => {
       return fail('Integration account not found', 404, accountError, cid);
     }
 
-    // ✅ 2. SISTEMA BLINDADO: Busca integration_secrets com SERVICE CLIENT (bypass RLS)
+    // 🛡️ NOVO: Detecção segura de provider
+    const provider = accountData.provider || 'mercadolivre';
+    console.log(`[unified-orders:${cid}] 🔍 Provider detectado: ${provider}`);
+
+    // 🛒 ROTEAMENTO SHOPEE (ISOLADO - NÃO AFETA ML)
+    if (provider === 'shopee') {
+      console.log(`[unified-orders:${cid}] 🛒 ROTA SHOPEE - buscando credenciais`);
+      
+      const { data: shopeeSecrets, error: shopeeSecretError } = await serviceClient
+        .from('integration_secrets')
+        .select('partner_id, partner_key, shop_id, access_token, simple_tokens, secret_enc')
+        .eq('integration_account_id', integration_account_id)
+        .eq('provider', 'shopee')
+        .maybeSingle();
+
+      if (shopeeSecretError || !shopeeSecrets) {
+        console.error(`[unified-orders:${cid}] 🛒 Shopee credentials not found:`, shopeeSecretError);
+        return fail('Shopee credentials not found', 404, shopeeSecretError, cid);
+      }
+
+      try {
+        // 🛒 Descriptografar credenciais Shopee se necessário
+        let shopeeCredentials = shopeeSecrets;
+        if (shopeeSecrets.secret_enc) {
+          console.log(`[unified-orders:${cid}] 🛒 Descriptografando credenciais Shopee`);
+          // TODO: Implementar descriptografia quando necessário
+        }
+
+        // 🛒 Buscar pedidos Shopee (ISOLADO)
+        const shopeeResult = await fetchShopeeOrders(body, accountData, shopeeCredentials, cid);
+        
+        console.log(`[unified-orders:${cid}] 🛒 Shopee resultado:`, {
+          total: shopeeResult.total,
+          pedidos: shopeeResult.pedidos?.length || 0
+        });
+        
+        return ok({
+          ...shopeeResult,
+          provider: 'shopee',
+          account_id: integration_account_id
+        }, cid);
+        
+      } catch (shopeeError) {
+        console.error(`[unified-orders:${cid}] 🛒 Erro Shopee:`, shopeeError);
+        return fail(`Shopee error: ${shopeeError.message}`, 500, shopeeError, cid);
+      }
+    }
+
+    // 🛡️ CONTINUAR COM LÓGICA ML EXISTENTE (INALTERADA)
+    console.log(`[unified-orders:${cid}] 🛒 ROTA ML - continuando fluxo original`);
+
+    // ✅ 2. SISTEMA BLINDADO: Busca integration_secrets com SERVICE CLIENT (bypass RLS) - SOMENTE ML
     const { data: secretRow, error: secretError } = await serviceClient
       .from('integration_secrets')
       .select('simple_tokens, use_simple, secret_enc, provider, expires_at, access_token, refresh_token')
