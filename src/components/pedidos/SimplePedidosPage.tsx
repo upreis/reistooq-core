@@ -71,9 +71,6 @@ import { DevolucoesMercadoLivreTab } from './devolucoes/DevolucoesMercadoLivreTa
 import { FEATURES } from '@/config/features';
 import { ProviderSelector } from './components/ProviderSelector';
 
-
-
-
 type Order = {
   id: string;
   numero: string;
