@@ -640,6 +640,9 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
+    
+    console.log(`[unified-orders:${cid}] 🚨 DEBUG BODY COMPLETO:`, JSON.stringify(body, null, 2));
+    
     const {
       integration_account_id,
       status,

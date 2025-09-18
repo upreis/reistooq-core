@@ -363,7 +363,8 @@ export function usePedidosManager(initialAccountId?: string) {
         };
           
           console.groupCollapsed(`[CONTA ${accountId.slice(0, 8)}...] Requisição`);
-          console.log('body', singleAccountBody);
+          console.log('🚨 DEBUG - body completo:', JSON.stringify(singleAccountBody, null, 2));
+          console.log('🚨 DEBUG - integration_account_id:', singleAccountBody.integration_account_id);
           console.groupEnd();
           
           let data: any | null = null;
