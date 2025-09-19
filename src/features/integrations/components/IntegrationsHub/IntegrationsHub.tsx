@@ -1,7 +1,7 @@
 // 🎯 Hub unificado de configurações e integrações
 // Dashboard principal com anúncios, integrações e configurações
 
-import React, { useState, useCallback } from 'react';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -35,23 +35,23 @@ export const IntegrationsHub: React.FC = () => {
 
   const { isAuthenticating, authError } = useOAuthFlow();
 
-  const [configProvider, setConfigProvider] = useState<Provider | null>(null);
-  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [configProvider, setConfigProvider] = React.useState<Provider | null>(null);
+  const [showConfigPanel, setShowConfigPanel] = React.useState(false);
 
   // Event handlers
-  const handleConnect = useCallback(async (provider: Provider) => {
+  const handleConnect = React.useCallback(async (provider: Provider) => {
     await connectProvider(provider);
   }, [connectProvider]);
 
-  const handleDisconnect = useCallback(async (provider: Provider) => {
+  const handleDisconnect = React.useCallback(async (provider: Provider) => {
     await disconnectProvider(provider);
   }, [disconnectProvider]);
 
-  const handleTest = useCallback(async (provider: Provider) => {
+  const handleTest = React.useCallback(async (provider: Provider) => {
     await testConnection(provider);
   }, [testConnection]);
 
-  const handleConfigure = useCallback((provider: Provider) => {
+  const handleConfigure = React.useCallback((provider: Provider) => {
     // Skip ConfigurationPanel for Shopee since it has its own custom modal
     if (provider === 'shopee') {
       return; // ShopeeConnection component handles its own configuration modal
@@ -60,16 +60,16 @@ export const IntegrationsHub: React.FC = () => {
     setShowConfigPanel(true);
   }, []);
 
-  const handleOAuth = useCallback((provider: Provider) => {
+  const handleOAuth = React.useCallback((provider: Provider) => {
     // OAuth logic handled by individual integration cards
     console.log('OAuth initiated for:', provider);
   }, []);
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = React.useCallback(async () => {
     await refreshIntegrations();
   }, [refreshIntegrations]);
 
-  const handleCloseConfig = useCallback(() => {
+  const handleCloseConfig = React.useCallback(() => {
     setShowConfigPanel(false);
     setConfigProvider(null);
   }, []);
