@@ -424,9 +424,29 @@ export class AdminService {
   }
 
   async createSystemAlert(data: Omit<SystemAlert, 'id' | 'created_at' | 'updated_at'>): Promise<SystemAlert> {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get user's organization
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organizacao_id')
+      .eq('id', user.id)
+      .single();
+
+    // Prepare the alert data with required fields
+    const alertData = {
+      ...data,
+      created_by: user.id,
+      organization_id: profile?.organizacao_id || null
+    };
+
     const { data: alert, error } = await supabase
       .from('system_alerts')
-      .insert(data)
+      .insert(alertData)
       .select()
       .single();
 
