@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
@@ -14,16 +14,7 @@ interface MobileContextType {
   showNotification: (title: string, body: string) => void;
 }
 
-// CRÍTICO: Default value seguro
-const defaultMobileValue: MobileContextType = {
-  isNative: false,
-  platform: 'web',
-  registerForPushNotifications: async () => {},
-  vibrate: async () => {},
-  showNotification: () => {},
-};
-
-const MobileContext = createContext<MobileContextType>(defaultMobileValue);
+const MobileContext = createContext<MobileContextType | null>(null);
 
 export function MobileProvider({ children }: { children: ReactNode }) {
   const [isNative] = useState(Capacitor.isNativePlatform());
@@ -157,12 +148,8 @@ export function MobileProvider({ children }: { children: ReactNode }) {
 
 export const useMobile = () => {
   const context = useContext(MobileContext);
-  
-  // CRÍTICO: Fallback ao invés de erro
-  if (!context || context === defaultMobileValue) {
-    console.warn('useMobile usado fora do MobileProvider - usando fallback seguro');
-    return defaultMobileValue;
+  if (!context) {
+    throw new Error('useMobile must be used within a MobileProvider');
   }
-  
   return context;
 };

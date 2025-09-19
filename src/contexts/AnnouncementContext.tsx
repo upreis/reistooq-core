@@ -9,17 +9,7 @@ interface AnnouncementContextType {
   setIsCollapsed: (collapsed: boolean) => void;
 }
 
-// CRÍTICO: Default value seguro
-const defaultAnnouncementValue: AnnouncementContextType = {
-  isHidden: false,
-  setIsHidden: () => {},
-  hasAnnouncements: false,
-  setHasAnnouncements: () => {},
-  isCollapsed: false,
-  setIsCollapsed: () => {}
-};
-
-const AnnouncementContext = createContext<AnnouncementContextType>(defaultAnnouncementValue);
+const AnnouncementContext = createContext<AnnouncementContextType | undefined>(undefined);
 
 export function AnnouncementProvider({ children }: { children: ReactNode }) {
   const [isHidden, setIsHidden] = useState(false);
@@ -42,12 +32,8 @@ export function AnnouncementProvider({ children }: { children: ReactNode }) {
 
 export function useAnnouncements() {
   const context = useContext(AnnouncementContext);
-  
-  // CRÍTICO: Fallback ao invés de erro
-  if (!context || context === defaultAnnouncementValue) {
-    console.warn('useAnnouncements usado fora do AnnouncementProvider - usando fallback seguro');
-    return defaultAnnouncementValue;
+  if (context === undefined) {
+    throw new Error('useAnnouncements must be used within an AnnouncementProvider');
   }
-  
   return context;
 }

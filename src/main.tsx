@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+import * as React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from "react-router-dom"
 import App from './App'
@@ -23,13 +23,31 @@ const root = createRoot(container);
 
 // Create error boundary wrapper with progressive loading
 function AppWithErrorBoundary() {
-  return (
-    <StrictMode>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </StrictMode>
-  );
+  try {
+    // Import main app
+    return (
+      <React.Suspense fallback={<div>Carregando...</div>}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </React.Suspense>
+    );
+  } catch (error) {
+    console.error('Main app failed:', error);
+    return (
+      <div style={{ 
+        padding: '2rem', 
+        textAlign: 'center',
+        backgroundColor: '#1a1a1a',
+        color: '#ffffff',
+        minHeight: '100vh'
+      }}>
+        <h1>Sistema Indisponível</h1>
+        <p>Erro crítico detectado. Recarregue a página.</p>
+        <button onClick={() => window.location.reload()}>Recarregar</button>
+      </div>
+    );
+  }
 }
 
 root.render(<AppWithErrorBoundary />);
