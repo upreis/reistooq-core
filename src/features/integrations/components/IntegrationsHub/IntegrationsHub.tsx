@@ -142,8 +142,8 @@ export const IntegrationsHub: React.FC = () => {
             {/* Mercado Livre Integration - Layout completo para contas conectadas */}
             {FEATURES.MERCADO_LIVRE && <MercadoLivreConnection />}
             
-            {/* Grid compacto para todas as integrações */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Grid compacto para todas as integrações - 5 cards lado a lado */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {/* Shopee Integration - Card compacto */}
               {FEATURES.SHOPEE && <ShopeeConnection />}
               
