@@ -94,28 +94,61 @@ export function ShopeeConnection() {
         throw new Error('Organização não encontrada');
       }
 
-      // Primeiro criar a conta de integração
-      const { data: newAccount, error: accountError } = await supabase
+      // Verificar se já existe uma conta com esse Shop ID
+      const { data: existingAccount } = await supabase
         .from('integration_accounts')
-        .insert({
-          provider: 'shopee',
-          name: `Shopee - Shop ${shopId}`,
-          account_identifier: shopId.trim(),
-          organization_id: orgId,
-          public_auth: {
-            shop_id: shopId.trim(),
-            partner_id: partnerId.trim()
-          }
-        })
-        .select()
+        .select('*')
+        .eq('provider', 'shopee')
+        .eq('account_identifier', shopId.trim())
+        .eq('organization_id', orgId)
         .single();
 
-      if (accountError) throw accountError;
+      let accountId: string;
+
+      if (existingAccount) {
+        // Atualizar conta existente
+        const { data: updatedAccount, error: updateError } = await supabase
+          .from('integration_accounts')
+          .update({
+            name: `Shopee - Shop ${shopId}`,
+            public_auth: {
+              shop_id: shopId.trim(),
+              partner_id: partnerId.trim()
+            },
+            is_active: true,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingAccount.id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+        accountId = updatedAccount.id;
+      } else {
+        // Criar nova conta
+        const { data: newAccount, error: accountError } = await supabase
+          .from('integration_accounts')
+          .insert({
+            provider: 'shopee',
+            name: `Shopee - Shop ${shopId}`,
+            account_identifier: shopId.trim(),
+            organization_id: orgId,
+            public_auth: {
+              shop_id: shopId.trim(),
+              partner_id: partnerId.trim()
+            }
+          })
+          .select()
+          .single();
+
+        if (accountError) throw accountError;
+        accountId = newAccount.id;
+      }
 
       // Depois salvar as credenciais de forma segura
       const { error: secretError } = await supabase.functions.invoke('integrations-store-secret', {
         body: {
-          integration_account_id: newAccount.id,
+          integration_account_id: accountId,
           provider: 'shopee',
           payload: {
             shop_id: shopId.trim(),
@@ -129,7 +162,7 @@ export function ShopeeConnection() {
 
       if (secretError) throw secretError;
 
-      toast.success('Conta Shopee configurada com sucesso!');
+      toast.success(existingAccount ? 'Conta Shopee atualizada com sucesso!' : 'Conta Shopee configurada com sucesso!');
       setShowConfigModal(false);
       
       // Limpar campos
