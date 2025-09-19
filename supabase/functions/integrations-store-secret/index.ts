@@ -28,6 +28,17 @@ serve(async (req) => {
 
     console.log('🔐 [Store Secret] Salvando credenciais para:', { integration_account_id, provider })
 
+    // Get organization_id from integration account
+    const { data: accountData, error: accountError } = await supabase
+      .from('integration_accounts')
+      .select('organization_id')
+      .eq('id', integration_account_id)
+      .single()
+
+    if (accountError || !accountData) {
+      throw new Error('Conta de integração não encontrada')
+    }
+
     // Encrypt the payload using simple encryption
     const { data: encryptedPayload, error: encryptError } = await supabase.rpc('encrypt_simple', {
       data: JSON.stringify(payload)
@@ -37,15 +48,17 @@ serve(async (req) => {
       throw new Error(`Erro ao criptografar: ${encryptError.message}`)
     }
 
-    // Store the encrypted secrets
+    // Store the encrypted secrets using upsert with proper conflict resolution
     const { error: insertError } = await supabase
       .from('integration_secrets')
       .upsert({
         integration_account_id,
         provider,
         simple_tokens: encryptedPayload,
-        created_at: new Date().toISOString(),
+        organization_id: accountData.organization_id,
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'integration_account_id,provider'
       })
 
     if (insertError) {
