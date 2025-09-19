@@ -3,51 +3,56 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
+// Configuração limpa para eliminar problemas de múltiplas instâncias React
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
   },
   plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
+    react({
+      // Configurações específicas para evitar problemas de hooks
+      jsxImportSource: 'react',
+    }),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
+  
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Force single React instance - more aggressive approach
+      // Garantir uma única instância do React
       "react": path.resolve(__dirname, "./node_modules/react"),
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
-      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime"),
-      "react/jsx-dev-runtime": path.resolve(__dirname, "./node_modules/react/jsx-dev-runtime"),
     },
-    dedupe: [
-      "react",
-      "react-dom",
-      "react/jsx-runtime", 
-      "react/jsx-dev-runtime",
-      "scheduler",
-      "react-router-dom",
-      "@tanstack/react-query"
-    ],
   },
+  
+  // Configuração otimizada para evitar duplicação
   optimizeDeps: {
     include: [
-      "react", 
-      "react-dom", 
+      "react",
+      "react-dom",
       "react/jsx-runtime",
-      "react/jsx-dev-runtime"
     ],
-    force: true
+    force: true, // Força reconstrução do cache
   },
+  
+  // Configuração de build limpa
   build: {
+    commonjsOptions: {
+      include: [/node_modules/],
+    },
     rollupOptions: {
-      external: [],
       output: {
-        manualChunks: undefined
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          vendor: ['@tanstack/react-query', 'react-router-dom'],
+        }
       }
     }
+  },
+  
+  // Evitar problemas de ESM
+  define: {
+    global: 'globalThis',
   },
 }));
