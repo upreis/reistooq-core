@@ -3,56 +3,51 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
-// Configuração limpa para eliminar problemas de múltiplas instâncias React
+// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
   },
   plugins: [
-    react({
-      // Configurações específicas para evitar problemas de hooks
-      jsxImportSource: 'react',
-    }),
-    mode === 'development' && componentTagger(),
+    react(),
+    mode === 'development' &&
+    componentTagger(),
   ].filter(Boolean),
-  
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Garantir uma única instância do React
+      // Force single React instance - more aggressive approach
       "react": path.resolve(__dirname, "./node_modules/react"),
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime"),
+      "react/jsx-dev-runtime": path.resolve(__dirname, "./node_modules/react/jsx-dev-runtime"),
     },
-  },
-  
-  // Configuração otimizada para evitar duplicação
-  optimizeDeps: {
-    include: [
+    dedupe: [
       "react",
       "react-dom",
-      "react/jsx-runtime",
+      "react/jsx-runtime", 
+      "react/jsx-dev-runtime",
+      "scheduler",
+      "react-router-dom",
+      "@tanstack/react-query"
     ],
-    force: true, // Força reconstrução do cache
   },
-  
-  // Configuração de build limpa
+  optimizeDeps: {
+    include: [
+      "react", 
+      "react-dom", 
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime"
+    ],
+    force: true
+  },
   build: {
-    commonjsOptions: {
-      include: [/node_modules/],
-    },
     rollupOptions: {
+      external: [],
       output: {
-        manualChunks: {
-          react: ['react', 'react-dom'],
-          vendor: ['@tanstack/react-query', 'react-router-dom'],
-        }
+        manualChunks: undefined
       }
     }
-  },
-  
-  // Evitar problemas de ESM
-  define: {
-    global: 'globalThis',
   },
 }));

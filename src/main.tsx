@@ -2,7 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from "react-router-dom"
 import App from './App'
-import AppMinimal from './App.minimal'
+import DebugApp from './App.debug'
 import FallbackApp from './App.fallback'
 
 import { setupGlobalToast } from "@/utils/toast-bridge";
@@ -26,11 +26,11 @@ const root = createRoot(container);
 // Create error boundary wrapper with progressive loading
 function AppWithErrorBoundary() {
   try {
-    // Usar app minimalista para testar estabilidade
+    // Use debug app first to test React hooks
     return (
       <React.Suspense fallback={<div>Carregando...</div>}>
         <BrowserRouter>
-          <AppMinimal />
+          <DebugApp />
         </BrowserRouter>
       </React.Suspense>
     );
