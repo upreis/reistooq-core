@@ -17,20 +17,17 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Force single React instance - more aggressive approach
+      // Force single React instance
       "react": path.resolve(__dirname, "./node_modules/react"),
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
-      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime"),
-      "react/jsx-dev-runtime": path.resolve(__dirname, "./node_modules/react/jsx-dev-runtime"),
     },
     dedupe: [
       "react",
       "react-dom",
-      "react/jsx-runtime", 
+      "react/jsx-runtime",
       "react/jsx-dev-runtime",
       "scheduler",
-      "react-router-dom",
-      "@tanstack/react-query"
+      "react-router-dom"
     ],
   },
   optimizeDeps: {
@@ -38,16 +35,10 @@ export default defineConfig(({ mode }) => ({
       "react", 
       "react-dom", 
       "react/jsx-runtime",
-      "react/jsx-dev-runtime"
+      "react/jsx-dev-runtime",
+      "@tanstack/react-query",
+      "react-router-dom"
     ],
     force: true
-  },
-  build: {
-    rollupOptions: {
-      external: [],
-      output: {
-        manualChunks: undefined
-      }
-    }
   },
 }));
