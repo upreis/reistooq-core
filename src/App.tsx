@@ -157,7 +157,7 @@ function App() {
                         </PermissionRoute>
                       } />
                       <Route path="/pedidos" element={
-                        <PermissionRoute requiredPermissions={['orders:view']}>
+                        <PermissionRoute requiredPermissions={['pedidos:view']}>
                           <Pedidos />
                         </PermissionRoute>
                       } />
@@ -167,6 +167,11 @@ function App() {
                         </PermissionRoute>
                       } />
                       <Route path="/ml-orders" element={
+                        <PermissionRoute requiredPermissions={['ml_orders:view']}>
+                          <MLOrdersCompletas />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/ml-orders-completas" element={
                         <PermissionRoute requiredPermissions={['ml_orders:view']}>
                           <MLOrdersCompletas />
                         </PermissionRoute>
