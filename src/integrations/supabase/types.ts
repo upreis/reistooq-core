@@ -3550,87 +3550,7 @@ export type Database = {
       }
     }
     Views: {
-      clientes_secure: {
-        Row: {
-          cpf_cnpj: string | null
-          created_at: string | null
-          data_is_masked: boolean | null
-          data_primeiro_pedido: string | null
-          data_ultimo_pedido: string | null
-          email: string | null
-          empresa: string | null
-          endereco_bairro: string | null
-          endereco_cep: string | null
-          endereco_cidade: string | null
-          endereco_numero: string | null
-          endereco_rua: string | null
-          endereco_uf: string | null
-          id: string | null
-          integration_account_id: string | null
-          nome_completo: string | null
-          observacoes: string | null
-          organization_id: string | null
-          status_cliente: string | null
-          telefone: string | null
-          ticket_medio: number | null
-          total_pedidos: number | null
-          updated_at: string | null
-          valor_total_gasto: number | null
-        }
-        Insert: {
-          cpf_cnpj?: never
-          created_at?: string | null
-          data_is_masked?: never
-          data_primeiro_pedido?: string | null
-          data_ultimo_pedido?: string | null
-          email?: never
-          empresa?: string | null
-          endereco_bairro?: never
-          endereco_cep?: never
-          endereco_cidade?: string | null
-          endereco_numero?: never
-          endereco_rua?: never
-          endereco_uf?: string | null
-          id?: string | null
-          integration_account_id?: string | null
-          nome_completo?: string | null
-          observacoes?: string | null
-          organization_id?: string | null
-          status_cliente?: string | null
-          telefone?: never
-          ticket_medio?: number | null
-          total_pedidos?: number | null
-          updated_at?: string | null
-          valor_total_gasto?: number | null
-        }
-        Update: {
-          cpf_cnpj?: never
-          created_at?: string | null
-          data_is_masked?: never
-          data_primeiro_pedido?: string | null
-          data_ultimo_pedido?: string | null
-          email?: never
-          empresa?: string | null
-          endereco_bairro?: never
-          endereco_cep?: never
-          endereco_cidade?: string | null
-          endereco_numero?: never
-          endereco_rua?: never
-          endereco_uf?: string | null
-          id?: string | null
-          integration_account_id?: string | null
-          nome_completo?: string | null
-          observacoes?: string | null
-          organization_id?: string | null
-          status_cliente?: string | null
-          telefone?: never
-          ticket_medio?: number | null
-          total_pedidos?: number | null
-          updated_at?: string | null
-          valor_total_gasto?: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       accept_invitation_secure: {
@@ -3834,6 +3754,35 @@ export type Database = {
           nome: string
           ordem: number
           updated_at: string
+        }[]
+      }
+      get_clientes_secure: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          cpf_cnpj: string
+          created_at: string
+          data_is_masked: boolean
+          data_primeiro_pedido: string
+          data_ultimo_pedido: string
+          email: string
+          empresa: string
+          endereco_bairro: string
+          endereco_cep: string
+          endereco_cidade: string
+          endereco_numero: string
+          endereco_rua: string
+          endereco_uf: string
+          id: string
+          integration_account_id: string
+          nome_completo: string
+          observacoes: string
+          organization_id: string
+          status_cliente: string
+          telefone: string
+          ticket_medio: number
+          total_pedidos: number
+          updated_at: string
+          valor_total_gasto: number
         }[]
       }
       get_current_org_id: {
