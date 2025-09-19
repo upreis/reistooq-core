@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { THEMES, type ThemeName } from "./materialm/tokens";
+
+type ThemeName = 'materialm-dark' | 'materialm-light';
 
 type ThemeProviderProps = {
   children: ReactNode;
@@ -50,14 +51,9 @@ export function ThemeProvider({
     // Remove all theme classes
     THEME_OPTIONS.forEach(t => root.classList.remove(t));
     
-    // Apply theme data attribute and CSS variables
+    // Apply theme data attribute
     root.setAttribute('data-theme', theme);
-    
-    // Apply CSS variables
-    const tokens = THEMES[theme];
-    Object.entries(tokens).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
-    });
+    root.classList.add(theme);
 
     // Log theme loading
     console.log('Theme loaded:', theme);
