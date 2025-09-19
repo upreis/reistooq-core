@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { SidebarContextValue } from './types/sidebar.types';
 import { useSidebarState } from './hooks/useSidebarState';
 import { SIDEBAR_CONFIG } from '@/config/enhanced-nav';

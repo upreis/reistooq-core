@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -13,7 +13,17 @@ interface AuthContextType {
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// CRÍTICO: Default value seguro para fallback
+const defaultAuthValue: AuthContextType = {
+  user: null,
+  session: null,
+  signIn: async () => ({ error: new Error('AuthProvider not available') }),
+  signUp: async () => ({ error: new Error('AuthProvider not available') }),
+  signOut: async () => ({ error: new Error('AuthProvider not available') }),
+  loading: false,
+};
+
+const AuthContext = createContext<AuthContextType>(defaultAuthValue);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -122,8 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+  
+  // CRÍTICO: Fallback ao invés de erro
+  if (!context || context === defaultAuthValue) {
+    console.warn('useAuth usado fora do AuthProvider - usando fallback seguro');
+    return defaultAuthValue;
   }
+  
   return context;
 }
