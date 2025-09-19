@@ -25,7 +25,6 @@ export function ShopeeConnection() {
 
   useEffect(() => {
     loadShopeeAccounts();
-    loadShopeeConfig();
     handleOAuthCallback();
   }, []);
 
@@ -38,31 +37,30 @@ export function ShopeeConnection() {
         .eq('is_active', true);
 
       if (error) throw error;
-
+      
       setAccounts(data || []);
-      console.log(`✅ Contas Shopee carregadas: ${data?.length || 0}`);
-    } catch (error) {
+      console.log('🛍️ Contas Shopee carregadas:', data?.length || 0);
+    } catch (error: any) {
       console.error('Erro ao carregar contas Shopee:', error);
+      toast.error('Erro ao carregar contas Shopee');
     } finally {
       setLoading(false);
     }
   };
 
   const loadShopeeConfig = async () => {
-    // Não carrega mais configurações globais - cada conta terá suas próprias credenciais
-    console.log('Configurações Shopee serão específicas por conta');
+    // Configurações agora são por conta, não globais
   };
 
   const clearFormFields = () => {
-    setShopId('225917626');
-    setPartnerId('1185587');
-    setAccessToken('4d6d4a70485346456855a64b426e496c');
+    setShopId('');
+    setPartnerId('');
+    setAccessToken('');
     setEnvironment('test');
     setApiDomain('https://openplatform.sandbox.test-stable.shopee.sg');
   };
 
   const saveShopeeConfig = async () => {
-    // Validar todos os campos obrigatórios
     if (!shopId.trim()) {
       toast.error('Shop ID é obrigatório');
       return;
@@ -202,54 +200,40 @@ export function ShopeeConnection() {
           // Limpar parâmetros da URL
           window.history.replaceState({}, document.title, window.location.pathname);
           
-          // Recarregar contas
+          // Recarregar lista de contas
           loadShopeeAccounts();
-        } else {
-          toast.error('Erro ao processar autorização Shopee');
         }
       } catch (error: any) {
         console.error('Erro no callback OAuth:', error);
-        toast.error(`Erro: ${error.message}`);
+        toast.error(`Erro na autenticação: ${error.message}`);
       }
     }
   };
 
-  const handleConnect = async (accountId: string) => {
+  const handleConnect = async (force = false) => {
+    if (!force && accounts.length > 0) {
+      // Se já tem conta conectada, só abre o modal de configuração
+      setShowConfigModal(true);
+      return;
+    }
+
     setIsConnecting(true);
-    
     try {
-      console.log(`🚀 Iniciando OAuth Shopee para conta: ${accountId}`);
-      
       const response = await supabase.functions.invoke('shopee-oauth', {
         body: {
-          action: 'get_auth_url',
-          integration_account_id: accountId,
-          redirect_uri: `${window.location.origin}${window.location.pathname}`
+          action: 'get_authorization_url',
+          partner_id: partnerId,
+          shop_id: shopId
         }
       });
 
       if (response.error) throw response.error;
-      
-      const { auth_url } = response.data;
-      
-      if (auth_url) {
-        toast.success('Redirecionando para autorização Shopee...');
-        
-        // Salvar contexto para o callback
-        localStorage.setItem('shopee_oauth_context', JSON.stringify({
-          account_id: accountId,
-          timestamp: Date.now()
-        }));
-        
-        // Redirecionar para OAuth Shopee
-        window.location.href = auth_url;
-      } else {
-        throw new Error('URL de autorização não recebida');
+
+      if (response.data?.authorization_url) {
+        window.location.href = response.data.authorization_url;
       }
-      
     } catch (error: any) {
       toast.error(`Erro ao conectar: ${error.message}`);
-      console.error('❌ Shopee OAuth error:', error);
     } finally {
       setIsConnecting(false);
     }
@@ -264,7 +248,7 @@ export function ShopeeConnection() {
 
       if (error) throw error;
 
-      toast.success('Shopee desconectado');
+      toast.success('Conta Shopee desconectada');
       loadShopeeAccounts();
     } catch (error: any) {
       toast.error(`Erro ao desconectar: ${error.message}`);
@@ -318,59 +302,112 @@ export function ShopeeConnection() {
   const hasConnections = accounts.length > 0;
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xs">S</span>
+    <div className="space-y-6">
+      {/* Contas Conectadas */}
+      {hasConnections && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Contas Shopee Conectadas</h3>
+          <div className="grid gap-4">
+            {accounts.map((account) => (
+              <Card key={account.id} className="border-green-200 bg-green-50/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-bold text-sm">S</span>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-foreground">{account.name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Shop ID: {account.account_identifier}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Conectado
+                      </Badge>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>Partner ID: {account.public_auth?.partner_id}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTestConnection(account.id)}
+                        className="h-8"
+                      >
+                        🧪 Testar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowConfigModal(true)}
+                        className="h-8"
+                      >
+                        <Settings className="w-3 h-3 mr-1" />
+                        Config
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDisconnect(account.id)}
+                        className="h-8 text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
+                      >
+                        <Unplug className="w-3 h-3 mr-1" />
+                        Desconectar
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Card para Conectar Nova Conta */}
+      <div className="space-y-4">
+        {hasConnections && (
+          <h3 className="text-lg font-semibold text-foreground">Adicionar Nova Conta</h3>
+        )}
+        <Card className="border-dashed border-2 border-muted-foreground/25">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">S</span>
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground">Shopee</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Marketplace de vendas online
+                  </p>
+                </div>
               </div>
-              Shopee
-            </div>
-            <span className="text-xs px-2 py-1 bg-muted rounded-full">
-              {hasConnections ? 'connected' : 'disconnected'}
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <p className="text-xs text-muted-foreground mb-3">Marketplace de vendas online</p>
-          
-          {!hasConnections ? (
-            <>
-              <Button 
+              {!hasConnections && (
+                <Badge variant="secondary" className="bg-gray-100 text-gray-600">
+                  Desconectado
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Configure sua conta Shopee para sincronizar pedidos e gerenciar produtos
+              </p>
+              
+              <Button
                 onClick={() => setShowConfigModal(true)}
-                className="w-full mb-2"
-                size="sm"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Conectar
-              </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled
-                >
-                  🧪 Testar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowConfigModal(true)}
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Config
-                </Button>
-              </div>
-            </>
-          ) : (
-            <>
-              <Button 
-                onClick={() => accounts.length > 0 && handleConnect(accounts[0].id)}
-                className="w-full mb-2"
                 disabled={isConnecting}
-                size="sm"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white"
               >
                 {isConnecting ? (
                   <>
@@ -379,31 +416,15 @@ export function ShopeeConnection() {
                   </>
                 ) : (
                   <>
-                    ⚡ Conectar via OAuth
+                    <ShoppingBag className="w-4 h-4 mr-2" />
+                    {hasConnections ? 'Adicionar Nova Conta' : 'Conectar Shopee'}
                   </>
                 )}
               </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => accounts.length > 0 && handleTestConnection(accounts[0].id)}
-                >
-                  🧪 Testar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowConfigModal(true)}
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Config
-                </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Modal de Configuração */}
       <Dialog open={showConfigModal} onOpenChange={setShowConfigModal}>
@@ -412,12 +433,12 @@ export function ShopeeConnection() {
             <DialogTitle className="flex items-center gap-2 text-lg">
               🛍️ CONFIGURAR: Integração Shopee com dados obtidos
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
+            <DialogDescription>
               Configure as credenciais da sua conta Shopee para autenticação e busca de pedidos na página /pedidos.
             </DialogDescription>
           </DialogHeader>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="modal-partnerId">Partner ID</Label>
               <Input
@@ -502,34 +523,24 @@ export function ShopeeConnection() {
           </div>
           
           <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setShowConfigModal(false);
-                clearFormFields();
-              }}
-            >
+            <Button variant="outline" onClick={() => setShowConfigModal(false)}>
               Cancelar
             </Button>
             <Button 
               onClick={saveShopeeConfig}
-              disabled={savingConfig || !shopId.trim() || !partnerId.trim() || !accessToken.trim() || !environment.trim() || !apiDomain.trim()}
+              disabled={savingConfig}
+              className="bg-orange-500 hover:bg-orange-600 text-white"
             >
               {savingConfig ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Salvando...
-                </>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Salvar e Configurar
-                </>
+                <Save className="w-4 h-4 mr-2" />
               )}
+              Salvar e Configurar
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
