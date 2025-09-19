@@ -1,4 +1,3 @@
-import React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,6 +10,7 @@ import { MobileProvider } from "@/contexts/MobileContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 // Import pages
 import NotFound from "./pages/NotFound";
@@ -54,297 +54,210 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: true
     },
+    mutations: {
+      retry: 1
+    }
   },
 });
 
 function App() {
-  try {
-    return (
+  return (
+    <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
-          <TooltipProvider>
-          <AuthProvider>
-            <MobileProvider>
-              <SidebarUIProvider>
-                <Toaster />
-                <Sonner />
-                <Routes>
-                  {/* Rota pública de autenticação */}
-                  <Route path="/auth" element={<Auth />} />
-                  {/* Rota pública para redefinição de senha */}
-                  <Route path="/auth/reset-password" element={<ResetPassword />} />
-                  {/* Rota pública para aceitar convites */}
-                  <Route path="/convite/:token" element={<AcceptInvite />} />
-                  {/* Rota pública para callback da Shopee */}
-                  <Route path="/shopee-callback" element={<ShopeeCallbackPage />} />
-                  
-                  {/* Todas as outras rotas são protegidas com novo layout */}
-                  <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
-                    <Route path="/" element={
-                      <PermissionRoute requiredPermissions={['dashboard:view']}>
-                        <Dashboard />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/analytics" element={
-                      <PermissionRoute requiredPermissions={['analytics:view']}>
-                        <Analytics />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/oms/*" element={
-                      <PermissionRoute requiredPermissions={['oms:view']}>
-                        <OMS />
-                      </PermissionRoute>
-                    } />
+          <TooltipProvider delayDuration={0}>
+            <AuthProvider>
+              <MobileProvider>
+                <SidebarUIProvider>
+                  <Toaster />
+                  <Sonner />
+                  <Routes>
+                    {/* Rota pública de autenticação */}
+                    <Route path="/auth" element={<Auth />} />
+                    {/* Rota pública para redefinição de senha */}
+                    <Route path="/auth/reset-password" element={<ResetPassword />} />
+                    {/* Rota pública para aceitar convites */}
+                    <Route path="/convite/:token" element={<AcceptInvite />} />
+                    {/* Rota pública para callback da Shopee */}
+                    <Route path="/shopee-callback" element={<ShopeeCallbackPage />} />
                     
-                    {/* eCommerce App Routes */}
-                    <Route path="/apps/ecommerce/shop" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <Shop />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/detail/:id" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <ProductDetail />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/list" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <ProductList />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/checkout" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <Checkout />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/addproduct" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <AddProduct />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/editproduct" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <EditProduct />
-                      </PermissionRoute>
-                    } />
+                    {/* Todas as outras rotas são protegidas com novo layout */}
+                    <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
+                      <Route path="/" element={
+                        <PermissionRoute requiredPermissions={['dashboard:view']}>
+                          <Dashboard />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/analytics" element={
+                        <PermissionRoute requiredPermissions={['analytics:view']}>
+                          <Analytics />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/oms/*" element={
+                        <PermissionRoute requiredPermissions={['oms:view']}>
+                          <OMS />
+                        </PermissionRoute>
+                      } />
+                      
+                      {/* eCommerce App Routes */}
+                      <Route path="/shop" element={
+                        <PermissionRoute requiredPermissions={['shop:view']}>
+                          <Shop />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/product/:id" element={
+                        <PermissionRoute requiredPermissions={['shop:view']}>
+                          <ProductDetail />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/products" element={
+                        <PermissionRoute requiredPermissions={['shop:view']}>
+                          <ProductList />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/checkout" element={
+                        <PermissionRoute requiredPermissions={['shop:view']}>
+                          <Checkout />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/add-product" element={
+                        <PermissionRoute requiredPermissions={['products:create']}>
+                          <AddProduct />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/edit-product/:id" element={
+                        <PermissionRoute requiredPermissions={['products:edit']}>
+                          <EditProduct />
+                        </PermissionRoute>
+                      } />
+                      
+                      <Route path="/profile" element={
+                        <PermissionRoute requiredPermissions={['profile:view']}>
+                          <UserProfile />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/calendar" element={
+                        <PermissionRoute requiredPermissions={['calendar:view']}>
+                          <Calendar />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/notes" element={
+                        <PermissionRoute requiredPermissions={['notes:view']}>
+                          <Notes />
+                        </PermissionRoute>
+                      } />
+                      
+                      {/* Módulos de negócio personalizados */}
+                      <Route path="/estoque" element={
+                        <PermissionRoute requiredPermissions={['inventory:view']}>
+                          <Estoque />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/pedidos" element={
+                        <PermissionRoute requiredPermissions={['orders:view']}>
+                          <Pedidos />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/scanner" element={
+                        <PermissionRoute requiredPermissions={['scanner:view']}>
+                          <Scanner />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/ml-orders" element={
+                        <PermissionRoute requiredPermissions={['ml_orders:view']}>
+                          <MLOrdersCompletas />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/de-para" element={
+                        <PermissionRoute requiredPermissions={['mapping:view']}>
+                          <DePara />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/alertas" element={
+                        <PermissionRoute requiredPermissions={['alerts:view']}>
+                          <Alertas />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/configuracoes/integracoes" element={
+                        <PermissionRoute requiredPermissions={['integrations:view']}>
+                          <IntegracoesPage />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/historico" element={
+                        <PermissionRoute requiredPermissions={['history:view']}>
+                          <Historico />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/account-settings" element={
+                        <PermissionRoute requiredPermissions={['account:edit']}>
+                          <AccountSettings />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/categories" element={
+                        <PermissionRoute requiredPermissions={['categories:view']}>
+                          <CategoryManager />
+                        </PermissionRoute>
+                      } />
+                      
+                      {/* Demo routes */}
+                      <Route path="/demo/faq" element={
+                        <PermissionRoute requiredPermissions={['demo:view']}>
+                          <FAQ />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/demo/pricing" element={
+                        <PermissionRoute requiredPermissions={['demo:view']}>
+                          <Pricing />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/demo/cards" element={
+                        <PermissionRoute requiredPermissions={['demo:view']}>
+                          <Cards />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/demo/banners" element={
+                        <PermissionRoute requiredPermissions={['demo:view']}>
+                          <Banners />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/demo/charts" element={
+                        <PermissionRoute requiredPermissions={['demo:view']}>
+                          <Charts />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/demo/solar-icons" element={
+                        <PermissionRoute requiredPermissions={['demo:view']}>
+                          <SolarIcons />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/admin" element={
+                        <PermissionRoute requiredPermissions={['admin:view']}>
+                          <AdminPage />
+                        </PermissionRoute>
+                      } />
+                      
+                      {/* Redirects legados */}
+                      <Route path="/dashboard" element={
+                        <PermissionRoute requiredPermissions={['dashboard:view']}>
+                          <Dashboard />
+                        </PermissionRoute>
+                      } />
+                    </Route>
                     
-                    {/* User Profile App Routes */}
-                    <Route path="/apps/user-profile/profile" element={
-                      <PermissionRoute requiredPermissions={['userprofile:view']}>
-                        <UserProfile />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/user-profile/followers" element={
-                      <PermissionRoute requiredPermissions={['userprofile:view']}>
-                        <UserProfile />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/user-profile/friends" element={
-                      <PermissionRoute requiredPermissions={['userprofile:view']}>
-                        <UserProfile />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/user-profile/gallery" element={
-                      <PermissionRoute requiredPermissions={['userprofile:view']}>
-                        <UserProfile />
-                      </PermissionRoute>
-                    } />
-                    
-                    {/* Other App Routes */}
-                    <Route path="/apps/calendar" element={
-                      <PermissionRoute requiredPermissions={['calendar:view']}>
-                        <Calendar />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/notes" element={
-                      <PermissionRoute requiredPermissions={['notes:view']}>
-                        <Notes />
-                      </PermissionRoute>
-                    } />
-                    
-                    {/* Custom Business Routes */}
-                    <Route path="/estoque" element={
-                      <PermissionRoute requiredPermissions={['estoque:view']}>
-                        <Estoque />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/category-manager" element={
-                      <PermissionRoute requiredPermissions={['estoque:view']}>
-                        <CategoryManager />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/pedidos" element={
-                      <PermissionRoute requiredPermissions={['orders:read']}>
-                        <Pedidos />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/ml-orders-completas" element={
-                      <PermissionRoute requiredPermissions={['integrations:manage']}>
-                        <MLOrdersCompletas />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/scanner" element={
-                      <PermissionRoute requiredPermissions={['scanner:use']}>
-                        <Scanner />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/de-para" element={
-                      <PermissionRoute requiredPermissions={['depara:view']}>
-                        <DePara />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/alertas" element={
-                      <PermissionRoute requiredPermissions={['alerts:view']}>
-                        <Alertas />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/configuracoes" element={
-                      <PermissionRoute requiredPermissions={['settings:view']}>
-                        <IntegracoesPage />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/configuracoes/integracoes" element={
-                      <PermissionRoute requiredPermissions={['settings:view']}>
-                        <IntegracoesPage />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/historico" element={
-                      <PermissionRoute requiredPermissions={['historico:view']}>
-                        <Historico />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/admin" element={
-                      <PermissionRoute requiredAny={['users:read', 'roles:manage', 'invites:manage', 'system:audit']}>
-                        <AdminPage />
-                      </PermissionRoute>
-                    } />
-
-                    {/* Demo Routes (protected) */}
-                    <Route path="/_demo/faq" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <FAQ />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/pricing" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Pricing />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/account-settings" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <AccountSettings />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/cards" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Cards />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/banners" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Banners />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/charts" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Charts />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/icons" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <SolarIcons />
-                      </PermissionRoute>
-                    } />
-
-                    {/* Legacy redirects (protected) */}
-                    <Route path="/dashboards/crm" element={
-                      <PermissionRoute requiredPermissions={['oms:view']}>
-                        <OMS />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/crm" element={
-                      <PermissionRoute requiredPermissions={['oms:view']}>
-                        <OMS />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/theme-pages/faq" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <FAQ />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/theme-pages/pricing" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Pricing />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/theme-pages/account-settings" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <AccountSettings />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/widgets/cards" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Cards />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/widgets/banners" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Banners />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/widgets/charts" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Charts />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/icons/solar" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <SolarIcons />
-                      </PermissionRoute>
-                    } />
-                  </Route>
-                  
-                  {/* Catch all */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </SidebarUIProvider>
-            </MobileProvider>
-          </AuthProvider>
-        </TooltipProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+                    {/* Catch all */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </SidebarUIProvider>
+              </MobileProvider>
+            </AuthProvider>
+          </TooltipProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
-  } catch (error) {
-    console.error('App rendering error:', error);
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#1a1a1a', 
-        color: '#ffffff',
-        padding: '2rem',
-        textAlign: 'center',
-        fontFamily: 'Inter, system-ui, sans-serif'
-      }}>
-        <h1>⚠️ Erro no Sistema</h1>
-        <p>Ocorreu um erro ao carregar o sistema principal.</p>
-        <button 
-          onClick={() => window.location.reload()}
-          style={{ 
-            padding: '0.5rem 1rem', 
-            marginTop: '1rem',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Recarregar Sistema
-        </button>
-      </div>
-    );
-  }
 }
 
 export default App;
