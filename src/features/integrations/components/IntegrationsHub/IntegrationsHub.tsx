@@ -22,7 +22,7 @@ import { MercadoLivreConnection } from '@/components/integrations/MercadoLivreCo
 import { ShopeeConnection } from '@/components/integrations/ShopeeConnection';
 import { FEATURES } from '@/config/features';
 
-const IntegrationsHub: React.FC = () => {
+export const IntegrationsHub: React.FC = () => {
   const {
     integrations,
     loading,
@@ -143,7 +143,7 @@ const IntegrationsHub: React.FC = () => {
             {FEATURES.MERCADO_LIVRE && <MercadoLivreConnection />}
             
             {/* Grid compacto para todas as integrações - 5 cards lado a lado */}
-            <div className="grid grid-cols-5 gap-4 auto-cols-fr">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {/* Shopee Integration - Card compacto */}
               {FEATURES.SHOPEE && <ShopeeConnection />}
               
@@ -199,5 +199,3 @@ const IntegrationsHub: React.FC = () => {
     </div>
   );
 };
-
-export { IntegrationsHub };
