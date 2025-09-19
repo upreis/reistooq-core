@@ -353,6 +353,24 @@ export const useInvitations = (): UseInvitationsReturn => {
     });
   }, [toast]);
 
+  const deleteInvitation = useCallback(async (id: string) => {
+    try {
+      await adminService.deleteInvitation(id);
+      await loadInvitations();
+      toast({
+        title: "Convite removido",
+        description: "O convite foi removido com sucesso",
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete invitation';
+      toast({
+        title: "Erro ao remover convite",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  }, [adminService, loadInvitations, toast]);
+
   const refreshInvitations = useCallback(async () => {
     await loadInvitations();
   }, [loadInvitations]);
@@ -368,6 +386,7 @@ export const useInvitations = (): UseInvitationsReturn => {
     createInvitation,
     revokeInvitation,
     resendInvitation,
+    deleteInvitation,
     refreshInvitations
   };
 };

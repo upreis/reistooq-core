@@ -3698,6 +3698,10 @@ export type Database = {
           token: string
         }
       }
+      create_invitation_safe: {
+        Args: { p_email: string; p_expires_in_days?: number; p_role_id: string }
+        Returns: Json
+      }
       create_logistic_events_from_pedido: {
         Args: { p_pedido_data: Json }
         Returns: string[]
@@ -3709,6 +3713,10 @@ export type Database = {
       decrypt_simple: {
         Args: { encrypted_data: string }
         Returns: string
+      }
+      delete_invitation_safe: {
+        Args: { p_invitation_id: string }
+        Returns: Json
       }
       encrypt_simple: {
         Args: { data: string }

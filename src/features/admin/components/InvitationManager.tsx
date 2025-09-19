@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Mail, Plus, RotateCcw, X, CalendarIcon, Shield, User, Copy } from 'lucide-react';
+import { Mail, Plus, RotateCcw, X, CalendarIcon, Shield, User, Copy, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -136,7 +136,7 @@ const InvitationForm: React.FC<InvitationFormProps> = ({ roles, onSave, onCancel
 };
 
 export const InvitationManager: React.FC = () => {
-  const { invitations, loading, createInvitation, revokeInvitation, resendInvitation } = useInvitations();
+  const { invitations, loading, createInvitation, revokeInvitation, resendInvitation, deleteInvitation } = useInvitations();
   const { roles } = useRoles();
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -303,34 +303,61 @@ export const InvitationManager: React.FC = () => {
                           <RotateCcw className="w-4 h-4" />
                         </Button>
                       </>
-                    )}
-                    {invitation.status === 'pending' && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Revogar Convite</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja revogar o convite para "{invitation.email}"? 
-                              Esta ação não pode ser desfeita e o link do convite ficará inválido.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => revokeInvitation(invitation.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Revogar
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
+                     )}
+                     {invitation.status === 'pending' && (
+                       <AlertDialog>
+                         <AlertDialogTrigger asChild>
+                           <Button variant="outline" size="sm">
+                             <X className="w-4 h-4" />
+                           </Button>
+                         </AlertDialogTrigger>
+                         <AlertDialogContent>
+                           <AlertDialogHeader>
+                             <AlertDialogTitle>Revogar Convite</AlertDialogTitle>
+                             <AlertDialogDescription>
+                               Tem certeza que deseja revogar o convite para "{invitation.email}"? 
+                               Esta ação não pode ser desfeita e o link do convite ficará inválido.
+                             </AlertDialogDescription>
+                           </AlertDialogHeader>
+                           <AlertDialogFooter>
+                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                             <AlertDialogAction
+                               onClick={() => revokeInvitation(invitation.id)}
+                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                             >
+                               Revogar
+                             </AlertDialogAction>
+                           </AlertDialogFooter>
+                         </AlertDialogContent>
+                       </AlertDialog>
+                     )}
+                     {(invitation.status === 'revoked' || invitation.status === 'accepted' || new Date(invitation.expires_at) < new Date()) && (
+                       <AlertDialog>
+                         <AlertDialogTrigger asChild>
+                           <Button variant="outline" size="sm">
+                             <Trash2 className="w-4 h-4" />
+                           </Button>
+                         </AlertDialogTrigger>
+                         <AlertDialogContent>
+                           <AlertDialogHeader>
+                             <AlertDialogTitle>Excluir Convite</AlertDialogTitle>
+                             <AlertDialogDescription>
+                               Tem certeza que deseja excluir permanentemente o convite para "{invitation.email}"? 
+                               Esta ação não pode ser desfeita e removerá o convite do histórico.
+                             </AlertDialogDescription>
+                           </AlertDialogHeader>
+                           <AlertDialogFooter>
+                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                             <AlertDialogAction
+                               onClick={() => deleteInvitation(invitation.id)}
+                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                             >
+                               Excluir
+                             </AlertDialogAction>
+                           </AlertDialogFooter>
+                         </AlertDialogContent>
+                       </AlertDialog>
+                     )}
                   </div>
                 </div>
               </CardHeader>

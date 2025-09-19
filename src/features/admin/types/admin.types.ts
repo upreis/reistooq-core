@@ -139,6 +139,7 @@ export interface UseInvitationsReturn {
   createInvitation: (data: InvitationCreate) => Promise<void>;
   revokeInvitation: (id: string) => Promise<void>;
   resendInvitation: (id: string) => Promise<void>;
+  deleteInvitation: (id: string) => Promise<void>;
   refreshInvitations: () => Promise<void>;
 }
 

@@ -355,45 +355,52 @@ export class AdminService {
   }
 
   async createInvitation(data: InvitationCreate): Promise<Invitation> {
-    // Calcular dias entre agora e a data de expiração
+    // Calculate days between now and expiration date
     const expiresAt = new Date(data.expires_at);
     const now = new Date();
     const diffTime = expiresAt.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    const { data: invitation, error } = await supabase
-      .rpc('create_invitation', {
-        _email: data.email,
-        _role_id: data.role_id,
-        _expires_in_days: Math.max(1, diffDays) // Mínimo de 1 dia
-      })
-      .single() as { data: Invitation | null; error: any };
+    // Use the safe function that prevents duplicates
+    const { data: result, error } = await supabase
+      .rpc('create_invitation_safe', {
+        p_email: data.email,
+        p_role_id: data.role_id,
+        p_expires_in_days: Math.max(1, diffDays)
+      });
 
     if (error) {
       console.error('Error creating invitation:', error);
       throw new Error(`Failed to create invitation: ${error.message}`);
     }
 
-    if (!invitation) {
-      throw new Error('Failed to create invitation: no data returned');
+    // Type the result properly
+    const typedResult = result as { success: boolean; error?: string; invitation_id?: string };
+    
+    if (!typedResult?.success) {
+      throw new Error(typedResult?.error || 'Failed to create invitation');
     }
 
-    // Send invitation email
-    try {
-      const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
-        body: { invitation_id: invitation.id }
-      });
+    // Get the created invitation with role data
+    const { data: invitationData, error: fetchError } = await supabase
+      .from('invitations')
+      .select('*')
+      .eq('id', typedResult.invitation_id)
+      .single();
 
-      if (emailError) {
-        console.error('Error sending invitation email:', emailError);
-        // Don't fail the entire operation if email sending fails
-      }
-    } catch (emailErr) {
-      console.error('Failed to send invitation email:', emailErr);
-      // Continue without failing - invitation was created successfully
+    if (fetchError || !invitationData) {
+      console.error('Error fetching created invitation:', fetchError);
+      throw new Error(`Failed to fetch invitation: ${fetchError?.message || 'Not found'}`);
     }
 
-    return invitation as Invitation;
+    // Get role data separately
+    const { data: roleData } = await supabase
+      .from('roles')
+      .select('*')
+      .eq('id', invitationData.role_id)
+      .single();
+
+    return { ...invitationData, role: roleData } as Invitation;
   }
 
   async revokeInvitation(id: string): Promise<void> {
@@ -403,6 +410,23 @@ export class AdminService {
     if (error) {
       console.error('Error revoking invitation:', error);
       throw new Error(`Failed to revoke invitation: ${error.message}`);
+    }
+  }
+
+  async deleteInvitation(id: string): Promise<void> {
+    const { data: result, error } = await supabase
+      .rpc('delete_invitation_safe', { p_invitation_id: id });
+
+    if (error) {
+      console.error('Error deleting invitation:', error);
+      throw new Error(`Failed to delete invitation: ${error.message}`);
+    }
+
+    // Type the result properly
+    const typedResult = result as { success: boolean; error?: string };
+    
+    if (!typedResult?.success) {
+      throw new Error(typedResult?.error || 'Failed to delete invitation');
     }
   }
 
