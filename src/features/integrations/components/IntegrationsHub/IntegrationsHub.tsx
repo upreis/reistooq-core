@@ -22,7 +22,7 @@ import { MercadoLivreConnection } from '@/components/integrations/MercadoLivreCo
 import { ShopeeConnection } from '@/components/integrations/ShopeeConnection';
 import { FEATURES } from '@/config/features';
 
-export const IntegrationsHub: React.FC = () => {
+const IntegrationsHub: React.FC = () => {
   const {
     integrations,
     loading,
@@ -199,3 +199,5 @@ export const IntegrationsHub: React.FC = () => {
     </div>
   );
 };
+
+export { IntegrationsHub };
