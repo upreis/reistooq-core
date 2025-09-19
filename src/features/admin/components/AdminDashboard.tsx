@@ -10,7 +10,7 @@ import { Settings, Users, Shield, Mail, Bell, History, AlertTriangle } from 'luc
 import { RoleManager } from './RoleManager';
 import { UserManager } from './UserManager';
 import { InvitationManager } from './InvitationManager';
-import { SystemAlertsManager } from './SystemAlertsManager';
+import { UnifiedAlertsManager } from './UnifiedAlertsManager';
 import { AuditLogsViewer } from './AuditLogsViewer';
 import { SecurityDashboard } from '@/features/security/components/SecurityDashboard';
 import { useRoles, useUsers, useInvitations, useSystemAlerts } from '../hooks/useAdmin';
@@ -252,7 +252,7 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Alerts Tab */}
         <TabsContent value="alerts">
-          <SystemAlertsManager />
+          <UnifiedAlertsManager />
         </TabsContent>
 
         {/* Security Tab */}
