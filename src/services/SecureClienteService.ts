@@ -8,31 +8,32 @@ export class SecureClienteService {
    */
   static async getClientes(filters: ClientesFilters = {}) {
     try {
-      // ✅ SEGURANÇA: Usar view segura clientes_secure com mascaramento automático
-      let query = supabase.from('clientes_secure').select('*');
+      // ✅ SEGURANÇA: Usar função segura get_clientes_secure com mascaramento automático
+      const { data, error } = await supabase.rpc('get_clientes_secure');
       
-      // Aplicar filtros se fornecidos
-      if (filters.search) {
-        query = query.or(`nome_completo.ilike.%${filters.search}%,email.ilike.%${filters.search}%,cpf_cnpj.ilike.%${filters.search}%`);
-      }
       
-      // Aplicar filtros básicos apenas (remove filtros não suportados)
-      // if (filters.status_cliente) {
-      //   query = query.eq('status_cliente', filters.status_cliente);
-      // }
-      
-      // Limitar resultados para evitar sobrecarga
-      const limit = 50; // Fixed limit for security
-      query = query.limit(limit);
-      
-      const { data, error } = await query;
-
       if (error) {
         console.error('❌ Erro na busca segura de clientes:', error);
         return { data: [], error, count: 0 };
       }
 
-      const clientes = (data || []) as Cliente[];
+      let clientes = (data || []) as Cliente[];
+
+      // Aplicar filtros se fornecidos
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        clientes = clientes.filter(cliente => 
+          cliente.nome_completo?.toLowerCase().includes(searchTerm) ||
+          cliente.email?.toLowerCase().includes(searchTerm) ||
+          cliente.cpf_cnpj?.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Limitar resultados para evitar sobrecarga
+      const limit = 50; // Fixed limit for security
+      if (clientes.length > limit) {
+        clientes = clientes.slice(0, limit);
+      }
 
       // Log de acesso para auditoria (opcional) - removido por problemas de TypeScript
       // TODO: Implementar logging de acesso em uma versão futura
@@ -49,10 +50,8 @@ export class SecureClienteService {
    */
   static async getClientesStats(): Promise<{ data: ClientesStats | null; error: any }> {
     try {
-      // ✅ SEGURANÇA: Usar view segura clientes_secure (dados não sensíveis para stats)
-      const { data, error } = await supabase
-        .from('clientes_secure')
-        .select('status_cliente,ticket_medio,valor_total_gasto');
+      // ✅ SEGURANÇA: Usar função segura get_clientes_secure (dados não sensíveis para stats)
+      const { data, error } = await supabase.rpc('get_clientes_secure');
 
       if (error) {
         console.error('❌ Erro na busca de estatísticas:', error);
@@ -83,22 +82,23 @@ export class SecureClienteService {
    */
   static async getClienteById(id: string) {
     try {
-      // ✅ SEGURANÇA: Usar view segura clientes_secure
-      const { data, error } = await supabase
-        .from('clientes_secure')
-        .select('*')
-        .eq('id', id)
-        .single();
-
+      // ✅ SEGURANÇA: Usar função segura get_clientes_secure e filtrar por ID
+      const { data: allData, error } = await supabase.rpc('get_clientes_secure');
+      
       if (error) {
         console.error('❌ Erro na busca segura de cliente:', error);
         return { data: null, error };
       }
 
+      const cliente = (allData || []).find((c: any) => c.id === id);
+      if (!cliente) {
+        return { data: null, error: { message: 'Cliente não encontrado' } };
+      }
+
       // Log de acesso para auditoria - removido por problemas de TypeScript
       // TODO: Implementar logging de acesso em uma versão futura
 
-      return { data: data as Cliente | null, error: null };
+      return { data: cliente as Cliente | null, error: null };
     } catch (error) {
       console.error('❌ Erro ao buscar cliente:', error);
       return { data: null, error };

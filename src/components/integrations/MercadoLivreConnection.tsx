@@ -226,20 +226,37 @@ export const MercadoLivreConnection: React.FC<MercadoLivreConnectionProps> = ({
     try {
       setIsSyncing(accountId);
       
-      const result = await mercadoLivreService.syncOrders(accountId, {
-        since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // Last 30 days
-      });
+      // First try the new sync service
+      const { syncMLOrders } = await import('@/services/syncOrders');
+      const result = await syncMLOrders(accountId);
 
-      if (result.synced > 0) {
-        toast.success(`${result.synced} pedidos sincronizados com sucesso`);
+      if (result.success) {
+        const ordersMsg = result.orders_synced ? 
+          `${result.orders_synced} pedidos sincronizados` : 
+          'Sincronização concluída';
+        const dbMsg = result.orders_in_db ? 
+          ` (${result.orders_in_db} na base de dados)` : '';
+        
+        toast.success(`✅ ${ordersMsg}${dbMsg}`);
         onOrdersSync?.(accountId);
       } else {
-        toast.info('Nenhum pedido novo encontrado');
-      }
+        // Fallback to old service if new one fails
+        console.log('🔄 Tentando serviço antigo como fallback...');
+        const fallbackResult = await mercadoLivreService.syncOrders(accountId, {
+          since: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        });
 
-      if (result.errors.length > 0) {
-        console.warn('Sync errors:', result.errors);
-        toast.error(`${result.errors.length} erros durante a sincronização`);
+        if (fallbackResult.synced > 0) {
+          toast.success(`${fallbackResult.synced} pedidos sincronizados (método alternativo)`);
+          onOrdersSync?.(accountId);
+        } else {
+          toast.info('Nenhum pedido novo encontrado');
+        }
+
+        if (fallbackResult.errors.length > 0) {
+          console.warn('Sync errors:', fallbackResult.errors);
+          toast.error(`${fallbackResult.errors.length} erros durante a sincronização`);
+        }
       }
     } catch (error) {
       console.error('Orders sync failed:', error);

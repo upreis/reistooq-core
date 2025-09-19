@@ -1,5 +1,8 @@
 project_id = "tdjyfqnxvjgossuncpwm"
 
+[functions.sync-ml-orders]
+verify_jwt = true
+
 [auth]
 enabled = true
 external_email_providers = ["gmail"]
