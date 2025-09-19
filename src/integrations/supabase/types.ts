@@ -3328,6 +3328,135 @@ export type Database = {
         }
         Relationships: []
       }
+      unified_orders: {
+        Row: {
+          carrier_name: string | null
+          created_at: string
+          currency: string
+          customer_document: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          date_closed: string | null
+          date_created: string
+          date_delivered: string | null
+          date_shipped: string | null
+          discount_amount: number | null
+          fulfillment_status: string | null
+          has_issues: boolean | null
+          id: string
+          integration_account_id: string | null
+          items: Json
+          notes: string | null
+          numero: string | null
+          order_id: string
+          order_status: string
+          organization_id: string
+          paid_amount: number | null
+          parent_order_id: string | null
+          payment_status: string | null
+          provider: string
+          raw_data: Json | null
+          shipping_address: Json | null
+          shipping_cost: number | null
+          shipping_method: string | null
+          shipping_status: string | null
+          tags: string[] | null
+          total_amount: number
+          tracking_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          carrier_name?: string | null
+          created_at?: string
+          currency?: string
+          customer_document?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          date_closed?: string | null
+          date_created: string
+          date_delivered?: string | null
+          date_shipped?: string | null
+          discount_amount?: number | null
+          fulfillment_status?: string | null
+          has_issues?: boolean | null
+          id?: string
+          integration_account_id?: string | null
+          items?: Json
+          notes?: string | null
+          numero?: string | null
+          order_id: string
+          order_status?: string
+          organization_id: string
+          paid_amount?: number | null
+          parent_order_id?: string | null
+          payment_status?: string | null
+          provider: string
+          raw_data?: Json | null
+          shipping_address?: Json | null
+          shipping_cost?: number | null
+          shipping_method?: string | null
+          shipping_status?: string | null
+          tags?: string[] | null
+          total_amount?: number
+          tracking_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          carrier_name?: string | null
+          created_at?: string
+          currency?: string
+          customer_document?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          date_closed?: string | null
+          date_created?: string
+          date_delivered?: string | null
+          date_shipped?: string | null
+          discount_amount?: number | null
+          fulfillment_status?: string | null
+          has_issues?: boolean | null
+          id?: string
+          integration_account_id?: string | null
+          items?: Json
+          notes?: string | null
+          numero?: string | null
+          order_id?: string
+          order_status?: string
+          organization_id?: string
+          paid_amount?: number | null
+          parent_order_id?: string | null
+          payment_status?: string | null
+          provider?: string
+          raw_data?: Json | null
+          shipping_address?: Json | null
+          shipping_cost?: number | null
+          shipping_method?: string | null
+          shipping_status?: string | null
+          tags?: string[] | null
+          total_amount?: number
+          tracking_code?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unified_orders_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "unified_orders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_dismissed_notifications: {
         Row: {
           dismissed_at: string
@@ -4354,6 +4483,10 @@ export type Database = {
       mask_phone_secure: {
         Args: { phone_input: string }
         Returns: string
+      }
+      migrate_existing_orders_to_unified: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       refresh_ml_token: {
         Args: {
