@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'react-hot-toast';
-import { ShoppingBag, Loader2, CheckCircle, AlertCircle, ExternalLink, Settings, Save, Unplug } from 'lucide-react';
+import { ShoppingBag, Loader2, CheckCircle, AlertCircle, ExternalLink, Settings, Save, Unplug, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export function ShopeeConnection() {
@@ -21,6 +21,7 @@ export function ShopeeConnection() {
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [savingConfig, setSavingConfig] = useState(false);
+  const [showToken, setShowToken] = useState(false);
 
   useEffect(() => {
     loadShopeeAccounts();
@@ -412,13 +413,29 @@ export function ShopeeConnection() {
             
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="modal-accessToken">Access Token</Label>
-              <Input
-                id="modal-accessToken"
-                type="password"
-                placeholder="Ex: 4d6d4a70485346456855a64b426e496c"
-                value={accessToken}
-                onChange={(e) => setAccessToken(e.target.value)}
-              />
+              <div className="relative">
+                <Input
+                  id="modal-accessToken"
+                  type={showToken ? "text" : "password"}
+                  placeholder="Ex: 4d6d4a70485346456855a64b426e496c"
+                  value={accessToken}
+                  onChange={(e) => setAccessToken(e.target.value)}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowToken(!showToken)}
+                >
+                  {showToken ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 Token de acesso para API do Shopee
               </p>
