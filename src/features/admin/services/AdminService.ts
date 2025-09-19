@@ -400,6 +400,21 @@ export class AdminService {
       .eq('id', invitationData.role_id)
       .single();
 
+    // Send invitation email automatically
+    try {
+      const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
+        body: { invitation_id: typedResult.invitation_id }
+      });
+      
+      if (emailError) {
+        console.error('Failed to send invitation email:', emailError);
+        // Don't throw here - invitation was created successfully, just email failed
+      }
+    } catch (emailError) {
+      console.error('Error calling send-invitation-email function:', emailError);
+      // Don't throw here - invitation was created successfully, just email failed
+    }
+
     return { ...invitationData, role: roleData } as Invitation;
   }
 
