@@ -142,11 +142,35 @@ const IntegrationsHub: React.FC = () => {
             {/* Mercado Livre Integration - Layout completo para contas conectadas */}
             {FEATURES.MERCADO_LIVRE && <MercadoLivreConnection />}
             
-            {/* Grid compacto para todas as integrações - 5 cards lado a lado */}
-            <div className="grid grid-cols-5 gap-4 auto-cols-fr">
+            {/* Grid compacto para Shopee e Telegram Bot lado a lado */}
+            <div className="grid grid-cols-2 gap-6">
               {/* Shopee Integration - Card compacto */}
               {FEATURES.SHOPEE && <ShopeeConnection />}
               
+              {/* Telegram Bot Card */}
+              <div className="p-6 border rounded-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">TG</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Telegram Bot</h3>
+                      <p className="text-sm text-muted-foreground">Automated messaging</p>
+                    </div>
+                  </div>
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Disconnected</span>
+                </div>
+                
+                <p className="text-sm text-muted-foreground mb-4">
+                  Configure um bot do Telegram para notificações automáticas e interação com clientes.
+                </p>
+                
+                <div className="flex gap-2">
+                  <Button size="sm" className="flex-1">Conectar</Button>
+                  <Button size="sm" variant="outline">Configurar</Button>
+                </div>
+              </div>
             </div>
             
             {/* Outras integrações dinâmicas */}
