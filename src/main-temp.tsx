@@ -20,8 +20,8 @@ if (!container) throw new Error('Failed to find the root element');
 
 const root = createRoot(container);
 
-// Componente temporário aguardando Vite rebuild
-function SystemRebuildingApp() {
+// Componente temporário enquanto Vite reconstrói
+function TemporaryApp() {
   return (
     <div style={{ 
       minHeight: '100vh', 
@@ -31,28 +31,20 @@ function SystemRebuildingApp() {
       textAlign: 'center',
       fontFamily: 'Inter, system-ui, sans-serif'
     }}>
-      <h1>🔧 Reistooq - Correção em Andamento</h1>
-      <p>Aplicando solução definitiva para múltiplas instâncias React...</p>
+      <h1>🔧 Sistema Reistooq - Reconstruindo</h1>
+      <p>Aplicando correções para múltiplas instâncias React...</p>
       <div style={{ marginTop: '2rem' }}>
         <div style={{ 
           padding: '1rem', 
           backgroundColor: '#333', 
           borderRadius: '8px', 
-          marginBottom: '1rem',
-          maxWidth: '500px',
-          margin: '0 auto 1rem'
+          marginBottom: '1rem' 
         }}>
-          <h3 style={{ color: '#4ade80' }}>✅ Correções Aplicadas:</h3>
-          <p style={{ textAlign: 'left', margin: '0.5rem 0' }}>• Alias absolutos React (.js específicos)</p>
-          <p style={{ textAlign: 'left', margin: '0.5rem 0' }}>• Chunk único react-single forçado</p>
-          <p style={{ textAlign: 'left', margin: '0.5rem 0' }}>• Cache limpo (.vite-new)</p>
-          <p style={{ textAlign: 'left', margin: '0.5rem 0' }}>• Deduplicação extrema scheduler</p>
+          <h3>✅ Configuração Vite Atualizada</h3>
+          <p>- Alias absolutos para React forçados</p>
+          <p>- Cache limpo (.vite-new)</p>
+          <p>- Chunk único React garantido</p>
         </div>
-        
-        <p style={{ margin: '1rem 0', color: '#fbbf24' }}>
-          ⚡ Aguarde o Vite finalizar rebuild automático...
-        </p>
-        
         <button 
           onClick={() => window.location.reload()}
           style={{ 
@@ -62,22 +54,24 @@ function SystemRebuildingApp() {
             border: 'none',
             borderRadius: '6px',
             cursor: 'pointer',
-            fontSize: '1rem',
-            marginTop: '1rem'
+            fontSize: '1rem'
           }}
         >
-          Tentar Novamente
+          Recarregar Sistema
         </button>
+      </div>
+      <div style={{ marginTop: '2rem', fontSize: '0.9rem', opacity: 0.8 }}>
+        <p>Aguarde o Vite finalizar o rebuild...</p>
+        <p>Rota atual: {window.location.pathname}</p>
       </div>
     </div>
   );
 }
 
-// Renderização temporária segura
 root.render(
   <StrictMode>
     <BrowserRouter>
-      <SystemRebuildingApp />
+      <TemporaryApp />
     </BrowserRouter>
   </StrictMode>
 );
