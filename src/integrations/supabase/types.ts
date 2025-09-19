@@ -4437,6 +4437,10 @@ export type Database = {
         Args: { full_name: string }
         Returns: string
       }
+      mask_phone: {
+        Args: { phone: string }
+        Returns: string
+      }
       mask_phone_secure: {
         Args: { phone_input: string }
         Returns: string
