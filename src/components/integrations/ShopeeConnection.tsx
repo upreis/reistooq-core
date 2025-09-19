@@ -12,11 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 export function ShopeeConnection() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [accounts, setAccounts] = useState<any[]>([]);
-  const [shopId, setShopId] = useState('');
-  const [partnerId, setPartnerId] = useState('');
-  const [appId, setAppId] = useState('');
-  const [appSecret, setAppSecret] = useState('');
-  const [partnerKey, setPartnerKey] = useState('');
+  const [shopId, setShopId] = useState('225917626');
+  const [partnerId, setPartnerId] = useState('1185587');
+  const [accessToken, setAccessToken] = useState('4d6d4a70485346456855a64b426e496c');
+  const [environment, setEnvironment] = useState('test');
+  const [apiDomain, setApiDomain] = useState('https://openplatform.sandbox.test-stable.shopee.sg');
   const [showSetup, setShowSetup] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -53,11 +53,11 @@ export function ShopeeConnection() {
   };
 
   const clearFormFields = () => {
-    setShopId('');
-    setPartnerId('');
-    setAppId('');
-    setAppSecret('');
-    setPartnerKey('');
+    setShopId('225917626');
+    setPartnerId('1185587');
+    setAccessToken('4d6d4a70485346456855a64b426e496c');
+    setEnvironment('test');
+    setApiDomain('https://openplatform.sandbox.test-stable.shopee.sg');
   };
 
   const saveShopeeConfig = async () => {
@@ -70,16 +70,16 @@ export function ShopeeConnection() {
       toast.error('Partner ID é obrigatório');
       return;
     }
-    if (!appId.trim()) {
-      toast.error('App ID é obrigatório');
+    if (!accessToken.trim()) {
+      toast.error('Access Token é obrigatório');
       return;
     }
-    if (!appSecret.trim()) {
-      toast.error('App Secret é obrigatório');
+    if (!environment.trim()) {
+      toast.error('Environment é obrigatório');
       return;
     }
-    if (!partnerKey.trim()) {
-      toast.error('Partner Key é obrigatório');
+    if (!apiDomain.trim()) {
+      toast.error('API Domain é obrigatório');
       return;
     }
 
@@ -110,9 +110,9 @@ export function ShopeeConnection() {
           payload: {
             shop_id: shopId.trim(),
             partner_id: partnerId.trim(),
-            app_id: appId.trim(),
-            app_secret: appSecret.trim(),
-            partner_key: partnerKey.trim()
+            access_token: accessToken.trim(),
+            environment: environment.trim(),
+            api_domain: apiDomain.trim()
           }
         }
       });
@@ -367,27 +367,14 @@ export function ShopeeConnection() {
         <DialogContent className="max-w-2xl bg-background border">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg">
-              🛍️ Configurar Nova Conta Shopee
+              🛍️ CONFIGURAR: Integração Shopee com dados obtidos
             </DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Configure as credenciais da sua conta Shopee para autenticação e importação de pedidos.
+              Configure as credenciais da sua conta Shopee para autenticação e busca de pedidos na página /pedidos.
             </DialogDescription>
           </DialogHeader>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="modal-shopId">Shop ID</Label>
-              <Input
-                id="modal-shopId"
-                placeholder="Ex: 225917626"
-                value={shopId}
-                onChange={(e) => setShopId(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Encontre no Shopee Seller Center
-              </p>
-            </div>
-            
             <div className="space-y-2">
               <Label htmlFor="modal-partnerId">Partner ID</Label>
               <Input
@@ -402,43 +389,55 @@ export function ShopeeConnection() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="modal-appId">App ID</Label>
+              <Label htmlFor="modal-shopId">Shop ID</Label>
               <Input
-                id="modal-appId"
-                placeholder="Ex: 123456"
-                value={appId}
-                onChange={(e) => setAppId(e.target.value)}
+                id="modal-shopId"
+                placeholder="Ex: 225917626"
+                value={shopId}
+                onChange={(e) => setShopId(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                ID da aplicação Shopee
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="modal-appSecret">App Secret</Label>
-              <Input
-                id="modal-appSecret"
-                type="password"
-                placeholder="Ex: abcd1234..."
-                value={appSecret}
-                onChange={(e) => setAppSecret(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Secret da aplicação Shopee
+                Encontre no Shopee Seller Center
               </p>
             </div>
             
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="modal-partnerKey">Partner Key</Label>
+              <Label htmlFor="modal-accessToken">Access Token</Label>
               <Input
-                id="modal-partnerKey"
+                id="modal-accessToken"
                 type="password"
-                placeholder="Ex: xyz789..."
-                value={partnerKey}
-                onChange={(e) => setPartnerKey(e.target.value)}
+                placeholder="Ex: 4d6d4a70485346456855a64b426e496c"
+                value={accessToken}
+                onChange={(e) => setAccessToken(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Chave do partner para autenticação
+                Token de acesso para API do Shopee
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="modal-environment">Environment</Label>
+              <Input
+                id="modal-environment"
+                placeholder="Ex: test"
+                value={environment}
+                onChange={(e) => setEnvironment(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Ambiente (test/production)
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="modal-apiDomain">API Domain</Label>
+              <Input
+                id="modal-apiDomain"
+                placeholder="Ex: https://openplatform.sandbox.test-stable.shopee.sg"
+                value={apiDomain}
+                onChange={(e) => setApiDomain(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Domínio da API Shopee
               </p>
             </div>
           </div>
@@ -455,7 +454,7 @@ export function ShopeeConnection() {
             </Button>
             <Button 
               onClick={saveShopeeConfig}
-              disabled={savingConfig || !shopId.trim() || !partnerId.trim() || !appId.trim() || !appSecret.trim() || !partnerKey.trim()}
+              disabled={savingConfig || !shopId.trim() || !partnerId.trim() || !accessToken.trim() || !environment.trim() || !apiDomain.trim()}
             >
               {savingConfig ? (
                 <>

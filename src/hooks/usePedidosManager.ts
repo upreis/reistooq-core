@@ -13,6 +13,7 @@ import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { formatDate } from '@/lib/format';
 import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'react-hot-toast';
+import { fetchShopeeOrders } from '@/services/orders';
 
 export interface PedidosFilters {
   search?: string;
@@ -154,6 +155,8 @@ export function usePedidosManager(initialAccountId?: string) {
   const [hasPrevPage, setHasPrevPage] = useState<boolean>(false);
   // ✅ Contas ML disponíveis para seleção/agrupamento
   const [availableMlAccounts, setAvailableMlAccounts] = useState<string[]>([]);
+  // 🛍️ Contas Shopee disponíveis
+  const [availableShopeeAccounts, setAvailableShopeeAccounts] = useState<string[]>([]);
   
   // ✅ Filtros são usados diretamente sem debounce para aplicação imediata
   
@@ -169,34 +172,54 @@ export function usePedidosManager(initialAccountId?: string) {
   
   // (requestIdRef já declarado acima com abortControllerRef)
 
-  // 🔍 Carregar contas ML ativas e definir padrão (multi-conta)
+  // 🔍 Carregar contas ML e Shopee ativas e definir padrão
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        // ✅ CORRIGIDO: Carregar contas ML ativas corretamente (sem limit(0))
-        const { data, error } = await supabase
+        // ✅ Carregar contas ML ativas
+        const { data: mlData, error: mlError } = await supabase
           .from('integration_accounts')
           .select('id, name, account_identifier')
           .eq('provider', 'mercadolivre')
           .eq('is_active', true)
           .order('updated_at', { ascending: false });
-        if (error) {
-          console.warn('[ML Accounts] Erro ao carregar contas:', error.message);
-          return;
+        
+        if (mlError) {
+          console.warn('[ML Accounts] Erro ao carregar contas:', mlError.message);
+        } else {
+          const mlIds = (mlData || []).map((d: any) => d.id).filter(Boolean);
+          if (active) {
+            setAvailableMlAccounts(mlIds);
+            // Se usuário não escolheu contas explicitamente, usar todas por padrão
+            setFiltersState(prev => {
+              if (prev?.contasML && prev.contasML.length > 0) return prev;
+              return mlIds.length > 0 ? { ...prev, contasML: mlIds } : prev;
+            });
+            // Garantir uma conta padrão para caminhos single-account
+            setIntegrationAccountId(prev => prev || mlIds[0] || prev);
+          }
         }
-        const ids = (data || []).map((d: any) => d.id).filter(Boolean);
-        if (!active) return;
-        setAvailableMlAccounts(ids);
-        // Se usuário não escolheu contas explicitamente, usar todas por padrão
-        setFiltersState(prev => {
-          if (prev?.contasML && prev.contasML.length > 0) return prev;
-          return ids.length > 0 ? { ...prev, contasML: ids } : prev;
-        });
-        // Garantir uma conta padrão para caminhos single-account
-        setIntegrationAccountId(prev => prev || ids[0] || prev);
+
+        // 🛍️ Carregar contas Shopee ativas
+        const { data: shopeeData, error: shopeeError } = await supabase
+          .from('integration_accounts')
+          .select('id, name, account_identifier, provider')
+          .eq('provider', 'shopee')
+          .eq('is_active', true)
+          .order('updated_at', { ascending: false });
+        
+        if (shopeeError) {
+          console.warn('[Shopee Accounts] Erro ao carregar contas:', shopeeError.message);
+        } else {
+          const shopeeIds = (shopeeData || []).map((d: any) => d.id).filter(Boolean);
+          if (active) {
+            setAvailableShopeeAccounts(shopeeIds);
+            console.log('🛍️ [Shopee Accounts] Contas carregadas:', shopeeIds);
+          }
+        }
       } catch (e: any) {
-        console.warn('[ML Accounts] Exceção ao carregar contas:', e?.message || e);
+        console.warn('[Accounts] Exceção ao carregar contas:', e?.message || e);
       }
     })();
     return () => { active = false; };
@@ -302,9 +325,14 @@ export function usePedidosManager(initialAccountId?: string) {
       console.log('🔗 [CONTAS] Usando múltiplas contas via integration_account_ids');
     }
 
+    // 🛍️ SHOPEE: Detectar se é uma conta Shopee e marcar
+    if (targetAccountId && availableShopeeAccounts.includes(targetAccountId)) {
+      params._shopeeAccount = true;
+      console.log('🛍️ [SHOPEE] Conta Shopee detectada:', targetAccountId);
+    }
     
     return params;
-   }, [integrationAccountId, availableMlAccounts]);
+   }, [integrationAccountId, availableMlAccounts, availableShopeeAccounts]);
 
   /**
    * Prioriza parâmetros da URL quando disponíveis
@@ -520,6 +548,32 @@ export function usePedidosManager(initialAccountId?: string) {
     if (!finalAccountId && !apiParams?.integration_account_ids) {
       console.error('❌ [loadOrders] Nenhum integration_account_id ou integration_account_ids válido');
       throw new Error('integration_account_id ou integration_account_ids é obrigatório');
+    }
+
+    // 🛍️ SHOPEE: Detectar se é conta Shopee e usar serviço específico
+    if (finalAccountId && apiParams?._shopeeAccount) {
+      console.log('🛍️ [loadOrders] Detectada conta Shopee, usando serviço específico');
+      
+      const shopeeParams = {
+        integration_account_id: finalAccountId,
+        limit: pageSize,
+        offset: (currentPage - 1) * pageSize,
+        ...(rest.status ? { status: rest.status } : {}),
+        ...(rest.q ? { q: rest.q } : {}),
+        ...(rest.date_from ? { date_from: rest.date_from } : {}),
+        ...(rest.date_to ? { date_to: rest.date_to } : {})
+      };
+
+      const shopeeResult = await fetchShopeeOrders(shopeeParams);
+      
+      return {
+        results: shopeeResult.rows.map(row => row.raw).filter(Boolean),
+        unified: shopeeResult.rows.map(row => row.unified).filter(Boolean),
+        total: shopeeResult.total,
+        paging: { total: shopeeResult.total, limit: pageSize, offset: (currentPage - 1) * pageSize },
+        serverStatusApplied: false,
+        _provider: 'shopee'
+      };
     }
 
     const requestBody = {

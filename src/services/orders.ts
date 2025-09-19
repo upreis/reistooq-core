@@ -1,5 +1,6 @@
 // src/services/orders.ts
 import { supabase } from '@/integrations/supabase/client';
+import { shopeeService } from './ShopeeService';
 
 // 🔒 GUARDRAILS:
 // - Não tocar em supabase/functions/**
@@ -141,6 +142,66 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
 
   const total = data?.paging?.total ?? data?.paging?.count ?? data?.total ?? (Array.isArray(results) ? results.length : rows.length);
   return { rows, total, debug: data?.debug };
+}
+
+// 🛍️ Função específica para buscar pedidos do Shopee
+export async function fetchShopeeOrders(params: UnifiedOrdersParams): Promise<FetchPedidosResult> {
+  try {
+    console.log('🛍️ [Orders] Buscando pedidos Shopee:', params);
+    
+    const response = await shopeeService.fetchOrders({
+      integration_account_id: params.integration_account_id,
+      page: Math.ceil((params.offset || 0) / (params.limit || 50)) + 1,
+      pageSize: params.limit || 50,
+      status: params.status,
+      search: params.q,
+      date_from: params.date_from,
+      date_to: params.date_to
+    });
+
+    if (!response.success) {
+      throw new Error(response.error || 'Erro ao buscar pedidos Shopee');
+    }
+
+    // Converter formato Shopee para unified
+    const rows: Row[] = (response.data?.orders || []).map((order: any) => ({
+      raw: order,
+      unified: {
+        id: order.order_sn || order.id,
+        numero: order.order_sn || order.id,
+        nome_cliente: order.recipient_address?.name || null,
+        cpf_cnpj: null,
+        data_pedido: order.create_time ? new Date(order.create_time * 1000).toISOString() : null,
+        data_prevista: order.ship_by_date ? new Date(order.ship_by_date * 1000).toISOString() : null,
+        situacao: order.order_status || null,
+        valor_total: order.total_amount || 0,
+        valor_frete: order.shipping_fee || 0,
+        valor_desconto: order.voucher_details_list?.reduce((sum: number, v: any) => sum + (v.discount_amount || 0), 0) || 0,
+        numero_ecommerce: order.order_sn || order.id,
+        numero_venda: order.order_sn || order.id,
+        empresa: 'Shopee',
+        cidade: order.recipient_address?.city || null,
+        uf: order.recipient_address?.state || null,
+        codigo_rastreamento: order.tracking_number || null,
+        url_rastreamento: null,
+        obs: order.note || null,
+        obs_interna: null,
+        integration_account_id: params.integration_account_id,
+        created_at: order.create_time ? new Date(order.create_time * 1000).toISOString() : null,
+        updated_at: order.update_time ? new Date(order.update_time * 1000).toISOString() : null,
+      } as Unified
+    }));
+
+    return {
+      rows,
+      total: response.data?.total || rows.length,
+      debug: { provider: 'shopee', orders_count: rows.length }
+    };
+
+  } catch (error: any) {
+    console.error('🛍️ [Orders] Erro ao buscar pedidos Shopee:', error);
+    throw new Error(`Erro Shopee: ${error.message}`);
+  }
 }
 
 // Backward compatibility (mantido)

@@ -33,21 +33,36 @@ class ShopeeService {
   }
 
   /**
-   * 🛡️ SEGURO: Buscar pedidos via unified-orders (quando implementado)
-   * POR ENQUANTO: Retorna mock para não quebrar nada
+   * 🛒 Buscar pedidos via edge function shopee-orders
    */
   async fetchOrders(params: ShopeeOrdersParams): Promise<ShopeeOrdersResponse> {
     try {
-      console.log('🛒 [ShopeeService] MOCK: Preparando busca Shopee:', params);
+      console.log('🛒 [ShopeeService] Buscando pedidos Shopee:', params);
       
-      // TODO: Implementar quando unified-orders suportar Shopee
-      // Por enquanto retorna mock para não quebrar
+      const { data, error } = await supabase.functions.invoke('shopee-orders', {
+        body: {
+          integration_account_id: params.integration_account_id,
+          page: params.page || 1,
+          page_size: params.pageSize || 50,
+          order_status: params.status,
+          date_from: params.date_from,
+          date_to: params.date_to
+        }
+      });
+
+      if (error) {
+        console.error('🛒 [ShopeeService] Erro na API:', error);
+        return { success: false, error: error.message };
+      }
+
+      console.log('🛒 [ShopeeService] Pedidos encontrados:', data?.orders?.length || 0);
+      
       return {
         success: true,
         data: {
-          orders: [],
-          total: 0,
-          has_more: false
+          orders: data?.orders || [],
+          total: data?.total || 0,
+          has_more: data?.has_more || false
         }
       };
 

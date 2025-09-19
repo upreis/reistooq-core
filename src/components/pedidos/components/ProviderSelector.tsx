@@ -45,9 +45,9 @@ export function ProviderSelector({
     }
   ].filter(provider => provider.enabled && provider.count > 0); // 🛡️ SEGURO: Só mostra se tem contas
 
-  // 🛡️ SEGURO: Se não há Shopee accounts, não mostra o seletor ainda
-  if (availableProviders.length <= 2) {
-    return null; // Mantém comportamento atual
+  // 🛡️ SEGURO: Sempre mostra se há pelo menos uma conta ativa
+  if (availableProviders.length <= 1) {
+    return null; // Só mostra se há pelo menos 2 opções
   }
 
   return (
