@@ -85,6 +85,14 @@ export function ShopeeConnection() {
 
     setSavingConfig(true);
     try {
+      // Garantir que temos a organização
+      const { data: orgData } = await supabase.rpc('ensure_current_org');
+      const orgId = (orgData as any)?.organization_id;
+      
+      if (!orgId) {
+        throw new Error('Organização não encontrada');
+      }
+
       // Primeiro criar a conta de integração
       const { data: newAccount, error: accountError } = await supabase
         .from('integration_accounts')
@@ -92,6 +100,7 @@ export function ShopeeConnection() {
           provider: 'shopee',
           name: `Shopee - Shop ${shopId}`,
           account_identifier: shopId.trim(),
+          organization_id: orgId,
           public_auth: {
             shop_id: shopId.trim(),
             partner_id: partnerId.trim()
