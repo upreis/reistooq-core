@@ -17,17 +17,43 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Força instância única React
+      "react": path.resolve(__dirname, "./node_modules/react"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
     dedupe: [
       "react",
-      "react-dom",
+      "react-dom", 
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
       "scheduler",
-      "react-router-dom"
+      "react-router-dom",
+      "react-router",
+      "@tanstack/react-query",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-dialog", 
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-slot",
+      "lucide-react",
+      "framer-motion",
+      "react-hook-form",
+      "class-variance-authority",
+      "clsx",
+      "tailwind-merge"
     ],
   },
   optimizeDeps: {
-    include: ["react", "react-dom"],
+    include: [
+      "react", 
+      "react-dom",
+      "@tanstack/react-query",
+      "lucide-react",
+      "framer-motion",
+      "react-hook-form"
+    ],
+    exclude: []
   },
 }));
