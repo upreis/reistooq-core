@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from "react-router-dom"
-import SimpleRouter from './components/test/SimpleRouter'
+import App from './App'
 import SimpleApp from './App.simple'
 import FallbackApp from './App.fallback'
 
@@ -29,7 +29,9 @@ function AppWithErrorBoundary() {
     // Import main app
     return (
       <React.Suspense fallback={<div>Carregando...</div>}>
-        <SimpleRouter />
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
       </React.Suspense>
     );
   } catch (error) {
