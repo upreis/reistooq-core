@@ -17,21 +17,19 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // FORÇA ABSOLUTA: Todas as variações React para mesmo caminho
-      "react": path.resolve(__dirname, "./node_modules/react/index.js"),
-      "react-dom": path.resolve(__dirname, "./node_modules/react-dom/index.js"),
+      // CORRIGIDO: Paths corretos sem /index.js
+      "react": path.resolve(__dirname, "./node_modules/react"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
       "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime.js"),
       "react/jsx-dev-runtime": path.resolve(__dirname, "./node_modules/react/jsx-dev-runtime.js"),
-      "scheduler": path.resolve(__dirname, "./node_modules/scheduler/index.js"),
-      "scheduler/tracing": path.resolve(__dirname, "./node_modules/scheduler/tracing.js"),
+      "scheduler": path.resolve(__dirname, "./node_modules/scheduler"),
     },
     dedupe: [
       "react",
       "react-dom", 
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
-      "scheduler",
-      "scheduler/tracing"
+      "scheduler"
     ],
   },
   optimizeDeps: {
@@ -43,36 +41,26 @@ export default defineConfig(({ mode }) => ({
       "scheduler"
     ],
     exclude: [],
-    force: true,
-    // CRÍTICO: Evita pre-bundling que pode criar instâncias separadas
-    esbuildOptions: {
-      resolveExtensions: ['.js', '.jsx', '.ts', '.tsx'],
-    }
+    force: true
   },
-  // CRÍTICO: Configuração extrema para forçar instância única
+  // CRÍTICO: Configuração para resolver conflitos React
   define: {
     __DEV__: JSON.stringify(mode === 'development'),
     'process.env.NODE_ENV': JSON.stringify(mode),
   },
   build: {
-    commonjsOptions: {
-      include: [/node_modules/]
-    },
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // FORÇA todos os React-related em um chunk único
+          // Força todos os React-related em um chunk único
           if (id.includes('react') || id.includes('scheduler')) {
             return 'react-single';
           }
-          // Agrupa outras dependências
           if (id.includes('node_modules')) {
             return 'vendor';
           }
         }
       }
     }
-  },
-  // CRÍTICO: Cache busting para forçar rebuild completo
-  cacheDir: '.vite-new'
+  }
 }));

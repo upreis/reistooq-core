@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from "react-router-dom"
+import App from './App'
 
 import { setupGlobalToast } from "@/utils/toast-bridge";
 import { toast } from "sonner";
@@ -20,64 +21,15 @@ if (!container) throw new Error('Failed to find the root element');
 
 const root = createRoot(container);
 
-// Componente temporário aguardando Vite rebuild
-function SystemRebuildingApp() {
+// Create error boundary wrapper with progressive loading
+function AppWithErrorBoundary() {
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#1a1a1a', 
-      color: '#ffffff',
-      padding: '2rem',
-      textAlign: 'center',
-      fontFamily: 'Inter, system-ui, sans-serif'
-    }}>
-      <h1>🔧 Reistooq - Correção em Andamento</h1>
-      <p>Aplicando solução definitiva para múltiplas instâncias React...</p>
-      <div style={{ marginTop: '2rem' }}>
-        <div style={{ 
-          padding: '1rem', 
-          backgroundColor: '#333', 
-          borderRadius: '8px', 
-          marginBottom: '1rem',
-          maxWidth: '500px',
-          margin: '0 auto 1rem'
-        }}>
-          <h3 style={{ color: '#4ade80' }}>✅ Correções Aplicadas:</h3>
-          <p style={{ textAlign: 'left', margin: '0.5rem 0' }}>• Alias absolutos React (.js específicos)</p>
-          <p style={{ textAlign: 'left', margin: '0.5rem 0' }}>• Chunk único react-single forçado</p>
-          <p style={{ textAlign: 'left', margin: '0.5rem 0' }}>• Cache limpo (.vite-new)</p>
-          <p style={{ textAlign: 'left', margin: '0.5rem 0' }}>• Deduplicação extrema scheduler</p>
-        </div>
-        
-        <p style={{ margin: '1rem 0', color: '#fbbf24' }}>
-          ⚡ Aguarde o Vite finalizar rebuild automático...
-        </p>
-        
-        <button 
-          onClick={() => window.location.reload()}
-          style={{ 
-            padding: '0.75rem 1.5rem', 
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            marginTop: '1rem'
-          }}
-        >
-          Tentar Novamente
-        </button>
-      </div>
-    </div>
+    <StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </StrictMode>
   );
 }
 
-// Renderização temporária segura
-root.render(
-  <StrictMode>
-    <BrowserRouter>
-      <SystemRebuildingApp />
-    </BrowserRouter>
-  </StrictMode>
-);
+root.render(<AppWithErrorBoundary />);
