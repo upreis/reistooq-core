@@ -43,7 +43,7 @@ export function ProviderSelector({
       count: providerCounts.shopee || 0,
       enabled: FEATURES.SHOPEE
     }
-  ].filter(provider => provider.enabled && provider.count > 0); // 🛡️ SEGURO: Só mostra se tem contas
+  ].filter(provider => provider.enabled && (provider.id === 'all' ? provider.count > 0 : provider.count > 0)); // 🛡️ SEGURO: Mostra "Todas" se há pelo menos uma conta
 
   // 🛡️ SEGURO: Sempre mostra se há pelo menos uma conta ativa
   if (availableProviders.length <= 1) {

@@ -325,10 +325,11 @@ export function usePedidosManager(initialAccountId?: string) {
       console.log('🔗 [CONTAS] Usando múltiplas contas via integration_account_ids');
     }
 
-    // 🛍️ SHOPEE: Detectar se é uma conta Shopee e marcar
+    // 🛍️ SHOPEE: Detectar se é uma conta Shopee e usar rota específica
     if (targetAccountId && availableShopeeAccounts.includes(targetAccountId)) {
       params._shopeeAccount = true;
-      console.log('🛍️ [SHOPEE] Conta Shopee detectada:', targetAccountId);
+      params._useShopeeOrders = true;
+      console.log('🛍️ [SHOPEE] Conta Shopee detectada, usando fetchShopeeOrders:', targetAccountId);
     }
     
     return params;
@@ -397,12 +398,43 @@ export function usePedidosManager(initialAccountId?: string) {
           
           let data: any | null = null;
           let error: any | null = null;
-          try {
-            ({ data, error } = await supabase.functions.invoke('unified-orders', {
-              body: singleAccountBody
-            }));
-          } catch (e: any) {
-            error = e;
+          
+          // 🛍️ SHOPEE: Usar fetchShopeeOrders para contas Shopee
+          if (availableShopeeAccounts.includes(accountId)) {
+            try {
+              console.log('🛍️ [SHOPEE] Usando fetchShopeeOrders para conta:', accountId);
+              const shopeeResult = await fetchShopeeOrders({
+                integration_account_id: accountId,
+                limit: pageSize,
+                offset: (currentPage - 1) * pageSize,
+                status: rest.status,
+                q: rest.q,
+                date_from: rest.date_from,
+                date_to: rest.date_to
+              });
+              
+              // Converter resultado para formato esperado
+              data = {
+                ok: true,
+                results: shopeeResult.rows.map(r => r.raw),
+                unified: shopeeResult.rows.map(r => r.unified),
+                paging: { total: shopeeResult.total },
+                debug: shopeeResult.debug
+              };
+              error = null;
+            } catch (e: any) {
+              error = e;
+              data = null;
+            }
+          } else {
+            // ML: Usar unified-orders
+            try {
+              ({ data, error } = await supabase.functions.invoke('unified-orders', {
+                body: singleAccountBody
+              }));
+            } catch (e: any) {
+              error = e;
+            }
           }
 
           // 🚨 AJUSTE 1: Captura detalhada de erro com toast específico
