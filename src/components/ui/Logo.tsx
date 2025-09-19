@@ -8,9 +8,7 @@ interface LogoProps {
 export function Logo({ className = "", size = "md" }: LogoProps) {
   const { theme } = useTheme();
   
-  const logoSrc = theme?.includes("dark")
-    ? "/lovable-uploads/2ac629b1-e95b-44dd-985f-2ce75a5d0ee6.png" // Logo para dark (novo)
-    : "/lovable-uploads/0b9a365e-610c-4fd7-b7bf-99b682141403.png"; // Logo para light
+  const logoSrc = "/logo-reistoq.png"; // Novo logo da empresa
   
   const sizeClasses = {
     sm: "h-10 w-10",
