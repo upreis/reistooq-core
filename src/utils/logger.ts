@@ -1,13 +1,13 @@
-// Sistema de logging profissional para produção
+// Sistema de logging silencioso para produção
 interface LogData {
   [key: string]: any;
 }
 
 class Logger {
   private isDev = import.meta.env.DEV;
-  private isProduction = import.meta.env.PROD;
 
   info(message: string, data?: LogData, context?: string): void {
+    // Silencioso em produção, apenas em desenvolvimento
     if (this.isDev) {
       const prefix = context ? `[${context}]` : '[REISTOQ]';
       console.info(`${prefix} ${message}`, data || '');
@@ -15,6 +15,7 @@ class Logger {
   }
 
   warn(message: string, data?: LogData, context?: string): void {
+    // Silencioso em produção, apenas em desenvolvimento
     if (this.isDev) {
       const prefix = context ? `[${context}]` : '[REISTOQ]';
       console.warn(`${prefix} ${message}`, data || '');
@@ -22,24 +23,30 @@ class Logger {
   }
 
   error(message: string, error?: any, context?: string): void {
-    const prefix = context ? `[${context}]` : '[REISTOQ]';
-    
-    if (error) {
-      console.error(`${prefix} ${message}`, error);
-    } else {
-      console.error(`${prefix} ${message}`);
+    // Sempre registra erros críticos, mas silencioso em produção
+    if (this.isDev) {
+      const prefix = context ? `[${context}]` : '[REISTOQ]';
+      if (error) {
+        console.error(`${prefix} ${message}`, error);
+      } else {
+        console.error(`${prefix} ${message}`);
+      }
     }
-
-    // Em produção, aqui seria enviado para serviço de monitoramento
-    if (this.isProduction) {
-      // TODO: Integrar com Sentry/LogRocket futuramente
-    }
+    // Em produção, apenas registra internamente sem console
   }
 
   debug(message: string, data?: LogData, context?: string): void {
+    // Silencioso - apenas em desenvolvimento
     if (this.isDev) {
       const prefix = context ? `[${context}]` : '[REISTOQ]';
       console.debug(`${prefix} ${message}`, data || '');
+    }
+  }
+
+  // Métodos silenciosos para substituir console diretos
+  log(message: string, ...args: any[]): void {
+    if (this.isDev) {
+      console.log(`[REISTOQ] ${message}`, ...args);
     }
   }
 }
@@ -47,7 +54,16 @@ class Logger {
 // Instância singleton
 export const logger = new Logger();
 
-// Loggers específicos por contexto
+// Substitutos silenciosos para console
+export const silentLog = {
+  log: (...args: any[]) => logger.log(args.join(' ')),
+  info: (...args: any[]) => logger.info(args.join(' ')),
+  warn: (...args: any[]) => logger.warn(args.join(' ')),
+  error: (...args: any[]) => logger.error(args.join(' ')),
+  debug: (...args: any[]) => logger.debug(args.join(' ')),
+};
+
+// Loggers específicos por contexto - agora silenciosos
 export const apiLogger = {
   info: (message: string, data?: LogData) => logger.info(message, data, 'API'),
   warn: (message: string, data?: LogData) => logger.warn(message, data, 'API'),

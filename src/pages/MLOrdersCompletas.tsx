@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
 import { toast } from "sonner";
+import { logger } from "@/utils/logger";
 
 export default function MLOrdersCompletas() {
   // Buscar contas ML disponíveis
@@ -43,10 +44,10 @@ export default function MLOrdersCompletas() {
               .order('created_at', { ascending: false });
             
             if (error) {
-              console.error('Erro ao recarregar devoluções:', error);
+              logger.error('Erro ao recarregar devoluções:', error);
               toast.error('Erro ao atualizar dados');
             } else {
-              console.log('✅ Devoluções recarregadas com sucesso');
+              logger.info('Devoluções recarregadas com sucesso');
             }
           } catch (error) {
             console.error('Erro no refetch:', error);

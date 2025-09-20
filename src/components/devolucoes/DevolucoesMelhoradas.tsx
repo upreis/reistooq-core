@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 import { Search, Filter, Download, RefreshCw, Eye, AlertTriangle, Package, DollarSign, Clock, Activity, BarChart3, X } from 'lucide-react';
 
 // Types básicos (compatíveis com o existente)
@@ -42,7 +43,7 @@ interface Props {
 const DevolucoesMelhoradas: React.FC<Props> = ({ mlAccounts, refetch }) => {
   // Função de tradução para motivos de cancelamento
   const traduzirMotivoCancelamento = (motivo: string | null | undefined): string => {
-    console.log('🔤 Traduzindo motivo:', motivo);
+    logger.debug('Traduzindo motivo', { motivo });
     if (!motivo) return 'N/A';
     
     // Primeiro, substitui underscores por espaços e converte para lowercase

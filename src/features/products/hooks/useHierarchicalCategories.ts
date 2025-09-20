@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentProfile } from '@/hooks/useCurrentProfile';
+import { logger } from '@/utils/logger';
 
 export interface HierarchicalCategory {
   id: string;
@@ -48,12 +49,12 @@ export const useHierarchicalCategories = () => {
       setError(null);
       
       if (!orgId) {
-        console.warn('⚠️ Organização não disponível. Pulando carregamento de categorias.');
+        logger.warn('Organização não disponível. Pulando carregamento de categorias.');
         setCategories([]);
         return;
       }
       
-      console.log('🔍 Carregando categorias hierárquicas para org:', orgId);
+      logger.info('Carregando categorias hierárquicas para org:', { orgId });
       
       const { data, error } = await supabase
         .from('categorias_produtos')
@@ -65,11 +66,11 @@ export const useHierarchicalCategories = () => {
         .order('nome');
 
       if (error) {
-        console.error('❌ Erro ao carregar categorias:', error);
+        logger.error('Erro ao carregar categorias:', error);
         throw error;
       }
       
-      console.log('✅ Categorias carregadas:', data?.length || 0);
+      logger.info('Categorias carregadas:', { count: data?.length || 0 });
       setCategories((data || []) as HierarchicalCategory[]);
       
       // Auto-sincronizar se necessário e não tentado ainda
@@ -78,12 +79,12 @@ export const useHierarchicalCategories = () => {
       // Se faltam principais (<8) ou quase nenhum nível 2 (<10), sincroniza
       if ((level1Count < 8 || level2Count < 10) && !generationAttemptedRef.current) {
         generationAttemptedRef.current = true;
-        console.log('🔄 Executando sincronização automática de categorias (faltando principais ou categorias)...');
+        logger.info('Executando sincronização automática de categorias');
         setTimeout(syncCategories, 500);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar categorias');
-      console.error('Error loading hierarchical categories:', err);
+      logger.error('Error loading hierarchical categories:', err);
     } finally {
       setLoading(false);
     }
@@ -92,26 +93,26 @@ export const useHierarchicalCategories = () => {
   const syncCategories = async () => {
     try {
       if (!orgId) {
-        console.warn('⚠️ Organização não disponível. Pulando sincronização.');
+        logger.warn('Organização não disponível. Pulando sincronização.');
         return;
       }
 
-      console.log('🔄 Executando sincronização de categorias padrão...');
+      logger.info('Executando sincronização de categorias padrão...');
       
       const { data, error } = await supabase.rpc('seed_default_categories');
       
       if (error) {
-        console.error('❌ Erro ao sincronizar categorias:', error);
+        logger.error('Erro ao sincronizar categorias:', error);
         throw error;
       }
       
-      console.log('✅ Sincronização concluída:', data);
+      logger.info('Sincronização concluída:', { data: JSON.stringify(data) });
       
       // Recarregar categorias após sincronização
       setTimeout(loadCategories, 500);
       
     } catch (error) {
-      console.error('❌ Erro na sincronização:', error);
+      logger.error('Erro na sincronização:', error);
     }
   };
 
