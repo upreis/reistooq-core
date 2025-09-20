@@ -98,8 +98,7 @@ export const OnboardingWizard = () => {
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          onboarding_completed: true,
-          onboarding_completed_at: new Date().toISOString()
+          onboarding_banner_dismissed: true
         })
         .eq('id', user?.id);
 

@@ -13,6 +13,9 @@ import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import { LoadingPage } from '@/components/ui/loading-states';
 
 // Import pages
 import NotFound from "./pages/NotFound";
@@ -61,6 +64,8 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const { isRequired: onboardingRequired, loading: onboardingLoading } = useOnboarding();
+
   // Validar configuração na inicialização
   React.useEffect(() => {
     const validation = validateConfig();
@@ -72,6 +77,16 @@ function App() {
   // Verificar modo de manutenção
   if (config.features.maintenanceMode) {
     return <MaintenanceMode />;
+  }
+
+  // Mostrar loading enquanto verifica onboarding
+  if (onboardingLoading) {
+    return <LoadingPage message="Verificando configuração..." />;
+  }
+
+  // Mostrar onboarding se necessário
+  if (onboardingRequired) {
+    return <OnboardingWizard />;
   }
 
   try {
