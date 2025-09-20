@@ -61,11 +61,19 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  console.log('🔧 App component rendering...');
+  
   // Validar configuração na inicialização
   React.useEffect(() => {
-    const validation = validateConfig();
-    if (!validation.valid) {
-      console.error('❌ Configuration errors:', validation.errors);
+    console.log('🔧 App useEffect running...');
+    try {
+      const validation = validateConfig();
+      if (!validation.valid) {
+        console.error('❌ Configuration errors:', validation.errors);
+      }
+      console.log('✅ Configuration validation complete');
+    } catch (error) {
+      console.error('🚨 Error in App useEffect:', error);
     }
   }, []);
 
