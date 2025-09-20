@@ -1,197 +1,160 @@
-/**
- * 🚀 VIRTUAL SCROLLING TABLE
- * Performance optimization for large datasets (>500 items)
- */
-
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { LoadingSpinner } from '@/components/ui/loading-states';
 
 interface VirtualTableProps<T> {
   data: T[];
-  columns: Array<{
+  columns: {
     key: string;
-    label: string;
+    header: string;
     width?: number;
-    render: (item: T, index: number) => React.ReactNode;
-  }>;
+    render?: (item: T, index: number) => React.ReactNode;
+  }[];
   height?: number;
   itemHeight?: number;
-  className?: string;
+  loading?: boolean;
   onRowClick?: (item: T, index: number) => void;
-  enableVirtualization?: boolean; // Permite desabilitar para listas pequenas
-  threshold?: number; // Limite para ativar virtualização
+  className?: string;
 }
 
-export function VirtualTable<T>({
+export function VirtualTable<T extends Record<string, any>>({
   data,
   columns,
-  height = 600,
-  itemHeight = 60,
-  className,
+  height = 400,
+  itemHeight = 50,
+  loading = false,
   onRowClick,
-  enableVirtualization = true,
-  threshold = 500
+  className = ''
 }: VirtualTableProps<T>) {
-  const parentRef = useRef<HTMLDivElement>(null);
-  const [tableWidth, setTableWidth] = useState<number>(0);
+  const parentRef = React.useRef<HTMLDivElement>(null);
 
-  // Decidir se usar virtualização baseado no tamanho dos dados
-  const shouldVirtualize = enableVirtualization && data.length > threshold;
-
-  // Configurar o virtualizador
   const virtualizer = useVirtualizer({
     count: data.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => itemHeight,
-    enabled: shouldVirtualize,
-    overscan: 10 // Renderizar 10 items extras para smooth scrolling
+    overscan: 10, // Render 10 extra items for smooth scrolling
   });
 
-  // Observar largura da tabela para ajuste responsivo
-  useEffect(() => {
-    const resizeObserver = new ResizeObserver((entries) => {
-      const [entry] = entries;
-      if (entry) {
-        setTableWidth(entry.contentRect.width);
-      }
+  const virtualItems = virtualizer.getVirtualItems();
+
+  // Memoize rendered rows for performance
+  const renderedRows = useMemo(() => {
+    return virtualItems.map((virtualRow) => {
+      const item = data[virtualRow.index];
+      return (
+        <TableRow
+          key={virtualRow.key}
+          data-index={virtualRow.index}
+          ref={virtualizer.measureElement}
+          className={onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''}
+          onClick={() => onRowClick?.(item, virtualRow.index)}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: `${virtualRow.size}px`,
+            transform: `translateY(${virtualRow.start}px)`,
+          }}
+        >
+          {columns.map((column) => (
+            <TableCell key={column.key} style={{ width: column.width }}>
+              {column.render ? column.render(item, virtualRow.index) : item[column.key]}
+            </TableCell>
+          ))}
+        </TableRow>
+      );
     });
+  }, [virtualItems, data, columns, onRowClick, virtualizer.measureElement]);
 
-    if (parentRef.current) {
-      resizeObserver.observe(parentRef.current);
-    }
-
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  // Calcular larguras das colunas
-  const columnWidths = useMemo(() => {
-    const totalFixedWidth = columns.reduce((acc, col) => acc + (col.width || 0), 0);
-    const flexColumns = columns.filter(col => !col.width);
-    const remainingWidth = Math.max(0, tableWidth - totalFixedWidth);
-    const flexWidth = flexColumns.length > 0 ? remainingWidth / flexColumns.length : 0;
-
-    return columns.map(col => col.width || Math.max(120, flexWidth));
-  }, [columns, tableWidth]);
-
-  if (!shouldVirtualize) {
-    // Renderização normal para listas pequenas
+  if (loading) {
     return (
-      <div className={cn("border rounded-lg overflow-auto", className)} style={{ height }}>
-        <table className="w-full">
-          <thead className="sticky top-0 bg-background border-b z-10">
-            <tr>
-              {columns.map((column, index) => (
-                <th
-                  key={column.key}
-                  className="px-4 py-3 text-left text-sm font-medium text-muted-foreground"
-                  style={{ width: columnWidths[index] }}
-                >
-                  {column.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((item, index) => (
-              <tr
-                key={index}
-                className={cn(
-                  "border-b hover:bg-muted/50 transition-colors",
-                  onRowClick && "cursor-pointer"
-                )}
-                onClick={() => onRowClick?.(item, index)}
-              >
-                {columns.map((column, colIndex) => (
-                  <td
-                    key={column.key}
-                    className="px-4 py-3 text-sm"
-                    style={{ width: columnWidths[colIndex] }}
-                  >
-                    {column.render(item, index)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="flex items-center justify-center" style={{ height }}>
+        <LoadingSpinner />
+        <span className="ml-2">Carregando dados...</span>
       </div>
     );
   }
 
-  // Renderização virtualizada para listas grandes
-  const items = virtualizer.getVirtualItems();
+  if (data.length === 0) {
+    return (
+      <div className="flex items-center justify-center" style={{ height }}>
+        <p className="text-muted-foreground">Nenhum dado disponível</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={cn("border rounded-lg overflow-hidden", className)}>
-      {/* Header fixo */}
-      <div className="bg-background border-b sticky top-0 z-10">
-        <div className="flex">
-          {columns.map((column, index) => (
-            <div
-              key={column.key}
-              className="px-4 py-3 text-left text-sm font-medium text-muted-foreground border-r last:border-r-0"
-              style={{ width: columnWidths[index] }}
-            >
-              {column.label}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Container virtualizador */}
-      <div
-        ref={parentRef}
-        className="overflow-auto"
-        style={{ height: height - 60 }} // Subtrair altura do header
-      >
+    <div className={className}>
+      <div className="border rounded-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((column) => (
+                <TableHead key={column.key} style={{ width: column.width }}>
+                  {column.header}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+        </Table>
+        
         <div
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: '100%',
-            position: 'relative',
-          }}
+          ref={parentRef}
+          className="overflow-auto"
+          style={{ height }}
         >
-          {items.map((virtualItem) => {
-            const item = data[virtualItem.index];
-            
-            return (
-              <div
-                key={virtualItem.index}
-                className={cn(
-                  "absolute top-0 left-0 w-full flex border-b hover:bg-muted/50 transition-colors",
-                  onRowClick && "cursor-pointer"
-                )}
-                style={{
-                  height: `${virtualItem.size}px`,
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-                onClick={() => onRowClick?.(item, virtualItem.index)}
-              >
-                {columns.map((column, colIndex) => (
-                  <div
-                    key={column.key}
-                    className="px-4 py-3 text-sm border-r last:border-r-0 flex items-center"
-                    style={{ width: columnWidths[colIndex] }}
-                  >
-                    {column.render(item, virtualItem.index)}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            <Table>
+              <TableBody>
+                {renderedRows}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
-
-      {/* Indicador de performance */}
-      {shouldVirtualize && (
-        <div className="px-4 py-2 text-xs text-muted-foreground bg-muted/30 border-t">
-          Virtual Scrolling ativo • {data.length.toLocaleString()} itens • 
-          Renderizando {items.length} de {data.length}
+      
+      {/* Performance info in development */}
+      {import.meta.env.DEV && (
+        <div className="text-xs text-muted-foreground mt-2">
+          Mostrando {virtualItems.length} de {data.length} itens 
+          (Virtual scrolling ativo)
         </div>
       )}
     </div>
   );
 }
 
-export default VirtualTable;
+// Hook para usar virtual table com dados paginados
+export const useVirtualTable = <T,>(
+  data: T[],
+  options: {
+    pageSize?: number;
+    threshold?: number; // When to enable virtual scrolling
+  } = {}
+) => {
+  const { pageSize = 50, threshold = 100 } = options;
+  
+  const shouldUseVirtual = data.length > threshold;
+  
+  const paginatedData = useMemo(() => {
+    if (shouldUseVirtual) {
+      return data; // Use all data with virtual scrolling
+    }
+    return data.slice(0, pageSize); // Use pagination for smaller datasets
+  }, [data, shouldUseVirtual, pageSize]);
+
+  return {
+    data: paginatedData,
+    shouldUseVirtual,
+    totalItems: data.length,
+    isVirtualized: shouldUseVirtual
+  };
+};

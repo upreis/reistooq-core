@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -18,51 +18,120 @@ import { useOnboarding } from '@/hooks/useOnboarding';
 import { LoadingPage } from '@/components/ui/loading-states';
 import { SystemAlertsProvider } from '@/components/system/SystemAlertsProvider';
 
-// Import pages
-import NotFound from "./pages/NotFound";
-import Estoque from "./pages/Estoque";
-import Pedidos from "./pages/Pedidos";
-import Scanner from "./pages/Scanner";
-import MLOrdersCompletas from "./pages/MLOrdersCompletas";
-import DePara from "./pages/DePara";
-import Alertas from "./pages/Alertas";
-import IntegracoesPage from "./pages/configuracoes/IntegracoesPage";
-import Historico from "./pages/Historico";
-import Shop from "./pages/Shop";
-import ProductDetail from "./pages/ProductDetail";
-import ProductList from "./pages/ProductList";
-import Checkout from "./pages/Checkout";
-import AddProduct from "./pages/AddProduct";
-import EditProduct from "./pages/EditProduct";
-import UserProfile from "./pages/UserProfile";
-import Calendar from "./pages/Calendar";
-import Notes from "./pages/Notes";
-import OMS from "./pages/OMS";
-import Dashboard from "./pages/Dashboard";
-import Analytics from "./pages/Analytics";
-import FAQ from "./pages/FAQ";
-import Pricing from "./pages/Pricing";
-import Auth from "./pages/Auth";
-import AccountSettings from "./pages/AccountSettings";
-import Cards from "./pages/Cards";
-import Banners from "./pages/Banners";
-import Charts from "./pages/Charts";
-import SolarIcons from "./pages/SolarIcons";
-import AdminPage from "./pages/AdminPage";
-import SystemAdmin from "./pages/SystemAdmin";
-import AcceptInvite from "./pages/AcceptInvite";
-import ResetPassword from "./pages/ResetPassword";
-import CategoryManager from "./pages/CategoryManager";
-import ShopeeCallbackPage from "./pages/ShopeeCallbackPage";
+// Lazy load all pages for better performance
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const OMS = lazy(() => import("./pages/OMS"));
+const Shop = lazy(() => import("./pages/Shop"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const ProductList = lazy(() => import("./pages/ProductList"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const AddProduct = lazy(() => import("./pages/AddProduct"));
+const EditProduct = lazy(() => import("./pages/EditProduct"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
+const Calendar = lazy(() => import("./pages/Calendar"));
+const Notes = lazy(() => import("./pages/Notes"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Auth = lazy(() => import("./pages/Auth"));
+const AccountSettings = lazy(() => import("./pages/AccountSettings"));
+const Cards = lazy(() => import("./pages/Cards"));
+const Banners = lazy(() => import("./pages/Banners"));
+const Charts = lazy(() => import("./pages/Charts"));
+const SolarIcons = lazy(() => import("./pages/SolarIcons"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
+const AcceptInvite = lazy(() => import("./pages/AcceptInvite"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const CategoryManager = lazy(() => import("./pages/CategoryManager"));
+const ShopeeCallbackPage = lazy(() => import("./pages/ShopeeCallbackPage"));
+const SystemAdmin = lazy(() => import("./pages/SystemAdmin"));
 
-// Create QueryClient instance outside component to avoid recreation
+// Critical pages - load immediately
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Business critical pages with preloading
+const Estoque = lazy(() => 
+  import("./pages/Estoque").then(module => {
+    // Preload related components
+    import("./components/estoque/EstoqueTable");
+    return module;
+  })
+);
+
+const Pedidos = lazy(() => 
+  import("./pages/Pedidos").then(module => {
+    // Preload related components
+    import("./components/pedidos/PedidosTable");
+    import("./hooks/usePedidosManager");
+    return module;
+  })
+);
+
+const MLOrdersCompletas = lazy(() => 
+  import("./pages/MLOrdersCompletas").then(module => {
+    // Preload ML-related services
+    import("./services/mlApiService");
+    return module;
+  })
+);
+
+const Scanner = lazy(() => 
+  import("./pages/Scanner").then(module => {
+    // Preload scanner components
+    import("./components/scanner/ScannerV2");
+    return module;
+  })
+);
+
+const DePara = lazy(() => import("./pages/DePara"));
+const Alertas = lazy(() => import("./pages/Alertas"));
+const IntegracoesPage = lazy(() => import("./pages/configuracoes/IntegracoesPage"));
+const Historico = lazy(() => import("./pages/Historico"));
+
+// Create QueryClient instance with advanced caching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
-      staleTime: 5 * 60 * 1000,
+      retry: (failureCount, error: any) => {
+        // Don't retry on 4xx errors except 408, 429
+        if (error?.status >= 400 && error?.status < 500 && ![408, 429].includes(error?.status)) {
+          return false;
+        }
+        return failureCount < 2;
+      },
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      refetchOnWindowFocus: false,
+      refetchOnMount: true,
+      refetchOnReconnect: 'always',
+      // Background refetch for better UX
+      refetchInterval: (query) => {
+        // Refetch critical data more frequently
+        if (query.queryKey[0] === 'system-health') return 30000; // 30s
+        if (query.queryKey[0] === 'pedidos') return 2 * 60 * 1000; // 2min
+        if (query.queryKey[0] === 'orders') return 2 * 60 * 1000; // 2min
+        return false; // No auto-refetch for other queries
+      }
     },
-  },
+    mutations: {
+      retry: 1,
+      // Optimistic updates
+      onMutate: async (variables) => {
+        // Cancel outgoing refetches so they don't overwrite optimistic update
+        await queryClient.cancelQueries();
+      },
+      onError: (error, variables, context: any) => {
+        // Rollback optimistic updates on error
+        if (context?.previousData) {
+          queryClient.setQueryData(context.queryKey, context.previousData);
+        }
+      },
+      onSettled: () => {
+        // Always refetch after mutation
+        queryClient.invalidateQueries();
+      }
+    }
+  }
 });
 
 function App() {
@@ -113,6 +182,7 @@ function App() {
                 
                   <Toaster />
                   <Sonner />
+                <Suspense fallback={<LoadingPage message="Carregando página..." />}>
                 <Routes>
                   {/* Rota pública de autenticação */}
                   <Route path="/auth" element={<Auth />} />
@@ -357,6 +427,7 @@ function App() {
                   {/* Catch all */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </Suspense>
                 
               </SidebarUIProvider>
             </MobileProvider>
