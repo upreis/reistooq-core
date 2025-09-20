@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -62,7 +62,7 @@ const queryClient = new QueryClient({
 
 function App() {
   // Validar configuração na inicialização
-  React.useEffect(() => {
+  useEffect(() => {
     const validation = validateConfig();
     if (!validation.valid) {
       console.error('❌ Configuration errors:', validation.errors);
