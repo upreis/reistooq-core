@@ -47,9 +47,9 @@ export const config: AppConfig = {
     supportEmail: import.meta.env.VITE_SUPPORT_EMAIL || 'suporte@reistoq.com.br'
   },
   supabase: {
-    url: requireEnv('VITE_SUPABASE_URL'),
-    anonKey: requireEnv('VITE_SUPABASE_PUBLISHABLE_KEY'),
-    projectId: requireEnv('VITE_SUPABASE_PROJECT_ID')
+    url: 'https://tdjyfqnxvjgossuncpwm.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkanlmcW54dmpnb3NzdW5jcHdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4OTczNTMsImV4cCI6MjA2OTQ3MzM1M30.qrEBpARgfuWF74zHoRzGJyWjgxN_oCG5DdKjPVGJYxk',
+    projectId: 'tdjyfqnxvjgossuncpwm'
   },
   features: {
     enableAnalytics: import.meta.env.VITE_ENABLE_ANALYTICS === 'true',
