@@ -1,4 +1,5 @@
 import { useTheme } from "@/theme/ThemeProvider";
+import logoLight from "@/assets/logo-light.png";
 
 interface LogoProps {
   className?: string;
@@ -8,7 +9,8 @@ interface LogoProps {
 export function Logo({ className = "", size = "md" }: LogoProps) {
   const { theme } = useTheme();
   
-  const logoSrc = "/logo-reistoq.png"; // Novo logo da empresa
+  // Logo para dark mode (atual) e light mode (novo)
+  const logoSrc = theme === "materialm-light" ? logoLight : "/logo-reistoq.png";
   
   const sizeClasses = {
     sm: "h-10 w-10",
