@@ -19,7 +19,7 @@ import { LoadingPage } from '@/components/ui/loading-states';
 import { SystemAlertsProvider } from '@/components/system/SystemAlertsProvider';
 import { performanceMonitor } from '@/utils/performance-monitor';
 import { prefetchManager } from '@/utils/prefetch';
-import { usePerformance } from '@/hooks/usePerformance';
+// import { usePerformance } from '@/hooks/usePerformance';
 
 // Lazy load all pages for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -144,11 +144,11 @@ function App() {
   }, []);
 
   // Performance monitoring para o App principal
-  const { trackAsync } = usePerformance({ 
-    componentName: 'App',
-    trackRender: true,
-    trackMount: true 
-  });
+  // const { trackAsync } = usePerformance({ 
+  //   componentName: 'App',
+  //   trackRender: true,
+  //   trackMount: true 
+  // });
 
   const { isRequired: onboardingRequired, loading: onboardingLoading } = useOnboarding();
 
