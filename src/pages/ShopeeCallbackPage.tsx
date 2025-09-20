@@ -50,6 +50,20 @@ export default function ShopeeCallbackPage() {
           setStatus('success');
           setMessage('Conta Shopee conectada com sucesso!');
           setShopId(data.shop_id || shop_id || '');
+          
+          // Tentar sincronizar pedidos automaticamente após conectar
+          try {
+            await supabase.functions.invoke('shopee-orders', {
+              body: {
+                integration_account_id: data.integration_account_id,
+                action: 'sync_orders'
+              }
+            });
+            console.log('✅ Sincronização inicial de pedidos Shopee iniciada');
+          } catch (syncError) {
+            console.warn('⚠️ Erro na sincronização inicial:', syncError);
+            // Não falha o callback por causa da sincronização
+          }
         } else {
           console.error('❌ Callback falhou:', data);
           setStatus('error');

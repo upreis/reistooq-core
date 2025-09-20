@@ -5,8 +5,8 @@ import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
-// Função para refresh preventivo de tokens
-async function refreshIfNeeded(supabase: any, tokens: any, cid: string, authHeader: string | null) {
+// Função para refresh preventivo de tokens com backoff exponencial
+async function refreshIfNeeded(supabase: any, tokens: any, cid: string, authHeader: string | null, retryCount = 0) {
   const { access_token, refresh_token, expires_at, account_id } = tokens;
   
   if (!expires_at) return { access_token };
@@ -30,7 +30,15 @@ async function refreshIfNeeded(supabase: any, tokens: any, cid: string, authHead
         return { access_token: refreshData.access_token };
       }
     } catch (e) {
-      console.warn(`[unified-orders:${cid}] ⚠️ Erro no refresh preventivo:`, e.message);
+      console.warn(`[unified-orders:${cid}] ⚠️ Erro no refresh preventivo (tentativa ${retryCount + 1}):`, e.message);
+      
+      // Retry com backoff exponencial (máximo 3 tentativas)
+      if (retryCount < 2) {
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        console.log(`[unified-orders:${cid}] 🔄 Tentando novamente em ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return refreshIfNeeded(supabase, tokens, cid, authHeader, retryCount + 1);
+      }
     }
   }
   

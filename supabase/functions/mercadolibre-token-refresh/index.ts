@@ -145,14 +145,21 @@ Deno.serve(async (req) => {
 
     console.log('[ML Token Refresh] Enviando request para ML API...');
     
+    // Implementar timeout de 30 segundos
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    
     const resp = await fetch("https://api.mercadolibre.com/oauth/token", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         Accept: "application/json"
       },
-      body: params.toString()
+      body: params.toString(),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const raw = await resp.text();
     
