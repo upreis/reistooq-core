@@ -12,6 +12,7 @@ import {
 import { mapMLShippingSubstatus } from '@/utils/mlStatusMapping';
 import { formatDate } from '@/lib/format';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePedidosCache } from '@/hooks/usePedidosCache';
 import { toast } from 'react-hot-toast';
 import { fetchShopeeOrders } from '@/services/orders';
 
@@ -138,7 +139,8 @@ export function usePedidosManager(initialAccountId?: string) {
   const [integrationAccountId, setIntegrationAccountId] = useState(initialAccountId || '');
   const [fonte, setFonte] = useState<'banco' | 'tempo-real' | 'hibrido'>('hibrido');
   
-  // 🚀 PERFORMANCE: Estados de cache otimizado
+  // 🚀 P3.3: Cache otimizado com TTL de 5 minutos
+  const pedidosCache = usePedidosCache({ ttl: 5 * 60 * 1000 });
   const [cachedAt, setCachedAt] = useState<Date>();
   const [lastQuery, setLastQuery] = useState<string>();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -158,7 +160,8 @@ export function usePedidosManager(initialAccountId?: string) {
   // 🛍️ Contas Shopee disponíveis
   const [availableShopeeAccounts, setAvailableShopeeAccounts] = useState<string[]>([]);
   
-  // ✅ Filtros são usados diretamente sem debounce para aplicação imediata
+  // 🚀 P3.2: Debounce para filtros com 500ms para melhor performance
+  const debouncedFilters = useDebounce(filters, 500);
   
   // 🚀 FASE 3: Filtros salvos (localStorage)
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => {
@@ -1290,7 +1293,7 @@ export function usePedidosManager(initialAccountId?: string) {
       setLoading(true);
       
       // ✅ CORRIGIDO: Carregar todos os dados sem paginação usando filters atuais
-      const apiParams = buildApiParams(filters);
+    const apiParams = buildApiParams(debouncedFilters);
       if (!apiParams) {
         throw new Error('Nenhuma conta disponível para exportação');
       }

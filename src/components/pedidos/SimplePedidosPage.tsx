@@ -221,9 +221,9 @@ function SimplePedidosPage({ className }: Props) {
     }
   }, [filtersManager.appliedFilters]);
   
-  // 🔧 Sistema de colunas unificado com persistência automatica
+  // 🔧 P3.1: Sistema de colunas unificado com persistência automatica (memoizado)
   const columnManager = useColumnManager();
-  const visibleColumns = columnManager.state.visibleColumns;
+  const visibleColumns = useMemo(() => columnManager.state.visibleColumns, [columnManager.state.visibleColumns]);
   
   
   
@@ -239,7 +239,7 @@ function SimplePedidosPage({ className }: Props) {
   const [showMapeamentoModal, setShowMapeamentoModal] = useState(false);
   const [pedidoParaMapeamento, setPedidoParaMapeamento] = useState<any>(null);
   
-  // 🧠 Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE
+  // 🧠 P3.2: Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE (debounce aumentado)
   const {
     mappingData,
     isProcessingMappings,
@@ -249,7 +249,7 @@ function SimplePedidosPage({ className }: Props) {
   } = usePedidosMappingsOptimized({
     enabled: true,
     autoProcess: true,
-    debounceMs: 800, // ✅ Debounce maior para evitar múltiplas execuções
+    debounceMs: 1000, // P3.2: Debounce maior para melhor performance (1s)
     onMappingUpdate: (mappings) => {
       // Callback silencioso para performance
     }
@@ -283,10 +283,15 @@ function SimplePedidosPage({ className }: Props) {
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
   
-  // Hook para contadores agregados (totais globais para os cards)
-  const { counts: globalCounts, loading: loadingCounts } = usePedidosAggregator(
+  // P3.1: Hook para contadores agregados (totais globais para os cards) - memoizado
+  const aggregatorParams = useMemo(() => ({
     integrationAccountId,
-    filtersManager.appliedFilters
+    filters: filtersManager.appliedFilters
+  }), [integrationAccountId, filtersManager.appliedFilters]);
+  
+  const { counts: globalCounts, loading: loadingCounts } = usePedidosAggregator(
+    aggregatorParams.integrationAccountId,
+    aggregatorParams.filters
   );
   
   // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
@@ -294,7 +299,7 @@ function SimplePedidosPage({ className }: Props) {
     return persistentState.persistedState?.quickFilter as any || 'all';
   });
 
-  // Lista exibida considerando o filtro rápido (não altera filtros da busca)
+  // P3.1: Lista exibida considerando o filtro rápido (memoizada para performance)
   const displayedOrders = useMemo(() => {
     if (!orders || quickFilter === 'all') return orders;
     return orders.filter((order: any) => {
@@ -374,12 +379,22 @@ function SimplePedidosPage({ className }: Props) {
     }
   }, [persistentState.isStateLoaded]);
   
-  // 🔄 SALVAR DADOS quando eles mudarem (após busca)
+// 🔄 P3.1: SALVAR DADOS quando eles mudarem (após busca) - com debounce
+  const debouncedSaveData = useMemo(() => {
+    let timeoutId: NodeJS.Timeout;
+    return (orders: any[], total: number, currentPage: number) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        persistentState.saveOrdersData(orders, total, currentPage);
+      }, 1000); // Debounce de 1s para evitar saves excessivos
+    };
+  }, [persistentState]);
+
   useEffect(() => {
     if (orders && orders.length > 0 && !loading) {
-      persistentState.saveOrdersData(orders, total, currentPage);
+      debouncedSaveData(orders, total, currentPage);
     }
-  }, [orders, total, currentPage, loading]);
+  }, [orders, total, currentPage, loading, debouncedSaveData]);
   
   // 🔄 SALVAR FILTRO RÁPIDO quando mudar
   const handleQuickFilterChange = useCallback((newFilter: typeof quickFilter) => {

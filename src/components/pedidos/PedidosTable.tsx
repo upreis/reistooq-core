@@ -8,6 +8,8 @@ import { translateShippingSubstatus } from '@/utils/pedidos-translations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonTable } from '@/components/ui/skeleton-table';
+import { PedidosTableRow } from './PedidosTableRow';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Table,
@@ -138,12 +140,7 @@ export function PedidosTable({
   const endItem = Math.min(page * pageSize, total);
 
   if (loading) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
+    return <SkeletonTable rows={10} columns={visibleColumns.length} />;
   }
 
   if (error) {
@@ -234,187 +231,15 @@ export function PedidosTable({
               const rowId = getRowId(row);
               
               return (
-                <TableRow
+                <PedidosTableRow
                   key={rowId}
-                  className={
-                    "border-l-4 " +
-                    (temMapeamento
-                      ? "border-l-emerald-500/60 bg-emerald-500/5 hover:bg-emerald-500/10 dark:bg-emerald-500/10"
-                      : "border-l-amber-500/60 bg-amber-500/5 hover:bg-amber-500/10 dark:bg-amber-500/10")
-                  }>
-                  <TableCell>
-                    <input
-                      type="checkbox"
-                      checked={selectedRows.has(rowId)}
-                      onChange={(e) => handleRowSelection(rowId, e.target.checked)}
-                      className="rounded border-border bg-background"
-                    />
-                  </TableCell>
-                  
-                  {/* Render each visible column */}
-                  {visibleColumnConfigs.map((col) => (
-                    <TableCell key={col.key}>
-                      {(() => {
-                        switch (col.key) {
-                          // UNIFIED columns with fallbacks
-                          case 'numero':
-                            const numero = get(row.unified, 'numero') ?? String(get(row.raw, 'id'));
-                            return (
-                              <div className="flex items-center gap-2">
-                                <span>{show(numero)}</span>
-                                {temMapeamento ? (
-                                  <Badge variant="outline" className="text-xs bg-emerald-500/10">
-                                    Mapeado
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-xs bg-amber-500/10">
-                                    Sem Map.
-                                  </Badge>
-                                )}
-                              </div>
-                            );
-                          case 'id_unico':
-                            return (
-                              <div className="font-mono text-xs">
-                                {show(get(row.unified, 'id_unico') ?? get(row.raw, 'id_unico') ?? get(row.unified, 'id') ?? get(row.raw, 'id'))}
-                              </div>
-                            );
-                          case 'nome_cliente':
-                            return show(get(row.unified, 'nome_cliente') ?? get(row.raw, 'buyer.nickname'));
-                          case 'nome_completo':
-                            return show(get(row.unified, 'nome_destinatario') ?? get(row.raw, 'shipping.destination.receiver_name') ?? '—');
-                          case 'cpf_cnpj':
-                            return maskCpfCnpj(get(row.unified, 'cpf_cnpj'));
-                          case 'data_pedido':
-                            return formatDate(get(row.unified, 'data_pedido') ?? get(row.raw, 'date_created'));
-                          case 'data_prevista':
-                            return formatDate(get(row.unified, 'data_prevista') ?? get(row.raw, 'date_closed'));
-                            case 'situacao':
-                              const situacao = get(row.unified, 'situacao') ?? get(row.raw, 'status');
-                              const mappedSituacao = mapMLStatus(situacao);
-                              return (
-                                <Badge variant={getStatusBadgeVariant(situacao)}>
-                                  {mappedSituacao}
-                                </Badge>
-                              );
-                          case 'valor_total':
-                            return formatMoney(get(row.unified, 'valor_total'));
-                          case 'valor_frete':
-                            return formatMoney(get(row.unified, 'valor_frete') ?? get(row.raw, 'payments.0.shipping_cost'));
-                          case 'valor_desconto':
-                            return formatMoney(get(row.unified, 'valor_desconto'));
-                          case 'numero_ecommerce':
-                            return show(get(row.unified, 'numero_ecommerce') ?? get(row.raw, 'id'));
-                          case 'numero_venda':
-                            return show(get(row.unified, 'numero_venda') ?? get(row.raw, 'id'));
-                          case 'empresa':
-                            return show(get(row.unified, 'empresa') ?? 'mercadolivre');
-                          case 'cidade':
-                            return show(get(row.unified, 'cidade') ?? get(row.raw, 'shipping_details.receiver_address.city.name'));
-                          case 'uf':
-                            return show(get(row.unified, 'uf') ?? get(row.raw, 'shipping_details.receiver_address.state.id'));
-                           case 'cep':
-                             return show(get(row.raw, 'shipping_details.receiver_address.zip_code'));
-                           case 'endereco_rua':
-                             return show(get(row.unified, 'endereco_rua') ?? get(row.raw, 'shipping_details.receiver_address.street_name') ?? get(row.raw, 'shipping.receiver_address.street_name'));
-                           case 'endereco_numero':
-                             return show(get(row.unified, 'endereco_numero') ?? get(row.raw, 'shipping_details.receiver_address.street_number') ?? get(row.raw, 'shipping.receiver_address.street_number'));
-                           case 'endereco_bairro':
-                             return show(get(row.unified, 'endereco_bairro') ?? get(row.raw, 'shipping_details.receiver_address.neighborhood.name') ?? get(row.raw, 'shipping.receiver_address.neighborhood.name'));
-                            case 'shipping_status':
-                              const shippingStatus = get(row.raw, 'shipping_details.status');
-                              const mappedStatus = mapMLStatus(shippingStatus);
-                              return (
-                                <Badge variant={getStatusBadgeVariant(shippingStatus)}>
-                                  {mappedStatus}
-                                </Badge>
-                              );
-                           case 'shipping_mode':
-                             return show(get(row.raw, 'shipping_details.shipping_mode'));
-                             case 'shipping_substatus':
-                               const rawSubstatus = get(row.raw, 'shipping_details.substatus');
-                               const translatedSubstatus = translateShippingSubstatus(rawSubstatus);
-                               return (
-                                 <Badge variant={getStatusBadgeVariant('', rawSubstatus)}>
-                                   {translatedSubstatus}
-                                 </Badge>
-                               );
-                            
-                             // ===== COLUNAS AVANÇADAS REMOVIDAS =====
-                           
-                           case 'codigo_rastreamento':
-                            return show(get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping_details.tracking_number'));
-                          case 'url_rastreamento':
-                            return show(get(row.unified, 'url_rastreamento') ?? get(row.raw, 'shipping_details.tracking_url'));
-                          case 'obs':
-                            return <TruncatedCell content={get(row.unified, 'obs')} />;
-                          case 'obs_interna':
-                            return <TruncatedCell content={get(row.unified, 'obs_interna')} />;
-                          
-                          // RAW columns from ML orders/search
-                          case 'pack_id':
-                            return show(get(row.raw, 'pack_id'));
-                          case 'pickup_id':
-                            return show(get(row.raw, 'pickup_id'));
-                          case 'manufacturing_ending_date':
-                            return formatDate(get(row.raw, 'manufacturing_ending_date'));
-                          case 'comment':
-                            return <TruncatedCell content={get(row.raw, 'comment')} maxLength={30} />;
-                          case 'status_detail':
-                            return show(get(row.raw, 'status_detail'));
-                          case 'tags':
-                            const tags = get(row.raw, 'tags');
-                            return Array.isArray(tags) && tags.length ? (
-                              <div className="flex flex-wrap gap-1">
-                                {tags.slice(0, 2).map((tag, idx) => (
-                                  <Badge key={idx} variant="outline" className="text-xs">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                                {tags.length > 2 && (
-                                  <span className="text-xs text-muted-foreground">
-                                    +{tags.length - 2}
-                                  </span>
-                                )}
-                              </div>
-                            ) : show(tags);
-                          case 'buyer_id':
-                            return show(get(row.raw, 'buyer.id'));
-                          case 'seller_id':
-                            return show(get(row.raw, 'seller.id'));
-                          case 'shipping_id':
-                            return show(get(row.raw, 'shipping.id')); // correto: shipping.id
-                          case 'date_created':
-                            return formatDate(get(row.raw, 'date_created'));
-                          case 'date_closed':
-                            return formatDate(get(row.raw, 'date_closed'));
-                          case 'last_updated':
-                            return formatDate(get(row.raw, 'last_updated'));
-                          
-                          // SKU extraction from order items
-                          case 'sku': {
-                            const items = get(row.raw, 'order_items');
-                            if (Array.isArray(items)) {
-                              const skus = items
-                                .map((it: any) => get(it, 'item.seller_sku') ?? get(it, 'item.seller_custom_field'))
-                                .filter(Boolean) as string[];
-                              return <TruncatedCell content={skus.join(', ')} maxLength={24} />;
-                            }
-                            return '—';
-                          }
-                          
-                          // Legacy columns - fallback to unified or show placeholder
-                          case 'quantidade':
-                            const items = get(row.raw, 'order_items');
-                            return Array.isArray(items) ? items.length : show(get(row.unified, 'total_itens'));
-                          
-                          default:
-                            return '—';
-                        }
-                      })()}
-                    </TableCell>
-                  ))}
-                </TableRow>
+                  row={row}
+                  isSelected={selectedRows.has(rowId)}
+                  onSelect={handleRowSelection}
+                  temMapeamento={temMapeamento}
+                  visibleColumns={visibleColumnConfigs}
+                  rowId={rowId}
+                />
               );
             })}
           </TableBody>
