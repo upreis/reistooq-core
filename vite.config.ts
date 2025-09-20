@@ -26,7 +26,14 @@ export default defineConfig(({ mode }) => ({
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
       "scheduler",
-      "@tanstack/react-query"
+      // ✅ ADICIONADOS - Previne múltiplas instâncias:
+      "@tanstack/react-query",
+      "@radix-ui/react-slot",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-tooltip",
+      "lucide-react",
+      "framer-motion"
     ],
   },
   optimizeDeps: {

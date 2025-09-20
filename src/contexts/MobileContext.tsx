@@ -14,7 +14,13 @@ interface MobileContextType {
   showNotification: (title: string, body: string) => void;
 }
 
-const MobileContext = createContext<MobileContextType | null>(null);
+const MobileContext = createContext<MobileContextType>({
+  isNative: false,
+  platform: 'web',
+  registerForPushNotifications: async () => {},
+  vibrate: async () => {},
+  showNotification: () => {}
+});
 
 export function MobileProvider({ children }: { children: ReactNode }) {
   const [isNative] = useState(Capacitor.isNativePlatform());
@@ -149,7 +155,14 @@ export function MobileProvider({ children }: { children: ReactNode }) {
 export const useMobile = () => {
   const context = useContext(MobileContext);
   if (!context) {
-    throw new Error('useMobile must be used within a MobileProvider');
+    console.warn('useMobile usado fora do MobileProvider - usando valores padrão');
+    return {
+      isNative: false,
+      platform: 'web',
+      registerForPushNotifications: async () => {},
+      vibrate: async () => {},
+      showNotification: () => {}
+    };
   }
   return context;
 };

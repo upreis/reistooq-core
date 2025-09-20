@@ -7,7 +7,12 @@ type SidebarUIState = {
   setIsMobileSidebarOpen: (v: boolean) => void;
 };
 
-const SidebarUIContext = createContext<SidebarUIState | null>(null);
+const SidebarUIContext = createContext<SidebarUIState>({
+  isSidebarCollapsed: false,
+  setIsSidebarCollapsed: () => {},
+  isMobileSidebarOpen: false,
+  setIsMobileSidebarOpen: () => {}
+});
 const LS_KEY = "ui.sidebar.collapsed";
 
 export function SidebarUIProvider({ children }: { children: ReactNode }) {
@@ -35,6 +40,14 @@ export function SidebarUIProvider({ children }: { children: ReactNode }) {
 
 export function useSidebarUI() {
   const ctx = useContext(SidebarUIContext);
-  if (!ctx) throw new Error("useSidebarUI must be used within SidebarUIProvider");
+  if (!ctx) {
+    console.warn("useSidebarUI usado fora do SidebarUIProvider - usando valores padrão");
+    return {
+      isSidebarCollapsed: false,
+      setIsSidebarCollapsed: () => {},
+      isMobileSidebarOpen: false,
+      setIsMobileSidebarOpen: () => {}
+    };
+  }
   return ctx;
 }
