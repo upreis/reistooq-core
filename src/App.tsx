@@ -16,6 +16,8 @@ import { MaintenanceMode } from '@/components/MaintenanceMode';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { LoadingPage } from '@/components/ui/loading-states';
+import { useSystemAlerts } from '@/hooks/useSystemAlerts';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 // Import pages
 import NotFound from "./pages/NotFound";
@@ -48,6 +50,7 @@ import Banners from "./pages/Banners";
 import Charts from "./pages/Charts";
 import SolarIcons from "./pages/SolarIcons";
 import AdminPage from "./pages/AdminPage";
+import SystemAdmin from "./pages/SystemAdmin";
 import AcceptInvite from "./pages/AcceptInvite";
 import ResetPassword from "./pages/ResetPassword";
 import CategoryManager from "./pages/CategoryManager";
@@ -65,6 +68,11 @@ const queryClient = new QueryClient({
 
 function App() {
   const { isRequired: onboardingRequired, loading: onboardingLoading } = useOnboarding();
+  
+  // Sistema de alertas automáticos (apenas para admins)
+  const { permissions } = useUserPermissions();
+  const hasAdminAccess = permissions.includes('admin:access') || permissions.includes('system:admin');
+  useSystemAlerts(hasAdminAccess && config.features.enableErrorReporting);
 
   // Validar configuração na inicialização
   React.useEffect(() => {
