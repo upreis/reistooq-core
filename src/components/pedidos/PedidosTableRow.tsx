@@ -3,7 +3,8 @@ import React, { memo } from 'react';
 import { Row } from '@/services/orders';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { mapMLStatus, getStatusBadgeVariant } from '@/utils/mlStatusMapping';
+// F4.2: Usar sistema unificado de status
+import { StatusMappingService } from '@/utils/statusMapping';
 import { translateShippingSubstatus } from '@/utils/pedidos-translations';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
@@ -109,18 +110,22 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 return formatMoney(get(row.unified, 'valor_total'));
               case 'situacao':
                 const situacao = get(row.unified, 'situacao') ?? get(row.raw, 'status');
-                const mappedSituacao = mapMLStatus(situacao);
+                // F4.2: Usar sistema unificado de status
+                const mappedSituacao = StatusMappingService.translateStatus(situacao, 'mercadolivre', 'order');
+                const badgeVariant = StatusMappingService.getStatusBadgeVariant(situacao, 'mercadolivre', 'order');
                 return (
-                  <Badge variant={getStatusBadgeVariant(situacao)}>
+                  <Badge variant={badgeVariant}>
                     {mappedSituacao}
                   </Badge>
                 );
               case 'shipping_status':
                 const shippingStatus = get(row.raw, 'shipping_details.status');
-                const mappedStatus = mapMLStatus(shippingStatus);
+                // F4.2: Usar sistema unificado de status
+                const mappedShippingStatus = StatusMappingService.translateStatus(shippingStatus, 'mercadolivre', 'shipping');
+                const shippingBadgeVariant = StatusMappingService.getStatusBadgeVariant(shippingStatus, 'mercadolivre', 'shipping');
                 return (
-                  <Badge variant={getStatusBadgeVariant(shippingStatus)}>
-                    {mappedStatus}
+                  <Badge variant={shippingBadgeVariant}>
+                    {mappedShippingStatus}
                   </Badge>
                 );
               case 'obs':

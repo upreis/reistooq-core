@@ -3,7 +3,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Row, get, show } from '@/services/orders';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-import { mapMLStatus, getStatusBadgeVariant } from '@/utils/mlStatusMapping';
+// F4.2: Usar sistema unificado de mapeamento de status
+import { StatusMappingService } from '@/utils/statusMapping';
 import { translateShippingSubstatus } from '@/utils/pedidos-translations';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

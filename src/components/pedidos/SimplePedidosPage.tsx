@@ -104,53 +104,66 @@ type Props = {
   className?: string;
 };
 
-function SimplePedidosPage({ className }: Props) {
+// F4.3: Envolver componentes críticos com Error Boundary
+const SimplePedidosPageWithErrorBoundary = withErrorBoundary(SimplePedidosPage, 'SimplePedidosPage');
+
+function SimplePedidosPageBase({ className }: Props) {
   const isMobile = useIsMobile();
   
+// F4.1: Sistema de validação e limpeza automática de localStorage
+import { LocalStorageValidator, useStorageValidation } from '@/utils/storageValidation';
+import { ErrorBoundary, withErrorBoundary } from '@/components/common/ErrorBoundary';
+
+type Props = {
+  className?: string;
+};
+
+function SimplePedidosPage({ className }: Props) {
+  const isMobile = useIsMobile();
+  const { cleanStorage, validateAndGet, checkHealth } = useStorageValidation();
   
-  // ✅ CORREÇÃO CRÍTICA: Limpar filtros problemáticos do localStorage e cache de colunas
+  // F4.1: CORREÇÃO CRÍTICA - Limpeza automática e validação de localStorage
   useEffect(() => {
     try {
-      // Limpar localStorage com filtros corrompidos/problemáticos
-      const keys = ['pedidos_unified_filters', 'pedidos_persistent_state', 'pedidos-saved-filters'];
-      keys.forEach(key => {
-        const saved = localStorage.getItem(key);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          // ✅ CORREÇÃO: Status de envio removido - apenas limpar localStorage antigo
-          if (parsed.statusEnvio?.length > 0 || parsed.filters?.statusEnvio?.length > 0) {
-            console.log('🗑️ Removendo filtros de status de envio antigos:', key, parsed);
-            localStorage.removeItem(key);
-          }
-        }
-      });
+      console.log('🧹 [F4.1] Iniciando limpeza e validação de localStorage...');
       
-      // ✅ FORÇAR ATUALIZAÇÃO: Limpar cache de colunas para reconhecer novas colunas avançadas
-      const columnCacheKeys = ['pedidos-column-preferences', 'pedidos:lastSearch'];
-      const hasOldColumns = columnCacheKeys.some(key => {
-        const stored = localStorage.getItem(key);
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            // Verificar se não tem as novas colunas avançadas
-            const visibleColumns = parsed.visibleColumns || {};
-            const hasAdvancedColumns = ['order_status_advanced', 'shipping_status_advanced'].some(col => 
-              Array.isArray(visibleColumns) ? visibleColumns.includes(col) : visibleColumns[col]
-            );
-            return !hasAdvancedColumns; // Se não tem, precisa limpar
-          } catch {
-            return true; // Se erro, limpar
-          }
-        }
-        return false;
-      });
-      
-      if (hasOldColumns) {
-        console.log('🔄 Limpando cache de colunas para incluir colunas avançadas...');
-        columnCacheKeys.forEach(key => localStorage.removeItem(key));
+      // Verificar saúde geral do localStorage
+      const health = checkHealth();
+      if (!health.healthy) {
+        console.warn('⚠️ [Storage Health] Problemas detectados:', health.issues);
+        toast.warning(`Problemas no armazenamento local: ${health.issues.join(', ')}`);
       }
+      
+      // Limpeza automática de dados corrompidos
+      const cleaned = LocalStorageValidator.cleanCorruptedStorage([
+        'pedidos_unified_filters',
+        'pedidos_persistent_state', 
+        'pedidos-saved-filters',
+        'pedidos-column-preferences',
+        'pedidos:lastSearch'
+      ]);
+      
+      if (cleaned > 0) {
+        console.log(`✅ [F4.1] ${cleaned} entradas corrompidas foram limpas`);
+      }
+      
+      // Limpar cache de colunas se necessário para incluir novas colunas
+      const columnCache = validateAndGet('pedidos-column-preferences', null);
+      if (columnCache && typeof columnCache === 'object') {
+        const visibleColumns = columnCache.visibleColumns || {};
+        const hasAdvancedColumns = ['order_status_advanced', 'shipping_status_advanced'].some(col => 
+          Array.isArray(visibleColumns) ? visibleColumns.includes(col) : visibleColumns[col]
+        );
+        
+        if (!hasAdvancedColumns) {
+          localStorage.removeItem('pedidos-column-preferences');
+          console.log('🔄 [F4.1] Cache de colunas atualizado para incluir colunas avançadas');
+        }
+      }
+      
     } catch (error) {
-      console.warn('Erro ao limpar filtros problemáticos:', error);
+      console.error('❌ [F4.1] Erro durante limpeza de localStorage:', error);
+      toast.error('Erro ao limpar dados locais. Alguns recursos podem não funcionar corretamente.');
     }
   }, []);
   
@@ -889,6 +902,7 @@ useEffect(() => {
             orders={orders || []}
             loading={loading}
           />
+        </ErrorBoundary>
 
       {/* 🛡️ HEADER BLINDADO */}
       <PedidosHeaderSection
@@ -952,7 +966,9 @@ useEffect(() => {
       )}
 
       {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
-      <PedidosFiltersUnified
+        {/* F4.3: PedidosFiltersUnified com Error Boundary */}
+        <ErrorBoundary name="PedidosFiltersUnified">
+          <PedidosFiltersUnified
         filters={filtersManager.filters}
         appliedFilters={filtersManager.appliedFilters}
         onFilterChange={filtersManager.updateFilter}
@@ -1024,7 +1040,8 @@ useEffect(() => {
                     onSelect={(date) => filtersManager.updateFilter('dataInicio', date)}
                     initialFocus
                     className="pointer-events-auto"
-                  />
+              />
+            </ErrorBoundary>
                 </PopoverContent>
               </Popover>
             </div>
@@ -1105,7 +1122,9 @@ useEffect(() => {
 
       {/* 🚀 FASE 2: Loading otimizado */}
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}
-      <PedidosTableSection
+            {/* F4.3: PedidosTableSection com Error Boundary */}
+            <ErrorBoundary name="PedidosTableSection">
+              <PedidosTableSection
         orders={displayedOrders}
         total={total}
         loading={loading}
@@ -1167,4 +1186,5 @@ useEffect(() => {
   );
 }
 
-export default memo(SimplePedidosPage);
+// F4.3: Exportar versão com Error Boundary
+export default SimplePedidosPageWithErrorBoundary;
