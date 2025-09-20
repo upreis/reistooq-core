@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { logger } from '@/utils/logger';
+import { config, isProduction } from '@/config/environment';
 
 interface Props {
   children: ReactNode;
@@ -28,8 +29,33 @@ export class ErrorBoundary extends Component<Props, State> {
     logger.error('ErrorBoundary caught an error', {
       error: error.message,
       stack: error.stack,
-      componentStack: errorInfo.componentStack
+      componentStack: errorInfo.componentStack,
+      userAgent: navigator.userAgent,
+      url: window.location.href,
+      timestamp: new Date().toISOString()
     }, 'ERROR_BOUNDARY');
+
+    // Em produção, enviar erro para monitoramento
+    if (isProduction && config.features.enableErrorReporting) {
+      // TODO: Integrar com Sentry/LogRocket
+      this.reportErrorToService(error, errorInfo);
+    }
+  }
+
+  private reportErrorToService(error: Error, errorInfo: ErrorInfo) {
+    // Placeholder para futura integração com serviço de monitoramento
+    const errorData = {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+      version: config.app.version
+    };
+
+    // Em produção, aqui seria enviado para Sentry, LogRocket, etc.
+    console.error('Error reported to monitoring service:', errorData);
   }
 
   private handleReload = () => {

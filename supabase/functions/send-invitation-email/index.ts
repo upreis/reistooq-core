@@ -79,7 +79,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Found invitation:', invitation.id, 'for email:', invitation.email);
 
     // Generate invitation URL - use production domain
-    const inviteUrl = `https://258a105b-decd-40ba-b5d1-b7ec18beb5b0.lovableproject.com/convite/${invitation.token}`;
+    const baseUrl = Deno.env.get('APP_BASE_URL') || 'https://app.reistoq.com.br';
+    const inviteUrl = `${baseUrl}/convite/${invitation.token}`;
 
     console.log('Sending email to:', invitation.email);
 

@@ -11,6 +11,8 @@ import { MobileProvider } from "@/contexts/MobileContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
+import { config, validateConfig } from '@/config/environment';
+import { MaintenanceMode } from '@/components/MaintenanceMode';
 
 // Import pages
 import NotFound from "./pages/NotFound";
@@ -59,6 +61,19 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // Validar configuração na inicialização
+  React.useEffect(() => {
+    const validation = validateConfig();
+    if (!validation.valid) {
+      console.error('❌ Configuration errors:', validation.errors);
+    }
+  }, []);
+
+  // Verificar modo de manutenção
+  if (config.features.maintenanceMode) {
+    return <MaintenanceMode />;
+  }
+
   try {
     return (
       <QueryClientProvider client={queryClient}>
