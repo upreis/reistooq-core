@@ -107,9 +107,10 @@ function App() {
         <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
           <TooltipProvider>
           <AuthProvider>
+            <SystemAlertsProvider>
             <MobileProvider>
               <SidebarUIProvider>
-                <SystemAlertsProvider>
+                
                   <Toaster />
                   <Sonner />
                 <Routes>
@@ -356,9 +357,10 @@ function App() {
                   {/* Catch all */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-                </SystemAlertsProvider>
+                
               </SidebarUIProvider>
             </MobileProvider>
+            </SystemAlertsProvider>
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
