@@ -3,7 +3,7 @@ import React, { memo } from 'react';
 import { Row } from '@/services/orders';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
-// F4.2: Usar sistema unificado de status
+// F4.2: Sistema unificado de mapeamento de status - atualizado
 import { mapApiStatusToLabel, getStatusBadgeVariant } from '@/utils/statusMapping';
 import { translateShippingSubstatus } from '@/utils/pedidos-translations';
 import { Badge } from '@/components/ui/badge';
