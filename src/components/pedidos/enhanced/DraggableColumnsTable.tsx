@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { VirtualTable } from '@/components/ui/virtual-table';
+import VirtualTable from '@/components/ui/virtual-table';
 import { cn } from '@/lib/utils';
 
 interface ColumnConfig {
@@ -319,14 +319,11 @@ export function DraggableColumnsTable({
             ) : (
               <VirtualTable
                 data={data}
-                columns={virtualTableColumns.map(col => ({
-                  key: col.key,
-                  header: col.label,
-                  width: col.width,
-                  render: col.render
-                }))}
+                columns={virtualTableColumns}
                 height={height - 60}
                 onRowClick={onRowClick}
+                enableVirtualization={enableVirtualization}
+                threshold={500}
               />
             )}
           </div>
