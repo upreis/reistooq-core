@@ -48,6 +48,10 @@ import { usePersistentPedidosState } from '@/hooks/usePersistentPedidosState';
 
 // ✅ SISTEMA UNIFICADO DE FILTROS
 import { usePedidosFiltersUnified } from '@/hooks/usePedidosFiltersUnified';
+
+// F4.1: Sistema de validação e limpeza automática de localStorage
+import { LocalStorageValidator, useStorageValidation } from '@/utils/storageValidation';
+import { ErrorBoundary, withErrorBoundary } from '@/components/common/ErrorBoundary';
 import { PedidosFiltersUnified } from './PedidosFiltersUnified';
 import { StatusFilters } from '@/features/orders/types/orders-status.types';
 
@@ -104,19 +108,8 @@ type Props = {
   className?: string;
 };
 
-// F4.3: Envolver componentes críticos com Error Boundary
-const SimplePedidosPageWithErrorBoundary = withErrorBoundary(SimplePedidosPage, 'SimplePedidosPage');
-
-function SimplePedidosPageBase({ className }: Props) {
+function SimplePedidosPage({ className }: Props) {
   const isMobile = useIsMobile();
-  
-// F4.1: Sistema de validação e limpeza automática de localStorage
-import { LocalStorageValidator, useStorageValidation } from '@/utils/storageValidation';
-import { ErrorBoundary, withErrorBoundary } from '@/components/common/ErrorBoundary';
-
-type Props = {
-  className?: string;
-};
 
 function SimplePedidosPage({ className }: Props) {
   const isMobile = useIsMobile();
@@ -898,11 +891,12 @@ useEffect(() => {
       <TabsContent value="orders" className="flex-1 overflow-auto m-0 p-6">
         <div className="space-y-6">
           {/* 📊 DASHBOARD INTELIGENTE */}
-          <PedidosDashboardSection 
-            orders={orders || []}
-            loading={loading}
-          />
-        </ErrorBoundary>
+          <ErrorBoundary name="PedidosDashboardSection">
+            <PedidosDashboardSection 
+              orders={orders || []}
+              loading={loading}
+            />
+          </ErrorBoundary>
 
       {/* 🛡️ HEADER BLINDADO */}
       <PedidosHeaderSection
@@ -987,6 +981,7 @@ useEffect(() => {
         onAdvancedStatusFiltersChange={handleAdvancedStatusFiltersChange}
         onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
       />
+        </ErrorBoundary>
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
       <Card className="p-4" style={{ display: 'none' }}>
@@ -1040,8 +1035,7 @@ useEffect(() => {
                     onSelect={(date) => filtersManager.updateFilter('dataInicio', date)}
                     initialFocus
                     className="pointer-events-auto"
-              />
-            </ErrorBoundary>
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -1173,6 +1167,7 @@ useEffect(() => {
         hasActiveFilters={filtersManager.hasActiveFilters}
         columnManager={columnManager}
       />
+            </ErrorBoundary>
         </div>
       </TabsContent>
 
@@ -1185,6 +1180,9 @@ useEffect(() => {
     </Tabs>
   );
 }
+
+// F4.3: Envolver componentes críticos com Error Boundary
+const SimplePedidosPageWithErrorBoundary = withErrorBoundary(SimplePedidosPage, 'SimplePedidosPage');
 
 // F4.3: Exportar versão com Error Boundary
 export default SimplePedidosPageWithErrorBoundary;

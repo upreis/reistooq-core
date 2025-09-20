@@ -1,5 +1,5 @@
 // F4.4: Sistema aprimorado de permissões com fallbacks seguros
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'react-hot-toast';
 
@@ -334,14 +334,14 @@ export function PermissionGate({
   
   // Loading state
   if (hasAccess === null) {
-    return fallback;
+    return React.createElement(React.Fragment, null, fallback);
   }
   
   // Access granted
   if (hasAccess) {
-    return <>{children}</>;
+    return React.createElement(React.Fragment, null, children);
   }
   
   // Access denied
-  return <>{fallback}</>;
+  return React.createElement(React.Fragment, null, fallback);
 }
