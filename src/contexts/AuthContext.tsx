@@ -13,7 +13,14 @@ interface AuthContextType {
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  signIn: async () => ({ error: new Error('AuthContext não inicializado') }),
+  signUp: async () => ({ error: new Error('AuthContext não inicializado') }),
+  signOut: async () => ({ error: new Error('AuthContext não inicializado') }),
+  loading: true,
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -123,7 +130,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    console.warn('useAuth usado fora do AuthProvider - usando valores padrão');
+    return {
+      user: null,
+      session: null,
+      signIn: async () => ({ error: new Error('AuthContext não disponível') }),
+      signUp: async () => ({ error: new Error('AuthContext não disponível') }),
+      signOut: async () => ({ error: new Error('AuthContext não disponível') }),
+      loading: false,
+    };
   }
   return context;
 }
