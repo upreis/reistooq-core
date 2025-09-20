@@ -17,6 +17,9 @@ import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { LoadingPage } from '@/components/ui/loading-states';
 import { SystemAlertsProvider } from '@/components/system/SystemAlertsProvider';
+import { performanceMonitor } from '@/utils/performance-monitor';
+import { prefetchManager } from '@/utils/prefetch';
+import { usePerformance } from '@/hooks/usePerformance';
 
 // Lazy load all pages for better performance
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -135,6 +138,18 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  // Start app initialization timer
+  React.useEffect(() => {
+    performanceMonitor.startTimer('app_initialization');
+  }, []);
+
+  // Performance monitoring para o App principal
+  const { trackAsync } = usePerformance({ 
+    componentName: 'App',
+    trackRender: true,
+    trackMount: true 
+  });
+
   const { isRequired: onboardingRequired, loading: onboardingLoading } = useOnboarding();
 
   // Validar configuração na inicialização
@@ -143,6 +158,78 @@ function App() {
     if (!validation.valid) {
       console.error('❌ Configuration errors:', validation.errors);
     }
+  }, []);
+
+  // Setup QueryClient for prefetching
+  React.useEffect(() => {
+    prefetchManager.setQueryClient(queryClient);
+  }, []);
+
+  // Track route changes for prefetching
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentRoute = window.location.pathname;
+      prefetchManager.prefetchRoute(currentRoute);
+      
+      // Track navigation performance
+      performanceMonitor.increment('route_navigation', 1, {
+        route: currentRoute,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [typeof window !== 'undefined' ? window.location.pathname : '/']);
+
+  // Performance monitoring setup
+  React.useEffect(() => {
+    // Track initial app load
+    performanceMonitor.endTimer('app_initialization');
+    
+    // Setup global error tracking
+    const originalError = console.error;
+    console.error = (...args) => {
+      performanceMonitor.increment('console_errors', 1);
+      originalError.apply(console, args);
+    };
+
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
+
+  // Setup QueryClient for prefetching
+  React.useEffect(() => {
+    prefetchManager.setQueryClient(queryClient);
+  }, []);
+
+  // Track route changes for prefetching
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const currentRoute = window.location.pathname;
+      prefetchManager.prefetchRoute(currentRoute);
+      
+      // Track navigation performance
+      performanceMonitor.increment('route_navigation', 1, {
+        route: currentRoute,
+        timestamp: new Date().toISOString()
+      });
+    }
+  }, [typeof window !== 'undefined' ? window.location.pathname : '/']);
+
+  // Performance monitoring setup
+  React.useEffect(() => {
+    // Track initial app load
+    performanceMonitor.endTimer('app_initialization');
+    
+    // Setup global error tracking
+    const originalError = console.error;
+    console.error = (...args) => {
+      performanceMonitor.increment('console_errors', 1);
+      originalError.apply(console, args);
+    };
+
+    return () => {
+      console.error = originalError;
+    };
   }, []);
 
   // Verificar modo de manutenção
