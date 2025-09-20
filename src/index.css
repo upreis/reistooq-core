@@ -36,6 +36,63 @@
     min-width: 0;
     max-width: 100%;
   }
+
+  /* F5.3: Smooth transitions for better UX */
+  * {
+    transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease, 
+                fill 300ms ease, stroke 300ms ease, opacity 300ms ease, 
+                box-shadow 300ms ease, transform 300ms ease, filter 300ms ease, 
+                backdrop-filter 300ms ease;
+  }
+
+  /* F5.1: Touch-friendly interactions */
+  @media (hover: none) and (pointer: coarse) {
+    .hover\:scale-105:hover {
+      transform: scale(1.02);
+    }
+    
+    button:active,
+    [role="button"]:active {
+      transform: scale(0.98);
+      transition: transform 150ms ease;
+    }
+  }
+
+  /* F5.2: Loading state animations */
+  @keyframes pulse-gentle {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  .animate-pulse-gentle {
+    animation: pulse-gentle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* F5.4: Focus visible improvements */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  
+  /* F5.1: Better scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
   
   /* Ensure main content areas don't overflow */
   main, .main-content {
