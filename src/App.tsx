@@ -89,6 +89,16 @@ function App() {
     return <OnboardingWizard />;
   }
 
+  // Mostrar loading enquanto verifica onboarding
+  if (onboardingLoading) {
+    return <LoadingPage message="Verificando configuração..." />;
+  }
+
+  // Mostrar onboarding se necessário
+  if (onboardingRequired) {
+    return <OnboardingWizard />;
+  }
+
   try {
     return (
       <QueryClientProvider client={queryClient}>
