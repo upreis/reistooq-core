@@ -1,142 +1,262 @@
-# Welcome to your Lovable project
+# ReistoOQ Core - Sistema de Gestão de E-commerce
 
-## Project info
+## 📋 Visão Geral
 
-**URL**: https://lovable.dev/projects/258a105b-decd-40ba-b5d1-b7ec18beb5b0
+O ReistoOQ Core é um sistema completo de gestão para e-commerce, com foco na integração com Mercado Livre e outras plataformas. O sistema oferece gerenciamento de pedidos, estoque, devoluções e relatórios em tempo real.
 
-## How can I edit this code?
+## 🚀 Funcionalidades Principais
 
-There are several ways of editing your application.
+### 📦 Gestão de Pedidos
+- Sincronização automática com Mercado Livre
+- Dashboard unificado de pedidos
+- Filtros avançados e busca inteligente
+- Atualizações em tempo real via webhooks
+- Suporte a múltiplas plataformas
 
-**Use Lovable**
+### 📊 Controle de Estoque
+- Monitoramento em tempo real
+- Alertas de estoque baixo
+- Gestão de composições de produtos
+- Movimentações detalhadas
+- SKU mapping automático
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/258a105b-decd-40ba-b5d1-b7ec18beb5b0) and start prompting.
+### 🔄 Gestão de Devoluções
+- Rastreamento completo de claims
+- Integração com mediações ML
+- Dashboard de devoluções
+- Análise de motivos e padrões
+- Comunicação automatizada
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📈 Relatórios e Analytics
+- Dashboard executivo
+- Métricas de performance
+- Relatórios customizáveis
+- Exportação de dados
+- Monitoramento de saúde do sistema
 
-**Use your preferred IDE**
+## 🛠️ Stack Tecnológica
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend
+- **React 18** com TypeScript
+- **Vite** para build e desenvolvimento
+- **Tailwind CSS** para estilização
+- **Shadcn/ui** para componentes
+- **Zustand** para gerenciamento de estado
+- **React Query** para cache e sincronização
+- **React Router** para navegação
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Backend
+- **Supabase** como BaaS (Backend as a Service)
+- **Edge Functions** para lógica serverless
+- **PostgreSQL** como banco de dados
+- **Row Level Security (RLS)** para segurança
 
-Follow these steps:
+### Integrações
+- **Mercado Livre API** para pedidos e produtos
+- **Webhooks** para atualizações em tempo real
+- **OAuth 2.0** para autenticação segura
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 📱 Mobile & Responsividade
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+O sistema é totalmente responsivo e otimizado para dispositivos móveis:
+- Layout adaptativo para tablet e smartphone
+- Menu hambúrguer para navegação móvel
+- Componentes touch-friendly
+- Performance otimizada para conexões lentas
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🔧 Configuração do Ambiente
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### Pré-requisitos
+- Node.js 18+ 
+- npm ou yarn
+- Conta Supabase
+- Credenciais Mercado Livre (opcional para desenvolvimento)
+
+### Instalação
+
+1. Clone o repositório:
+```bash
+git clone [repository-url]
+cd reistooq-core
+```
+
+2. Instale as dependências:
+```bash
+npm install
+```
+
+3. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env.local
+```
+
+4. Configure o Supabase:
+- Crie um projeto no Supabase
+- Configure as credenciais no arquivo de configuração
+- Execute as migrações de banco
+
+5. Inicie o servidor de desenvolvimento:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🏗️ Arquitetura do Sistema
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/258a105b-decd-40ba-b5d1-b7ec18beb5b0) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
-
-## MercadoLibre Integration Setup
-
-### 1. Cadastrar Aplicação no MercadoLibre
-
-1. Acesse [MercadoLibre Developers](https://developers.mercadolibre.com/)
-2. Faça login e crie uma nova aplicação
-3. Configure as URLs de redirecionamento:
-   - **URL de callback**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service`
-4. Anote o `CLIENT_ID` e `CLIENT_SECRET`
-
-### 2. Configurar Secrets no Supabase
-
-Acesse [Edge Functions Secrets](https://supabase.com/dashboard/project/tdjyfqnxvjgossuncpwm/settings/functions) e configure:
+### Estrutura de Pastas
 
 ```
-ML_CLIENT_ID = seu_client_id_aqui
-ML_CLIENT_SECRET = seu_client_secret_aqui  
-ML_REDIRECT_URI = https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service
-ML_SITE_ID = MLB
-APP_ENCRYPTION_KEY = sua_chave_de_criptografia_segura
+src/
+├── components/          # Componentes React reutilizáveis
+│   ├── ui/             # Componentes base (shadcn)
+│   ├── mobile/         # Componentes otimizados para mobile
+│   ├── pedidos/        # Componentes específicos de pedidos
+│   └── monitoring/     # Componentes de monitoramento
+├── features/           # Features organizadas por domínio
+├── hooks/              # Custom hooks
+├── services/           # Serviços de API e integrações
+├── stores/             # Stores Zustand
+├── utils/              # Utilitários e helpers
+├── contexts/           # Contexts React
+└── integrations/       # Configurações de integrações
 ```
 
-### 3. Testar a Integração
+### Fluxo de Dados
 
-Execute o script de teste:
+1. **Webhooks ML** → Edge Functions → Database
+2. **Frontend** → React Query → Edge Functions → APIs Externas
+3. **Tempo Real** → Supabase Realtime → Frontend Updates
+
+## 🔒 Segurança
+
+### Autenticação e Autorização
+- JWT tokens via Supabase Auth
+- Row Level Security (RLS) no banco
+- Sistema de permissões granulares
+- Controle de acesso baseado em organizações
+
+### Proteção de Dados
+- Criptografia de dados sensíveis
+- Mascaramento de informações pessoais
+- Logs de auditoria completos
+- Rate limiting nas APIs
+
+## 📊 Monitoramento e Observabilidade
+
+### Métricas de Performance
+- Tempo de resposta das APIs
+- Taxa de sucesso/erro
+- Métricas de usuário
+- Saúde do sistema
+
+### Error Tracking
+- Captura automática de erros
+- Rastreamento de erros de API
+- Alertas proativos
+- Logs estruturados
+
+### Dashboard de Saúde
+- Status em tempo real
+- Métricas de performance
+- Alertas e notificações
+- Exportação de dados
+
+## 🧪 Testes
+
+### Estratégia de Testes
+- **Unit Tests**: Funções utilitárias e lógica de negócio
+- **Integration Tests**: APIs e serviços
+- **Component Tests**: Componentes React críticos
+- **E2E Tests**: Fluxos principais (planejado)
+
+### Executar Testes
 ```bash
-node scripts/test-mercadolivre-integration.js
+# Todos os testes
+npm test
+
+# Testes em modo watch
+npm run test:watch
+
+# Cobertura de testes
+npm run test:coverage
 ```
 
-### 4. Fluxo de Uso
+## 🚀 Deploy
 
-**Iniciar OAuth:**
-```bash
-curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/hyper-function \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"usePkce": true}'
-```
+### Ambiente de Produção
+O sistema pode ser deployado em:
+- **Vercel** (recomendado)
+- **Netlify**
+- **Supabase Hosting**
 
-**Renovar Token:**
-```bash
-curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smart-responder \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"integration_account_id": "uuid-here"}'
-```
+### CI/CD
+- Deploy automático via GitHub Actions
+- Testes automatizados no pipeline
+- Validação de segurança
+- Rollback automático em caso de falha
 
-**Buscar Pedidos:**
-```bash
-curl -X POST https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/rapid-responder \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{
-    "integration_account_id": "uuid-here",
-    "seller_id": 123456789,
-    "date_from": "2024-01-01T00:00:00.000Z",
-    "date_to": "2024-12-31T23:59:59.999Z",
-    "order_status": "paid",
-    "limit": 50
-  }'
-```
+## 📝 Guias de Desenvolvimento
 
-### 5. URLs das Funções
+### Convenções de Código
+- **ESLint** + **Prettier** para formatação
+- **TypeScript** estrito habilitado
+- Convenção de nomenclatura camelCase
+- Componentes em PascalCase
 
-- **OAuth Start**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/hyper-function`
-- **OAuth Callback**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smooth-service`
-- **Token Refresh**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/smart-responder`
-- **Orders API**: `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/rapid-responder`
+### Git Workflow
+- Feature branches a partir de `main`
+- Pull requests obrigatórios
+- Commits convencionais
+- Squash merge recomendado
+
+### Contribuição
+1. Fork o projeto
+2. Crie uma feature branch
+3. Faça commit das mudanças
+4. Abra um Pull Request
+5. Aguarde review e merge
+
+## 🛠️ Troubleshooting
+
+### Problemas Comuns
+
+**Error: Failed to fetch orders**
+- Verifique se o token ML está válido
+- Confirme se a conta de integração está ativa
+- Verifique os logs das Edge Functions
+
+**Build Error: Module not found**
+- Execute `npm install` para instalar dependências
+- Verifique se os imports estão corretos
+- Limpe o cache: `npm run build:clean`
+
+**Database Connection Error**
+- Verifique as credenciais do Supabase
+- Confirme se as migrações foram executadas
+- Verifique se o projeto Supabase está ativo
+
+### Logs e Debug
+- Logs do cliente: Console do navegador
+- Logs do servidor: Supabase Edge Functions
+- Logs de banco: Supabase Dashboard
+
+## 📚 Documentação Adicional
+
+- [API Reference](./docs/api.md)
+- [Database Schema](./docs/database.md)
+- [Integration Guide](./docs/integrations.md)
+- [Security Guidelines](./docs/security.md)
+
+## 🤝 Suporte
+
+Para suporte técnico:
+- Abra uma issue no GitHub
+- Consulte a documentação completa
+- Entre em contato com a equipe de desenvolvimento
+
+## 📄 Licença
+
+Este projeto está licenciado sob a [MIT License](LICENSE).
+
+---
+
+**ReistoOQ Core** - Desenvolvido com ❤️ para simplificar a gestão de e-commerce.
