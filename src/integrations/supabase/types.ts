@@ -2913,8 +2913,6 @@ export type Database = {
           nome_completo: string | null
           nome_exibicao: string | null
           onboarding_banner_dismissed: boolean
-          onboarding_completed: boolean | null
-          onboarding_completed_at: string | null
           organizacao_id: string | null
           telefone: string | null
           updated_at: string
@@ -2930,8 +2928,6 @@ export type Database = {
           nome_completo?: string | null
           nome_exibicao?: string | null
           onboarding_banner_dismissed?: boolean
-          onboarding_completed?: boolean | null
-          onboarding_completed_at?: string | null
           organizacao_id?: string | null
           telefone?: string | null
           updated_at?: string
@@ -2947,8 +2943,6 @@ export type Database = {
           nome_completo?: string | null
           nome_exibicao?: string | null
           onboarding_banner_dismissed?: boolean
-          onboarding_completed?: boolean | null
-          onboarding_completed_at?: string | null
           organizacao_id?: string | null
           telefone?: string | null
           updated_at?: string
@@ -3595,8 +3589,6 @@ export type Database = {
           nome_completo: string | null
           nome_exibicao: string | null
           onboarding_banner_dismissed: boolean
-          onboarding_completed: boolean | null
-          onboarding_completed_at: string | null
           organizacao_id: string | null
           telefone: string | null
           updated_at: string
@@ -4210,8 +4202,6 @@ export type Database = {
           nome_completo: string | null
           nome_exibicao: string | null
           onboarding_banner_dismissed: boolean
-          onboarding_completed: boolean | null
-          onboarding_completed_at: string | null
           organizacao_id: string | null
           telefone: string | null
           updated_at: string

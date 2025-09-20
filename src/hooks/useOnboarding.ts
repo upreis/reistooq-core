@@ -30,26 +30,26 @@ export const useOnboarding = () => {
     try {
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('onboarding_banner_dismissed, created_at')
+        .select('onboarding_completed, onboarding_completed_at, created_at')
         .eq('id', user?.id)
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 
-      const isNewUser = profile?.created_at && 
+      const isNewUser = profile.created_at && 
         new Date(profile.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000); // Últimas 24h
 
       setStatus({
-        isRequired: isNewUser && !profile?.onboarding_banner_dismissed,
-        isCompleted: profile?.onboarding_banner_dismissed || false,
-        completedAt: profile?.created_at,
+        isRequired: isNewUser && !profile.onboarding_completed,
+        isCompleted: profile.onboarding_completed || false,
+        completedAt: profile.onboarding_completed_at,
         loading: false
       });
 
       logger.debug('Onboarding status checked', {
         userId: user?.id,
-        isRequired: isNewUser && !profile?.onboarding_banner_dismissed,
-        isCompleted: profile?.onboarding_banner_dismissed
+        isRequired: isNewUser && !profile.onboarding_completed,
+        isCompleted: profile.onboarding_completed
       });
 
     } catch (error) {
@@ -67,7 +67,8 @@ export const useOnboarding = () => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          onboarding_banner_dismissed: true
+          onboarding_completed: true,
+          onboarding_completed_at: new Date().toISOString()
         })
         .eq('id', user?.id);
 
