@@ -4,7 +4,7 @@ import { Row } from '@/services/orders';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 // F4.2: Usar sistema unificado de status
-import { StatusMappingService } from '@/utils/statusMapping';
+import { mapApiStatusToLabel, getStatusBadgeVariant } from '@/utils/statusMapping';
 import { translateShippingSubstatus } from '@/utils/pedidos-translations';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
@@ -111,8 +111,8 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
               case 'situacao':
                 const situacao = get(row.unified, 'situacao') ?? get(row.raw, 'status');
                 // F4.2: Usar sistema unificado de status
-                const mappedSituacao = StatusMappingService.translateStatus(situacao, 'mercadolivre', 'order');
-                const badgeVariant = StatusMappingService.getStatusBadgeVariant(situacao, 'mercadolivre', 'order');
+                const mappedSituacao = mapApiStatusToLabel(situacao);
+                const badgeVariant = getStatusBadgeVariant(situacao);
                 return (
                   <Badge variant={badgeVariant}>
                     {mappedSituacao}
@@ -121,8 +121,8 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
               case 'shipping_status':
                 const shippingStatus = get(row.raw, 'shipping_details.status');
                 // F4.2: Usar sistema unificado de status
-                const mappedShippingStatus = StatusMappingService.translateStatus(shippingStatus, 'mercadolivre', 'shipping');
-                const shippingBadgeVariant = StatusMappingService.getStatusBadgeVariant(shippingStatus, 'mercadolivre', 'shipping');
+                const mappedShippingStatus = mapApiStatusToLabel(shippingStatus);
+                const shippingBadgeVariant = getStatusBadgeVariant(shippingStatus);
                 return (
                   <Badge variant={shippingBadgeVariant}>
                     {mappedShippingStatus}

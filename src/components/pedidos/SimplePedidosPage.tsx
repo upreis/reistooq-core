@@ -110,9 +110,6 @@ type Props = {
 
 function SimplePedidosPage({ className }: Props) {
   const isMobile = useIsMobile();
-
-function SimplePedidosPage({ className }: Props) {
-  const isMobile = useIsMobile();
   const { cleanStorage, validateAndGet, checkHealth } = useStorageValidation();
   
   // F4.1: CORREÇÃO CRÍTICA - Limpeza automática e validação de localStorage
@@ -124,7 +121,7 @@ function SimplePedidosPage({ className }: Props) {
       const health = checkHealth();
       if (!health.healthy) {
         console.warn('⚠️ [Storage Health] Problemas detectados:', health.issues);
-        toast.warning(`Problemas no armazenamento local: ${health.issues.join(', ')}`);
+        toast(`⚠️ Problemas no armazenamento local: ${health.issues.join(', ')}`);
       }
       
       // Limpeza automática de dados corrompidos
