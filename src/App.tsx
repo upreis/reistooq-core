@@ -16,8 +16,7 @@ import { MaintenanceMode } from '@/components/MaintenanceMode';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { LoadingPage } from '@/components/ui/loading-states';
-import { useSystemAlerts } from '@/hooks/useSystemAlerts';
-import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { SystemAlertsProvider } from '@/components/system/SystemAlertsProvider';
 
 // Import pages
 import NotFound from "./pages/NotFound";
@@ -68,11 +67,6 @@ const queryClient = new QueryClient({
 
 function App() {
   const { isRequired: onboardingRequired, loading: onboardingLoading } = useOnboarding();
-  
-  // Sistema de alertas automáticos (apenas para admins)
-  const { permissions } = useUserPermissions();
-  const hasAdminAccess = permissions.includes('admin:access') || permissions.includes('system:admin');
-  useSystemAlerts(hasAdminAccess && config.features.enableErrorReporting);
 
   // Validar configuração na inicialização
   React.useEffect(() => {
@@ -115,8 +109,9 @@ function App() {
           <AuthProvider>
             <MobileProvider>
               <SidebarUIProvider>
-                <Toaster />
-                <Sonner />
+                <SystemAlertsProvider>
+                  <Toaster />
+                  <Sonner />
                 <Routes>
                   {/* Rota pública de autenticação */}
                   <Route path="/auth" element={<Auth />} />
@@ -361,6 +356,7 @@ function App() {
                   {/* Catch all */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
+                </SystemAlertsProvider>
               </SidebarUIProvider>
             </MobileProvider>
           </AuthProvider>
