@@ -12,6 +12,9 @@ export function Logo({ className = "", size = "md" }: LogoProps) {
   // Logo para dark mode (atual) e light mode (novo)
   const logoSrc = theme === "materialm-light" ? logoLight : "/logo-reistoq.png";
   
+  // Debug para verificar qual logo está sendo usado
+  console.log('🎨 Logo Debug:', { theme, logoSrc, logoLight });
+  
   const sizeClasses = {
     sm: "h-10 w-10",
     md: "h-12 w-12", 
