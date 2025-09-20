@@ -259,6 +259,11 @@ function App() {
                         <AdminPage />
                       </PermissionRoute>
                     } />
+                    <Route path="/system-admin" element={
+                      <PermissionRoute requiredAny={['admin:access', 'system:admin']}>
+                        <SystemAdmin />
+                      </PermissionRoute>
+                    } />
 
                     {/* Demo Routes (protected) */}
                     <Route path="/_demo/faq" element={
