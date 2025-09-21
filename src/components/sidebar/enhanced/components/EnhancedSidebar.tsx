@@ -9,6 +9,7 @@ import { /* Tooltip, TooltipContent, TooltipTrigger, */ TooltipProvider } from '
 import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { getSidebarIconSize } from '@/constants/icon-sizes';
 
 interface EnhancedSidebarProps {
   navItems: NavSection[];
@@ -48,7 +49,7 @@ const SidebarSingleItem = memo(({
           : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
       )}
     >
-      <Icon className={cn("h-5 w-5 shrink-0", itemActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
+      <Icon className={cn(getSidebarIconSize(isCollapsed), "shrink-0", itemActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
       <span className={cn(
         'truncate transition-opacity duration-200',
         !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
