@@ -30,6 +30,25 @@ function fail(error: string, status = 400, detail?: unknown, cid?: string) {
   });
 }
 
+// Cache simples em memória para a duração da execution
+const cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+
+function getCachedResult(key: string) {
+  return cache.get(key) || null;
+}
+
+function isExpired(cached: { timestamp: number; ttl: number }) {
+  return Date.now() - cached.timestamp > cached.ttl;
+}
+
+function setCachedResult(key: string, data: any, ttl: number) {
+  cache.set(key, {
+    data,
+    timestamp: Date.now(),
+    ttl
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -52,13 +71,22 @@ Deno.serve(async (req) => {
 
     console.log(`[pedidos-aggregator:${cid}] Aggregating counts with filters:`, filters);
 
-    // Buscar todos os pedidos do período com os dados de mapeamento
-    const unifiedOrdersUrl = new URL(Deno.env.get("SUPABASE_URL") + "/functions/v1/unified-orders");
-    
     const accounts = integration_account_ids || (integration_account_id ? [integration_account_id] : []);
     if (!accounts.length) return fail("Missing integration account", 400, null, cid);
 
-    console.log(`[pedidos-aggregator:${cid}] Fetching orders with mappings to count by status...`);
+    // Implementar cache para evitar reprocessar a mesma busca
+    const cacheKey = `aggregator_${JSON.stringify({ accounts: accounts.sort(), filters })}`;
+    const cached = getCachedResult(cacheKey);
+
+    if (cached && !isExpired(cached)) {
+      console.log(`[pedidos-aggregator:${cid}] Returning cached result for key: ${cacheKey.slice(0, 50)}...`);
+      return ok({ ...cached.data, correlation_id: cid, from_cache: true });
+    }
+
+    console.log(`[pedidos-aggregator:${cid}] Processing fresh aggregation for ${accounts.length} accounts...`);
+
+    // Buscar todos os pedidos do período com os dados de mapeamento
+    const unifiedOrdersUrl = new URL(Deno.env.get("SUPABASE_URL") + "/functions/v1/unified-orders");
 
     let prontosBaixaCount = 0;
     let mapeamentoPendenteCount = 0;
@@ -243,6 +271,10 @@ Deno.serve(async (req) => {
     };
 
     console.log(`[pedidos-aggregator:${cid}] Aggregated counts:`, result);
+
+    // Cachear resultado por 5 minutos (300.000ms)
+    setCachedResult(cacheKey, result, 5 * 60 * 1000);
+    console.log(`[pedidos-aggregator:${cid}] Result cached for 5 minutes`);
 
     return ok(result);
   } catch (err: any) {
