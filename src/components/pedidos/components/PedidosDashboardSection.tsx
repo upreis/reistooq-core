@@ -6,7 +6,6 @@
 
 import { memo } from 'react';
 import { IntelligentPedidosDashboard } from '@/features/pedidos/components/IntelligentPedidosDashboard';
-import { PedidosAlerts } from '../dashboard/PedidosAlerts';
 
 interface PedidosDashboardSectionProps {
   orders: any[];
@@ -23,9 +22,6 @@ export const PedidosDashboardSection = memo(function PedidosDashboardSection({
 }: PedidosDashboardSectionProps) {
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* 🚨 Alertas de Pedidos */}
-      <PedidosAlerts orders={orders} />
-      
       {/* 📊 Dashboard Inteligente */}
       <IntelligentPedidosDashboard 
         orders={orders} 
