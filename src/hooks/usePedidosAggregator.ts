@@ -25,8 +25,6 @@ interface PedidosAggregatorCounts {
   prontosBaixa: number;
   mapeamentoPendente: number;
   baixados: number;
-  shipped: number;
-  delivered: number;
 }
 
 interface UsePedidosAggregatorReturn {
@@ -169,9 +167,7 @@ export function usePedidosAggregator(
         total: data.total || 0,
         prontosBaixa: data.prontosBaixa || 0,
         mapeamentoPendente: data.mapeamentoPendente || 0,
-        baixados: data.baixados || 0,
-        shipped: data.shipped || 0,
-        delivered: data.delivered || 0
+        baixados: data.baixados || 0
       };
 
       console.log('📊 [Aggregator] Contadores recebidos:', aggregatedCounts);

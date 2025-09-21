@@ -13,9 +13,9 @@ import { cn } from '@/lib/utils';
 interface PedidosStatusBarProps {
   orders: any[];
   quickFilter: string;
-  onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered') => void;
+  onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado') => void;
   className?: string;
-  globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number; shipped: number; delivered: number }>;
+  globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number }>;
 }
 
 export const PedidosStatusBar = memo<PedidosStatusBarProps>(({ 
@@ -35,9 +35,7 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
         total: globalCounts.total || 0,
         prontosBaixa: globalCounts.prontosBaixa || 0,
         mapeamentoPendente: globalCounts.mapeamentoPendente || 0,
-        baixados: globalCounts.baixados || 0,
-        shipped: globalCounts.shipped || 0,
-        delivered: globalCounts.delivered || 0
+        baixados: globalCounts.baixados || 0
       };
       console.log('📊 [StatusBar] Usando contadores globais:', result);
       return result;
@@ -50,21 +48,16 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
         total: 0,
         prontosBaixa: 0,
         mapeamentoPendente: 0,
-        baixados: 0,
-        shipped: 0,
-        delivered: 0
+        baixados: 0
       };
     }
 
     let prontosBaixa = 0;
     let mapeamentoPendente = 0;
     let baixados = 0;
-    let shipped = 0;
-    let delivered = 0;
 
     for (const order of orders) {
       const statusBaixa = order?.status_baixa || order?.unified?.status_baixa || '';
-      const shippingStatus = order?.shipping_status || order?.unified?.shipping?.status || '';
       
       // Usar a coluna "Status da Baixa" como referência principal
       if (statusBaixa === 'Pronto p/ Baixar') {
@@ -74,23 +67,13 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       } else if (statusBaixa === 'Baixado' || statusBaixa === 'Processado') {
         baixados++;
       }
-      
-      // Contadores de status de envio
-      if (shippingStatus?.toLowerCase().includes('shipped')) {
-        shipped++;
-      }
-      if (shippingStatus?.toLowerCase().includes('delivered')) {
-        delivered++;
-      }
     }
 
     const result = {
       total: orders.length,
       prontosBaixa,
       mapeamentoPendente,
-      baixados,
-      shipped,
-      delivered
+      baixados
     };
     
     console.log('📊 [StatusBar] Contadores calculados localmente:', result);
@@ -126,22 +109,6 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       key: 'baixado',
       label: 'Baixados',
       count: counters.baixados,
-      icon: CheckCircle,
-      variant: 'outline' as const,
-      color: 'success'
-    },
-    {
-      key: 'shipped',
-      label: 'Enviados',
-      count: counters.shipped,
-      icon: CheckCircle,
-      variant: 'outline' as const,
-      color: 'info'
-    },
-    {
-      key: 'delivered',
-      label: 'Entregues',
-      count: counters.delivered,
       icon: CheckCircle,
       variant: 'outline' as const,
       color: 'success'
