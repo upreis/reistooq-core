@@ -219,7 +219,7 @@ export function SidebarItemWithChildren({
                           : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
                       )}
                     >
-                      <ChildIcon className="h-4 w-4 shrink-0" />
+                      <ChildIcon className="h-5 w-5 shrink-0" />
                       <span className="truncate">{child.label}</span>
                     </NavLink>
                   );
@@ -257,7 +257,7 @@ export function SidebarItemWithChildren({
                     : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
                 )}
               >
-                <ChildIcon className={cn("h-4 w-4 shrink-0", childActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
+                <ChildIcon className={cn("h-5 w-5 shrink-0", childActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
                 <span className="truncate">{child.label}</span>
                 {child.badge && (
                   <span className={cn(
