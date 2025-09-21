@@ -1,9 +1,10 @@
 /**
  * 🔄 HOOK DE PERSISTÊNCIA DE ESTADO DA PÁGINA PEDIDOS
  * Mantém filtros e dados quando o usuário sai e volta à página
+ * ✅ MELHORIAS: Debounce para persistência + Validação de integridade
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface PersistentPedidosState {
   filters: any;
@@ -23,6 +24,19 @@ export function usePersistentPedidosState() {
   const [persistedState, setPersistedState] = useState<PersistentPedidosState | null>(null);
   const [isStateLoaded, setIsStateLoaded] = useState(false);
 
+  // ✅ VALIDAÇÃO DE INTEGRIDADE DOS DADOS
+  const validatePersistedState = useCallback((state: PersistentPedidosState): boolean => {
+    if (!state.orders || !Array.isArray(state.orders)) return false;
+    if (!state.filters || typeof state.filters !== 'object') return false;
+    if (typeof state.total !== 'number') return false;
+    if (typeof state.currentPage !== 'number') return false;
+    if (typeof state.integrationAccountId !== 'string') return false;
+    if (typeof state.quickFilter !== 'string') return false;
+    if (typeof state.appliedAt !== 'number') return false;
+    if (typeof state.cachedAt !== 'number') return false;
+    return true;
+  }, []);
+
   // Carregar estado persistido na inicialização
   useEffect(() => {
     const loadPersistedState = () => {
@@ -30,6 +44,14 @@ export function usePersistentPedidosState() {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed: PersistentPedidosState = JSON.parse(saved);
+          
+          // ✅ VALIDAR INTEGRIDADE DOS DADOS PRIMEIRO
+          if (!validatePersistedState(parsed)) {
+            console.log('🗑️ Estado com integridade comprometida, removendo:', parsed);
+            localStorage.removeItem(STORAGE_KEY);
+            setIsStateLoaded(true);
+            return;
+          }
           
           // ✅ VERIFICAR E LIMPAR FILTROS PROBLEMÁTICOS
           if (parsed.filters?.statusEnvio?.length > 0) {
@@ -74,10 +96,10 @@ export function usePersistentPedidosState() {
     };
 
     loadPersistedState();
-  }, []);
+  }, [validatePersistedState]);
 
-  // Salvar estado atual
-  const saveState = useCallback((state: Partial<PersistentPedidosState>) => {
+  // Salvar estado atual (função interna sem debounce)
+  const saveStateImmediate = useCallback((state: Partial<PersistentPedidosState>) => {
     try {
       const currentState = persistedState || {
         filters: {},
@@ -108,6 +130,22 @@ export function usePersistentPedidosState() {
       console.warn('Erro ao salvar estado:', error);
     }
   }, [persistedState]);
+
+  // ✅ DEBOUNCE PARA SALVAR ESTADO - Evitar muitas escritas no localStorage
+  const debouncedSaveState = useMemo(() => {
+    let timeoutId: NodeJS.Timeout;
+    return (state: Partial<PersistentPedidosState>) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        saveStateImmediate(state);
+      }, 1000); // Salvar após 1s de inatividade
+    };
+  }, [saveStateImmediate]);
+
+  // Salvar estado atual (com debounce)
+  const saveState = useCallback((state: Partial<PersistentPedidosState>) => {
+    debouncedSaveState(state);
+  }, [debouncedSaveState]);
 
   // Salvar filtros aplicados
   const saveAppliedFilters = useCallback((filters: any) => {
