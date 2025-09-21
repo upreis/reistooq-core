@@ -3,7 +3,8 @@
  * Usado nos cards de status para mostrar totais globais em vez de apenas da página atual
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import debounce from 'lodash.debounce';
 import { supabase } from '@/integrations/supabase/client';
 // Tipo temporário compatível com ambos os sistemas
 interface CompatibleFiltersState {
@@ -27,6 +28,13 @@ interface PedidosAggregatorCounts {
   baixados: number;
 }
 
+interface UsePedidosAggregatorOptions {
+  enabled?: boolean;
+  refetchInterval?: number;
+  cacheTime?: number;
+  debounceMs?: number;
+}
+
 interface UsePedidosAggregatorReturn {
   counts: PedidosAggregatorCounts | null;
   loading: boolean;
@@ -36,13 +44,38 @@ interface UsePedidosAggregatorReturn {
 
 export function usePedidosAggregator(
   integrationAccountId: string,
-  appliedFilters: CompatibleFiltersState
+  appliedFilters: CompatibleFiltersState,
+  options: UsePedidosAggregatorOptions = {}
 ): UsePedidosAggregatorReturn {
+  const {
+    enabled = true,
+    refetchInterval,
+    cacheTime = 5 * 60 * 1000, // 5 minutos padrão
+    debounceMs = 1000
+  } = options;
+
   const [counts, setCounts] = useState<PedidosAggregatorCounts | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cacheRef = useRef<{ data: PedidosAggregatorCounts; timestamp: number } | null>(null);
 
   const fetchCounts = useCallback(async () => {
+    if (!enabled) {
+      console.log('🔢 [Aggregator] Hook desabilitado, pulando busca');
+      return;
+    }
+
+    // Verificar cache local primeiro
+    if (cacheRef.current && cacheTime > 0) {
+      const cacheAge = Date.now() - cacheRef.current.timestamp;
+      if (cacheAge < cacheTime) {
+        console.log('📦 [Aggregator] Usando dados do cache local', { cacheAge });
+        setCounts(cacheRef.current.data);
+        return;
+      }
+    }
+
     console.log('🔢 [Aggregator] Iniciando busca com filtros:', appliedFilters);
     
     const accountIds = (appliedFilters?.contasML && appliedFilters.contasML.length > 0)
@@ -172,6 +205,15 @@ export function usePedidosAggregator(
 
       console.log('📊 [Aggregator] Contadores recebidos:', aggregatedCounts);
       setCounts(aggregatedCounts);
+      
+      // Atualizar cache local
+      if (cacheTime > 0) {
+        cacheRef.current = {
+          data: aggregatedCounts,
+          timestamp: Date.now()
+        };
+        console.log('📦 [Aggregator] Dados salvos no cache local');
+      }
 
     } catch (err: any) {
       console.error('❌ [Aggregator] Erro ao buscar contadores:', err);
@@ -180,12 +222,52 @@ export function usePedidosAggregator(
     } finally {
       setLoading(false);
     }
-  }, [integrationAccountId, appliedFilters]);
+  }, [integrationAccountId, appliedFilters, enabled, cacheTime]);
 
-  // Buscar contadores quando dependências mudarem
+  // Implementar debounce para evitar muitas requisições
+  const debouncedFetch = useMemo(() => 
+    debounce(fetchCounts, debounceMs), 
+    [fetchCounts, debounceMs]
+  );
+
+  // Auto-refetch quando filtros mudarem (com debounce)
   useEffect(() => {
-    fetchCounts();
-  }, [fetchCounts]);
+    if (enabled) {
+      debouncedFetch();
+    }
+    
+    // Cleanup debounce on unmount
+    return () => {
+      debouncedFetch.cancel();
+    };
+  }, [integrationAccountId, appliedFilters, debouncedFetch, enabled]);
+
+  // Implementar refetch interval se especificado
+  useEffect(() => {
+    if (refetchInterval && enabled) {
+      intervalRef.current = setInterval(() => {
+        console.log('⏰ [Aggregator] Refetch automático por intervalo');
+        fetchCounts();
+      }, refetchInterval);
+      
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      };
+    }
+  }, [refetchInterval, enabled, fetchCounts]);
+
+  // Cleanup no unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      debouncedFetch.cancel();
+    };
+  }, [debouncedFetch]);
 
   return {
     counts,
