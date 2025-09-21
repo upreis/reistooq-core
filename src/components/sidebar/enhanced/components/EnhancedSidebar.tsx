@@ -48,7 +48,10 @@ const SidebarSingleItem = memo(({
           : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
       )}
     >
-      <Icon className={cn("h-5 w-5 shrink-0", itemActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
+      <Icon className={cn("shrink-0", 
+        !isMobile && isCollapsed ? "h-6 w-6" : "h-5 w-5", 
+        itemActive && "text-[hsl(var(--brand-yellow-foreground))]"
+      )} />
       <span className={cn(
         'truncate transition-opacity duration-200',
         !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
