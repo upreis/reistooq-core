@@ -8,7 +8,6 @@ import { SidebarFlyout } from './SidebarFlyout';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { useSidebar } from '../SidebarContext';
 import { SIDEBAR_BEHAVIOR } from '@/config/sidebar-behavior';
-import { getSidebarIconSize, ICON_SIZES } from '@/constants/icon-sizes';
 
 interface SidebarItemWithChildrenProps {
   item: NavItem;
@@ -126,7 +125,7 @@ export function SidebarItemWithChildren({
       aria-haspopup="true"
       aria-controls={!isCollapsed ? `submenu-${item.id}` : undefined}
     >
-      <Icon className={cn(getSidebarIconSize(isCollapsed), "shrink-0", hasActiveChild && "text-[hsl(var(--brand-yellow-foreground))]")} />
+      <Icon className={cn("h-5 w-5 shrink-0", hasActiveChild && "text-[hsl(var(--brand-yellow-foreground))]")} />
       
       {/* Label - hidden when collapsed */}
       <span className={cn(
@@ -189,7 +188,7 @@ export function SidebarItemWithChildren({
                 aria-haspopup="menu"
                 aria-label={item.label}
               >
-                <Icon className={cn(ICON_SIZES.lg, "text-current")} />
+                <Icon className="h-5 w-5 text-current" />
               </button>
             </HoverCardTrigger>
             <HoverCardContent
@@ -220,7 +219,7 @@ export function SidebarItemWithChildren({
                           : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
                       )}
                     >
-                      <ChildIcon className={cn(ICON_SIZES.sm, "shrink-0")} />
+                      <ChildIcon className="h-4 w-4 shrink-0" />
                       <span className="truncate">{child.label}</span>
                     </NavLink>
                   );
@@ -258,7 +257,7 @@ export function SidebarItemWithChildren({
                     : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
                 )}
               >
-                <ChildIcon className={cn(ICON_SIZES.sm, "shrink-0", childActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
+                <ChildIcon className={cn("h-4 w-4 shrink-0", childActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
                 <span className="truncate">{child.label}</span>
                 {child.badge && (
                   <span className={cn(
