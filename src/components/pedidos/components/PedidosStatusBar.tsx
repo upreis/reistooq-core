@@ -29,21 +29,57 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   mappingData,
   isPedidoProcessado
 }) => {
-  // ✅ CONTAGEM SIMPLES: Apenas pedidos da página atual baseado na coluna Status da Baixa
+  // ✅ CONTAGEM SIMPLES: Contar pedidos da página atual (já filtrados)
   const counters = useMemo(() => {
-    console.log('📊 [StatusBar] Contando pedidos da página atual:', { ordersLength: orders?.length });
+    console.log('📊 [StatusBar] Contando pedidos filtrados:', { 
+      ordersLength: orders?.length, 
+      quickFilter,
+      hasMapping: !!mappingData,
+      mappingSize: mappingData?.size 
+    });
     
     if (!orders?.length) {
+      console.log('📊 [StatusBar] Nenhum pedido na página');
       return { total: 0, prontosBaixa: 0, mapeamentoPendente: 0, baixados: 0 };
     }
 
+    // ✅ LÓGICA SIMPLES: Se quickFilter está ativo, todos os pedidos pertencem a essa categoria
+    if (quickFilter === 'pronto_baixar') {
+      console.log('📊 [StatusBar] Modo pronto_baixar - todos os pedidos são prontos');
+      return {
+        total: orders.length,
+        prontosBaixa: orders.length,
+        mapeamentoPendente: 0,
+        baixados: 0
+      };
+    }
+    
+    if (quickFilter === 'mapear_incompleto') {
+      console.log('📊 [StatusBar] Modo mapear_incompleto - todos os pedidos são pendentes');
+      return {
+        total: orders.length,
+        prontosBaixa: 0,
+        mapeamentoPendente: orders.length,
+        baixados: 0
+      };
+    }
+    
+    if (quickFilter === 'baixado') {
+      console.log('📊 [StatusBar] Modo baixado - todos os pedidos são baixados');
+      return {
+        total: orders.length,
+        prontosBaixa: 0,
+        mapeamentoPendente: 0,
+        baixados: orders.length
+      };
+    }
+
+    // ✅ MODO 'ALL': Calcular contadores reais
     let prontosBaixa = 0;
     let mapeamentoPendente = 0;
     let baixados = 0;
 
     for (const order of orders) {
-      // ✅ CALCULAR STATUS DA BAIXA (mesma lógica do PedidosTableSection)
-      
       // 🔍 PRIMEIRO: Verificar se já foi baixado (histórico)
       const jaProcessado = isPedidoProcessado?.(order);
       if (jaProcessado) {
@@ -54,12 +90,11 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       // 🗂️ SEGUNDO: Verificar mapeamento completo (de-para)
       const mapping = mappingData?.get?.(order.id);
       const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
-      const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
       
       if (temMapeamentoCompleto) {
-        prontosBaixa++;           // ← "Pronto p/ Baixar"
-      } else if (temMapeamentoIncompleto || !mapping) {
-        mapeamentoPendente++;     // ← "Mapear Incompleto" ou "Sem Mapear"
+        prontosBaixa++;
+      } else {
+        mapeamentoPendente++;
       }
     }
 
@@ -72,7 +107,7 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     
     console.log('📊 [StatusBar] Contadores da página atual:', result);
     return result;
-  }, [orders, mappingData, isPedidoProcessado]);
+  }, [orders, mappingData, isPedidoProcessado, quickFilter]);
 
   const statusChips = [
     {

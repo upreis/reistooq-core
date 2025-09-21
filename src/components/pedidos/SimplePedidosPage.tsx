@@ -924,10 +924,11 @@ useEffect(() => {
 
       {/* ✅ Barra de resumo com contadores */}
       <PedidosStatusBar 
-        orders={orders}
+        orders={displayedOrders || orders}
         quickFilter={quickFilter}
         onQuickFilterChange={(filter) => setQuickFilter(filter)}
-        globalCounts={globalCounts}
+        mappingData={mappingData}
+        isPedidoProcessado={isPedidoProcessado}
       />
 
       {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
