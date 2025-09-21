@@ -125,10 +125,7 @@ export function SidebarItemWithChildren({
       aria-haspopup="true"
       aria-controls={!isCollapsed ? `submenu-${item.id}` : undefined}
     >
-      <Icon className={cn("shrink-0", 
-        !isMobile && isCollapsed ? "h-6 w-6" : "h-5 w-5", 
-        hasActiveChild && "text-[hsl(var(--brand-yellow-foreground))]"
-      )} />
+      <Icon className={cn("h-5 w-5 shrink-0", hasActiveChild && "text-[hsl(var(--brand-yellow-foreground))]")} />
       
       {/* Label - hidden when collapsed */}
       <span className={cn(
@@ -191,7 +188,7 @@ export function SidebarItemWithChildren({
                 aria-haspopup="menu"
                 aria-label={item.label}
               >
-                <Icon className="h-6 w-6 text-current" />
+                <Icon className="h-5 w-5 text-current" />
               </button>
             </HoverCardTrigger>
             <HoverCardContent
