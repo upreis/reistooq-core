@@ -29,31 +29,12 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   mappingData,
   isPedidoProcessado
 }) => {
-  // ✅ CORRIGIDO: Usar contadores globais quando disponíveis
+  // ✅ CONTAGEM SIMPLES: Apenas pedidos da página atual baseado na coluna Status da Baixa
   const counters = useMemo(() => {
-    console.log('📊 [StatusBar] Calculando contadores:', { globalCounts, ordersLength: orders?.length });
+    console.log('📊 [StatusBar] Contando pedidos da página atual:', { ordersLength: orders?.length });
     
-    // ✅ PRIORIDADE: Se temos globalCounts, usar eles (resultado agregado dos filtros)
-    if (globalCounts && typeof globalCounts.total === 'number') {
-      const result = {
-        total: globalCounts.total || 0,
-        prontosBaixa: globalCounts.prontosBaixa || 0,
-        mapeamentoPendente: globalCounts.mapeamentoPendente || 0,
-        baixados: globalCounts.baixados || 0
-      };
-      console.log('📊 [StatusBar] Usando contadores globais:', result);
-      return result;
-    }
-
-    // ✅ FALLBACK: Calcular contadores da página atual se não temos globalCounts válidos
     if (!orders?.length) {
-      console.log('📊 [StatusBar] Nenhum pedido, retornando zeros');
-      return {
-        total: 0,
-        prontosBaixa: 0,
-        mapeamentoPendente: 0,
-        baixados: 0
-      };
+      return { total: 0, prontosBaixa: 0, mapeamentoPendente: 0, baixados: 0 };
     }
 
     let prontosBaixa = 0;
@@ -61,40 +42,24 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     let baixados = 0;
 
     for (const order of orders) {
-      // ✅ CORREÇÃO: Calcular status baseado na lógica de mapeamento
-      const orderItems = order.order_items || [];
-      let temMapeamentoCompleto = false;
-      let temMapeamentoIncompleto = false;
-      let temSemMapeamento = false;
-
-      // Analisar cada item do pedido
-      for (const item of orderItems) {
-        const sku = item.item?.seller_sku;
-        if (!sku) continue;
-
-        // Verificar se existe mapeamento (usar mappingData se disponível)
-        const mapping = mappingData?.get?.(order.id);
-        if (!mapping) {
-          temSemMapeamento = true;
-        } else {
-          if (mapping.skuEstoque || mapping.skuKit) {
-            temMapeamentoCompleto = true;
-          } else {
-            temMapeamentoIncompleto = true;
-          }
-        }
-      }
-
-      // ✅ NOVA LÓGICA: Calcular status baseado no mapeamento real
-      if (temMapeamentoCompleto && !temMapeamentoIncompleto && !temSemMapeamento) {
-        prontosBaixa++;
-      } else if (temMapeamentoIncompleto || temSemMapeamento) {
-        mapeamentoPendente++;
-      }
-
-      // Verificar se já foi baixado (histórico_vendas)
-      if (isPedidoProcessado?.(order)) {
+      // ✅ CALCULAR STATUS DA BAIXA (mesma lógica do PedidosTableSection)
+      
+      // 🔍 PRIMEIRO: Verificar se já foi baixado (histórico)
+      const jaProcessado = isPedidoProcessado?.(order);
+      if (jaProcessado) {
         baixados++;
+        continue;
+      }
+      
+      // 🗂️ SEGUNDO: Verificar mapeamento completo (de-para)
+      const mapping = mappingData?.get?.(order.id);
+      const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
+      const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
+      
+      if (temMapeamentoCompleto) {
+        prontosBaixa++;           // ← "Pronto p/ Baixar"
+      } else if (temMapeamentoIncompleto || !mapping) {
+        mapeamentoPendente++;     // ← "Mapear Incompleto" ou "Sem Mapear"
       }
     }
 
@@ -105,9 +70,9 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       baixados
     };
     
-    console.log('📊 [StatusBar] Contadores calculados localmente:', result);
+    console.log('📊 [StatusBar] Contadores da página atual:', result);
     return result;
-  }, [orders, globalCounts, mappingData, isPedidoProcessado]);
+  }, [orders, mappingData, isPedidoProcessado]);
 
   const statusChips = [
     {
