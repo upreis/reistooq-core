@@ -33,7 +33,7 @@ export function SidebarItemWithChildren({
   
   const location = useLocation();
   const navigate = useNavigate();
-  const { toggleGroup, openGroup, closeGroup, isGroupOpen } = useSidebarUI();
+  const { toggleGroup, openGroup, closeGroup, isGroupOpen, openGroups } = useSidebarUI();
   
   const Icon = getIconComponent(item.icon);
   
@@ -45,8 +45,8 @@ export function SidebarItemWithChildren({
     );
   }, [location.pathname, item.children]);
 
-  // Check if this group is open
-  const isOpen = isGroupOpen(item.id);
+  // Check if this group is open (força re-renderização com openGroups como dependência)
+  const isOpen = useMemo(() => isGroupOpen(item.id), [isGroupOpen, item.id, openGroups]);
   
   // Auto-expand group when child is active
   useEffect(() => {
@@ -65,8 +65,6 @@ export function SidebarItemWithChildren({
       e.preventDefault();
     }
     
-    console.log('Click no item:', item.label, 'ID:', item.id, 'hasChildren:', hasChildren);
-    
     if (isCollapsed && !isMobile) {
       // For now, just prevent default behavior when collapsed
       // Flyout functionality can be added back later if needed
@@ -81,11 +79,10 @@ export function SidebarItemWithChildren({
         return;
       }
       
-      console.log('Toggling group:', item.id, 'Current state:', isOpen);
       // Default toggle behavior
       toggleGroup(item.id);
     }
-  }, [isCollapsed, isMobile, item.children, item.id, item.label, toggleGroup, navigate, isOpen]);
+  }, [isCollapsed, isMobile, item.children, item.id, toggleGroup, navigate]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {

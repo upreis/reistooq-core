@@ -49,16 +49,10 @@ export function SidebarUIProvider({ children }: { children: ReactNode }) {
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
   const toggleGroup = (groupId: string) => {
-    console.log('SidebarUIContext toggleGroup called:', groupId);
-    console.log('Previous state:', openGroups[groupId]);
-    setOpenGroups(prev => {
-      const newState = {
-        ...prev,
-        [groupId]: !prev[groupId]
-      };
-      console.log('New state for', groupId, ':', newState[groupId]);
-      return newState;
-    });
+    setOpenGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
   };
 
   const openGroup = (groupId: string) => {
