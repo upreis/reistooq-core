@@ -254,22 +254,22 @@ export function SidebarItemWithChildren({
                 key={child.id || child.path || child.label}
                 to={child.path || '#'}
                 className={cn(
-                  'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200',
-                  'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20',
-                  'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))] hover:to-[hsl(var(--accent))]/50',
-                  'hover:shadow-sm hover:translate-x-1',
+                  'group flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200',
+                  'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
+                  'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30',
+                  'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
                   childActive
-                    ? 'bg-gradient-to-r from-[hsl(var(--accent))]/80 to-[hsl(var(--accent))]/40 text-[hsl(var(--primary))] shadow-sm border-l-2 border-[hsl(var(--primary))]'
-                    : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
+                    ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/25'
+                    : 'text-[hsl(var(--foreground))] hover:text-[hsl(var(--foreground))]'
                 )}
               >
                 <ChildIcon className={cn(
                   "h-4 w-4 shrink-0 transition-colors duration-200", 
-                  childActive ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]"
+                  childActive ? "text-[hsl(var(--brand-yellow-foreground))] drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]"
                 )} />
                 <span className={cn(
                   "truncate font-medium transition-colors duration-200",
-                  childActive ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--foreground))]"
+                  childActive ? "text-[hsl(var(--brand-yellow-foreground))] font-semibold" : "text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--foreground))]"
                 )}>
                   {child.label}
                 </span>
