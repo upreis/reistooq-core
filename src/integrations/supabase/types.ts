@@ -3647,6 +3647,21 @@ export type Database = {
         Args: { _token: string }
         Returns: Json
       }
+      admin_create_customer: {
+        Args: { p_customer_data: Json }
+        Returns: {
+          error_message: string
+          id: string
+          success: boolean
+        }[]
+      }
+      admin_delete_customer: {
+        Args: { p_customer_id: string }
+        Returns: {
+          error_message: string
+          success: boolean
+        }[]
+      }
       admin_list_profiles: {
         Args:
           | { _limit?: number; _offset?: number; _search?: string }
@@ -3660,6 +3675,13 @@ export type Database = {
           nome_exibicao: string
           organizacao_id: string
           telefone: string
+        }[]
+      }
+      admin_update_customer: {
+        Args: { p_customer_id: string; p_updates: Json }
+        Returns: {
+          error_message: string
+          success: boolean
         }[]
       }
       admin_update_profile: {

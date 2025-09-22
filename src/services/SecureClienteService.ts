@@ -115,19 +115,24 @@ export class SecureClienteService {
    */
   static async createCliente(cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at' | 'organization_id'>) {
     try {
-      // Note: This operation now requires customers:manage permission due to enhanced security
-      // The organization_id will be set automatically by RLS triggers
+      // ✅ SEGURANÇA: Usar função admin segura com verificação de permissões
       const { data, error } = await supabase
-        .from('clientes')
-        .insert(cliente as any) // Cast to any to bypass strict type checking for organization_id
-        .select()
-        .single();
+        .rpc('admin_create_customer', {
+          p_customer_data: cliente
+        });
 
-      if (error) {
-        console.error('❌ Erro ao criar cliente (pode ser falta de permissão customers:manage):', error);
+      if (error || !data?.[0]?.success) {
+        const errorMessage = data?.[0]?.error_message || error?.message || 'Erro ao criar cliente';
+        console.error('❌ Erro ao criar cliente:', errorMessage);
+        return { data: null, error: { message: errorMessage } };
       }
 
-      return { data: data as Cliente | null, error };
+      const result = data[0];
+      console.log('✅ Cliente criado com sucesso:', result.id);
+      
+      // Return the newly created customer data
+      const customerResult = await this.getClienteById(result.id!);
+      return { data: customerResult.data, error: customerResult.error };
     } catch (error) {
       console.error('❌ Erro ao criar cliente:', error);
       return { data: null, error };
@@ -140,19 +145,24 @@ export class SecureClienteService {
    */
   static async updateCliente(id: string, updates: Partial<Cliente>) {
     try {
-      // Note: This operation now requires customers:manage permission due to enhanced security
+      // ✅ SEGURANÇA: Usar função admin segura com verificação de permissões
       const { data, error } = await supabase
-        .from('clientes')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+        .rpc('admin_update_customer', {
+          p_customer_id: id,
+          p_updates: updates
+        });
 
-      if (error) {
-        console.error('❌ Erro ao atualizar cliente (pode ser falta de permissão customers:manage):', error);
+      if (error || !data?.[0]?.success) {
+        const errorMessage = data?.[0]?.error_message || error?.message || 'Erro ao atualizar cliente';
+        console.error('❌ Erro ao atualizar cliente:', errorMessage);
+        return { data: null, error: { message: errorMessage } };
       }
 
-      return { data: data as Cliente | null, error };
+      console.log('✅ Cliente atualizado com sucesso:', id);
+      
+      // Return the updated customer data
+      const customerResult = await this.getClienteById(id);
+      return { data: customerResult.data, error: customerResult.error };
     } catch (error) {
       console.error('❌ Erro ao atualizar cliente:', error);
       return { data: null, error };
@@ -165,19 +175,22 @@ export class SecureClienteService {
    */
   static async deleteCliente(id: string) {
     try {
-      // Note: This operation now requires customers:manage permission due to enhanced security
-      const { error } = await supabase
-        .from('clientes')
-        .delete()
-        .eq('id', id);
+      // ✅ SEGURANÇA: Usar função admin segura com verificação de permissões
+      const { data, error } = await supabase
+        .rpc('admin_delete_customer', {
+          p_customer_id: id
+        });
 
-      if (error) {
-        console.error('❌ Erro ao deletar cliente (pode ser falta de permissão customers:manage):', error);
+      if (error || !data?.[0]?.success) {
+        const errorMessage = data?.[0]?.error_message || error?.message || 'Erro ao excluir cliente';
+        console.error('❌ Erro ao excluir cliente:', errorMessage);
+        return { error: { message: errorMessage } };
       }
 
-      return { error };
+      console.log('✅ Cliente excluído com sucesso:', id);
+      return { error: null };
     } catch (error) {
-      console.error('❌ Erro ao deletar cliente:', error);
+      console.error('❌ Erro ao excluir cliente:', error);
       return { error };
     }
   }
