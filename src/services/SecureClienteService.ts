@@ -25,12 +25,16 @@ export class SecureClienteService {
       }
 
       // Map the data to match Cliente interface (remove extra fields)
-      const mappedData = data?.map(({ data_is_masked, total_count, ...cliente }) => cliente) || [];
+      const totalCount = (data as any)?.[0]?.total_count || 0;
+      const mappedData = data?.map((item: any) => {
+        const { data_is_masked, total_count, ...cliente } = item;
+        return cliente;
+      }) || [];
 
       return { 
         data: mappedData, 
         error: null, 
-        count: data?.[0]?.total_count || 0 
+        count: totalCount
       };
     } catch (error) {
       console.error('❌ Erro ao buscar clientes:', error);
@@ -94,7 +98,7 @@ export class SecureClienteService {
       // Map the data to match Cliente interface (remove extra fields)
       const cliente = data?.[0];
       if (cliente) {
-        const { data_is_masked, ...mappedCliente } = cliente;
+        const { data_is_masked, ...mappedCliente } = cliente as any;
         return { data: mappedCliente as Cliente, error: null };
       }
 
@@ -106,16 +110,22 @@ export class SecureClienteService {
   }
 
   /**
-   * Creates a new customer (requires customers:create permission)
+   * Creates a new customer (requires customers:create AND customers:manage permissions)
+   * For enhanced security, direct table operations require management permissions
    */
   static async createCliente(cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at' | 'organization_id'>) {
     try {
+      // Note: This operation now requires customers:manage permission due to enhanced security
       // The organization_id will be set automatically by RLS triggers
       const { data, error } = await supabase
         .from('clientes')
         .insert(cliente as any) // Cast to any to bypass strict type checking for organization_id
         .select()
         .single();
+
+      if (error) {
+        console.error('❌ Erro ao criar cliente (pode ser falta de permissão customers:manage):', error);
+      }
 
       return { data: data as Cliente | null, error };
     } catch (error) {
@@ -125,16 +135,22 @@ export class SecureClienteService {
   }
 
   /**
-   * Updates an existing customer (requires customers:update permission)
+   * Updates an existing customer (requires customers:update AND customers:manage permissions)
+   * For enhanced security, direct table operations require management permissions
    */
   static async updateCliente(id: string, updates: Partial<Cliente>) {
     try {
+      // Note: This operation now requires customers:manage permission due to enhanced security
       const { data, error } = await supabase
         .from('clientes')
         .update(updates)
         .eq('id', id)
         .select()
         .single();
+
+      if (error) {
+        console.error('❌ Erro ao atualizar cliente (pode ser falta de permissão customers:manage):', error);
+      }
 
       return { data: data as Cliente | null, error };
     } catch (error) {
@@ -144,14 +160,20 @@ export class SecureClienteService {
   }
 
   /**
-   * Deletes a customer (requires customers:delete permission)
+   * Deletes a customer (requires customers:delete AND customers:manage permissions)
+   * For enhanced security, direct table operations require management permissions
    */
   static async deleteCliente(id: string) {
     try {
+      // Note: This operation now requires customers:manage permission due to enhanced security
       const { error } = await supabase
         .from('clientes')
         .delete()
         .eq('id', id);
+
+      if (error) {
+        console.error('❌ Erro ao deletar cliente (pode ser falta de permissão customers:manage):', error);
+      }
 
       return { error };
     } catch (error) {
