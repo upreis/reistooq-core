@@ -674,7 +674,9 @@ Deno.serve(async (req) => {
       return fail(error.message, 400, null, cid);
     }
     
-    console.log(`[unified-orders:${cid}] 🚨 DEBUG BODY COMPLETO:`, JSON.stringify(body, null, 2));
+    if (Deno.env.get("DEBUG_ENABLED") === "true") {
+      console.log(`[unified-orders:${cid}] 🚨 DEBUG BODY COMPLETO:`, JSON.stringify(body, null, 2));
+    }
     
     const {
       integration_account_id,
