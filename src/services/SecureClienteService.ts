@@ -8,37 +8,30 @@ export class SecureClienteService {
    */
   static async getClientes(filters: ClientesFilters = {}) {
     try {
-      // ✅ SEGURANÇA: Usar função segura get_clientes_secure com mascaramento automático
-      const { data, error } = await supabase.rpc('get_clientes_secure');
+      const { search, status, cidade, uf } = filters;
       
-      
+      // ✅ SEGURANÇA: Usar função segura search_customers_secure com mascaramento automático
+      const { data, error } = await supabase.rpc('search_customers_secure', {
+        p_search: search || null,
+        p_status: status || null,
+        p_cidade: cidade || null,
+        p_uf: uf || null,
+        p_limit: 100
+      });
+
       if (error) {
         console.error('❌ Erro na busca segura de clientes:', error);
         return { data: [], error, count: 0 };
       }
 
-      let clientes = (data || []) as Cliente[];
+      // Map the data to match Cliente interface (remove extra fields)
+      const mappedData = data?.map(({ data_is_masked, total_count, ...cliente }) => cliente) || [];
 
-      // Aplicar filtros se fornecidos
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase();
-        clientes = clientes.filter(cliente => 
-          cliente.nome_completo?.toLowerCase().includes(searchTerm) ||
-          cliente.email?.toLowerCase().includes(searchTerm) ||
-          cliente.cpf_cnpj?.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      // Limitar resultados para evitar sobrecarga
-      const limit = 50; // Fixed limit for security
-      if (clientes.length > limit) {
-        clientes = clientes.slice(0, limit);
-      }
-
-      // Log de acesso para auditoria (opcional) - removido por problemas de TypeScript
-      // TODO: Implementar logging de acesso em uma versão futura
-
-      return { data: clientes, error: null, count: clientes.length };
+      return { 
+        data: mappedData, 
+        error: null, 
+        count: data?.[0]?.total_count || 0 
+      };
     } catch (error) {
       console.error('❌ Erro ao buscar clientes:', error);
       return { data: [], error, count: 0 };
@@ -50,8 +43,14 @@ export class SecureClienteService {
    */
   static async getClientesStats(): Promise<{ data: ClientesStats | null; error: any }> {
     try {
-      // ✅ SEGURANÇA: Usar função segura get_clientes_secure (dados não sensíveis para stats)
-      const { data, error } = await supabase.rpc('get_clientes_secure');
+      // ✅ SEGURANÇA: Usar função segura search_customers_secure para estatísticas
+      const { data, error } = await supabase.rpc('search_customers_secure', {
+        p_search: null,
+        p_status: null,
+        p_cidade: null,
+        p_uf: null,
+        p_limit: 1000 // Higher limit for stats calculation
+      });
 
       if (error) {
         console.error('❌ Erro na busca de estatísticas:', error);
@@ -63,7 +62,7 @@ export class SecureClienteService {
       // Calculate stats from secure view data
       const stats: ClientesStats = {
         total: clientes.length,
-        ativos: clientes.filter(c => c.status_cliente === 'Ativo').length,
+        ativos: clientes.filter(c => c.status_cliente === 'Regular').length,
         vip: clientes.filter(c => c.status_cliente === 'VIP').length,
         premium: clientes.filter(c => c.status_cliente === 'Premium').length,
         ticket_medio: clientes.reduce((acc, c) => acc + (Number(c.ticket_medio) || 0), 0) / clientes.length || 0,
@@ -82,23 +81,24 @@ export class SecureClienteService {
    */
   static async getClienteById(id: string) {
     try {
-      // ✅ SEGURANÇA: Usar função segura get_clientes_secure e filtrar por ID
-      const { data: allData, error } = await supabase.rpc('get_clientes_secure');
-      
+      // ✅ SEGURANÇA: Usar função segura get_customer_secure com mascaramento automático
+      const { data, error } = await supabase.rpc('get_customer_secure', {
+        p_customer_id: id
+      });
+
       if (error) {
         console.error('❌ Erro na busca segura de cliente:', error);
         return { data: null, error };
       }
 
-      const cliente = (allData || []).find((c: any) => c.id === id);
-      if (!cliente) {
-        return { data: null, error: { message: 'Cliente não encontrado' } };
+      // Map the data to match Cliente interface (remove extra fields)
+      const cliente = data?.[0];
+      if (cliente) {
+        const { data_is_masked, ...mappedCliente } = cliente;
+        return { data: mappedCliente as Cliente, error: null };
       }
 
-      // Log de acesso para auditoria - removido por problemas de TypeScript
-      // TODO: Implementar logging de acesso em uma versão futura
-
-      return { data: cliente as Cliente | null, error: null };
+      return { data: null, error: { message: 'Cliente não encontrado' } };
     } catch (error) {
       console.error('❌ Erro ao buscar cliente:', error);
       return { data: null, error };

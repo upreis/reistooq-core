@@ -3556,7 +3556,87 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      clientes_secure: {
+        Row: {
+          cpf_cnpj: string | null
+          created_at: string | null
+          data_is_masked: boolean | null
+          data_primeiro_pedido: string | null
+          data_ultimo_pedido: string | null
+          email: string | null
+          empresa: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
+          id: string | null
+          integration_account_id: string | null
+          nome_completo: string | null
+          observacoes: string | null
+          organization_id: string | null
+          status_cliente: string | null
+          telefone: string | null
+          ticket_medio: number | null
+          total_pedidos: number | null
+          updated_at: string | null
+          valor_total_gasto: number | null
+        }
+        Insert: {
+          cpf_cnpj?: never
+          created_at?: string | null
+          data_is_masked?: never
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: never
+          empresa?: string | null
+          endereco_bairro?: never
+          endereco_cep?: never
+          endereco_cidade?: never
+          endereco_numero?: never
+          endereco_rua?: never
+          endereco_uf?: never
+          id?: string | null
+          integration_account_id?: string | null
+          nome_completo?: never
+          observacoes?: never
+          organization_id?: string | null
+          status_cliente?: string | null
+          telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
+        }
+        Update: {
+          cpf_cnpj?: never
+          created_at?: string | null
+          data_is_masked?: never
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
+          email?: never
+          empresa?: string | null
+          endereco_bairro?: never
+          endereco_cep?: never
+          endereco_cidade?: never
+          endereco_numero?: never
+          endereco_rua?: never
+          endereco_uf?: never
+          id?: string | null
+          integration_account_id?: string | null
+          nome_completo?: never
+          observacoes?: never
+          organization_id?: string | null
+          status_cliente?: string | null
+          telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_invitation_secure: {
@@ -3806,10 +3886,11 @@ export type Database = {
         Returns: string
       }
       get_customer_secure: {
-        Args: { customer_id: string }
+        Args: { p_customer_id: string }
         Returns: {
           cpf_cnpj: string
           created_at: string
+          data_is_masked: boolean
           data_primeiro_pedido: string
           data_ultimo_pedido: string
           email: string
@@ -4473,10 +4554,20 @@ export type Database = {
         Returns: Json
       }
       search_customers_secure: {
-        Args: { limit_count?: number; search_term?: string }
+        Args:
+          | { limit_count?: number; search_term?: string }
+          | {
+              p_cidade?: string
+              p_limit?: number
+              p_offset?: number
+              p_search?: string
+              p_status?: string
+              p_uf?: string
+            }
         Returns: {
           cpf_cnpj: string
           created_at: string
+          data_is_masked: boolean
           data_primeiro_pedido: string
           data_ultimo_pedido: string
           email: string
@@ -4495,6 +4586,7 @@ export type Database = {
           status_cliente: string
           telefone: string
           ticket_medio: number
+          total_count: number
           total_pedidos: number
           updated_at: string
           valor_total_gasto: number
