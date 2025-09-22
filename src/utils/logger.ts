@@ -1,86 +1,36 @@
-// Sistema de logging silencioso para produção
-interface LogData {
-  [key: string]: any;
-}
+/**
+ * Sistema centralizado de logging para desenvolvimento
+ * Evita logs em produção e padroniza mensagens de debug
+ */
 
-class Logger {
-  private isDev = import.meta.env.DEV;
-
-  info(message: string, data?: LogData, context?: string): void {
-    // Silencioso em produção, apenas em desenvolvimento
-    if (this.isDev) {
-      const prefix = context ? `[${context}]` : '[REISTOQ]';
-      console.info(`${prefix} ${message}`, data || '');
-    }
+export const debugLog = (message: string, ...args: any[]) => {
+  if (import.meta.env.DEV) {
+    console.log(`[REISTOQ DEBUG] ${message}`, ...args);
   }
-
-  warn(message: string, data?: LogData, context?: string): void {
-    // Silencioso em produção, apenas em desenvolvimento
-    if (this.isDev) {
-      const prefix = context ? `[${context}]` : '[REISTOQ]';
-      console.warn(`${prefix} ${message}`, data || '');
-    }
-  }
-
-  error(message: string, error?: any, context?: string): void {
-    // Sempre registra erros críticos, mas silencioso em produção
-    if (this.isDev) {
-      const prefix = context ? `[${context}]` : '[REISTOQ]';
-      if (error) {
-        console.error(`${prefix} ${message}`, error);
-      } else {
-        console.error(`${prefix} ${message}`);
-      }
-    }
-    // Em produção, apenas registra internamente sem console
-  }
-
-  debug(message: string, data?: LogData, context?: string): void {
-    // Silencioso - apenas em desenvolvimento
-    if (this.isDev) {
-      const prefix = context ? `[${context}]` : '[REISTOQ]';
-      console.debug(`${prefix} ${message}`, data || '');
-    }
-  }
-
-  // Métodos silenciosos para substituir console diretos
-  log(message: string, ...args: any[]): void {
-    if (this.isDev) {
-      console.log(`[REISTOQ] ${message}`, ...args);
-    }
-  }
-}
-
-// Instância singleton
-export const logger = new Logger();
-
-// Substitutos silenciosos para console
-export const silentLog = {
-  log: (...args: any[]) => logger.log(args.join(' ')),
-  info: (...args: any[]) => logger.info(args.join(' ')),
-  warn: (...args: any[]) => logger.warn(args.join(' ')),
-  error: (...args: any[]) => logger.error(args.join(' ')),
-  debug: (...args: any[]) => logger.debug(args.join(' ')),
 };
 
-// Loggers específicos por contexto - agora silenciosos
-export const apiLogger = {
-  info: (message: string, data?: LogData) => logger.info(message, data, 'API'),
-  warn: (message: string, data?: LogData) => logger.warn(message, data, 'API'),
-  error: (message: string, error?: any) => logger.error(message, error, 'API'),
-  debug: (message: string, data?: LogData) => logger.debug(message, data, 'API')
+export const errorLog = (message: string, ...args: any[]) => {
+  if (import.meta.env.DEV) {
+    console.error(`[REISTOQ ERROR] ${message}`, ...args);
+  }
 };
 
-export const integrationLogger = {
-  info: (message: string, data?: LogData) => logger.info(message, data, 'INTEGRATION'),
-  warn: (message: string, data?: LogData) => logger.warn(message, data, 'INTEGRATION'),
-  error: (message: string, error?: any) => logger.error(message, error, 'INTEGRATION'),
-  debug: (message: string, data?: LogData) => logger.debug(message, data, 'INTEGRATION')
+export const warnLog = (message: string, ...args: any[]) => {
+  if (import.meta.env.DEV) {
+    console.warn(`[REISTOQ WARN] ${message}`, ...args);
+  }
 };
 
-export const scannerLogger = {
-  info: (message: string, data?: LogData) => logger.info(message, data, 'SCANNER'),
-  warn: (message: string, data?: LogData) => logger.warn(message, data, 'SCANNER'),
-  error: (message: string, error?: any) => logger.error(message, error, 'SCANNER'),
-  debug: (message: string, data?: LogData) => logger.debug(message, data, 'SCANNER')
+export const infoLog = (message: string, ...args: any[]) => {
+  if (import.meta.env.DEV) {
+    console.info(`[REISTOQ INFO] ${message}`, ...args);
+  }
+};
+
+// Compatibilidade com código existente
+export const logger = {
+  debug: debugLog,
+  error: errorLog,
+  warn: warnLog,
+  info: infoLog
 };
