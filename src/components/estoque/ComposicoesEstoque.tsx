@@ -25,7 +25,7 @@ import { Product, useProducts } from "@/hooks/useProducts";
 import { toast } from "sonner";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { cn } from "@/lib/utils";
-import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
+import { useSidebarUI } from "@/context/SidebarUIContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -47,7 +47,7 @@ export function ComposicoesEstoque() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [skuParaCadastro, setSkuParaCadastro] = useState<string>("");
-  const { isCollapsed: sidebarCollapsed, toggleCollapse: toggleSidebar } = useSidebarCollapse();
+  const { isSidebarCollapsed: sidebarCollapsed, toggleSidebar } = useSidebarUI();
   
   // Filtros hierárquicos para o sidebar
   const [hierarchicalFilters, setHierarchicalFilters] = useState<{

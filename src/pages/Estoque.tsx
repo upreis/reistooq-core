@@ -21,7 +21,7 @@ import { Package, AlertTriangle, Boxes, Search, X, Filter } from "lucide-react";
 import { useHierarchicalCategories } from "@/features/products/hooks/useHierarchicalCategories";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { OptimizedCategorySidebar } from "@/components/estoque/OptimizedCategorySidebar";
-import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse";
+import { useSidebarUI } from "@/context/SidebarUIContext";
 import { cn } from "@/lib/utils";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -65,7 +65,7 @@ const Estoque = () => {
   const { getProducts, getCategories, updateProduct, deleteProduct } = useProducts();
   const { toast } = useToast();
   const { getCategoriasPrincipais, getCategorias, getSubcategorias, categories: hierarchicalCategories, loading: categoriesLoading } = useHierarchicalCategories();
-  const { isCollapsed: sidebarCollapsed, toggleCollapse: toggleSidebar } = useSidebarCollapse();
+  const { isSidebarCollapsed: sidebarCollapsed, toggleSidebar } = useSidebarUI();
 
   // Hook para filtros inteligentes
   const { filters: intelligentFilters, setFilters: setIntelligentFilters, filteredData: intelligentFilteredData, stats: intelligentStats } = useEstoqueFilters(products);
