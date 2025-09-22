@@ -648,7 +648,31 @@ Deno.serve(async (req) => {
       return fail('Missing Authorization header', 401, null, cid);
     }
 
-    const body = await req.json();
+    let body = await req.json();
+    
+    // ✅ VALIDAÇÃO CORRIGIDA: Garantir integration_account_id
+    const validateRequest = (requestBody: any) => {
+      // Se integration_account_id estiver ausente, tentar alternativas
+      if (!requestBody.integration_account_id && !requestBody.integration_account_ids) {
+        // Buscar da URL ou headers como fallback
+        const url = new URL(req.url);
+        const accountId = url.searchParams.get('integration_account_id');
+        if (accountId) {
+          requestBody.integration_account_id = accountId;
+        } else {
+          throw new Error('integration_account_id é obrigatório');
+        }
+      }
+      return requestBody;
+    };
+
+    // Aplicar validação
+    try {
+      body = validateRequest(body);
+    } catch (error) {
+      console.error(`[unified-orders:${cid}] ❌ Validação falhou:`, error.message);
+      return fail(error.message, 400, null, cid);
+    }
     
     console.log(`[unified-orders:${cid}] 🚨 DEBUG BODY COMPLETO:`, JSON.stringify(body, null, 2));
     
