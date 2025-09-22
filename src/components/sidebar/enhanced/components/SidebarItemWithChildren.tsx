@@ -110,53 +110,59 @@ export function SidebarItemWithChildren({
       role="button"
       tabIndex={0}
       className={cn(
-        'group w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-        'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
+        'group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
+        'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
+        'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30',
+        'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
         hasActiveChild
-          ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
-          : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
+          ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/25'
+          : 'text-[hsl(var(--foreground))] hover:text-[hsl(var(--foreground))]'
       )}
       aria-expanded={!isCollapsed ? isOpen : undefined}
       aria-haspopup="true"
       aria-controls={!isCollapsed ? `submenu-${item.id}` : undefined}
     >
-      <Icon className={cn("h-5 w-5 shrink-0", hasActiveChild && "text-[hsl(var(--brand-yellow-foreground))]")} />
+      <Icon className={cn(
+        "h-5 w-5 shrink-0 transition-all duration-200", 
+        hasActiveChild ? "text-[hsl(var(--brand-yellow-foreground))] drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]"
+      )} />
       
-      {/* Label - hidden when collapsed */}
+      {/* Label com tipografia melhorada */}
       <span className={cn(
-        'truncate transition-opacity duration-200',
+        'font-medium truncate transition-all duration-200',
         !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
-        hasActiveChild && 'text-[hsl(var(--brand-yellow-foreground))]'
+        hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))] font-semibold' : 'text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--foreground))]'
       )}>
         {item.label}
       </span>
 
-      {/* Chevron - hidden when collapsed */}
+      {/* Chevron com animação suave */}
       <ChevronDown className={cn(
-        'h-4 w-4 ml-auto transition-transform shrink-0',
-        isOpen ? 'rotate-180' : '',
-        !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'
+        'h-4 w-4 ml-auto transition-all duration-300 shrink-0',
+        isOpen ? 'rotate-180 text-[hsl(var(--primary))]' : 'rotate-0',
+        !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
+        hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))]' : 'text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]'
       )} />
 
-      {/* Badge */}
+      {/* Badge melhorado */}
       {item.badge && (
         <span className={cn(
-          'ml-auto px-1.5 py-0.5 text-xs rounded-full shrink-0',
+          'ml-auto px-2 py-1 text-xs font-semibold rounded-full shrink-0 shadow-sm',
           !isMobile && isCollapsed ? 'absolute -top-1 -right-1 ml-0' : '',
           {
             'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]': item.badge.variant === 'default',
             'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]': item.badge.variant === 'destructive',
-            'bg-yellow-500 text-yellow-50': item.badge.variant === 'warning',
-            'bg-green-500 text-green-50': item.badge.variant === 'success'
+            'bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]': item.badge.variant === 'warning',
+            'bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]': item.badge.variant === 'success'
           }
         )}>
           {item.badge.content}
         </span>
       )}
 
-      {/* Active indicator when collapsed */}
+      {/* Indicador ativo melhorado */}
       {!isMobile && isCollapsed && hasActiveChild && (
-        <span className="ml-auto h-2 w-2 rounded-full bg-[hsl(var(--primary))] shrink-0" />
+        <span className="ml-auto h-2 w-2 rounded-full bg-[hsl(var(--primary))] shrink-0 animate-pulse" />
       )}
     </button>
   );
@@ -174,16 +180,18 @@ export function SidebarItemWithChildren({
                 onKeyDown={handleKeyDown}
                 type="button"
                 className={cn(
-                  'h-12 w-12 rounded-2xl flex items-center justify-center transition-colors shadow-sm p-1',
-                  'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
+                  'h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-200 p-1',
+                  'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20',
+                  'hover:shadow-lg hover:scale-105 active:scale-95',
+                  'backdrop-blur-sm border border-white/10',
                   hasActiveChild 
-                    ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))]'
-                    : 'hover:bg-[hsl(var(--interactive-hover))] bg-transparent'
+                    ? 'bg-gradient-to-br from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/30'
+                    : 'bg-[hsl(var(--background))]/80 hover:bg-[hsl(var(--accent))] text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] shadow-sm'
                 )}
                 aria-haspopup="menu"
                 aria-label={item.label}
               >
-                <Icon className="h-6 w-6 text-current" />
+                <Icon className="h-6 w-6 text-current transition-transform duration-200 group-hover:scale-110" />
               </button>
             </HoverCardTrigger>
             <HoverCardContent
@@ -232,7 +240,8 @@ export function SidebarItemWithChildren({
         <div
           id={`submenu-${item.id}`}
           className={cn(
-            'mt-1 pl-6 space-y-1 overflow-hidden transition-all duration-200',
+            'mt-2 ml-4 pl-4 space-y-1 overflow-hidden transition-all duration-300 ease-out',
+            'border-l-2 border-[hsl(var(--border))]/50',
             isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
           )}
         >
@@ -245,23 +254,33 @@ export function SidebarItemWithChildren({
                 key={child.id || child.path || child.label}
                 to={child.path || '#'}
                 className={cn(
-                  'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                  'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
+                  'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200',
+                  'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20',
+                  'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))] hover:to-[hsl(var(--accent))]/50',
+                  'hover:shadow-sm hover:translate-x-1',
                   childActive
-                    ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
-                    : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
+                    ? 'bg-gradient-to-r from-[hsl(var(--accent))]/80 to-[hsl(var(--accent))]/40 text-[hsl(var(--primary))] shadow-sm border-l-2 border-[hsl(var(--primary))]'
+                    : 'text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]'
                 )}
               >
-                <ChildIcon className={cn("h-4 w-4 shrink-0", childActive && "text-[hsl(var(--brand-yellow-foreground))]")} />
-                <span className="truncate">{child.label}</span>
+                <ChildIcon className={cn(
+                  "h-4 w-4 shrink-0 transition-colors duration-200", 
+                  childActive ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]"
+                )} />
+                <span className={cn(
+                  "truncate font-medium transition-colors duration-200",
+                  childActive ? "text-[hsl(var(--primary))]" : "text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--foreground))]"
+                )}>
+                  {child.label}
+                </span>
                 {child.badge && (
                   <span className={cn(
-                    'ml-auto px-1.5 py-0.5 text-xs rounded-full shrink-0',
+                    'ml-auto px-1.5 py-0.5 text-xs font-medium rounded-full shrink-0',
                     {
                       'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]': child.badge.variant === 'default',
                       'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]': child.badge.variant === 'destructive',
-                      'bg-yellow-500 text-yellow-50': child.badge.variant === 'warning',
-                      'bg-green-500 text-green-50': child.badge.variant === 'success'
+                      'bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]': child.badge.variant === 'warning',
+                      'bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]': child.badge.variant === 'success'
                     }
                   )}>
                     {child.badge.content}
