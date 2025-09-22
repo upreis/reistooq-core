@@ -84,9 +84,42 @@ const SidebarSingleItem = memo(({
     </NavLink>
   );
 
-  // For solo items (no children), no Tooltip to avoid runtime issues
+  // For solo items (no children), create consistent sizing when collapsed
   return !isMobile && isCollapsed ? (
-    <div title={item.label}>{link}</div>
+    <div title={item.label} className="flex justify-center">
+      <NavLink 
+        to={item.path || '#'}
+        className={cn(
+          "relative h-12 w-12 rounded-2xl flex items-center justify-center transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95 backdrop-blur-sm border border-white/10",
+          itemActive 
+            ? "bg-gradient-to-br from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/30"
+            : "bg-[hsl(var(--background))]/80 hover:bg-[hsl(var(--accent))] text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] shadow-sm"
+        )}
+      >
+        <Icon className={cn(
+          "h-6 w-6 shrink-0 transition-colors duration-200",
+          itemActive ? "text-[hsl(var(--brand-yellow-foreground))]" : "text-current"
+        )} />
+        {/* Active indicator when collapsed */}
+        {itemActive && (
+          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[hsl(var(--primary))] animate-pulse" />
+        )}
+        {/* Badge for collapsed single items */}
+        {item.badge && (
+          <span className={cn(
+            'absolute -top-1 -right-1 px-1.5 py-0.5 text-xs font-medium rounded-full',
+            {
+              'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]': item.badge.variant === 'default',
+              'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]': item.badge.variant === 'destructive',
+              'bg-yellow-500 text-yellow-50': item.badge.variant === 'warning',
+              'bg-green-500 text-green-50': item.badge.variant === 'success'
+            }
+          )}>
+            {item.badge.content}
+          </span>
+        )}
+      </NavLink>
+    </div>
   ) : (
     link
   );
