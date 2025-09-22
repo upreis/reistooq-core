@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/theme/ThemeProvider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SidebarUIProvider } from "@/context/SidebarUIContext";
 import { MobileProvider } from "@/contexts/MobileContext";
+import { InactivityTracker } from "@/components/auth/InactivityTracker";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
@@ -90,6 +91,7 @@ function App() {
           <AuthProvider>
             <MobileProvider>
               <SidebarUIProvider>
+                <InactivityTracker />
                 <Toaster />
                 <Sonner />
                 <Routes>
