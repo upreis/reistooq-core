@@ -43,17 +43,19 @@ const SidebarSingleItem = memo(({
       className={cn(
         'group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
         'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
-        'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30',
-        'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
+        'hover:bg-gradient-to-r hover:from-[hsl(var(--brand-yellow))] hover:to-[hsl(var(--brand-yellow-glow))]',
+        'hover:text-[hsl(var(--brand-yellow-foreground))] hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
         itemActive
-          ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
-          : 'hover:bg-gradient-to-r hover:from-[hsl(var(--brand-yellow))] hover:to-[hsl(var(--brand-yellow-glow))] hover:text-[hsl(var(--brand-yellow-foreground))] hover:[&_svg]:text-[hsl(var(--brand-yellow-foreground))] text-[hsl(var(--foreground))]'
+          ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/25'
+          : 'text-[hsl(var(--foreground))]'
       )}
     >
       <Icon className={cn(
         "shrink-0 transition-all duration-200",
         !isMobile && isCollapsed ? "h-5 w-5" : "h-5 w-5",
-        itemActive && "text-[hsl(var(--brand-yellow-foreground))]"
+        itemActive 
+          ? "text-[hsl(var(--brand-yellow-foreground))] drop-shadow-sm" 
+          : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--brand-yellow-foreground))]"
       )} />
       <span className={cn(
         'truncate transition-opacity duration-200',
