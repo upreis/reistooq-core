@@ -4567,7 +4567,6 @@ export type Database = {
         Returns: {
           cpf_cnpj: string
           created_at: string
-          data_is_masked: boolean
           data_primeiro_pedido: string
           data_ultimo_pedido: string
           email: string
@@ -4586,7 +4585,6 @@ export type Database = {
           status_cliente: string
           telefone: string
           ticket_medio: number
-          total_count: number
           total_pedidos: number
           updated_at: string
           valor_total_gasto: number
