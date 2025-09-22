@@ -41,11 +41,13 @@ const SidebarSingleItem = memo(({
     <NavLink
       to={item.path || '#'}
       className={cn(
-        'group flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
-        'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
+        'group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
+        'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
+        'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30',
+        'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
         itemActive
           ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
-          : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
+          : 'hover:bg-gradient-to-r hover:from-[hsl(var(--brand-yellow))] hover:to-[hsl(var(--brand-yellow-glow))] hover:text-[hsl(var(--brand-yellow-foreground))] hover:[&_svg]:text-[hsl(var(--brand-yellow-foreground))] text-[hsl(var(--foreground))]'
       )}
     >
       <Icon className={cn(
