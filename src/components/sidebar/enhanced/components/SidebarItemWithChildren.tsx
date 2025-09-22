@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { NavItem, FlyoutPosition } from '../types/sidebar.types';
 import { SidebarFlyout } from './SidebarFlyout';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { useSidebar } from '../SidebarContext';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 import { SIDEBAR_BEHAVIOR } from '@/config/sidebar-behavior';
 
 interface SidebarItemWithChildrenProps {
@@ -33,7 +33,7 @@ export function SidebarItemWithChildren({
   
   const location = useLocation();
   const navigate = useNavigate();
-  const { actions, utils } = useSidebar();
+  const { toggleGroup, openGroup, closeGroup, isGroupOpen } = useSidebarUI();
   
   const Icon = getIconComponent(item.icon);
   
@@ -46,17 +46,17 @@ export function SidebarItemWithChildren({
   }, [location.pathname, item.children]);
 
   // Check if this group is open
-  const isOpen = actions.isGroupOpen(item.id);
+  const isOpen = isGroupOpen(item.id);
   
   // Auto-expand group when child is active
   useEffect(() => {
     if (!isCollapsed && hasActiveChild && !isOpen) {
-      actions.openGroup(item.id);
+      openGroup(item.id);
     }
-  }, [hasActiveChild, isCollapsed, isOpen, item.id, actions]);
+  }, [hasActiveChild, isCollapsed, isOpen, item.id, openGroup]);
 
-  // Check if flyout is pinned
-  const isFlyoutPinned = actions.isFlyoutOpen(item.id);
+  // Remove flyout functionality temporarily as it's not used in the unified context
+  const isFlyoutPinned = false;
 
   const handleParentClick = useCallback((e: React.MouseEvent) => {
     // Prevent navigation for items WITH children only
@@ -66,13 +66,8 @@ export function SidebarItemWithChildren({
     }
     
     if (isCollapsed && !isMobile) {
-      if (SIDEBAR_BEHAVIOR.collapsed.clickOpensFlyout && hasChildren) {
-        // Pin the flyout when clicked
-        actions.openFlyout(item.id, { 
-          pinned: true, 
-          ttlMs: SIDEBAR_BEHAVIOR.pinOnClickMs 
-        });
-      }
+      // For now, just prevent default behavior when collapsed
+      // Flyout functionality can be added back later if needed
       return;
     }
 
@@ -85,9 +80,9 @@ export function SidebarItemWithChildren({
       }
       
       // Default toggle behavior
-      actions.toggleGroup(item.id);
+      toggleGroup(item.id);
     }
-  }, [isCollapsed, isMobile, item.children, item.id, actions, navigate]);
+  }, [isCollapsed, isMobile, item.children, item.id, toggleGroup, navigate]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -97,15 +92,15 @@ export function SidebarItemWithChildren({
     if (e.key === 'ArrowRight') {
       if (!isCollapsed) {
         // Open group when expanded
-        actions.openGroup(item.id);
+        openGroup(item.id);
       }
     }
     if (e.key === 'ArrowLeft') {
       if (!isCollapsed) {
-        actions.closeGroup(item.id);
+        closeGroup(item.id);
       }
     }
-  }, [handleParentClick, isCollapsed, actions, item.id]);
+  }, [handleParentClick, isCollapsed, openGroup, closeGroup, item.id]);
 
   const button = (
     <button
@@ -205,7 +200,7 @@ export function SidebarItemWithChildren({
               <div className="p-2 space-y-1">
                 {item.children?.map((child) => {
                   const ChildIcon = getIconComponent(child.icon);
-                  const childActive = child.path ? utils.isActive(child.path) : false;
+                   const childActive = child.path ? location.pathname.startsWith(child.path) : false;
                   
                   return (
                     <NavLink
@@ -243,7 +238,7 @@ export function SidebarItemWithChildren({
         >
           {item.children?.map((child) => {
             const ChildIcon = getIconComponent(child.icon);
-            const childActive = child.path ? utils.isActive(child.path) : false;
+            const childActive = child.path ? location.pathname.startsWith(child.path) : false;
 
             return (
               <NavLink
