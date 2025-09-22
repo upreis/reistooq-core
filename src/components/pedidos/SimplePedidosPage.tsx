@@ -424,7 +424,7 @@ function SimplePedidosPage({ className }: Props) {
       // ✅ Usar a função correta que processa diretamente
       mappingActions.processOrdersMappings(orders);
     }
-  }, [orders, verificarPedidos]); // ✅ Dependência simplificada mas funcional
+  }, [orders]); // ✅ Dependência otimizada - removida verificarPedidos para evitar loops
   
   // 🔗 Listener para abrir modal de mapeamento
   useEffect(() => {

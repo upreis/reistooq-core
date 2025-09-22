@@ -214,7 +214,7 @@ export function usePedidosMappingsOptimized({
     if (autoProcess && debouncedPendingOrders.length > 0) {
       processOrdersMappings(debouncedPendingOrders);
     }
-  }, [debouncedPendingOrders, autoProcess, processOrdersMappings]);
+  }, [debouncedPendingOrders, autoProcess]); // ✅ Dependência otimizada - removida processOrdersMappings para evitar loops
 
   // ✅ AÇÃO: Reprocessar mapeamentos forçando atualização
   const reprocessMappings = useCallback((orders: any[]) => {
