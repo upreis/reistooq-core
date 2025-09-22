@@ -191,7 +191,7 @@ export function SidebarItemWithChildren({
                 aria-haspopup="menu"
                 aria-label={item.label}
               >
-                <Icon className="h-6 w-6 text-current transition-transform duration-200 group-hover:scale-110" />
+                <Icon className="h-5 w-5 text-current transition-transform duration-200 group-hover:scale-110" />
               </button>
             </HoverCardTrigger>
             <HoverCardContent

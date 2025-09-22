@@ -50,7 +50,7 @@ const SidebarSingleItem = memo(({
     >
       <Icon className={cn(
         "shrink-0 transition-all duration-200",
-        !isMobile && isCollapsed ? "h-6 w-6" : "h-5 w-5",
+        !isMobile && isCollapsed ? "h-5 w-5" : "h-5 w-5",
         itemActive && "text-[hsl(var(--brand-yellow-foreground))]"
       )} />
       <span className={cn(
@@ -97,7 +97,7 @@ const SidebarSingleItem = memo(({
         )}
       >
         <Icon className={cn(
-          "h-6 w-6 shrink-0 transition-colors duration-200",
+          "h-5 w-5 shrink-0 transition-colors duration-200",
           itemActive ? "text-[hsl(var(--brand-yellow-foreground))]" : "text-current"
         )} />
         {/* Active indicator when collapsed */}
