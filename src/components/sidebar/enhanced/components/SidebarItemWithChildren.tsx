@@ -186,7 +186,7 @@ export function SidebarItemWithChildren({
                   'backdrop-blur-sm border border-white/10',
                   hasActiveChild 
                     ? 'bg-gradient-to-br from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/30'
-                    : 'bg-[hsl(var(--background))]/80 hover:bg-[hsl(var(--accent))] text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] shadow-sm'
+                    : 'bg-transparent hover:border-[hsl(var(--primary))] hover:border-2 text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] shadow-sm'
                 )}
                 aria-haspopup="menu"
                 aria-label={item.label}
