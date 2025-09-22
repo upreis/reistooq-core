@@ -43,7 +43,7 @@ export const config: AppConfig = {
     name: 'REISTOQ',
     version: import.meta.env.VITE_APP_VERSION || '1.0.0',
     environment: import.meta.env.MODE as 'development' | 'production' | 'staging',
-    baseUrl: import.meta.env.VITE_APP_URL || 'https://www.reistoq.com.br',
+    baseUrl: import.meta.env.VITE_APP_URL || 'https://reistoq.com.br',
     supportEmail: import.meta.env.VITE_SUPPORT_EMAIL || 'suporte@reistoq.com.br'
   },
   supabase: {
