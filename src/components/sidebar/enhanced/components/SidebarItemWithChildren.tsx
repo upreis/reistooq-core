@@ -179,7 +179,7 @@ export function SidebarItemWithChildren({
                 onKeyDown={handleKeyDown}
                 type="button"
                 className={cn(
-                  'h-11 w-11 rounded-2xl flex items-center justify-center transition-colors shadow-sm',
+                  'h-12 w-12 rounded-2xl flex items-center justify-center transition-colors shadow-sm p-1',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
                   hasActiveChild 
                     ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))]'
@@ -188,7 +188,7 @@ export function SidebarItemWithChildren({
                 aria-haspopup="menu"
                 aria-label={item.label}
               >
-                <Icon className="h-5 w-5 text-current" />
+                <Icon className="h-6 w-6 text-current" />
               </button>
             </HoverCardTrigger>
             <HoverCardContent

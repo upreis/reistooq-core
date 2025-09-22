@@ -98,7 +98,7 @@ export function useSidebarState(config: Partial<SidebarConfig> = {}) {
     },
 
     isGroupOpen: (groupId: string) => {
-      return state.expandedGroups.has(groupId) || state.openGroups[groupId] || false;
+      return Boolean(state.openGroups[groupId]);
     },
 
     openFlyout: (itemId: string, options?: { pinned?: boolean; ttlMs?: number }) => {
