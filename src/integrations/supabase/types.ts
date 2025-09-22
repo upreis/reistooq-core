@@ -3724,6 +3724,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: boolean
       }
+      check_clientes_secure_access: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       cleanup_expired_notifications: {
         Args: Record<PropertyKey, never>
         Returns: undefined
