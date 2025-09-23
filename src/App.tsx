@@ -50,6 +50,7 @@ import AcceptInvite from "./pages/AcceptInvite";
 import ResetPassword from "./pages/ResetPassword";
 import CategoryManager from "./pages/CategoryManager";
 import ShopeeCallbackPage from "./pages/ShopeeCallbackPage";
+import Compras from "./pages/Compras";
 
 // Create QueryClient instance outside component to avoid recreation
 const queryClient = new QueryClient({
@@ -120,8 +121,13 @@ function App() {
                       <PermissionRoute requiredPermissions={['oms:view']}>
                         <OMS />
                       </PermissionRoute>
-                    } />
-                    
+                     } />
+                     <Route path="/compras" element={
+                       <PermissionRoute requiredPermissions={['compras:view']}>
+                         <Compras />
+                       </PermissionRoute>
+                     } />
+                     
                     {/* eCommerce App Routes */}
                     <Route path="/apps/ecommerce/shop" element={
                       <PermissionRoute requiredPermissions={['ecommerce:view']}>
