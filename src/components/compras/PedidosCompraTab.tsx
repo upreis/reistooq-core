@@ -67,6 +67,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPedido, setEditingPedido] = useState(null);
   const [viewingPedido, setViewingPedido] = useState(null);
+  const [viewingPedidoItens, setViewingPedidoItens] = useState([]);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [showEstoqueModal, setShowEstoqueModal] = useState(false);
@@ -1124,8 +1125,30 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => {
+                        onClick={async () => {
                           setViewingPedido(pedido);
+                          
+                          // Carregar itens do pedido
+                          try {
+                            const { data: itens, error } = await supabase
+                              .from('pedidos_compra_itens')
+                              .select(`
+                                *,
+                                produtos!inner(id, nome, sku_interno)
+                              `)
+                              .eq('pedido_compra_id', pedido.id);
+                            
+                            if (!error && itens) {
+                              console.log('Itens carregados para visualização:', itens);
+                              setViewingPedidoItens(itens);
+                            } else {
+                              setViewingPedidoItens([]);
+                            }
+                          } catch (error) {
+                            console.error('Erro ao carregar itens para visualização:', error);
+                            setViewingPedidoItens([]);
+                          }
+                          
                           setIsViewModalOpen(true);
                         }}
                       >
@@ -1233,6 +1256,47 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                   <p className="font-medium text-lg">{formatCurrency(viewingPedido.valor_total)}</p>
                 </div>
               </div>
+              
+              {/* Seção de Itens do Pedido */}
+              <div>
+                <Label className="text-lg font-semibold">Itens do Pedido</Label>
+                {viewingPedidoItens.length > 0 ? (
+                  <div className="mt-3">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Produto</TableHead>
+                          <TableHead>SKU</TableHead>
+                          <TableHead className="text-center">Quantidade</TableHead>
+                          <TableHead className="text-right">Valor Unitário</TableHead>
+                          <TableHead className="text-right">Valor Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {viewingPedidoItens.map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">
+                              {item.produtos?.nome || 'Produto não encontrado'}
+                            </TableCell>
+                            <TableCell>{item.produtos?.sku_interno}</TableCell>
+                            <TableCell className="text-center">{item.quantidade}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.valor_unitario)}</TableCell>
+                            <TableCell className="text-right font-medium">
+                              {formatCurrency(item.quantidade * item.valor_unitario)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="mt-3 p-4 bg-muted rounded-lg text-center">
+                    <Package className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground">Nenhum item encontrado neste pedido</p>
+                  </div>
+                )}
+              </div>
+              
               {viewingPedido.observacoes && (
                 <div>
                   <Label>Observações</Label>
