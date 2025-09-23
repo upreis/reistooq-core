@@ -8,7 +8,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       { 
         id: 'dashboard', 
         label: 'Dashboard', 
-        path: '/', 
+        path: '/dashboardinicial', 
         icon: 'LayoutDashboard' 
       },
       {

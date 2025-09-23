@@ -35,7 +35,7 @@ import UserProfile from "./pages/UserProfile";
 import Calendar from "./pages/Calendar";
 import Notes from "./pages/Notes";
 import OMS from "./pages/OMS";
-import Dashboard from "./pages/Dashboard";
+import DashboardInicialPage from "./pages/DashboardInicialPage";
 
 import FAQ from "./pages/FAQ";
 import Pricing from "./pages/Pricing";
@@ -108,11 +108,12 @@ function App() {
                   
                   {/* Todas as outras rotas são protegidas com novo layout */}
                   <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
-                    <Route path="/" element={
+                    <Route path="/dashboardinicial/*" element={
                       <PermissionRoute requiredPermissions={['dashboard:view']}>
-                        <Dashboard />
+                        <DashboardInicialPage />
                       </PermissionRoute>
                     } />
+                    <Route path="/" element={<Navigate to="/dashboardinicial/visao-geral" replace />} />
                     <Route path="/oms/*" element={
                       <PermissionRoute requiredPermissions={['oms:view']}>
                         <OMS />
