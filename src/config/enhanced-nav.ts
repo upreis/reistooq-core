@@ -74,15 +74,9 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         children: [
           {
             id: 'compras-pedidos',
-            label: 'Pedidos de Compra',
+            label: 'Pedidos',
             path: '/compras',
             icon: 'ShoppingCart'
-          },
-          {
-            id: 'compras-fornecedores',
-            label: 'Fornecedores',
-            path: '/compras/fornecedores',
-            icon: 'Building2'
           },
           {
             id: 'compras-cotacoes',
@@ -91,10 +85,16 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Calculator'
           },
           {
-            id: 'compras-recebimento',
-            label: 'Recebimento',
-            path: '/compras/recebimento',
-            icon: 'Package'
+            id: 'compras-fornecedores',
+            label: 'Fornecedores',
+            path: '/compras/fornecedores',
+            icon: 'Building2'
+          },
+          {
+            id: 'compras-importacao',
+            label: 'Importação',
+            path: '/compras/importacao',
+            icon: 'Upload'
           }
         ]
       }
