@@ -190,7 +190,7 @@ function App() {
                     } />
                     
                     {/* Custom Business Routes */}
-                    <Route path="/estoque" element={
+                    <Route path="/estoque/*" element={
                       <PermissionRoute requiredPermissions={['estoque:view']}>
                         <Estoque />
                       </PermissionRoute>
