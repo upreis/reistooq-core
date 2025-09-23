@@ -476,6 +476,128 @@ export type Database = {
         }
         Relationships: []
       }
+      compras_importacoes_historico: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          detalhes_erro: Json | null
+          fornecedor_id: string | null
+          id: string
+          linhas_erro: number | null
+          linhas_processadas: number | null
+          nome_arquivo: string
+          organization_id: string
+          produtos_atualizados: number | null
+          produtos_novos: number | null
+          status: string | null
+          tipo_arquivo: string
+          total_linhas: number | null
+          valor_total: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          detalhes_erro?: Json | null
+          fornecedor_id?: string | null
+          id?: string
+          linhas_erro?: number | null
+          linhas_processadas?: number | null
+          nome_arquivo: string
+          organization_id?: string
+          produtos_atualizados?: number | null
+          produtos_novos?: number | null
+          status?: string | null
+          tipo_arquivo: string
+          total_linhas?: number | null
+          valor_total?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          detalhes_erro?: Json | null
+          fornecedor_id?: string | null
+          id?: string
+          linhas_erro?: number | null
+          linhas_processadas?: number | null
+          nome_arquivo?: string
+          organization_id?: string
+          produtos_atualizados?: number | null
+          produtos_novos?: number | null
+          status?: string | null
+          tipo_arquivo?: string
+          total_linhas?: number | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_importacoes_historico_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compras_movimentacoes_estoque: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          data_recebimento: string | null
+          data_validade: string | null
+          id: string
+          lote: string | null
+          observacoes: string | null
+          organization_id: string
+          pedido_compra_id: string | null
+          produto_id: string | null
+          quantidade: number
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          data_recebimento?: string | null
+          data_validade?: string | null
+          id?: string
+          lote?: string | null
+          observacoes?: string | null
+          organization_id?: string
+          pedido_compra_id?: string | null
+          produto_id?: string | null
+          quantidade: number
+          valor_unitario: number
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          data_recebimento?: string | null
+          data_validade?: string | null
+          id?: string
+          lote?: string | null
+          observacoes?: string | null
+          organization_id?: string
+          pedido_compra_id?: string | null
+          produto_id?: string | null
+          quantidade?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compras_movimentacoes_estoque_pedido_compra_id_fkey"
+            columns: ["pedido_compra_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compras_movimentacoes_estoque_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configuracoes: {
         Row: {
           chave: string
@@ -508,6 +630,195 @@ export type Database = {
           valor?: string
         }
         Relationships: []
+      }
+      cotacoes: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          data_abertura: string
+          data_fechamento: string | null
+          descricao: string
+          id: string
+          numero_cotacao: string
+          observacoes: string | null
+          organization_id: string
+          status: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          data_abertura?: string
+          data_fechamento?: string | null
+          descricao: string
+          id?: string
+          numero_cotacao: string
+          observacoes?: string | null
+          organization_id?: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          data_abertura?: string
+          data_fechamento?: string | null
+          descricao?: string
+          id?: string
+          numero_cotacao?: string
+          observacoes?: string | null
+          organization_id?: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      cotacoes_fornecedores: {
+        Row: {
+          cotacao_id: string | null
+          created_at: string | null
+          data_envio: string | null
+          data_resposta: string | null
+          fornecedor_id: string | null
+          id: string
+          observacoes_fornecedor: string | null
+          organization_id: string
+          valor_total_proposta: number | null
+        }
+        Insert: {
+          cotacao_id?: string | null
+          created_at?: string | null
+          data_envio?: string | null
+          data_resposta?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          observacoes_fornecedor?: string | null
+          organization_id?: string
+          valor_total_proposta?: number | null
+        }
+        Update: {
+          cotacao_id?: string | null
+          created_at?: string | null
+          data_envio?: string | null
+          data_resposta?: string | null
+          fornecedor_id?: string | null
+          id?: string
+          observacoes_fornecedor?: string | null
+          organization_id?: string
+          valor_total_proposta?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotacoes_fornecedores_cotacao_id_fkey"
+            columns: ["cotacao_id"]
+            isOneToOne: false
+            referencedRelation: "cotacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_fornecedores_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cotacoes_itens: {
+        Row: {
+          cotacao_id: string | null
+          created_at: string | null
+          especificacoes: string | null
+          id: string
+          organization_id: string
+          produto_id: string | null
+          quantidade: number
+        }
+        Insert: {
+          cotacao_id?: string | null
+          created_at?: string | null
+          especificacoes?: string | null
+          id?: string
+          organization_id?: string
+          produto_id?: string | null
+          quantidade: number
+        }
+        Update: {
+          cotacao_id?: string | null
+          created_at?: string | null
+          especificacoes?: string | null
+          id?: string
+          organization_id?: string
+          produto_id?: string | null
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotacoes_itens_cotacao_id_fkey"
+            columns: ["cotacao_id"]
+            isOneToOne: false
+            referencedRelation: "cotacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cotacoes_propostas: {
+        Row: {
+          cotacao_fornecedor_id: string | null
+          cotacao_item_id: string | null
+          created_at: string | null
+          id: string
+          observacoes: string | null
+          organization_id: string
+          prazo_entrega: number | null
+          valor_unitario: number
+        }
+        Insert: {
+          cotacao_fornecedor_id?: string | null
+          cotacao_item_id?: string | null
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          organization_id?: string
+          prazo_entrega?: number | null
+          valor_unitario: number
+        }
+        Update: {
+          cotacao_fornecedor_id?: string | null
+          cotacao_item_id?: string | null
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          organization_id?: string
+          prazo_entrega?: number | null
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cotacoes_propostas_cotacao_fornecedor_id_fkey"
+            columns: ["cotacao_fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "cotacoes_fornecedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cotacoes_propostas_cotacao_item_id_fkey"
+            columns: ["cotacao_item_id"]
+            isOneToOne: false
+            referencedRelation: "cotacoes_itens"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_data_access_log: {
         Row: {
@@ -998,6 +1309,72 @@ export type Database = {
           valor_reembolso_total?: number | null
           valor_retido?: number | null
           versao_api_utilizada?: string | null
+        }
+        Relationships: []
+      }
+      fornecedores: {
+        Row: {
+          ativo: boolean | null
+          avaliacao: number | null
+          categoria: string | null
+          cep: string | null
+          cidade: string | null
+          cnpj: string | null
+          contato_principal: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          endereco: string | null
+          estado: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          organization_id: string
+          telefone: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          avaliacao?: number | null
+          categoria?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          contato_principal?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          organization_id?: string
+          telefone?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          avaliacao?: number | null
+          categoria?: string | null
+          cep?: string | null
+          cidade?: string | null
+          cnpj?: string | null
+          contato_principal?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          endereco?: string | null
+          estado?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          organization_id?: string
+          telefone?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -2575,6 +2952,113 @@ export type Database = {
             columns: ["integration_account_id"]
             isOneToOne: false
             referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos_compra: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          data_entrega_prevista: string | null
+          data_pedido: string
+          fornecedor_id: string | null
+          id: string
+          numero_pedido: string
+          observacoes: string | null
+          organization_id: string
+          status: string | null
+          updated_at: string | null
+          updated_by: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          data_entrega_prevista?: string | null
+          data_pedido?: string
+          fornecedor_id?: string | null
+          id?: string
+          numero_pedido: string
+          observacoes?: string | null
+          organization_id?: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          data_entrega_prevista?: string | null
+          data_pedido?: string
+          fornecedor_id?: string | null
+          id?: string
+          numero_pedido?: string
+          observacoes?: string | null
+          organization_id?: string
+          status?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_compra_fornecedor_id_fkey"
+            columns: ["fornecedor_id"]
+            isOneToOne: false
+            referencedRelation: "fornecedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pedidos_compra_itens: {
+        Row: {
+          created_at: string | null
+          id: string
+          observacoes: string | null
+          organization_id: string
+          pedido_compra_id: string | null
+          produto_id: string | null
+          quantidade: number
+          valor_total: number | null
+          valor_unitario: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          organization_id?: string
+          pedido_compra_id?: string | null
+          produto_id?: string | null
+          quantidade: number
+          valor_total?: number | null
+          valor_unitario: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          observacoes?: string | null
+          organization_id?: string
+          pedido_compra_id?: string | null
+          produto_id?: string | null
+          quantidade?: number
+          valor_total?: number | null
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_compra_itens_pedido_compra_id_fkey"
+            columns: ["pedido_compra_id"]
+            isOneToOne: false
+            referencedRelation: "pedidos_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_compra_itens_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
             referencedColumns: ["id"]
           },
         ]
@@ -4504,6 +4988,10 @@ export type Database = {
       }
       migrate_existing_orders_to_unified: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      processar_recebimento_pedido_compra: {
+        Args: { p_itens: Json; p_pedido_id: string }
         Returns: Json
       }
       refresh_ml_token: {
