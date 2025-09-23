@@ -55,14 +55,14 @@ const ComprasContent = () => {
         <span className="text-primary">Compras</span>
       </div>
 
+      <ComprasNav />
+
       {/* Cards de Resumo */}
       <ComprasStats 
         fornecedores={fornecedores}
         pedidosCompra={pedidosCompra}
         cotacoes={cotacoes}
       />
-
-      <ComprasNav />
       
       <div className="mt-6">
         <Routes>
