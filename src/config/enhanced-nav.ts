@@ -119,8 +119,27 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       { 
         id: 'estoque', 
         label: 'Gestão de Estoque', 
-        path: '/estoque', 
-        icon: 'Boxes' 
+        icon: 'Boxes',
+        children: [
+          {
+            id: 'estoque-lista',
+            label: 'Lista de Produtos',
+            path: '/estoque',
+            icon: 'Package'
+          },
+          {
+            id: 'estoque-movimentacao',
+            label: 'Movimentação',
+            path: '/estoque/movimentacao',
+            icon: 'ArrowUpDown'
+          },
+          {
+            id: 'estoque-relatorios',
+            label: 'Relatórios',
+            path: '/estoque/relatorios',
+            icon: 'BarChart3'
+          }
+        ]
       },
       { 
         id: 'scanner', 
