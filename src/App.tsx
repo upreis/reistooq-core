@@ -240,7 +240,7 @@ function App() {
                         <Historico />
                       </PermissionRoute>
                     } />
-                    <Route path="/admin" element={
+                    <Route path="/admin/*" element={
                       <PermissionRoute requiredAny={['users:read', 'roles:manage', 'invites:manage', 'system:audit']}>
                         <AdminPage />
                       </PermissionRoute>

@@ -1,0 +1,70 @@
+import { NavLink, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { Settings, Users, Shield, Mail, Bell, History } from "lucide-react";
+
+const navItems = [
+  {
+    path: "/admin",
+    label: "Visão Geral",
+    icon: Settings,
+  },
+  {
+    path: "/admin/usuarios",
+    label: "Usuários", 
+    icon: Users,
+  },
+  {
+    path: "/admin/cargos",
+    label: "Cargos",
+    icon: Shield,
+  },
+  {
+    path: "/admin/convites",
+    label: "Convites",
+    icon: Mail,
+  },
+  {
+    path: "/admin/alertas",
+    label: "Alertas",
+    icon: Bell,
+  },
+  {
+    path: "/admin/seguranca",
+    label: "Segurança",
+    icon: Shield,
+  },
+  {
+    path: "/admin/auditoria",
+    label: "Auditoria",
+    icon: History,
+  },
+];
+
+export function AdminNav() {
+  const location = useLocation();
+
+  return (
+    <nav className="flex space-x-8 border-b border-border">
+      {navItems.map((item) => {
+        const isActive = location.pathname === item.path;
+        const Icon = item.icon;
+        
+        return (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={cn(
+              "pb-4 px-1 text-sm font-medium transition-colors hover:text-primary flex items-center gap-2",
+              isActive
+                ? "border-b-2 border-primary text-primary"
+                : "text-muted-foreground border-b-2 border-transparent"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {item.label}
+          </NavLink>
+        );
+      })}
+    </nav>
+  );
+}
