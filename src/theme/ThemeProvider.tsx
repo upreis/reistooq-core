@@ -31,21 +31,26 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<ThemeName>(() => {
-    // Safe localStorage access for SSR/hydration
-    if (typeof window === 'undefined') {
+    // ✅ FIX CRÍTICO: Verificação mais robusta para evitar erro de React
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
       return defaultTheme;
     }
     
     try {
-      const stored = localStorage.getItem(storageKey) as ThemeName;
-      return THEME_OPTIONS.includes(stored) ? stored : defaultTheme;
-    } catch {
+      const stored = window.localStorage?.getItem?.(storageKey) as ThemeName;
+      return (stored && THEME_OPTIONS.includes(stored)) ? stored : defaultTheme;
+    } catch (error) {
+      console.warn('Theme localStorage error:', error);
       return defaultTheme;
     }
   });
 
   useEffect(() => {
+    // ✅ FIX CRÍTICO: Verificação mais robusta do DOM
+    if (typeof document === 'undefined') return;
+    
     const root = document.documentElement;
+    if (!root) return;
     
     // Remove all theme classes
     THEME_OPTIONS.forEach(t => root.classList.remove(t));
@@ -55,18 +60,27 @@ export function ThemeProvider({
     root.classList.add(theme);
 
     // Apply CSS variables from theme tokens
-    const themeTokens = THEMES[theme];
-    Object.entries(themeTokens).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
-    });
+    try {
+      const themeTokens = THEMES[theme];
+      if (themeTokens) {
+        Object.entries(themeTokens).forEach(([key, value]) => {
+          root.style.setProperty(key, value);
+        });
+      }
+    } catch (error) {
+      console.warn('Theme tokens error:', error);
+    }
 
     // Log theme loading
-    console.log('Theme loaded:', theme);
+    console.log('🎨 Theme loaded:', theme);
   }, [theme]);
 
   const handleSetTheme = (newTheme: ThemeName) => {
     try {
-      localStorage.setItem(storageKey, newTheme);
+      // ✅ FIX CRÍTICO: Verificação mais segura do localStorage
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(storageKey, newTheme);
+      }
     } catch (error) {
       console.warn('Failed to save theme to localStorage:', error);
     }
