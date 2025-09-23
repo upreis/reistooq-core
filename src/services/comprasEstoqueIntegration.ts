@@ -286,6 +286,174 @@ export class ComprasEstoqueIntegration {
   }
 
   /**
+   * Extorna o recebimento de um pedido de compra e reverte o estoque
+   */
+  static async extornarRecebimentoPedido(
+    pedidoId: string
+  ): Promise<{ success: boolean; message: string; detalhes?: any }> {
+    try {
+      console.log('🔄 [ComprasEstoqueIntegration] Iniciando extorno do pedido:', pedidoId);
+
+      // Buscar as movimentações de compra deste pedido
+      const { data: movimentacoes, error: movError } = await supabase
+        .from('compras_movimentacoes_estoque' as any)
+        .select('*')
+        .eq('pedido_compra_id', pedidoId);
+
+      if (movError) {
+        console.error('Erro ao buscar movimentações:', movError);
+        return {
+          success: false,
+          message: 'Erro ao buscar movimentações do pedido'
+        };
+      }
+
+      if (!movimentacoes || movimentacoes.length === 0) {
+        return {
+          success: false,
+          message: 'Nenhuma movimentação encontrada para extornar'
+        };
+      }
+
+      console.log('📋 [ComprasEstoqueIntegration] Movimentações encontradas:', movimentacoes.length);
+
+      const resultados = [];
+
+      for (const movimentacao of (movimentacoes as any[])) {
+        try {
+          // Buscar produto atual
+          const { data: produto, error: produtoError } = await supabase
+            .from('produtos')
+            .select('*')
+            .eq('id', movimentacao.produto_id)
+            .maybeSingle();
+
+          if (produtoError || !produto) {
+            console.error('Erro ao buscar produto para extorno:', produtoError);
+            resultados.push({
+              produto_id: movimentacao.produto_id,
+              success: false,
+              erro: 'Produto não encontrado'
+            });
+            continue;
+          }
+
+          const quantidadeAtual = produto.quantidade_atual || 0;
+          const quantidadeExtorno = movimentacao.quantidade || 0;
+          const novaQuantidade = quantidadeAtual - quantidadeExtorno;
+
+          // Verificar se há estoque suficiente para extornar
+          if (novaQuantidade < 0) {
+            resultados.push({
+              produto_id: movimentacao.produto_id,
+              sku: produto.sku_interno,
+              success: false,
+              erro: `Estoque insuficiente para extorno. Atual: ${quantidadeAtual}, Tentativa extorno: ${quantidadeExtorno}`
+            });
+            continue;
+          }
+
+          console.log(`📊 [ComprasEstoqueIntegration] Extornando produto ${produto.sku_interno}:`, {
+            quantidadeAtual,
+            quantidadeExtorno,
+            novaQuantidade
+          });
+
+          // Atualizar estoque do produto
+          const { error: updateError } = await supabase
+            .from('produtos')
+            .update({
+              quantidade_atual: novaQuantidade,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', movimentacao.produto_id);
+
+          if (updateError) {
+            console.error('Erro ao extornar estoque:', updateError);
+            resultados.push({
+              produto_id: movimentacao.produto_id,
+              sku: produto.sku_interno,
+              success: false,
+              erro: 'Erro ao atualizar estoque'
+            });
+            continue;
+          }
+
+          // Registrar movimentação de extorno
+          const { error: historicoError } = await supabase
+            .from('movimentacoes_estoque')
+            .insert({
+              produto_id: movimentacao.produto_id,
+              tipo_movimentacao: 'saida',
+              quantidade_anterior: quantidadeAtual,
+              quantidade_nova: novaQuantidade,
+              quantidade_movimentada: quantidadeExtorno,
+              motivo: 'extorno_pedido_compra',
+              observacoes: `Extorno do pedido de compra - Referência: ${pedidoId}`
+            });
+
+          if (historicoError) {
+            console.error('Erro ao registrar histórico de extorno:', historicoError);
+          }
+
+          resultados.push({
+            produto_id: movimentacao.produto_id,
+            sku: produto.sku_interno,
+            success: true,
+            quantidade_extornada: quantidadeExtorno
+          });
+
+        } catch (error) {
+          console.error('Erro ao processar extorno do produto:', error);
+          resultados.push({
+            produto_id: movimentacao.produto_id,
+            success: false,
+            erro: 'Erro interno no processamento'
+          });
+        }
+      }
+
+      // Remover registros de movimentação de compra após extorno bem-sucedido
+      const sucessos = resultados.filter(r => r.success);
+      if (sucessos.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('compras_movimentacoes_estoque' as any)
+          .delete()
+          .eq('pedido_compra_id', pedidoId);
+
+        if (deleteError) {
+          console.error('Erro ao remover movimentações de compra:', deleteError);
+        }
+      }
+
+      const totalProcessados = resultados.length;
+      const totalSucesso = sucessos.length;
+      const totalErros = totalProcessados - totalSucesso;
+
+      if (totalSucesso === 0) {
+        return {
+          success: false,
+          message: 'Nenhum item pôde ser extornado do estoque',
+          detalhes: resultados
+        };
+      }
+
+      return {
+        success: true,
+        message: `Extorno concluído: ${totalSucesso} item(s) extornado(s)${totalErros > 0 ? `, ${totalErros} erro(s)` : ''}`,
+        detalhes: resultados
+      };
+
+    } catch (error) {
+      console.error('Erro geral no extorno:', error);
+      return {
+        success: false,
+        message: 'Erro interno no processo de extorno'
+      };
+    }
+  }
+
+  /**
    * Obter histórico de compras de um produto
    */
   static async obterHistoricoComprasProduto(produtoId: string): Promise<any[]> {

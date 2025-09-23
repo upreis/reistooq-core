@@ -72,6 +72,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [showEstoqueModal, setShowEstoqueModal] = useState(false);
   const [showConfirmacaoStatusModal, setShowConfirmacaoStatusModal] = useState(false);
+  const [showConfirmacaoExtornoModal, setShowConfirmacaoExtornoModal] = useState(false);
   const [pedidoParaEstoque, setPedidoParaEstoque] = useState(null);
   
   // MANTÉM a estrutura original do formData
@@ -83,10 +84,12 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
     status: 'pendente',
     valor_total: 0,
     observacoes: '',
-    itens: [] // ADICIONA campo itens como array vazio
+    itens: []
   });
+  
+  const [statusParaExtorno, setStatusParaExtorno] = useState('');
 
-  // NOVOS estados para funcionalidades avançadas (SEM alterar os existentes)
+  // NOVOS estados para funcionalidades avançadas
   const [currentTab, setCurrentTab] = useState('basico');
   const { getProducts } = useProducts();
   const [produtos, setProdutos] = useState([]);
@@ -107,7 +110,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   });
 
   const { toast } = useToast();
-  const { createPedidoCompra, updatePedidoCompra, processarRecebimentoPedido } = useCompras();
+  const { createPedidoCompra, updatePedidoCompra, processarRecebimentoPedido, extornarRecebimentoPedido } = useCompras();
 
   // Carregar produtos do estoque
   useEffect(() => {
@@ -169,6 +172,11 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
       const statusMudouParaConcluido = editingPedido && 
         editingPedido.status !== 'concluido_recebido' && 
         formData.status === 'concluido_recebido';
+
+      // Verifica se status mudou DE concluido_recebido para outro
+      const statusMudouParaExtorno = editingPedido && 
+        editingPedido.status === 'concluido_recebido' && 
+        formData.status !== 'concluido_recebido';
 
       let resultado;
       if (editingPedido) {
@@ -278,6 +286,36 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
               title: "Aviso",
               description: "Para dar entrada no estoque, é necessário ter produtos cadastrados no pedido.",
               variant: "default",
+            });
+          }
+        }
+
+        // Se mudou DE concluído/recebido para outro status, extornar estoque
+        if (statusMudouParaExtorno) {
+          console.log('🔄 Status mudou DE concluído, processando extorno...');
+          
+          try {
+            const resultadoExtorno = await extornarRecebimentoPedido(editingPedido.id);
+            
+            if (resultadoExtorno.success) {
+              toast({
+                title: "Extorno realizado",
+                description: resultadoExtorno.message,
+                variant: "default",
+              });
+            } else {
+              toast({
+                title: "Erro no extorno",
+                description: resultadoExtorno.message,
+                variant: "destructive",
+              });
+            }
+          } catch (error) {
+            console.error("Erro ao processar extorno:", error);
+            toast({
+              title: "Erro no extorno", 
+              description: "Não foi possível processar o extorno do estoque.",
+              variant: "destructive",
             });
           }
         }
@@ -614,7 +652,14 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                                 variant: "default",
                               });
                             }
-                          } else {
+                          } 
+                          // Se está mudando DE concluído/recebido para outro status, mostrar confirmação de extorno
+                          else if (formData.status === 'concluido_recebido' && value !== 'concluido_recebido') {
+                            setShowConfirmacaoExtornoModal(true);
+                            // Armazenar o novo valor para usar após confirmação
+                            setStatusParaExtorno(value);
+                          } 
+                          else {
                             setFormData({ ...formData, status: value });
                           }
                         }}

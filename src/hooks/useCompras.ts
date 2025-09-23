@@ -283,6 +283,38 @@ export const useCompras = () => {
     }
   };
 
+  const extornarRecebimentoPedido = async (pedidoId: string) => {
+    try {
+      setLoading(true);
+      const resultado = await ComprasEstoqueIntegration.extornarRecebimentoPedido(pedidoId);
+      
+      if (resultado.success) {
+        toast({
+          title: "Extorno processado",
+          description: resultado.message,
+        });
+      } else {
+        toast({
+          title: "Erro no extorno",
+          description: resultado.message,
+          variant: "destructive",
+        });
+      }
+      
+      return resultado;
+    } catch (error) {
+      console.error('Erro ao processar extorno:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar o extorno.",
+        variant: "destructive",
+      });
+      return { success: false, message: 'Erro interno' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const buscarProdutosParaReposicao = async () => {
     try {
       return await ComprasEstoqueIntegration.buscarProdutosParaReposicao();
@@ -362,6 +394,7 @@ export const useCompras = () => {
     createCotacao,
     // Integração com estoque
     processarRecebimentoPedido,
+    extornarRecebimentoPedido,
     buscarProdutosParaReposicao,
     gerarSugestaoPedidoCompra
   };
