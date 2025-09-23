@@ -58,7 +58,7 @@ export const useCompras = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('fornecedores' as any)
+        .from('fornecedores')
         .select('*')
         .order('nome');
 
@@ -81,7 +81,7 @@ export const useCompras = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('fornecedores' as any)
+        .from('fornecedores')
         .insert([fornecedor])
         .select()
         .single();
@@ -106,7 +106,7 @@ export const useCompras = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('pedidos_compra' as any)
+        .from('pedidos_compra')
         .select(`
           *,
           fornecedores!inner(nome)
@@ -137,7 +137,7 @@ export const useCompras = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('cotacoes' as any)
+        .from('cotacoes')
         .select(`*`)
         .order('created_at', { ascending: false });
 
@@ -160,7 +160,7 @@ export const useCompras = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('cotacoes' as any)
+        .from('cotacoes')
         .insert([cotacao])
         .select()
         .single();
