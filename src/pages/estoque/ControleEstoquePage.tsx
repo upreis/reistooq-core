@@ -1,6 +1,5 @@
 // 🛡️ PÁGINA PROTEGIDA - NÃO MODIFICAR SEM AUTORIZAÇÃO EXPLÍCITA
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { EstoqueGuard } from '@/core/estoque/guards/EstoqueGuard';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EstoqueActions } from "@/components/estoque/EstoqueActions";
@@ -15,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Package, AlertTriangle, Filter } from "lucide-react";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
-import { EstoqueStats } from "@/components/estoque/EstoqueStats";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 
 export default function ControleEstoquePage() {
@@ -310,13 +308,8 @@ export default function ControleEstoquePage() {
   const totalPages = Math.ceil(finalFilteredProducts.length / itemsPerPage);
 
   return (
-    <EstoqueGuard>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10">
-        {/* Stats Cards */}
-        <EstoqueStats products={products} />
-        
-        <div className="space-y-6 pb-6 px-6">
-          {/* Filtros inteligentes */}
+    <div className="space-y-6">
+      {/* Filtros inteligentes */}
           <Card className="shadow-sm border-border/40">
             <CardContent className="p-4">
               <EstoqueIntelligentFilters
@@ -397,23 +390,21 @@ export default function ControleEstoquePage() {
                 )}
               </TableWrapper>
             </CardContent>
-          </Card>
-        </div>
+        </Card>
 
-        {/* Modal de produto */}
-        <ProductModal
-          open={editModalOpen || newProductModalOpen}
-          onOpenChange={(open) => {
-            if (!open) {
-              setEditModalOpen(false);
-              setNewProductModalOpen(false);
-              setEditingProduct(null);
-            }
-          }}
-          product={editingProduct}
-          onSuccess={handleEditSuccess}
-        />
-      </div>
-    </EstoqueGuard>
+      {/* Modal de produto */}
+      <ProductModal
+        open={editModalOpen || newProductModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditModalOpen(false);
+            setNewProductModalOpen(false);
+            setEditingProduct(null);
+          }
+        }}
+        product={editingProduct}
+        onSuccess={handleEditSuccess}
+      />
+    </div>
   );
 }
