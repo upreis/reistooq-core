@@ -104,9 +104,9 @@ const SidebarSingleItem = memo(({
           "h-5 w-5 shrink-0 transition-colors duration-200",
           itemActive ? "text-[hsl(var(--brand-yellow-foreground))]" : "text-current"
         )} />
-        {/* Active indicator when collapsed */}
+        {/* Active indicator when collapsed - mais visível */}
         {itemActive && (
-          <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-[hsl(var(--primary))] animate-pulse" />
+          <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[hsl(var(--primary))] animate-pulse border-2 border-[hsl(var(--background))]" />
         )}
         {/* Badge for collapsed single items */}
         {item.badge && (

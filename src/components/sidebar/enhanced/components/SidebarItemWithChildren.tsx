@@ -74,12 +74,13 @@ export function SidebarItemWithChildren({
     // When expanded - only for items with children
     if (hasChildren) {
       const firstChild = item.children?.[0];
-      if (SIDEBAR_BEHAVIOR.groupClick === 'navigateFirst' && firstChild?.path) {
+      // Always navigate to first child instead of toggling
+      if (firstChild?.path) {
         navigate(firstChild.path);
         return;
       }
       
-      // Default toggle behavior
+      // Fallback toggle behavior if no valid first child
       toggleGroup(item.id);
     }
   }, [isCollapsed, isMobile, item.children, item.id, toggleGroup, navigate]);
@@ -160,9 +161,9 @@ export function SidebarItemWithChildren({
         </span>
       )}
 
-      {/* Indicador ativo melhorado */}
+      {/* Indicador ativo melhorado - sempre visível quando collapsed e tem filho ativo */}
       {!isMobile && isCollapsed && hasActiveChild && (
-        <span className="ml-auto h-2 w-2 rounded-full bg-[hsl(var(--primary))] shrink-0 animate-pulse" />
+        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[hsl(var(--primary))] shrink-0 animate-pulse border-2 border-[hsl(var(--background))]" />
       )}
     </button>
   );
@@ -192,6 +193,10 @@ export function SidebarItemWithChildren({
                 aria-label={item.label}
               >
                 <Icon className="h-5 w-5 text-current transition-transform duration-200 group-hover:scale-110" />
+                {/* Indicador ativo para collapsed hover card */}
+                {hasActiveChild && (
+                  <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[hsl(var(--primary))] animate-pulse border-2 border-[hsl(var(--background))]" />
+                )}
               </button>
             </HoverCardTrigger>
             <HoverCardContent
