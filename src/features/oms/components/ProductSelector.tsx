@@ -17,6 +17,7 @@ import {
 import { Search, Package, Barcode } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useProducts } from "@/hooks/useProducts";
 
 interface Product {
   id: string;
@@ -39,50 +40,31 @@ export function ProductSelector({
 }: ProductSelectorProps) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const { getProducts } = useProducts();
 
-  // Mock products data - replace with real data from Supabase
+  // Buscar produtos reais do estoque
   const { data: products = [] } = useQuery({
     queryKey: ['products', searchTerm],
     queryFn: async () => {
-      // For now, return mock data
-      // Later, implement real Supabase query
-      const mockProducts: Product[] = [
-        {
-          id: "1",
-          sku_interno: "PROD-001",
-          nome: "Notebook Dell Inspiron 15",
-          categoria: "Eletrônicos",
-          preco_venda: 2500.00,
-          quantidade_atual: 10,
-          codigo_barras: "7891234567890"
-        },
-        {
-          id: "2",
-          sku_interno: "PROD-002", 
-          nome: "Mouse Wireless Logitech",
-          categoria: "Acessórios",
-          preco_venda: 85.00,
-          quantidade_atual: 25,
-          codigo_barras: "7891234567891"
-        },
-        {
-          id: "3",
-          sku_interno: "PROD-003",
-          nome: "Teclado Mecânico RGB",
-          categoria: "Acessórios",
-          preco_venda: 350.00,
-          quantidade_atual: 15,
-          codigo_barras: "7891234567892"
-        }
-      ];
-
-      if (!searchTerm) return mockProducts;
-      
-      return mockProducts.filter(product => 
-        product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.codigo_barras?.includes(searchTerm)
-      );
+      try {
+        const data = await getProducts({ 
+          limit: 100,
+          search: searchTerm || undefined
+        });
+        
+        return data.map(product => ({
+          id: product.id,
+          sku_interno: product.sku_interno,
+          nome: product.nome,
+          categoria: product.categoria || "Sem categoria",
+          preco_venda: product.preco_venda || 0,
+          quantidade_atual: product.quantidade_atual,
+          codigo_barras: product.codigo_barras
+        }));
+      } catch (error) {
+        console.error("Error loading products:", error);
+        return [];
+      }
     },
     enabled: open || searchTerm.length > 0
   });

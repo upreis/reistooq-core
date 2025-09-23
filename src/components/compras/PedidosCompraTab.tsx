@@ -1,5 +1,5 @@
 // src/components/compras/PedidosCompraTab.tsx - EVOLUÇÃO COMPLETA do modal existente
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductSelector } from "./ProductSelector";
+import { useProducts } from "@/hooks/useProducts";
 
 // MANTÉM a interface original EXATAMENTE igual
 interface PedidosCompraTabProps {
@@ -81,13 +82,8 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
 
   // NOVOS estados para funcionalidades avançadas (SEM alterar os existentes)
   const [currentTab, setCurrentTab] = useState('basico');
-  const [produtos] = useState([
-    { id: '1', nome: 'Produto A', sku_interno: 'SKU001', preco_custo: 10.50, estoque: 100 },
-    { id: '2', nome: 'Produto B', sku_interno: 'SKU002', preco_custo: 25.00, estoque: 50 },
-    { id: '3', nome: 'Produto C', sku_interno: 'SKU003', preco_custo: 15.75, estoque: 75 },
-    { id: '4', nome: 'Produto D', sku_interno: 'SKU004', preco_custo: 35.90, estoque: 25 },
-    { id: '5', nome: 'Produto E', sku_interno: 'SKU005', preco_custo: 8.25, estoque: 150 }
-  ]);
+  const { getProducts } = useProducts();
+  const [produtos, setProdutos] = useState([]);
   const [searchProduto, setSearchProduto] = useState('');
   const [dadosFiscais, setDadosFiscais] = useState({
     cfop_padrao: '1102',
@@ -105,6 +101,19 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   });
 
   const { toast } = useToast();
+
+  // Carregar produtos do estoque
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const data = await getProducts({ limit: 1000 });
+        setProdutos(data);
+      } catch (error) {
+        console.error("Error loading products:", error);
+      }
+    };
+    loadProducts();
+  }, [getProducts]);
 
   // MANTÉM a lógica de filtros original EXATAMENTE igual
   const filteredPedidos = pedidosCompra.filter(pedido => {
@@ -241,7 +250,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
     const newItens = selectedProducts.map(product => ({
       produto_id: product.id,
       produto_nome: product.nome,
-      produto_sku: product.sku,
+      produto_sku: product.sku_interno,
       quantidade: product.quantidade || 1,
       valor_unitario: product.preco_custo || 0,
       valor_total: (product.quantidade || 1) * (product.preco_custo || 0)
@@ -1016,6 +1025,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
         isOpen={isProductSelectorOpen}
         onOpenChange={setIsProductSelectorOpen}
         onSelectProducts={handleAddProducts}
+        selectedProducts={[]}
       />
 
       {/* Modal de visualização */}

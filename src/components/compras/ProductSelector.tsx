@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,14 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Package, ShoppingCart, Minus, Plus } from "lucide-react";
+import { useProducts } from "@/hooks/useProducts";
 
 interface Product {
   id: string;
   nome: string;
-  sku: string;
+  sku_interno: string;
   preco_custo: number;
   quantidade_atual: number;
-  estoque_minimo: number;
+  estoque_minimo?: number;
   categoria?: string;
 }
 
@@ -25,54 +26,6 @@ interface ProductSelectorProps {
   selectedProducts?: any[];
 }
 
-const mockProducts: Product[] = [
-  {
-    id: '1',
-    nome: 'Produto A',
-    sku: 'SKU001',
-    preco_custo: 10.50,
-    quantidade_atual: 100,
-    estoque_minimo: 10,
-    categoria: 'Categoria 1'
-  },
-  {
-    id: '2',
-    nome: 'Produto B',
-    sku: 'SKU002',
-    preco_custo: 25.00,
-    quantidade_atual: 50,
-    estoque_minimo: 5,
-    categoria: 'Categoria 2'
-  },
-  {
-    id: '3',
-    nome: 'Produto C',
-    sku: 'SKU003',
-    preco_custo: 15.75,
-    quantidade_atual: 75,
-    estoque_minimo: 15,
-    categoria: 'Categoria 1'
-  },
-  {
-    id: '4',
-    nome: 'Produto D',
-    sku: 'SKU004',
-    preco_custo: 35.90,
-    quantidade_atual: 25,
-    estoque_minimo: 8,
-    categoria: 'Categoria 3'
-  },
-  {
-    id: '5',
-    nome: 'Produto E',
-    sku: 'SKU005',
-    preco_custo: 8.25,
-    quantidade_atual: 150,
-    estoque_minimo: 20,
-    categoria: 'Categoria 2'
-  }
-];
-
 export const ProductSelector: React.FC<ProductSelectorProps> = ({
   isOpen,
   onOpenChange,
@@ -81,10 +34,31 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<{[key: string]: { product: Product; quantidade: number }}>({});
+  const { getProducts } = useProducts();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const filteredProducts = mockProducts.filter(product =>
+  // Carregar produtos do estoque
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (isOpen) {
+        setLoading(true);
+        try {
+          const data = await getProducts({ limit: 1000 });
+          setProducts(data);
+        } catch (error) {
+          console.error("Error loading products:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    loadProducts();
+  }, [isOpen, getProducts]);
+
+  const filteredProducts = products.filter(product =>
     product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.sku_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -114,7 +88,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
     const productsToReturn = Object.values(selectedItems).map(({ product, quantidade }) => ({
       id: product.id,
       nome: product.nome,
-      sku: product.sku,
+      sku_interno: product.sku_interno,
       preco_custo: product.preco_custo,
       quantidade: quantidade
     }));
@@ -139,7 +113,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
   };
 
   const getStockStatus = (product: Product) => {
-    const percentage = (product.quantidade_atual / product.estoque_minimo) * 100;
+    const percentage = (product.quantidade_atual / (product.estoque_minimo || 1)) * 100;
     
     if (percentage <= 100) {
       return { variant: "destructive" as const, label: "Estoque Baixo", icon: Package };
@@ -239,7 +213,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                       </TableCell>
                       <TableCell>
                         <code className="text-sm bg-muted px-2 py-1 rounded">
-                          {product.sku}
+                          {product.sku_interno}
                         </code>
                       </TableCell>
                       <TableCell>
