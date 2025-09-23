@@ -14,7 +14,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       {
         id: 'oms',
         label: 'Vendas',
-        icon: 'ShoppingBag',
+        icon: 'DollarSign',
         children: [
           {
             id: 'oms-dashboard',
