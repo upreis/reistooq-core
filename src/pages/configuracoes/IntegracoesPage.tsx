@@ -24,11 +24,11 @@ const ConfiguracoesContent = () => {
       {/* 3. Conteúdo das rotas */}
       <div className="mt-6">
         <Routes>
-          <Route path="/" element={<Navigate to="/configuracoes/integracoes" replace />} />
-          <Route path="/integracoes" element={<ConfiguracoesIntegracoes />} />
-          <Route path="/anuncios" element={<AnunciosPage />} />
-          <Route path="/administracao" element={<AdministracaoPage />} />
-          <Route path="*" element={<Navigate to="/configuracoes/integracoes" replace />} />
+          <Route index element={<Navigate to="integracoes" replace />} />
+          <Route path="integracoes" element={<ConfiguracoesIntegracoes />} />
+          <Route path="anuncios" element={<AnunciosPage />} />
+          <Route path="administracao" element={<AdministracaoPage />} />
+          <Route path="*" element={<Navigate to="integracoes" replace />} />
         </Routes>
       </div>
     </div>
