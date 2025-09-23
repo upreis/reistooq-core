@@ -17,12 +17,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'DollarSign',
         children: [
           {
-            id: 'oms-dashboard',
-            label: 'Dashboard OMS',
-            path: '/oms',
-            icon: 'BarChart3'
-          },
-          {
             id: 'oms-pedidos',
             label: 'Vendas Direta/Atacado',
             path: '/oms/pedidos',
