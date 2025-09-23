@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Grid3X3 } from "lucide-react";
+import { AplicativosGuard } from "@/core/aplicativos/guards/AplicativosGuard";
 import { AplicativosNav } from "@/features/aplicativos/components/AplicativosNav";
 import { AplicativosStats } from "@/features/aplicativos/components/AplicativosStats";
 import AplicativosCalendario from "./aplicativos/AplicativosCalendario";
@@ -36,7 +37,11 @@ const AplicativosContent = () => {
 };
 
 const AplicativosPage: React.FC = () => {
-  return <AplicativosContent />;
+  return (
+    <AplicativosGuard>
+      <AplicativosContent />
+    </AplicativosGuard>
+  );
 };
 
 export default AplicativosPage;
