@@ -19,6 +19,7 @@ export class ComprasEstoqueIntegration {
     itens: ItemRecebimento[]
   ): Promise<{ success: boolean; message: string; detalhes?: any }> {
     try {
+      console.log('🏭 [ComprasEstoqueIntegration] Iniciando processamento:', { pedidoId, itens });
       // Validar se o pedido existe e está no status correto
       const { data: pedido, error: pedidoError } = await supabase
         .from('pedidos_compra' as any)
@@ -42,7 +43,10 @@ export class ComprasEstoqueIntegration {
       }
 
       const pedidoStatus = (pedido as any).status;
+      console.log('📋 [ComprasEstoqueIntegration] Status do pedido:', pedidoStatus);
+      
       if (!['aprovado', 'em_andamento', 'concluido'].includes(pedidoStatus)) {
+        console.log('❌ [ComprasEstoqueIntegration] Status inválido para recebimento:', pedidoStatus);
         return {
           success: false,
           message: 'Pedido não está em status válido para recebimento'
@@ -108,6 +112,12 @@ export class ComprasEstoqueIntegration {
           const valorCustoAtual = produto.preco_custo || 0;
           const novaQuantidade = quantidadeAtual + item.quantidade;
           
+          console.log(`📊 [ComprasEstoqueIntegration] Produto ${produto.sku_interno}:`, {
+            quantidadeAtual,
+            quantidadeEntrada: item.quantidade,
+            novaQuantidade
+          });
+          
           let novoValorCustoMedio = item.valor_unitario;
           if (quantidadeAtual > 0) {
             novoValorCustoMedio = (
@@ -125,6 +135,9 @@ export class ComprasEstoqueIntegration {
               updated_at: new Date().toISOString()
             })
             .eq('id', item.produto_id);
+            
+          console.log(`💾 [ComprasEstoqueIntegration] Atualização do produto ${produto.sku_interno}:`, 
+            updateError ? 'ERRO' : 'SUCESSO', updateError);
 
           if (updateError) {
             console.error('Erro ao atualizar estoque:', updateError);

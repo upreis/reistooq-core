@@ -226,6 +226,9 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
 
         // Se mudou para concluído/recebido, dar entrada automática no estoque
         if (statusMudouParaConcluido) {
+          console.log('🔄 Status mudou para concluído, processando estoque...');
+          console.log('📦 Itens do pedido:', formData.itens);
+          
           // Se o pedido tem itens cadastrados, processar automaticamente
           if ((formData.itens || []).length > 0) {
             try {
@@ -237,11 +240,16 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                 observacoes: `Entrada automática - Pedido ${pedidoCompleto.numero_pedido} concluído`
               }));
               
+              console.log('📋 Itens formatados para recebimento:', itensRecebimento);
+              console.log('🆔 ID do pedido:', editingPedido ? editingPedido.id : resultado.id);
+              
               // Processar entrada no estoque automaticamente
               const resultadoEstoque = await processarRecebimentoPedido(
                 editingPedido ? editingPedido.id : resultado.id, 
                 itensRecebimento
               );
+              
+              console.log('📊 Resultado do processamento de estoque:', resultadoEstoque);
               
               if (resultadoEstoque.success) {
                 toast({
