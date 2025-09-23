@@ -29,9 +29,12 @@ import {
   Building,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  Calculator,
+  Minus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ProductSelector } from "./ProductSelector";
 
 interface PedidosCompraTabProps {
   pedidosCompra: any[];
@@ -56,6 +59,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   const [editingPedido, setEditingPedido] = useState(null);
   const [viewingPedido, setViewingPedido] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [formData, setFormData] = useState({
     numero_pedido: '',
     fornecedor_id: '',
@@ -201,6 +205,66 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  // Funções para gestão de itens
+  const handleAddProducts = (products: any[]) => {
+    const newItens = products.map(product => ({
+      produto_id: product.id,
+      produto_nome: product.nome,
+      produto_sku: product.sku,
+      quantidade: product.quantidade,
+      valor_unitario: product.preco_custo || 0,
+      valor_total: (product.preco_custo || 0) * product.quantidade,
+      unidade_medida: product.unidade_medida || 'UN'
+    }));
+
+    const updatedItens = [...formData.itens];
+    newItens.forEach(newItem => {
+      const existingIndex = updatedItens.findIndex(item => item.produto_id === newItem.produto_id);
+      if (existingIndex >= 0) {
+        updatedItens[existingIndex] = newItem;
+      } else {
+        updatedItens.push(newItem);
+      }
+    });
+
+    const novoValorTotal = updatedItens.reduce((total, item) => total + item.valor_total, 0);
+    
+    setFormData({
+      ...formData,
+      itens: updatedItens,
+      valor_total: novoValorTotal
+    });
+  };
+
+  const handleRemoveItem = (index: number) => {
+    const updatedItens = formData.itens.filter((_, i) => i !== index);
+    const novoValorTotal = updatedItens.reduce((total, item) => total + item.valor_total, 0);
+    
+    setFormData({
+      ...formData,
+      itens: updatedItens,
+      valor_total: novoValorTotal
+    });
+  };
+
+  const handleUpdateItem = (index: number, field: string, value: any) => {
+    const updatedItens = [...formData.itens];
+    updatedItens[index] = { ...updatedItens[index], [field]: value };
+    
+    // Recalcular valor total do item se quantidade ou valor unitário mudou
+    if (field === 'quantidade' || field === 'valor_unitario') {
+      updatedItens[index].valor_total = updatedItens[index].quantidade * updatedItens[index].valor_unitario;
+    }
+    
+    const novoValorTotal = updatedItens.reduce((total, item) => total + item.valor_total, 0);
+    
+    setFormData({
+      ...formData,
+      itens: updatedItens,
+      valor_total: novoValorTotal
+    });
   };
 
   return (
@@ -410,15 +474,134 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
             <Separator />
             
             {/* Resumo Visual */}
+            {/* Gestão de Itens */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5" />
+                  <Package className="h-5 w-5" />
+                  Itens do Pedido
+                  {formData.itens.length > 0 && (
+                    <Badge variant="secondary">{formData.itens.length} itens</Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Botão para adicionar produtos */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsProductSelectorOpen(true)}
+                    className="w-full gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Adicionar Produtos
+                  </Button>
+
+                  {/* Lista de itens */}
+                  {formData.itens.length > 0 ? (
+                    <div className="border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Produto</TableHead>
+                            <TableHead>SKU</TableHead>
+                            <TableHead>Qtd.</TableHead>
+                            <TableHead>Unidade</TableHead>
+                            <TableHead>Valor Unit.</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead className="w-12"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {formData.itens.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{item.produto_nome}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    ID: {item.produto_id}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{item.produto_sku}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantidade}
+                                  onChange={(e) => handleUpdateItem(index, 'quantidade', parseInt(e.target.value) || 1)}
+                                  className="w-20"
+                                />
+                              </TableCell>
+                              <TableCell>{item.unidade_medida}</TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={item.valor_unitario}
+                                  onChange={(e) => handleUpdateItem(index, 'valor_unitario', parseFloat(e.target.value) || 0)}
+                                  className="w-24"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">
+                                  {formatCurrency(item.valor_total)}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleRemoveItem(index)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 border rounded-lg bg-muted/20">
+                      <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h4 className="font-medium mb-2">Nenhum produto adicionado</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Clique em "Adicionar Produtos" para incluir itens no pedido
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsProductSelectorOpen(true)}
+                        className="gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Adicionar Primeiro Produto
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Separator />
+
+            {/* Resumo do Pedido */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calculator className="h-5 w-5" />
                   Resumo do Pedido
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <Building className="h-8 w-8 text-primary" />
                     <div>
@@ -433,6 +616,14 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                   </div>
                   
                   <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Package className="h-8 w-8 text-blue-600" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total de Itens</p>
+                      <p className="font-medium">{formData.itens.length} produtos</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                     <DollarSign className="h-8 w-8 text-green-600" />
                     <div>
                       <p className="text-sm text-muted-foreground">Valor Total</p>
@@ -441,7 +632,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                   </div>
                   
                   <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Calendar className="h-8 w-8 text-blue-600" />
+                    <Calendar className="h-8 w-8 text-orange-600" />
                     <div>
                       <p className="text-sm text-muted-foreground">Entrega Prevista</p>
                       <p className="font-medium">
@@ -721,6 +912,17 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Product Selector Modal */}
+      <ProductSelector
+        isOpen={isProductSelectorOpen}
+        onOpenChange={setIsProductSelectorOpen}
+        onSelectProducts={handleAddProducts}
+        selectedProducts={formData.itens.map(item => ({
+          product_id: item.produto_id,
+          quantidade: item.quantidade
+        }))}
+      />
     </div>
   );
 };
