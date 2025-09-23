@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ComprasEstoqueIntegration, ItemRecebimento } from '@/services/comprasEstoqueIntegration';
 
 export interface Fornecedor {
   id: string;
@@ -179,12 +180,67 @@ export const useCompras = () => {
     }
   };
 
+  // INTEGRAÇÃO COM ESTOQUE
+  const processarRecebimentoPedido = async (pedidoId: string, itens: ItemRecebimento[]) => {
+    try {
+      setLoading(true);
+      const resultado = await ComprasEstoqueIntegration.processarRecebimentoPedido(pedidoId, itens);
+      
+      if (resultado.success) {
+        toast({
+          title: "Recebimento processado",
+          description: resultado.message,
+        });
+      } else {
+        toast({
+          title: "Erro no recebimento",
+          description: resultado.message,
+          variant: "destructive",
+        });
+      }
+      
+      return resultado;
+    } catch (error) {
+      console.error('Erro ao processar recebimento:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar o recebimento.",
+        variant: "destructive",
+      });
+      return { success: false, message: 'Erro interno' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buscarProdutosParaReposicao = async () => {
+    try {
+      return await ComprasEstoqueIntegration.buscarProdutosParaReposicao();
+    } catch (error) {
+      console.error('Erro ao buscar produtos para reposição:', error);
+      return [];
+    }
+  };
+
+  const gerarSugestaoPedidoCompra = async () => {
+    try {
+      return await ComprasEstoqueIntegration.gerarSugestaoPedidoCompra();
+    } catch (error) {
+      console.error('Erro ao gerar sugestão de pedido:', error);
+      return [];
+    }
+  };
+
   return {
     loading,
     getFornecedores,
     createFornecedor,
     getPedidosCompra,
     getCotacoes,
-    createCotacao
+    createCotacao,
+    // Integração com estoque
+    processarRecebimentoPedido,
+    buscarProdutosParaReposicao,
+    gerarSugestaoPedidoCompra
   };
 };
