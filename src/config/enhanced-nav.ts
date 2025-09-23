@@ -165,6 +165,18 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Zap' 
           },
           { 
+            id: 'anuncios', 
+            label: 'Anúncios', 
+            path: '/configuracoes/anuncios', 
+            icon: 'Megaphone' 
+          },
+          { 
+            id: 'administracao', 
+            label: 'Administração', 
+            path: '/configuracoes/administracao', 
+            icon: 'UserCheck' 
+          },
+          { 
             id: 'ml-orders-completas', 
             label: 'Devoluções ML', 
             path: '/ml-orders-completas', 
