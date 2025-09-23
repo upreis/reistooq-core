@@ -1,61 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Package, Plus, AlertTriangle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Package, ShoppingCart, Minus, Plus } from "lucide-react";
 
 interface Product {
   id: string;
-  sku: string;
   nome: string;
-  categoria?: string;
-  preco_custo?: number;
+  sku: string;
+  preco_custo: number;
   quantidade_atual: number;
   estoque_minimo: number;
-  unidade_medida?: string;
+  categoria?: string;
 }
 
 interface ProductSelectorProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectProducts: (products: Array<Product & { quantidade: number }>) => void;
-  selectedProducts?: Array<{ product_id: string; quantidade: number }>;
+  onSelectProducts: (products: any[]) => void;
+  selectedProducts?: any[];
 }
 
-// Mock de produtos para demonstração
 const mockProducts: Product[] = [
   {
     id: '1',
-    sku: 'PROD001',
     nome: 'Produto A',
-    categoria: 'Categoria 1',
+    sku: 'SKU001',
     preco_custo: 10.50,
-    quantidade_atual: 50,
+    quantidade_atual: 100,
     estoque_minimo: 10,
-    unidade_medida: 'UN'
+    categoria: 'Categoria 1'
   },
   {
     id: '2',
-    sku: 'PROD002',
     nome: 'Produto B',
-    categoria: 'Categoria 2',
+    sku: 'SKU002',
     preco_custo: 25.00,
-    quantidade_atual: 5,
-    estoque_minimo: 15,
-    unidade_medida: 'UN'
+    quantidade_atual: 50,
+    estoque_minimo: 5,
+    categoria: 'Categoria 2'
   },
   {
     id: '3',
-    sku: 'PROD003',
     nome: 'Produto C',
-    categoria: 'Categoria 1',
-    preco_custo: 8.75,
-    quantidade_atual: 100,
+    sku: 'SKU003',
+    preco_custo: 15.75,
+    quantidade_atual: 75,
+    estoque_minimo: 15,
+    categoria: 'Categoria 1'
+  },
+  {
+    id: '4',
+    nome: 'Produto D',
+    sku: 'SKU004',
+    preco_custo: 35.90,
+    quantidade_atual: 25,
+    estoque_minimo: 8,
+    categoria: 'Categoria 3'
+  },
+  {
+    id: '5',
+    nome: 'Produto E',
+    sku: 'SKU005',
+    preco_custo: 8.25,
+    quantidade_atual: 150,
     estoque_minimo: 20,
-    unidade_medida: 'KG'
+    categoria: 'Categoria 2'
   }
 ];
 
@@ -66,56 +80,54 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
   selectedProducts = []
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [products, setProducts] = useState<Product[]>(mockProducts);
-  const [selectedItems, setSelectedItems] = useState<Map<string, { product: Product; quantidade: number }>>(new Map());
+  const [selectedItems, setSelectedItems] = useState<{[key: string]: { product: Product; quantidade: number }}>({});
 
-  useEffect(() => {
-    // Inicializar com produtos já selecionados
-    const initialSelected = new Map();
-    selectedProducts.forEach(selected => {
-      const product = products.find(p => p.id === selected.product_id);
-      if (product) {
-        initialSelected.set(product.id, { product, quantidade: selected.quantidade });
-      }
-    });
-    setSelectedItems(initialSelected);
-  }, [selectedProducts, products]);
-
-  const filteredProducts = products.filter(product =>
+  const filteredProducts = mockProducts.filter(product =>
     product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleProductToggle = (product: Product, checked: boolean) => {
-    const newSelected = new Map(selectedItems);
+    const newSelected = { ...selectedItems };
     
     if (checked) {
-      newSelected.set(product.id, { product, quantidade: 1 });
+      newSelected[product.id] = { product, quantidade: 1 };
     } else {
-      newSelected.delete(product.id);
+      delete newSelected[product.id];
     }
     
     setSelectedItems(newSelected);
   };
 
   const handleQuantityChange = (productId: string, quantidade: number) => {
-    const newSelected = new Map(selectedItems);
-    const item = newSelected.get(productId);
+    if (quantidade <= 0) return;
     
-    if (item && quantidade > 0) {
-      newSelected.set(productId, { ...item, quantidade });
+    const newSelected = { ...selectedItems };
+    if (newSelected[productId]) {
+      newSelected[productId].quantidade = quantidade;
       setSelectedItems(newSelected);
     }
   };
 
   const handleConfirm = () => {
-    const selectedProductsWithQuantity = Array.from(selectedItems.values()).map(item => ({
-      ...item.product,
-      quantidade: item.quantidade
+    const productsToReturn = Object.values(selectedItems).map(({ product, quantidade }) => ({
+      id: product.id,
+      nome: product.nome,
+      sku: product.sku,
+      preco_custo: product.preco_custo,
+      quantidade: quantidade
     }));
-    
-    onSelectProducts(selectedProductsWithQuantity);
+
+    onSelectProducts(productsToReturn);
+    setSelectedItems({});
+    setSearchTerm('');
+    onOpenChange(false);
+  };
+
+  const handleCancel = () => {
+    setSelectedItems({});
+    setSearchTerm('');
     onOpenChange(false);
   };
 
@@ -126,113 +138,157 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
     }).format(value);
   };
 
-  const getStockStatus = (atual: number, minimo: number) => {
-    if (atual <= 0) {
-      return { label: 'Sem estoque', variant: 'destructive' as const, icon: AlertTriangle };
+  const getStockStatus = (product: Product) => {
+    const percentage = (product.quantidade_atual / product.estoque_minimo) * 100;
+    
+    if (percentage <= 100) {
+      return { variant: "destructive" as const, label: "Estoque Baixo", icon: Package };
+    } else if (percentage <= 200) {
+      return { variant: "secondary" as const, label: "Estoque OK", icon: Package };
+    } else {
+      return { variant: "default" as const, label: "Estoque Alto", icon: Package };
     }
-    if (atual <= minimo) {
-      return { label: 'Estoque baixo', variant: 'secondary' as const, icon: AlertTriangle };
-    }
-    return { label: 'Disponível', variant: 'default' as const, icon: Package };
   };
+
+  const selectedCount = Object.keys(selectedItems).length;
+  const totalValue = Object.values(selectedItems).reduce(
+    (sum, { product, quantidade }) => sum + (product.preco_custo * quantidade),
+    0
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
+            <ShoppingCart className="h-5 w-5" />
             Selecionar Produtos
-            {selectedItems.size > 0 && (
-              <Badge variant="secondary">{selectedItems.size} selecionados</Badge>
+            {selectedCount > 0 && (
+              <Badge variant="default" className="ml-2">
+                {selectedCount} selecionado(s)
+              </Badge>
             )}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col gap-4">
-          {/* Busca */}
+        <div className="space-y-4">
+          {/* Barra de pesquisa */}
           <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome, SKU ou categoria..."
+              placeholder="Buscar produtos por nome, SKU ou categoria..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
             />
           </div>
 
-          {/* Lista de produtos */}
-          <div className="flex-1 overflow-auto border rounded-lg">
+          {/* Resumo da seleção */}
+          {selectedCount > 0 && (
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="font-semibold">Resumo da Seleção</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedCount} produto(s) selecionado(s)
+                  </p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-primary">
+                    {formatCurrency(totalValue)}
+                  </div>
+                  <div className="text-sm text-muted-foreground">Total</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tabela de produtos */}
+          <div className="border rounded-lg overflow-hidden">
             <Table>
-              <TableHeader className="sticky top-0 bg-background">
+              <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">Sel.</TableHead>
+                  <TableHead className="w-12">Selecionar</TableHead>
                   <TableHead>Produto</TableHead>
                   <TableHead>SKU</TableHead>
                   <TableHead>Categoria</TableHead>
-                  <TableHead>Preço Custo</TableHead>
+                  <TableHead>Preço</TableHead>
                   <TableHead>Estoque</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Qtd.</TableHead>
+                  <TableHead className="w-32">Quantidade</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => {
-                  const isSelected = selectedItems.has(product.id);
-                  const selectedItem = selectedItems.get(product.id);
-                  const stockStatus = getStockStatus(product.quantidade_atual, product.estoque_minimo);
-                  const StatusIcon = stockStatus.icon;
+                  const isSelected = !!selectedItems[product.id];
+                  const quantidade = selectedItems[product.id]?.quantidade || 1;
+                  const stockStatus = getStockStatus(product);
+                  const StockIcon = stockStatus.icon;
 
                   return (
-                    <TableRow key={product.id} className={isSelected ? "bg-muted/50" : ""}>
+                    <TableRow key={product.id} className={isSelected ? "bg-primary/5" : ""}>
                       <TableCell>
                         <Checkbox
                           checked={isSelected}
-                          onCheckedChange={(checked) => 
-                            handleProductToggle(product, checked as boolean)
-                          }
+                          onCheckedChange={(checked) => handleProductToggle(product, !!checked)}
                         />
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{product.nome}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {product.unidade_medida || 'UN'}
-                          </p>
+                          <div className="font-medium">{product.nome}</div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{product.sku}</Badge>
-                      </TableCell>
-                      <TableCell>{product.categoria || '-'}</TableCell>
-                      <TableCell>
-                        {product.preco_custo ? formatCurrency(product.preco_custo) : '-'}
+                        <code className="text-sm bg-muted px-2 py-1 rounded">
+                          {product.sku}
+                        </code>
                       </TableCell>
                       <TableCell>
-                        <div>
-                          <p className="font-medium">{product.quantidade_atual}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Mín: {product.estoque_minimo}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={stockStatus.variant} className="gap-1">
-                          <StatusIcon className="h-3 w-3" />
-                          {stockStatus.label}
+                        <Badge variant="outline">
+                          {product.categoria || 'Sem categoria'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {isSelected && (
-                          <Input
-                            type="number"
-                            min="1"
-                            value={selectedItem?.quantidade || 1}
-                            onChange={(e) => 
-                              handleQuantityChange(product.id, parseInt(e.target.value) || 1)
-                            }
-                            className="w-20"
-                          />
+                        <div className="font-medium">
+                          {formatCurrency(product.preco_custo)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <StockIcon className="h-4 w-4" />
+                          <span>{product.quantidade_atual}</span>
+                          <Badge variant={stockStatus.variant} className="text-xs">
+                            {stockStatus.label}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {isSelected ? (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleQuantityChange(product.id, quantidade - 1)}
+                              disabled={quantidade <= 1}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <Input
+                              type="number"
+                              value={quantidade}
+                              onChange={(e) => handleQuantityChange(product.id, parseInt(e.target.value) || 1)}
+                              className="w-16 h-8 text-center"
+                              min="1"
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleQuantityChange(product.id, quantidade + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -242,34 +298,40 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
             </Table>
           </div>
 
-          {/* Resumo dos selecionados */}
-          {selectedItems.size > 0 && (
-            <div className="border rounded-lg p-4 bg-muted/30">
-              <h4 className="font-medium mb-2">Produtos Selecionados ({selectedItems.size})</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                {Array.from(selectedItems.values()).map(({ product, quantidade }) => (
-                  <div key={product.id} className="flex items-center justify-between text-sm p-2 bg-background rounded">
-                    <span>{product.nome} ({product.sku})</span>
-                    <Badge variant="outline">Qtd: {quantidade}</Badge>
-                  </div>
-                ))}
-              </div>
+          {/* Produtos não encontrados */}
+          {filteredProducts.length === 0 && (
+            <div className="text-center py-8">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Nenhum produto encontrado</h3>
+              <p className="text-muted-foreground">
+                Tente ajustar sua pesquisa ou verificar se há produtos cadastrados.
+              </p>
             </div>
           )}
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleConfirm}
-            disabled={selectedItems.size === 0}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Adicionar {selectedItems.size} produto{selectedItems.size !== 1 ? 's' : ''}
-          </Button>
+        {/* Botões de ação */}
+        <div className="flex justify-between items-center pt-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            {selectedCount > 0 && (
+              <span>
+                {selectedCount} produto(s) selecionado(s) • Total: {formatCurrency(totalValue)}
+              </span>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={handleCancel}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleConfirm} 
+              disabled={selectedCount === 0}
+              className="gap-2"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Confirmar Seleção ({selectedCount})
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
