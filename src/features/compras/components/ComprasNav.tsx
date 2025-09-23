@@ -3,9 +3,9 @@ import { Building2, FileText, TrendingUp, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Fornecedores", href: "/compras/fornecedores", icon: Building2 },
   { name: "Pedidos", href: "/compras/pedidos", icon: FileText },
   { name: "Cotações", href: "/compras/cotacoes", icon: TrendingUp },
+  { name: "Fornecedores", href: "/compras/fornecedores", icon: Building2 },
   { name: "Importação", href: "/compras/importacao", icon: Upload },
 ];
 
