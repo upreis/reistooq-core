@@ -19,23 +19,20 @@ interface ComprasStatsProps {
 }
 
 export const ComprasStats: React.FC<ComprasStatsProps> = ({
-  fornecedores,
-  pedidosCompra,
-  cotacoes
+  fornecedores = [],
+  pedidosCompra = [],
+  cotacoes = []
 }) => {
-  // Calcular estatísticas
   const totalFornecedores = fornecedores.length;
   const fornecedoresAtivos = fornecedores.filter(f => f.ativo).length;
   
   const totalPedidos = pedidosCompra.length;
   const pedidosPendentes = pedidosCompra.filter(p => p.status === 'pendente').length;
-  const pedidosAprovados = pedidosCompra.filter(p => p.status === 'aprovado').length;
   
   const totalCotacoes = cotacoes.length;
   const cotacoesAbertas = cotacoes.filter(c => c.status === 'aberta').length;
   
   const valorTotalPedidos = pedidosCompra.reduce((acc, p) => acc + (p.valor_total || 0), 0);
-  const valorMedioPedido = totalPedidos > 0 ? valorTotalPedidos / totalPedidos : 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -82,9 +79,6 @@ export const ComprasStats: React.FC<ComprasStatsProps> = ({
             <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
               {pedidosPendentes} pendentes
             </Badge>
-            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
-              {pedidosAprovados} aprovados
-            </Badge>
           </div>
         </CardContent>
       </Card>
@@ -123,7 +117,7 @@ export const ComprasStats: React.FC<ComprasStatsProps> = ({
           </div>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-xs text-orange-600 dark:text-orange-400">
-              Média: {formatCurrency(valorMedioPedido)}
+              {totalPedidos > 0 ? `Média: ${formatCurrency(valorTotalPedidos / totalPedidos)}` : 'Sem pedidos'}
             </span>
           </div>
         </CardContent>

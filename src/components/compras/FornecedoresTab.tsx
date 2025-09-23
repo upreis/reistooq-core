@@ -21,6 +21,7 @@ import {
   FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCompras } from "@/hooks/useCompras";
 
 interface FornecedoresTabProps {
   fornecedores: any[];
@@ -53,6 +54,7 @@ export const FornecedoresTab: React.FC<FornecedoresTabProps> = ({
     ativo: true
   });
   const { toast } = useToast();
+  const { createFornecedor, updateFornecedor, deleteFornecedor } = useCompras();
 
   // Filtrar fornecedores
   const filteredFornecedores = fornecedores.filter(fornecedor => {
@@ -69,8 +71,11 @@ export const FornecedoresTab: React.FC<FornecedoresTabProps> = ({
 
   const handleSave = async () => {
     try {
-      // Implementar salvamento do fornecedor
-      // Se editingFornecedor existe, é uma edição, senão é criação
+      if (editingFornecedor) {
+        await updateFornecedor(editingFornecedor.id, formData);
+      } else {
+        await createFornecedor(formData);
+      }
       
       toast({
         title: editingFornecedor ? "Fornecedor atualizado" : "Fornecedor criado",
@@ -99,7 +104,7 @@ export const FornecedoresTab: React.FC<FornecedoresTabProps> = ({
     if (!confirm('Tem certeza que deseja excluir este fornecedor?')) return;
     
     try {
-      // Implementar exclusão
+      await deleteFornecedor(fornecedorId);
       toast({
         title: "Fornecedor excluído",
         description: "Fornecedor removido com sucesso!",

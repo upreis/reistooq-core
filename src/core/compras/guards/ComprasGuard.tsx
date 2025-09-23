@@ -1,169 +1,45 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Shield, AlertTriangle, RefreshCw, ShoppingCart } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShieldAlert } from "lucide-react";
 
 interface ComprasGuardProps {
   children: React.ReactNode;
-  fallbackComponent?: React.ComponentType;
 }
 
-export function ComprasGuard({ children, fallbackComponent: FallbackComponent }: ComprasGuardProps) {
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-  const [isChecking, setIsChecking] = useState(true);
-  const [lastCheck, setLastCheck] = useState<Date>(new Date());
+export const ComprasGuard: React.FC<ComprasGuardProps> = ({ children }) => {
+  const { hasPermission, loading } = useUserPermissions();
 
-  const checkAccess = async () => {
-    try {
-      setIsChecking(true);
-      
-      // Verificar se o usuário está autenticado
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      console.log('🔍 ComprasGuard - Usuário:', user?.email, 'Erro:', userError);
-      
-      if (!user) {
-        console.error('❌ ComprasGuard - Usuário não autenticado');
-        setHasAccess(false);
-        return;
-      }
-
-      // Liberação global para o email do proprietário
-      const email = user.email?.toLowerCase();
-      if (email === 'nildoreiz@hotmail.com') {
-        console.info('✅ ComprasGuard - Acesso liberado para proprietário');
-        setHasAccess(true);
-        return;
-      }
-
-      // Verificar permissões do usuário
-      const { data: permissions, error } = await supabase.rpc('get_user_permissions');
-      console.log('🔍 ComprasGuard - Permissões retornadas:', permissions, 'Erro:', error);
-
-      if (error) {
-        console.error('❌ Erro ao verificar permissões:', error);
-        setHasAccess(false);
-        return;
-      }
-
-      // Verificar se tem a permissão compras:view
-      const hasPermission = permissions && permissions.includes('compras:view');
-      console.log('🔍 ComprasGuard - Tem permissão compras:view:', hasPermission);
-      
-      if (hasPermission) {
-        setHasAccess(true);
-        console.info('✅ Acesso ao sistema de compras autorizado');
-      } else {
-        console.warn('❌ Permissão compras:view não encontrada');
-        setHasAccess(false);
-      }
-      
-    } catch (error) {
-      console.error('❌ Erro na verificação de acesso:', error);
-      setHasAccess(false);
-    } finally {
-      setIsChecking(false);
-      setLastCheck(new Date());
-    }
-  };
-
-  useEffect(() => {
-    checkAccess();
-    
-    // Verificação periódica a cada 2 minutos
-    const interval = setInterval(checkAccess, 120000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // Ainda verificando acesso
-  if (isChecking || hasAccess === null) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <RefreshCw className="h-4 w-4 animate-spin" />
-          <span>Verificando permissões de acesso...</span>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  // Acesso negado
-  if (!hasAccess) {
-    if (FallbackComponent) {
-      return <FallbackComponent />;
-    }
-
+  if (!hasPermission('compras:view')) {
     return (
-      <div className="p-6 space-y-4">
-        <Alert className="border-destructive/20 bg-destructive/10">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="space-y-2">
-            <div className="font-medium text-destructive">
-              🚫 Acesso Negado ao Sistema de Compras
+      <div className="flex items-center justify-center min-h-screen p-6">
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+              <ShieldAlert className="w-6 h-6 text-destructive" />
             </div>
-            <div className="text-sm">
-              Você não possui permissão para acessar o sistema de compras. 
-              Entre em contato com seu administrador para solicitar acesso.
-            </div>
-            <div className="text-xs text-muted-foreground mt-2">
-              Permissões necessárias: <code>compras:view</code>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Última verificação: {lastCheck.toLocaleTimeString()}
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={checkAccess}
-              className="mt-2"
-            >
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Tentar Novamente
-            </Button>
-          </AlertDescription>
-        </Alert>
+            <CardTitle className="text-xl">Acesso Negado</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-muted-foreground">
+              Você não tem permissão para acessar o sistema de compras.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Entre em contato com o administrador para solicitar acesso.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // Acesso autorizado - renderizar children
-  return children;
-}
-
-// Hook para usar o guard em outros componentes
-export function useComprasGuard() {
-  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          setHasAccess(false);
-          return;
-        }
-
-        const email = user.email?.toLowerCase();
-        if (email === 'nildoreiz@hotmail.com') {
-          setHasAccess(true);
-          return;
-        }
-
-        const { data: permissions, error } = await supabase.rpc('get_user_permissions');
-        const hasPermission = permissions && permissions.includes('compras:view');
-        
-        setHasAccess(hasPermission && !error);
-      } catch (error) {
-        setHasAccess(false);
-      }
-    };
-
-    checkAccess();
-    const interval = setInterval(checkAccess, 120000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return { hasAccess };
-}
+  return <>{children}</>;
+};

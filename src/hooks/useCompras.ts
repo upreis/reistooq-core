@@ -231,10 +231,60 @@ export const useCompras = () => {
     }
   };
 
+  const updateFornecedor = async (id: string, fornecedor: any): Promise<any> => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('fornecedores')
+        .update(fornecedor)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Erro ao atualizar fornecedor:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o fornecedor.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteFornecedor = async (id: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('fornecedores')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Erro ao excluir fornecedor:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o fornecedor.",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     getFornecedores,
     createFornecedor,
+    updateFornecedor,
+    deleteFornecedor,
     getPedidosCompra,
     getCotacoes,
     createCotacao,

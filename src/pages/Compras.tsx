@@ -1,193 +1,211 @@
-// 🛡️ PÁGINA PROTEGIDA - Sistema de Permissões Ativo
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ComprasGuard } from '@/core/compras/guards/ComprasGuard';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShoppingCart, Building2, FileText, Upload, BarChart3 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  ShoppingCart, 
+  Building2, 
+  FileText, 
+  Upload, 
+  TrendingUp,
+  Search,
+  Filter
+} from "lucide-react";
+
+// Importar os componentes que já existem
+import { FornecedoresTab } from "@/components/compras/FornecedoresTab";
+import { PedidosCompraTab } from "@/components/compras/PedidosCompraTab";
+import { CotacoesTab } from "@/components/compras/CotacoesTab";
+import { ImportacaoTab } from "@/components/compras/ImportacaoTab";
+import { ComprasStats } from "@/components/compras/ComprasStats";
+import { ComprasFilters } from "@/components/compras/ComprasFilters";
+import { useCompras } from "@/hooks/useCompras";
+import { useToast } from "@/hooks/use-toast";
 
 const ComprasContent = () => {
+  const [activeTab, setActiveTab] = useState("fornecedores");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedFornecedor, setSelectedFornecedor] = useState("all");
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  
+  // Estados para dados
+  const [fornecedores, setFornecedores] = useState([]);
+  const [pedidosCompra, setPedidosCompra] = useState([]);
+  const [cotacoes, setCotacoes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  const { getFornecedores, getPedidosCompra, getCotacoes } = useCompras();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [fornecedoresData, pedidosData, cotacoesData] = await Promise.all([
+        getFornecedores(),
+        getPedidosCompra(),
+        getCotacoes()
+      ]);
+      
+      setFornecedores(fornecedoresData);
+      setPedidosCompra(pedidosData);
+      setCotacoes(cotacoesData);
+    } catch (error) {
+      toast({
+        title: "Erro ao carregar dados",
+        description: "Não foi possível carregar os dados de compras.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setSelectedStatus("all");
+    setSelectedFornecedor("all");
+    setDateRange({ start: "", end: "" });
+  };
+
+  const hasActiveFilters = searchTerm !== "" || selectedStatus !== "all" || 
+                          selectedFornecedor !== "all" || dateRange.start !== "" || dateRange.end !== "";
+
   return (
-    <div className="flex flex-col space-y-6 p-6 bg-background min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-6 bg-card rounded-lg border shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg">
-            <ShoppingCart className="h-5 w-5 text-primary" />
+      <div className="hidden md:block relative overflow-hidden bg-gradient-to-r from-primary/3 via-primary/5 to-primary/3 border-b border-border/30">
+        <div className="absolute inset-0 bg-grid-pattern opacity-3"></div>
+        <div className="relative container mx-auto px-6 py-12">
+          <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-8">
+            <ShoppingCart className="h-4 w-4" />
+            <span>/</span>
+            <span className="text-foreground font-medium">Sistema de Compras</span>
+          </nav>
+
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-10">
+            <div className="space-y-3 flex-1 min-w-[300px]">
+              <h1 className="text-4xl font-bold tracking-tight text-foreground">
+                Sistema de Compras
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Gerencie fornecedores, pedidos de compra e integre automaticamente com o estoque
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Sistema de Compras
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Gerencie fornecedores, cotações e pedidos de compra
-            </p>
-          </div>
+
+          <ComprasStats 
+            fornecedores={fornecedores}
+            pedidosCompra={pedidosCompra}
+            cotacoes={cotacoes}
+          />
         </div>
       </div>
 
-      {/* Tabs de módulos */}
-      <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="fornecedores" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Fornecedores
-          </TabsTrigger>
-          <TabsTrigger value="pedidos" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Pedidos
-          </TabsTrigger>
-          <TabsTrigger value="cotacoes" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Cotações
-          </TabsTrigger>
-          <TabsTrigger value="importacoes" className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Importações
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="dashboard" className="space-y-6">
-          {/* Cards de resumo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Fornecedores</CardTitle>
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">
-                  Cadastro e gestão de fornecedores
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pedidos</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">
-                  Pedidos de compra em andamento
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Cotações</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">
-                  Solicitações de cotação ativas
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Importações</CardTitle>
-                <Upload className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">-</div>
-                <p className="text-xs text-muted-foreground">
-                  Importação de dados de compras
-                </p>
-              </CardContent>
-            </Card>
+      {/* Conteúdo principal */}
+      <div className="container mx-auto px-3 md:px-6 py-2 md:py-8 max-w-none">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <div className="flex items-center gap-2 mb-4 md:mb-8">
+            <div className="flex-1 md:w-auto">
+              <TabsList className="grid w-full md:w-auto grid-cols-4 h-10 md:h-12">
+                <TabsTrigger value="fornecedores" className="gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Fornecedores
+                  <Badge variant="secondary">{fornecedores.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="pedidos" className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Pedidos
+                  <Badge variant="secondary">{pedidosCompra.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="cotacoes" className="gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Cotações
+                  <Badge variant="secondary">{cotacoes.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="importacao" className="gap-2">
+                  <Upload className="h-4 w-4" />
+                  Importação
+                </TabsTrigger>
+              </TabsList>
+            </div>
           </div>
 
-          {/* Conteúdo principal */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Sistema de Compras</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                ✅ Você tem acesso ao sistema de compras! 
-                Aqui você pode gerenciar fornecedores, pedidos de compra, cotações e importações.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {/* Filtros Globais */}
+          <div className="space-y-3 md:space-y-0 md:flex md:gap-4 md:items-start mb-6">
+            <div className="flex gap-2 md:flex-1">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-10 bg-background/60 border-border/60 h-9 md:h-10 text-sm"
+                  />
+                </div>
+              </div>
+              
+              <ComprasFilters
+                selectedStatus={selectedStatus}
+                onStatusChange={setSelectedStatus}
+                selectedFornecedor={selectedFornecedor}
+                onFornecedorChange={setSelectedFornecedor}
+                dateRange={dateRange}
+                onDateRangeChange={setDateRange}
+                onClearFilters={handleClearFilters}
+                hasActiveFilters={hasActiveFilters}
+                fornecedores={fornecedores}
+              />
+            </div>
+          </div>
 
-        <TabsContent value="fornecedores" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                Gestão de Fornecedores
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Aqui você pode cadastrar e gerenciar seus fornecedores, incluindo informações de contato, 
-                avaliações e histórico de compras.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="fornecedores">
+            <FornecedoresTab 
+              fornecedores={fornecedores}
+              searchTerm={searchTerm}
+              selectedStatus={selectedStatus}
+              onRefresh={loadData}
+            />
+          </TabsContent>
 
-        <TabsContent value="pedidos" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Pedidos de Compra
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Gerencie seus pedidos de compra, desde a criação até o recebimento dos produtos. 
-                Acompanhe o status e controle as entregas.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="pedidos">
+            <PedidosCompraTab 
+              pedidosCompra={pedidosCompra}
+              fornecedores={fornecedores}
+              searchTerm={searchTerm}
+              selectedStatus={selectedStatus}
+              selectedFornecedor={selectedFornecedor}
+              dateRange={dateRange}
+              onRefresh={loadData}
+            />
+          </TabsContent>
 
-        <TabsContent value="cotacoes" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Cotações
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Crie e gerencie cotações com seus fornecedores. Compare preços e 
-                condições para tomar as melhores decisões de compra.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          <TabsContent value="cotacoes">
+            <CotacoesTab 
+              cotacoes={cotacoes}
+              fornecedores={fornecedores}
+              searchTerm={searchTerm}
+              selectedStatus={selectedStatus}
+              onRefresh={loadData}
+            />
+          </TabsContent>
 
-        <TabsContent value="importacoes" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Importações
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Importe dados de compras de planilhas e outros sistemas. 
-                Mantenha suas informações sempre atualizadas.
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="importacao">
+            <ImportacaoTab 
+              onImportSuccess={loadData}
+              fornecedores={fornecedores}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
