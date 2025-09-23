@@ -19,8 +19,11 @@ export function ComprasGuard({ children, fallbackComponent: FallbackComponent }:
       setIsChecking(true);
       
       // Verificar se o usuário está autenticado
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('🔍 ComprasGuard - Usuário:', user?.email, 'Erro:', userError);
+      
       if (!user) {
+        console.error('❌ ComprasGuard - Usuário não autenticado');
         setHasAccess(false);
         return;
       }
@@ -28,12 +31,14 @@ export function ComprasGuard({ children, fallbackComponent: FallbackComponent }:
       // Liberação global para o email do proprietário
       const email = user.email?.toLowerCase();
       if (email === 'nildoreiz@hotmail.com') {
+        console.info('✅ ComprasGuard - Acesso liberado para proprietário');
         setHasAccess(true);
         return;
       }
 
       // Verificar permissões do usuário
       const { data: permissions, error } = await supabase.rpc('get_user_permissions');
+      console.log('🔍 ComprasGuard - Permissões retornadas:', permissions, 'Erro:', error);
 
       if (error) {
         console.error('❌ Erro ao verificar permissões:', error);
@@ -43,6 +48,7 @@ export function ComprasGuard({ children, fallbackComponent: FallbackComponent }:
 
       // Verificar se tem a permissão compras:view
       const hasPermission = permissions && permissions.includes('compras:view');
+      console.log('🔍 ComprasGuard - Tem permissão compras:view:', hasPermission);
       
       if (hasPermission) {
         setHasAccess(true);
