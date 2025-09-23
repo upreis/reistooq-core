@@ -3,242 +3,187 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Send,
+  FileText, 
+  Calendar, 
+  DollarSign, 
+  Building, 
+  Eye,
+  Edit,
+  Trash2,
   Clock,
   CheckCircle,
-  TrendingUp,
-  Building2,
-  Calendar,
-  DollarSign
+  AlertCircle
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useCompras } from "@/hooks/useCompras";
 
 interface CotacoesTabProps {
-  cotacoes: any[];
-  fornecedores: any[];
-  searchTerm: string;
-  selectedStatus: string;
+  cotacoes?: any[];
   onRefresh: () => void;
 }
 
+// Mock de cotações para demonstração
+const mockCotacoes = [
+  {
+    id: '1',
+    numero_cotacao: 'COT-001',
+    descricao: 'Materiais de escritório',
+    data_abertura: '2024-01-15',
+    data_fechamento: null,
+    status: 'aberta',
+    valor_estimado: 2500.00,
+    fornecedores_convidados: 3,
+    propostas_recebidas: 1
+  },
+  {
+    id: '2',
+    numero_cotacao: 'COT-002',
+    descricao: 'Equipamentos de informática',
+    data_abertura: '2024-01-10',
+    data_fechamento: '2024-01-20',
+    status: 'fechada',
+    valor_estimado: 15000.00,
+    fornecedores_convidados: 5,
+    propostas_recebidas: 4
+  }
+];
+
 export const CotacoesTab: React.FC<CotacoesTabProps> = ({
-  cotacoes,
-  fornecedores,
-  searchTerm,
-  selectedStatus,
+  cotacoes = mockCotacoes,
   onRefresh
 }) => {
-  const { toast } = useToast();
-  const { createCotacao, loading } = useCompras();
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCotacao, setEditingCotacao] = useState(null);
-  const [formData, setFormData] = useState({
-    numero_cotacao: '',
-    descricao: '',
-    data_abertura: new Date().toISOString().split('T')[0],
-    data_fechamento: '',
-    status: 'aberta',
-    observacoes: ''
-  });
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredCotacoes = cotacoes.filter(cotacao => {
-    const matchesSearch = cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = selectedStatus === 'all' || cotacao.status === selectedStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleSave = async () => {
-    try {
-      // Gerar número automaticamente se não informado
-      if (!formData.numero_cotacao) {
-        const nextNumber = `COT-${new Date().getFullYear()}-${String(cotacoes.length + 1).padStart(3, '0')}`;
-        formData.numero_cotacao = nextNumber;
-      }
-
-      await createCotacao(formData);
-      
-      toast({
-        title: editingCotacao ? "Cotação atualizada" : "Cotação criada",
-        description: "Operação realizada com sucesso!",
-      });
-      
-      setIsModalOpen(false);
-      resetForm();
-      onRefresh();
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar a cotação.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      numero_cotacao: '',
-      descricao: '',
-      data_abertura: new Date().toISOString().split('T')[0],
-      data_fechamento: '',
-      status: 'aberta',
-      observacoes: ''
-    });
-    setEditingCotacao(null);
-  };
+  const filteredCotacoes = cotacoes.filter(cotacao =>
+    cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getStatusBadge = (status: string) => {
-    const statusColors = {
-      'aberta': 'bg-blue-100 text-blue-700',
-      'em_analise': 'bg-yellow-100 text-yellow-700',
-      'finalizada': 'bg-green-100 text-green-700',
-      'cancelada': 'bg-red-100 text-red-700'
+    const statusConfig = {
+      aberta: { variant: "default" as const, label: "Aberta", icon: Clock },
+      fechada: { variant: "secondary" as const, label: "Fechada", icon: CheckCircle },
+      cancelada: { variant: "destructive" as const, label: "Cancelada", icon: AlertCircle }
     };
     
+    const config = statusConfig[status] || statusConfig.aberta;
+    const Icon = config.icon;
+    
     return (
-      <Badge variant="secondary" className={statusColors[status] || statusColors['aberta']}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+      <Badge variant={config.variant} className="gap-1">
+        <Icon className="h-3 w-3" />
+        {config.label}
       </Badge>
     );
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('pt-BR');
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Cotações</h2>
-          <p className="text-muted-foreground">
-            Gerencie cotações e compare preços de fornecedores
-          </p>
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Buscar cotações por número ou descrição..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-md"
+          />
         </div>
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nova Cotação
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCotacao ? 'Editar Cotação' : 'Nova Cotação'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="numero_cotacao">Número da Cotação</Label>
-                <Input
-                  id="numero_cotacao"
-                  value={formData.numero_cotacao}
-                  onChange={(e) => setFormData({ ...formData, numero_cotacao: e.target.value })}
-                  placeholder="Deixe vazio para gerar automaticamente"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select 
-                  value={formData.status} 
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="aberta">Aberta</SelectItem>
-                    <SelectItem value="enviada">Enviada</SelectItem>
-                    <SelectItem value="respondida">Respondida</SelectItem>
-                    <SelectItem value="fechada">Fechada</SelectItem>
-                    <SelectItem value="cancelada">Cancelada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="data_abertura">Data de Abertura</Label>
-                <Input
-                  id="data_abertura"
-                  type="date"
-                  value={formData.data_abertura}
-                  onChange={(e) => setFormData({ ...formData, data_abertura: e.target.value })}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="data_fechamento">Data de Fechamento</Label>
-                <Input
-                  id="data_fechamento"
-                  type="date"
-                  value={formData.data_fechamento}
-                  onChange={(e) => setFormData({ ...formData, data_fechamento: e.target.value })}
-                />
-              </div>
-              
-              <div className="md:col-span-2">
-                <Label htmlFor="descricao">Descrição *</Label>
-                <Input
-                  id="descricao"
-                  value={formData.descricao}
-                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  placeholder="Descrição da cotação"
-                  required
-                />
-              </div>
-              
-              <div className="md:col-span-2">
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                  placeholder="Informações adicionais sobre a cotação"
-                  rows={3}
-                />
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSave} disabled={loading || !formData.descricao}>
-                {loading ? 'Salvando...' : (editingCotacao ? 'Atualizar' : 'Criar')} Cotação
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" />
+          Nova Cotação
+        </Button>
       </div>
 
-      {/* Tabela de cotações */}
+      {/* Resumo Rápido */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <FileText className="h-8 w-8 text-blue-600" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Cotações</p>
+                <p className="text-2xl font-bold">{cotacoes.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Clock className="h-8 w-8 text-orange-600" />
+              <div>
+                <p className="text-sm text-muted-foreground">Em Andamento</p>
+                <p className="text-2xl font-bold">
+                  {cotacoes.filter(c => c.status === 'aberta').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div>
+                <p className="text-sm text-muted-foreground">Finalizadas</p>
+                <p className="text-2xl font-bold">
+                  {cotacoes.filter(c => c.status === 'fechada').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <DollarSign className="h-8 w-8 text-purple-600" />
+              <div>
+                <p className="text-sm text-muted-foreground">Valor Total</p>
+                <p className="text-2xl font-bold">
+                  {formatCurrency(
+                    cotacoes.reduce((total, c) => total + (c.valor_estimado || 0), 0)
+                  )}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabela de Cotações */}
       <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Cotações
+          </CardTitle>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Cotação</TableHead>
                 <TableHead>Descrição</TableHead>
-                <TableHead>Fornecedores</TableHead>
-                <TableHead>Período</TableHead>
+                <TableHead>Data Abertura</TableHead>
+                <TableHead>Valor Estimado</TableHead>
+                <TableHead>Propostas</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -247,43 +192,39 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
               {filteredCotacoes.map((cotacao) => (
                 <TableRow key={cotacao.id}>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="font-medium flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        {cotacao.numero_cotacao}
-                      </div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Aberta: {formatDate(cotacao.data_abertura)}
-                      </div>
+                    <div className="font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      {cotacao.numero_cotacao}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="max-w-xs">
-                      <div className="font-medium truncate">{cotacao.descricao}</div>
-                      {cotacao.observacoes && (
-                        <div className="text-sm text-muted-foreground truncate">
-                          {cotacao.observacoes}
-                        </div>
+                    <div>
+                      <p className="font-medium">{cotacao.descricao}</p>
+                      {cotacao.data_fechamento && (
+                        <p className="text-sm text-muted-foreground">
+                          Fechada em: {formatDate(cotacao.data_fechamento)}
+                        </p>
                       )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
-                      <Building2 className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-sm">
-                        {cotacao.fornecedores_count || 0} fornecedores
-                      </span>
+                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                      {formatDate(cotacao.data_abertura)}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">
-                      <div>Início: {formatDate(cotacao.data_abertura)}</div>
-                      {cotacao.data_fechamento && (
-                        <div className="text-muted-foreground">
-                          Fim: {formatDate(cotacao.data_fechamento)}
-                        </div>
-                      )}
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-3 w-3 text-muted-foreground" />
+                      {formatCurrency(cotacao.valor_estimado)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-center">
+                      <p className="font-medium">
+                        {cotacao.propostas_recebidas}/{cotacao.fornecedores_convidados}
+                      </p>
+                      <p className="text-xs text-muted-foreground">recebidas</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -291,36 +232,15 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          // Implementar visualização detalhada
-                        }}
-                      >
+                      <Button variant="ghost" size="sm">
                         <Eye className="h-4 w-4" />
                       </Button>
-                      
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingCotacao(cotacao);
-                          setFormData(cotacao);
-                          setIsModalOpen(true);
-                        }}
-                      >
+                      <Button variant="ghost" size="sm">
                         <Edit className="h-4 w-4" />
                       </Button>
-                      
-                      <Button
-                        variant="ghost"
+                      <Button 
+                        variant="ghost" 
                         size="sm"
-                        onClick={() => {
-                          if (confirm('Tem certeza que deseja excluir esta cotação?')) {
-                            // Implementar exclusão
-                          }
-                        }}
                         className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -334,14 +254,20 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
 
           {filteredCotacoes.length === 0 && (
             <div className="text-center py-8">
-              <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">Nenhuma cotação encontrada</h3>
               <p className="text-muted-foreground mb-4">
-                {searchTerm || selectedStatus !== 'all'
+                {searchTerm 
                   ? 'Tente ajustar os filtros de busca'
                   : 'Comece criando sua primeira cotação'
                 }
               </p>
+              {!searchTerm && (
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Primeira Cotação
+                </Button>
+              )}
             </div>
           )}
         </CardContent>

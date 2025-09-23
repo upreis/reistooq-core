@@ -41,9 +41,6 @@ export default function CotacoesPage() {
   return (
     <CotacoesTab 
       cotacoes={cotacoes}
-      fornecedores={fornecedores}
-      searchTerm=""
-      selectedStatus="all"
       onRefresh={loadData}
     />
   );

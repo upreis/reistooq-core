@@ -36,8 +36,6 @@ export default function FornecedoresPage() {
   return (
     <FornecedoresTab 
       fornecedores={fornecedores}
-      searchTerm=""
-      selectedStatus="all"
       onRefresh={loadData}
     />
   );
