@@ -42,7 +42,7 @@ export class ComprasEstoqueIntegration {
       }
 
       const pedidoStatus = (pedido as any).status;
-      if (!['aprovado', 'em_andamento'].includes(pedidoStatus)) {
+      if (!['aprovado', 'em_andamento', 'concluido'].includes(pedidoStatus)) {
         return {
           success: false,
           message: 'Pedido não está em status válido para recebimento'
