@@ -71,6 +71,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [showEstoqueModal, setShowEstoqueModal] = useState(false);
+  const [showConfirmacaoStatusModal, setShowConfirmacaoStatusModal] = useState(false);
   const [pedidoParaEstoque, setPedidoParaEstoque] = useState(null);
   
   // MANTÉM a estrutura original do formData
@@ -567,8 +568,25 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                     <div>
                       <Label htmlFor="status">Status</Label>
                       <Select 
-                        value={formData.status} 
-                        onValueChange={(value) => setFormData({ ...formData, status: value })}
+                        value={formData.status}
+                        onValueChange={(value) => {
+                          // Se está mudando para concluído/recebido, mostrar confirmação
+                          if (value === 'concluido_recebido' && formData.status !== 'concluido_recebido') {
+                            // Verificar se tem produtos no pedido
+                            if ((formData.itens || []).length > 0) {
+                              setShowConfirmacaoStatusModal(true);
+                            } else {
+                              // Se não tem produtos, avisar que é necessário adicionar produtos primeiro
+                              toast({
+                                title: "Atenção",
+                                description: "Adicione produtos ao pedido antes de marcar como concluído/recebido.",
+                                variant: "default",
+                              });
+                            }
+                          } else {
+                            setFormData({ ...formData, status: value });
+                          }
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -1305,6 +1323,67 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmação para mudança de status para Concluído/Recebido */}
+      <Dialog open={showConfirmacaoStatusModal} onOpenChange={setShowConfirmacaoStatusModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirmar mudança de status</DialogTitle>
+            <DialogDescription>
+              Ao marcar este pedido como "Concluído/Recebido", todos os produtos do pedido serão automaticamente adicionados ao estoque. 
+              Deseja continuar?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Package className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-yellow-800">Produtos serão adicionados ao estoque</p>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    {(formData.itens || []).length} produto(s) será(ão) automaticamente adicionado(s) ao seu estoque.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {(formData.itens || []).length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Produtos que serão adicionados:</Label>
+                {(formData.itens || []).map((item, index) => (
+                  <div key={index} className="flex justify-between items-center text-sm bg-muted p-2 rounded">
+                    <span>{item.produto_nome || item.produto_sku || item.sku}</span>
+                    <span className="font-medium">+{item.quantidade}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowConfirmacaoStatusModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                setFormData({ ...formData, status: 'concluido_recebido' });
+                setShowConfirmacaoStatusModal(false);
+                toast({
+                  title: "Status atualizado",
+                  description: "O pedido foi marcado como Concluído/Recebido. Salve o pedido para confirmar as alterações.",
+                  variant: "default",
+                });
+              }}
+            >
+              Confirmar
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
