@@ -1,6 +1,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -46,6 +46,7 @@ import Banners from "./pages/Banners";
 import Charts from "./pages/Charts";
 import SolarIcons from "./pages/SolarIcons";
 import AdminPage from "./pages/AdminPage";
+import AplicativosPage from "./pages/AplicativosPage";
 import AcceptInvite from "./pages/AcceptInvite";
 import ResetPassword from "./pages/ResetPassword";
 import CategoryManager from "./pages/CategoryManager";
@@ -177,17 +178,16 @@ function App() {
                       </PermissionRoute>
                     } />
                     
-                    {/* Other App Routes */}
-                    <Route path="/apps/calendar" element={
-                      <PermissionRoute requiredPermissions={['calendar:view']}>
-                        <Calendar />
+                    {/* Aplicativos Routes */}
+                    <Route path="/aplicativos/*" element={
+                      <PermissionRoute requiredPermissions={['apps:view']}>
+                        <AplicativosPage />
                       </PermissionRoute>
                     } />
-                    <Route path="/apps/notes" element={
-                      <PermissionRoute requiredPermissions={['notes:view']}>
-                        <Notes />
-                      </PermissionRoute>
-                    } />
+                    
+                    {/* Legacy App Routes - redirect to new structure */}
+                    <Route path="/apps/calendar" element={<Navigate to="/aplicativos/calendario" replace />} />
+                    <Route path="/apps/notes" element={<Navigate to="/aplicativos/notas" replace />} />
                     
                      {/* Custom Business Routes */}
                      <Route path="/estoque/*" element={
