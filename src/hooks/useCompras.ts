@@ -29,7 +29,7 @@ export interface PedidoCompra {
   fornecedor_nome?: string;
   data_pedido: string;
   data_entrega_prevista?: string;
-  status: 'pendente' | 'aprovado' | 'em_andamento' | 'concluido' | 'cancelado';
+  status: 'pendente' | 'aprovado' | 'em_andamento' | 'concluido_recebido' | 'cancelado';
   valor_total: number;
   observacoes?: string;
   created_at: string;

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -68,6 +68,8 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   const [viewingPedido, setViewingPedido] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const [showEstoqueModal, setShowEstoqueModal] = useState(false);
+  const [pedidoParaEstoque, setPedidoParaEstoque] = useState(null);
   
   // MANTÉM a estrutura original do formData
   const [formData, setFormData] = useState({
@@ -102,7 +104,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   });
 
   const { toast } = useToast();
-  const { createPedidoCompra, updatePedidoCompra } = useCompras();
+  const { createPedidoCompra, updatePedidoCompra, processarRecebimentoPedido } = useCompras();
 
   // Carregar produtos do estoque
   useEffect(() => {
@@ -160,6 +162,11 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
         // podem ser implementados em futuras versões com tabelas relacionadas
       };
 
+      // Verifica se status mudou para concluido_recebido
+      const statusMudouParaConcluido = editingPedido && 
+        editingPedido.status !== 'concluido_recebido' && 
+        formData.status === 'concluido_recebido';
+
       let resultado;
       if (editingPedido) {
         resultado = await updatePedidoCompra(editingPedido.id, pedidoCompleto);
@@ -176,6 +183,15 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
         setIsModalOpen(false);
         resetForm();
         onRefresh();
+
+        // Se mudou para concluído/recebido, mostrar modal de entrada no estoque
+        if (statusMudouParaConcluido && (formData.itens || []).length > 0) {
+          setPedidoParaEstoque({
+            ...pedidoCompleto,
+            itens: formData.itens
+          });
+          setShowEstoqueModal(true);
+        }
       }
     } catch (error) {
       console.error("Erro ao salvar pedido:", error);
@@ -295,6 +311,46 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
     });
   };
 
+  // Nova função para dar entrada no estoque
+  const handleEntradaEstoque = async () => {
+    try {
+      if (!pedidoParaEstoque || !pedidoParaEstoque.itens?.length) {
+        toast({
+          title: "Erro",
+          description: "Nenhum item encontrado para dar entrada no estoque.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Chama a função do useCompras para processar o recebimento
+      const result = await processarRecebimentoPedido(pedidoParaEstoque.id, pedidoParaEstoque.itens);
+      
+      if (result.success) {
+        toast({
+          title: "Entrada realizada",
+          description: "Produtos adicionados ao estoque com sucesso!",
+        });
+        setShowEstoqueModal(false);
+        setPedidoParaEstoque(null);
+        onRefresh();
+      } else {
+        toast({
+          title: "Erro",
+          description: result.message || "Não foi possível processar a entrada no estoque.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao dar entrada no estoque:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar a entrada no estoque.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // MANTÉM funções originais EXATAMENTE iguais
   const handleReceivePedido = async (pedidoId: string) => {
     try {
@@ -317,7 +373,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
       pendente: { variant: "secondary" as const, label: "Pendente", icon: Clock },
       aprovado: { variant: "default" as const, label: "Aprovado", icon: Check },
       em_andamento: { variant: "default" as const, label: "Em Andamento", icon: Package },
-      concluido: { variant: "default" as const, label: "Concluído", icon: Check },
+      concluido_recebido: { variant: "default" as const, label: "Concluído/Recebido", icon: Check },
       cancelado: { variant: "destructive" as const, label: "Cancelado", icon: X }
     };
     
@@ -464,7 +520,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                           <SelectItem value="pendente">Pendente</SelectItem>
                           <SelectItem value="aprovado">Aprovado</SelectItem>
                           <SelectItem value="em_andamento">Em Andamento</SelectItem>
-                          <SelectItem value="concluido">Concluído</SelectItem>
+                          <SelectItem value="concluido_recebido">Concluído/Recebido</SelectItem>
                           <SelectItem value="cancelado">Cancelado</SelectItem>
                         </SelectContent>
                       </Select>
@@ -1099,6 +1155,53 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmação para entrada no estoque */}
+      <Dialog open={showEstoqueModal} onOpenChange={setShowEstoqueModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Dar entrada no estoque</DialogTitle>
+            <DialogDescription>
+              O pedido foi marcado como "Concluído/Recebido". Deseja dar entrada no estoque de todos os produtos deste pedido?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {pedidoParaEstoque && (
+            <div className="space-y-4">
+              <div className="bg-muted p-4 rounded-lg">
+                <p className="font-medium">Pedido: {pedidoParaEstoque.numero_pedido}</p>
+                <p className="text-sm text-muted-foreground">
+                  {(pedidoParaEstoque.itens || []).length} item(ns) será(ão) adicionado(s) ao estoque
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                {(pedidoParaEstoque.itens || []).map((item, index) => (
+                  <div key={index} className="flex justify-between items-center text-sm">
+                    <span>{item.produto_nome || item.produto_sku}</span>
+                    <span className="font-medium">+{item.quantidade}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowEstoqueModal(false);
+                setPedidoParaEstoque(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleEntradaEstoque}>
+              Confirmar Entrada
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
