@@ -181,8 +181,57 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       { 
         id: 'admin', 
         label: 'Administração', 
-        path: '/admin', 
-        icon: 'Shield' 
+        icon: 'Shield',
+        children: [
+          {
+            id: 'admin-visao-geral',
+            label: 'Visão Geral',
+            path: '/admin',
+            icon: 'LayoutDashboard'
+          },
+          {
+            id: 'admin-usuarios',
+            label: 'Usuários',
+            path: '/admin/usuarios',
+            icon: 'Users'
+          },
+          {
+            id: 'admin-cargos',
+            label: 'Cargos',
+            path: '/admin/cargos',
+            icon: 'UserCheck'
+          },
+          {
+            id: 'admin-convites',
+            label: 'Convites',
+            path: '/admin/convites',
+            icon: 'Mail'
+          },
+          {
+            id: 'admin-alertas',
+            label: 'Alertas',
+            path: '/admin/alertas',
+            icon: 'Bell'
+          },
+          {
+            id: 'admin-seguranca',
+            label: 'Segurança',
+            path: '/admin/seguranca',
+            icon: 'Lock'
+          },
+          {
+            id: 'admin-auditoria',
+            label: 'Auditoria',
+            path: '/admin/auditoria',
+            icon: 'FileSearch'
+          },
+          {
+            id: 'admin-perfil',
+            label: 'Perfil',
+            path: '/admin/perfil',
+            icon: 'User'
+          }
+        ]
       }
     ]
   }
