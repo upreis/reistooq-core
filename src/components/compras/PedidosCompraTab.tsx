@@ -1,5 +1,6 @@
 // src/components/compras/PedidosCompraTab.tsx - EVOLUÇÃO COMPLETA do modal existente
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -175,6 +176,44 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
       }
 
       if (resultado) {
+        // Salvar itens do pedido se existirem
+        if ((formData.itens || []).length > 0) {
+          try {
+            // Primeiro, limpar itens existentes se for uma edição
+            if (editingPedido) {
+              await supabase
+                .from('pedidos_compra_itens')
+                .delete()
+                .eq('pedido_compra_id', editingPedido.id);
+            }
+            
+            // Inserir novos itens
+            const itensParaSalvar = (formData.itens || []).map(item => ({
+              pedido_compra_id: editingPedido ? editingPedido.id : resultado.id,
+              produto_id: item.produto_id,
+              quantidade: item.quantidade || 1,
+              valor_unitario: item.valor_unitario || 0,
+              valor_total: (item.quantidade || 1) * (item.valor_unitario || 0),
+              observacoes: item.observacoes || null
+            }));
+            
+            const { error: itensError } = await supabase
+              .from('pedidos_compra_itens')
+              .insert(itensParaSalvar);
+              
+            if (itensError) {
+              console.error('Erro ao salvar itens do pedido:', itensError);
+              toast({
+                title: "Aviso",
+                description: "Pedido salvo, mas houve erro ao salvar os itens.",
+                variant: "default",
+              });
+            }
+          } catch (error) {
+            console.error('Erro ao processar itens do pedido:', error);
+          }
+        }
+        
         toast({
           title: editingPedido ? "Pedido atualizado" : "Pedido criado",
           description: "Operação realizada com sucesso!",
@@ -1096,8 +1135,34 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => {
+                        onClick={async () => {
                           setEditingPedido(pedido);
+                          
+                          // Carregar itens do pedido
+                          let itensCarregados = [];
+                          try {
+                            const { data: itens, error } = await supabase
+                              .from('pedidos_compra_itens')
+                              .select(`
+                                *,
+                                produtos!inner(id, nome, sku_interno)
+                              `)
+                              .eq('pedido_compra_id', pedido.id);
+                            
+                            if (!error && itens) {
+                              itensCarregados = itens.map(item => ({
+                                produto_id: item.produto_id,
+                                produto_nome: item.produtos.nome,
+                                produto_sku: item.produtos.sku_interno,
+                                quantidade: item.quantidade,
+                                valor_unitario: item.valor_unitario,
+                                valor_total: item.valor_total
+                              }));
+                            }
+                          } catch (error) {
+                            console.error('Erro ao carregar itens do pedido:', error);
+                          }
+                          
                           setFormData({
                             numero_pedido: pedido.numero_pedido || '',
                             fornecedor_id: pedido.fornecedor_id || '',
@@ -1106,7 +1171,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                             status: pedido.status || 'pendente',
                             valor_total: pedido.valor_total || 0,
                             observacoes: pedido.observacoes || '',
-                            itens: [] // Inicializa como array vazio por enquanto
+                            itens: itensCarregados
                           });
                           setIsModalOpen(true);
                         }}
