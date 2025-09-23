@@ -20,6 +20,7 @@ import {
   Filter
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useCompras } from "@/hooks/useCompras";
 
 // Componentes específicos do sistema de compras
 import { FornecedoresTab } from "@/components/compras/FornecedoresTab";
@@ -36,6 +37,7 @@ const Compras = () => {
   const [selectedFornecedor, setSelectedFornecedor] = useState("all");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const { toast } = useToast();
+  const { getFornecedores, getPedidosCompra, getCotacoes, loading: comprasLoading } = useCompras();
 
   // Estados para dados
   const [fornecedores, setFornecedores] = useState([]);
@@ -50,8 +52,17 @@ const Compras = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      // Carregar dados dos fornecedores, pedidos, etc.
-      // Implementar chamadas para a API
+      
+      // Carregar dados usando o hook
+      const [fornecedoresData, pedidosData, cotacoesData] = await Promise.all([
+        getFornecedores(),
+        getPedidosCompra(),
+        getCotacoes()
+      ]);
+
+      setFornecedores(fornecedoresData);
+      setPedidosCompra(pedidosData);
+      setCotacoes(cotacoesData);
     } catch (error) {
       toast({
         title: "Erro ao carregar dados",
