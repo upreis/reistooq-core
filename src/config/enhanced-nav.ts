@@ -61,10 +61,10 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         ]
       },
       {
-        id: 'analytics',
-        label: 'Analytics',
-        path: '/analytics',
-        icon: 'TrendingUp'
+        id: 'compras',
+        label: 'Compras',
+        path: '/compras',
+        icon: 'ShoppingBag'
       }
     ]
   },

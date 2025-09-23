@@ -36,7 +36,7 @@ import Calendar from "./pages/Calendar";
 import Notes from "./pages/Notes";
 import OMS from "./pages/OMS";
 import Dashboard from "./pages/Dashboard";
-import Analytics from "./pages/Analytics";
+
 import FAQ from "./pages/FAQ";
 import Pricing from "./pages/Pricing";
 import Auth from "./pages/Auth";
@@ -110,11 +110,6 @@ function App() {
                     <Route path="/" element={
                       <PermissionRoute requiredPermissions={['dashboard:view']}>
                         <Dashboard />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/analytics" element={
-                      <PermissionRoute requiredPermissions={['analytics:view']}>
-                        <Analytics />
                       </PermissionRoute>
                     } />
                     <Route path="/oms/*" element={
