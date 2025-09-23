@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { TabsContent } from "@/components/ui/tabs";
 import { PedidosCompraTab } from "@/components/compras/PedidosCompraTab";
-import { CotacoesTab } from "@/components/compras/CotacoesTab";
 import { FornecedoresTab } from "@/components/compras/FornecedoresTab";
 import { ComprasHeader } from "@/components/compras/ComprasHeader";
 import { ConfiguracoesFiscais } from "@/components/compras/ConfiguracoesFiscais";
@@ -12,9 +11,8 @@ export default function PedidosPage() {
   const [activeTab, setActiveTab] = useState('pedidos');
   const [pedidosCompra, setPedidosCompra] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
-  const [cotacoes, setCotacoes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { getPedidosCompra, getFornecedores, getCotacoes } = useCompras();
+  const { getPedidosCompra, getFornecedores } = useCompras();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -24,14 +22,12 @@ export default function PedidosPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [pedidosData, fornecedoresData, cotacoesData] = await Promise.all([
+      const [pedidosData, fornecedoresData] = await Promise.all([
         getPedidosCompra(),
-        getFornecedores(),
-        getCotacoes()
+        getFornecedores()
       ]);
       setPedidosCompra(pedidosData);
       setFornecedores(fornecedoresData);
-      setCotacoes(cotacoesData);
     } catch (error) {
       toast({
         title: "Erro ao carregar dados",
@@ -46,7 +42,6 @@ export default function PedidosPage() {
   // Calcular estatísticas para o header
   const stats = {
     pedidos_pendentes: pedidosCompra.filter(p => p.status === 'pendente').length,
-    cotacoes_abertas: cotacoes.filter(c => c.status === 'aberta').length,
     fornecedores_ativos: fornecedores.filter(f => f.ativo).length,
     valor_total_mes: pedidosCompra.reduce((total, p) => total + (p.valor_total || 0), 0)
   };
@@ -87,13 +82,6 @@ export default function PedidosPage() {
             selectedStatus="all"
             selectedFornecedor="all"
             dateRange={{ start: "", end: "" }}
-            onRefresh={loadData}
-          />
-        )}
-
-        {activeTab === 'cotacoes' && (
-          <CotacoesTab 
-            cotacoes={cotacoes}
             onRefresh={loadData}
           />
         )}

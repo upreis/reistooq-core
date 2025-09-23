@@ -90,23 +90,13 @@ export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
 
       {/* Navegação por Abas */}
       <Tabs value={activeTab} onValueChange={onTabChange}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="pedidos" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
             Pedidos de Compra
             {stats.pedidos_pendentes > 0 && (
               <Badge variant="secondary" className="ml-1">
                 {stats.pedidos_pendentes}
-              </Badge>
-            )}
-          </TabsTrigger>
-          
-          <TabsTrigger value="cotacoes" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Cotações
-            {stats.cotacoes_abertas > 0 && (
-              <Badge variant="secondary" className="ml-1">
-                {stats.cotacoes_abertas}
               </Badge>
             )}
           </TabsTrigger>
@@ -134,14 +124,6 @@ export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
           </div>
         )}
 
-        {stats.cotacoes_abertas > 3 && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg border border-blue-200">
-            <FileText className="h-4 w-4" />
-            <span className="text-sm font-medium">
-              {stats.cotacoes_abertas} cotações em andamento
-            </span>
-          </div>
-        )}
 
         {stats.valor_total_mes > 50000 && (
           <div className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg border border-green-200">
