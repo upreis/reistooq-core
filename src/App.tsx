@@ -225,6 +225,11 @@ function App() {
                         <Alertas />
                       </PermissionRoute>
                     } />
+                    <Route path="/configuracoes" element={
+                      <PermissionRoute requiredPermissions={['settings:view']}>
+                        <IntegracoesPage />
+                      </PermissionRoute>
+                    } />
                     <Route path="/configuracoes/*" element={
                       <PermissionRoute requiredPermissions={['settings:view']}>
                         <IntegracoesPage />
