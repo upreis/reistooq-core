@@ -221,22 +221,47 @@ const SidebarContent = memo(({
   // Map route paths to permission keys
   const getPermissionForPath = (path?: string): string | null => {
     if (!path) return null;
-    if (path === '/') return 'dashboard:view';
-    if (path.startsWith('/analytics')) return 'analytics:view';
-    if (path.startsWith('/oms')) return 'oms:view';
+    
+    // Dashboard permissions
+    if (path === '/' || path.startsWith('/dashboardinicial')) return 'dashboard:view';
+    if (path.startsWith('/dashboard/vendas')) return 'vendas:read';
+    if (path.startsWith('/dashboard/estoque')) return 'estoque:view';
+    if (path.startsWith('/dashboard/financeiro')) return 'vendas:view_pii';
+    
+    // OMS/Vendas permissions
+    if (path.startsWith('/pedidos')) return 'pedidos:view';
+    if (path.startsWith('/oms/pedidos')) return 'oms:view';
+    if (path.startsWith('/oms/clientes')) return 'customers:read';
+    if (path.startsWith('/oms/configuracoes')) return 'oms:view';
+    
+    // Compras permissions
+    if (path.startsWith('/compras/pedidos')) return 'compras:view';
+    if (path.startsWith('/compras/cotacoes')) return 'compras:view';
+    if (path.startsWith('/compras/fornecedores')) return 'compras:view';
+    if (path.startsWith('/compras/importacao')) return 'compras:view';
+    
+    // Aplicações permissions
     if (path.startsWith('/apps/ecommerce')) return 'ecommerce:view';
-    if (path.startsWith('/apps/calendar')) return 'calendar:view';
-    if (path.startsWith('/apps/calendar')) return 'calendar:view';
-    if (path.startsWith('/apps/notes')) return 'notes:view';
+    if (path.startsWith('/aplicativos/calendario')) return 'calendar:view';
+    if (path.startsWith('/aplicativos/notas')) return 'notes:view';
     if (path.startsWith('/estoque')) return 'estoque:view';
-    if (path.startsWith('/pedidos')) return 'orders:read';
     if (path.startsWith('/scanner')) return 'scanner:use';
     if (path.startsWith('/de-para')) return 'depara:view';
     if (path.startsWith('/alertas')) return 'alerts:view';
-    if (path.startsWith('/configuracoes')) return 'settings:view';
     if (path.startsWith('/historico')) return 'historico:view';
+    
+    // Configurações permissions
+    if (path.startsWith('/configuracoes/integracoes')) return 'integrations:read';
+    if (path.startsWith('/configuracoes/anuncios')) return 'system:announce';
+    if (path.startsWith('/configuracoes/administracao')) return 'admin:access';
+    if (path.startsWith('/ml-orders-completas')) return 'historico:read_full';
+    
+    // Admin permissions
     if (path.startsWith('/admin')) return 'admin:access';
+    
+    // Demo permissions
     if (path.startsWith('/_demo') || path.startsWith('/theme-pages') || path.startsWith('/widgets') || path.startsWith('/icons')) return 'demo:access';
+    
     return null;
   };
 
