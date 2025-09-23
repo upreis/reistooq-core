@@ -153,14 +153,14 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         children: [
           { 
             id: 'calendar', 
-            label: 'Calendário Logístico', 
-            path: '/aplicativos/calendario', 
+            label: 'Calendário', 
+            path: '/apps/calendar', 
             icon: 'Calendar' 
           },
           { 
             id: 'notes', 
             label: 'Notas', 
-            path: '/aplicativos/notas', 
+            path: '/apps/notes', 
             icon: 'Notebook' 
           }
         ]
