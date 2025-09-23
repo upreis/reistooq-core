@@ -69,15 +69,6 @@ const SYSTEM_ROUTES = [
     ]
   },
   {
-    section: 'Perfil do Usuário',
-    routes: [
-      { path: '/apps/user-profile/profile', label: 'Perfil' },
-      { path: '/apps/user-profile/followers', label: 'Seguidores' },
-      { path: '/apps/user-profile/friends', label: 'Amigos' },
-      { path: '/apps/user-profile/gallery', label: 'Galeria' },
-    ]
-  },
-  {
     section: 'APLICAÇÕES',
     routes: [
       { path: '/apps/calendar', label: 'Calendário' },

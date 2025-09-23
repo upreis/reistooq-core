@@ -220,7 +220,7 @@ const SidebarContent = memo(({
     if (path.startsWith('/analytics')) return 'analytics:view';
     if (path.startsWith('/oms')) return 'oms:view';
     if (path.startsWith('/apps/ecommerce')) return 'ecommerce:view';
-    if (path.startsWith('/apps/user-profile')) return 'userprofile:view';
+    if (path.startsWith('/apps/calendar')) return 'calendar:view';
     if (path.startsWith('/apps/calendar')) return 'calendar:view';
     if (path.startsWith('/apps/notes')) return 'notes:view';
     if (path.startsWith('/estoque')) return 'estoque:view';

@@ -31,7 +31,7 @@ import ProductList from "./pages/ProductList";
 import Checkout from "./pages/Checkout";
 import AddProduct from "./pages/AddProduct";
 import EditProduct from "./pages/EditProduct";
-import UserProfile from "./pages/UserProfile";
+
 import Calendar from "./pages/Calendar";
 import Notes from "./pages/Notes";
 import OMS from "./pages/OMS";
@@ -154,28 +154,6 @@ function App() {
                     <Route path="/apps/ecommerce/editproduct" element={
                       <PermissionRoute requiredPermissions={['ecommerce:view']}>
                         <EditProduct />
-                      </PermissionRoute>
-                    } />
-                    
-                    {/* User Profile App Routes */}
-                    <Route path="/apps/user-profile/profile" element={
-                      <PermissionRoute requiredPermissions={['userprofile:view']}>
-                        <UserProfile />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/user-profile/followers" element={
-                      <PermissionRoute requiredPermissions={['userprofile:view']}>
-                        <UserProfile />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/user-profile/friends" element={
-                      <PermissionRoute requiredPermissions={['userprofile:view']}>
-                        <UserProfile />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/user-profile/gallery" element={
-                      <PermissionRoute requiredPermissions={['userprofile:view']}>
-                        <UserProfile />
                       </PermissionRoute>
                     } />
                     

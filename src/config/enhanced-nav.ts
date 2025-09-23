@@ -98,37 +98,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         ]
       },
       {
-        id: 'user-profile',
-        label: 'Perfil do Usuário',
-        icon: 'UserRound',
-        children: [
-          { 
-            id: 'profile', 
-            label: 'Perfil', 
-            path: '/apps/user-profile/profile', 
-            icon: 'User' 
-          },
-          { 
-            id: 'followers', 
-            label: 'Seguidores', 
-            path: '/apps/user-profile/followers', 
-            icon: 'Users' 
-          },
-          { 
-            id: 'friends', 
-            label: 'Amigos', 
-            path: '/apps/user-profile/friends', 
-            icon: 'UsersRound' 
-          },
-          { 
-            id: 'gallery', 
-            label: 'Galeria', 
-            path: '/apps/user-profile/gallery', 
-            icon: 'Image' 
-          }
-        ]
-      },
-      {
         id: 'aplicativos',
         label: 'Aplicativos',
         icon: 'Grid3X3',
