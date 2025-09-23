@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Settings, Users, Shield, Mail, Bell, History } from "lucide-react";
+import { Settings, Users, Shield, Mail, Bell, History, User } from "lucide-react";
 
 const navItems = [
   {
@@ -37,6 +37,11 @@ const navItems = [
     path: "/admin/auditoria",
     label: "Auditoria",
     icon: History,
+  },
+  {
+    path: "/admin/perfil",
+    label: "Perfil",
+    icon: User,
   },
 ];
 

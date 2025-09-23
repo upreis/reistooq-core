@@ -10,6 +10,7 @@ import AdminConvites from "./admin/AdminConvites";
 import AdminAlertas from "./admin/AdminAlertas";
 import AdminSeguranca from "./admin/AdminSeguranca";
 import AdminAuditoria from "./admin/AdminAuditoria";
+import AdminPerfil from "./admin/AdminPerfil";
 
 const AdminContent = () => {
   return (
@@ -37,6 +38,7 @@ const AdminContent = () => {
           <Route path="alertas" element={<AdminAlertas />} />
           <Route path="seguranca" element={<AdminSeguranca />} />
           <Route path="auditoria" element={<AdminAuditoria />} />
+          <Route path="perfil" element={<AdminPerfil />} />
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
       </div>
