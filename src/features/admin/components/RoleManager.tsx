@@ -1,5 +1,5 @@
 // 🎯 Gerenciador de Cargos e Permissões
-// Interface completa para RBAC - Atualizado com estrutura real do sistema
+// Interface completa para RBAC - Atualizado com estrutura granular por abas
 
 import React, { useState } from 'react';
 import { useRoles, usePermissions } from '../hooks/useAdmin';
@@ -13,7 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Shield, Plus, Edit, Trash2, Users, Key } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Shield, Plus, Edit, Trash2, Users, Key, ChevronDown, ChevronRight } from 'lucide-react';
+import { DETAILED_PERMISSIONS, type DetailedPermission } from '@/config/detailed-permissions';
 import type { Role, Permission } from '../types/admin.types';
 
 interface RoleFormProps {
@@ -57,45 +59,29 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
     }));
   };
 
-  // Group permissions by category with proper organization
-  const groupedPermissions = permissions.reduce((acc, permission) => {
-    const [category] = permission.key.split(':');
+  // Group permissions by category and subcategory for better organization
+  const groupedPermissions = React.useMemo(() => {
+    const grouped: Record<string, { main: DetailedPermission[], subcategories: Record<string, DetailedPermission[]> }> = {};
     
-    // Map categories to more user-friendly names
-    const categoryMap: Record<string, string> = {
-      'dashboard': 'DASHBOARD',
-      'oms': 'VENDAS (OMS)',
-      'compras': 'COMPRAS',
-      'estoque': 'ESTOQUE',
-      'ecommerce': 'ECOMMERCE',
-      'orders': 'PEDIDOS',
-      'pedidos': 'PEDIDOS',
-      'customers': 'CLIENTES',
-      'historico': 'HISTÓRICO',
-      'sales': 'VENDAS',
-      'integrations': 'INTEGRAÇÕES',
-      'settings': 'CONFIGURAÇÕES',
-      'configuracoes': 'CONFIGURAÇÕES',
-      'admin': 'ADMINISTRAÇÃO',
-      'users': 'USUÁRIOS',
-      'invites': 'CONVITES',
-      'system': 'SISTEMA',
-      'alerts': 'ALERTAS',
-      'analytics': 'RELATÓRIOS',
-      'calendar': 'CALENDÁRIO',
-      'notes': 'NOTAS',
-      'scanner': 'SCANNER',
-      'depara': 'DE-PARA',
-      'demo': 'DEMONSTRAÇÃO',
-      'userprofile': 'PERFIL'
-    };
+    DETAILED_PERMISSIONS.forEach(permission => {
+      const category = permission.category;
+      
+      if (!grouped[category]) {
+        grouped[category] = { main: [], subcategories: {} };
+      }
+      
+      if (permission.subcategory) {
+        if (!grouped[category].subcategories[permission.subcategory]) {
+          grouped[category].subcategories[permission.subcategory] = [];
+        }
+        grouped[category].subcategories[permission.subcategory].push(permission);
+      } else {
+        grouped[category].main.push(permission);
+      }
+    });
     
-    const displayCategory = categoryMap[category] || category.toUpperCase();
-    
-    if (!acc[displayCategory]) acc[displayCategory] = [];
-    acc[displayCategory].push(permission);
-    return acc;
-  }, {} as Record<string, Permission[]>);
+    return grouped;
+  }, []);
 
   // Sort categories by importance
   const categoryOrder = [
@@ -103,25 +89,11 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
     'VENDAS (OMS)', 
     'COMPRAS',
     'ESTOQUE',
-    'PEDIDOS',
-    'CLIENTES',
-    'HISTÓRICO',
-    'VENDAS',
     'ECOMMERCE',
-    'INTEGRAÇÕES',
-    'ADMINISTRAÇÃO',
-    'USUÁRIOS',
-    'CONVITES',
-    'SISTEMA',
     'CONFIGURAÇÕES',
-    'RELATÓRIOS',
-    'ALERTAS',
-    'CALENDÁRIO',
-    'NOTAS',
-    'SCANNER',
-    'DE-PARA',
-    'PERFIL',
-    'DEMONSTRAÇÃO'
+    'ADMINISTRAÇÃO',
+    'APLICATIVOS',
+    'FERRAMENTAS'
   ];
   
   const sortedCategories = Object.keys(groupedPermissions).sort((a, b) => {
@@ -132,6 +104,27 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
     if (bIndex === -1) return -1;
     return aIndex - bIndex;
   });
+
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  const getCategoryPermissions = (category: string): string[] => {
+    const categoryData = groupedPermissions[category];
+    const permissions: string[] = [];
+    
+    permissions.push(...categoryData.main.map(p => p.key));
+    Object.values(categoryData.subcategories).forEach(subcatPerms => {
+      permissions.push(...subcatPerms.map(p => p.key));
+    });
+    
+    return permissions;
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -148,63 +141,112 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
 
       <div className="space-y-4">
         <Label>Permissões</Label>
-        <ScrollArea className="h-80 border rounded p-4">
-          {sortedCategories.map(category => (
-            <div key={category} className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-sm uppercase tracking-wide text-muted-foreground">
-                  {category}
-                </h4>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => {
-                      const categoryPermissions = groupedPermissions[category].map(p => p.key);
-                      const allSelected = categoryPermissions.every(p => formData.selectedPermissions.includes(p));
-                      
-                      if (allSelected) {
-                        // Remove all from this category
-                        setFormData(prev => ({
-                          ...prev,
-                          selectedPermissions: prev.selectedPermissions.filter(p => !categoryPermissions.includes(p))
-                        }));
-                      } else {
-                        // Add all from this category
-                        setFormData(prev => ({
-                          ...prev,
-                          selectedPermissions: [...new Set([...prev.selectedPermissions, ...categoryPermissions])]
-                        }));
-                      }
-                    }}
-                  >
-                    {groupedPermissions[category].every(p => formData.selectedPermissions.includes(p.key)) ? 'Desmarcar Todos' : 'Selecionar Todos'}
-                  </Button>
-                </div>
-              </div>
-              <div className="space-y-3">
-                {groupedPermissions[category].map(permission => (
-                  <div key={permission.key} className="flex items-start space-x-3">
-                    <Checkbox
-                      checked={formData.selectedPermissions.includes(permission.key)}
-                      onCheckedChange={() => togglePermission(permission.key)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <Label className="text-sm font-medium">{permission.name}</Label>
-                      {permission.description && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {permission.description}
-                        </p>
-                      )}
+        <ScrollArea className="h-96 border rounded p-4">
+          {sortedCategories.map(category => {
+            const categoryData = groupedPermissions[category];
+            const categoryPermissions = getCategoryPermissions(category);
+            const isExpanded = expandedCategories[category];
+            
+            return (
+              <div key={category} className="mb-6">
+                <Collapsible open={isExpanded} onOpenChange={() => toggleCategory(category)}>
+                  <div className="flex items-center justify-between mb-3">
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="p-0 h-auto font-medium text-sm uppercase tracking-wide text-muted-foreground hover:text-foreground flex items-center gap-2"
+                      >
+                        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        {category}
+                        <Badge variant="secondary" className="text-xs">
+                          {categoryPermissions.length}
+                        </Badge>
+                      </Button>
+                    </CollapsibleTrigger>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          const allSelected = categoryPermissions.every(p => formData.selectedPermissions.includes(p));
+                          
+                          if (allSelected) {
+                            setFormData(prev => ({
+                              ...prev,
+                              selectedPermissions: prev.selectedPermissions.filter(p => !categoryPermissions.includes(p))
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              selectedPermissions: [...new Set([...prev.selectedPermissions, ...categoryPermissions])]
+                            }));
+                          }
+                        }}
+                      >
+                        {categoryPermissions.every(p => formData.selectedPermissions.includes(p)) ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                      </Button>
                     </div>
                   </div>
-                ))}
+                  
+                  <CollapsibleContent className="space-y-4">
+                    {/* Main permissions for the category */}
+                    {categoryData.main.length > 0 && (
+                      <div className="space-y-2">
+                        {categoryData.main.map(permission => (
+                          <div key={permission.key} className="flex items-start space-x-3 pl-6">
+                            <Checkbox
+                              checked={formData.selectedPermissions.includes(permission.key)}
+                              onCheckedChange={() => togglePermission(permission.key)}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <Label className="text-sm font-medium">{permission.name}</Label>
+                              {permission.description && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {permission.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Subcategory permissions */}
+                    {Object.entries(categoryData.subcategories).map(([subcategory, subcatPermissions]) => (
+                      <div key={subcategory} className="pl-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide pl-2">
+                            {subcategory}
+                          </h5>
+                        </div>
+                        <div className="space-y-2">
+                          {subcatPermissions.map(permission => (
+                            <div key={permission.key} className="flex items-start space-x-3 pl-6">
+                              <Checkbox
+                                checked={formData.selectedPermissions.includes(permission.key)}
+                                onCheckedChange={() => togglePermission(permission.key)}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <Label className="text-sm font-medium">{permission.name}</Label>
+                                {permission.description && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {permission.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+                <Separator className="mt-4" />
               </div>
-              <Separator className="mt-4" />
-            </div>
-          ))}
+            );
+          })}
         </ScrollArea>
         <p className="text-sm text-muted-foreground">
           {formData.selectedPermissions.length} permissões selecionadas
