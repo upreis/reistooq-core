@@ -19,6 +19,14 @@ export function PermissionRoute({
 }: PermissionRouteProps) {
   const { permissions, loading, error, hasAllPermissions, hasAnyPermission } = useUserPermissions();
 
+  console.log('🔍 PermissionRoute Debug:', {
+    path: window.location.pathname,
+    requiredPermissions,
+    userPermissions: permissions,
+    loading,
+    error
+  });
+
   // Ainda carregando permissões
   if (loading) {
     return (

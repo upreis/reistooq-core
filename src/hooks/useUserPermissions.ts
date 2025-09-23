@@ -23,6 +23,12 @@ export function useUserPermissions() {
         const { data, error: permError } = await supabase
           .rpc('get_user_permissions');
 
+        console.log('🔍 useUserPermissions - RPC response:', {
+          data,
+          error: permError,
+          user: user?.email
+        });
+
         if (permError) {
           console.error('Erro ao carregar permissões:', permError);
           setError(permError.message);
