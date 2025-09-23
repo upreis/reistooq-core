@@ -35,18 +35,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Users'
           },
           {
-            id: 'oms-fornecedores',
-            label: 'Fornecedores',
-            path: '/oms/fornecedores',
-            icon: 'Building'
-          },
-          {
-            id: 'oms-relatorios',
-            label: 'Relatórios',
-            path: '/oms/relatorios',
-            icon: 'FileBarChart'
-          },
-          {
             id: 'oms-configuracoes',
             label: 'Configurações OMS',
             path: '/oms/configuracoes',
