@@ -185,12 +185,30 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
         onRefresh();
 
         // Se mudou para concluído/recebido, mostrar modal de entrada no estoque
-        if (statusMudouParaConcluido && (formData.itens || []).length > 0) {
-          setPedidoParaEstoque({
-            ...pedidoCompleto,
-            itens: formData.itens
-          });
-          setShowEstoqueModal(true);
+        if (statusMudouParaConcluido) {
+          // Se o pedido tem itens cadastrados, usar eles
+          if ((formData.itens || []).length > 0) {
+            // Converter formato dos itens para ItemRecebimento
+            const itensFormatados = (formData.itens || []).map(item => ({
+              produto_id: item.produto_id,
+              quantidade: item.quantidade || 1,
+              valor_unitario: item.valor_unitario || 0,
+              observacoes: `Recebimento do pedido ${pedidoCompleto.numero_pedido}`
+            }));
+            
+            setPedidoParaEstoque({
+              ...pedidoCompleto,
+              itens: itensFormatados
+            });
+            setShowEstoqueModal(true);
+          } else {
+            // Se não tem itens, avisar que precisa ter produtos cadastrados
+            toast({
+              title: "Aviso",
+              description: "Para dar entrada no estoque, é necessário ter produtos cadastrados no pedido.",
+              variant: "default",
+            });
+          }
         }
       }
     } catch (error) {
