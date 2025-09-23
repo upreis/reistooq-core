@@ -4,6 +4,7 @@ import { PedidosCompraTab } from "@/components/compras/PedidosCompraTab";
 import { CotacoesTab } from "@/components/compras/CotacoesTab";
 import { FornecedoresTab } from "@/components/compras/FornecedoresTab";
 import { ComprasHeader } from "@/components/compras/ComprasHeader";
+import { ConfiguracoesFiscais } from "@/components/compras/ConfiguracoesFiscais";
 import { useCompras } from "@/hooks/useCompras";
 import { useToast } from "@/hooks/use-toast";
 
@@ -102,6 +103,10 @@ export default function PedidosPage() {
             fornecedores={fornecedores}
             onRefresh={loadData}
           />
+        )}
+
+        {activeTab === 'configuracoes' && (
+          <ConfiguracoesFiscais />
         )}
       </div>
     </div>

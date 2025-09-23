@@ -10,7 +10,8 @@ import {
   Package,
   DollarSign,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Settings
 } from "lucide-react";
 
 interface ComprasHeaderProps {
@@ -89,7 +90,7 @@ export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
 
       {/* Navegação por Abas */}
       <Tabs value={activeTab} onValueChange={onTabChange}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pedidos" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
             Pedidos de Compra
@@ -113,6 +114,11 @@ export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
           <TabsTrigger value="fornecedores" className="flex items-center gap-2">
             <Building className="h-4 w-4" />
             Fornecedores
+          </TabsTrigger>
+
+          <TabsTrigger value="configuracoes" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Configurações
           </TabsTrigger>
         </TabsList>
       </Tabs>

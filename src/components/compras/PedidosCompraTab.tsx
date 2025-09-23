@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductSelector } from "./ProductSelector";
+import { DadosFiscais } from "./DadosFiscais";
 
 interface PedidosCompraTabProps {
   pedidosCompra: any[];
@@ -68,7 +69,26 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
     status: 'pendente',
     valor_total: 0,
     observacoes: '',
-    itens: []
+    itens: [],
+    dados_fiscais: {
+      aliquota_icms: 0,
+      aliquota_ipi: 0,
+      aliquota_pis: 0,
+      aliquota_cofins: 0,
+      valor_icms: 0,
+      valor_ipi: 0,
+      valor_pis: 0,
+      valor_cofins: 0,
+      total_impostos: 0,
+      valor_total_com_impostos: 0,
+      regime_tributario: '',
+      numero_nf: '',
+      serie_nf: '',
+      chave_acesso: '',
+      data_emissao_nf: '',
+      nf_emitida: false,
+      observacoes_fiscais: ''
+    }
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -169,7 +189,26 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
       status: 'pendente',
       valor_total: 0,
       observacoes: '',
-      itens: []
+      itens: [],
+      dados_fiscais: {
+        aliquota_icms: 0,
+        aliquota_ipi: 0,
+        aliquota_pis: 0,
+        aliquota_cofins: 0,
+        valor_icms: 0,
+        valor_ipi: 0,
+        valor_pis: 0,
+        valor_cofins: 0,
+        total_impostos: 0,
+        valor_total_com_impostos: 0,
+        regime_tributario: '',
+        numero_nf: '',
+        serie_nf: '',
+        chave_acesso: '',
+        data_emissao_nf: '',
+        nf_emitida: false,
+        observacoes_fiscais: ''
+      }
     });
     setEditingPedido(null);
     setErrors({});
@@ -589,6 +628,12 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Dados Fiscais */}
+            <DadosFiscais 
+              formData={formData}
+              setFormData={setFormData}
+            />
 
             <Separator />
 
@@ -876,6 +921,15 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                     <p className="text-sm">{viewingPedido.observacoes}</p>
                   </CardContent>
                 </Card>
+              )}
+              
+              {/* Dados Fiscais */}
+              {viewingPedido.dados_fiscais && (
+                <DadosFiscais 
+                  formData={viewingPedido}
+                  setFormData={() => {}} 
+                  readonly={true}
+                />
               )}
               
               {/* Itens do pedido */}
