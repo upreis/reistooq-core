@@ -189,12 +189,12 @@ function App() {
                       </PermissionRoute>
                     } />
                     
-                    {/* Custom Business Routes */}
-                    <Route path="/estoque" element={
-                      <PermissionRoute requiredPermissions={['estoque:view']}>
-                        <Estoque />
-                      </PermissionRoute>
-                    } />
+                     {/* Custom Business Routes */}
+                     <Route path="/estoque/*" element={
+                       <PermissionRoute requiredPermissions={['estoque:view']}>
+                         <Estoque />
+                       </PermissionRoute>
+                     } />
                     <Route path="/category-manager" element={
                       <PermissionRoute requiredPermissions={['estoque:view']}>
                         <CategoryManager />
