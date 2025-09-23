@@ -75,7 +75,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           {
             id: 'compras-pedidos',
             label: 'Pedidos',
-            path: '/compras',
+            path: '/compras/pedidos',
             icon: 'ShoppingCart'
           },
           {

@@ -66,7 +66,7 @@ const ComprasContent = () => {
       
       <div className="mt-6">
         <Routes>
-          <Route path="/" element={<Navigate to="/compras/fornecedores" replace />} />
+          <Route path="/" element={<Navigate to="/compras/pedidos" replace />} />
           <Route path="/fornecedores" element={<FornecedoresPage />} />
           <Route path="/pedidos" element={<PedidosPage />} />
           <Route path="/cotacoes" element={<CotacoesPage />} />
