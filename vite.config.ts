@@ -41,47 +41,28 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // React core
-          if (id.includes('react') || id.includes('scheduler')) {
-            return 'react-vendor';
-          }
-          
-          // UI Components
-          if (id.includes('@radix-ui')) {
-            return 'ui-vendor';
-          }
-          
-          // Data fetching
-          if (id.includes('@tanstack/react-query')) {
-            return 'query-vendor';
-          }
-          
-          // Charts
-          if (id.includes('recharts')) {
-            return 'chart-vendor';
-          }
-          
-          // Icons
-          if (id.includes('lucide-react')) {
-            return 'icon-vendor';
-          }
-          
-          // Animations
-          if (id.includes('framer-motion')) {
-            return 'animation-vendor';
-          }
-          
-          // Other node_modules
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
-        }
+        // ✅ FIX CRÍTICO: Simplifica chunks e evita problemas de inicialização
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'scheduler'],
+          'router-vendor': ['react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tooltip'],
+          'query-vendor': ['@tanstack/react-query'],
+          'supabase-vendor': ['@supabase/supabase-js']
+        },
+        // ✅ FIX CRÍTICO: Garante ordem correta de carregamento
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     },
-    target: 'esnext',
+    target: 'es2020',
     minify: 'esbuild',
-    sourcemap: false
+    sourcemap: false,
+    // ✅ FIX CRÍTICO: Configurações para evitar problemas de inicialização
+    modulePreload: {
+      polyfill: false
+    },
+    cssCodeSplit: true
   },
   resolve: {
     alias: {
