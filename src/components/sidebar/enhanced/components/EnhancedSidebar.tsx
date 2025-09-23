@@ -36,6 +36,11 @@ const SidebarSingleItem = memo(({
 }) => {
   const Icon = getIconComponent(item.icon);
   const itemActive = item.path ? isActive(item.path) : false;
+  
+  // Debug log para single items
+  if (itemActive) {
+    console.log(`🎯 Single item "${item.label}" está ativo na rota: ${item.path}`);
+  }
 
   const link = (
     <NavLink

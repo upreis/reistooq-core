@@ -17,6 +17,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'DollarSign',
         children: [
           {
+            id: 'vendas-marketplace',
+            label: 'Vendas Marketplace',
+            path: '/pedidos',
+            icon: 'Store'
+          },
+          {
             id: 'oms-pedidos',
             label: 'Vendas Direta/Atacado',
             path: '/oms/pedidos',
@@ -33,12 +39,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             label: 'Configurações OMS',
             path: '/oms/configuracoes',
             icon: 'Settings'
-          },
-          {
-            id: 'vendas-marketplace',
-            label: 'Vendas Marketplace',
-            path: '/pedidos',
-            icon: 'Store'
           }
         ]
       },

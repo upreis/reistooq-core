@@ -40,10 +40,17 @@ export function SidebarItemWithChildren({
   // Check if this item has active children
   const hasActiveChild = useMemo(() => {
     if (!item.children) return false;
-    return item.children.some(child => 
+    const isChildActive = item.children.some(child => 
       child.path && matchPath({ path: child.path, end: false }, location.pathname)
     );
-  }, [location.pathname, item.children]);
+    
+    // Debug log para verificar detecção de páginas ativas
+    if (isChildActive) {
+      console.log(`🎯 Item "${item.label}" tem filho ativo na rota: ${location.pathname}`);
+    }
+    
+    return isChildActive;
+  }, [location.pathname, item.children, item.label]);
 
   // Check if this group is open (força re-renderização com openGroups como dependência)
   const isOpen = useMemo(() => isGroupOpen(item.id), [isGroupOpen, item.id, openGroups]);
@@ -59,29 +66,24 @@ export function SidebarItemWithChildren({
   const isFlyoutPinned = false;
 
   const handleParentClick = useCallback((e: React.MouseEvent) => {
-    // Prevent navigation for items WITH children only
+    // Prevent navigation for items WITH children only when we want to toggle
     const hasChildren = item.children && item.children.length > 0;
+    
     if (hasChildren) {
       e.preventDefault();
-    }
-    
-    if (isCollapsed && !isMobile) {
-      // For now, just prevent default behavior when collapsed
-      // Flyout functionality can be added back later if needed
-      return;
-    }
-
-    // When expanded - only for items with children
-    if (hasChildren) {
       const firstChild = item.children?.[0];
-      // Always navigate to first child instead of toggling
+      
+      // SEMPRE navegar para o primeiro filho, independente do estado collapsed
       if (firstChild?.path) {
+        console.log(`🔄 Navegando para primeira página filho: ${firstChild.path}`);
         navigate(firstChild.path);
         return;
       }
       
-      // Fallback toggle behavior if no valid first child
-      toggleGroup(item.id);
+      // Fallback toggle behavior apenas se não houver primeiro filho válido
+      if (!isCollapsed || isMobile) {
+        toggleGroup(item.id);
+      }
     }
   }, [isCollapsed, isMobile, item.children, item.id, toggleGroup, navigate]);
 
