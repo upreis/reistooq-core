@@ -45,11 +45,11 @@ export class ComprasEstoqueIntegration {
       const pedidoStatus = (pedido as any).status;
       console.log('📋 [ComprasEstoqueIntegration] Status do pedido:', pedidoStatus);
       
-      if (!['aprovado', 'em_andamento', 'concluido'].includes(pedidoStatus)) {
+      if (!['aprovado', 'em_andamento', 'concluido', 'concluido_recebido'].includes(pedidoStatus)) {
         console.log('❌ [ComprasEstoqueIntegration] Status inválido para recebimento:', pedidoStatus);
         return {
           success: false,
-          message: 'Pedido não está em status válido para recebimento'
+          message: `Pedido não está em status válido para recebimento. Status atual: ${pedidoStatus}`
         };
       }
 
