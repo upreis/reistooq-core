@@ -144,8 +144,8 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
         return;
       }
 
-      // Calcula valor total baseado nos itens (se houver)
-      const valorCalculado = formData.itens.reduce((sum, item) => sum + (item.quantidade * item.valor_unitario), 0);
+      // Calcula valor total baseado nos itens (se houver) - com proteção contra undefined
+      const valorCalculado = (formData.itens || []).reduce((sum, item) => sum + (item.quantidade * item.valor_unitario), 0);
       
       // MANTÉM a estrutura original + ADICIONA novos campos opcionais
       const pedidoCompleto = {
@@ -220,7 +220,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
 
   // NOVAS funções para gestão de produtos (SEM alterar as existentes)
   const adicionarProduto = (produto) => {
-    const itemExistente = formData.itens.find(item => item.produto_id === produto.id);
+    const itemExistente = (formData.itens || []).find(item => item.produto_id === produto.id);
     if (itemExistente) {
       toast({
         title: "Produto já adicionado",
@@ -241,7 +241,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
 
     setFormData(prev => ({
       ...prev,
-      itens: [...prev.itens, novoItem]
+      itens: [...(prev.itens || []), novoItem]
     }));
 
     toast({
@@ -251,23 +251,25 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   };
 
   const atualizarItem = (index, campo, valor) => {
-    const novosItens = [...formData.itens];
-    novosItens[index][campo] = valor;
+    const novosItens = [...(formData.itens || [])];
+    if (novosItens[index]) {
+      novosItens[index][campo] = valor;
     
-    if (campo === 'quantidade' || campo === 'valor_unitario') {
-      novosItens[index].valor_total = novosItens[index].quantidade * novosItens[index].valor_unitario;
+      if (campo === 'quantidade' || campo === 'valor_unitario') {
+        novosItens[index].valor_total = novosItens[index].quantidade * novosItens[index].valor_unitario;
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        itens: novosItens
+      }));
     }
-    
-    setFormData(prev => ({
-      ...prev,
-      itens: novosItens
-    }));
   };
 
   const removerItem = (index) => {
     setFormData(prev => ({
       ...prev,
-      itens: prev.itens.filter((_, i) => i !== index)
+      itens: (prev.itens || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -343,7 +345,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
 
   // Cálculos automáticos
   const calcularTotais = () => {
-    const subtotal = formData.itens.reduce((sum, item) => sum + (item.valor_total || 0), 0);
+    const subtotal = (formData.itens || []).reduce((sum, item) => sum + (item.valor_total || 0), 0);
     const frete = dadosFiscais.valor_frete || 0;
     const seguro = dadosFiscais.valor_seguro || 0;
     const outras = dadosFiscais.outras_despesas || 0;
@@ -388,7 +390,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="basico">Dados Básicos</TabsTrigger>
-                <TabsTrigger value="produtos">Produtos ({formData.itens.length})</TabsTrigger>
+                <TabsTrigger value="produtos">Produtos ({(formData.itens || []).length})</TabsTrigger>
                 <TabsTrigger value="fiscal">Dados Fiscais</TabsTrigger>
                 <TabsTrigger value="revisao">Revisão</TabsTrigger>
               </TabsList>
@@ -476,9 +478,9 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                         step="0.01"
                         value={formData.valor_total}
                         onChange={(e) => setFormData({ ...formData, valor_total: parseFloat(e.target.value) || 0 })}
-                        placeholder={formData.itens.length > 0 ? `Calculado: ${formatCurrency(totais.total)}` : "0.00"}
+                        placeholder={(formData.itens || []).length > 0 ? `Calculado: ${formatCurrency(totais.total)}` : "0.00"}
                       />
-                      {formData.itens.length > 0 && (
+                      {(formData.itens || []).length > 0 && (
                         <p className="text-sm text-muted-foreground mt-1">
                           Valor calculado automaticamente: {formatCurrency(totais.total)}
                         </p>
@@ -552,11 +554,11 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <ShoppingCart className="h-5 w-5" />
-                        Produtos no Pedido ({formData.itens.length})
+                        Produtos no Pedido ({(formData.itens || []).length})
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="max-h-64 overflow-y-auto">
-                      {formData.itens.length === 0 ? (
+                      {(formData.itens || []).length === 0 ? (
                         <div className="text-center py-8">
                           <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                           <p className="text-muted-foreground">Nenhum produto selecionado</p>
@@ -571,7 +573,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {formData.itens.map((item, index) => (
+                          {(formData.itens || []).map((item, index) => (
                             <div key={index} className="border rounded-lg p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <div>
@@ -627,7 +629,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                 </div>
 
                 {/* Resumo dos produtos */}
-                {formData.itens.length > 0 && (
+                {(formData.itens || []).length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -638,12 +640,12 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center">
                         <div>
-                          <div className="text-2xl font-bold text-primary">{formData.itens.length}</div>
+                          <div className="text-2xl font-bold text-primary">{(formData.itens || []).length}</div>
                           <div className="text-sm text-muted-foreground">Produtos</div>
                         </div>
                         <div>
                           <div className="text-2xl font-bold text-primary">
-                            {formData.itens.reduce((sum, item) => sum + item.quantidade, 0)}
+                            {(formData.itens || []).reduce((sum, item) => sum + item.quantidade, 0)}
                           </div>
                           <div className="text-sm text-muted-foreground">Quantidade</div>
                         </div>
@@ -904,9 +906,9 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                     </div>
 
                     {/* Lista de produtos */}
-                    {formData.itens.length > 0 && (
+                    {(formData.itens || []).length > 0 && (
                       <div className="mt-6">
-                        <h4 className="font-semibold mb-4">Produtos ({formData.itens.length})</h4>
+                        <h4 className="font-semibold mb-4">Produtos ({(formData.itens || []).length})</h4>
                         <div className="border rounded-lg overflow-hidden">
                           <Table>
                             <TableHeader>
@@ -919,7 +921,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {formData.itens.map((item, index) => (
+                              {(formData.itens || []).map((item, index) => (
                                 <TableRow key={index}>
                                   <TableCell className="font-medium">{item.produto_nome}</TableCell>
                                   <TableCell className="text-muted-foreground">{item.produto_sku}</TableCell>
@@ -948,13 +950,13 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                           <span className="text-sm text-red-800">Fornecedor não selecionado</span>
                         </div>
                       )}
-                      {formData.itens.length === 0 && (
+                      {(formData.itens || []).length === 0 && (
                         <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                           <AlertTriangle className="h-4 w-4 text-orange-600" />
                           <span className="text-sm text-orange-800">Nenhum produto adicionado</span>
                         </div>
                       )}
-                      {formData.numero_pedido && formData.fornecedor_id && formData.itens.length > 0 && (
+                      {formData.numero_pedido && formData.fornecedor_id && (formData.itens || []).length > 0 && (
                         <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                           <CheckCircle className="h-4 w-4 text-green-600" />
                           <span className="text-sm text-green-800">Pedido pronto para ser salvo</span>
@@ -1022,7 +1024,16 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                         variant="ghost"
                         onClick={() => {
                           setEditingPedido(pedido);
-                          setFormData({ ...pedido });
+                          setFormData({
+                            numero_pedido: pedido.numero_pedido || '',
+                            fornecedor_id: pedido.fornecedor_id || '',
+                            data_pedido: pedido.data_pedido || new Date().toISOString().split('T')[0],
+                            data_entrega_prevista: pedido.data_entrega_prevista || '',
+                            status: pedido.status || 'pendente',
+                            valor_total: pedido.valor_total || 0,
+                            observacoes: pedido.observacoes || '',
+                            itens: [] // Inicializa como array vazio por enquanto
+                          });
                           setIsModalOpen(true);
                         }}
                       >
