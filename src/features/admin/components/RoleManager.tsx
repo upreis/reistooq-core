@@ -15,7 +15,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Shield, Plus, Edit, Trash2, Users, Key, ChevronDown, ChevronRight } from 'lucide-react';
-import { DETAILED_PERMISSIONS, type DetailedPermission } from '@/config/detailed-permissions';
 import type { Role, Permission } from '../types/admin.types';
 
 interface RoleFormProps {
@@ -59,29 +58,57 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
     }));
   };
 
-  // Group permissions by category and subcategory for better organization
+  // Group permissions by module/category based on their key prefixes
   const groupedPermissions = React.useMemo(() => {
-    const grouped: Record<string, { main: DetailedPermission[], subcategories: Record<string, DetailedPermission[]> }> = {};
+    const grouped: Record<string, Permission[]> = {};
     
-    DETAILED_PERMISSIONS.forEach(permission => {
-      const category = permission.category;
+    permissions.forEach(permission => {
+      // Extract module from permission key (e.g., "admin:access" -> "admin")
+      const module = permission.key.split(':')[0];
+      const moduleMap: Record<string, string> = {
+        'admin': 'ADMINISTRAÇÃO',
+        'dashboard': 'DASHBOARD', 
+        'oms': 'VENDAS (OMS)',
+        'vendas': 'VENDAS (OMS)',
+        'sales': 'VENDAS (OMS)',
+        'orders': 'VENDAS (OMS)',
+        'pedidos': 'VENDAS (OMS)',
+        'historico': 'VENDAS (OMS)',
+        'compras': 'COMPRAS',
+        'cotacoes': 'COMPRAS',
+        'fornecedores': 'COMPRAS',
+        'estoque': 'ESTOQUE',
+        'produtos': 'ESTOQUE',
+        'ecommerce': 'ECOMMERCE',
+        'configuracoes': 'CONFIGURAÇÕES',
+        'settings': 'CONFIGURAÇÕES',
+        'integrations': 'CONFIGURAÇÕES',
+        'users': 'ADMINISTRAÇÃO',
+        'invites': 'ADMINISTRAÇÃO',
+        'customers': 'CLIENTES',
+        'clientes': 'CLIENTES',
+        'analytics': 'FERRAMENTAS',
+        'calendar': 'FERRAMENTAS',
+        'scanner': 'FERRAMENTAS',
+        'notes': 'FERRAMENTAS',
+        'alerts': 'SISTEMA',
+        'system': 'SISTEMA',
+        'demo': 'SISTEMA',
+        'userprofile': 'USUÁRIO',
+        'depara': 'CONFIGURAÇÕES'
+      };
+      
+      const category = moduleMap[module] || module.toUpperCase();
       
       if (!grouped[category]) {
-        grouped[category] = { main: [], subcategories: {} };
+        grouped[category] = [];
       }
       
-      if (permission.subcategory) {
-        if (!grouped[category].subcategories[permission.subcategory]) {
-          grouped[category].subcategories[permission.subcategory] = [];
-        }
-        grouped[category].subcategories[permission.subcategory].push(permission);
-      } else {
-        grouped[category].main.push(permission);
-      }
+      grouped[category].push(permission);
     });
     
     return grouped;
-  }, []);
+  }, [permissions]);
 
   // Sort categories by importance
   const categoryOrder = [
@@ -89,11 +116,13 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
     'VENDAS (OMS)', 
     'COMPRAS',
     'ESTOQUE',
+    'CLIENTES',
     'ECOMMERCE',
     'CONFIGURAÇÕES',
     'ADMINISTRAÇÃO',
-    'APLICATIVOS',
-    'FERRAMENTAS'
+    'USUÁRIO',
+    'FERRAMENTAS',
+    'SISTEMA'
   ];
   
   const sortedCategories = Object.keys(groupedPermissions).sort((a, b) => {
@@ -115,15 +144,8 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
   };
 
   const getCategoryPermissions = (category: string): string[] => {
-    const categoryData = groupedPermissions[category];
-    const permissions: string[] = [];
-    
-    permissions.push(...categoryData.main.map(p => p.key));
-    Object.values(categoryData.subcategories).forEach(subcatPerms => {
-      permissions.push(...subcatPerms.map(p => p.key));
-    });
-    
-    return permissions;
+    const categoryData = groupedPermissions[category] || [];
+    return categoryData.map(p => p.key);
   };
 
   return (
@@ -143,9 +165,11 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
         <Label>Permissões</Label>
         <ScrollArea className="h-96 border rounded p-4">
           {sortedCategories.map(category => {
-            const categoryData = groupedPermissions[category];
+            const categoryData = groupedPermissions[category] || [];
             const categoryPermissions = getCategoryPermissions(category);
             const isExpanded = expandedCategories[category];
+            
+            if (categoryData.length === 0) return null;
             
             return (
               <div key={category} className="mb-6">
@@ -190,54 +214,20 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
                     </div>
                   </div>
                   
-                  <CollapsibleContent className="space-y-4">
-                    {/* Main permissions for the category */}
-                    {categoryData.main.length > 0 && (
-                      <div className="space-y-2">
-                        {categoryData.main.map(permission => (
-                          <div key={permission.key} className="flex items-start space-x-3 pl-6">
-                            <Checkbox
-                              checked={formData.selectedPermissions.includes(permission.key)}
-                              onCheckedChange={() => togglePermission(permission.key)}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <Label className="text-sm font-medium">{permission.name}</Label>
-                              {permission.description && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {permission.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Subcategory permissions */}
-                    {Object.entries(categoryData.subcategories).map(([subcategory, subcatPermissions]) => (
-                      <div key={subcategory} className="pl-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide pl-2">
-                            {subcategory}
-                          </h5>
-                        </div>
-                        <div className="space-y-2">
-                          {subcatPermissions.map(permission => (
-                            <div key={permission.key} className="flex items-start space-x-3 pl-6">
-                              <Checkbox
-                                checked={formData.selectedPermissions.includes(permission.key)}
-                                onCheckedChange={() => togglePermission(permission.key)}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <Label className="text-sm font-medium">{permission.name}</Label>
-                                {permission.description && (
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {permission.description}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          ))}
+                  <CollapsibleContent className="space-y-2">
+                    {categoryData.map(permission => (
+                      <div key={permission.key} className="flex items-start space-x-3 pl-6">
+                        <Checkbox
+                          checked={formData.selectedPermissions.includes(permission.key)}
+                          onCheckedChange={() => togglePermission(permission.key)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <Label className="text-sm font-medium">{permission.name}</Label>
+                          {permission.description && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {permission.description}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
