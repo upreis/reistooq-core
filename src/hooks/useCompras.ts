@@ -132,6 +132,76 @@ export const useCompras = () => {
     }
   };
 
+  const createPedidoCompra = async (pedido: any): Promise<any> => {
+    try {
+      setLoading(true);
+      
+      // Busca o organization_id do usuário atual
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (userError || !userData?.organizacao_id) {
+        throw new Error('Usuário não possui organização definida');
+      }
+
+      const pedidoComOrg = {
+        ...pedido,
+        organization_id: userData.organizacao_id
+      };
+
+      const { data, error } = await supabase
+        .from('pedidos_compra')
+        .insert([pedidoComOrg])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Erro ao criar pedido de compra:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar o pedido de compra.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePedidoCompra = async (id: string, pedido: any): Promise<any> => {
+    try {
+      setLoading(true);
+      
+      // Remove campos que não devem ser atualizados
+      const { organization_id, created_at, updated_at, ...pedidoUpdate } = pedido;
+
+      const { data, error } = await supabase
+        .from('pedidos_compra')
+        .update(pedidoUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Erro ao atualizar pedido de compra:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o pedido de compra.",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // COTAÇÕES
   const getCotacoes = async (): Promise<any[]> => {
     try {
@@ -286,6 +356,8 @@ export const useCompras = () => {
     updateFornecedor,
     deleteFornecedor,
     getPedidosCompra,
+    createPedidoCompra,
+    updatePedidoCompra,
     getCotacoes,
     createCotacao,
     // Integração com estoque

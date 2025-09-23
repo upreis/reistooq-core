@@ -41,6 +41,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { ProductSelector } from "./ProductSelector";
 import { useProducts } from "@/hooks/useProducts";
+import { useCompras } from "@/hooks/useCompras";
 
 // MANTÉM a interface original EXATAMENTE igual
 interface PedidosCompraTabProps {
@@ -101,6 +102,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   });
 
   const { toast } = useToast();
+  const { createPedidoCompra, updatePedidoCompra } = useCompras();
 
   // Carregar produtos do estoque
   useEffect(() => {
@@ -132,27 +134,51 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   // EVOLUI o handleSave mantendo compatibilidade
   const handleSave = async () => {
     try {
+      // Validação básica
+      if (!formData.numero_pedido || !formData.fornecedor_id) {
+        toast({
+          title: "Erro de validação",
+          description: "Número do pedido e fornecedor são obrigatórios.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Calcula valor total baseado nos itens (se houver)
       const valorCalculado = formData.itens.reduce((sum, item) => sum + (item.quantidade * item.valor_unitario), 0);
       
       // MANTÉM a estrutura original + ADICIONA novos campos opcionais
       const pedidoCompleto = {
-        ...formData,
-        valor_total: calcularTotais().total || formData.valor_total, // Usa calculado ou manual
-        itens: formData.itens, // ADICIONA itens se houver
-        dados_fiscais: dadosFiscais, // ADICIONA dados fiscais opcionais
-        condicoes_comerciais: condicoesComerciais // ADICIONA condições opcionais
+        numero_pedido: formData.numero_pedido,
+        fornecedor_id: formData.fornecedor_id,
+        data_pedido: formData.data_pedido,
+        data_entrega_prevista: formData.data_entrega_prevista || null,
+        status: formData.status,
+        valor_total: calcularTotais().total || formData.valor_total || 0,
+        observacoes: formData.observacoes || null
+        // Nota: Campos como itens, dados_fiscais e condições_comerciais
+        // podem ser implementados em futuras versões com tabelas relacionadas
       };
 
-      toast({
-        title: editingPedido ? "Pedido atualizado" : "Pedido criado",
-        description: "Operação realizada com sucesso!",
-      });
-      
-      setIsModalOpen(false);
-      resetForm();
-      onRefresh();
+      let resultado;
+      if (editingPedido) {
+        resultado = await updatePedidoCompra(editingPedido.id, pedidoCompleto);
+      } else {
+        resultado = await createPedidoCompra(pedidoCompleto);
+      }
+
+      if (resultado) {
+        toast({
+          title: editingPedido ? "Pedido atualizado" : "Pedido criado",
+          description: "Operação realizada com sucesso!",
+        });
+        
+        setIsModalOpen(false);
+        resetForm();
+        onRefresh();
+      }
     } catch (error) {
+      console.error("Erro ao salvar pedido:", error);
       toast({
         title: "Erro",
         description: "Não foi possível salvar o pedido.",
