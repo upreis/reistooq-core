@@ -290,34 +290,12 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
           }
         }
 
-        // Se mudou DE concluído/recebido para outro status, extornar estoque
-        if (statusMudouParaExtorno) {
-          console.log('🔄 Status mudou DE concluído, processando extorno...');
-          
-          try {
-            const resultadoExtorno = await extornarRecebimentoPedido(editingPedido.id);
-            
-            if (resultadoExtorno.success) {
-              toast({
-                title: "Extorno realizado",
-                description: resultadoExtorno.message,
-                variant: "default",
-              });
-            } else {
-              toast({
-                title: "Erro no extorno",
-                description: resultadoExtorno.message,
-                variant: "destructive",
-              });
-            }
-          } catch (error) {
-            console.error("Erro ao processar extorno:", error);
-            toast({
-              title: "Erro no extorno", 
-              description: "Não foi possível processar o extorno do estoque.",
-              variant: "destructive",
-            });
-          }
+        // Se mudou DE concluído/recebido para outro status, mostrar modal de confirmação
+        if (statusMudouParaExtorno && !statusParaExtorno) {
+          console.log('🔄 Status mudou DE concluído, solicitando confirmação de extorno...');
+          setStatusParaExtorno(formData.status);
+          setShowConfirmacaoExtornoModal(true);
+          return; // Para o processo aqui até a confirmação
         }
       }
     } catch (error) {
@@ -415,6 +393,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
       itens: (prev.itens || []).filter((_, i) => i !== index)
     }));
   };
+
 
   // Gestão de produtos via ProductSelector
   const handleAddProducts = (selectedProducts: any[]) => {
@@ -1505,6 +1484,110 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
             </Button>
             <Button onClick={handleEntradaEstoque}>
               Confirmar Entrada
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmação para extorno do estoque */}
+      <Dialog open={showConfirmacaoExtornoModal} onOpenChange={setShowConfirmacaoExtornoModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Confirmar extorno do estoque
+            </DialogTitle>
+            <DialogDescription>
+              Ao alterar o status de "Concluído/Recebido" para outro status, os produtos que foram adicionados ao estoque serão automaticamente extornados (removidos). Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Minus className="h-5 w-5 text-destructive mt-0.5" />
+                <div>
+                  <p className="font-medium text-destructive">Extorno automático do estoque</p>
+                  <p className="text-sm text-destructive/80 mt-1">
+                    Todos os produtos deste pedido serão removidos do estoque na quantidade que foi adicionada.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-sm text-muted-foreground">
+              Deseja continuar com a alteração de status e realizar o extorno do estoque automaticamente?
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowConfirmacaoExtornoModal(false);
+                setStatusParaExtorno('');
+                // Reverter o status no formData
+                if (editingPedido) {
+                  setFormData(prev => ({ ...prev, status: editingPedido.status }));
+                }
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={async () => {
+                try {
+                  console.log('🔄 Confirmado extorno, processando...');
+                  
+                  // Primeiro, extornar o estoque
+                  const resultadoExtorno = await extornarRecebimentoPedido(editingPedido.id);
+                  
+                  if (resultadoExtorno.success) {
+                    // Se extorno foi bem-sucedido, atualizar o status
+                    const pedidoCompleto = {
+                      numero_pedido: formData.numero_pedido,
+                      fornecedor_id: formData.fornecedor_id,
+                      data_pedido: formData.data_pedido,
+                      data_entrega_prevista: formData.data_entrega_prevista || null,
+                      status: statusParaExtorno,
+                      valor_total: calcularTotais().total || formData.valor_total || 0,
+                      observacoes: formData.observacoes || null
+                    };
+                    
+                    const resultado = await updatePedidoCompra(editingPedido.id, pedidoCompleto);
+                    
+                    if (resultado) {
+                      toast({
+                        title: "Status alterado com extorno",
+                        description: `Status atualizado e ${resultadoExtorno.message}`,
+                        variant: "default",
+                      });
+                      
+                      setShowConfirmacaoExtornoModal(false);
+                      setStatusParaExtorno('');
+                      setIsModalOpen(false);
+                      resetForm();
+                      onRefresh();
+                    }
+                  } else {
+                    toast({
+                      title: "Erro no extorno",
+                      description: resultadoExtorno.message,
+                      variant: "destructive",
+                    });
+                  }
+                } catch (error) {
+                  console.error("Erro ao processar extorno:", error);
+                  toast({
+                    title: "Erro no extorno", 
+                    description: "Não foi possível processar o extorno do estoque.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Confirmar Extorno
             </Button>
           </DialogFooter>
         </DialogContent>
