@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   Plus, 
@@ -29,6 +33,17 @@ export const FornecedoresTab: React.FC<FornecedoresTabProps> = ({
   onRefresh
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    nome: '',
+    cnpj: '',
+    email: '',
+    telefone: '',
+    endereco: '',
+    categoria: '',
+    contato_principal: '',
+    observacoes: ''
+  });
 
   const filteredFornecedores = fornecedores.filter(fornecedor =>
     fornecedor.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,7 +106,7 @@ export const FornecedoresTab: React.FC<FornecedoresTabProps> = ({
           />
         </div>
         
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setShowForm(true)}>
           <Plus className="h-4 w-4" />
           Novo Fornecedor
         </Button>
@@ -276,6 +291,146 @@ export const FornecedoresTab: React.FC<FornecedoresTabProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog para criar novo fornecedor */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Novo Fornecedor</DialogTitle>
+            <DialogDescription>
+              Cadastre um novo fornecedor no sistema
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="nome">Nome/Razão Social *</Label>
+                <Input
+                  id="nome"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  placeholder="Ex: Empresa ABC Ltda"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="cnpj">CNPJ/CPF *</Label>
+                <Input
+                  id="cnpj"
+                  value={formData.cnpj}
+                  onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
+                  placeholder="00.000.000/0000-00"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="contato@empresa.com"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="telefone">Telefone</Label>
+                <Input
+                  id="telefone"
+                  value={formData.telefone}
+                  onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                  placeholder="(11) 99999-9999"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="categoria">Categoria</Label>
+                <Select 
+                  value={formData.categoria} 
+                  onValueChange={(value) => setFormData({ ...formData, categoria: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="material_escritorio">Material de Escritório</SelectItem>
+                    <SelectItem value="tecnologia">Tecnologia</SelectItem>
+                    <SelectItem value="servicos">Serviços</SelectItem>
+                    <SelectItem value="equipamentos">Equipamentos</SelectItem>
+                    <SelectItem value="manutencao">Manutenção</SelectItem>
+                    <SelectItem value="outros">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label htmlFor="contato_principal">Contato Principal</Label>
+                <Input
+                  id="contato_principal"
+                  value={formData.contato_principal}
+                  onChange={(e) => setFormData({ ...formData, contato_principal: e.target.value })}
+                  placeholder="Nome do responsável"
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="endereco">Endereço</Label>
+                <Textarea
+                  id="endereco"
+                  value={formData.endereco}
+                  onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                  placeholder="Endereço completo"
+                  rows={2}
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="observacoes">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={formData.observacoes}
+                  onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                  placeholder="Observações adicionais"
+                  rows={2}
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex gap-2 pt-4">
+            <Button 
+              onClick={() => {
+                console.log('Criando fornecedor:', formData);
+                setShowForm(false);
+                setFormData({
+                  nome: '', cnpj: '', email: '', telefone: '', endereco: '',
+                  categoria: '', contato_principal: '', observacoes: ''
+                });
+                onRefresh();
+              }}
+              disabled={!formData.nome || !formData.cnpj}
+            >
+              Cadastrar Fornecedor
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowForm(false);
+                setFormData({
+                  nome: '', cnpj: '', email: '', telefone: '', endereco: '',
+                  categoria: '', contato_principal: '', observacoes: ''
+                });
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
