@@ -4,6 +4,7 @@ import { OMSNav } from "@/features/oms/components/OMSNav";
 import OrdersPage from "@/pages/oms/OrdersPage";
 import CustomersPage from "@/pages/oms/CustomersPage";
 import OMSSettingsPage from "@/pages/oms/OMSSettingsPage";
+import Pedidos from "@/pages/Pedidos";
 
 const OMS = () => {
   return (

@@ -1,9 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, Users, Settings } from "lucide-react";
+import { ShoppingCart, Users, Settings, Store } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Pedidos", href: "/oms/pedidos", icon: ShoppingCart },
+  { name: "Vendas Marketplace", href: "/pedidos", icon: Store },
+  { name: "Vendas Direta/Atacado", href: "/oms/pedidos", icon: ShoppingCart },
   { name: "Clientes", href: "/oms/clientes", icon: Users },
   { name: "Configurações", href: "/oms/configuracoes", icon: Settings },
 ];

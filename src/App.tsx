@@ -201,11 +201,11 @@ function App() {
                         <CategoryManager />
                       </PermissionRoute>
                     } />
-                    <Route path="/pedidos" element={
-                      <PermissionRoute requiredPermissions={['orders:read']}>
-                        <Pedidos />
-                      </PermissionRoute>
-                    } />
+                     <Route path="/pedidos" element={
+                       <PermissionRoute requiredPermissions={['orders:read']}>
+                         <OMS />
+                       </PermissionRoute>
+                     } />
                     <Route path="/ml-orders-completas" element={
                       <PermissionRoute requiredPermissions={['integrations:manage']}>
                         <MLOrdersCompletas />
