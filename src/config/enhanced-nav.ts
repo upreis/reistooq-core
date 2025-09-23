@@ -146,17 +146,24 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           }
         ]
       },
-      { 
-        id: 'calendar', 
-        label: 'Calendário', 
-        path: '/apps/calendar', 
-        icon: 'Calendar' 
-      },
-      { 
-        id: 'notes', 
-        label: 'Notas', 
-        path: '/apps/notes', 
-        icon: 'Notebook' 
+      {
+        id: 'aplicativos',
+        label: 'Aplicativos',
+        icon: 'Grid3X3',
+        children: [
+          { 
+            id: 'calendar', 
+            label: 'Calendário', 
+            path: '/apps/calendar', 
+            icon: 'Calendar' 
+          },
+          { 
+            id: 'notes', 
+            label: 'Notas', 
+            path: '/apps/notes', 
+            icon: 'Notebook' 
+          }
+        ]
       },
       { 
         id: 'estoque', 
