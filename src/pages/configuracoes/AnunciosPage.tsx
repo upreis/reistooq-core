@@ -1,14 +1,9 @@
+import { AnnouncementManager } from '@/features/announcements/components/AnnouncementManager';
+
 export default function AnunciosPage() {
   return (
     <div className="space-y-6">
-      <div className="text-center py-12">
-        <h3 className="text-lg font-medium text-muted-foreground">
-          Configurações de Anúncios
-        </h3>
-        <p className="text-sm text-muted-foreground mt-2">
-          Em desenvolvimento...
-        </p>
-      </div>
+      <AnnouncementManager />
     </div>
   );
 }
