@@ -4340,6 +4340,14 @@ export type Database = {
         Args: { _email: string }
         Returns: Json
       }
+      gerar_numero_cotacao: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      gerar_numero_pedido_compra: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       gerar_sku_automatico: {
         Args: { org_id: string; prefixo?: string }
         Returns: string
