@@ -8,8 +8,33 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       { 
         id: 'dashboard', 
         label: 'Dashboard', 
-        path: '/dashboardinicial', 
-        icon: 'LayoutDashboard' 
+        icon: 'LayoutDashboard',
+        children: [
+          {
+            id: 'dashboard-inicial',
+            label: 'Visão Geral',
+            path: '/dashboardinicial',
+            icon: 'Home'
+          },
+          {
+            id: 'dashboard-vendas',
+            label: 'Dashboard Vendas',
+            path: '/dashboard/vendas',
+            icon: 'TrendingUp'
+          },
+          {
+            id: 'dashboard-estoque',
+            label: 'Dashboard Estoque',
+            path: '/dashboard/estoque',
+            icon: 'Package'
+          },
+          {
+            id: 'dashboard-financeiro',
+            label: 'Dashboard Financeiro',
+            path: '/dashboard/financeiro',
+            icon: 'DollarSign'
+          }
+        ]
       },
       {
         id: 'oms',
