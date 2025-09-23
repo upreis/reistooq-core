@@ -43,9 +43,6 @@ const Estoque = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <EstoqueStats products={products} />
-
         {/* Conteúdo das rotas */}
         <Routes>
           <Route index element={<ControleEstoquePage />} />

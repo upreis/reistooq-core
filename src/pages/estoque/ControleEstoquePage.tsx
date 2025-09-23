@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Package, AlertTriangle, Filter } from "lucide-react";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
+import { EstoqueStats } from "@/components/estoque/EstoqueStats";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 
 export default function ControleEstoquePage() {
@@ -311,6 +312,9 @@ export default function ControleEstoquePage() {
   return (
     <EstoqueGuard>
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10">
+        {/* Stats Cards */}
+        <EstoqueStats products={products} />
+        
         <div className="space-y-6 pb-6 px-6">
           {/* Filtros inteligentes */}
           <Card className="shadow-sm border-border/40">
