@@ -117,7 +117,7 @@ function App() {
                         <OMS />
                       </PermissionRoute>
                      } />
-                     <Route path="/compras" element={
+                     <Route path="/compras/*" element={
                        <PermissionRoute requiredPermissions={['compras:view']}>
                          <Compras />
                        </PermissionRoute>
