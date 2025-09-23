@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   Plus, 
@@ -54,6 +58,13 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
   onRefresh
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    descricao: '',
+    valor_estimado: 0,
+    data_fechamento: '',
+    observacoes: ''
+  });
 
   const filteredCotacoes = cotacoes.filter(cotacao =>
     cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -102,7 +113,7 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
           />
         </div>
         
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setShowForm(true)}>
           <Plus className="h-4 w-4" />
           Nova Cotação
         </Button>
@@ -263,7 +274,7 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
                 }
               </p>
               {!searchTerm && (
-                <Button>
+                <Button onClick={() => setShowForm(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Criar Primeira Cotação
                 </Button>
@@ -272,6 +283,87 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog para criar nova cotação */}
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Nova Cotação</DialogTitle>
+            <DialogDescription>
+              Preencha os dados para criar uma nova cotação
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="descricao">Descrição *</Label>
+              <Input
+                id="descricao"
+                value={formData.descricao}
+                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                placeholder="Ex: Materiais de escritório"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="valor_estimado">Valor Estimado</Label>
+              <Input
+                id="valor_estimado"
+                type="number"
+                step="0.01"
+                value={formData.valor_estimado}
+                onChange={(e) => setFormData({ ...formData, valor_estimado: parseFloat(e.target.value) || 0 })}
+                placeholder="0.00"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="data_fechamento">Data de Fechamento</Label>
+              <Input
+                id="data_fechamento"
+                type="date"
+                value={formData.data_fechamento}
+                onChange={(e) => setFormData({ ...formData, data_fechamento: e.target.value })}
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="observacoes">Observações</Label>
+              <Textarea
+                id="observacoes"
+                value={formData.observacoes}
+                onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                placeholder="Observações adicionais sobre a cotação..."
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => {
+                  // Aqui você pode chamar a função de criar cotação
+                  console.log('Criando cotação:', formData);
+                  setShowForm(false);
+                  setFormData({ descricao: '', valor_estimado: 0, data_fechamento: '', observacoes: '' });
+                  onRefresh();
+                }}
+                disabled={!formData.descricao}
+              >
+                Criar Cotação
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowForm(false);
+                  setFormData({ descricao: '', valor_estimado: 0, data_fechamento: '', observacoes: '' });
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
