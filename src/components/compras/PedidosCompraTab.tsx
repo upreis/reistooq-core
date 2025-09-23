@@ -193,7 +193,6 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
               produto_id: item.produto_id,
               quantidade: item.quantidade || 1,
               valor_unitario: item.valor_unitario || 0,
-              valor_total: (item.quantidade || 1) * (item.valor_unitario || 0),
               observacoes: item.observacoes || null
             }));
             
@@ -1150,14 +1149,18 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                               .eq('pedido_compra_id', pedido.id);
                             
                             if (!error && itens) {
+                              console.log('Itens carregados do banco:', itens);
                               itensCarregados = itens.map(item => ({
                                 produto_id: item.produto_id,
-                                produto_nome: item.produtos.nome,
-                                produto_sku: item.produtos.sku_interno,
+                                produto_nome: item.produtos?.nome || 'Produto não encontrado',
+                                produto_sku: item.produtos?.sku_interno || '',
+                                sku: item.produtos?.sku_interno || '',
                                 quantidade: item.quantidade,
                                 valor_unitario: item.valor_unitario,
-                                valor_total: item.valor_total
+                                valor_total: item.quantidade * item.valor_unitario,
+                                observacoes: item.observacoes
                               }));
+                              console.log('Itens mapeados para formData:', itensCarregados);
                             }
                           } catch (error) {
                             console.error('Erro ao carregar itens do pedido:', error);
