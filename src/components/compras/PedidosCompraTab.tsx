@@ -302,8 +302,8 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
   };
 
   // Funções para gestão de itens
-  const handleAddProducts = (products: any[]) => {
-    const newItens = products.map(product => ({
+  const handleAddProducts = (selectedProducts: any[]) => {
+    const newItens = selectedProducts.map(product => ({
       produto_id: product.id,
       produto_nome: product.nome,
       produto_sku: product.sku,
@@ -1070,7 +1070,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
         <ProductSelector
           isOpen={isProductSelectorOpen}
           onOpenChange={setIsProductSelectorOpen}
-          onProductsSelected={handleAddProducts}
+          onSelectProducts={handleAddProducts}
         />
       </div>
 
