@@ -180,7 +180,7 @@ function App() {
                     
                     {/* Aplicativos Routes */}
                     <Route path="/aplicativos/*" element={
-                      <PermissionRoute requiredPermissions={['apps:view']}>
+                      <PermissionRoute requiredPermissions={['dashboard:view']}>
                         <AplicativosPage />
                       </PermissionRoute>
                     } />

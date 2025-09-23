@@ -18,7 +18,7 @@ export const AplicativosGuard: React.FC<AplicativosGuardProps> = ({ children }) 
     );
   }
 
-  if (!hasPermission('apps:view')) {
+  if (!hasPermission('dashboard:view')) {
     return (
       <div className="flex items-center justify-center min-h-screen p-6">
         <Card className="max-w-md w-full">
