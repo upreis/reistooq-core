@@ -1,5 +1,5 @@
 // 🎯 Gerenciador de Cargos e Permissões
-// Interface completa para RBAC
+// Interface completa para RBAC - Atualizado com estrutura real do sistema
 
 import React, { useState } from 'react';
 import { useRoles, usePermissions } from '../hooks/useAdmin';
@@ -57,13 +57,81 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
     }));
   };
 
-  // Group permissions by category
+  // Group permissions by category with proper organization
   const groupedPermissions = permissions.reduce((acc, permission) => {
-    const category = permission.key.split(':')[0] || 'other';
-    if (!acc[category]) acc[category] = [];
-    acc[category].push(permission);
+    const [category] = permission.key.split(':');
+    
+    // Map categories to more user-friendly names
+    const categoryMap: Record<string, string> = {
+      'dashboard': 'DASHBOARD',
+      'oms': 'VENDAS (OMS)',
+      'compras': 'COMPRAS',
+      'estoque': 'ESTOQUE',
+      'ecommerce': 'ECOMMERCE',
+      'orders': 'PEDIDOS',
+      'pedidos': 'PEDIDOS',
+      'customers': 'CLIENTES',
+      'historico': 'HISTÓRICO',
+      'sales': 'VENDAS',
+      'integrations': 'INTEGRAÇÕES',
+      'settings': 'CONFIGURAÇÕES',
+      'configuracoes': 'CONFIGURAÇÕES',
+      'admin': 'ADMINISTRAÇÃO',
+      'users': 'USUÁRIOS',
+      'invites': 'CONVITES',
+      'system': 'SISTEMA',
+      'alerts': 'ALERTAS',
+      'analytics': 'RELATÓRIOS',
+      'calendar': 'CALENDÁRIO',
+      'notes': 'NOTAS',
+      'scanner': 'SCANNER',
+      'depara': 'DE-PARA',
+      'demo': 'DEMONSTRAÇÃO',
+      'userprofile': 'PERFIL'
+    };
+    
+    const displayCategory = categoryMap[category] || category.toUpperCase();
+    
+    if (!acc[displayCategory]) acc[displayCategory] = [];
+    acc[displayCategory].push(permission);
     return acc;
   }, {} as Record<string, Permission[]>);
+
+  // Sort categories by importance
+  const categoryOrder = [
+    'DASHBOARD',
+    'VENDAS (OMS)', 
+    'COMPRAS',
+    'ESTOQUE',
+    'PEDIDOS',
+    'CLIENTES',
+    'HISTÓRICO',
+    'VENDAS',
+    'ECOMMERCE',
+    'INTEGRAÇÕES',
+    'ADMINISTRAÇÃO',
+    'USUÁRIOS',
+    'CONVITES',
+    'SISTEMA',
+    'CONFIGURAÇÕES',
+    'RELATÓRIOS',
+    'ALERTAS',
+    'CALENDÁRIO',
+    'NOTAS',
+    'SCANNER',
+    'DE-PARA',
+    'PERFIL',
+    'DEMONSTRAÇÃO'
+  ];
+  
+  const sortedCategories = Object.keys(groupedPermissions).sort((a, b) => {
+    const aIndex = categoryOrder.indexOf(a);
+    const bIndex = categoryOrder.indexOf(b);
+    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+    return aIndex - bIndex;
+  });
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -81,13 +149,43 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
       <div className="space-y-4">
         <Label>Permissões</Label>
         <ScrollArea className="h-80 border rounded p-4">
-          {Object.entries(groupedPermissions).map(([category, categoryPermissions]) => (
+          {sortedCategories.map(category => (
             <div key={category} className="mb-6">
-              <h4 className="font-medium text-sm uppercase tracking-wide text-muted-foreground mb-3">
-                {category.replace('_', ' ')}
-              </h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-sm uppercase tracking-wide text-muted-foreground">
+                  {category}
+                </h4>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => {
+                      const categoryPermissions = groupedPermissions[category].map(p => p.key);
+                      const allSelected = categoryPermissions.every(p => formData.selectedPermissions.includes(p));
+                      
+                      if (allSelected) {
+                        // Remove all from this category
+                        setFormData(prev => ({
+                          ...prev,
+                          selectedPermissions: prev.selectedPermissions.filter(p => !categoryPermissions.includes(p))
+                        }));
+                      } else {
+                        // Add all from this category
+                        setFormData(prev => ({
+                          ...prev,
+                          selectedPermissions: [...new Set([...prev.selectedPermissions, ...categoryPermissions])]
+                        }));
+                      }
+                    }}
+                  >
+                    {groupedPermissions[category].every(p => formData.selectedPermissions.includes(p.key)) ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                  </Button>
+                </div>
+              </div>
               <div className="space-y-3">
-                {categoryPermissions.map(permission => (
+                {groupedPermissions[category].map(permission => (
                   <div key={permission.key} className="flex items-start space-x-3">
                     <Checkbox
                       checked={formData.selectedPermissions.includes(permission.key)}
@@ -176,7 +274,7 @@ export const RoleManager: React.FC = () => {
           <div>
             <h2 className="text-2xl font-bold">Gerenciar Cargos</h2>
             <p className="text-muted-foreground">
-              Configure cargos e permissões para sua organização
+              Configure cargos e permissões baseados nos módulos reais do sistema: Dashboard, OMS, Compras, Estoque, Administração, etc.
             </p>
           </div>
         </div>
