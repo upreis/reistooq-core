@@ -224,23 +224,46 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
         resetForm();
         onRefresh();
 
-        // Se mudou para concluído/recebido, mostrar modal de entrada no estoque
+        // Se mudou para concluído/recebido, dar entrada automática no estoque
         if (statusMudouParaConcluido) {
-          // Se o pedido tem itens cadastrados, usar eles
+          // Se o pedido tem itens cadastrados, processar automaticamente
           if ((formData.itens || []).length > 0) {
-            // Converter formato dos itens para ItemRecebimento
-            const itensFormatados = (formData.itens || []).map(item => ({
-              produto_id: item.produto_id,
-              quantidade: item.quantidade || 1,
-              valor_unitario: item.valor_unitario || 0,
-              observacoes: `Recebimento do pedido ${pedidoCompleto.numero_pedido}`
-            }));
-            
-            setPedidoParaEstoque({
-              ...pedidoCompleto,
-              itens: itensFormatados
-            });
-            setShowEstoqueModal(true);
+            try {
+              // Converter formato dos itens para ItemRecebimento
+              const itensRecebimento = (formData.itens || []).map(item => ({
+                produto_id: item.produto_id,
+                quantidade: item.quantidade || 1,
+                valor_unitario: item.valor_unitario || 0,
+                observacoes: `Entrada automática - Pedido ${pedidoCompleto.numero_pedido} concluído`
+              }));
+              
+              // Processar entrada no estoque automaticamente
+              const resultadoEstoque = await processarRecebimentoPedido(
+                editingPedido ? editingPedido.id : resultado.id, 
+                itensRecebimento
+              );
+              
+              if (resultadoEstoque.success) {
+                toast({
+                  title: "Entrada no estoque realizada",
+                  description: `${itensRecebimento.length} produto(s) adicionado(s) ao estoque automaticamente.`,
+                  variant: "default",
+                });
+              } else {
+                toast({
+                  title: "Erro na entrada do estoque",
+                  description: resultadoEstoque.message || "Não foi possível processar a entrada no estoque.",
+                  variant: "destructive",
+                });
+              }
+            } catch (error) {
+              console.error("Erro ao processar entrada no estoque:", error);
+              toast({
+                title: "Erro na entrada do estoque", 
+                description: "Não foi possível processar a entrada automática no estoque.",
+                variant: "destructive",
+              });
+            }
           } else {
             // Se não tem itens, avisar que precisa ter produtos cadastrados
             toast({
@@ -1333,7 +1356,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
             <DialogTitle>Confirmar mudança de status</DialogTitle>
             <DialogDescription>
               Ao marcar este pedido como "Concluído/Recebido", todos os produtos do pedido serão automaticamente adicionados ao estoque. 
-              Deseja continuar?
+              Esta ação não pode ser desfeita. Deseja continuar?
             </DialogDescription>
           </DialogHeader>
           
@@ -1342,9 +1365,9 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
               <div className="flex items-start gap-3">
                 <Package className="h-5 w-5 text-yellow-600 mt-0.5" />
                 <div>
-                  <p className="font-medium text-yellow-800">Produtos serão adicionados ao estoque</p>
+                  <p className="font-medium text-yellow-800">Entrada automática no estoque</p>
                   <p className="text-sm text-yellow-700 mt-1">
-                    {(formData.itens || []).length} produto(s) será(ão) automaticamente adicionado(s) ao seu estoque.
+                    {(formData.itens || []).length} produto(s) será(ão) automaticamente adicionado(s) ao seu estoque assim que você salvar o pedido.
                   </p>
                 </div>
               </div>
