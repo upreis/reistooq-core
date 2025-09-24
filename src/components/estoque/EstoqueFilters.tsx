@@ -90,25 +90,34 @@ export function EstoqueFilters({
     <div className="space-y-4">
       {/* Linha principal de filtros */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Campo de busca */}
+        {/* Campo de busca - desktop ou input buscar produto no mobile */}
         <div className="relative flex-1 min-w-[300px]">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input 
-            placeholder="Buscar por nome, SKU, código de barras..." 
-            className="pl-10" 
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            onKeyPress={handleKeyPress}
-          />
-          {searchTerm && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-              onClick={() => onSearchChange("")}
-            >
-              <X className="w-3 h-3" />
+          {isMobile ? (
+            <Button className="w-full justify-start gap-2">
+              <Search className="w-4 h-4" />
+              Buscar produto
             </Button>
+          ) : (
+            <>
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input 
+                placeholder="Buscar por nome, SKU, código de barras..." 
+                className="pl-10" 
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyPress={handleKeyPress}
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => onSearchChange("")}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
+            </>
           )}
         </div>
 
@@ -228,16 +237,35 @@ export function EstoqueFilters({
           </Popover>
         )}
 
-        {/* Botão Filtros sempre visível */}
-        <Button variant="outline" className="gap-2">
-          <Filter className="w-4 h-4" />
-          Filtros
-          {hasActiveFilters && (
-            <Badge variant="secondary" className="ml-1">
-              •
-            </Badge>
-          )}
-        </Button>
+        {/* No mobile, mostrar apenas 3 botões: Buscar produto, Filtro e Categorias */}
+        {isMobile && (
+          <>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Filter className="w-4 h-4" />
+              {hasActiveFilters && (
+                <Badge variant="secondary" className="ml-1">
+                  •
+                </Badge>
+              )}
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Package className="w-4 h-4" />
+            </Button>
+          </>
+        )}
+
+        {/* Botão Filtros sempre visível - apenas no desktop */}
+        {!isMobile && (
+          <Button variant="outline" className="gap-2">
+            <Filter className="w-4 h-4" />
+            Filtros
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="ml-1">
+                •
+              </Badge>
+            )}
+          </Button>
+        )}
 
 
         {/* Limpar filtros */}
