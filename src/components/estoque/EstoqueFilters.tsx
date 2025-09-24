@@ -228,6 +228,17 @@ export function EstoqueFilters({
           </Popover>
         )}
 
+        {/* Botão Filtros sempre visível */}
+        <Button variant="outline" className="gap-2">
+          <Filter className="w-4 h-4" />
+          Filtros
+          {hasActiveFilters && (
+            <Badge variant="secondary" className="ml-1">
+              •
+            </Badge>
+          )}
+        </Button>
+
 
         {/* Limpar filtros */}
         {hasActiveFilters && (
