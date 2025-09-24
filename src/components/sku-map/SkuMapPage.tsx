@@ -17,7 +17,6 @@ import { useSkuFilters } from "@/hooks/useSkuFilters";
 import { useSkuMapShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SkuMapping } from "@/types/sku-mapping.types";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 
 export function SkuMapPage() {
   const { filters, updateFilters, resetFilters } = useSkuFilters();
@@ -68,51 +67,20 @@ export function SkuMapPage() {
     onDelete: handleDelete,
   });
 
-  // Header actions for mobile
-  const headerActions = isMobile ? (
-    <div className="flex gap-2">
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 px-3"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Filtros
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 p-0" align="end">
-          <SkuMapFilters
-            filters={filters}
-            onFiltersChange={updateFilters}
-            onReset={resetFilters}
-          />
-        </PopoverContent>
-      </Popover>
-      <Button 
-        onClick={() => setShowCreateForm(true)}
-        size="sm"
-        className="h-9 px-3"
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        Novo
-      </Button>
-    </div>
-  ) : null;
-
-  const content = (
-    <div className={isMobile ? "space-y-4" : "p-6 space-y-6"}>
-      {/* Header - Desktop only */}
-      {!isMobile && (
-        <div className="flex items-center justify-between">
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        {!isMobile && (
           <div>
             <h1 className="text-3xl font-bold">De-Para de Produtos</h1>
             <p className="text-muted-foreground">
               Mapeie produtos entre diferentes plataformas
             </p>
           </div>
-          <div className="flex gap-2">
+        )}
+        <div className={`flex gap-2 ${isMobile ? 'w-full justify-end' : ''}`}>
+          {!isMobile && (
             <Button
               variant="outline"
               onClick={() => setShowImportWizard(true)}
@@ -120,13 +88,44 @@ export function SkuMapPage() {
               <Upload className="w-4 h-4 mr-2" />
               Importar
             </Button>
+          )}
+          {isMobile && (
+            <>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex-[0.4]"
+                  >
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filtros
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="end">
+                  <SkuMapFilters
+                    filters={filters}
+                    onFiltersChange={updateFilters}
+                    onReset={resetFilters}
+                  />
+                </PopoverContent>
+              </Popover>
+              <Button 
+                onClick={() => setShowCreateForm(true)}
+                className="flex-[0.6]"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Mapeamento
+              </Button>
+            </>
+          )}
+          {!isMobile && (
             <Button onClick={() => setShowCreateForm(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Novo Mapeamento
             </Button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Stats */}
       <SkuMapStats onFilterClick={isMobile ? handleStatsFilterClick : undefined} />
@@ -183,19 +182,7 @@ export function SkuMapPage() {
           <SkuMapHistory />
         </div>
       </div>
-    </div>
-  );
 
-  return (
-    <>
-      {isMobile ? (
-        <MobileAppShell title="De-Para de Produtos" headerActions={headerActions}>
-          {content}
-        </MobileAppShell>
-      ) : (
-        content
-      )}
-      
       {/* Create/Edit Form Dialog */}
       <Dialog 
         open={showCreateForm || !!editingItem} 
@@ -219,6 +206,6 @@ export function SkuMapPage() {
           <ImportWizard onClose={() => setShowImportWizard(false)} />
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
