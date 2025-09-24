@@ -41,7 +41,7 @@ import { useOMSOrders, formatCurrency, getStatusColor } from "@/hooks/useOMSData
 import { useToast } from "@/hooks/use-toast";
 
 // ✅ USAR COMPONENTE EXISTENTE - OBRIGATÓRIO  
-import { OrderForm } from "@/components/oms/OrderForm";
+import { OrderFormEnhanced } from "@/components/oms/OrderFormEnhanced";
 
 interface OrdersPageProfessionalProps {
   // Permite alternar entre modo simples e profissional
@@ -766,8 +766,8 @@ export default function OrdersPageProfessional({
           <DialogHeader>
             <DialogTitle>Novo Pedido de Venda</DialogTitle>
           </DialogHeader>
-          {/* ✅ USAR COMPONENTE EXISTENTE OrderForm - OBRIGATÓRIO */}
-          <OrderForm
+          {/* ✅ USAR COMPONENTE ENHANCED COMPLETO */}
+          <OrderFormEnhanced
             onSubmit={handleCreateOrder}
             onCancel={() => setOrderDialogOpen(false)}
             isLoading={loading}
