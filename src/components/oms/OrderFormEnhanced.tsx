@@ -173,18 +173,23 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
     const updatedItems = [...formData.items];
     const item = updatedItems[index];
     
+    console.log('🔍 DEBUG updateItem:', { field, value, item });
+    
     // ✅ VALIDAÇÃO DE ESTOQUE QUANDO ALTERAR QUANTIDADE
     if (field === 'qty') {
       const requestedQty = parseFloat(value) || 0;
       const availableStock = item.available_stock || 0;
       
-      if (requestedQty > availableStock) {
+      console.log('🔍 DEBUG stock validation:', { requestedQty, availableStock });
+      
+      // ✅ PERMITIR EDIÇÃO SE NÃO HOUVER STOCK DEFINIDO OU FOR MAIOR QUE 0
+      if (availableStock > 0 && requestedQty > availableStock) {
         toast({
           title: "Estoque Insuficiente",
           description: `Quantidade solicitada (${requestedQty}) é maior que o estoque disponível (${availableStock}) para "${item.title}"`,
           variant: "destructive"
         });
-        return; // ✅ NÃO PERMITE ALTERAR
+        return; // ✅ NÃO PERMITE ALTERAR APENAS SE TIVER ESTOQUE DEFINIDO E EXCEDER
       }
     }
 
@@ -204,6 +209,8 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   // ✅ FUNÇÃO PARA SELECIONAR PRODUTOS PELO SELETOR AVANÇADO
   const handleProductSelectorConfirm = (products: any[]) => {
     products.forEach(selectedProduct => {
+      console.log('🔍 DEBUG selectedProduct:', selectedProduct);
+      
       // Verificar se o produto já não foi adicionado
       const alreadyExists = formData.items.find(item => item.product_id === selectedProduct.id);
       if (alreadyExists) {
@@ -220,19 +227,25 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       const tierMultiplier = getPriceTierMultiplier(customerTier);
       const unitPrice = selectedProduct.preco_custo * tierMultiplier;
 
+      // ✅ CORRIGIR MAPEAMENTO DO ESTOQUE
+      const availableStock = selectedProduct.quantidade_atual || selectedProduct.quantidade || selectedProduct.stock || 0;
+      console.log('🔍 DEBUG availableStock:', availableStock);
+
       const newItem = {
         id: Date.now().toString() + Math.random(),
         product_id: selectedProduct.id,
         sku: selectedProduct.sku_interno,
         title: selectedProduct.nome,
-        qty: selectedProduct.quantidade || 1,
+        qty: 1, // ✅ SEMPRE COMEÇAR COM 1
         unit_price: unitPrice,
         discount_pct: 0,
         discount_value: 0,
         tax_value: 0,
-        total: unitPrice * (selectedProduct.quantidade || 1),
-        available_stock: selectedProduct.quantidade_atual || 0
+        total: unitPrice,
+        available_stock: availableStock
       };
+
+      console.log('🔍 DEBUG newItem:', newItem);
 
       setFormData(prev => ({
         ...prev,
