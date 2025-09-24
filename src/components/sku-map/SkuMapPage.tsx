@@ -76,6 +76,7 @@ export function SkuMapPage() {
           <Button
             variant="outline"
             size="sm"
+            className="h-9 px-3"
           >
             <Filter className="w-4 h-4 mr-2" />
             Filtros
@@ -92,6 +93,7 @@ export function SkuMapPage() {
       <Button 
         onClick={() => setShowCreateForm(true)}
         size="sm"
+        className="h-9 px-3"
       >
         <Plus className="w-4 h-4 mr-2" />
         Novo
