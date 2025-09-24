@@ -207,8 +207,9 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   };
 
   const addItem = (product: any) => {
-    // ✅ VALIDAÇÃO DE ESTOQUE - CORRIGIR MAPEAMENTO
-    const availableStock = product.stock || product.quantidade_atual || product.quantidade || 0;
+    // ✅ VALIDAÇÃO DE ESTOQUE - USAR DADOS REAIS DA TABELA PRODUTOS
+    const availableStock = product.quantidade_atual || product.quantidade || 0;
+    console.log('🔍 DEBUG addItem - availableStock para produto', product.nome, ':', availableStock);
     
     if (availableStock <= 0) {
       toast({
@@ -299,9 +300,10 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       const tierMultiplier = getPriceTierMultiplier(customerTier);
       const unitPrice = selectedProduct.preco_custo * tierMultiplier;
 
-      // ✅ CORRIGIR MAPEAMENTO DO ESTOQUE - VERIFICAR TODAS AS PROPRIEDADES
-      const availableStock = selectedProduct.quantidade_atual || selectedProduct.quantidade || selectedProduct.stock || 1000;
-      console.log('🔍 DEBUG availableStock:', availableStock);
+      // ✅ CORRIGIR MAPEAMENTO DO ESTOQUE - USAR DADOS REAIS DA TABELA PRODUTOS
+      const availableStock = selectedProduct.quantidade_atual || selectedProduct.quantidade || 0;
+      console.log('🔍 DEBUG availableStock para produto', selectedProduct.nome, ':', availableStock);
+      console.log('🔍 DEBUG selectedProduct full data:', selectedProduct);
 
       const newItem = {
         id: Date.now().toString() + Math.random(),
