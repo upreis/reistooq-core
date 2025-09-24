@@ -186,10 +186,20 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       if (availableStock > 0 && requestedQty > availableStock) {
         toast({
           title: "Estoque Insuficiente",
-          description: `Quantidade solicitada (${requestedQty}) é maior que o estoque disponível (${availableStock}) para "${item.title}"`,
+          description: `Quantidade máxima disponível: ${availableStock} para "${item.title}"`,
           variant: "destructive"
         });
-        return; // ✅ NÃO PERMITE ALTERAR APENAS SE TIVER ESTOQUE DEFINIDO E EXCEDER
+        
+        // ✅ DEFINIR QUANTIDADE MÁXIMA DISPONÍVEL
+        updatedItems[index] = { ...updatedItems[index], qty: availableStock };
+        
+        // Recalcular total com a quantidade corrigida
+        const subtotal = availableStock * item.unit_price;
+        updatedItems[index].discount_value = (subtotal * item.discount_pct) / 100;
+        updatedItems[index].total = subtotal - updatedItems[index].discount_value + item.tax_value;
+        
+        setFormData(prev => ({ ...prev, items: updatedItems }));
+        return;
       }
     }
 
@@ -717,15 +727,23 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                         type="number"
                         min="0.01"
                         step="0.01"
-                        max={item.available_stock}
+                        max={item.available_stock > 0 ? item.available_stock : undefined}
                         value={item.qty === 0 ? '' : item.qty}
                         onChange={(e) => updateItem(index, 'qty', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                         placeholder="Qtd"
-                        className={item.qty > item.available_stock ? "border-red-500" : ""}
+                        className={item.available_stock > 0 && item.qty > item.available_stock ? "border-red-500" : ""}
                       />
-                      {item.available_stock && (
+                      {item.available_stock > 0 && (
                         <div className="text-xs text-muted-foreground mt-1">
-                          Estoque: {item.available_stock}
+                          <span className={item.qty > item.available_stock ? "text-red-500 font-medium" : ""}>
+                            Estoque: {item.available_stock}
+                            {item.qty > item.available_stock && " (EXCEDIDO)"}
+                          </span>
+                        </div>
+                      )}
+                      {item.available_stock === 0 && (
+                        <div className="text-xs text-yellow-600 mt-1">
+                          ⚠️ Sem controle de estoque
                         </div>
                       )}
                     </div>
