@@ -162,7 +162,7 @@ export function SkuMapPage() {
       <div className="flex items-center gap-2 px-1">
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 px-3">
+            <Button variant="outline" size="sm" className="h-9 px-3 flex-1">
               <Filter className="w-4 h-4 mr-1" />
               Filtros
             </Button>
@@ -175,7 +175,7 @@ export function SkuMapPage() {
             />
           </PopoverContent>
         </Popover>
-        <Button onClick={() => setShowCreateForm(true)} size="sm" className="h-9 px-3">
+        <Button onClick={() => setShowCreateForm(true)} size="sm" className="h-9 px-3 flex-1">
           <Plus className="w-4 h-4 mr-1" />
           Novo
         </Button>
