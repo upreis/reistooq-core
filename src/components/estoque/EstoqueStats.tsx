@@ -149,97 +149,74 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
   }
 
   if (isMobile) {
-    // Versão mobile compacta
-    const mobileStats = isExpanded ? stats : stats.slice(0, 3);
-    
     return (
       <div className="space-y-3 mb-4">
         {/* Controles mobile */}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium text-muted-foreground">Estatísticas</h3>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              {isExpanded ? (
-                <>
-                  <ChevronUp className="h-3 w-3" />
-                  Recolher
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-3 w-3" />
-                  Ver mais
-                </>
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsVisible(false)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <EyeOff className="h-3 w-3" />
-              Ocultar
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsVisible(false)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <EyeOff className="h-3 w-3" />
+            Ocultar
+          </Button>
         </div>
 
-        {/* Cards compactos mobile */}
-        <div className="grid grid-cols-1 gap-2">
-          {mobileStats.map((stat, index) => {
-            const IconComponent = stat.icon;
-            
-            return (
-              <Card key={index} className="overflow-hidden">
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    {/* Ícone e título compactos */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className={`p-1.5 rounded-md ${stat.bgColor} shrink-0`}>
-                        <IconComponent className={`w-3.5 h-3.5 ${stat.color}`} />
+        {/* Cards com scroll horizontal */}
+        <div className="overflow-x-auto pb-2">
+          <div className="flex gap-3 min-w-max">
+            {stats.map((stat, index) => {
+              const IconComponent = stat.icon;
+              
+              return (
+                <Card key={index} className="w-[140px] flex-shrink-0">
+                  <CardContent className="p-3">
+                    <div className="space-y-2">
+                      {/* Ícone e badge */}
+                      <div className="flex items-center justify-between">
+                        <div className={`p-1.5 rounded-md ${stat.bgColor}`}>
+                          <IconComponent className={`w-4 h-4 ${stat.color}`} />
+                        </div>
+                        {stat.trend && (
+                          <Badge 
+                            variant={
+                              stat.trend === "critical" ? "destructive" : 
+                              stat.trend === "warning" ? "secondary" : 
+                              "default"
+                            }
+                            className="text-[8px] px-1 py-0.5 h-3"
+                          >
+                            {stat.trend === "critical" && <AlertTriangle className="w-1.5 h-1.5" />}
+                            {stat.trend === "warning" && <TrendingDown className="w-1.5 h-1.5" />}
+                            {stat.trend === "good" && <TrendingUp className="w-1.5 h-1.5" />}
+                            {stat.trend === "up" && <TrendingUp className="w-1.5 h-1.5" />}
+                          </Badge>
+                        )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-muted-foreground truncate">
-                          {stat.title}
-                        </p>
-                        <p className="text-lg font-bold text-foreground leading-tight">
-                          {stat.value}
-                        </p>
-                      </div>
+                      
+                      {/* Título */}
+                      <p className="text-xs font-medium text-muted-foreground leading-tight">
+                        {stat.title}
+                      </p>
+                      
+                      {/* Valor */}
+                      <p className="text-lg font-bold text-foreground leading-tight">
+                        {stat.value}
+                      </p>
+                      
+                      {/* Subtitle */}
+                      <p className="text-[10px] text-muted-foreground/70 leading-tight line-clamp-2">
+                        {stat.subtitle}
+                      </p>
                     </div>
-
-                    {/* Badge de trend compacto */}
-                    {stat.trend && (
-                      <Badge 
-                        variant={
-                          stat.trend === "critical" ? "destructive" : 
-                          stat.trend === "warning" ? "secondary" : 
-                          "default"
-                        }
-                        className="text-[9px] px-1.5 py-0.5 h-4 shrink-0"
-                      >
-                        {stat.trend === "critical" && <AlertTriangle className="w-2 h-2" />}
-                        {stat.trend === "warning" && <TrendingDown className="w-2 h-2" />}
-                        {stat.trend === "good" && <TrendingUp className="w-2 h-2" />}
-                        {stat.trend === "up" && <TrendingUp className="w-2 h-2" />}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  {/* Subtitle apenas quando expandido */}
-                  {isExpanded && (
-                    <p className="text-xs text-muted-foreground/70 mt-2 leading-relaxed">
-                      {stat.subtitle}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
