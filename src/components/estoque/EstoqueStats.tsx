@@ -13,8 +13,7 @@ import {
   ChevronUp,
   ChevronDown,
   Eye,
-  EyeOff,
-  Filter
+  EyeOff
 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -135,15 +134,7 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
 
   if (!isVisible) {
     return (
-      <div className="md:hidden flex justify-between mb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <Filter className="h-3 w-3" />
-          Filtros
-        </Button>
+      <div className="md:hidden flex justify-end mb-4">
         <Button
           variant="ghost"
           size="sm"
@@ -162,14 +153,7 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
       <div className="space-y-3 mb-4">
         {/* Controles mobile */}
         <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <Filter className="h-3 w-3" />
-            Filtros
-          </Button>
+          <h3 className="text-sm font-medium text-muted-foreground">Estatísticas</h3>
           <Button
             variant="ghost"
             size="sm"
