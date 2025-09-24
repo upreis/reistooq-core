@@ -33,13 +33,17 @@ export class AdminService {
       return cached.data;
     }
 
-    // Fetch roles without app_permissions join - use simplified permissions
     const { data, error } = await supabase
       .from('roles')
       .select(`
         *,
         role_permissions (
-          permission_key
+          permission_key,
+          app_permissions (
+            key,
+            name,
+            description
+          )
         )
       `)
       .order('name');
@@ -49,28 +53,37 @@ export class AdminService {
       throw new Error(`Failed to fetch roles: ${error.message}`);
     }
 
-    // Map permissions using DETAILED_PERMISSIONS config
-    const roles = (data || []).map(role => {
-      const permissions = (role.role_permissions || [])
-        .map((rp: any) => {
-          const permission = DETAILED_PERMISSIONS.find(p => p.key === rp.permission_key);
-          return permission ? {
-            key: permission.key,
-            name: permission.name,
-            description: permission.description,
-            category: permission.category
-          } : null;
-        })
-        .filter(Boolean);
-      
-      return {
-        ...role,
-        permissions
-      };
-    }) as Role[];
+    const roles = (data || []).map(role => ({
+      ...role,
+      permissions: role.role_permissions?.map((rp: any) => ({
+        ...rp.app_permissions,
+        category: this.getCategoryFromKey(rp.app_permissions.key)
+      })) || []
+    })) as Role[];
 
     this.cache.set(cacheKey, { data: roles, timestamp: Date.now() });
     return roles;
+  }
+
+  private getCategoryFromKey(key: string): string {
+    const categoryMap: Record<string, string> = {
+      'dashboard:view': 'DASHBOARD',
+      'pedidos:marketplace': 'VENDAS (OMS)',
+      'oms:pedidos': 'VENDAS (OMS)',
+      'oms:clientes': 'VENDAS (OMS)',
+      'oms:configuracoes': 'VENDAS (OMS)',
+      'compras:view': 'COMPRAS',
+      'estoque:view': 'ESTOQUE',
+      'estoque:compositions': 'ESTOQUE',
+      'ecommerce:view': 'ECOMMERCE',
+      'configuracoes:view': 'CONFIGURAÇÕES',
+      'admin:access': 'ADMINISTRAÇÃO',
+      'calendar:view': 'APLICATIVOS',
+      'notes:view': 'APLICATIVOS',
+      'scanner:use': 'FERRAMENTAS',
+      'depara:view': 'FERRAMENTAS'
+    };
+    return categoryMap[key] || 'OUTROS';
   }
 
   async createRole(data: { name: string; permissions: string[] }): Promise<Role> {
@@ -192,15 +205,25 @@ export class AdminService {
   // ==================== PERMISSIONS ====================
 
   async getPermissions(): Promise<Permission[]> {
-    // Use the simplified permissions from config instead of database
-    const permissions = DETAILED_PERMISSIONS.map(perm => ({
-      key: perm.key,
-      name: perm.name,
-      description: perm.description,
-      category: perm.category
-    })) as Permission[];
+    const cacheKey = 'permissions';
+    const cached = this.cache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < this.cacheTime) {
+      return cached.data;
+    }
 
-    return permissions;
+    const { data, error } = await supabase
+      .from('app_permissions')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching permissions:', error);
+      throw new Error(`Failed to fetch permissions: ${error.message}`);
+    }
+
+    this.cache.set(cacheKey, { data: data || [], timestamp: Date.now() });
+    return (data || []) as Permission[];
   }
 
   // ==================== USERS ====================
@@ -232,7 +255,10 @@ export class AdminService {
             user_id, 
             role:roles(
               id, name, slug, is_system, organization_id, created_at, updated_at, 
-              role_permissions(permission_key)
+              role_permissions(
+                permission_key,
+                app_permissions(key, name, description)
+              )
             )
           `)
           .eq('organization_id', orgId);
@@ -242,22 +268,12 @@ export class AdminService {
           assignments.forEach((row: any) => {
             const arr = rolesByUser.get(row.user_id) ?? [];
             if (row.role) {
-              // Map permissions using DETAILED_PERMISSIONS config
-              const permissions = (row.role.role_permissions || [])
-                .map((rp: any) => {
-                  const permission = DETAILED_PERMISSIONS.find(p => p.key === rp.permission_key);
-                  return permission ? {
-                    key: permission.key,
-                    name: permission.name,
-                    description: permission.description,
-                    category: permission.category
-                  } : null;
-                })
-                .filter(Boolean);
-              
               const role = {
                 ...row.role,
-                permissions
+                permissions: row.role.role_permissions?.map((rp: any) => ({
+                  ...rp.app_permissions,
+                  category: this.getCategoryFromKey(rp.app_permissions.key)
+                })) || []
               } as Role;
               arr.push(role);
             }
