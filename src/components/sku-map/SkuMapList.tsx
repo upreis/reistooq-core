@@ -78,14 +78,15 @@ export function SkuMapList({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Mapeamentos ({data?.total || 0})</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Desktop Table View - Hidden on smaller screens */}
-          <div className="hidden lg:block">
+    <div className="space-y-4">
+      {/* Header com título */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Mapeamentos ({data?.total || 0})</h2>
+      </div>
+      {/* Desktop Table View - Hidden on smaller screens */}
+      <div className="hidden lg:block">
+        <Card>
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -233,10 +234,12 @@ export function SkuMapList({
                 )}
               </TableBody>
             </Table>
-          </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Mobile Card Layout - Visible on smaller screens */}
-          <div className="lg:hidden space-y-3">
+      {/* Mobile Card Layout - Visible on smaller screens */}
+      <div className="lg:hidden space-y-3">
             {/* Mobile Cards */}
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
@@ -399,8 +402,6 @@ export function SkuMapList({
               </div>
             </div>
           )}
-        </div>
-      </CardContent>
-    </Card>
+    </div>
   );
 }
