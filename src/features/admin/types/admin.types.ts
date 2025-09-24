@@ -17,6 +17,7 @@ export interface Permission {
   key: string;
   name: string;
   description?: string;
+  category?: string;
 }
 
 export interface UserRoleAssignment {

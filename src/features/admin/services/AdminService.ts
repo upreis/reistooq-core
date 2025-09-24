@@ -18,6 +18,11 @@ export class AdminService {
   private cache = new Map<string, any>();
   private cacheTime = 5 * 60 * 1000; // 5 minutos
 
+  constructor() {
+    // Clear cache on instantiation to ensure fresh data
+    this.clearCache();
+  }
+
   // ==================== ROLES ====================
 
   async getRoles(): Promise<Role[]> {
@@ -28,17 +33,13 @@ export class AdminService {
       return cached.data;
     }
 
+    // Fetch roles without app_permissions join - use simplified permissions
     const { data, error } = await supabase
       .from('roles')
       .select(`
         *,
         role_permissions (
-          permission_key,
-          app_permissions (
-            key,
-            name,
-            description
-          )
+          permission_key
         )
       `)
       .order('name');
@@ -48,10 +49,25 @@ export class AdminService {
       throw new Error(`Failed to fetch roles: ${error.message}`);
     }
 
-    const roles = (data || []).map(role => ({
-      ...role,
-      permissions: role.role_permissions?.map((rp: any) => rp.app_permissions) || []
-    })) as Role[];
+    // Map permissions using DETAILED_PERMISSIONS config
+    const roles = (data || []).map(role => {
+      const permissions = (role.role_permissions || [])
+        .map((rp: any) => {
+          const permission = DETAILED_PERMISSIONS.find(p => p.key === rp.permission_key);
+          return permission ? {
+            key: permission.key,
+            name: permission.name,
+            description: permission.description,
+            category: permission.category
+          } : null;
+        })
+        .filter(Boolean);
+      
+      return {
+        ...role,
+        permissions
+      };
+    }) as Role[];
 
     this.cache.set(cacheKey, { data: roles, timestamp: Date.now() });
     return roles;
@@ -212,7 +228,13 @@ export class AdminService {
       if (orgId) {
         const { data: assignments } = await supabase
           .from('user_role_assignments')
-          .select("user_id, role:roles(id, name, slug, is_system, organization_id, created_at, updated_at, role_permissions(permission_key, app_permissions(key, name, description)))")
+          .select(`
+            user_id, 
+            role:roles(
+              id, name, slug, is_system, organization_id, created_at, updated_at, 
+              role_permissions(permission_key)
+            )
+          `)
           .eq('organization_id', orgId);
 
         if (assignments) {
@@ -220,9 +242,22 @@ export class AdminService {
           assignments.forEach((row: any) => {
             const arr = rolesByUser.get(row.user_id) ?? [];
             if (row.role) {
+              // Map permissions using DETAILED_PERMISSIONS config
+              const permissions = (row.role.role_permissions || [])
+                .map((rp: any) => {
+                  const permission = DETAILED_PERMISSIONS.find(p => p.key === rp.permission_key);
+                  return permission ? {
+                    key: permission.key,
+                    name: permission.name,
+                    description: permission.description,
+                    category: permission.category
+                  } : null;
+                })
+                .filter(Boolean);
+              
               const role = {
                 ...row.role,
-                permissions: row.role.role_permissions?.map((rp: any) => rp.app_permissions) || []
+                permissions
               } as Role;
               arr.push(role);
             }

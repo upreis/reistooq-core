@@ -58,47 +58,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
     }));
   };
 
-  // Group permissions by module/category based on their key prefixes
+  // Group permissions by their category from DETAILED_PERMISSIONS
   const groupedPermissions = React.useMemo(() => {
     const grouped: Record<string, Permission[]> = {};
     
     permissions.forEach(permission => {
-      // Extract module from permission key (e.g., "admin:access" -> "admin")
-      const module = permission.key.split(':')[0];
-      const moduleMap: Record<string, string> = {
-        'admin': 'ADMINISTRAÇÃO',
-        'dashboard': 'DASHBOARD', 
-        'oms': 'VENDAS (OMS)',
-        'vendas': 'VENDAS (OMS)',
-        'sales': 'VENDAS (OMS)',
-        'orders': 'VENDAS (OMS)',
-        'pedidos': 'VENDAS (OMS)',
-        'historico': 'VENDAS (OMS)',
-        'compras': 'COMPRAS',
-        'cotacoes': 'COMPRAS',
-        'fornecedores': 'COMPRAS',
-        'estoque': 'ESTOQUE',
-        'produtos': 'ESTOQUE',
-        'ecommerce': 'ECOMMERCE',
-        'configuracoes': 'CONFIGURAÇÕES',
-        'settings': 'CONFIGURAÇÕES',
-        'integrations': 'CONFIGURAÇÕES',
-        'users': 'ADMINISTRAÇÃO',
-        'invites': 'ADMINISTRAÇÃO',
-        'customers': 'CLIENTES',
-        'clientes': 'CLIENTES',
-        'analytics': 'FERRAMENTAS',
-        'calendar': 'FERRAMENTAS',
-        'scanner': 'FERRAMENTAS',
-        'notes': 'FERRAMENTAS',
-        'alerts': 'SISTEMA',
-        'system': 'SISTEMA',
-        'demo': 'SISTEMA',
-        'userprofile': 'USUÁRIO',
-        'depara': 'CONFIGURAÇÕES'
-      };
-      
-      const category = moduleMap[module] || module.toUpperCase();
+      const category = permission.category || permission.key.split(':')[0].toUpperCase();
       
       if (!grouped[category]) {
         grouped[category] = [];
@@ -116,13 +81,11 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
     'VENDAS (OMS)', 
     'COMPRAS',
     'ESTOQUE',
-    'CLIENTES',
     'ECOMMERCE',
     'CONFIGURAÇÕES',
     'ADMINISTRAÇÃO',
-    'USUÁRIO',
-    'FERRAMENTAS',
-    'SISTEMA'
+    'APLICATIVOS',
+    'FERRAMENTAS'
   ];
   
   const sortedCategories = Object.keys(groupedPermissions).sort((a, b) => {
