@@ -228,11 +228,11 @@ const SidebarContent = memo(({
     if (path.startsWith('/dashboard/estoque')) return 'estoque:view';
     if (path.startsWith('/dashboard/financeiro')) return 'vendas:view_pii';
     
-    // OMS/Vendas permissions
-    if (path.startsWith('/pedidos')) return 'pedidos:view';
-    if (path.startsWith('/oms/pedidos')) return 'oms:view';
-    if (path.startsWith('/oms/clientes')) return 'customers:read';
-    if (path.startsWith('/oms/configuracoes')) return 'oms:view';
+    // OMS/Vendas permissions - mapeamento atualizado
+    if (path.startsWith('/pedidos')) return 'pedidos:marketplace';
+    if (path.startsWith('/oms/pedidos')) return 'oms:pedidos';
+    if (path.startsWith('/oms/clientes')) return 'oms:clientes';
+    if (path.startsWith('/oms/configuracoes')) return 'oms:configuracoes';
     
     // Compras permissions
     if (path.startsWith('/compras/pedidos')) return 'compras:view';

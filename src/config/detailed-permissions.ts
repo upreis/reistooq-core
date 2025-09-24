@@ -44,40 +44,30 @@ export const DETAILED_PERMISSIONS: DetailedPermission[] = [
     subcategory: 'Dashboard Principal'
   },
 
-  // VENDAS (OMS) PERMISSIONS
+  // VENDAS (OMS) PERMISSIONS - Simplificado para as 4 páginas reais
   {
-    key: 'oms:view',
-    name: 'Acessar Módulo OMS',
-    description: 'Acesso geral ao módulo de vendas OMS',
+    key: 'pedidos:marketplace',
+    name: 'Vendas Marketplace',
+    description: 'Acessar página de vendas marketplace (/pedidos)',
     category: 'VENDAS (OMS)'
   },
   {
-    key: 'oms:marketplace_orders',
-    name: 'Vendas Marketplace',
-    description: 'Acessar aba de vendas marketplace',
-    category: 'VENDAS (OMS)',
-    subcategory: 'Vendas OMS'
-  },
-  {
-    key: 'oms:direct_wholesale_orders',
+    key: 'oms:pedidos',
     name: 'Vendas Direta/Atacado',
-    description: 'Acessar aba de vendas direta e atacado',
-    category: 'VENDAS (OMS)',
-    subcategory: 'Vendas OMS'
+    description: 'Acessar página de vendas direta e atacado (/oms/pedidos)',
+    category: 'VENDAS (OMS)'
   },
   {
-    key: 'oms:customers',
-    name: 'Clientes OMS',
-    description: 'Acessar aba de clientes no módulo OMS',
-    category: 'VENDAS (OMS)',
-    subcategory: 'Vendas OMS'
+    key: 'oms:clientes',
+    name: 'Clientes',
+    description: 'Acessar página de clientes (/oms/clientes)',
+    category: 'VENDAS (OMS)'
   },
   {
-    key: 'oms:settings',
-    name: 'Configurações OMS',
-    description: 'Acessar aba de configurações do OMS',
-    category: 'VENDAS (OMS)',
-    subcategory: 'Vendas OMS'
+    key: 'oms:configuracoes',
+    name: 'Configurações',
+    description: 'Acessar página de configurações OMS (/oms/configuracoes)',
+    category: 'VENDAS (OMS)'
   },
 
   // COMPRAS PERMISSIONS
@@ -328,23 +318,23 @@ export const DETAILED_PERMISSIONS: DetailedPermission[] = [
     category: 'FERRAMENTAS'
   },
 
-  // LEGACY PERMISSIONS (manter compatibilidade)
+  // LEGACY PERMISSIONS (manter compatibilidade com sistema atual)
   {
     key: 'pedidos:view',
-    name: 'Visualizar Pedidos',
-    description: 'Visualizar lista de pedidos',
-    category: 'VENDAS (OMS)'
+    name: 'Ver Pedidos (Legacy)',
+    description: 'Compatibilidade - usar "Vendas Marketplace" ou "Vendas Direta/Atacado"',
+    category: 'SISTEMA'
   },
   {
     key: 'customers:read',
-    name: 'Ler Dados de Clientes',
-    description: 'Visualizar informações básicas dos clientes',
-    category: 'VENDAS (OMS)'
+    name: 'Ver Clientes (Legacy)',
+    description: 'Compatibilidade - usar "Clientes" em VENDAS (OMS)',
+    category: 'SISTEMA'
   },
   {
     key: 'integrations:read',
-    name: 'Ler Integrações',
-    description: 'Visualizar configurações de integrações',
-    category: 'CONFIGURAÇÕES'
+    name: 'Ver Integrações (Legacy)',
+    description: 'Compatibilidade - usar "Integrações" em CONFIGURAÇÕES',
+    category: 'SISTEMA'
   }
 ];

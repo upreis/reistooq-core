@@ -29,8 +29,10 @@ export const PermissionsGuide: React.FC = () => {
               <p className="text-muted-foreground pl-4">• dashboard:view - Ver Dashboard</p>
 
               <h5 className="font-medium text-primary">🛒 VENDAS (OMS)</h5>
-              <p className="text-muted-foreground pl-4">• oms:view - Ver módulo OMS</p>
-              <p className="text-muted-foreground pl-4">• orders:read - Ver Pedidos</p>
+              <p className="text-muted-foreground pl-4">• pedidos:marketplace - Vendas Marketplace</p>
+              <p className="text-muted-foreground pl-4">• oms:pedidos - Vendas Direta/Atacado</p>
+              <p className="text-muted-foreground pl-4">• oms:clientes - Clientes</p>
+              <p className="text-muted-foreground pl-4">• oms:configuracoes - Configurações OMS</p>
 
               <h5 className="font-medium text-primary">🛍️ COMPRAS</h5>
               <p className="text-muted-foreground pl-4">• compras:view - Sistema de Compras</p>
@@ -43,8 +45,7 @@ export const PermissionsGuide: React.FC = () => {
 
             <div className="space-y-2">
               <h5 className="font-medium text-primary">👥 CLIENTES</h5>
-              <p className="text-muted-foreground pl-4">• customers:read - Ver Clientes</p>
-              <p className="text-muted-foreground pl-4">• customers:manage - Gerenciar Clientes</p>
+              <p className="text-muted-foreground pl-4">• oms:clientes - Gerenciar Clientes (via OMS)</p>
 
               <h5 className="font-medium text-primary">🔧 ADMINISTRAÇÃO</h5>
               <p className="text-muted-foreground pl-4">• admin:access - Acessar Admin</p>
