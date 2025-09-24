@@ -128,21 +128,35 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   };
 
   const addItem = (product: any) => {
+    // ✅ VALIDAÇÃO DE ESTOQUE
+    const availableStock = product.quantidade_atual || 0;
+    
+    if (availableStock <= 0) {
+      toast({
+        title: "Estoque Insuficiente",
+        description: `O produto "${product.nome}" não possui estoque disponível`,
+        variant: "destructive"
+      });
+      return;
+    }
+
     const customerTier = customers.find(c => c.id === formData.selectedCustomer)?.price_tier || 'standard';
     const tierMultiplier = getPriceTierMultiplier(customerTier);
-    const unitPrice = product.price * tierMultiplier;
+    const unitPrice = product.preco_venda || product.price || 0;
+    const finalPrice = unitPrice * tierMultiplier;
 
     const newItem = {
       id: Date.now().toString(),
       product_id: product.id,
-      sku: product.sku,
-      title: product.title,
+      sku: product.sku_interno || product.sku,
+      title: product.nome || product.title,
       qty: 1,
-      unit_price: unitPrice,
+      unit_price: finalPrice,
       discount_pct: 0,
       discount_value: 0,
       tax_value: 0,
-      total: unitPrice
+      total: finalPrice,
+      available_stock: availableStock // ✅ GUARDAR ESTOQUE DISPONÍVEL
     };
 
     setFormData(prev => ({
@@ -155,6 +169,23 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
 
   const updateItem = (index: number, field: string, value: any) => {
     const updatedItems = [...formData.items];
+    const item = updatedItems[index];
+    
+    // ✅ VALIDAÇÃO DE ESTOQUE QUANDO ALTERAR QUANTIDADE
+    if (field === 'qty') {
+      const requestedQty = parseFloat(value) || 0;
+      const availableStock = item.available_stock || 0;
+      
+      if (requestedQty > availableStock) {
+        toast({
+          title: "Estoque Insuficiente",
+          description: `Quantidade solicitada (${requestedQty}) é maior que o estoque disponível (${availableStock}) para "${item.title}"`,
+          variant: "destructive"
+        });
+        return; // ✅ NÃO PERMITE ALTERAR
+      }
+    }
+
     updatedItems[index] = { ...updatedItems[index], [field]: value };
 
     // Recalcular total do item
@@ -598,17 +629,24 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-5 gap-2">
                     <div>
                       <Label className="text-xs">Quantidade</Label>
                       <Input
                         type="number"
                         min="0.01"
                         step="0.01"
+                        max={item.available_stock}
                         value={item.qty === 0 ? '' : item.qty}
                         onChange={(e) => updateItem(index, 'qty', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                         placeholder="Qtd"
+                        className={item.qty > item.available_stock ? "border-red-500" : ""}
                       />
+                      {item.available_stock && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Estoque: {item.available_stock}
+                        </div>
+                      )}
                     </div>
                     <div>
                       <Label className="text-xs">Preço Unit.</Label>
