@@ -722,14 +722,24 @@ export default function OrdersPageProfessional({
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="sm">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
+                             <TableCell>
+                               <div className="flex items-center gap-1">
+                                 <Button 
+                                   variant="ghost" 
+                                   size="sm"
+                                   onClick={() => console.log('Visualizar pedido:', order.id)}
+                                   title="Visualizar pedido"
+                                 >
+                                   <Eye className="h-4 w-4" />
+                                 </Button>
+                                 <Button 
+                                   variant="ghost" 
+                                   size="sm"
+                                   onClick={() => handleEditOrder(order)}
+                                   title="Editar pedido"
+                                 >
+                                   <Edit className="h-4 w-4" />
+                                 </Button>
                                 {order.status === 'draft' && (
                                   <Button
                                     variant="ghost"
