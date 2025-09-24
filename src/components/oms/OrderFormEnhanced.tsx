@@ -15,6 +15,7 @@ import { ptBR } from "date-fns/locale";
 
 // ✅ USAR HOOKS EXISTENTES - OBRIGATÓRIO
 import { useOMSCustomers, useOMSSalesReps, useOMSProducts, formatCurrency, getPriceTierMultiplier } from "@/hooks/useOMSData";
+import { useProducts } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 
 interface OrderFormEnhancedProps {
@@ -38,6 +39,9 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   const { customers } = useOMSCustomers();
   const { salesReps } = useOMSSalesReps();
   const { products, searchProducts } = useOMSProducts();
+  
+  // ✅ INTEGRAÇÃO COM ESTOQUE
+  const { getProducts } = useProducts();
 
   // Estados do formulário completo
   const [formData, setFormData] = useState({
@@ -89,8 +93,35 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
 
   const handleSearch = async (query: string) => {
     if (query.length >= 2) {
-      const results = await searchProducts(query);
-      setSearchResults(results);
+      try {
+        // ✅ BUSCAR PRODUTOS DO ESTOQUE
+        const stockProducts = await getProducts({
+          search: query,
+          limit: 20,
+          ativo: true
+        });
+        
+        // Mapear produtos do estoque para o formato esperado
+        const mappedResults = stockProducts.map(product => ({
+          id: product.id,
+          sku: product.sku_interno,
+          title: product.nome,
+          price: product.preco_venda || 0,
+          stock: product.quantidade_atual,
+          category: product.categoria,
+          barcode: product.codigo_barras
+        }));
+        
+        setSearchResults(mappedResults);
+      } catch (error) {
+        console.error("Erro ao buscar produtos:", error);
+        toast({
+          title: "Erro",
+          description: "Erro ao buscar produtos do estoque",
+          variant: "destructive"
+        });
+        setSearchResults([]);
+      }
     } else {
       setSearchResults([]);
     }
@@ -490,13 +521,27 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 {searchResults.map((product) => (
                   <div
                     key={product.id}
-                    className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                    className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
                     onClick={() => addItem(product)}
                   >
-                    <div className="font-medium">{product.title}</div>
-                    <div className="text-sm text-gray-500 flex justify-between">
-                      <span>SKU: {product.sku}</span>
-                      <span>{formatCurrency(product.price)}</span>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium">{product.title}</div>
+                        <div className="text-sm text-muted-foreground flex gap-4">
+                          <span>SKU: {product.sku}</span>
+                          {product.category && <span>Cat: {product.category}</span>}
+                          {product.barcode && <span>Código: {product.barcode}</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Estoque: {product.stock} unidades
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium">{formatCurrency(product.price)}</div>
+                        <Badge variant={product.stock > 0 ? "secondary" : "destructive"} className="text-xs">
+                          {product.stock > 0 ? "Disponível" : "Sem estoque"}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 ))}
