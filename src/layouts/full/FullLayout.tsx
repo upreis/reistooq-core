@@ -56,7 +56,7 @@ const InnerLayout = () => {
   // Pages that use MobileAppShell (which already includes AppMobileHeader)
   const usesMobileAppShell = () => {
     const path = location.pathname;
-    return path === "/estoque" || path === "/pedidos" || path === "/de-para";
+    return path.startsWith("/estoque") || path.startsWith("/pedidos") || path.startsWith("/de-para");
   };
 
   return (
