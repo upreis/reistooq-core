@@ -87,18 +87,26 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
     { id: "90_days", label: "90 Dias", days: 90 }
   ]);
 
+  // ✅ AGUARDAR CARREGAMENTO DOS DADOS ANTES DE MAPEAR
   useEffect(() => {
-    if (initialData) {
+    if (initialData && customers.length > 0 && salesReps.length > 0) {
       console.log('🔍 DEBUG initialData recebido:', initialData);
       console.log('🔍 DEBUG customer_id:', initialData.customer_id);
       console.log('🔍 DEBUG sales_rep_id:', initialData.sales_rep_id);
-      console.log('🔍 DEBUG customers disponíveis:', customers);
-      console.log('🔍 DEBUG salesReps disponíveis:', salesReps);
+      console.log('🔍 DEBUG customers disponíveis:', customers.map(c => ({ id: c.id, name: c.name })));
+      console.log('🔍 DEBUG salesReps disponíveis:', salesReps.map(s => ({ id: s.id, name: s.name })));
+      
+      // ✅ VERIFICAR SE CLIENTE EXISTE NA LISTA
+      const customerExists = customers.find(c => c.id === initialData.customer_id);
+      const salesRepExists = salesReps.find(s => s.id === initialData.sales_rep_id);
+      
+      console.log('🔍 DEBUG cliente encontrado:', customerExists);
+      console.log('🔍 DEBUG sales rep encontrado:', salesRepExists);
       
       // ✅ MAPEAR DADOS DO PEDIDO EXISTENTE PARA O FORMATO DO FORMULÁRIO
       const mappedData = {
-        selectedCustomer: initialData.customer_id ? String(initialData.customer_id) : "",
-        selectedSalesRep: initialData.sales_rep_id ? String(initialData.sales_rep_id) : "",
+        selectedCustomer: customerExists ? String(initialData.customer_id) : "",
+        selectedSalesRep: salesRepExists ? String(initialData.sales_rep_id) : "",
         orderDate: initialData.order_date ? new Date(initialData.order_date) : new Date(),
         deliveryDate: initialData.delivery_date ? new Date(initialData.delivery_date) : null,
         paymentTerm: initialData.payment_terms || "30_days",
@@ -130,7 +138,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       console.log('🔍 DEBUG dados mapeados:', mappedData);
       setFormData(prev => ({ ...prev, ...mappedData }));
     }
-  }, [initialData]);
+  }, [initialData, customers, salesReps]);
 
   const handleSearch = async (query: string) => {
     if (query.length >= 2) {
