@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import { useOMSCustomers, useOMSSalesReps, useOMSProducts, formatCurrency, getPriceTierMultiplier } from "@/hooks/useOMSData";
 import { useProducts } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { ProductSelector } from "@/components/compras/ProductSelector";
 
 interface OrderFormEnhancedProps {
@@ -103,40 +104,68 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       console.log('🔍 DEBUG cliente encontrado:', customerExists);
       console.log('🔍 DEBUG sales rep encontrado:', salesRepExists);
       
-      // ✅ MAPEAR DADOS DO PEDIDO EXISTENTE PARA O FORMATO DO FORMULÁRIO
-      const mappedData = {
-        selectedCustomer: customerExists ? String(initialData.customer_id) : "",
-        selectedSalesRep: salesRepExists ? String(initialData.sales_rep_id) : "",
-        orderDate: initialData.order_date ? new Date(initialData.order_date) : new Date(),
-        deliveryDate: initialData.delivery_date ? new Date(initialData.delivery_date) : null,
-        paymentTerm: initialData.payment_terms || "30_days",
-        customPaymentDays: initialData.payment_term_days || 30,
-        paymentMethod: initialData.payment_method || "bank_transfer",
-        discount: initialData.discount_amount || 0,
-        discountType: initialData.discount_type || "percentage",
-        shippingTotal: initialData.shipping_total || 0,
-        shippingMethod: initialData.shipping_method || "standard",
-        deliveryAddress: initialData.delivery_address || "",
-        notes: initialData.notes || "",
-        internalNotes: initialData.internal_notes || "",
-        // ✅ MAPEAR ITENS DO PEDIDO CORRETAMENTE
-        items: (initialData.oms_order_items || []).map((item: any) => ({
-          id: item.id,
-          product_id: item.product_id,
-          sku: item.sku,
-          title: item.title,
-          qty: item.qty,
-          unit_price: item.unit_price,
-          discount_pct: item.discount_pct || 0,
-          discount_value: item.discount_value || 0,
-          tax_value: item.tax_value || 0,
-          total: item.total,
-          available_stock: 1000 // ✅ DEFAULT ALTO PARA EDIÇÃO - SEM VALIDAÇÃO RESTRITIVA
-        }))
+      // ✅ BUSCAR ESTOQUE REAL DOS PRODUTOS E MAPEAR DADOS
+      const loadRealStock = async () => {
+        const productIds = (initialData.oms_order_items || []).map((item: any) => item.product_id);
+        const stockPromises = productIds.map(async (productId: string) => {
+          try {
+            const { data, error } = await supabase
+              .from('produtos')
+              .select('id, quantidade')
+              .eq('id', productId)
+              .single();
+            
+            if (error) throw error;
+            return { productId, stock: (data as any)?.quantidade || 0 };
+          } catch (error) {
+            console.warn('Erro ao buscar estoque do produto:', productId, error);
+            return { productId, stock: 0 };
+          }
+        });
+
+        const stockData = await Promise.all(stockPromises);
+        const stockMap = stockData.reduce((acc, { productId, stock }) => {
+          acc[productId] = stock;
+          return acc;
+        }, {} as Record<string, number>);
+
+        // ✅ MAPEAR DADOS DO PEDIDO EXISTENTE PARA O FORMATO DO FORMULÁRIO
+        const mappedData = {
+          selectedCustomer: customerExists ? String(initialData.customer_id) : "",
+          selectedSalesRep: salesRepExists ? String(initialData.sales_rep_id) : "",
+          orderDate: initialData.order_date ? new Date(initialData.order_date) : new Date(),
+          deliveryDate: initialData.delivery_date ? new Date(initialData.delivery_date) : null,
+          paymentTerm: initialData.payment_terms || "30_days",
+          customPaymentDays: initialData.payment_term_days || 30,
+          paymentMethod: initialData.payment_method || "bank_transfer",
+          discount: initialData.discount_amount || 0,
+          discountType: initialData.discount_type || "percentage",
+          shippingTotal: initialData.shipping_total || 0,
+          shippingMethod: initialData.shipping_method || "standard",
+          deliveryAddress: initialData.delivery_address || "",
+          notes: initialData.notes || "",
+          internalNotes: initialData.internal_notes || "",
+          // ✅ MAPEAR ITENS DO PEDIDO COM ESTOQUE REAL
+          items: (initialData.oms_order_items || []).map((item: any) => ({
+            id: item.id,
+            product_id: item.product_id,
+            sku: item.sku,
+            title: item.title,
+            qty: item.qty,
+            unit_price: item.unit_price,
+            discount_pct: item.discount_pct || 0,
+            discount_value: item.discount_value || 0,
+            tax_value: item.tax_value || 0,
+            total: item.total,
+            available_stock: stockMap[item.product_id] || 0 // ✅ ESTOQUE REAL DO PRODUTO
+          }))
+        };
+        
+        console.log('🔍 DEBUG dados mapeados com estoque real:', mappedData);
+        setFormData(prev => ({ ...prev, ...mappedData }));
       };
-      
-      console.log('🔍 DEBUG dados mapeados:', mappedData);
-      setFormData(prev => ({ ...prev, ...mappedData }));
+
+      loadRealStock();
     }
   }, [initialData, customers, salesReps]);
 
@@ -765,17 +794,18 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                          placeholder="Qtd"
                          className="bg-background text-foreground border-input"
                        />
-                       {/* ✅ APENAS INFORMATIVO - SEM VALIDAÇÃO RESTRITIVA */}
-                       {item.available_stock > 0 && item.available_stock < 1000 && (
-                         <div className="text-xs text-muted-foreground mt-1">
-                           <span className="text-blue-600">
+                       {/* ✅ AVISOS DE ESTOQUE - INFORMATIVOS */}
+                       {item.available_stock > 0 && (
+                         <div className="text-xs mt-1">
+                           <span className={item.qty > item.available_stock ? "text-orange-600 font-medium" : "text-muted-foreground"}>
                              Estoque: {item.available_stock}
+                             {item.qty > item.available_stock && " ⚠️ EXCEDIDO"}
                            </span>
                          </div>
                        )}
-                       {(item.available_stock === 0 || item.available_stock >= 1000) && (
+                       {item.available_stock === 0 && (
                          <div className="text-xs text-muted-foreground mt-1">
-                           ✅ Sem controle de estoque
+                           ⚠️ Sem controle de estoque
                          </div>
                        )}
                      </div>
