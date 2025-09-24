@@ -228,16 +228,6 @@ export function EstoqueFilters({
           </Popover>
         )}
 
-        {/* Botão de busca */}
-        <Button onClick={onSearch} size="sm" variant="outline" className="gap-2">
-          <Search className="w-4 h-4" />
-        </Button>
-
-        {/* Botão buscar */}
-        <Button onClick={onSearch} className="gap-2">
-          <Search className="w-4 h-4" />
-          Buscar
-        </Button>
 
         {/* Limpar filtros */}
         {hasActiveFilters && (
