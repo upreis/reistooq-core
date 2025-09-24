@@ -242,31 +242,60 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       return;
     }
 
-    const totals = calculateTotals();
-    const selectedPaymentTerm = paymentTerms.find(pt => pt.id === formData.paymentTerm);
+    // Validar itens
+    const invalidItems = formData.items.filter(item => item.qty <= 0 || item.unit_price <= 0);
+    if (invalidItems.length > 0) {
+      toast({
+        title: "Erro",
+        description: "Todos os itens devem ter quantidade e preço válidos",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    const orderData = {
-      customer_id: formData.selectedCustomer,
-      sales_rep_id: formData.selectedSalesRep || undefined,
-      order_date: formData.orderDate,
-      delivery_date: formData.deliveryDate,
-      payment_terms: formData.paymentTerm,
-      payment_term_days: selectedPaymentTerm?.days || 30,
-      payment_method: formData.paymentMethod,
-      shipping_total: formData.shippingTotal,
-      shipping_method: formData.shippingMethod,
-      delivery_address: formData.deliveryAddress,
-      discount_amount: totals.discountAmount,
-      discount_type: formData.discountType,
-      notes: formData.notes,
-      internal_notes: formData.internalNotes,
-      items: formData.items,
-      subtotal: totals.subtotal,
-      tax_total: totals.taxTotal,
-      grand_total: totals.grandTotal
-    };
+    try {
+      const totals = calculateTotals();
+      const selectedPaymentTerm = paymentTerms.find(pt => pt.id === formData.paymentTerm);
 
-    onSubmit(orderData);
+      const orderData = {
+        customer_id: formData.selectedCustomer,
+        sales_rep_id: formData.selectedSalesRep || undefined,
+        order_date: formData.orderDate.toISOString(),
+        delivery_date: formData.deliveryDate ? formData.deliveryDate.toISOString() : null,
+        payment_terms: formData.paymentTerm,
+        payment_term_days: selectedPaymentTerm?.days || 30,
+        payment_method: formData.paymentMethod,
+        shipping_total: Number(formData.shippingTotal) || 0,
+        shipping_method: formData.shippingMethod,
+        delivery_address: formData.deliveryAddress,
+        discount_amount: Number(totals.discountAmount) || 0,
+        discount_type: formData.discountType,
+        notes: formData.notes,
+        internal_notes: formData.internalNotes,
+        items: formData.items.map(item => ({
+          ...item,
+          qty: Number(item.qty),
+          unit_price: Number(item.unit_price),
+          discount_pct: Number(item.discount_pct) || 0,
+          discount_value: Number(item.discount_value) || 0,
+          tax_value: Number(item.tax_value) || 0,
+          total: Number(item.total)
+        })),
+        subtotal: Number(totals.subtotal),
+        tax_total: Number(totals.taxTotal),
+        grand_total: Number(totals.grandTotal)
+      };
+
+      console.log("Enviando dados do pedido:", orderData);
+      onSubmit(orderData);
+    } catch (error) {
+      console.error("Erro ao preparar dados do pedido:", error);
+      toast({
+        title: "Erro",
+        description: "Erro ao processar dados do pedido",
+        variant: "destructive"
+      });
+    }
   };
 
   const totals = calculateTotals();
@@ -360,6 +389,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                     selected={formData.deliveryDate}
                     onSelect={(date) => setFormData(prev => ({ ...prev, deliveryDate: date }))}
                     locale={ptBR}
+                    className="pointer-events-auto"
                   />
                 </PopoverContent>
               </Popover>
@@ -415,10 +445,10 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                       type="number"
                       min="1"
                       max="365"
-                      value={formData.customPaymentDays}
+                      value={formData.customPaymentDays === 30 ? '' : formData.customPaymentDays}
                       onChange={(e) => setFormData(prev => ({ 
                         ...prev, 
-                        customPaymentDays: parseInt(e.target.value) || 0 
+                        customPaymentDays: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 
                       }))}
                       placeholder="Ex: 45"
                     />
@@ -459,10 +489,10 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.discount}
+                value={formData.discount === 0 ? '' : formData.discount}
                 onChange={(e) => setFormData(prev => ({ 
                   ...prev, 
-                  discount: parseFloat(e.target.value) || 0 
+                  discount: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 
                 }))}
                 placeholder="0,00"
               />
@@ -575,8 +605,9 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                         type="number"
                         min="0.01"
                         step="0.01"
-                        value={item.qty}
-                        onChange={(e) => updateItem(index, 'qty', parseFloat(e.target.value) || 0)}
+                        value={item.qty === 0 ? '' : item.qty}
+                        onChange={(e) => updateItem(index, 'qty', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                        placeholder="Qtd"
                       />
                     </div>
                     <div>
@@ -585,8 +616,9 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                         type="number"
                         min="0"
                         step="0.01"
-                        value={item.unit_price}
-                        onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                        value={item.unit_price === 0 ? '' : item.unit_price}
+                        onChange={(e) => updateItem(index, 'unit_price', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                        placeholder="Preço"
                       />
                     </div>
                     <div>
@@ -596,8 +628,9 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                         min="0"
                         max="100"
                         step="0.01"
-                        value={item.discount_pct}
-                        onChange={(e) => updateItem(index, 'discount_pct', parseFloat(e.target.value) || 0)}
+                        value={item.discount_pct === 0 ? '' : item.discount_pct}
+                        onChange={(e) => updateItem(index, 'discount_pct', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                        placeholder="0%"
                       />
                     </div>
                     <div>
@@ -645,10 +678,10 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.shippingTotal}
+                value={formData.shippingTotal === 0 ? '' : formData.shippingTotal}
                 onChange={(e) => setFormData(prev => ({ 
                   ...prev, 
-                  shippingTotal: parseFloat(e.target.value) || 0 
+                  shippingTotal: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 
                 }))}
                 placeholder="0,00"
               />
