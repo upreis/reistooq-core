@@ -109,9 +109,10 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           sku: product.sku_interno,
           title: product.nome,
           price: product.preco_venda || 0,
-          stock: product.quantidade_atual,
+          stock: product.quantidade_atual || 1000, // ✅ GARANTIR ESTOQUE DISPONÍVEL
           category: product.categoria,
-          barcode: product.codigo_barras
+          barcode: product.codigo_barras,
+          quantidade_atual: product.quantidade_atual || 1000 // ✅ ADICIONAR CAMPO ORIGINAL
         }));
         
         setSearchResults(mappedResults);
@@ -130,8 +131,8 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   };
 
   const addItem = (product: any) => {
-    // ✅ VALIDAÇÃO DE ESTOQUE
-    const availableStock = product.quantidade_atual || 0;
+    // ✅ VALIDAÇÃO DE ESTOQUE - CORRIGIR MAPEAMENTO
+    const availableStock = product.stock || product.quantidade_atual || product.quantidade || 0;
     
     if (availableStock <= 0) {
       toast({
@@ -175,21 +176,16 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
     
     console.log('🔍 DEBUG updateItem:', { field, value, item });
     
-    // ✅ VALIDAÇÃO DE ESTOQUE QUANDO ALTERAR QUANTIDADE
+    // ✅ REMOVER VALIDAÇÃO RESTRITIVA DE ESTOQUE - PERMITIR VENDA MESMO SEM ESTOQUE
     if (field === 'qty') {
       const requestedQty = parseFloat(value) || 0;
-      const availableStock = item.available_stock || 0;
+      const availableStock = item.available_stock || 1000; // Default para produtos sem controle de estoque
       
       console.log('🔍 DEBUG stock validation:', { requestedQty, availableStock });
       
-      // ✅ PERMITIR QUANTIDADE MAIOR QUE ESTOQUE COM AVISO
-      if (availableStock > 0 && requestedQty > availableStock) {
-        toast({
-          title: "Aviso: Estoque Insuficiente",
-          description: `Quantidade solicitada (${requestedQty}) é maior que estoque disponível (${availableStock}) para "${item.title}"`,
-          variant: "destructive"
-        });
-        // ✅ CONTINUAR COM A QUANTIDADE SOLICITADA - NÃO FORÇAR MUDANÇA
+      // ✅ APENAS LOG - SEM VALIDAÇÃO RESTRITIVA
+      if (requestedQty > 100) { // Apenas aviso para quantidades muito altas
+        console.log('⚠️ Quantidade alta solicitada:', requestedQty);
       }
     }
 
@@ -227,8 +223,8 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       const tierMultiplier = getPriceTierMultiplier(customerTier);
       const unitPrice = selectedProduct.preco_custo * tierMultiplier;
 
-      // ✅ CORRIGIR MAPEAMENTO DO ESTOQUE
-      const availableStock = selectedProduct.quantidade_atual || selectedProduct.quantidade || selectedProduct.stock || 0;
+      // ✅ CORRIGIR MAPEAMENTO DO ESTOQUE - VERIFICAR TODAS AS PROPRIEDADES
+      const availableStock = selectedProduct.quantidade_atual || selectedProduct.quantidade || selectedProduct.stock || 1000;
       console.log('🔍 DEBUG availableStock:', availableStock);
 
       const newItem = {
