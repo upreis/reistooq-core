@@ -89,16 +89,49 @@ export function EstoqueFilters({
   return (
     <div className="space-y-4">
       {/* Linha principal de filtros */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Campo de busca - desktop ou input buscar produto no mobile */}
-        <div className="relative flex-1 min-w-[300px]">
-          {isMobile ? (
-            <Button className="w-full justify-start gap-2">
-              <Search className="w-4 h-4" />
-              Buscar produto
+      <div className="flex items-center gap-3">
+        {/* Layout Mobile - organizado como na aba composições */}
+        {isMobile ? (
+          <>
+            {/* Campo de busca expansível */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input 
+                placeholder="Buscar produtos..." 
+                className="pl-10" 
+                value={searchTerm}
+                onChange={(e) => onSearchChange(e.target.value)}
+                onKeyPress={handleKeyPress}
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                  onClick={() => onSearchChange("")}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
+            
+            {/* Ícone de filtro compacto */}
+            <Button variant="outline" size="sm" className="p-2 h-10 w-10">
+              <Filter className="w-4 h-4" />
+              {hasActiveFilters && (
+                <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+              )}
             </Button>
-          ) : (
-            <>
+            
+            {/* Ícone de categorias compacto */}
+            <Button variant="outline" size="sm" className="p-2 h-10 w-10">
+              <Package className="w-4 h-4" />
+            </Button>
+          </>
+        ) : (
+          <>
+            {/* Layout Desktop - mantém o original */}
+            <div className="relative flex-1 min-w-[300px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input 
                 placeholder="Buscar por nome, SKU, código de barras..." 
@@ -117,37 +150,40 @@ export function EstoqueFilters({
                   <X className="w-3 h-3" />
                 </Button>
               )}
-            </>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Filtros desktop - só mostra no desktop */}
+      {!isMobile && (
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Filtro de categoria */}
+          {useHierarchicalCategories && onHierarchicalFiltersChange ? (
+            <div className="min-w-[300px]">
+              <HierarchicalCategoryFilter
+                selectedFilters={hierarchicalFilters}
+                onFilterChange={onHierarchicalFiltersChange}
+                className="space-y-2"
+              />
+            </div>
+          ) : (
+            <Select value={selectedCategory} onValueChange={onCategoryChange}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas categorias</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
-        </div>
 
-        {/* Filtro de categoria */}
-        {!isMobile && (useHierarchicalCategories && onHierarchicalFiltersChange ? (
-          <div className="min-w-[300px]">
-            <HierarchicalCategoryFilter
-              selectedFilters={hierarchicalFilters}
-              onFilterChange={onHierarchicalFiltersChange}
-              className="space-y-2"
-            />
-          </div>
-        ) : (
-          <Select value={selectedCategory} onValueChange={onCategoryChange}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas categorias</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ))}
-
-        {/* Filtro de status */}
-        {!isMobile && (
+          {/* Filtro de status */}
           <Select value={selectedStatus} onValueChange={onStatusChange}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Status" />
@@ -166,10 +202,8 @@ export function EstoqueFilters({
               })}
             </SelectContent>
           </Select>
-        )}
 
-        {/* Filtros avançados */}
-        {!isMobile && (
+          {/* Filtros avançados */}
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="gap-2">
@@ -235,27 +269,8 @@ export function EstoqueFilters({
               </div>
             </PopoverContent>
           </Popover>
-        )}
 
-        {/* No mobile, mostrar apenas 3 botões: Buscar produto, Filtro e Categorias */}
-        {isMobile && (
-          <>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="w-4 h-4" />
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1">
-                  •
-                </Badge>
-              )}
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Package className="w-4 h-4" />
-            </Button>
-          </>
-        )}
-
-        {/* Botão Filtros sempre visível - apenas no desktop */}
-        {!isMobile && (
+          {/* Botão Filtros sempre visível - apenas no desktop */}
           <Button variant="outline" className="gap-2">
             <Filter className="w-4 h-4" />
             Filtros
@@ -265,17 +280,16 @@ export function EstoqueFilters({
               </Badge>
             )}
           </Button>
-        )}
 
-
-        {/* Limpar filtros */}
-        {hasActiveFilters && (
-          <Button variant="outline" onClick={onClearFilters} className="gap-2">
-            <X className="w-4 h-4" />
-            Limpar
-          </Button>
-        )}
-      </div>
+          {/* Limpar filtros */}
+          {hasActiveFilters && (
+            <Button variant="outline" onClick={onClearFilters} className="gap-2">
+              <X className="w-4 h-4" />
+              Limpar
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Filtros ativos */}
       {hasActiveFilters && (
