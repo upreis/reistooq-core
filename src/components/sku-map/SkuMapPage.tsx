@@ -68,30 +68,8 @@ export function SkuMapPage() {
     onDelete: handleDelete,
   });
 
-  // Header actions para mobile
-  const headerActions = isMobile ? (
-    <div className="flex items-center gap-2">
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 px-3">
-            <Filter className="w-4 h-4 mr-1" />
-            Filtros
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 p-0" align="end">
-          <SkuMapFilters
-            filters={filters}
-            onFiltersChange={updateFilters}
-            onReset={resetFilters}
-          />
-        </PopoverContent>
-      </Popover>
-      <Button onClick={() => setShowCreateForm(true)} size="sm" className="h-9 px-3">
-        <Plus className="w-4 h-4 mr-1" />
-        Novo
-      </Button>
-    </div>
-  ) : undefined;
+  // Header actions para mobile - removido, será movido para baixo do header
+  const headerActions = undefined;
 
   const desktopContent = (
     <div className="p-6 space-y-6">
@@ -172,6 +150,29 @@ export function SkuMapPage() {
 
   const mobileContent = (
     <div className="space-y-4">
+      {/* Mobile Actions - Filtros e Novo */}
+      <div className="flex items-center gap-2 px-1">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 px-3">
+              <Filter className="w-4 h-4 mr-1" />
+              Filtros
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-0" align="start">
+            <SkuMapFilters
+              filters={filters}
+              onFiltersChange={updateFilters}
+              onReset={resetFilters}
+            />
+          </PopoverContent>
+        </Popover>
+        <Button onClick={() => setShowCreateForm(true)} size="sm" className="h-9 px-3">
+          <Plus className="w-4 h-4 mr-1" />
+          Novo
+        </Button>
+      </div>
+
       {/* Stats */}
       <SkuMapStats onFilterClick={handleStatsFilterClick} />
 
