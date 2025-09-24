@@ -97,7 +97,14 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
     return aIndex - bIndex;
   });
 
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() => {
+    // Initialize all categories as collapsed
+    const initialState: Record<string, boolean> = {};
+    categoryOrder.forEach(category => {
+      initialState[category] = false;
+    });
+    return initialState;
+  });
 
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev => ({
@@ -281,12 +288,15 @@ export const RoleManager: React.FC = () => {
               Novo Cargo
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="role-form-description">
             <DialogHeader>
               <DialogTitle>
                 {editingRole ? 'Editar Cargo' : 'Criar Novo Cargo'}
               </DialogTitle>
             </DialogHeader>
+            <div id="role-form-description" className="sr-only">
+              Formulário para {editingRole ? 'editar um cargo existente' : 'criar um novo cargo'} com suas respectivas permissões
+            </div>
             <RoleForm
               role={editingRole}
               permissions={permissions}
