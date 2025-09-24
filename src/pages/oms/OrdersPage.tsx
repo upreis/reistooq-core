@@ -9,8 +9,10 @@ import { Plus, Search, CheckCircle, XCircle, FileText, Filter } from "lucide-rea
 import { OrderForm } from "@/components/oms/OrderForm";
 import { useOMSOrders, formatCurrency, getStatusColor } from "@/hooks/useOMSData";
 import { useToast } from "@/hooks/use-toast";
+import OrdersPageProfessional from './OrdersPageProfessional';
 
-export default function OrdersPage() {
+// Componente da página simples (código existente mantido)
+function OrdersPageSimple() {
   const { toast } = useToast();
   const { orders, loading, createOrder, approveOrder, cancelOrder } = useOMSOrders();
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
@@ -255,6 +257,36 @@ export default function OrdersPage() {
           />
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// Componente principal com alternância de modos
+export default function OrdersPage() {
+  const [isProfessionalMode, setIsProfessionalMode] = useState(true);
+
+  const toggleMode = () => {
+    setIsProfessionalMode(!isProfessionalMode);
+  };
+
+  if (isProfessionalMode) {
+    return (
+      <OrdersPageProfessional 
+        onToggleMode={toggleMode}
+        showModeToggle={true}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Pedidos OMS - Modo Simples</h1>
+        <Button variant="outline" onClick={toggleMode}>
+          Modo Profissional
+        </Button>
+      </div>
+      <OrdersPageSimple />
     </div>
   );
 }
