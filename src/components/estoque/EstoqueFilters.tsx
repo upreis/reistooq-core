@@ -24,6 +24,7 @@ import {
   TrendingDown
 } from "lucide-react";
 import { HierarchicalCategoryFilter } from '@/features/products/components/HierarchicalCategoryFilter';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EstoqueFiltersProps {
   searchTerm: string;
@@ -67,6 +68,7 @@ export function EstoqueFilters({
 }: EstoqueFiltersProps) {
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [stockRange, setStockRange] = useState({ min: "", max: "" });
+  const isMobile = useIsMobile();
 
   const statusOptions = [
     { value: "all", label: "Todos os status", icon: Package },
@@ -111,7 +113,7 @@ export function EstoqueFilters({
         </div>
 
         {/* Filtro de categoria */}
-        {useHierarchicalCategories && onHierarchicalFiltersChange ? (
+        {!isMobile && (useHierarchicalCategories && onHierarchicalFiltersChange ? (
           <div className="min-w-[300px]">
             <HierarchicalCategoryFilter
               selectedFilters={hierarchicalFilters}
@@ -133,94 +135,98 @@ export function EstoqueFilters({
               ))}
             </SelectContent>
           </Select>
-        )}
+        ))}
 
         {/* Filtro de status */}
-        <Select value={selectedStatus} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            {statusOptions.map((option) => {
-              const IconComponent = option.icon;
-              return (
-                <SelectItem key={option.value} value={option.value}>
-                  <div className="flex items-center">
-                    <IconComponent className="w-4 h-4 mr-2" />
-                    {option.label}
-                  </div>
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+        {!isMobile && (
+          <Select value={selectedStatus} onValueChange={onStatusChange}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((option) => {
+                const IconComponent = option.icon;
+                return (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div className="flex items-center">
+                      <IconComponent className="w-4 h-4 mr-2" />
+                      {option.label}
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        )}
 
         {/* Filtros avançados */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Filter className="w-4 h-4" />
-              Filtros Avançados
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1">
-                  •
-                </Badge>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-sm mb-2">Faixa de Preço (Custo)</h4>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    placeholder="Mín"
-                    value={priceRange.min}
-                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                    type="number"
-                    step="0.01"
-                  />
-                  <span className="text-muted-foreground">até</span>
-                  <Input
-                    placeholder="Máx"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                    type="number"
-                    step="0.01"
-                  />
+        {!isMobile && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="w-4 h-4" />
+                Filtros Avançados
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-1">
+                    •
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Faixa de Preço (Custo)</h4>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Mín"
+                      value={priceRange.min}
+                      onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                      type="number"
+                      step="0.01"
+                    />
+                    <span className="text-muted-foreground">até</span>
+                    <Input
+                      placeholder="Máx"
+                      value={priceRange.max}
+                      onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                      type="number"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Faixa de Estoque</h4>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Mín"
+                      value={stockRange.min}
+                      onChange={(e) => setStockRange(prev => ({ ...prev, min: e.target.value }))}
+                      type="number"
+                    />
+                    <span className="text-muted-foreground">até</span>
+                    <Input
+                      placeholder="Máx"
+                      value={stockRange.max}
+                      onChange={(e) => setStockRange(prev => ({ ...prev, max: e.target.value }))}
+                      type="number"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-between">
+                  <Button variant="outline" size="sm" onClick={onClearFilters}>
+                    Limpar Filtros
+                  </Button>
+                  <Button size="sm" onClick={onSearch}>
+                    Aplicar
+                  </Button>
                 </div>
               </div>
-
-              <div>
-                <h4 className="font-medium text-sm mb-2">Faixa de Estoque</h4>
-                <div className="flex items-center space-x-2">
-                  <Input
-                    placeholder="Mín"
-                    value={stockRange.min}
-                    onChange={(e) => setStockRange(prev => ({ ...prev, min: e.target.value }))}
-                    type="number"
-                  />
-                  <span className="text-muted-foreground">até</span>
-                  <Input
-                    placeholder="Máx"
-                    value={stockRange.max}
-                    onChange={(e) => setStockRange(prev => ({ ...prev, max: e.target.value }))}
-                    type="number"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-between">
-                <Button variant="outline" size="sm" onClick={onClearFilters}>
-                  Limpar Filtros
-                </Button>
-                <Button size="sm" onClick={onSearch}>
-                  Aplicar
-                </Button>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+            </PopoverContent>
+          </Popover>
+        )}
 
         {/* Botão de busca */}
         <Button onClick={onSearch} size="sm" variant="outline" className="gap-2">
