@@ -39,6 +39,7 @@ import { ptBR } from "date-fns/locale";
 // ✅ USAR HOOKS EXISTENTES - OBRIGATÓRIO
 import { useOMSOrders, formatCurrency, getStatusColor } from "@/hooks/useOMSData";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // ✅ USAR COMPONENTE EXISTENTE - OBRIGATÓRIO  
 import { OrderFormEnhanced } from "@/components/oms/OrderFormEnhanced";
@@ -56,7 +57,7 @@ export default function OrdersPageProfessional({
   const { toast } = useToast();
   
   // ✅ USAR HOOK EXISTENTE - OBRIGATÓRIO
-  const { orders, loading, createOrder, approveOrder, cancelOrder } = useOMSOrders();
+  const { orders, loading, createOrder, updateOrder, approveOrder, cancelOrder } = useOMSOrders();
   
   // Estados da interface profissional
   const [activeTab, setActiveTab] = useState('todos');
@@ -260,9 +261,67 @@ export default function OrdersPageProfessional({
 
   // ✅ FUNÇÃO PARA SALVAR EDIÇÃO DE PEDIDO  
   const handleUpdateOrder = async (data: any) => {
+    if (!editingOrder?.id) {
+      toast({
+        title: "Erro",
+        description: "ID do pedido não encontrado",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      // TODO: Implementar atualização real do pedido
       console.log('Atualizando pedido:', editingOrder?.id, data);
+      
+      // ✅ USAR FUNÇÃO REAL DE UPDATE DO HOOK
+      await updateOrder(editingOrder.id, {
+        customer_id: data.customer_id,
+        sales_rep_id: data.sales_rep_id,
+        order_date: data.order_date,
+        delivery_date: data.delivery_date,
+        payment_terms: data.payment_terms,
+        payment_term_days: data.payment_term_days,
+        payment_method: data.payment_method,
+        shipping_total: data.shipping_total,
+        shipping_method: data.shipping_method,
+        delivery_address: data.delivery_address,
+        discount_amount: data.discount_amount,
+        discount_type: data.discount_type,
+        subtotal: data.subtotal,
+        tax_total: data.tax_total,
+        grand_total: data.grand_total,
+        notes: data.notes,
+        internal_notes: data.internal_notes
+      });
+
+      // ✅ ATUALIZAR ITENS DO PEDIDO SEPARADAMENTE
+      if (data.items && data.items.length > 0) {
+        // Primeiro deletar itens existentes
+        const { error: deleteError } = await supabase
+          .from('oms_order_items')
+          .delete()
+          .eq('order_id', editingOrder.id);
+        
+        if (deleteError) throw deleteError;
+
+        // Inserir novos itens
+        const { error: itemsError } = await supabase
+          .from('oms_order_items')
+          .insert(data.items.map((item: any) => ({
+            order_id: editingOrder.id,
+            product_id: item.product_id,
+            sku: item.sku,
+            title: item.title,
+            qty: item.qty,
+            unit_price: item.unit_price,
+            discount_pct: item.discount_pct,
+            discount_value: item.discount_value,
+            tax_value: item.tax_value,
+            total: item.total
+          })));
+        
+        if (itemsError) throw itemsError;
+      }
       
       setOrderDialogOpen(false);
       setEditingOrder(null);
@@ -273,6 +332,7 @@ export default function OrdersPageProfessional({
         description: "Pedido atualizado com sucesso!"
       });
     } catch (error) {
+      console.error('Erro ao atualizar pedido:', error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar pedido",
