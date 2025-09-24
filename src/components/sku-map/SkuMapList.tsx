@@ -241,140 +241,119 @@ export function SkuMapList({
       {/* Mobile Card Layout - Visible on smaller screens */}
       <div className="lg:hidden space-y-3">
             {/* Mobile Cards */}
-        {isLoading ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i} className="p-4 hover:shadow-sm">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-6 w-16" />
-                </div>
-                <Skeleton className="h-5 w-32" />
-                <div className="grid grid-cols-2 gap-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-4 w-20" />
-                </div>
-              </div>
-            </Card>
-          ))
-        ) : data?.data.length === 0 ? (
-          <Card className="p-8 hover:shadow-sm">
-            <div className="text-center text-muted-foreground">
-              Nenhum mapeamento encontrado
-            </div>
-          </Card>
-        ) : (
-          data?.data.map((item) => (
-            <Card 
-              key={item.id} 
-              className={`p-4 hover:shadow-sm cursor-pointer transition-all ${
-                selectedItems.includes(item.id!) ? 'ring-2 ring-primary' : ''
-              }`}
-              onClick={() => handleSelectItem(item.id!, !selectedItems.includes(item.id!))}
-            >
-              <div className="space-y-3">
-                {/* Card Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      checked={selectedItems.includes(item.id!)}
-                      onCheckedChange={(checked) => handleSelectItem(item.id!, checked as boolean)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <div>
-                      <div className="text-base font-medium">{item.sku_pedido}</div>
-                      <div className="text-xs text-muted-foreground mb-1">SKU do Pedido</div>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <Card key={i} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-4 w-4" />
+                      <Skeleton className="h-6 w-16" />
+                    </div>
+                    <Skeleton className="h-5 w-32" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-20" />
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-9 w-9 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(item);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
+                </Card>
+              ))
+            ) : data?.data.length === 0 ? (
+              <Card className="p-8">
+                <div className="text-center text-muted-foreground">
+                  Nenhum mapeamento encontrado
+                </div>
+              </Card>
+            ) : (
+              data?.data.map((item) => (
+                <Card key={item.id} className="p-4">
+                  <div className="space-y-3">
+                    {/* Card Header */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-sm">{item.sku_pedido}</div>
+                        <div className="text-xs text-muted-foreground">SKU do Pedido</div>
+                      </div>
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-9 w-9 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeletingId(item.id!);
-                          }}
+                          onClick={() => onEdit(item)}
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <Edit className="w-4 h-4" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja excluir o mapeamento do SKU "{item.sku_pedido}"?
-                            Esta ação não pode ser desfeita.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel onClick={() => setDeletingId(null)}>
-                            Cancelar
-                          </AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(item.id!)}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Excluir
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeletingId(item.id!)}
+                            >
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir o mapeamento do SKU "{item.sku_pedido}"?
+                                Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setDeletingId(null)}>
+                                Cancelar
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(item.id!)}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
 
-                {/* Card Content */}
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">SKU Correto</div>
-                    <div className="text-sm font-medium">{item.sku_correspondente || "-"}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">SKU Unitário</div>
-                    <div className="text-sm font-medium">{item.sku_simples || "-"}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Quantidade</div>
-                    <div className="text-sm font-medium">{item.quantidade}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Status</div>
-                    <Badge variant={item.ativo ? "default" : "secondary"} className="text-xs">
-                      {item.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
-                  </div>
-                </div>
+                    {/* Card Content */}
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <div className="text-xs text-muted-foreground">SKU Correto</div>
+                        <div className="font-medium">{item.sku_correspondente || "-"}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">SKU Unitário</div>
+                        <div className="font-medium">{item.sku_simples || "-"}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Quantidade</div>
+                        <div className="font-medium">{item.quantidade}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Status</div>
+                        <Badge variant={item.ativo ? "default" : "secondary"} className="h-5 text-xs">
+                          {item.ativo ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </div>
+                    </div>
 
-                {/* Additional Info */}
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Criado em</div>
-                    <div className="text-xs">
-                      {item.created_at ? format(new Date(item.created_at), "dd/MM/yyyy") : "-"}
+                    {/* Additional Info */}
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Criado em</div>
+                        <div className="text-xs">
+                          {item.created_at ? format(new Date(item.created_at), "dd/MM/yyyy") : "-"}
+                        </div>
+                      </div>
+                      {item.observacoes && (
+                        <div>
+                          <div className="text-xs text-muted-foreground">Observações</div>
+                          <div className="text-xs text-muted-foreground">{item.observacoes}</div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  {item.observacoes && (
-                    <div>
-                      <div className="text-xs text-muted-foreground mb-1">Observações</div>
-                      <div className="text-xs text-muted-foreground">{item.observacoes}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
+                </Card>
               ))
             )}
           </div>
