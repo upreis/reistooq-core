@@ -208,12 +208,35 @@ export default function OrdersPageProfessional({
   };
 
   const handleBulkAction = async (action: 'approve' | 'cancel' | 'delete') => {
+    if (action === 'delete') {
+      const confirmed = window.confirm(
+        `Tem certeza que deseja excluir ${selectedOrders.length} pedido(s)? Esta ação não pode ser desfeita.`
+      );
+      if (!confirmed) return;
+    }
+
     try {
       for (const orderId of selectedOrders) {
         if (action === 'approve') {
           await approveOrder(orderId);
         } else if (action === 'cancel') {
           await cancelOrder(orderId);
+        } else if (action === 'delete') {
+          // Primeiro deletar os itens do pedido
+          const { error: itemsError } = await supabase
+            .from('oms_order_items')
+            .delete()
+            .eq('order_id', orderId);
+          
+          if (itemsError) throw itemsError;
+
+          // Depois deletar o pedido
+          const { error: orderError } = await supabase
+            .from('oms_orders')
+            .delete()
+            .eq('id', orderId);
+          
+          if (orderError) throw orderError;
         }
       }
       setSelectedOrders([]);
@@ -222,6 +245,7 @@ export default function OrdersPageProfessional({
         description: `${selectedOrders.length} pedidos processados com sucesso!`
       });
     } catch (error) {
+      console.error('Erro ao processar pedidos em lote:', error);
       toast({
         title: "Erro",
         description: "Erro ao processar pedidos em lote",
@@ -336,6 +360,44 @@ export default function OrdersPageProfessional({
       toast({
         title: "Erro",
         description: "Erro ao atualizar pedido",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // ✅ FUNÇÃO PARA EXCLUIR PEDIDO INDIVIDUAL
+  const handleDeleteOrder = async (orderId: string) => {
+    const confirmed = window.confirm(
+      'Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.'
+    );
+    if (!confirmed) return;
+
+    try {
+      // Primeiro deletar os itens do pedido
+      const { error: itemsError } = await supabase
+        .from('oms_order_items')
+        .delete()
+        .eq('order_id', orderId);
+      
+      if (itemsError) throw itemsError;
+
+      // Depois deletar o pedido
+      const { error: orderError } = await supabase
+        .from('oms_orders')
+        .delete()
+        .eq('id', orderId);
+      
+      if (orderError) throw orderError;
+
+      toast({
+        title: "Sucesso",
+        description: "Pedido excluído com sucesso!"
+      });
+    } catch (error) {
+      console.error('Erro ao excluir pedido:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir pedido",
         variant: "destructive"
       });
     }
@@ -657,6 +719,15 @@ export default function OrdersPageProfessional({
                       )}
                       <Button 
                         size="sm" 
+                        variant="destructive"
+                        onClick={() => handleBulkAction('delete')}
+                        disabled={loading}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir Selecionados
+                      </Button>
+                      <Button 
+                        size="sm" 
                         variant="outline"
                         onClick={() => setSelectedOrders([])}
                       >
@@ -848,14 +919,23 @@ export default function OrdersPageProfessional({
                                         <Download className="h-4 w-4 mr-2" />
                                         Imprimir
                                       </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full justify-start"
-                                      >
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        Duplicar
-                                      </Button>
+                                       <Button
+                                         variant="ghost"
+                                         size="sm"
+                                         className="w-full justify-start"
+                                       >
+                                         <Upload className="h-4 w-4 mr-2" />
+                                         Duplicar
+                                       </Button>
+                                       <Button
+                                         variant="ghost"
+                                         size="sm"
+                                         className="w-full justify-start text-destructive hover:text-destructive"
+                                         onClick={() => handleDeleteOrder(order.id)}
+                                       >
+                                         <Trash2 className="h-4 w-4 mr-2" />
+                                         Excluir Pedido
+                                       </Button>
                                     </div>
                                   </PopoverContent>
                                 </Popover>
