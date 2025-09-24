@@ -82,7 +82,8 @@ export default function OrdersPageProfessional({
   // ✅ CALCULAR ESTATÍSTICAS USANDO DADOS DO HOOK EXISTENTE
   const stats = useMemo(() => {
     const total = orders.length;
-    const draft = orders.filter(o => o.status === 'draft').length;
+    // Apenas pedidos realmente pendentes que precisam de aprovação
+    const draft = orders.filter(o => o.status === 'draft' && o.grand_total > 0).length;
     const approved = orders.filter(o => o.status === 'approved').length;
     const invoiced = orders.filter(o => o.status === 'invoiced').length;
     const cancelled = orders.filter(o => o.status === 'cancelled').length;
