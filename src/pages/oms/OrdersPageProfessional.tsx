@@ -31,7 +31,9 @@ import {
   Users,
   AlertTriangle,
   TrendingUp,
-  RefreshCw
+  RefreshCw,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -66,6 +68,7 @@ export default function OrdersPageProfessional({
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [editingOrder, setEditingOrder] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
   // Filtros avançados
   const [filters, setFilters] = useState({
@@ -517,14 +520,31 @@ export default function OrdersPageProfessional({
 
       {/* Filtros Avançados */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros Avançados
-          </CardTitle>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtros Avançados
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className="flex items-center gap-2"
+            >
+              {showAdvancedFilters ? 'Ocultar' : 'Mostrar'}
+              {showAdvancedFilters ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {showAdvancedFilters && (
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <Label>Busca Geral</Label>
               <div className="relative">
@@ -636,8 +656,9 @@ export default function OrdersPageProfessional({
             <Button onClick={() => {}}>
               Aplicar Filtros
             </Button>
-          </div>
-        </CardContent>
+            </div>
+          </CardContent>
+        )}
       </Card>
 
       {/* Sistema de Abas Profissional */}
