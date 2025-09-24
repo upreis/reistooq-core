@@ -82,7 +82,8 @@ function OrdersPageSimple() {
   // Calcular estatísticas
   const stats = {
     total: orders.length,
-    draft: orders.filter(o => o.status === 'draft').length,
+    // Apenas pedidos realmente pendentes que precisam de aprovação
+    draft: orders.filter(o => o.status === 'draft' && o.grand_total > 0).length,
     approved: orders.filter(o => o.status === 'approved').length,
     invoiced: orders.filter(o => o.status === 'invoiced').length,
     totalValue: orders.reduce((sum, o) => sum + o.grand_total, 0)
