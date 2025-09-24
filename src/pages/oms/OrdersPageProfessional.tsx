@@ -251,6 +251,8 @@ export default function OrdersPageProfessional({
 
   // ✅ FUNÇÃO PARA EDITAR PEDIDO
   const handleEditOrder = (order: any) => {
+    console.log('🔍 DEBUG: Editando pedido:', order);
+    console.log('🔍 DEBUG: Itens do pedido:', order.oms_order_items);
     setEditingOrder(order);
     setIsEditMode(true);
     setOrderDialogOpen(true);
@@ -284,6 +286,7 @@ export default function OrdersPageProfessional({
     setOrderDialogOpen(false);
     setEditingOrder(null);
     setIsEditMode(false);
+    console.log('🔍 DEBUG: Cancelando edição, limpando estados');
   };
 
   return (

@@ -89,7 +89,42 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
 
   useEffect(() => {
     if (initialData) {
-      setFormData(prev => ({ ...prev, ...initialData }));
+      console.log('🔍 DEBUG initialData recebido:', initialData);
+      
+      // ✅ MAPEAR DADOS DO PEDIDO EXISTENTE PARA O FORMATO DO FORMULÁRIO
+      const mappedData = {
+        selectedCustomer: initialData.customer_id || "",
+        selectedSalesRep: initialData.sales_rep_id || "",
+        orderDate: initialData.order_date ? new Date(initialData.order_date) : new Date(),
+        deliveryDate: initialData.delivery_date ? new Date(initialData.delivery_date) : null,
+        paymentTerm: initialData.payment_terms || "30_days",
+        customPaymentDays: initialData.payment_term_days || 30,
+        paymentMethod: initialData.payment_method || "bank_transfer",
+        discount: initialData.discount_amount || 0,
+        discountType: initialData.discount_type || "percentage",
+        shippingTotal: initialData.shipping_total || 0,
+        shippingMethod: initialData.shipping_method || "standard",
+        deliveryAddress: initialData.delivery_address || "",
+        notes: initialData.notes || "",
+        internalNotes: initialData.internal_notes || "",
+        // ✅ MAPEAR ITENS DO PEDIDO CORRETAMENTE
+        items: (initialData.oms_order_items || []).map((item: any) => ({
+          id: item.id,
+          product_id: item.product_id,
+          sku: item.sku,
+          title: item.title,
+          qty: item.qty,
+          unit_price: item.unit_price,
+          discount_pct: item.discount_pct || 0,
+          discount_value: item.discount_value || 0,
+          tax_value: item.tax_value || 0,
+          total: item.total,
+          available_stock: 1000 // Default para edição
+        }))
+      };
+      
+      console.log('🔍 DEBUG dados mapeados:', mappedData);
+      setFormData(prev => ({ ...prev, ...mappedData }));
     }
   }, [initialData]);
 
