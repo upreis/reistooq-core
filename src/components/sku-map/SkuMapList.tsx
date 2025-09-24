@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,6 +10,8 @@ import { Edit, Trash2, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-rea
 import { useSkuMappings, useDeleteSkuMapping } from "@/hooks/useSkuMappings";
 import { SkuMapping, SkuMappingFilters } from "@/types/sku-mapping.types";
 import { format } from "date-fns";
+import { DataListCard, DataField, CardAction } from "@/components/mobile/standard/DataListCard";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SkuMapListProps {
   filters: SkuMappingFilters;
@@ -29,6 +31,7 @@ export function SkuMapList({
   const { data, isLoading, error } = useSkuMappings(filters);
   const deleteMapping = useDeleteSkuMapping();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const handleSelectAll = (checked: boolean) => {
     if (checked && data?.data) {
@@ -64,6 +67,74 @@ export function SkuMapList({
     if (filters.sortBy !== column) return <ArrowUpDown className="w-4 h-4" />;
     return filters.sortDir === 'asc' ? '↑' : '↓';
   };
+
+  // Converter mapeamentos para cards mobile
+  const mappingCards = useMemo(() => {
+    if (!data?.data) return [];
+    
+    return data.data.map((item) => {
+      const fields: DataField[] = [
+        {
+          key: 'sku_pedido',
+          label: 'SKU do Pedido',
+          value: item.sku_pedido,
+          isMain: true
+        },
+        {
+          key: 'sku_correto',
+          label: 'SKU Correto',
+          value: item.sku_correspondente || "-"
+        },
+        {
+          key: 'sku_unitario',
+          label: 'SKU Unitário',
+          value: item.sku_simples || "-"
+        },
+        {
+          key: 'quantidade',
+          label: 'Quantidade',
+          value: item.quantidade?.toString() || "1"
+        },
+        {
+          key: 'status',
+          label: 'Status',
+          value: item.ativo ? "Ativo" : "Inativo",
+          isBadge: true,
+          variant: item.ativo ? "default" : "secondary"
+        },
+        {
+          key: 'criado_em',
+          label: 'Criado em',
+          value: item.created_at ? format(new Date(item.created_at), "dd/MM/yyyy") : "-"
+        }
+      ];
+
+      const actions: CardAction[] = [
+        {
+          label: 'Editar',
+          onClick: () => onEdit(item),
+          icon: <Edit className="h-4 w-4" />
+        },
+        {
+          label: 'Excluir',
+          onClick: () => handleDelete(item.id!),
+          icon: <Trash2 className="h-4 w-4" />,
+          variant: 'destructive'
+        }
+      ];
+
+      return {
+        id: item.id!,
+        fields,
+        actions,
+        isSelected: selectedItems.includes(item.id!),
+        onSelectChange: (selected: boolean) => {
+          handleSelectItem(item.id!, selected);
+        }
+      };
+    });
+  }, [data?.data, selectedItems, onEdit, handleDelete]);
+
 
   if (error) {
     return (
@@ -237,22 +308,9 @@ export function SkuMapList({
 
           {/* Mobile Card Layout - Visible on smaller screens */}
           <div className="lg:hidden space-y-3">
-            {/* Mobile Cards */}
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
-                <Card key={i} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Skeleton className="h-4 w-4" />
-                      <Skeleton className="h-6 w-16" />
-                    </div>
-                    <Skeleton className="h-5 w-32" />
-                    <div className="grid grid-cols-2 gap-3">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-20" />
-                    </div>
-                  </div>
-                </Card>
+                <div key={i} className="h-32 bg-muted/20 rounded-lg animate-pulse" />
               ))
             ) : data?.data.length === 0 ? (
               <Card className="p-8">
@@ -261,96 +319,16 @@ export function SkuMapList({
                 </div>
               </Card>
             ) : (
-              data?.data.map((item) => (
-                <Card key={item.id} className="p-4">
-                  <div className="space-y-3">
-                    {/* Card Header */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-sm">{item.sku_pedido}</div>
-                        <div className="text-xs text-muted-foreground">SKU do Pedido</div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onEdit(item)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setDeletingId(item.id!)}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir o mapeamento do SKU "{item.sku_pedido}"?
-                                Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel onClick={() => setDeletingId(null)}>
-                                Cancelar
-                              </AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(item.id!)}
-                                className="bg-destructive hover:bg-destructive/90"
-                              >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-
-                    {/* Card Content */}
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <div className="text-xs text-muted-foreground">SKU Correto</div>
-                        <div className="font-medium">{item.sku_correspondente || "-"}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">SKU Unitário</div>
-                        <div className="font-medium">{item.sku_simples || "-"}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">Quantidade</div>
-                        <div className="font-medium">{item.quantidade}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">Status</div>
-                        <Badge variant={item.ativo ? "default" : "secondary"} className="h-5 text-xs">
-                          {item.ativo ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Additional Info */}
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <div className="text-xs text-muted-foreground">Criado em</div>
-                        <div className="text-xs">
-                          {item.created_at ? format(new Date(item.created_at), "dd/MM/yyyy") : "-"}
-                        </div>
-                      </div>
-                      {item.observacoes && (
-                        <div>
-                          <div className="text-xs text-muted-foreground">Observações</div>
-                          <div className="text-xs text-muted-foreground">{item.observacoes}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
+              mappingCards.map((card) => (
+                <DataListCard
+                  key={card.id}
+                  id={card.id}
+                  fields={card.fields}
+                  actions={card.actions}
+                  isSelected={card.isSelected}
+                  onSelectChange={card.onSelectChange}
+                  showSelect={true}
+                />
               ))
             )}
           </div>
