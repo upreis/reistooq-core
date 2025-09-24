@@ -111,12 +111,12 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           try {
             const { data, error } = await supabase
               .from('produtos')
-              .select('id, quantidade')
+              .select('id, quantidade_atual')
               .eq('id', productId)
               .single();
             
             if (error) throw error;
-            return { productId, stock: (data as any)?.quantidade || 0 };
+            return { productId, stock: (data as any)?.quantidade_atual || 0 };
           } catch (error) {
             console.warn('Erro ao buscar estoque do produto:', productId, error);
             return { productId, stock: 0 };
@@ -208,8 +208,9 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
 
   const addItem = (product: any) => {
     // ✅ VALIDAÇÃO DE ESTOQUE - USAR DADOS REAIS DA TABELA PRODUTOS
-    const availableStock = product.quantidade_atual || product.quantidade || 0;
-    console.log('🔍 DEBUG addItem - availableStock para produto', product.nome, ':', availableStock);
+    const availableStock = product.stock || product.quantidade_atual || product.quantidade || 0;
+    console.log('🔍 DEBUG addItem - availableStock para produto', product.nome || product.title, ':', availableStock);
+    console.log('🔍 DEBUG addItem - product full data:', product);
     
     if (availableStock <= 0) {
       toast({
@@ -256,7 +257,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
     // ✅ REMOVER VALIDAÇÃO RESTRITIVA DE ESTOQUE - PERMITIR VENDA MESMO SEM ESTOQUE
     if (field === 'qty') {
       const requestedQty = parseFloat(value) || 0;
-      const availableStock = item.available_stock || 1000; // Default para produtos sem controle de estoque
+      const availableStock = item.available_stock || 0; // Usar o estoque real do item
       
       console.log('🔍 DEBUG stock validation:', { requestedQty, availableStock });
       
@@ -300,8 +301,8 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       const tierMultiplier = getPriceTierMultiplier(customerTier);
       const unitPrice = selectedProduct.preco_custo * tierMultiplier;
 
-      // ✅ CORRIGIR MAPEAMENTO DO ESTOQUE - USAR DADOS REAIS DA TABELA PRODUTOS
-      const availableStock = selectedProduct.quantidade_atual || selectedProduct.quantidade || 0;
+      // ✅ CORRIGIR MAPEAMENTO DO ESTOQUE - USAR TODOS OS FORMATOS POSSÍVEIS
+      const availableStock = selectedProduct.stock || selectedProduct.quantidade_atual || selectedProduct.quantidade || 0;
       console.log('🔍 DEBUG availableStock para produto', selectedProduct.nome, ':', availableStock);
       console.log('🔍 DEBUG selectedProduct full data:', selectedProduct);
 
