@@ -19,24 +19,68 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
   const [manualCode, setManualCode] = useState('');
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [cachedDevices, setCachedDevices] = useState<MediaDeviceInfo[]>([]);
+  const [scanPerformance, setScanPerformance] = useState({
+    initTime: 0,
+    scanTime: 0,
+    avgScanTime: 0,
+    totalScans: 0
+  });
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<any>(null);
   const captureInputRef = useRef<HTMLInputElement>(null);
+  const zxingReaderRef = useRef<any>(null);
 
-  // Cleanup on unmount
+  // Pre-initialization and permissions check
   useEffect(() => {
+    const initializeScanner = async () => {
+      try {
+        // Pre-load ZXing library
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
+        zxingReaderRef.current = new BrowserMultiFormatReader();
+        console.log('✅ ZXing pré-carregado');
+        
+        // Cache available devices
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const cameras = devices.filter(d => d.kind === 'videoinput');
+        setCachedDevices(cameras);
+        
+        // Pre-warm camera permission (non-intrusive)
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+          });
+          stream.getTracks().forEach(track => track.stop());
+          setHasPermission(true);
+          console.log('✅ Permissão de câmera pré-verificada');
+        } catch (e) {
+          setHasPermission(false);
+          console.log('⚠️ Permissão de câmera não concedida ainda');
+        }
+      } catch (error) {
+        console.log('ℹ️ Pre-inicialização falhou, continuando normalmente');
+      }
+    };
+
+    initializeScanner();
+
+    // Cleanup on unmount
     return () => {
       stopCamera();
     };
   }, []);
 
   const startCamera = async () => {
+    const startTime = performance.now();
     try {
       console.log('🚀 Iniciando câmera...', {
         secure: window.isSecureContext,
         hasMediaDevices: !!navigator.mediaDevices,
-        ua: navigator.userAgent
+        ua: navigator.userAgent,
+        cachedDevices: cachedDevices.length,
+        hasPermission
       });
 
       if (!(window.isSecureContext || location.hostname === 'localhost')) {
@@ -63,6 +107,19 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
       // Mostrar o container do vídeo imediatamente
       setIsScanning(true);
 
+      // iOS Safari user gesture fix
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        const startWithGesture = async () => {
+          try {
+            await videoRef.current?.play();
+            document.removeEventListener('touchstart', startWithGesture);
+          } catch (e) {
+            console.log('Aguardando gesto do usuário...');
+          }
+        };
+        document.addEventListener('touchstart', startWithGesture, { once: true });
+      }
+
       // Assim que o ZXing anexar o stream ao <video>, garantimos play()
       const onLoaded = async () => {
         if (!videoRef.current) return;
@@ -71,6 +128,13 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
           console.log('✅ Vídeo iniciou');
           const s = (videoRef.current.srcObject as MediaStream) || null;
           if (s) setStream(s);
+          
+          // Measure initialization time
+          const endTime = performance.now();
+          setScanPerformance(prev => ({
+            ...prev,
+            initTime: endTime - startTime
+          }));
         } catch (err) {
           console.error('❌ Erro ao dar play no vídeo:', err);
           onError?.('Não foi possível iniciar o vídeo da câmera');
@@ -129,34 +193,65 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
 
   const startScanner = async () => {
     try {
-      // Dynamic import para reduzir bundle size
-      const { BrowserMultiFormatReader } = await import('@zxing/browser');
-      
-      scannerRef.current = new BrowserMultiFormatReader();
+      // Use pre-loaded ZXing if available, otherwise dynamic import
+      let BrowserMultiFormatReader;
+      if (zxingReaderRef.current) {
+        scannerRef.current = zxingReaderRef.current;
+        console.log('✅ Usando ZXing pré-carregado');
+      } else {
+        const zxing = await import('@zxing/browser');
+        BrowserMultiFormatReader = zxing.BrowserMultiFormatReader;
+        scannerRef.current = new BrowserMultiFormatReader();
+      }
+
+      // Optimized video constraints for better performance
+      const constraints = {
+        video: {
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          frameRate: { ideal: 30, max: 60 },
+          facingMode: 'environment',
+          // Mobile optimizations
+          focusMode: 'continuous',
+          whiteBalanceMode: 'continuous',
+          exposureMode: 'continuous'
+        }
+      };
       
       scannerRef.current.decodeFromVideoDevice(
-        undefined, // Use default camera
+        undefined, // Use default camera with constraints
         videoRef.current,
         (result: any, error: any) => {
           if (result) {
+            const scanStartTime = performance.now();
             const code = result.getText();
             console.log('📱 Código escaneado:', code);
             
-            // Vibração de feedback
+            // IMMEDIATE FEEDBACK - vibração antes do processamento
             if ('vibrate' in navigator) {
-              navigator.vibrate(200);
+              navigator.vibrate([50, 50, 100]); // Padrão mais rápido e distintivo
             }
             
-            onScanResult?.(code);
-            toast.success(`Código escaneado: ${code}`);
+            // Process in parallel - não bloquear UI
+            Promise.resolve().then(() => {
+              onScanResult?.(code);
+              toast.success(`Código: ${code}`);
+            });
             
-            // Optional: pause for a moment to show result
-            setTimeout(() => {
-              if (scannerRef.current) {
-                scannerRef.current.reset();
-                startScanner(); // Restart scanning
-              }
-            }, 1000);
+            // Update performance metrics
+            const scanEndTime = performance.now();
+            const scanTime = scanEndTime - scanStartTime;
+            setScanPerformance(prev => ({
+              ...prev,
+              scanTime,
+              avgScanTime: prev.totalScans > 0 
+                ? (prev.avgScanTime * prev.totalScans + scanTime) / (prev.totalScans + 1)
+                : scanTime,
+              totalScans: prev.totalScans + 1
+            }));
+            
+            // Continuous scanning - sem delay desnecessário
+            // Remover setTimeout para scan contínuo mais fluido
           }
           
           // Ignore common scanning errors - they happen frequently
@@ -169,22 +264,37 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
     } catch (error: any) {
       console.error('❌ Erro ao inicializar scanner:', error);
       onError?.('Erro ao inicializar scanner de códigos');
+      
+      // Fallback for manual input if scanner fails
+      if (!showManualInput) {
+        toast.info('Use "Digitar Código" como alternativa');
+      }
     }
   };
 
   const toggleTorch = async () => {
-    if (!stream) return;
+    if (!stream) {
+      toast.warning('Inicie a câmera primeiro');
+      return;
+    }
     
     try {
       const videoTrack = stream.getVideoTracks()[0];
       const capabilities = videoTrack.getCapabilities() as any;
       
       if (capabilities.torch) {
+        const newTorchState = !torchEnabled;
         await videoTrack.applyConstraints({
-          advanced: [{ torch: !torchEnabled } as any]
+          advanced: [{ torch: newTorchState } as any]
         });
-        setTorchEnabled(!torchEnabled);
-        toast.success(torchEnabled ? 'Flash desligado' : 'Flash ligado');
+        setTorchEnabled(newTorchState);
+        
+        // Immediate haptic feedback
+        if ('vibrate' in navigator) {
+          navigator.vibrate(50);
+        }
+        
+        toast.success(newTorchState ? '🔦 Flash ligado' : '💡 Flash desligado');
       } else {
         toast.warning('Flash não disponível neste dispositivo');
       }
@@ -352,11 +462,28 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
         </Card>
       )}
 
+      {/* Performance Stats (Development Mode) */}
+      {process.env.NODE_ENV === 'development' && scanPerformance.totalScans > 0 && (
+        <Card className="p-3">
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p><strong>Performance:</strong></p>
+            <p>• Inicialização: {scanPerformance.initTime.toFixed(0)}ms</p>
+            <p>• Scans realizados: {scanPerformance.totalScans}</p>
+            <p>• Tempo médio: {scanPerformance.avgScanTime.toFixed(0)}ms</p>
+            <p>• Câmeras disponíveis: {cachedDevices.length}</p>
+            <p>• Permissão: {hasPermission ? '✅' : '❌'}</p>
+          </div>
+        </Card>
+      )}
+
       {/* Instructions */}
       <div className="text-center text-sm text-muted-foreground space-y-1">
         <p>• Aponte a câmera para o código de barras</p>
         <p>• Mantenha o código dentro da área marcada</p>
         <p>• Aguarde o scanner reconhecer automaticamente</p>
+        {hasPermission === false && (
+          <p className="text-yellow-600">⚠️ Permissão de câmera necessária</p>
+        )}
       </div>
 
       {/* Hidden input for native camera capture fallback */}
