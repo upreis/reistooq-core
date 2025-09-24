@@ -14,6 +14,7 @@ import { ENHANCED_NAV_ITEMS } from "@/config/enhanced-nav";
 interface AppMobileHeaderProps {
   title: string;
   actions?: React.ReactNode;
+  breadcrumb?: React.ReactNode;
 }
 
 // Mobile Navigation Component
@@ -96,7 +97,7 @@ function MobileNavItem({ item }: { item: any }) {
   );
 }
 
-export default function AppMobileHeader({ title, actions }: AppMobileHeaderProps) {
+export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobileHeaderProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -173,9 +174,13 @@ export default function AppMobileHeader({ title, actions }: AppMobileHeaderProps
           </SheetContent>
         </Sheet>
 
-        <h1 className="text-base font-semibold truncate min-w-0 flex-1 text-foreground">
-          {title}
-        </h1>
+        <div className="min-w-0 flex-1">
+          {breadcrumb || (
+            <h1 className="text-base font-semibold truncate text-foreground">
+              {title}
+            </h1>
+          )}
+        </div>
 
         <div className="flex items-center gap-1 shrink-0">
           {actions}

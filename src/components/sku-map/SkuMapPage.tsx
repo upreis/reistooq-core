@@ -148,15 +148,16 @@ export function SkuMapPage() {
     </div>
   );
 
+  const breadcrumb = (
+    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+      <ArrowLeftRight className="h-4 w-4" />
+      <span>/</span>
+      <span className="text-primary">De-Para de Produtos</span>
+    </div>
+  );
+
   const mobileContent = (
     <div className="space-y-4">
-      {/* Breadcrumb */}
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground px-1">
-        <ArrowLeftRight className="h-4 w-4" />
-        <span>/</span>
-        <span className="text-primary">De-Para de Produtos</span>
-      </div>
-
       {/* Mobile Actions - Filtros e Novo */}
       <div className="flex items-center gap-2 px-1">
         <Popover>
@@ -223,7 +224,7 @@ export function SkuMapPage() {
   return (
     <>
       {isMobile ? (
-        <MobileAppShell title="" headerActions={headerActions}>
+        <MobileAppShell title="" headerActions={headerActions} breadcrumb={breadcrumb}>
           {mobileContent}
         </MobileAppShell>
       ) : (

@@ -8,6 +8,7 @@ interface MobileAppShellProps {
   title: string;
   children: React.ReactNode;
   headerActions?: React.ReactNode;
+  breadcrumb?: React.ReactNode;
   className?: string;
   showBottomNav?: boolean;
 }
@@ -16,6 +17,7 @@ export function MobileAppShell({
   title, 
   children, 
   headerActions, 
+  breadcrumb,
   className,
   showBottomNav = true 
 }: MobileAppShellProps) {
@@ -28,7 +30,7 @@ export function MobileAppShell({
   return (
     <div className={cn("min-h-screen bg-background flex flex-col", className)}>
       {/* Mobile Header */}
-      <AppMobileHeader title={title} actions={headerActions} />
+      <AppMobileHeader title={title} actions={headerActions} breadcrumb={breadcrumb} />
       
       {/* Main Content */}
       <main className={cn(
