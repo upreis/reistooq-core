@@ -17,6 +17,7 @@ import { useSkuFilters } from "@/hooks/useSkuFilters";
 import { useSkuMapShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SkuMapping } from "@/types/sku-mapping.types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 
 export function SkuMapPage() {
   const { filters, updateFilters, resetFilters } = useSkuFilters();
@@ -67,77 +68,65 @@ export function SkuMapPage() {
     onDelete: handleDelete,
   });
 
-  return (
+  // Header actions para mobile
+  const headerActions = isMobile ? (
+    <div className="flex items-center gap-2">
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" size="sm" className="h-9 px-3">
+            <Filter className="w-4 h-4 mr-1" />
+            Filtros
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80 p-0" align="end">
+          <SkuMapFilters
+            filters={filters}
+            onFiltersChange={updateFilters}
+            onReset={resetFilters}
+          />
+        </PopoverContent>
+      </Popover>
+      <Button onClick={() => setShowCreateForm(true)} size="sm" className="h-9 px-3">
+        <Plus className="w-4 h-4 mr-1" />
+        Novo
+      </Button>
+    </div>
+  ) : undefined;
+
+  const desktopContent = (
     <div className="p-6 space-y-6">
-      {/* Header */}
+      {/* Header Desktop */}
       <div className="flex items-center justify-between">
-        {!isMobile && (
-          <div>
-            <h1 className="text-3xl font-bold">De-Para de Produtos</h1>
-            <p className="text-muted-foreground">
-              Mapeie produtos entre diferentes plataformas
-            </p>
-          </div>
-        )}
-        <div className={`flex gap-2 ${isMobile ? 'w-full justify-end' : ''}`}>
-          {!isMobile && (
-            <Button
-              variant="outline"
-              onClick={() => setShowImportWizard(true)}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Importar
-            </Button>
-          )}
-          {isMobile && (
-            <>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex-[0.4]"
-                  >
-                    <Filter className="w-4 h-4 mr-2" />
-                    Filtros
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0" align="end">
-                  <SkuMapFilters
-                    filters={filters}
-                    onFiltersChange={updateFilters}
-                    onReset={resetFilters}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button 
-                onClick={() => setShowCreateForm(true)}
-                className="flex-[0.6]"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Mapeamento
-              </Button>
-            </>
-          )}
-          {!isMobile && (
-            <Button onClick={() => setShowCreateForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Mapeamento
-            </Button>
-          )}
+        <div>
+          <h1 className="text-3xl font-bold">De-Para de Produtos</h1>
+          <p className="text-muted-foreground">
+            Mapeie produtos entre diferentes plataformas
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowImportWizard(true)}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Importar
+          </Button>
+          <Button onClick={() => setShowCreateForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Mapeamento
+          </Button>
         </div>
       </div>
 
       {/* Stats */}
-      <SkuMapStats onFilterClick={isMobile ? handleStatsFilterClick : undefined} />
+      <SkuMapStats onFilterClick={undefined} />
 
-      {/* Filters - Hidden on mobile */}
-      {!isMobile && (
-        <SkuMapFilters
-          filters={filters}
-          onFiltersChange={updateFilters}
-          onReset={resetFilters}
-        />
-      )}
+      {/* Filters */}
+      <SkuMapFilters
+        filters={filters}
+        onFiltersChange={updateFilters}
+        onReset={resetFilters}
+      />
 
       {/* Bulk Actions */}
       {selectedItems.length > 0 && (
@@ -160,7 +149,6 @@ export function SkuMapPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
-          {/* List */}
           <SkuMapList
             filters={filters}
             selectedItems={selectedItems}
@@ -172,16 +160,67 @@ export function SkuMapPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Saved Filters */}
           <SavedFiltersManager
             currentFilters={filters}
             onLoadFilters={updateFilters}
           />
-
-          {/* History */}
           <SkuMapHistory />
         </div>
       </div>
+    </div>
+  );
+
+  const mobileContent = (
+    <div className="space-y-4">
+      {/* Stats */}
+      <SkuMapStats onFilterClick={handleStatsFilterClick} />
+
+      {/* Bulk Actions */}
+      {selectedItems.length > 0 && (
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <SkuMapActions
+              selectedItems={selectedItems}
+              onClearSelection={() => setSelectedItems([])}
+            />
+          </div>
+          <BulkEditModal
+            selectedItems={selectedItems}
+            onClose={() => setSelectedItems([])}
+            onSuccess={() => setSelectedItems([])}
+          />
+        </div>
+      )}
+
+      {/* Main List */}
+      <SkuMapList
+        filters={filters}
+        selectedItems={selectedItems}
+        onSelectionChange={setSelectedItems}
+        onEdit={handleEdit}
+        onFiltersChange={updateFilters}
+      />
+
+      {/* Sidebar content for mobile */}
+      <div className="space-y-4">
+        <SavedFiltersManager
+          currentFilters={filters}
+          onLoadFilters={updateFilters}
+        />
+        <SkuMapHistory />
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      {isMobile ? (
+        <MobileAppShell title="De-Para" headerActions={headerActions}>
+          {mobileContent}
+        </MobileAppShell>
+      ) : (
+        desktopContent
+      )}
 
       {/* Create/Edit Form Dialog */}
       <Dialog 
@@ -206,6 +245,6 @@ export function SkuMapPage() {
           <ImportWizard onClose={() => setShowImportWizard(false)} />
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
