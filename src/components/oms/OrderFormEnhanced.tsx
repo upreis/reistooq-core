@@ -281,8 +281,8 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   };
 
   // ✅ FUNÇÃO PARA SELECIONAR PRODUTOS PELO SELETOR AVANÇADO
-  const handleProductSelectorConfirm = (products: any[]) => {
-    products.forEach(selectedProduct => {
+  const handleProductSelectorConfirm = async (products: any[]) => {
+    for (const selectedProduct of products) {
       console.log('🔍 DEBUG selectedProduct:', selectedProduct);
       
       // Verificar se o produto já não foi adicionado
@@ -293,7 +293,24 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           description: `O produto "${selectedProduct.nome}" já está no pedido`,
           variant: "destructive"
         });
-        return;
+        continue;
+      }
+
+      // ✅ BUSCAR ESTOQUE REAL DA TABELA PRODUTOS (ProductSelector de compras retorna apenas 'quantidade' solicitada)
+      let realStock = 0;
+      try {
+        const { data, error } = await supabase
+          .from('produtos')
+          .select('quantidade_atual')
+          .eq('id', selectedProduct.id)
+          .single();
+        
+        if (error) throw error;
+        realStock = data?.quantidade_atual || 0;
+        console.log('🔍 DEBUG estoque real para produto', selectedProduct.nome, ':', realStock);
+      } catch (error) {
+        console.warn('Erro ao buscar estoque real para produto', selectedProduct.nome, ':', error);
+        realStock = 0;
       }
 
       // Converter para formato do pedido
@@ -301,23 +318,18 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       const tierMultiplier = getPriceTierMultiplier(customerTier);
       const unitPrice = selectedProduct.preco_custo * tierMultiplier;
 
-      // ✅ CORRIGIR MAPEAMENTO DO ESTOQUE - USAR TODOS OS FORMATOS POSSÍVEIS
-      const availableStock = selectedProduct.stock || selectedProduct.quantidade_atual || selectedProduct.quantidade || 0;
-      console.log('🔍 DEBUG availableStock para produto', selectedProduct.nome, ':', availableStock);
-      console.log('🔍 DEBUG selectedProduct full data:', selectedProduct);
-
       const newItem = {
         id: Date.now().toString() + Math.random(),
         product_id: selectedProduct.id,
         sku: selectedProduct.sku_interno,
         title: selectedProduct.nome,
-        qty: 1, // ✅ SEMPRE COMEÇAR COM 1
+        qty: selectedProduct.quantidade || 1, // ✅ USAR QUANTIDADE SOLICITADA OU 1 POR PADRÃO
         unit_price: unitPrice,
         discount_pct: 0,
         discount_value: 0,
         tax_value: 0,
-        total: unitPrice,
-        available_stock: availableStock
+        total: unitPrice * (selectedProduct.quantidade || 1),
+        available_stock: realStock // ✅ USAR ESTOQUE REAL DA TABELA PRODUTOS
       };
 
       console.log('🔍 DEBUG newItem:', newItem);
@@ -326,7 +338,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
         ...prev,
         items: [...prev.items, newItem]
       }));
-    });
+    } // ✅ FIM DO LOOP FOR...OF
   };
 
   const removeItem = (index: number) => {
