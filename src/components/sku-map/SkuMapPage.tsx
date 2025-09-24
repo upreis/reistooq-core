@@ -12,7 +12,7 @@ import { ImportWizard } from "./import/ImportWizard";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload, Filter } from "lucide-react";
+import { Plus, Upload, Filter, ArrowLeftRight } from "lucide-react";
 import { useSkuFilters } from "@/hooks/useSkuFilters";
 import { useSkuMapShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { SkuMapping } from "@/types/sku-mapping.types";
@@ -150,6 +150,13 @@ export function SkuMapPage() {
 
   const mobileContent = (
     <div className="space-y-4">
+      {/* Breadcrumb */}
+      <div className="flex items-center space-x-2 text-sm text-muted-foreground px-1">
+        <ArrowLeftRight className="h-4 w-4" />
+        <span>/</span>
+        <span className="text-primary">De-Para de Produtos</span>
+      </div>
+
       {/* Mobile Actions - Filtros e Novo */}
       <div className="flex items-center gap-2 px-1">
         <Popover>
