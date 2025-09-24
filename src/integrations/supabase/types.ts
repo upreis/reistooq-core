@@ -2807,6 +2807,233 @@ export type Database = {
           },
         ]
       }
+      oms_customers: {
+        Row: {
+          billing_address: Json | null
+          created_at: string
+          doc: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          payment_terms: string | null
+          phone: string | null
+          price_tier: string | null
+          shipping_address: Json | null
+          updated_at: string
+        }
+        Insert: {
+          billing_address?: Json | null
+          created_at?: string
+          doc?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          payment_terms?: string | null
+          phone?: string | null
+          price_tier?: string | null
+          shipping_address?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          billing_address?: Json | null
+          created_at?: string
+          doc?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          payment_terms?: string | null
+          phone?: string | null
+          price_tier?: string | null
+          shipping_address?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      oms_order_items: {
+        Row: {
+          created_at: string
+          discount_pct: number | null
+          discount_value: number | null
+          id: string
+          order_id: string
+          product_id: string | null
+          qty: number
+          sku: string
+          tax_value: number | null
+          title: string
+          total: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discount_pct?: number | null
+          discount_value?: number | null
+          id?: string
+          order_id: string
+          product_id?: string | null
+          qty: number
+          sku: string
+          tax_value?: number | null
+          title: string
+          total: number
+          unit_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discount_pct?: number | null
+          discount_value?: number | null
+          id?: string
+          order_id?: string
+          product_id?: string | null
+          qty?: number
+          sku?: string
+          tax_value?: number | null
+          title?: string
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oms_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "oms_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oms_orders: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          customer_id: string
+          delivery_address: string | null
+          delivery_date: string | null
+          discount_amount: number | null
+          discount_type: string | null
+          grand_total: number
+          id: string
+          internal_notes: string | null
+          notes: string | null
+          number: string
+          order_date: string
+          payment_method: string | null
+          payment_term_days: number | null
+          payment_terms: string | null
+          sales_rep_id: string | null
+          shipping_method: string | null
+          shipping_total: number | null
+          status: string | null
+          subtotal: number
+          tax_total: number | null
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          customer_id: string
+          delivery_address?: string | null
+          delivery_date?: string | null
+          discount_amount?: number | null
+          discount_type?: string | null
+          grand_total?: number
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          number: string
+          order_date?: string
+          payment_method?: string | null
+          payment_term_days?: number | null
+          payment_terms?: string | null
+          sales_rep_id?: string | null
+          shipping_method?: string | null
+          shipping_total?: number | null
+          status?: string | null
+          subtotal?: number
+          tax_total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          delivery_address?: string | null
+          delivery_date?: string | null
+          discount_amount?: number | null
+          discount_type?: string | null
+          grand_total?: number
+          id?: string
+          internal_notes?: string | null
+          notes?: string | null
+          number?: string
+          order_date?: string
+          payment_method?: string | null
+          payment_term_days?: number | null
+          payment_terms?: string | null
+          sales_rep_id?: string | null
+          shipping_method?: string | null
+          shipping_total?: number | null
+          status?: string | null
+          subtotal?: number
+          tax_total?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oms_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "oms_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oms_orders_sales_rep_id_fkey"
+            columns: ["sales_rep_id"]
+            isOneToOne: false
+            referencedRelation: "oms_sales_reps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oms_sales_reps: {
+        Row: {
+          created_at: string
+          default_commission_pct: number | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_commission_pct?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_commission_pct?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       organizacoes: {
         Row: {
           ativo: boolean

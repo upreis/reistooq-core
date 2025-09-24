@@ -1,151 +1,43 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-// Mock data para demonstração
-const mockCustomers = [
-  {
-    id: "1",
-    name: "Cliente Exemplo",
-    doc: "12.345.678/0001-90",
-    email: "cliente@exemplo.com",
-    phone: "(11) 99999-9999",
-    price_tier: "standard" as 'standard' | 'premium' | 'vip',
-    payment_terms: "30_days",
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "2",
-    name: "Cliente Premium",
-    doc: "11.222.333/0001-44",
-    email: "premium@exemplo.com",
-    phone: "(11) 88888-8888",
-    price_tier: "premium" as 'standard' | 'premium' | 'vip',
-    payment_terms: "15_days",
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "3",
-    name: "Cliente VIP",
-    doc: "55.666.777/0001-88",
-    email: "vip@exemplo.com",
-    phone: "(11) 77777-7777",
-    price_tier: "vip" as 'standard' | 'premium' | 'vip',
-    payment_terms: "cash",
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
-const mockSalesReps = [
-  {
-    id: "1",
-    name: "João Silva",
-    email: "joao@empresa.com",
-    phone: "(11) 88888-8888",
-    default_commission_pct: 5.0,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
-const mockProducts = [
-  {
-    id: "1",
-    sku: "PROD-001",
-    title: "Produto Exemplo 1",
-    price: 29.90,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "2",
-    sku: "PROD-002",
-    title: "Produto Exemplo 2",
-    price: 49.90,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: "3",
-    sku: "PROD-003",
-    title: "Produto Exemplo 3",
-    price: 99.90,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
-
-type OrderStatus = 'draft' | 'approved' | 'invoiced' | 'cancelled';
-
-const mockOrders = [
-  {
-    id: "1",
-    number: "000001/2025",
-    customer_id: "1",
-    sales_rep_id: "1",
-    status: "draft" as OrderStatus,
-    subtotal: 149.70,
-    discount_total: 0,
-    tax_total: 0,
-    shipping_total: 15.00,
-    grand_total: 164.70,
-    notes: "Pedido de exemplo",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    oms_customers: mockCustomers[0],
-    oms_sales_reps: mockSalesReps[0],
-    oms_order_items: [
-      {
-        id: "1",
-        sku: "PROD-001",
-        title: "Produto Exemplo 1",
-        qty: 2,
-        unit_price: 29.90,
-        discount_pct: 0,
-        discount_value: 0,
-        tax_value: 0,
-        total: 59.80
-      },
-      {
-        id: "2",
-        sku: "PROD-002",
-        title: "Produto Exemplo 2",
-        qty: 1,
-        unit_price: 49.90,
-        discount_pct: 10,
-        discount_value: 4.99,
-        tax_value: 0,
-        total: 44.91
-      }
-    ]
-  }
-];
-
+// ✅ INTEGRAÇÃO REAL COM SUPABASE - REMOVENDO DADOS MOCK
 export function useOMSCustomers() {
-  const [customers, setCustomers] = useState(mockCustomers);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('oms_customers')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar clientes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
   const createCustomer = async (data: any) => {
     setLoading(true);
     try {
-      // Simular criação
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const newCustomer = {
-        ...data,
-        id: Date.now().toString(),
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      const { data: newCustomer, error } = await supabase
+        .from('oms_customers')
+        .insert([data])
+        .select()
+        .single();
+      
+      if (error) throw error;
       setCustomers([...customers, newCustomer]);
       return newCustomer;
     } finally {
@@ -156,10 +48,13 @@ export function useOMSCustomers() {
   const updateCustomer = async (id: string, data: any) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setCustomers(customers.map(c => 
-        c.id === id ? { ...c, ...data, updated_at: new Date().toISOString() } : c
-      ));
+      const { error } = await supabase
+        .from('oms_customers')
+        .update(data)
+        .eq('id', id);
+      
+      if (error) throw error;
+      await fetchCustomers(); // Recarregar dados
     } finally {
       setLoading(false);
     }
@@ -168,8 +63,13 @@ export function useOMSCustomers() {
   const deleteCustomer = async (id: string) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setCustomers(customers.filter(c => c.id !== id));
+      const { error } = await supabase
+        .from('oms_customers')
+        .update({ is_active: false })
+        .eq('id', id);
+      
+      if (error) throw error;
+      await fetchCustomers(); // Recarregar dados
     } finally {
       setLoading(false);
     }
@@ -180,29 +80,80 @@ export function useOMSCustomers() {
     loading,
     createCustomer,
     updateCustomer,
-    deleteCustomer
+    deleteCustomer,
+    refetch: fetchCustomers
   };
 }
 
 export function useOMSSalesReps() {
-  const [salesReps, setSalesReps] = useState(mockSalesReps);
+  const [salesReps, setSalesReps] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const fetchSalesReps = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('oms_sales_reps')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      setSalesReps(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar representantes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSalesReps();
+  }, []);
 
   return {
     salesReps,
-    loading
+    loading,
+    refetch: fetchSalesReps
   };
 }
 
 export function useOMSProducts() {
-  const [products, setProducts] = useState(mockProducts);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const searchProducts = async (query: string) => {
-    return products.filter(p => 
-      p.sku.toLowerCase().includes(query.toLowerCase()) ||
-      p.title.toLowerCase().includes(query.toLowerCase())
-    );
+  const searchProducts = async (query: string): Promise<any[]> => {
+    try {
+      if (!query || query.trim().length < 2) {
+        return [];
+      }
+
+      // ✅ BUSCAR PRODUTOS DO ESTOQUE REAL (tabela produtos)
+      const { data, error } = await supabase
+        .from('produtos')
+        .select('id, sku_interno, nome, preco_venda, quantidade_atual, ativo')
+        .eq('ativo', true)
+        .or(`sku_interno.ilike.%${query}%,nome.ilike.%${query}%`)
+        .limit(20);
+      
+      if (error) {
+        console.error('Erro ao buscar produtos:', error);
+        return [];
+      }
+      
+      // Mapear para formato esperado pelo OMS
+      return (data || []).map(product => ({
+        id: product.id,
+        sku: product.sku_interno,
+        title: product.nome,
+        price: product.preco_venda || 0,
+        stock: product.quantidade_atual || 0,
+        is_active: product.ativo
+      }));
+    } catch (error) {
+      console.error('Erro ao buscar produtos:', error);
+      return [];
+    }
   };
 
   return {
@@ -213,29 +164,109 @@ export function useOMSProducts() {
 }
 
 export function useOMSOrders() {
-  const [orders, setOrders] = useState(mockOrders);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const createOrder = async (data: any) => {
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('oms_orders')
+        .select(`
+          *,
+          oms_customers:customer_id(*),
+          oms_sales_reps:sales_rep_id(*),
+          oms_order_items(*)
+        `)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar pedidos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const createOrder = async (orderData: any) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Gerar número do pedido
+      const orderNumber = `${String(orders.length + 1).padStart(6, '0')}/2025`;
       
-      // Simular criação completa do pedido
-      const newOrder = {
-        ...data,
-        id: Date.now().toString(),
-        number: `${String(orders.length + 1).padStart(6, '0')}/2025`,
-        status: "draft" as const,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        oms_customers: mockCustomers.find(c => c.id === data.customer_id),
-        oms_sales_reps: mockSalesReps.find(r => r.id === data.sales_rep_id),
-        oms_order_items: data.items
-      };
-      
-      setOrders([newOrder, ...orders]);
+      // Criar pedido principal
+      const { data: newOrder, error: orderError } = await supabase
+        .from('oms_orders')
+        .insert([{
+          number: orderNumber,
+          customer_id: orderData.customer_id,
+          sales_rep_id: orderData.sales_rep_id,
+          order_date: orderData.order_date,
+          delivery_date: orderData.delivery_date,
+          payment_terms: orderData.payment_terms,
+          payment_term_days: orderData.payment_term_days,
+          payment_method: orderData.payment_method,
+          shipping_total: orderData.shipping_total,
+          shipping_method: orderData.shipping_method,
+          delivery_address: orderData.delivery_address,
+          discount_amount: orderData.discount_amount,
+          discount_type: orderData.discount_type,
+          subtotal: orderData.subtotal,
+          tax_total: orderData.tax_total,
+          grand_total: orderData.grand_total,
+          notes: orderData.notes,
+          internal_notes: orderData.internal_notes,
+          status: 'draft'
+        }])
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Criar itens do pedido
+      if (orderData.items && orderData.items.length > 0) {
+        const orderItems = orderData.items.map((item: any) => ({
+          order_id: newOrder.id,
+          product_id: item.product_id,
+          sku: item.sku,
+          title: item.title,
+          qty: item.qty,
+          unit_price: item.unit_price,
+          discount_pct: item.discount_pct,
+          discount_value: item.discount_value,
+          tax_value: item.tax_value,
+          total: item.total
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('oms_order_items')
+          .insert(orderItems);
+
+        if (itemsError) throw itemsError;
+      }
+
+      await fetchOrders(); // Recarregar dados
       return newOrder;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateOrder = async (id: string, orderData: any) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('oms_orders')
+        .update(orderData)
+        .eq('id', id);
+      
+      if (error) throw error;
+      await fetchOrders(); // Recarregar dados
     } finally {
       setLoading(false);
     }
@@ -244,15 +275,16 @@ export function useOMSOrders() {
   const approveOrder = async (id: string) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-        setOrders(orders.map(o => 
-        o.id === id ? { 
-          ...o, 
-          status: "approved" as OrderStatus, 
-          confirmed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString() 
-        } : o
-      ));
+      const { error } = await supabase
+        .from('oms_orders')
+        .update({ 
+          status: 'approved', 
+          confirmed_at: new Date().toISOString() 
+        })
+        .eq('id', id);
+      
+      if (error) throw error;
+      await fetchOrders(); // Recarregar dados
     } finally {
       setLoading(false);
     }
@@ -261,14 +293,13 @@ export function useOMSOrders() {
   const cancelOrder = async (id: string) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-        setOrders(orders.map(o => 
-        o.id === id ? { 
-          ...o, 
-          status: "cancelled" as OrderStatus,
-          updated_at: new Date().toISOString() 
-        } : o
-      ));
+      const { error } = await supabase
+        .from('oms_orders')
+        .update({ status: 'cancelled' })
+        .eq('id', id);
+      
+      if (error) throw error;
+      await fetchOrders(); // Recarregar dados
     } finally {
       setLoading(false);
     }
@@ -278,8 +309,10 @@ export function useOMSOrders() {
     orders,
     loading,
     createOrder,
+    updateOrder,
     approveOrder,
-    cancelOrder
+    cancelOrder,
+    refetch: fetchOrders
   };
 }
 
