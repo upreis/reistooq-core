@@ -131,7 +131,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           discount_value: item.discount_value || 0,
           tax_value: item.tax_value || 0,
           total: item.total,
-          available_stock: 1000 // Default para edição
+          available_stock: 1000 // ✅ DEFAULT ALTO PARA EDIÇÃO - SEM VALIDAÇÃO RESTRITIVA
         }))
       };
       
@@ -754,31 +754,31 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                   </div>
                   
                   <div className="grid grid-cols-5 gap-2">
-                    <div>
-                      <Label className="text-xs">Quantidade</Label>
-                      <Input
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        value={item.qty === 0 ? '' : item.qty}
-                        onChange={(e) => updateItem(index, 'qty', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
-                        placeholder="Qtd"
-                        className={item.available_stock > 0 && item.qty > item.available_stock ? "border-orange-500 bg-orange-50" : ""}
-                      />
-                      {item.available_stock > 0 && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          <span className={item.qty > item.available_stock ? "text-red-500 font-medium" : ""}>
-                            Estoque: {item.available_stock}
-                            {item.qty > item.available_stock && " (EXCEDIDO)"}
-                          </span>
-                        </div>
-                      )}
-                      {item.available_stock === 0 && (
-                        <div className="text-xs text-yellow-600 mt-1">
-                          ⚠️ Sem controle de estoque
-                        </div>
-                      )}
-                    </div>
+                     <div>
+                       <Label className="text-xs">Quantidade</Label>
+                       <Input
+                         type="number"
+                         min="0.01"
+                         step="0.01"
+                         value={item.qty === 0 ? '' : item.qty}
+                         onChange={(e) => updateItem(index, 'qty', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
+                         placeholder="Qtd"
+                         className="bg-background text-foreground border-input"
+                       />
+                       {/* ✅ APENAS INFORMATIVO - SEM VALIDAÇÃO RESTRITIVA */}
+                       {item.available_stock > 0 && item.available_stock < 1000 && (
+                         <div className="text-xs text-muted-foreground mt-1">
+                           <span className="text-blue-600">
+                             Estoque: {item.available_stock}
+                           </span>
+                         </div>
+                       )}
+                       {(item.available_stock === 0 || item.available_stock >= 1000) && (
+                         <div className="text-xs text-muted-foreground mt-1">
+                           ✅ Sem controle de estoque
+                         </div>
+                       )}
+                     </div>
                     <div>
                       <Label className="text-xs">Preço Unit.</Label>
                       <Input
