@@ -32,23 +32,10 @@ export default function Header() {
   return (
     <header className={`sticky z-40 bg-background border-b transition-all duration-300 ${hasAnnouncements && !isCollapsed && !isHidden ? 'top-12' : 'top-0'}`}>
       <div className="flex items-center gap-2 px-4 h-14">
-        {/* Hamburger (mobile only) */}
-        <button
-          type="button"
-          className="inline-flex md:hidden items-center justify-center rounded p-2 border"
-          aria-controls="app-sidebar"
-          aria-expanded={isMobileSidebarOpen}
-          aria-label={isMobileSidebarOpen ? "Fechar menu" : "Abrir menu"}
-          onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-        >
-          {/* ícone hamburger */}
-          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" fill="none" stroke="currentColor" strokeWidth="2"/></svg>
-        </button>
-
         {/* Desktop Sidebar Toggle */}
         <button
           type="button"
-          className="hidden md:inline-flex items-center justify-center rounded p-2 border ml-2"
+          className="inline-flex items-center justify-center rounded p-2 border ml-2"
           aria-label={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           data-testid="sidebar-desktop-toggle"
@@ -88,43 +75,6 @@ export default function Header() {
           {/* Theme Toggle */}
           <ThemeToggle />
           
-          {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs"
-                >
-                  4
-                </Badge>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notificações</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">Nova mensagem recebida</p>
-                  <p className="text-xs text-muted-foreground">De João sobre atualização do projeto</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">Tarefa concluída</p>
-                  <p className="text-xs text-muted-foreground">Fase de desenvolvimento finalizada</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <div className="flex flex-col gap-1">
-                  <p className="text-sm font-medium">Novo usuário registrado</p>
-                  <p className="text-xs text-muted-foreground">Bem-vindo ao time!</p>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* Plus/Add Button */}
           <Button variant="ghost" size="icon">
             <Plus className="h-5 w-5" />
