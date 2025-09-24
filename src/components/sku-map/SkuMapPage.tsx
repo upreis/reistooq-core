@@ -223,7 +223,7 @@ export function SkuMapPage() {
   return (
     <>
       {isMobile ? (
-        <MobileAppShell title="De-para" headerActions={headerActions}>
+        <MobileAppShell title="" headerActions={headerActions}>
           {mobileContent}
         </MobileAppShell>
       ) : (
