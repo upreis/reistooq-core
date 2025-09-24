@@ -53,11 +53,17 @@ const InnerLayout = () => {
     return "Sistema";
   };
 
+  // Pages that use MobileAppShell (which already includes AppMobileHeader)
+  const usesMobileAppShell = () => {
+    const path = location.pathname;
+    return path === "/estoque" || path === "/pedidos" || path === "/de-para";
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen w-full overflow-x-hidden">
-        {/* Mobile Header */}
-        {isMobile && <AppMobileHeader title={getPageTitle()} />}
+        {/* Mobile Header - Only show for pages that don't use MobileAppShell */}
+        {isMobile && !usesMobileAppShell() && <AppMobileHeader title={getPageTitle()} />}
         
         {/* Desktop Layout */}
         {!isMobile && (
