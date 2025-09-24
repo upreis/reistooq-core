@@ -2,6 +2,7 @@
 // Gestão de roles, permissões, usuários e convites
 
 import { supabase } from '@/integrations/supabase/client';
+import { DETAILED_PERMISSIONS } from '@/config/detailed-permissions';
 import type { 
   Role, 
   Permission, 
@@ -175,25 +176,15 @@ export class AdminService {
   // ==================== PERMISSIONS ====================
 
   async getPermissions(): Promise<Permission[]> {
-    const cacheKey = 'permissions';
-    const cached = this.cache.get(cacheKey);
-    
-    if (cached && Date.now() - cached.timestamp < this.cacheTime) {
-      return cached.data;
-    }
+    // Use the simplified permissions from config instead of database
+    const permissions = DETAILED_PERMISSIONS.map(perm => ({
+      key: perm.key,
+      name: perm.name,
+      description: perm.description,
+      category: perm.category
+    })) as Permission[];
 
-    const { data, error } = await supabase
-      .from('app_permissions')
-      .select('*')
-      .order('name');
-
-    if (error) {
-      console.error('Error fetching permissions:', error);
-      throw new Error(`Failed to fetch permissions: ${error.message}`);
-    }
-
-    this.cache.set(cacheKey, { data: data || [], timestamp: Date.now() });
-    return (data || []) as Permission[];
+    return permissions;
   }
 
   // ==================== USERS ====================
