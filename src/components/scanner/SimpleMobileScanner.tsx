@@ -144,8 +144,10 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
       };
       videoRef.current?.addEventListener('loadedmetadata', onLoaded);
 
-      // Iniciar decodificação (ZXing gerencia getUserMedia e anexa ao <video>)
-      startScanner();
+      // Aguardar um pouco antes de iniciar o scanner para garantir que o vídeo esteja pronto
+      setTimeout(() => {
+        startScanner();
+      }, 100);
 
     } catch (error: any) {
       console.error('❌ Erro ao acessar câmera:', error);
@@ -205,21 +207,15 @@ export const SimpleMobileScanner: React.FC<SimpleMobileScannerProps> = ({
       }
 
       // Optimized video constraints for better performance
+      // Usar apenas constraints básicas para garantir compatibilidade
       const constraints = {
         video: {
-          width: { ideal: 1280, max: 1920 },
-          height: { ideal: 720, max: 1080 },
-          frameRate: { ideal: 30, max: 60 },
-          facingMode: 'environment',
-          // Mobile optimizations
-          focusMode: 'continuous',
-          whiteBalanceMode: 'continuous',
-          exposureMode: 'continuous'
+          facingMode: 'environment'
         }
       };
       
       scannerRef.current.decodeFromVideoDevice(
-        undefined, // Use default camera with constraints
+        undefined, // Use default camera 
         videoRef.current,
         (result: any, error: any) => {
           if (result) {
