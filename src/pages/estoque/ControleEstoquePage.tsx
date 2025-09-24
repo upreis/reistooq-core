@@ -309,50 +309,23 @@ export default function ControleEstoquePage() {
 
   return (
     <div className="space-y-6">
-      {/* Filtros inteligentes */}
-          <Card className="shadow-sm border-border/40">
-            <CardContent className="p-4">
-              <EstoqueIntelligentFilters
-                filters={intelligentFilters}
-                onFiltersChange={setIntelligentFilters}
-                onSearchChange={setSearchTerm}
-                searchTerm={searchTerm}
-                stats={intelligentStats}
-              />
-            </CardContent>
-          </Card>
+      {/* Filtros básicos */}
+      <EstoqueFilters
+        searchTerm={searchTerm}
+        selectedCategory={selectedCategory}
+        selectedStatus={selectedStatus}
+        categories={categories}
+        onSearchChange={setSearchTerm}
+        onCategoryChange={setSelectedCategory}
+        onStatusChange={setSelectedStatus}
+        onClearFilters={handleClearFilters}
+        onSearch={handleSearch}
+        useHierarchicalCategories={false}
+        hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all"}
+      />
 
-          {/* Ações do estoque */}
-          <Card className="shadow-sm border-border/40">
-            <CardContent className="p-4">
-              <EstoqueActions
-                selectedProducts={selectedProducts}
-                products={finalFilteredProducts}
-                onNewProduct={handleNewProduct}
-                onDeleteSelected={handleDeleteSelected}
-                onRefresh={handleRefresh}
-                onSendAlerts={handleSendAlerts}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Filtros básicos */}
-          <EstoqueFilters
-            searchTerm={searchTerm}
-            selectedCategory={selectedCategory}
-            selectedStatus={selectedStatus}
-            categories={categories}
-            onSearchChange={setSearchTerm}
-            onCategoryChange={setSelectedCategory}
-            onStatusChange={setSelectedStatus}
-            onClearFilters={handleClearFilters}
-            onSearch={handleSearch}
-            useHierarchicalCategories={false}
-            hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all"}
-          />
-
-          {/* Tabela de produtos */}
-          <Card className="shadow-sm border-border/40">
+      {/* Tabela de produtos */}
+      <Card className="shadow-sm border-border/40">
             <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
