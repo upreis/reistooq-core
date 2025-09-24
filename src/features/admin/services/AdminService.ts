@@ -72,16 +72,27 @@ export class AdminService {
       'oms:pedidos': 'VENDAS (OMS)',
       'oms:clientes': 'VENDAS (OMS)',
       'oms:configuracoes': 'VENDAS (OMS)',
+      'oms:view': 'VENDAS (OMS)',
       'compras:view': 'COMPRAS',
       'estoque:view': 'ESTOQUE',
       'estoque:compositions': 'ESTOQUE',
       'ecommerce:view': 'ECOMMERCE',
       'configuracoes:view': 'CONFIGURAÇÕES',
       'admin:access': 'ADMINISTRAÇÃO',
+      'users:read': 'ADMINISTRAÇÃO',
+      'roles:manage': 'ADMINISTRAÇÃO',
+      'invites:manage': 'ADMINISTRAÇÃO',
+      'system:audit': 'ADMINISTRAÇÃO',
+      'integrations:manage': 'ADMINISTRAÇÃO',
+      'alerts:view': 'ADMINISTRAÇÃO',
       'calendar:view': 'APLICATIVOS',
       'notes:view': 'APLICATIVOS',
       'scanner:use': 'FERRAMENTAS',
-      'depara:view': 'FERRAMENTAS'
+      'depara:view': 'FERRAMENTAS',
+      'orders:read': 'VENDAS (OMS)',
+      'settings:view': 'CONFIGURAÇÕES',
+      'historico:view': 'ADMINISTRAÇÃO',
+      'demo:access': 'OUTROS'
     };
     return categoryMap[key] || 'OUTROS';
   }
@@ -222,8 +233,14 @@ export class AdminService {
       throw new Error(`Failed to fetch permissions: ${error.message}`);
     }
 
-    this.cache.set(cacheKey, { data: data || [], timestamp: Date.now() });
-    return (data || []) as Permission[];
+    // Apply categories from detailed permissions config
+    const categorizedPermissions = (data || []).map(permission => ({
+      ...permission,
+      category: this.getCategoryFromKey(permission.key)
+    }));
+
+    this.cache.set(cacheKey, { data: categorizedPermissions, timestamp: Date.now() });
+    return categorizedPermissions as Permission[];
   }
 
   // ==================== USERS ====================
