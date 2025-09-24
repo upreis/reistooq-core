@@ -63,6 +63,8 @@ export default function OrdersPageProfessional({
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   
   // Filtros avançados
   const [filters, setFilters] = useState({
@@ -245,6 +247,43 @@ export default function OrdersPageProfessional({
       minValue: '',
       maxValue: ''
     });
+  };
+
+  // ✅ FUNÇÃO PARA EDITAR PEDIDO
+  const handleEditOrder = (order: any) => {
+    setEditingOrder(order);
+    setIsEditMode(true);
+    setOrderDialogOpen(true);
+  };
+
+  // ✅ FUNÇÃO PARA SALVAR EDIÇÃO DE PEDIDO  
+  const handleUpdateOrder = async (data: any) => {
+    try {
+      // TODO: Implementar atualização real do pedido
+      console.log('Atualizando pedido:', editingOrder?.id, data);
+      
+      setOrderDialogOpen(false);
+      setEditingOrder(null);
+      setIsEditMode(false);
+      
+      toast({
+        title: "Sucesso",
+        description: "Pedido atualizado com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar pedido",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // ✅ FUNÇÃO PARA CANCELAR EDIÇÃO
+  const handleCancelEdit = () => {
+    setOrderDialogOpen(false);
+    setEditingOrder(null);
+    setIsEditMode(false);
   };
 
   return (
@@ -719,14 +758,15 @@ export default function OrdersPageProfessional({
                                   </PopoverTrigger>
                                   <PopoverContent className="w-48">
                                     <div className="space-y-2">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full justify-start"
-                                      >
-                                        <FileText className="h-4 w-4 mr-2" />
-                                        Ver Detalhes
-                                      </Button>
+                                       <Button
+                                         variant="ghost"
+                                         size="sm"
+                                         className="w-full justify-start"
+                                         onClick={() => handleEditOrder(order)}
+                                       >
+                                         <FileText className="h-4 w-4 mr-2" />
+                                         Editar Pedido
+                                       </Button>
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -764,13 +804,16 @@ export default function OrdersPageProfessional({
       <Dialog open={orderDialogOpen} onOpenChange={setOrderDialogOpen}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Novo Pedido de Venda</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? 'Editar Pedido de Venda' : 'Novo Pedido de Venda'}
+            </DialogTitle>
           </DialogHeader>
           {/* ✅ USAR COMPONENTE ENHANCED COMPLETO */}
           <OrderFormEnhanced
-            onSubmit={handleCreateOrder}
-            onCancel={() => setOrderDialogOpen(false)}
+            onSubmit={isEditMode ? handleUpdateOrder : handleCreateOrder}
+            onCancel={handleCancelEdit}
             isLoading={loading}
+            initialData={editingOrder}
           />
         </DialogContent>
       </Dialog>

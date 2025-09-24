@@ -182,24 +182,14 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
       
       console.log('🔍 DEBUG stock validation:', { requestedQty, availableStock });
       
-      // ✅ PERMITIR EDIÇÃO SE NÃO HOUVER STOCK DEFINIDO OU FOR MAIOR QUE 0
+      // ✅ PERMITIR QUANTIDADE MAIOR QUE ESTOQUE COM AVISO
       if (availableStock > 0 && requestedQty > availableStock) {
         toast({
-          title: "Estoque Insuficiente",
-          description: `Quantidade máxima disponível: ${availableStock} para "${item.title}"`,
+          title: "Aviso: Estoque Insuficiente",
+          description: `Quantidade solicitada (${requestedQty}) é maior que estoque disponível (${availableStock}) para "${item.title}"`,
           variant: "destructive"
         });
-        
-        // ✅ DEFINIR QUANTIDADE MÁXIMA DISPONÍVEL
-        updatedItems[index] = { ...updatedItems[index], qty: availableStock };
-        
-        // Recalcular total com a quantidade corrigida
-        const subtotal = availableStock * item.unit_price;
-        updatedItems[index].discount_value = (subtotal * item.discount_pct) / 100;
-        updatedItems[index].total = subtotal - updatedItems[index].discount_value + item.tax_value;
-        
-        setFormData(prev => ({ ...prev, items: updatedItems }));
-        return;
+        // ✅ CONTINUAR COM A QUANTIDADE SOLICITADA - NÃO FORÇAR MUDANÇA
       }
     }
 
@@ -727,11 +717,10 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
                         type="number"
                         min="0.01"
                         step="0.01"
-                        max={item.available_stock > 0 ? item.available_stock : undefined}
                         value={item.qty === 0 ? '' : item.qty}
                         onChange={(e) => updateItem(index, 'qty', e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)}
                         placeholder="Qtd"
-                        className={item.available_stock > 0 && item.qty > item.available_stock ? "border-red-500" : ""}
+                        className={item.available_stock > 0 && item.qty > item.available_stock ? "border-orange-500 bg-orange-50" : ""}
                       />
                       {item.available_stock > 0 && (
                         <div className="text-xs text-muted-foreground mt-1">
