@@ -90,11 +90,15 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   useEffect(() => {
     if (initialData) {
       console.log('🔍 DEBUG initialData recebido:', initialData);
+      console.log('🔍 DEBUG customer_id:', initialData.customer_id);
+      console.log('🔍 DEBUG sales_rep_id:', initialData.sales_rep_id);
+      console.log('🔍 DEBUG customers disponíveis:', customers);
+      console.log('🔍 DEBUG salesReps disponíveis:', salesReps);
       
       // ✅ MAPEAR DADOS DO PEDIDO EXISTENTE PARA O FORMATO DO FORMULÁRIO
       const mappedData = {
-        selectedCustomer: initialData.customer_id || "",
-        selectedSalesRep: initialData.sales_rep_id || "",
+        selectedCustomer: initialData.customer_id ? String(initialData.customer_id) : "",
+        selectedSalesRep: initialData.sales_rep_id ? String(initialData.sales_rep_id) : "",
         orderDate: initialData.order_date ? new Date(initialData.order_date) : new Date(),
         deliveryDate: initialData.delivery_date ? new Date(initialData.delivery_date) : null,
         paymentTerm: initialData.payment_terms || "30_days",
