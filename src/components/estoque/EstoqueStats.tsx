@@ -13,7 +13,8 @@ import {
   ChevronUp,
   ChevronDown,
   Eye,
-  EyeOff
+  EyeOff,
+  Filter
 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -153,7 +154,14 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
       <div className="space-y-3 mb-4">
         {/* Controles mobile */}
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">Estatísticas</h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Filter className="h-3 w-3" />
+            Filtros
+          </Button>
           <Button
             variant="ghost"
             size="sm"
