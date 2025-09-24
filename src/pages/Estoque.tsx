@@ -12,6 +12,9 @@ import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 const EstoqueContent = () => {
   const { getProducts } = useProducts();
   const [products, setProducts] = useState([]);
+  const [filtersVisible, setFiltersVisible] = useState(true);
+
+  const toggleFilters = () => setFiltersVisible(!filtersVisible);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -42,11 +45,11 @@ const EstoqueContent = () => {
         <EstoqueNav />
 
         {/* Cards de Resumo */}
-        <EstoqueStats products={products} />
+        <EstoqueStats products={products} onToggleFilters={toggleFilters} />
         
         <div className="mt-6">
           <Routes>
-            <Route index element={<ControleEstoquePage />} />
+            <Route index element={<ControleEstoquePage filtersVisible={filtersVisible} />} />
             <Route path="composicoes" element={<ComposicoesPage />} />
           </Routes>
         </div>

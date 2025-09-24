@@ -16,7 +16,11 @@ import { Package, AlertTriangle, Filter } from "lucide-react";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 
-export default function ControleEstoquePage() {
+interface ControleEstoquePageProps {
+  filtersVisible?: boolean;
+}
+
+export default function ControleEstoquePage({ filtersVisible: externalFiltersVisible }: ControleEstoquePageProps = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -32,7 +36,11 @@ export default function ControleEstoquePage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [newProductModalOpen, setNewProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  
+  const [filtersVisible, setFiltersVisible] = useState(externalFiltersVisible ?? true);
+
+  // Usar o valor externo se fornecido, senão usar o estado local
+  const isFiltersVisible = externalFiltersVisible !== undefined ? externalFiltersVisible : filtersVisible;
+
   const { getProducts, getCategories, deleteProduct } = useProducts();
   const { toast } = useToast();
 
@@ -284,6 +292,8 @@ export default function ControleEstoquePage() {
   
   const handleRefresh = () => loadProducts();
 
+  const toggleFilters = () => setFiltersVisible(!filtersVisible);
+
   // Aplicar busca por termo aos dados já filtrados pelos filtros inteligentes
   const finalFilteredProducts = useMemo(() => {
     let filtered = [...intelligentFilteredData];
@@ -337,19 +347,21 @@ export default function ControleEstoquePage() {
           </Card>
 
           {/* Filtros básicos */}
-          <EstoqueFilters
-            searchTerm={searchTerm}
-            selectedCategory={selectedCategory}
-            selectedStatus={selectedStatus}
-            categories={categories}
-            onSearchChange={setSearchTerm}
-            onCategoryChange={setSelectedCategory}
-            onStatusChange={setSelectedStatus}
-            onClearFilters={handleClearFilters}
-            onSearch={handleSearch}
-            useHierarchicalCategories={false}
-            hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all"}
-          />
+          {isFiltersVisible && (
+            <EstoqueFilters
+              searchTerm={searchTerm}
+              selectedCategory={selectedCategory}
+              selectedStatus={selectedStatus}
+              categories={categories}
+              onSearchChange={setSearchTerm}
+              onCategoryChange={setSelectedCategory}
+              onStatusChange={setSelectedStatus}
+              onClearFilters={handleClearFilters}
+              onSearch={handleSearch}
+              useHierarchicalCategories={false}
+              hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all"}
+            />
+          )}
 
           {/* Tabela de produtos */}
           <Card className="shadow-sm border-border/40">

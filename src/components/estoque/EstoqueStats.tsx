@@ -13,7 +13,8 @@ import {
   ChevronUp,
   ChevronDown,
   Eye,
-  EyeOff
+  EyeOff,
+  Filter
 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -21,9 +22,10 @@ import { useState } from "react";
 
 interface EstoqueStatsProps {
   products: Product[];
+  onToggleFilters?: () => void;
 }
 
-export function EstoqueStats({ products }: EstoqueStatsProps) {
+export function EstoqueStats({ products, onToggleFilters }: EstoqueStatsProps) {
   const isMobile = useIsMobile();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -153,7 +155,20 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
       <div className="space-y-3 mb-4">
         {/* Controles mobile */}
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">Estatísticas</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Estatísticas</h3>
+            {onToggleFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleFilters}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <Filter className="h-3 w-3" />
+                Filtros
+              </Button>
+            )}
+          </div>
           <Button
             variant="ghost"
             size="sm"
