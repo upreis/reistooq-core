@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Trash2, Plus, Search, Calendar as CalendarIcon, Settings } from "lucide-react";
+import { Trash2, Plus, Search, Calendar as CalendarIcon, Settings, Package } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import { useOMSCustomers, useOMSSalesReps, useOMSProducts, formatCurrency, getPriceTierMultiplier } from "@/hooks/useOMSData";
 import { useProducts } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
+import { ProductSelector } from "@/components/compras/ProductSelector";
 
 interface OrderFormEnhancedProps {
   onSubmit: (data: any) => void;
@@ -74,6 +75,7 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
   const [productSearch, setProductSearch] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showCustomPayment, setShowCustomPayment] = useState(false);
+  const [showProductSelector, setShowProductSelector] = useState(false);
 
   // Formas de pagamento configuráveis
   const [paymentTerms, setPaymentTerms] = useState<PaymentTerm[]>([
@@ -197,6 +199,46 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
     }
 
     setFormData(prev => ({ ...prev, items: updatedItems }));
+  };
+
+  // ✅ FUNÇÃO PARA SELECIONAR PRODUTOS PELO SELETOR AVANÇADO
+  const handleProductSelectorConfirm = (products: any[]) => {
+    products.forEach(selectedProduct => {
+      // Verificar se o produto já não foi adicionado
+      const alreadyExists = formData.items.find(item => item.product_id === selectedProduct.id);
+      if (alreadyExists) {
+        toast({
+          title: "Produto já adicionado",
+          description: `O produto "${selectedProduct.nome}" já está no pedido`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Converter para formato do pedido
+      const customerTier = customers.find(c => c.id === formData.selectedCustomer)?.price_tier || 'standard';
+      const tierMultiplier = getPriceTierMultiplier(customerTier);
+      const unitPrice = selectedProduct.preco_custo * tierMultiplier;
+
+      const newItem = {
+        id: Date.now().toString() + Math.random(),
+        product_id: selectedProduct.id,
+        sku: selectedProduct.sku_interno,
+        title: selectedProduct.nome,
+        qty: selectedProduct.quantidade || 1,
+        unit_price: unitPrice,
+        discount_pct: 0,
+        discount_value: 0,
+        tax_value: 0,
+        total: unitPrice * (selectedProduct.quantidade || 1),
+        available_stock: selectedProduct.quantidade_atual || 0
+      };
+
+      setFormData(prev => ({
+        ...prev,
+        items: [...prev.items, newItem]
+      }));
+    });
   };
 
   const removeItem = (index: number) => {
@@ -561,54 +603,80 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           <CardTitle>Itens do Pedido</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="relative">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar produtos por SKU ou nome..."
-                  value={productSearch}
-                  onChange={(e) => {
-                    setProductSearch(e.target.value);
-                    handleSearch(e.target.value);
-                  }}
-                  className="pl-10"
-                />
-              </div>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar produtos por SKU ou nome..."
+                value={productSearch}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  handleSearch(e.target.value);
+                }}
+                className="pl-10"
+              />
             </div>
-            
-            {searchResults.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
-                {searchResults.map((product) => (
-                  <div
-                    key={product.id}
-                    className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
-                    onClick={() => addItem(product)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-medium">{product.title}</div>
-                        <div className="text-sm text-muted-foreground flex gap-4">
-                          <span>SKU: {product.sku}</span>
-                          {product.category && <span>Cat: {product.category}</span>}
-                          {product.barcode && <span>Código: {product.barcode}</span>}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          Estoque: {product.stock} unidades
-                        </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowProductSelector(true)}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Usar Seletor Avançado
+            </Button>
+          </div>
+          
+          {searchResults.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+              {searchResults.map((product) => (
+                <div
+                  key={product.id}
+                  className="p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                  onClick={() => addItem(product)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium">{product.title}</div>
+                      <div className="text-sm text-muted-foreground flex gap-4">
+                        <span>SKU: {product.sku}</span>
+                        {product.category && <span>Cat: {product.category}</span>}
+                        {product.barcode && <span>Código: {product.barcode}</span>}
                       </div>
-                      <div className="text-right">
-                        <div className="font-medium">{formatCurrency(product.price)}</div>
-                        <Badge variant={product.stock > 0 ? "secondary" : "destructive"} className="text-xs">
-                          {product.stock > 0 ? "Disponível" : "Sem estoque"}
-                        </Badge>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Estoque: {product.stock} unidades
                       </div>
                     </div>
+                    <div className="text-right">
+                      <div className="font-medium">{formatCurrency(product.price)}</div>
+                      <Badge variant={product.stock > 0 ? "secondary" : "destructive"} className="text-xs">
+                        {product.stock > 0 ? "Disponível" : "Sem estoque"}
+                      </Badge>
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {formData.items.length === 0 && (
+            <div className="text-center py-8 border-2 border-dashed border-muted rounded-lg">
+              <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Nenhum produto selecionado</h3>
+              <p className="text-muted-foreground mb-4">
+                Use o seletor avançado ou busque produtos acima para adicionar itens ao pedido.
+              </p>
+              <Button
+                type="button"
+                variant="default"
+                onClick={() => setShowProductSelector(true)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Usar Seletor Avançado
+              </Button>
+            </div>
+          )}
 
           {formData.items.length > 0 && (
             <div className="space-y-2">
@@ -809,6 +877,13 @@ export function OrderFormEnhanced({ onSubmit, onCancel, isLoading, initialData }
           {isLoading ? "Salvando..." : "Criar Pedido"}
         </Button>
       </div>
+
+      {/* Modal do Seletor de Produtos */}
+      <ProductSelector
+        isOpen={showProductSelector}
+        onOpenChange={setShowProductSelector}
+        onSelectProducts={handleProductSelectorConfirm}
+      />
     </form>
   );
 }
