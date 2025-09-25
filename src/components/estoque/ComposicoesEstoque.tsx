@@ -704,8 +704,8 @@ export function ComposicoesEstoque() {
         )}
 
         <div className="flex-1 min-w-0 space-y-0">
-          {/* Filtros Inteligentes - ocultos no mobile */}
-          <div className="hidden md:block">
+          {/* Filtros Desktop */}
+          <div className="hidden md:block mb-6">
             <ComposicoesFilters 
               filters={filters}
               onFiltersChange={setFilters}
@@ -713,53 +713,55 @@ export function ComposicoesEstoque() {
             />
           </div>
 
-          {/* Busca e Filtros - layout mobile igual ao controle de estoque */}
-          <div className="flex gap-2 md:flex-1">
-            {/* Busca - mais compacta no mobile */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar produtos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-background/60 border-border/60 h-9 md:h-10 text-sm"
-                />
-              </div>
-            </div>
-            
-            {/* Filtros - ao lado da busca no mobile */}
-            <div className="w-auto md:w-auto">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline" 
-                    className="bg-background/60 border-border/60 flex-shrink-0 h-9 md:h-10 text-sm px-3 gap-2"
-                  >
-                    <Filter className="h-4 w-4" />
-                    <span className="hidden md:inline">Filtros</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="z-50 w-[340px] sm:w-[520px] bg-popover text-popover-foreground">
-                  <ComposicoesFilters 
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                    stats={stats}
-                    forceExpanded
+          {/* Busca e Filtros Mobile/Desktop */}
+          <div className="mb-6 p-4 bg-background/60 border border-border/60 rounded-lg backdrop-blur-sm">
+            <div className="flex gap-2">
+              {/* Campo de busca - ocupa maior parte da largura */}
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar produtos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 h-10"
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
+                </div>
+              </div>
+              
+              {/* Ícone de filtro compacto */}
+              <div className="md:hidden">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline" 
+                      size="icon"
+                      className="h-10 w-10"
+                    >
+                      <Filter className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="z-50 w-[340px] sm:w-[520px] bg-popover text-popover-foreground">
+                    <ComposicoesFilters 
+                      filters={filters}
+                      onFiltersChange={setFilters}
+                      stats={stats}
+                      forceExpanded
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-            {/* Botão de categorias no mobile */}
-            <Button
-              variant="outline"
-              size="icon"
-                className="md:hidden bg-background/60 border-border/60 flex-shrink-0 h-9"
-              onClick={toggleSidebar}
-            >
-              <Package className="h-4 w-4" />
-            </Button>
+              {/* Ícone de categorias compacto */}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 md:hidden"
+                onClick={toggleSidebar}
+              >
+                <Package className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Header da seção - apenas para desktop */}
