@@ -7,8 +7,112 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Upload } from "lucide-react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { useProducts } from "@/hooks/useProducts";
 
 const AddProduct = () => {
+  const { createProduct } = useProducts();
+  
+  // Estados para todos os campos
+  const [formData, setFormData] = useState({
+    sku_interno: "",
+    nome: "",
+    descricao: "",
+    preco_venda: 0,
+    quantidade_atual: 0,
+    codigo_barras: "",
+    categoria: "",
+    imagem_fornecedor: "",
+    material: "",
+    cor: "",
+    package: "",
+    unit: "",
+    pcs_ctn: 0,
+    peso_unitario_g: 0,
+    peso_cx_master_kg: 0,
+    comprimento_cm: 0,
+    largura_cm: 0,
+    altura_cm: 0,
+    observacoes: ""
+  });
+
+  // Campos calculados
+  const [calculatedFields, setCalculatedFields] = useState({
+    peso_sem_cx_master_kg: 0,
+    peso_total_cx_master_kg: 0,
+    peso_total_sem_cx_master_kg: 0,
+    cbm_cubagem: 0,
+    cbm_total: 0,
+    quantidade_total: 0,
+    valor_total: 0
+  });
+
+  // Recalcular campos derivados quando os campos base mudarem
+  useEffect(() => {
+    const pesoSemCxMaster = Math.max(formData.peso_cx_master_kg - 1, 0);
+    const pesoTotalCxMaster = formData.peso_cx_master_kg * formData.quantidade_atual;
+    const pesoTotalSemCxMaster = pesoSemCxMaster * formData.quantidade_atual;
+    const cbmCubagem = (formData.comprimento_cm * formData.largura_cm * formData.altura_cm) / 1000000;
+    const cbmTotal = cbmCubagem * formData.quantidade_atual;
+    const quantidadeTotal = formData.pcs_ctn * formData.quantidade_atual;
+    const valorTotal = formData.preco_venda * quantidadeTotal;
+
+    setCalculatedFields({
+      peso_sem_cx_master_kg: pesoSemCxMaster,
+      peso_total_cx_master_kg: pesoTotalCxMaster,
+      peso_total_sem_cx_master_kg: pesoTotalSemCxMaster,
+      cbm_cubagem,
+      cbm_total: cbmTotal,
+      quantidade_total: quantidadeTotal,
+      valor_total: valorTotal
+    });
+  }, [formData]);
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async () => {
+    try {
+      if (!formData.sku_interno || !formData.nome) {
+        toast.error("SKU e Nome são obrigatórios");
+        return;
+      }
+
+      await createProduct.mutateAsync(formData);
+      toast.success("Produto criado com sucesso!");
+      
+      // Reset form
+      setFormData({
+        sku_interno: "",
+        nome: "",
+        descricao: "",
+        preco_venda: 0,
+        quantidade_atual: 0,
+        codigo_barras: "",
+        categoria: "",
+        imagem_fornecedor: "",
+        material: "",
+        cor: "",
+        package: "",
+        unit: "",
+        pcs_ctn: 0,
+        peso_unitario_g: 0,
+        peso_cx_master_kg: 0,
+        comprimento_cm: 0,
+        largura_cm: 0,
+        altura_cm: 0,
+        observacoes: ""
+      });
+    } catch (error) {
+      toast.error("Erro ao criar produto");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}

@@ -3515,21 +3515,32 @@ export type Database = {
       }
       produtos: {
         Row: {
+          altura_cm: number | null
           ativo: boolean
           categoria: string | null
           categoria_id: string | null
           categoria_nivel2: string | null
           categoria_principal: string | null
           codigo_barras: string | null
+          comprimento_cm: number | null
+          cor: string | null
           created_at: string
           descricao: string | null
           estoque_maximo: number
           estoque_minimo: number
           id: string
+          imagem_fornecedor: string | null
           integration_account_id: string | null
+          largura_cm: number | null
           localizacao: string | null
+          material: string | null
           nome: string
+          observacoes: string | null
           organization_id: string | null
+          package: string | null
+          pcs_ctn: number | null
+          peso_cx_master_kg: number | null
+          peso_unitario_g: number | null
           preco_custo: number | null
           preco_venda: number | null
           produto_origem_id: string | null
@@ -3540,26 +3551,38 @@ export type Database = {
           subcategoria: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
+          unit: string | null
           updated_at: string
           url_imagem: string | null
           versao: number | null
         }
         Insert: {
+          altura_cm?: number | null
           ativo?: boolean
           categoria?: string | null
           categoria_id?: string | null
           categoria_nivel2?: string | null
           categoria_principal?: string | null
           codigo_barras?: string | null
+          comprimento_cm?: number | null
+          cor?: string | null
           created_at?: string
           descricao?: string | null
           estoque_maximo?: number
           estoque_minimo?: number
           id?: string
+          imagem_fornecedor?: string | null
           integration_account_id?: string | null
+          largura_cm?: number | null
           localizacao?: string | null
+          material?: string | null
           nome: string
+          observacoes?: string | null
           organization_id?: string | null
+          package?: string | null
+          pcs_ctn?: number | null
+          peso_cx_master_kg?: number | null
+          peso_unitario_g?: number | null
           preco_custo?: number | null
           preco_venda?: number | null
           produto_origem_id?: string | null
@@ -3570,26 +3593,38 @@ export type Database = {
           subcategoria?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id: string
+          unit?: string | null
           updated_at?: string
           url_imagem?: string | null
           versao?: number | null
         }
         Update: {
+          altura_cm?: number | null
           ativo?: boolean
           categoria?: string | null
           categoria_id?: string | null
           categoria_nivel2?: string | null
           categoria_principal?: string | null
           codigo_barras?: string | null
+          comprimento_cm?: number | null
+          cor?: string | null
           created_at?: string
           descricao?: string | null
           estoque_maximo?: number
           estoque_minimo?: number
           id?: string
+          imagem_fornecedor?: string | null
           integration_account_id?: string | null
+          largura_cm?: number | null
           localizacao?: string | null
+          material?: string | null
           nome?: string
+          observacoes?: string | null
           organization_id?: string | null
+          package?: string | null
+          pcs_ctn?: number | null
+          peso_cx_master_kg?: number | null
+          peso_unitario_g?: number | null
           preco_custo?: number | null
           preco_venda?: number | null
           produto_origem_id?: string | null
@@ -3600,6 +3635,7 @@ export type Database = {
           subcategoria?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id?: string
+          unit?: string | null
           updated_at?: string
           url_imagem?: string | null
           versao?: number | null
@@ -4964,21 +5000,32 @@ export type Database = {
       get_low_stock_products: {
         Args: Record<PropertyKey, never>
         Returns: {
+          altura_cm: number | null
           ativo: boolean
           categoria: string | null
           categoria_id: string | null
           categoria_nivel2: string | null
           categoria_principal: string | null
           codigo_barras: string | null
+          comprimento_cm: number | null
+          cor: string | null
           created_at: string
           descricao: string | null
           estoque_maximo: number
           estoque_minimo: number
           id: string
+          imagem_fornecedor: string | null
           integration_account_id: string | null
+          largura_cm: number | null
           localizacao: string | null
+          material: string | null
           nome: string
+          observacoes: string | null
           organization_id: string | null
+          package: string | null
+          pcs_ctn: number | null
+          peso_cx_master_kg: number | null
+          peso_unitario_g: number | null
           preco_custo: number | null
           preco_venda: number | null
           produto_origem_id: string | null
@@ -4989,6 +5036,7 @@ export type Database = {
           subcategoria: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
+          unit: string | null
           updated_at: string
           url_imagem: string | null
           versao: number | null
