@@ -28,7 +28,7 @@ import Historico from "./pages/Historico";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
 import ProductList from "./pages/ProductList";
-import Checkout from "./pages/Checkout";
+
 import AddProduct from "./pages/AddProduct";
 import ProductImport from "./pages/ProductImport";
 import EditProduct from "./pages/EditProduct";
@@ -140,11 +140,6 @@ function App() {
                     <Route path="/apps/ecommerce/list" element={
                       <PermissionRoute requiredPermissions={['ecommerce:view']}>
                         <ProductList />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/checkout" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <Checkout />
                       </PermissionRoute>
                     } />
                     <Route path="/apps/ecommerce/addproduct" element={

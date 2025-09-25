@@ -63,7 +63,7 @@ const SYSTEM_ROUTES = [
       { path: '/apps/ecommerce/shop', label: 'Loja' },
       { path: '/apps/ecommerce/detail', label: 'Detalhes do Produto' },
       { path: '/apps/ecommerce/list', label: 'Lista de Produtos' },
-      { path: '/apps/ecommerce/checkout', label: 'Checkout' },
+      
       { path: '/apps/ecommerce/addproduct', label: 'Adicionar Produto' },
       { path: '/apps/ecommerce/editproduct', label: 'Editar Produto' },
     ]

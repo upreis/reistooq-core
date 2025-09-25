@@ -33,7 +33,7 @@ const routeAliases: Record<string, string[]> = {
   '/apps/ecommerce/detail': ['/ecommerce/detalhes'],
   '/produtos': ['/apps/ecommerce/list'],
   '/apps/ecommerce/list': ['/produtos'],
-  '/ecommerce/checkout': ['/apps/ecommerce/checkout'],
+  
   '/produtos/adicionar': ['/apps/ecommerce/addproduct'],
   '/apps/ecommerce/addproduct': ['/produtos/adicionar'],
   '/produtos/editar': ['/apps/ecommerce/editproduct'],

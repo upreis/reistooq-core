@@ -128,12 +128,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Package' 
           },
           { 
-            id: 'checkout', 
-            label: 'Checkout', 
-            path: '/apps/ecommerce/checkout', 
-            icon: 'CreditCard' 
-          },
-          { 
             id: 'add-product', 
             label: 'Adicionar Produto', 
             path: '/apps/ecommerce/addproduct', 
