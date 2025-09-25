@@ -111,7 +111,7 @@ interface CotacoesInternacionaisTabProps {
   onRefresh: () => void;
 }
 
-// Serviço de cotação de moedas (simulado - você pode integrar com API real)
+// Serviço de cotação de moedas melhorado
 const useCurrencyRates = () => {
   const [rates, setRates] = useState({
     CNY_USD: 0.14, // Yuan para Dólar
@@ -122,16 +122,24 @@ const useCurrencyRates = () => {
   });
 
   const updateRates = async () => {
-    // Aqui você integraria com uma API real como exchangerate-api.com
-    // Por enquanto, simulo uma atualização
-    setRates(prev => ({
-      ...prev,
-      CNY_USD: 0.14 + (Math.random() - 0.5) * 0.01,
-      USD_BRL: 5.20 + (Math.random() - 0.5) * 0.20,
-      EUR_USD: 1.08 + (Math.random() - 0.5) * 0.05,
-      JPY_USD: 0.0067 + (Math.random() - 0.5) * 0.0005,
-      lastUpdate: new Date().toISOString()
-    }));
+    try {
+      // Você pode descomentar as linhas abaixo para usar API real
+      // import { CurrencyService } from '@/services/currencyService';
+      // const newRates = await CurrencyService.getRealTimeRates();
+      // setRates(newRates);
+      
+      // Por enquanto, simula atualização
+      setRates(prev => ({
+        ...prev,
+        CNY_USD: 0.14 + (Math.random() - 0.5) * 0.01,
+        USD_BRL: 5.20 + (Math.random() - 0.5) * 0.20,
+        EUR_USD: 1.08 + (Math.random() - 0.5) * 0.05,
+        JPY_USD: 0.0067 + (Math.random() - 0.5) * 0.0005,
+        lastUpdate: new Date().toISOString()
+      }));
+    } catch (error) {
+      console.error('Erro ao atualizar cotações:', error);
+    }
   };
 
   return { rates, updateRates };
