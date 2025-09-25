@@ -704,17 +704,19 @@ export function ComposicoesEstoque() {
         )}
 
         <div className="flex-1 min-w-0 space-y-6">
-          {/* Filtros Desktop */}
-          <div className="hidden md:block">
-            <ComposicoesFilters 
-              filters={filters}
-              onFiltersChange={setFilters}
-              stats={stats}
-            />
-          </div>
+          {/* Seção combinada de filtros e busca - tratada como um elemento único */}
+          <div className="space-y-4">
+            {/* Filtros Desktop */}
+            <div className="hidden md:block">
+              <ComposicoesFilters 
+                filters={filters}
+                onFiltersChange={setFilters}
+                stats={stats}
+              />
+            </div>
 
-          {/* Busca e Filtros Mobile/Desktop */}
-          <div>
+            {/* Busca e Filtros Mobile/Desktop */}
+            <div>
             <div className="flex gap-2">
               {/* Campo de busca - ocupa maior parte da largura */}
               <div className="flex-1">
@@ -762,9 +764,9 @@ export function ComposicoesEstoque() {
                 <Package className="h-4 w-4" />
               </Button>
             </div>
+            </div>
           </div>
-
-          {/* Header da seção - apenas para desktop */}
+          {/* Fim da seção combinada de filtros */}
           <Card className="hidden md:block border-border/40 bg-card/30 backdrop-blur-sm">
             <CardContent className="p-6">
               <div className="flex items-center justify-between gap-4">
