@@ -218,7 +218,7 @@ const ProductList = () => {
                     <thead className="bg-muted/50 sticky top-0 z-10">
                       <tr>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">SKU</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[150px]">Produto</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[120px] max-w-[120px]">Produto</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[120px]">Imagem</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[100px]">Material</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">Cor</th>
@@ -258,7 +258,7 @@ const ProductList = () => {
                             </td>
 
                             {/* Produto */}
-                            <td className="px-3 py-3">
+                            <td className="px-3 py-3 max-w-[120px]">
                               <div className="flex items-center space-x-2">
                                 <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden shrink-0">
                                   {product.url_imagem ? (
@@ -276,8 +276,10 @@ const ProductList = () => {
                                     <Package className="w-4 h-4 text-muted-foreground" />
                                   )}
                                 </div>
-                                <div className="min-w-0">
-                                  <p className="font-medium truncate">{product.nome}</p>
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-medium truncate" title={product.nome}>
+                                    {product.nome.length > 60 ? `${product.nome.substring(0, 60)}...` : product.nome}
+                                  </p>
                                 </div>
                               </div>
                             </td>
