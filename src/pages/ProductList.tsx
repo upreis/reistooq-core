@@ -218,7 +218,7 @@ const ProductList = () => {
                     <thead className="bg-muted/50 sticky top-0 z-10">
                       <tr>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">SKU</th>
-                        <th className="px-3 py-3 text-left font-medium w-[140px] min-w-[140px] max-w-[140px]">Produto</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[300px] max-w-[400px]">Produto</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[120px]">Imagem</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[100px]">Material</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">Cor</th>
@@ -258,7 +258,7 @@ const ProductList = () => {
                             </td>
 
                             {/* Produto */}
-                            <td className="px-3 py-3 w-[140px] min-w-[140px] max-w-[140px]">
+                            <td className="px-3 py-3 min-w-[300px] max-w-[400px]">
                               <div className="flex items-center space-x-2">
                                 <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden shrink-0">
                                   {product.url_imagem ? (
@@ -278,7 +278,7 @@ const ProductList = () => {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <p className="font-medium truncate text-sm" title={product.nome}>
-                                    {product.nome.length > 25 ? `${product.nome.substring(0, 25)}...` : product.nome}
+                                    {product.nome.length > 150 ? `${product.nome.substring(0, 150)}...` : product.nome}
                                   </p>
                                 </div>
                               </div>
