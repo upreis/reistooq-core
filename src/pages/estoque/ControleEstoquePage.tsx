@@ -45,9 +45,13 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
   const { filters: intelligentFilters, setFilters: setIntelligentFilters, filteredData: intelligentFilteredData, stats: intelligentStats } = useEstoqueFilters(products);
 
   const loadProducts = useCallback(async () => {
+    // CORREÇÃO: Não recarregar se há produtos iniciais (usar filtros locais apenas)
+    if (initialProducts.length > 0) {
+      return;
+    }
+    
     try {
       setLoading(true);
-      console.log('🔄 ControleEstoquePage: Carregando produtos (fallback)...', { hasInitialProducts: initialProducts.length > 0 });
       
       let allProducts = await getProducts({
         search: searchTerm || undefined,
@@ -103,7 +107,7 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, getProducts, toast]);
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, getProducts, toast, initialProducts.length]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -133,12 +137,15 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
   }, []);
 
   useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      loadProducts();
-    }, 300);
+    // CORREÇÃO: Só executar se não há produtos iniciais
+    if (initialProducts.length === 0) {
+      const delayedSearch = setTimeout(() => {
+        loadProducts();
+      }, 300);
 
-    return () => clearTimeout(delayedSearch);
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, loadProducts]);
+      return () => clearTimeout(delayedSearch);
+    }
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, loadProducts, initialProducts.length]);
 
   const handleSearch = () => {
     setCurrentPage(1);

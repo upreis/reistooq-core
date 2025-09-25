@@ -18,9 +18,7 @@ const EstoqueContent = () => {
     const loadProducts = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Estoque: Carregando produtos do componente pai...');
         const data = await getProducts({ limit: 1000 });
-        console.log('✅ Estoque: Produtos carregados:', data.length);
         setProducts(data);
       } catch (error) {
         console.error("Error loading products:", error);
