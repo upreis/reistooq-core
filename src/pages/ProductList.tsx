@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet, Check, X, Trash2, Upload, Camera } from "lucide-react";
+import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet, Check, X, Trash2, Upload, Camera, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,7 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from 'xlsx';
 
 interface EditingCell {
   productId: string;
@@ -195,6 +196,115 @@ const ProductList = () => {
     } finally {
       setUploadingProductId(null);
       setUploadingField(null);
+    }
+  };
+
+  const handleDownloadData = () => {
+    try {
+      // Preparar dados para exportação
+      const exportData = products.map(product => ({
+        ID: product.id,
+        "NOME DO PRODUTO": product.nome,
+        "SKU INTERNO": product.sku_interno,
+        "CÓDIGO DE BARRAS": product.codigo_barras,
+        "CATEGORIA": product.categoria,
+        "DESCRIÇÃO": product.descricao,
+        "OBSERVAÇÕES": product.observacoes,
+        "PREÇO DE CUSTO": product.preco_custo,
+        "PREÇO DE VENDA": product.preco_venda,
+        "QUANTIDADE ATUAL": product.quantidade_atual,
+        "ESTOQUE MÍNIMO": product.estoque_minimo,
+        "ESTOQUE MÁXIMO": product.estoque_maximo,
+        "LOCALIZAÇÃO": product.localizacao,
+        "STATUS": product.status,
+        "COR": product.cor || "",
+        "MATERIAL": product.material || "",
+        "PESO UNITÁRIO (G)": product.peso_unitario_g || "",
+        "PESO CX MASTER (KG)": product.peso_cx_master_kg || "",
+        "COMPRIMENTO": product.comprimento || "",
+        "LARGURA": product.largura || "",
+        "ALTURA": product.altura || "",
+        "CBM CUBAGEM": product.cbm_cubagem || "",
+        "NCM": product.ncm || "",
+        "PIS": product.pis || "",
+        "COFINS": product.cofins || "",
+        "IMPOSTO IMPORTAÇÃO": product.imposto_importacao || "",
+        "IPI": product.ipi || "",
+        "ICMS": product.icms || "",
+        "UNIDADE": product.unidade || "",
+        "PACKAGE INFO": product.package_info || "",
+        "IMAGEM": product.url_imagem || "",
+        "IMAGEM DO FORNECEDOR": product.url_imagem_fornecedor || "",
+        "ATIVO": product.ativo ? "Sim" : "Não",
+        "DATA DE CRIAÇÃO": product.created_at ? new Date(product.created_at).toLocaleDateString('pt-BR') : "",
+        "ÚLTIMA ATUALIZAÇÃO": product.updated_at ? new Date(product.updated_at).toLocaleDateString('pt-BR') : "",
+        "ÚLTIMA MOVIMENTAÇÃO": product.ultima_movimentacao ? new Date(product.ultima_movimentacao).toLocaleDateString('pt-BR') : ""
+      }));
+
+      // Criar workbook
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exportData);
+
+      // Ajustar largura das colunas
+      const colWidths = [
+        { wch: 36 }, // ID
+        { wch: 30 }, // NOME DO PRODUTO
+        { wch: 15 }, // CÓDIGO
+        { wch: 15 }, // SKU
+        { wch: 18 }, // CÓDIGO DE BARRAS
+        { wch: 15 }, // CATEGORIA
+        { wch: 15 }, // SUBCATEGORIA
+        { wch: 15 }, // MARCA
+        { wch: 15 }, // MODELO
+        { wch: 10 }, // COR
+        { wch: 10 }, // TAMANHO
+        { wch: 40 }, // DESCRIÇÃO
+        { wch: 40 }, // OBSERVAÇÕES
+        { wch: 15 }, // PREÇO DE CUSTO
+        { wch: 15 }, // PREÇO DE VENDA
+        { wch: 15 }, // MARGEM DE LUCRO
+        { wch: 15 }, // ESTOQUE ATUAL
+        { wch: 15 }, // ESTOQUE MÍNIMO
+        { wch: 15 }, // ESTOQUE MÁXIMO
+        { wch: 15 }, // LOCALIZAÇÃO
+        { wch: 10 }, // PESO
+        { wch: 10 }, // ALTURA
+        { wch: 10 }, // LARGURA
+        { wch: 15 }, // COMPRIMENTO
+        { wch: 10 }, // ORIGEM
+        { wch: 15 }, // NCM
+        { wch: 15 }, // CEST
+        { wch: 15 }, // CFOP
+        { wch: 10 }, // UNIDADE
+        { wch: 50 }, // IMAGEM
+        { wch: 50 }, // IMAGEM DO FORNECEDOR
+        { wch: 10 }, // ATIVO
+        { wch: 15 }, // DATA DE CRIAÇÃO
+        { wch: 15 }, // ÚLTIMA ATUALIZAÇÃO
+      ];
+      
+      ws['!cols'] = colWidths;
+
+      // Adicionar à workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Produtos');
+
+      // Gerar nome do arquivo com data atual
+      const fileName = `produtos_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+      // Download
+      XLSX.writeFile(wb, fileName);
+
+      toast({
+        title: "Download concluído",
+        description: `Arquivo ${fileName} baixado com sucesso.`,
+      });
+    } catch (error: any) {
+      console.error("Error downloading data:", error);
+      toast({
+        title: "Erro no download",
+        description: "Não foi possível baixar os dados.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -449,6 +559,10 @@ const ProductList = () => {
               <Button variant="outline" onClick={() => navigate("/apps/ecommerce/import")}>
                 <FileSpreadsheet className="h-4 w-4 mr-2" />
                 Importar
+              </Button>
+              <Button variant="outline" onClick={handleDownloadData}>
+                <Download className="h-4 w-4 mr-2" />
+                Baixar Dados
               </Button>
             </div>
           </CardHeader>
