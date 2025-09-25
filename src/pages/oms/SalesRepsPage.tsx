@@ -13,11 +13,8 @@ import {
   Trash2, 
   Eye, 
   User, 
-  Mail, 
-  Phone,
   DollarSign,
-  Shield,
-  AlertCircle
+  Shield
 } from "lucide-react";
 import { useOMSSalesReps } from "@/hooks/useOMSData";
 import { useToast } from "@/hooks/use-toast";
