@@ -60,7 +60,8 @@ export const useProductImport = () => {
     'PIS': 'pis',
     'COFINS': 'cofins',
     'IMPOSTO DE IMPORTAÇÃO': 'imposto_importacao',
-    'IPI': 'ipi'
+    'IPI': 'ipi',
+    'ICMS': 'icms'
   };
 
   const validateRow = (row: any, index: number): string[] => {
@@ -240,7 +241,7 @@ export const useProductImport = () => {
       'Nome do Produto', 'DESCRIÇÃO', 'PACKAGE', 'PREÇO', 'UNIT', 
       'PCS/CTN', 'PESO UNITARIO(g)', 'Peso cx Master (KG)', 
       'Comprimento', 'Largura', 'Altura', 'CBM CUBAGEM', 'OBS', 'Codigo de Barras', 'NCM',
-      'PIS', 'COFINS', 'IMPOSTO DE IMPORTAÇÃO', 'IPI'
+      'PIS', 'COFINS', 'IMPOSTO DE IMPORTAÇÃO', 'IPI', 'ICMS'
     ];
 
     const exampleData = [
@@ -269,7 +270,8 @@ export const useProductImport = () => {
         'PIS': '0.65',
         'COFINS': '3.00',
         'IMPOSTO DE IMPORTAÇÃO': '20.00',
-        'IPI': '15.00'
+        'IPI': '15.00',
+        'ICMS': '12.00'
       }
     ];
 
