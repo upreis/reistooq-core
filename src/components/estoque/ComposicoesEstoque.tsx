@@ -714,7 +714,7 @@ export function ComposicoesEstoque() {
           </div>
 
           {/* Busca e Filtros Mobile/Desktop */}
-          <div className="mb-6">
+          <div>
             <div className="flex gap-2">
               {/* Campo de busca - ocupa maior parte da largura */}
               <div className="flex-1">
