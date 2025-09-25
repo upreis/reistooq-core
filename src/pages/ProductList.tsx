@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet, Check, X } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet, Check, X, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,8 @@ const ProductList = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [editingValue, setEditingValue] = useState("");
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
   const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -54,6 +57,9 @@ const ProductList = () => {
         limit: 50
       });
       setProducts(data);
+      // Limpar seleções quando recarregar produtos
+      setSelectedProducts([]);
+      setSelectAll(false);
     } catch (error) {
       toast({
         title: "Erro ao carregar produtos",
@@ -90,6 +96,52 @@ const ProductList = () => {
       toast({
         title: "Erro ao remover produto",
         description: "Não foi possível remover o produto.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Funções para gerenciar seleção de produtos
+  const handleSelectProduct = (productId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProducts(prev => [...prev, productId]);
+    } else {
+      setSelectedProducts(prev => prev.filter(id => id !== productId));
+      setSelectAll(false);
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAll(checked);
+    if (checked) {
+      setSelectedProducts(products.map(p => p.id));
+    } else {
+      setSelectedProducts([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProducts.length === 0) return;
+    
+    if (!confirm(`Tem certeza que deseja excluir ${selectedProducts.length} produto(s) selecionado(s)?`)) {
+      return;
+    }
+
+    try {
+      for (const productId of selectedProducts) {
+        await deleteProduct(productId);
+      }
+      toast({
+        title: "Produtos removidos",
+        description: `${selectedProducts.length} produto(s) foram removidos com sucesso.`,
+      });
+      setSelectedProducts([]);
+      setSelectAll(false);
+      loadProducts();
+    } catch (error) {
+      toast({
+        title: "Erro ao remover produtos",
+        description: "Não foi possível remover todos os produtos selecionados.",
         variant: "destructive",
       });
     }
@@ -317,6 +369,38 @@ const ProductList = () => {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Selection Actions Bar */}
+            {selectedProducts.length > 0 && (
+              <div className="flex items-center justify-between p-3 mb-4 bg-muted/50 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium">
+                    {selectedProducts.length} produto(s) selecionado(s)
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedProducts([]);
+                      setSelectAll(false);
+                    }}
+                  >
+                    Limpar seleção
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Excluir Selecionados
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Search and Filter */}
             <div className="flex items-center space-x-4 mb-6">
               <div className="relative flex-1">
@@ -367,10 +451,17 @@ const ProductList = () => {
               <>
                 {/* Scrollable Table Container */}
                 <div className="overflow-x-auto border rounded-lg">
-                  <table className="w-full min-w-[5200px] text-xs">
+                  <table className="w-full min-w-[5300px] text-xs">
                     {/* Table Header */}
                     <thead className="bg-muted/50 sticky top-0 z-10">
                       <tr>
+                        <th className="px-3 py-3 text-left font-medium min-w-[50px]">
+                          <Checkbox
+                            checked={selectAll}
+                            onCheckedChange={handleSelectAll}
+                            aria-label="Selecionar todos"
+                          />
+                        </th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">SKU</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">IMAGEM</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">IMAGEM FORNECEDOR</th>
@@ -435,6 +526,14 @@ const ProductList = () => {
                               index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
                             }`}
                           >
+                            {/* Checkbox for selection */}
+                            <td className="px-3 py-3">
+                              <Checkbox
+                                checked={selectedProducts.includes(product.id)}
+                                onCheckedChange={(checked) => handleSelectProduct(product.id, checked as boolean)}
+                                aria-label={`Selecionar ${product.nome}`}
+                              />
+                            </td>
                             {/* SKU */}
                             <EditableCell 
                               productId={product.id} 
