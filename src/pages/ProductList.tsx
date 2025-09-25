@@ -213,175 +213,185 @@ const ProductList = () => {
               <>
                 {/* Scrollable Table Container */}
                 <div className="overflow-x-auto border rounded-lg">
-                  <div className="min-w-[2400px]">
+                  <table className="w-full min-w-[2400px] text-xs">
                     {/* Table Header */}
-                    <div className="grid grid-cols-20 gap-2 py-3 px-4 bg-muted/50 text-xs font-medium sticky top-0 z-10">
-                      <div className="min-w-[80px]">SKU</div>
-                      <div className="min-w-[150px]">Produto</div>
-                      <div className="min-w-[120px]">Imagem</div>
-                      <div className="min-w-[100px]">Material</div>
-                      <div className="min-w-[80px]">Cor</div>
-                      <div className="min-w-[120px]">Descrição</div>
-                      <div className="min-w-[100px]">Package</div>
-                      <div className="min-w-[80px]">Preço</div>
-                      <div className="min-w-[60px]">Unit</div>
-                      <div className="min-w-[80px]">PCS/CTN</div>
-                      <div className="min-w-[80px]">Quantidade</div>
-                      <div className="min-w-[80px]">Peso (g)</div>
-                      <div className="min-w-[80px]">Peso Cx</div>
-                      <div className="min-w-[80px]">Comp.</div>
-                      <div className="min-w-[80px]">Larg.</div>
-                      <div className="min-w-[80px]">Alt.</div>
-                      <div className="min-w-[80px]">CBM</div>
-                      <div className="min-w-[100px]">Código Barras</div>
-                      <div className="min-w-[80px]">Status</div>
-                      <div className="min-w-[80px]">Ações</div>
-                    </div>
+                    <thead className="bg-muted/50 sticky top-0 z-10">
+                      <tr>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">SKU</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[150px]">Produto</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[120px]">Imagem</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">Material</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Cor</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[120px]">Descrição</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">Package</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Preço</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[60px]">Unit</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">PCS/CTN</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Quantidade</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Peso (g)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Peso Cx</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Comp.</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Larg.</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Alt.</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">CBM</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">NCM</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">Código Barras</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Status</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Ações</th>
+                      </tr>
+                    </thead>
 
-                    {/* Product List */}
-                    <div className="space-y-0">
+                    {/* Table Body */}
+                    <tbody>
                       {products.map((product, index) => {
                         const stockStatus = getStockStatus(product);
                         return (
-                          <div
+                          <tr
                             key={product.id}
-                            className={`grid grid-cols-20 gap-2 py-3 px-4 border-b hover:bg-muted/30 transition-colors text-xs ${
+                            className={`border-b hover:bg-muted/30 transition-colors ${
                               index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
                             }`}
                           >
                             {/* SKU */}
-                            <div className="flex items-center min-w-[80px]">
-                              <span className="font-mono font-medium truncate">{product.sku_interno}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span className="font-mono font-medium">{product.sku_interno}</span>
+                            </td>
 
                             {/* Produto */}
-                            <div className="flex items-center space-x-2 min-w-[150px]">
-                              <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden shrink-0">
-                                {product.url_imagem ? (
-                                  <img 
-                                    src={product.url_imagem} 
-                                    alt={product.nome} 
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                      target.parentElement!.innerHTML = '<Package class="w-4 h-4 text-muted-foreground" />';
-                                    }}
-                                  />
-                                ) : (
-                                  <Package className="w-4 h-4 text-muted-foreground" />
-                                )}
+                            <td className="px-3 py-3">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden shrink-0">
+                                  {product.url_imagem ? (
+                                    <img 
+                                      src={product.url_imagem} 
+                                      alt={product.nome} 
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        target.parentElement!.innerHTML = '<Package class="w-4 h-4 text-muted-foreground" />';
+                                      }}
+                                    />
+                                  ) : (
+                                    <Package className="w-4 h-4 text-muted-foreground" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-medium truncate">{product.nome}</p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="font-medium truncate">{product.nome}</p>
-                              </div>
-                            </div>
+                            </td>
 
-                            {/* Imagem URL */}
-                            <div className="flex items-center min-w-[120px]">
-                              <span className="truncate text-xs">
-                                {product.url_imagem ? 
-                                  <Badge variant="secondary" className="text-xs">Sim</Badge> : 
-                                  <Badge variant="outline" className="text-xs">Não</Badge>
-                                }
-                              </span>
-                            </div>
+                            {/* Imagem */}
+                            <td className="px-3 py-3">
+                              {product.url_imagem ? 
+                                <Badge variant="secondary" className="text-xs">Sim</Badge> : 
+                                <Badge variant="outline" className="text-xs">Não</Badge>
+                              }
+                            </td>
 
                             {/* Material */}
-                            <div className="flex items-center min-w-[100px]">
+                            <td className="px-3 py-3">
                               <span className="truncate">{(product as any).material || "N/A"}</span>
-                            </div>
+                            </td>
 
                             {/* Cor */}
-                            <div className="flex items-center min-w-[80px]">
+                            <td className="px-3 py-3">
                               <span className="truncate">{(product as any).cor || "N/A"}</span>
-                            </div>
+                            </td>
 
                             {/* Descrição */}
-                            <div className="flex items-center min-w-[120px]">
-                              <span className="truncate text-xs">
-                                {product.descricao?.substring(0, 30) || "Sem descrição"}
+                            <td className="px-3 py-3">
+                              <span className="truncate">
+                                {product.descricao?.substring(0, 20) || "Sem descrição"}
                               </span>
-                            </div>
+                            </td>
 
                             {/* Package */}
-                            <div className="flex items-center min-w-[100px]">
+                            <td className="px-3 py-3">
                               <span className="truncate">{(product as any).package_info || "N/A"}</span>
-                            </div>
+                            </td>
 
                             {/* Preço */}
-                            <div className="flex items-center min-w-[80px]">
-                              <span className="font-medium truncate">
+                            <td className="px-3 py-3">
+                              <span className="font-medium">
                                 {formatPrice(product.preco_venda)}
                               </span>
-                            </div>
+                            </td>
 
                             {/* Unit */}
-                            <div className="flex items-center min-w-[60px]">
-                              <span className="truncate">{(product as any).unidade || "UN"}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span>{(product as any).unidade || "UN"}</span>
+                            </td>
 
                             {/* PCS/CTN */}
-                            <div className="flex items-center min-w-[80px]">
-                              <span className="truncate">{(product as any).pcs_ctn || "N/A"}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span>{(product as any).pcs_ctn || "N/A"}</span>
+                            </td>
 
                             {/* Quantidade */}
-                            <div className="flex items-center min-w-[80px]">
+                            <td className="px-3 py-3">
                               <span className="font-medium">{product.quantidade_atual}</span>
-                            </div>
+                            </td>
 
                             {/* Peso Unitário */}
-                            <div className="flex items-center min-w-[80px]">
-                              <span className="truncate">{(product as any).peso_unitario_g ? `${(product as any).peso_unitario_g}g` : "N/A"}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span>{(product as any).peso_unitario_g ? `${(product as any).peso_unitario_g}g` : "N/A"}</span>
+                            </td>
 
                             {/* Peso Cx Master */}
-                            <div className="flex items-center min-w-[80px]">
-                              <span className="truncate">{(product as any).peso_cx_master_kg ? `${(product as any).peso_cx_master_kg}kg` : "N/A"}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span>{(product as any).peso_cx_master_kg ? `${(product as any).peso_cx_master_kg}kg` : "N/A"}</span>
+                            </td>
 
                             {/* Comprimento */}
-                            <div className="flex items-center min-w-[80px]">
-                              <span className="truncate">{(product as any).comprimento ? `${(product as any).comprimento}cm` : "N/A"}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span>{(product as any).comprimento ? `${(product as any).comprimento}cm` : "N/A"}</span>
+                            </td>
 
                             {/* Largura */}
-                            <div className="flex items-center min-w-[80px]">
-                              <span className="truncate">{(product as any).largura ? `${(product as any).largura}cm` : "N/A"}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span>{(product as any).largura ? `${(product as any).largura}cm` : "N/A"}</span>
+                            </td>
 
                             {/* Altura */}
-                            <div className="flex items-center min-w-[80px]">
-                              <span className="truncate">{(product as any).altura ? `${(product as any).altura}cm` : "N/A"}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span>{(product as any).altura ? `${(product as any).altura}cm` : "N/A"}</span>
+                            </td>
 
                             {/* CBM */}
-                            <div className="flex items-center min-w-[80px]">
-                              <span className="truncate">{(product as any).cbm_cubagem || "N/A"}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span>{(product as any).cbm_cubagem || "N/A"}</span>
+                            </td>
+
+                            {/* NCM */}
+                            <td className="px-3 py-3">
+                              <span className="font-mono">{(product as any).ncm || "N/A"}</span>
+                            </td>
 
                             {/* Código de Barras */}
-                            <div className="flex items-center min-w-[100px]">
-                              <span className="font-mono text-xs truncate">{product.codigo_barras || "N/A"}</span>
-                            </div>
+                            <td className="px-3 py-3">
+                              <span className="font-mono">{product.codigo_barras || "N/A"}</span>
+                            </td>
 
                             {/* Status/Estoque */}
-                            <div className="flex items-center space-x-1 min-w-[80px]">
-                              <Badge
-                                variant={stockStatus.variant}
-                                className="text-xs px-2 py-0"
-                              >
-                                <div className={`w-1.5 h-1.5 rounded-full mr-1 ${stockStatus.color}`} />
-                                {product.quantidade_atual}
-                              </Badge>
-                              {product.quantidade_atual <= product.estoque_minimo && (
-                                <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                              )}
-                            </div>
+                            <td className="px-3 py-3">
+                              <div className="flex items-center space-x-1">
+                                <Badge
+                                  variant={stockStatus.variant}
+                                  className="text-xs px-2 py-0"
+                                >
+                                  <div className={`w-1.5 h-1.5 rounded-full mr-1 ${stockStatus.color}`} />
+                                  {product.quantidade_atual}
+                                </Badge>
+                                {product.quantidade_atual <= product.estoque_minimo && (
+                                  <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                                )}
+                              </div>
+                            </td>
 
                             {/* Actions */}
-                            <div className="flex items-center min-w-[80px]">
+                            <td className="px-3 py-3">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
@@ -407,12 +417,12 @@ const ProductList = () => {
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
-                            </div>
-                          </div>
+                            </td>
+                          </tr>
                         );
                       })}
-                    </div>
-                  </div>
+                    </tbody>
+                  </table>
                 </div>
                 
                 {/* Scroll hint */}
