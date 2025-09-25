@@ -7,6 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet, Check, X, Trash2, Upload, Camera } from "lucide-react";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -46,6 +52,8 @@ const ProductList = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingProductId, setUploadingProductId] = useState<string | null>(null);
   const [uploadingField, setUploadingField] = useState<'imagem' | 'imagem_fornecedor' | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -190,6 +198,26 @@ const ProductList = () => {
     }
   };
 
+  // Função para abrir detalhes do produto
+  const handleRowClick = (product: Product, event: React.MouseEvent) => {
+    // Evitar abrir modal se clicou em botões, checkboxes ou células editáveis
+    const target = event.target as HTMLElement;
+    const isInteractiveElement = target.closest('button, input, .editable-cell');
+    
+    if (!isInteractiveElement) {
+      setSelectedProduct(product);
+      setIsDetailModalOpen(true);
+    }
+  };
+
+  const formatPrice = (price: number | null | undefined): string => {
+    if (price === null || price === undefined) return "R$ 0,00";
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(price);
+  };
+
   const triggerImageUpload = (productId: string, field: 'imagem' | 'imagem_fornecedor') => {
     setUploadingProductId(productId);
     setUploadingField(field);
@@ -232,13 +260,6 @@ const ProductList = () => {
     }
   };
 
-  const formatPrice = (price: number | null) => {
-    if (!price) return "N/A";
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(price);
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
@@ -378,7 +399,7 @@ const ProductList = () => {
 
     return (
       <td 
-        className={`px-3 py-3 ${className} ${editable ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+        className={`px-3 py-3 editable-cell ${className} ${editable ? 'cursor-pointer hover:bg-muted/50' : ''}`}
         onDoubleClick={() => editable && startEditing(productId, field, value)}
         title={editable ? "Clique duplo para editar" : undefined}
       >
@@ -585,9 +606,10 @@ const ProductList = () => {
                         return (
                           <tr
                             key={product.id}
-                            className={`border-b hover:bg-muted/30 transition-colors ${
+                            className={`border-b hover:bg-muted/30 transition-colors cursor-pointer ${
                               index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
                             }`}
+                            onClick={(e) => handleRowClick(product, e)}
                           >
                             {/* Checkbox for selection */}
                             <td className="px-3 py-3">
@@ -1004,6 +1026,210 @@ const ProductList = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Detalhes do Produto */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-background border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Detalhes do Produto: {selectedProduct?.nome}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedProduct && (
+            <div className="grid gap-6 py-4">
+              {/* Seção de Imagens */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <h3 className="font-medium text-sm">Imagem Principal</h3>
+                  <div className="w-full h-48 bg-muted rounded-lg flex items-center justify-center overflow-hidden border">
+                    {selectedProduct.url_imagem ? (
+                      <img 
+                        src={selectedProduct.url_imagem} 
+                        alt={selectedProduct.nome} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        <Package className="w-12 h-12 mx-auto mb-2" />
+                        <p className="text-sm">Sem imagem</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="font-medium text-sm">Imagem do Fornecedor</h3>
+                  <div className="w-full h-48 bg-muted rounded-lg flex items-center justify-center overflow-hidden border">
+                    {(selectedProduct as any).url_imagem_fornecedor ? (
+                      <img 
+                        src={(selectedProduct as any).url_imagem_fornecedor} 
+                        alt="Fornecedor" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center text-muted-foreground">
+                        <Camera className="w-12 h-12 mx-auto mb-2" />
+                        <p className="text-sm">Sem imagem do fornecedor</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações Básicas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">SKU</label>
+                  <p className="text-sm font-mono bg-muted p-2 rounded">{selectedProduct.sku_interno}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Nome do Produto</label>
+                  <p className="text-sm bg-muted p-2 rounded">{selectedProduct.nome}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Preço de Venda</label>
+                  <p className="text-sm bg-muted p-2 rounded font-medium text-green-600">
+                    {formatPrice(selectedProduct.preco_venda)}
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Quantidade Atual</label>
+                  <p className="text-sm bg-muted p-2 rounded">
+                    {selectedProduct.quantidade_atual || 0}
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Material</label>
+                  <p className="text-sm bg-muted p-2 rounded">
+                    {(selectedProduct as any).material || "-"}
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Cor</label>
+                  <p className="text-sm bg-muted p-2 rounded">
+                    {(selectedProduct as any).cor || "-"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Dimensões e Pesos */}
+              <div>
+                <h3 className="font-medium mb-3">Dimensões e Pesos</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Comprimento</label>
+                    <p className="text-sm bg-muted p-2 rounded">
+                      {(selectedProduct as any).comprimento_cm ? `${(selectedProduct as any).comprimento_cm}cm` : "-"}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Largura</label>
+                    <p className="text-sm bg-muted p-2 rounded">
+                      {(selectedProduct as any).largura_cm ? `${(selectedProduct as any).largura_cm}cm` : "-"}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Altura</label>
+                    <p className="text-sm bg-muted p-2 rounded">
+                      {(selectedProduct as any).altura_cm ? `${(selectedProduct as any).altura_cm}cm` : "-"}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Peso Unitário</label>
+                    <p className="text-sm bg-muted p-2 rounded">
+                      {(selectedProduct as any).peso_unitario_g ? `${(selectedProduct as any).peso_unitario_g}g` : "-"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações Fiscais */}
+              <div>
+                <h3 className="font-medium mb-3">Informações Fiscais</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">NCM</label>
+                    <p className="text-sm bg-muted p-2 rounded font-mono">
+                      {(selectedProduct as any).ncm || "-"}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Código de Barras</label>
+                    <p className="text-sm bg-muted p-2 rounded font-mono">
+                      {selectedProduct.codigo_barras || "-"}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">PIS</label>
+                    <p className="text-sm bg-muted p-2 rounded">
+                      {(selectedProduct as any).pis ? `${((selectedProduct as any).pis * 100).toFixed(2)}%` : "-"}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">COFINS</label>
+                    <p className="text-sm bg-muted p-2 rounded">
+                      {(selectedProduct as any).cofins ? `${((selectedProduct as any).cofins * 100).toFixed(2)}%` : "-"}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">IPI</label>
+                    <p className="text-sm bg-muted p-2 rounded">
+                      {(selectedProduct as any).ipi ? `${((selectedProduct as any).ipi * 100).toFixed(2)}%` : "-"}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">ICMS</label>
+                    <p className="text-sm bg-muted p-2 rounded">
+                      {(selectedProduct as any).icms ? `${((selectedProduct as any).icms * 100).toFixed(2)}%` : "-"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Descrição e Observações */}
+              {(selectedProduct.descricao || (selectedProduct as any).observacoes) && (
+                <div>
+                  <h3 className="font-medium mb-3">Descrição e Observações</h3>
+                  <div className="grid gap-4">
+                    {selectedProduct.descricao && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Descrição</label>
+                        <p className="text-sm bg-muted p-3 rounded">
+                          {selectedProduct.descricao}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {(selectedProduct as any).observacoes && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-muted-foreground">Observações</label>
+                        <p className="text-sm bg-muted p-3 rounded">
+                          {(selectedProduct as any).observacoes}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
