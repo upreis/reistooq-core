@@ -213,30 +213,36 @@ const ProductList = () => {
               <>
                 {/* Scrollable Table Container */}
                 <div className="overflow-x-auto border rounded-lg">
-                  <table className="w-full min-w-[2400px] text-xs">
+                  <table className="w-full min-w-[4000px] text-xs">
                     {/* Table Header */}
                     <thead className="bg-muted/50 sticky top-0 z-10">
                       <tr>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">SKU</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[300px] max-w-[400px]">Produto</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[120px]">Imagem</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">Material</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Cor</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[120px]">Descrição</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">Package</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Preço</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[60px]">Unit</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">PCS/CTN</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">IMAGEM</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">IMAGEM FORNECEDOR</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">MATERIAL</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[60px]">COR</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[200px]">Nome do Produto</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[120px]">DESCRIÇÃO</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">PACKAGE</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">PREÇO</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[60px]">UNIT</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[70px]">PCS/CTN</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">Quantidade</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Peso (g)</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Peso Cx</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Comp.</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Larg.</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Alt.</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">CBM</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">NCM</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">Código Barras</th>
-                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Status</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[90px]">PESO UNITARIO(g)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[110px]">Peso cx Master (KG)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[130px]">Peso Sem cx Master (KG)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[140px]">Peso total cx Master (KG)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[160px]">Peso total sem cx Master (KG)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">Comprimento</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[70px]">Largura</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[60px]">Altura</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[90px]">CBM Cubagem</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">CBM Total</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[100px]">Quantidade Total</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[90px]">Valor Total</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">OBS</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[120px]">Codigo de Barras</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">Ações</th>
                       </tr>
                     </thead>
@@ -244,7 +250,24 @@ const ProductList = () => {
                     {/* Table Body */}
                     <tbody>
                       {products.map((product, index) => {
-                        const stockStatus = getStockStatus(product);
+                        // Cálculos automáticos
+                        const quantidade = product.quantidade_atual || 0;
+                        const pcsCtn = (product as any).pcs_ctn || 0;
+                        const preco = product.preco_venda || 0;
+                        const pesoCxMaster = (product as any).peso_cx_master_kg || 0;
+                        const comprimento = (product as any).comprimento || 0;
+                        const largura = (product as any).largura || 0;
+                        const altura = (product as any).altura || 0;
+                        
+                        // Cálculos das colunas derivadas
+                        const pesoSemCxMaster = pesoCxMaster > 0 ? pesoCxMaster - 1 : 0;
+                        const pesoTotalCxMaster = pesoCxMaster * quantidade;
+                        const pesoTotalSemCxMaster = pesoSemCxMaster * quantidade;
+                        const cbmCubagem = (comprimento * largura * altura) / 1000000;
+                        const cbmTotal = cbmCubagem * quantidade;
+                        const quantidadeTotal = pcsCtn * quantidade;
+                        const valorTotal = preco * quantidadeTotal;
+
                         return (
                           <tr
                             key={product.id}
@@ -254,142 +277,196 @@ const ProductList = () => {
                           >
                             {/* SKU */}
                             <td className="px-3 py-3">
-                              <span className="font-mono font-medium">{product.sku_interno}</span>
+                              <span className="font-mono font-medium text-xs">{product.sku_interno}</span>
                             </td>
 
-                            {/* Produto */}
-                            <td className="px-3 py-3 min-w-[300px] max-w-[400px]">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden shrink-0">
-                                  {product.url_imagem ? (
-                                    <img 
-                                      src={product.url_imagem} 
-                                      alt={product.nome} 
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        target.parentElement!.innerHTML = '<Package class="w-4 h-4 text-muted-foreground" />';
-                                      }}
-                                    />
-                                  ) : (
-                                    <Package className="w-4 h-4 text-muted-foreground" />
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-medium truncate text-sm" title={product.nome}>
-                                    {product.nome.length > 150 ? `${product.nome.substring(0, 150)}...` : product.nome}
-                                  </p>
-                                </div>
+                            {/* IMAGEM */}
+                            <td className="px-3 py-3">
+                              <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
+                                {product.url_imagem ? (
+                                  <img 
+                                    src={product.url_imagem} 
+                                    alt={product.nome} 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const parent = target.parentElement;
+                                      if (parent) {
+                                        parent.innerHTML = '<div class="w-4 h-4 bg-gray-300 rounded"></div>';
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <Package className="w-4 h-4 text-muted-foreground" />
+                                )}
                               </div>
                             </td>
 
-                            {/* Imagem */}
+                            {/* IMAGEM DO FORNECEDOR */}
                             <td className="px-3 py-3">
-                              {product.url_imagem ? 
-                                <Badge variant="secondary" className="text-xs">Sim</Badge> : 
-                                <Badge variant="outline" className="text-xs">Não</Badge>
-                              }
+                              <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
+                                {(product as any).url_imagem_fornecedor ? (
+                                  <img 
+                                    src={(product as any).url_imagem_fornecedor} 
+                                    alt="Fornecedor" 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const parent = target.parentElement;
+                                      if (parent) {
+                                        parent.innerHTML = '<div class="w-4 h-4 bg-gray-300 rounded"></div>';
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-4 h-4 bg-gray-300 rounded"></div>
+                                )}
+                              </div>
                             </td>
 
-                            {/* Material */}
+                            {/* MATERIAL */}
                             <td className="px-3 py-3">
-                              <span className="truncate">{(product as any).material || "N/A"}</span>
+                              <span className="text-xs">{(product as any).material || "-"}</span>
                             </td>
 
-                            {/* Cor */}
+                            {/* COR */}
                             <td className="px-3 py-3">
-                              <span className="truncate">{(product as any).cor || "N/A"}</span>
+                              <span className="text-xs">{(product as any).cor || "-"}</span>
                             </td>
 
-                            {/* Descrição */}
+                            {/* Nome do Produto */}
                             <td className="px-3 py-3">
-                              <span className="truncate">
-                                {product.descricao?.substring(0, 20) || "Sem descrição"}
+                              <span className="text-xs font-medium" title={product.nome}>
+                                {product.nome.length > 30 ? `${product.nome.substring(0, 30)}...` : product.nome}
                               </span>
                             </td>
 
-                            {/* Package */}
+                            {/* DESCRIÇÃO */}
                             <td className="px-3 py-3">
-                              <span className="truncate">{(product as any).package_info || "N/A"}</span>
+                              <span className="text-xs" title={product.descricao || ""}>
+                                {product.descricao ? 
+                                  (product.descricao.length > 20 ? `${product.descricao.substring(0, 20)}...` : product.descricao) 
+                                  : "-"
+                                }
+                              </span>
                             </td>
 
-                            {/* Preço */}
+                            {/* PACKAGE */}
                             <td className="px-3 py-3">
-                              <span className="font-medium">
+                              <span className="text-xs">{(product as any).package_info || "-"}</span>
+                            </td>
+
+                            {/* PREÇO */}
+                            <td className="px-3 py-3">
+                              <span className="text-xs font-medium">
                                 {formatPrice(product.preco_venda)}
                               </span>
                             </td>
 
-                            {/* Unit */}
+                            {/* UNIT */}
                             <td className="px-3 py-3">
-                              <span>{(product as any).unidade || "UN"}</span>
+                              <span className="text-xs">{(product as any).unidade || "UN"}</span>
                             </td>
 
                             {/* PCS/CTN */}
                             <td className="px-3 py-3">
-                              <span>{(product as any).pcs_ctn || "N/A"}</span>
+                              <span className="text-xs">{pcsCtn || "-"}</span>
                             </td>
 
                             {/* Quantidade */}
                             <td className="px-3 py-3">
-                              <span className="font-medium">{product.quantidade_atual}</span>
+                              <span className="text-xs font-medium">{quantidade}</span>
                             </td>
 
-                            {/* Peso Unitário */}
+                            {/* PESO UNITARIO(g) */}
                             <td className="px-3 py-3">
-                              <span>{(product as any).peso_unitario_g ? `${(product as any).peso_unitario_g}g` : "N/A"}</span>
+                              <span className="text-xs">{(product as any).peso_unitario_g ? `${(product as any).peso_unitario_g}g` : "-"}</span>
                             </td>
 
-                            {/* Peso Cx Master */}
+                            {/* Peso cx Master (KG) */}
                             <td className="px-3 py-3">
-                              <span>{(product as any).peso_cx_master_kg ? `${(product as any).peso_cx_master_kg}kg` : "N/A"}</span>
+                              <span className="text-xs">{pesoCxMaster ? `${pesoCxMaster.toFixed(2)}kg` : "-"}</span>
+                            </td>
+
+                            {/* Peso Sem cx Master (KG) - CALCULADO */}
+                            <td className="px-3 py-3">
+                              <span className="text-xs font-medium text-blue-600">
+                                {pesoCxMaster > 0 ? `${pesoSemCxMaster.toFixed(2)}kg` : "-"}
+                              </span>
+                            </td>
+
+                            {/* Peso total cx Master (KG) - CALCULADO */}
+                            <td className="px-3 py-3">
+                              <span className="text-xs font-medium text-green-600">
+                                {pesoCxMaster > 0 ? `${pesoTotalCxMaster.toFixed(2)}kg` : "-"}
+                              </span>
+                            </td>
+
+                            {/* Peso total sem cx Master (KG) - CALCULADO */}
+                            <td className="px-3 py-3">
+                              <span className="text-xs font-medium text-green-600">
+                                {pesoCxMaster > 0 ? `${pesoTotalSemCxMaster.toFixed(2)}kg` : "-"}
+                              </span>
                             </td>
 
                             {/* Comprimento */}
                             <td className="px-3 py-3">
-                              <span>{(product as any).comprimento ? `${(product as any).comprimento}cm` : "N/A"}</span>
+                              <span className="text-xs">{comprimento ? `${comprimento}cm` : "-"}</span>
                             </td>
 
                             {/* Largura */}
                             <td className="px-3 py-3">
-                              <span>{(product as any).largura ? `${(product as any).largura}cm` : "N/A"}</span>
+                              <span className="text-xs">{largura ? `${largura}cm` : "-"}</span>
                             </td>
 
                             {/* Altura */}
                             <td className="px-3 py-3">
-                              <span>{(product as any).altura ? `${(product as any).altura}cm` : "N/A"}</span>
+                              <span className="text-xs">{altura ? `${altura}cm` : "-"}</span>
                             </td>
 
-                            {/* CBM */}
+                            {/* CBM Cubagem - CALCULADO */}
                             <td className="px-3 py-3">
-                              <span>{(product as any).cbm_cubagem || "N/A"}</span>
+                              <span className="text-xs font-medium text-purple-600">
+                                {(comprimento && largura && altura) ? cbmCubagem.toFixed(6) : "-"}
+                              </span>
                             </td>
 
-                            {/* NCM */}
+                            {/* CBM Total - CALCULADO */}
                             <td className="px-3 py-3">
-                              <span className="font-mono">{(product as any).ncm || "N/A"}</span>
+                              <span className="text-xs font-medium text-purple-600">
+                                {(comprimento && largura && altura) ? cbmTotal.toFixed(6) : "-"}
+                              </span>
                             </td>
 
-                            {/* Código de Barras */}
+                            {/* Quantidade Total - CALCULADO */}
                             <td className="px-3 py-3">
-                              <span className="font-mono">{product.codigo_barras || "N/A"}</span>
+                              <span className="text-xs font-medium text-orange-600">
+                                {pcsCtn > 0 ? quantidadeTotal : "-"}
+                              </span>
                             </td>
 
-                            {/* Status/Estoque */}
+                            {/* Valor Total - CALCULADO */}
                             <td className="px-3 py-3">
-                              <div className="flex items-center space-x-1">
-                                <Badge
-                                  variant={stockStatus.variant}
-                                  className="text-xs px-2 py-0"
-                                >
-                                  <div className={`w-1.5 h-1.5 rounded-full mr-1 ${stockStatus.color}`} />
-                                  {product.quantidade_atual}
-                                </Badge>
-                                {product.quantidade_atual <= product.estoque_minimo && (
-                                  <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                                )}
-                              </div>
+                              <span className="text-xs font-medium text-red-600">
+                                {(pcsCtn > 0 && preco > 0) ? formatPrice(valorTotal) : "-"}
+                              </span>
+                            </td>
+
+                            {/* OBS */}
+                            <td className="px-3 py-3">
+                              <span className="text-xs" title={(product as any).observacoes || ""}>
+                                {(product as any).observacoes ? 
+                                  ((product as any).observacoes.length > 15 ? `${(product as any).observacoes.substring(0, 15)}...` : (product as any).observacoes)
+                                  : "-"
+                                }
+                              </span>
+                            </td>
+
+                            {/* Codigo de Barras */}
+                            <td className="px-3 py-3">
+                              <span className="text-xs font-mono">{product.codigo_barras || "-"}</span>
                             </td>
 
                             {/* Actions */}
@@ -427,9 +504,33 @@ const ProductList = () => {
                   </table>
                 </div>
                 
-                {/* Scroll hint */}
-                <div className="text-xs text-muted-foreground mt-2 text-center">
-                  <span>💡 Role horizontalmente para ver todas as colunas</span>
+                {/* Legenda das cores dos cálculos */}
+                <div className="text-xs text-muted-foreground mt-4 p-3 bg-muted/30 rounded-lg">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-600 rounded"></div>
+                      <span>Peso Sem cx Master (calculado)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-green-600 rounded"></div>
+                      <span>Pesos Totais (calculados)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-600 rounded"></div>
+                      <span>CBM (calculado)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-orange-600 rounded"></div>
+                      <span>Quantidade Total (calculado)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-red-600 rounded"></div>
+                      <span>Valor Total (calculado)</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-center">
+                    <span>💡 Role horizontalmente para ver todas as colunas</span>
+                  </div>
                 </div>
               </>
             )}
