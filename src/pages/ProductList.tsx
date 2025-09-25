@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet, Check, X, Trash2 } from "lucide-react";
+import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet, Check, X, Trash2, Upload, Camera } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
+import { useImageUpload } from "@/hooks/useImageUpload";
 import { useNavigate } from "react-router-dom";
 
 interface EditingCell {
@@ -41,6 +42,10 @@ const ProductList = () => {
   const [selectAll, setSelectAll] = useState(false);
   const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
   const { toast } = useToast();
+  const { uploadImage, uploading } = useImageUpload();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingProductId, setUploadingProductId] = useState<string | null>(null);
+  const [uploadingField, setUploadingField] = useState<'imagem' | 'imagem_fornecedor' | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -145,6 +150,64 @@ const ProductList = () => {
         variant: "destructive",
       });
     }
+  };
+
+  // Funções para upload de imagem
+  const handleImageUpload = async (productId: string, field: 'imagem' | 'imagem_fornecedor', file: File) => {
+    try {
+      setUploadingProductId(productId);
+      setUploadingField(field);
+
+      const result = await uploadImage(file, `products/${productId}`);
+      
+      if (result.success && result.url) {
+        const fieldName = field === 'imagem' ? 'url_imagem' : 'url_imagem_fornecedor';
+        
+        await updateProduct(productId, { [fieldName]: result.url });
+        
+        toast({
+          title: "Imagem enviada",
+          description: "A imagem foi enviada e salva com sucesso.",
+        });
+        
+        loadProducts(); // Recarregar para mostrar a nova imagem
+      } else {
+        toast({
+          title: "Erro no upload",
+          description: result.error || "Não foi possível enviar a imagem.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro no upload",
+        description: "Ocorreu um erro ao enviar a imagem.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingProductId(null);
+      setUploadingField(null);
+    }
+  };
+
+  const triggerImageUpload = (productId: string, field: 'imagem' | 'imagem_fornecedor') => {
+    setUploadingProductId(productId);
+    setUploadingField(field);
+    
+    // Criar input file temporário
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        handleImageUpload(productId, field, file);
+      } else {
+        setUploadingProductId(null);
+        setUploadingField(null);
+      }
+    };
+    input.click();
   };
 
   const getStockStatus = (product: Product) => {
@@ -451,7 +514,7 @@ const ProductList = () => {
               <>
                 {/* Scrollable Table Container */}
                 <div className="overflow-x-auto border rounded-lg">
-                  <table className="w-full min-w-[5300px] text-xs">
+                  <table className="w-full min-w-[5400px] text-xs">
                     {/* Table Header */}
                     <thead className="bg-muted/50 sticky top-0 z-10">
                       <tr>
@@ -545,53 +608,85 @@ const ProductList = () => {
 
                             {/* IMAGEM */}
                             <td className="px-3 py-3">
-                              <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
-                                {product.url_imagem ? (
-                                  <img 
-                                    src={product.url_imagem} 
-                                    alt={product.nome} 
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                      const parent = target.parentElement;
-                                      if (parent) {
-                                        parent.innerHTML = '<div class="w-4 h-4 bg-gray-300 rounded"></div>';
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  <Package className="w-4 h-4 text-muted-foreground" />
-                                )}
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
+                                  {product.url_imagem ? (
+                                    <img 
+                                      src={product.url_imagem} 
+                                      alt={product.nome} 
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const parent = target.parentElement;
+                                        if (parent) {
+                                          parent.innerHTML = '<div class="w-4 h-4 bg-gray-300 rounded"></div>';
+                                        }
+                                      }}
+                                    />
+                                  ) : (
+                                    <Package className="w-4 h-4 text-muted-foreground" />
+                                  )}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => triggerImageUpload(product.id, 'imagem')}
+                                  disabled={uploadingProductId === product.id && uploadingField === 'imagem'}
+                                >
+                                  {uploadingProductId === product.id && uploadingField === 'imagem' ? (
+                                    <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Upload className="w-3 h-3" />
+                                  )}
+                                </Button>
                               </div>
                             </td>
 
                             {/* IMAGEM DO FORNECEDOR */}
-                            <EditableCell 
-                              productId={product.id} 
-                              field="url_imagem_fornecedor" 
-                              value={(product as any).url_imagem_fornecedor}
-                            >
-                              <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
-                                {(product as any).url_imagem_fornecedor ? (
-                                  <img 
-                                    src={(product as any).url_imagem_fornecedor} 
-                                    alt="Fornecedor" 
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                      const parent = target.parentElement;
-                                      if (parent) {
-                                        parent.innerHTML = '<div class="w-4 h-4 bg-gray-300 rounded"></div>';
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  <div className="w-4 h-4 bg-gray-300 rounded"></div>
-                                )}
+                            <td className="px-3 py-3">
+                              <div className="flex items-center gap-2">
+                                <EditableCell 
+                                  productId={product.id} 
+                                  field="url_imagem_fornecedor" 
+                                  value={(product as any).url_imagem_fornecedor}
+                                >
+                                  <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
+                                    {(product as any).url_imagem_fornecedor ? (
+                                      <img 
+                                        src={(product as any).url_imagem_fornecedor} 
+                                        alt="Fornecedor" 
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          target.style.display = 'none';
+                                          const parent = target.parentElement;
+                                          if (parent) {
+                                            parent.innerHTML = '<div class="w-4 h-4 bg-gray-300 rounded"></div>';
+                                          }
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="w-4 h-4 bg-gray-300 rounded"></div>
+                                    )}
+                                  </div>
+                                </EditableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => triggerImageUpload(product.id, 'imagem_fornecedor')}
+                                  disabled={uploadingProductId === product.id && uploadingField === 'imagem_fornecedor'}
+                                >
+                                  {uploadingProductId === product.id && uploadingField === 'imagem_fornecedor' ? (
+                                    <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Upload className="w-3 h-3" />
+                                  )}
+                                </Button>
                               </div>
-                            </EditableCell>
+                            </td>
 
                             {/* MATERIAL */}
                             <EditableCell 
