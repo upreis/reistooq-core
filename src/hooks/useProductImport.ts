@@ -102,6 +102,9 @@ export const useProductImport = () => {
           product[productField] = parseFloat(value) || 0;
         } else if (['pcs_ctn'].includes(productField)) {
           product[productField] = parseInt(value) || 0;
+        } else if (['pis', 'cofins', 'imposto_importacao', 'ipi', 'icms'].includes(productField)) {
+          // Converter porcentagem para decimal (ex: 12.5 -> 0.125)
+          product[productField] = (parseFloat(value) || 0) / 100;
         } else {
           product[productField] = value.toString();
         }
