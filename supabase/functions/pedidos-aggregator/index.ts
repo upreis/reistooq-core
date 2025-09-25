@@ -228,9 +228,9 @@ Deno.serve(async (req) => {
           }
         }
       }
-        } catch (error) {
-          console.warn(`[pedidos-aggregator:${cid}] Error processing account ${accountId.slice(0,8)}:`, error);
-        }
+    } catch (error) {
+      console.warn(`[pedidos-aggregator:${cid}] Error processing account ${accountId.slice(0,8)}:`, error);
+    }
       }
 
       console.log(`[pedidos-aggregator:${cid}] Analysis result: total=${totalCount}, prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
