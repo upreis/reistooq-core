@@ -764,65 +764,6 @@ export function ComposicoesEstoque() {
             </div>
           </div>
 
-          {/* Cards de Resumo */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <Card className="border-border/40 bg-card/30 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Package className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Total de Produtos</p>
-                    <p className="text-2xl font-bold text-primary">{filteredData?.length || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/40 bg-card/30 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-green-500/10">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Disponíveis</p>
-                    <p className="text-2xl font-bold text-green-500">{(stats?.total || 0) - (stats?.lowStock || 0)}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/40 bg-card/30 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-orange-500/10">
-                    <AlertTriangle className="h-5 w-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Em Falta</p>
-                    <p className="text-2xl font-bold text-orange-500">{stats?.lowStock || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/40 bg-card/30 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10">
-                    <Boxes className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Valor Total</p>
-                    <p className="text-2xl font-bold text-blue-500">{stats?.total || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Header da seção - apenas para desktop */}
           <Card className="hidden md:block border-border/40 bg-card/30 backdrop-blur-sm">
             <CardContent className="p-6">
