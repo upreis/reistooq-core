@@ -98,10 +98,12 @@ export const useProductImport = () => {
       product.quantidade_atual = 0;
     }
 
-    // Mapear apenas os campos que têm valores no Excel
+    // Mapear TODOS os campos do Excel - para update, limpar campos vazios
     Object.entries(columnMapping).forEach(([excelCol, productField]) => {
       const value = row[excelCol];
-      if (value !== undefined && value !== null && value !== '') {
+      
+      // Para updates, sempre incluir o campo (mesmo se vazio) para garantir atualização
+      if (isUpdate || (value !== undefined && value !== null && value !== '')) {
         if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento_cm', 'largura_cm', 'altura_cm', 'cubagem_cm3'].includes(productField)) {
           product[productField] = parseFloat(value) || 0;
         } else if (['pcs_ctn'].includes(productField)) {
@@ -110,7 +112,8 @@ export const useProductImport = () => {
           // Converter porcentagem para decimal (ex: 12.5 -> 0.125)
           product[productField] = (parseFloat(value) || 0) / 100;
         } else {
-          product[productField] = value.toString();
+          // Para strings, limpar valores vazios em updates
+          product[productField] = value ? value.toString() : (isUpdate ? '' : value);
         }
       }
     });
@@ -213,8 +216,9 @@ export const useProductImport = () => {
           .single();
 
         if (existingProduct) {
-          // Produto existe, fazer UPDATE apenas dos campos fornecidos
+          // Produto existe, fazer UPDATE de todos os campos do template
           const productData = convertRowToProduct(row, true);
+          console.log(`🔄 Atualizando produto SKU: ${row['SKU']}`, productData);
           await updateProduct(existingProduct.id, productData);
         } else {
           // Produto não existe, fazer INSERT completo
