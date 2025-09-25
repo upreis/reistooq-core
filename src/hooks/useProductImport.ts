@@ -83,19 +83,23 @@ export const useProductImport = () => {
     return errors;
   };
 
-  const convertRowToProduct = (row: any) => {
-    const product: any = {
-      ativo: true,
-      status: 'ativo',
-      estoque_minimo: 0,
-      estoque_maximo: 1000,
-      preco_custo: 0,
-      localizacao: '',
-      categoria: null,
-      quantidade_atual: 0
-    };
+  const convertRowToProduct = (row: any, isUpdate: boolean = false) => {
+    const product: any = {};
 
-      Object.entries(columnMapping).forEach(([excelCol, productField]) => {
+    // Para novos produtos, definir valores padrão
+    if (!isUpdate) {
+      product.ativo = true;
+      product.status = 'ativo';
+      product.estoque_minimo = 0;
+      product.estoque_maximo = 1000;
+      product.preco_custo = 0;
+      product.localizacao = '';
+      product.categoria = null;
+      product.quantidade_atual = 0;
+    }
+
+    // Mapear apenas os campos que têm valores no Excel
+    Object.entries(columnMapping).forEach(([excelCol, productField]) => {
       const value = row[excelCol];
       if (value !== undefined && value !== null && value !== '') {
         if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento_cm', 'largura_cm', 'altura_cm', 'cubagem_cm3'].includes(productField)) {
@@ -201,30 +205,30 @@ export const useProductImport = () => {
       }
 
       try {
-        const productData = convertRowToProduct(row);
-        
-        // Garantir que unidade_medida_id nunca seja null
-        if (!productData.unidade_medida_id) {
-          if (unidadePadraoId) {
-            productData.unidade_medida_id = unidadePadraoId;
-          } else {
-            throw new Error('Unidade de medida padrão não encontrada. Configure unidades de medida no sistema.');
-          }
-        }
-
-        
         // Verificar se produto já existe pelo SKU
         const { data: existingProduct } = await supabase
           .from('produtos')
           .select('id')
-          .eq('sku_interno', productData.sku_interno)
+          .eq('sku_interno', row['SKU'])
           .single();
 
         if (existingProduct) {
-          // Produto existe, fazer UPDATE
+          // Produto existe, fazer UPDATE apenas dos campos fornecidos
+          const productData = convertRowToProduct(row, true);
           await updateProduct(existingProduct.id, productData);
         } else {
-          // Produto não existe, fazer INSERT
+          // Produto não existe, fazer INSERT completo
+          const productData = convertRowToProduct(row, false);
+          
+          // Garantir que unidade_medida_id nunca seja null para novos produtos
+          if (!productData.unidade_medida_id) {
+            if (unidadePadraoId) {
+              productData.unidade_medida_id = unidadePadraoId;
+            } else {
+              throw new Error('Unidade de medida padrão não encontrada. Configure unidades de medida no sistema.');
+            }
+          }
+          
           await createProduct(productData);
         }
         
