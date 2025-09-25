@@ -12,14 +12,20 @@ import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 const EstoqueContent = () => {
   const { getProducts } = useProducts();
   const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
+        setLoading(true);
+        console.log('🔄 Estoque: Carregando produtos do componente pai...');
         const data = await getProducts({ limit: 1000 });
+        console.log('✅ Estoque: Produtos carregados:', data.length);
         setProducts(data);
       } catch (error) {
         console.error("Error loading products:", error);
+      } finally {
+        setLoading(false);
       }
     };
     loadProducts();
@@ -46,7 +52,7 @@ const EstoqueContent = () => {
         
         <div className="mt-6">
           <Routes>
-            <Route index element={<ControleEstoquePage />} />
+            <Route index element={<ControleEstoquePage initialProducts={products} initialLoading={loading} />} />
             <Route path="composicoes" element={<ComposicoesPage />} />
           </Routes>
         </div>

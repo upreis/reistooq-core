@@ -16,9 +16,14 @@ import { Package, AlertTriangle, Filter } from "lucide-react";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 
-export default function ControleEstoquePage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+interface ControleEstoquePageProps {
+  initialProducts?: Product[];
+  initialLoading?: boolean;
+}
+
+export default function ControleEstoquePage({ initialProducts = [], initialLoading = true }: ControleEstoquePageProps = {}) {
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [loading, setLoading] = useState(initialLoading);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -42,6 +47,7 @@ export default function ControleEstoquePage() {
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true);
+      console.log('🔄 ControleEstoquePage: Carregando produtos (fallback)...', { hasInitialProducts: initialProducts.length > 0 });
       
       let allProducts = await getProducts({
         search: searchTerm || undefined,
@@ -108,9 +114,22 @@ export default function ControleEstoquePage() {
     }
   }, [getCategories]);
 
+  // Sincronizar com produtos iniciais do componente pai
   useEffect(() => {
-    loadProducts();
-    loadCategories();
+    if (initialProducts.length > 0) {
+      setProducts(initialProducts);
+      setLoading(false);
+    }
+  }, [initialProducts]);
+
+  useEffect(() => {
+    // Só carrega produtos se não foram fornecidos produtos iniciais
+    if (initialProducts.length === 0) {
+      loadProducts();
+      loadCategories();
+    } else {
+      loadCategories();
+    }
   }, []);
 
   useEffect(() => {
