@@ -238,6 +238,16 @@ export const RoleManager: React.FC = () => {
   );
 
   const handleSave = async (data: { name: string; permissions: string[] }) => {
+    // Check for duplicate names (case-insensitive)
+    const nameExists = roles.some(role => 
+      role.name.toLowerCase() === data.name.toLowerCase() && 
+      (!editingRole || role.id !== editingRole.id)
+    );
+    
+    if (nameExists) {
+      throw new Error(`Já existe um cargo com o nome "${data.name}"`);
+    }
+    
     if (editingRole) {
       await updateRole(editingRole.id, data);
     } else {
