@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     let totalCount = 0;
     
     try {
-    // PROBLEMA IDENTIFICADO: A API do ML retorna erro 401 (token expirado)
+      // PROBLEMA IDENTIFICADO: A API do ML retorna erro 401 (token expirado)
       // Precisamos usar uma abordagem diferente para contar os pedidos
       
       // Para múltiplas contas, processar uma por vez com paginação completa
@@ -228,12 +228,8 @@ Deno.serve(async (req) => {
           }
         }
       }
-    } catch (error) {
-      console.warn(`[pedidos-aggregator:${cid}] Error processing account ${accountId.slice(0,8)}:`, error);
-    }
-  }
 
-    console.log(`[pedidos-aggregator:${cid}] Analysis result: total=${totalCount}, prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
+      console.log(`[pedidos-aggregator:${cid}] Analysis result: total=${totalCount}, prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
     } catch (error) {
       console.warn(`[pedidos-aggregator:${cid}] Error fetching orders for analysis:`, error);
     }
