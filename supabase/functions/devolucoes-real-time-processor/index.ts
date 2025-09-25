@@ -4,6 +4,7 @@
  */
 
 import { corsHeaders, makeServiceClient, ok, fail } from '../_shared/client.ts';
+import { getErrorMessage } from '../_shared/error-handler.ts';
 
 interface WebhookEvent {
   integration_account_id: string;
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Erro no processamento:', error);
-    return fail(`Erro no processamento: ${error.message}`, 500);
+    return fail(`Erro no processamento: ${getErrorMessage(error)}`, 500);
   }
 });
 
@@ -123,7 +124,7 @@ async function processClaimUpdate(supabase: any, event: WebhookEvent) {
 
   } catch (error) {
     console.error('❌ Erro no processamento de claim:', error);
-    return fail(`Erro no processamento: ${error.message}`, 500);
+    return fail(`Erro no processamento: ${getErrorMessage(error)}`, 500);
   }
 }
 
@@ -174,7 +175,7 @@ async function processOrderUpdate(supabase: any, event: WebhookEvent) {
 
   } catch (error) {
     console.error('❌ Erro no processamento de pedido:', error);
-    return fail(`Erro no processamento: ${error.message}`, 500);
+    return fail(`Erro no processamento: ${getErrorMessage(error)}`, 500);
   }
 }
 
@@ -242,7 +243,7 @@ async function processMessageReceived(supabase: any, event: WebhookEvent) {
 
   } catch (error) {
     console.error('❌ Erro no processamento de mensagem:', error);
-    return fail(`Erro no processamento: ${error.message}`, 500);
+    return fail(`Erro no processamento: ${getErrorMessage(error)}`, 500);
   }
 }
 
@@ -276,7 +277,7 @@ async function processStatusChange(supabase: any, event: WebhookEvent) {
       motivo: statusData.reason || 'mudança_automática'
     });
 
-    const updateData = {
+    const updateData: any = {
       status_devolucao: statusData.new_status,
       historico_status: historico,
       updated_at: new Date().toISOString()
@@ -317,7 +318,7 @@ async function processStatusChange(supabase: any, event: WebhookEvent) {
 
   } catch (error) {
     console.error('❌ Erro no processamento de status:', error);
-    return fail(`Erro no processamento: ${error.message}`, 500);
+    return fail(`Erro no processamento: ${getErrorMessage(error)}`, 500);
   }
 }
 

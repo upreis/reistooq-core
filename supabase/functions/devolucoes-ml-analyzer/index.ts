@@ -4,6 +4,7 @@
  */
 
 import { corsHeaders, makeServiceClient, ok, fail } from '../_shared/client.ts';
+import { getErrorMessage } from '../_shared/error-handler.ts';
 
 interface AnalysisRequest {
   integration_account_id: string;

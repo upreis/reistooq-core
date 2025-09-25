@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
     
     return new Response(JSON.stringify({
       success: false,
-      error: error.message || 'Erro interno do servidor'
+      error: (error instanceof Error ? error.message : 'Unknown error') || 'Erro interno do servidor'
     }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -208,5 +208,5 @@ async function prepareNotification(order: any, type: string, customMessage?: str
     }
   };
 
-  return templates[type] || templates.status_update;
+  return templates[type as keyof typeof templates] || templates.status_update;
 }
