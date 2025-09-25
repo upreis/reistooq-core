@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CotacoesTab } from "@/components/compras/CotacoesTab";
 import { CotacoesInternacionaisTab } from "@/components/compras/CotacoesInternacionaisTab";
 import { useCompras } from "@/hooks/useCompras";
+import { useCotacoesInternacionais } from "@/hooks/useCotacoesInternacionais";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CotacoesPage() {
@@ -11,6 +12,7 @@ export default function CotacoesPage() {
   const [fornecedores, setFornecedores] = useState([]);
   const [loading, setLoading] = useState(true);
   const { getCotacoes, getFornecedores } = useCompras();
+  const { getCotacoesInternacionais } = useCotacoesInternacionais();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -20,15 +22,14 @@ export default function CotacoesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [cotacoesData, fornecedoresData] = await Promise.all([
+      const [cotacoesData, fornecedoresData, cotacoesInternacionaisData] = await Promise.all([
         getCotacoes(),
-        getFornecedores()
+        getFornecedores(),
+        getCotacoesInternacionais()
       ]);
       setCotacoes(cotacoesData);
       setFornecedores(fornecedoresData);
-      
-      // TODO: Aqui você pode adicionar uma chamada para buscar cotações internacionais
-      // setCotacoesInternacionais(await getCotacoesInternacionais());
+      setCotacoesInternacionais(cotacoesInternacionaisData);
     } catch (error) {
       toast({
         title: "Erro ao carregar cotações",

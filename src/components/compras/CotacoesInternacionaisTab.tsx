@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
@@ -37,6 +37,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { CurrencyService } from "@/services/currencyService";
 import { ProductSelector } from './ProductSelector';
+import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
 import { z } from 'zod';
 
 // Esquemas de validação com zod
@@ -223,6 +224,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   });
 
   const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
+  const { createCotacaoInternacional, updateCotacaoInternacional, loading: saveLoading } = useCotacoesInternacionais();
   const { toast } = useToast();
 
   // Handler para produtos selecionados do seletor avançado
@@ -465,13 +467,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         ...totaisGerais
       };
 
-      // Aqui você salvaria no banco de dados
       console.log('Salvando cotação:', cotacaoCompleta);
 
-      toast({
-        title: "Cotação salva",
-        description: "Cotação internacional criada com sucesso!"
-      });
+      // Salvar no banco de dados
+      if (editingCotacao?.id) {
+        await updateCotacaoInternacional(editingCotacao.id, cotacaoCompleta);
+      } else {
+        await createCotacaoInternacional(cotacaoCompleta);
+      }
 
       setShowModal(false);
       resetForm();
@@ -623,6 +626,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 <Badge variant="outline">{dadosBasicos.numero_cotacao}</Badge>
               )}
             </DialogTitle>
+            <DialogDescription>
+              Gerencie cotações de produtos importados com conversão automática de moedas e cálculos de impostos.
+            </DialogDescription>
           </DialogHeader>
 
           <Tabs value={currentTab} onValueChange={setCurrentTab} className="flex-1 flex flex-col">
@@ -1322,10 +1328,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 </Button>
                 <Button 
                   onClick={handleSave} 
-                  disabled={!dadosBasicos.numero_cotacao || !dadosBasicos.descricao}
+                  disabled={!dadosBasicos.numero_cotacao || !dadosBasicos.descricao || saveLoading}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {editingCotacao ? 'Atualizar' : 'Salvar'} Cotação
+                  {saveLoading ? 'Salvando...' : (editingCotacao ? 'Atualizar' : 'Salvar')} Cotação
                 </Button>
               </div>
             </div>

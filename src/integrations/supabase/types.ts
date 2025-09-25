@@ -727,6 +727,81 @@ export type Database = {
           },
         ]
       }
+      cotacoes_internacionais: {
+        Row: {
+          created_at: string
+          created_by: string
+          data_abertura: string
+          data_fechamento: string | null
+          descricao: string
+          fator_multiplicador: number
+          id: string
+          moeda_origem: string
+          numero_cotacao: string
+          observacoes: string | null
+          organization_id: string
+          pais_origem: string
+          produtos: Json
+          status: string
+          total_cbm: number | null
+          total_peso_kg: number | null
+          total_quantidade: number | null
+          total_valor_brl: number | null
+          total_valor_origem: number | null
+          total_valor_usd: number | null
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          data_abertura?: string
+          data_fechamento?: string | null
+          descricao: string
+          fator_multiplicador?: number
+          id?: string
+          moeda_origem?: string
+          numero_cotacao: string
+          observacoes?: string | null
+          organization_id?: string
+          pais_origem?: string
+          produtos?: Json
+          status?: string
+          total_cbm?: number | null
+          total_peso_kg?: number | null
+          total_quantidade?: number | null
+          total_valor_brl?: number | null
+          total_valor_origem?: number | null
+          total_valor_usd?: number | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          data_abertura?: string
+          data_fechamento?: string | null
+          descricao?: string
+          fator_multiplicador?: number
+          id?: string
+          moeda_origem?: string
+          numero_cotacao?: string
+          observacoes?: string | null
+          organization_id?: string
+          pais_origem?: string
+          produtos?: Json
+          status?: string
+          total_cbm?: number | null
+          total_peso_kg?: number | null
+          total_quantidade?: number | null
+          total_valor_brl?: number | null
+          total_valor_origem?: number | null
+          total_valor_usd?: number | null
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: []
+      }
       cotacoes_itens: {
         Row: {
           cotacao_id: string | null
