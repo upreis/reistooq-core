@@ -3522,18 +3522,24 @@ export type Database = {
           categoria_nivel2: string | null
           categoria_principal: string | null
           codigo_barras: string | null
+          cofins: number | null
           comprimento_cm: number | null
           cor: string | null
           created_at: string
+          cubagem_cm3: number | null
           descricao: string | null
           estoque_maximo: number
           estoque_minimo: number
+          icms: number | null
           id: string
           imagem_fornecedor: string | null
+          imposto_importacao: number | null
           integration_account_id: string | null
+          ipi: number | null
           largura_cm: number | null
           localizacao: string | null
           material: string | null
+          ncm: string | null
           nome: string
           observacoes: string | null
           organization_id: string | null
@@ -3541,6 +3547,7 @@ export type Database = {
           pcs_ctn: number | null
           peso_cx_master_kg: number | null
           peso_unitario_g: number | null
+          pis: number | null
           preco_custo: number | null
           preco_venda: number | null
           produto_origem_id: string | null
@@ -3564,18 +3571,24 @@ export type Database = {
           categoria_nivel2?: string | null
           categoria_principal?: string | null
           codigo_barras?: string | null
+          cofins?: number | null
           comprimento_cm?: number | null
           cor?: string | null
           created_at?: string
+          cubagem_cm3?: number | null
           descricao?: string | null
           estoque_maximo?: number
           estoque_minimo?: number
+          icms?: number | null
           id?: string
           imagem_fornecedor?: string | null
+          imposto_importacao?: number | null
           integration_account_id?: string | null
+          ipi?: number | null
           largura_cm?: number | null
           localizacao?: string | null
           material?: string | null
+          ncm?: string | null
           nome: string
           observacoes?: string | null
           organization_id?: string | null
@@ -3583,6 +3596,7 @@ export type Database = {
           pcs_ctn?: number | null
           peso_cx_master_kg?: number | null
           peso_unitario_g?: number | null
+          pis?: number | null
           preco_custo?: number | null
           preco_venda?: number | null
           produto_origem_id?: string | null
@@ -3606,18 +3620,24 @@ export type Database = {
           categoria_nivel2?: string | null
           categoria_principal?: string | null
           codigo_barras?: string | null
+          cofins?: number | null
           comprimento_cm?: number | null
           cor?: string | null
           created_at?: string
+          cubagem_cm3?: number | null
           descricao?: string | null
           estoque_maximo?: number
           estoque_minimo?: number
+          icms?: number | null
           id?: string
           imagem_fornecedor?: string | null
+          imposto_importacao?: number | null
           integration_account_id?: string | null
+          ipi?: number | null
           largura_cm?: number | null
           localizacao?: string | null
           material?: string | null
+          ncm?: string | null
           nome?: string
           observacoes?: string | null
           organization_id?: string | null
@@ -3625,6 +3645,7 @@ export type Database = {
           pcs_ctn?: number | null
           peso_cx_master_kg?: number | null
           peso_unitario_g?: number | null
+          pis?: number | null
           preco_custo?: number | null
           preco_venda?: number | null
           produto_origem_id?: string | null
@@ -5007,18 +5028,24 @@ export type Database = {
           categoria_nivel2: string | null
           categoria_principal: string | null
           codigo_barras: string | null
+          cofins: number | null
           comprimento_cm: number | null
           cor: string | null
           created_at: string
+          cubagem_cm3: number | null
           descricao: string | null
           estoque_maximo: number
           estoque_minimo: number
+          icms: number | null
           id: string
           imagem_fornecedor: string | null
+          imposto_importacao: number | null
           integration_account_id: string | null
+          ipi: number | null
           largura_cm: number | null
           localizacao: string | null
           material: string | null
+          ncm: string | null
           nome: string
           observacoes: string | null
           organization_id: string | null
@@ -5026,6 +5053,7 @@ export type Database = {
           pcs_ctn: number | null
           peso_cx_master_kg: number | null
           peso_unitario_g: number | null
+          pis: number | null
           preco_custo: number | null
           preco_venda: number | null
           produto_origem_id: string | null
