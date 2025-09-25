@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
     }
   }
 
-      console.log(`[pedidos-aggregator:${cid}] Analysis result: total=${totalCount}, prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
+    console.log(`[pedidos-aggregator:${cid}] Analysis result: total=${totalCount}, prontos=${prontosBaixaCount}, pendentes=${mapeamentoPendenteCount}`);
     } catch (error) {
       console.warn(`[pedidos-aggregator:${cid}] Error fetching orders for analysis:`, error);
     }
