@@ -35,6 +35,7 @@ import {
   X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CurrencyService } from "@/services/currencyService";
 import { z } from 'zod';
 
 // Esquemas de validação com zod
@@ -111,38 +112,74 @@ interface CotacoesInternacionaisTabProps {
   onRefresh: () => void;
 }
 
-// Serviço de cotação de moedas melhorado
+// Lista completa de moedas disponíveis
+const AVAILABLE_CURRENCIES = [
+  { code: 'USD', name: 'Dólar Americano', flag: '🇺🇸', symbol: '$' },
+  { code: 'CNY', name: 'Yuan Chinês', flag: '🇨🇳', symbol: '¥' },
+  { code: 'EUR', name: 'Euro', flag: '🇪🇺', symbol: '€' },
+  { code: 'JPY', name: 'Yen Japonês', flag: '🇯🇵', symbol: '¥' },
+  { code: 'KRW', name: 'Won Sul-Coreano', flag: '🇰🇷', symbol: '₩' },
+  { code: 'GBP', name: 'Libra Esterlina', flag: '🇬🇧', symbol: '£' },
+  { code: 'CAD', name: 'Dólar Canadense', flag: '🇨🇦', symbol: 'C$' },
+  { code: 'AUD', name: 'Dólar Australiano', flag: '🇦🇺', symbol: 'A$' },
+  { code: 'CHF', name: 'Franco Suíço', flag: '🇨🇭', symbol: 'CHF' },
+  { code: 'SEK', name: 'Coroa Sueca', flag: '🇸🇪', symbol: 'kr' },
+  { code: 'NOK', name: 'Coroa Norueguesa', flag: '🇳🇴', symbol: 'kr' },
+  { code: 'DKK', name: 'Coroa Dinamarquesa', flag: '🇩🇰', symbol: 'kr' },
+  { code: 'PLN', name: 'Zloty Polonês', flag: '🇵🇱', symbol: 'zł' },
+  { code: 'CZK', name: 'Coroa Tcheca', flag: '🇨🇿', symbol: 'Kč' },
+  { code: 'HUF', name: 'Forint Húngaro', flag: '🇭🇺', symbol: 'Ft' },
+  { code: 'SGD', name: 'Dólar de Singapura', flag: '🇸🇬', symbol: 'S$' },
+  { code: 'HKD', name: 'Dólar de Hong Kong', flag: '🇭🇰', symbol: 'HK$' },
+  { code: 'NZD', name: 'Dólar Neozelandês', flag: '🇳🇿', symbol: 'NZ$' },
+  { code: 'MXN', name: 'Peso Mexicano', flag: '🇲🇽', symbol: '$' },
+  { code: 'INR', name: 'Rupia Indiana', flag: '🇮🇳', symbol: '₹' },
+  { code: 'RUB', name: 'Rublo Russo', flag: '🇷🇺', symbol: '₽' },
+  { code: 'TRY', name: 'Lira Turca', flag: '🇹🇷', symbol: '₺' },
+  { code: 'ZAR', name: 'Rand Sul-Africano', flag: '🇿🇦', symbol: 'R' },
+  { code: 'THB', name: 'Baht Tailandês', flag: '🇹🇭', symbol: '฿' },
+  { code: 'MYR', name: 'Ringgit Malaio', flag: '🇲🇾', symbol: 'RM' },
+  { code: 'IDR', name: 'Rupia Indonésia', flag: '🇮🇩', symbol: 'Rp' },
+  { code: 'PHP', name: 'Peso Filipino', flag: '🇵🇭', symbol: '₱' },
+  { code: 'VND', name: 'Dong Vietnamita', flag: '🇻🇳', symbol: '₫' },
+];
+
+// Hook para cotações de moedas com API real
 const useCurrencyRates = () => {
-  const [rates, setRates] = useState({
-    CNY_USD: 0.14, // Yuan para Dólar
-    USD_BRL: 5.20, // Dólar para Real
-    EUR_USD: 1.08, // Euro para Dólar
-    JPY_USD: 0.0067, // Yen para Dólar
-    lastUpdate: new Date().toISOString()
-  });
+  const [rates, setRates] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const updateRates = async () => {
     try {
-      // Você pode descomentar as linhas abaixo para usar API real
-      // import { CurrencyService } from '@/services/currencyService';
-      // const newRates = await CurrencyService.getRealTimeRates();
-      // setRates(newRates);
+      setLoading(true);
+      const newRates = await CurrencyService.getRealTimeRates();
+      setRates(newRates);
+      setLastUpdate(newRates.lastUpdate);
       
-      // Por enquanto, simula atualização
-      setRates(prev => ({
-        ...prev,
-        CNY_USD: 0.14 + (Math.random() - 0.5) * 0.01,
-        USD_BRL: 5.20 + (Math.random() - 0.5) * 0.20,
-        EUR_USD: 1.08 + (Math.random() - 0.5) * 0.05,
-        JPY_USD: 0.0067 + (Math.random() - 0.5) * 0.0005,
-        lastUpdate: new Date().toISOString()
-      }));
+      toast({
+        title: "Cotações atualizadas",
+        description: "Cotações de moedas atualizadas com sucesso!"
+      });
     } catch (error) {
       console.error('Erro ao atualizar cotações:', error);
+      toast({
+        title: "Erro ao atualizar cotações",
+        description: "Usando valores padrão. Verifique sua conexão.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  return { rates, updateRates };
+  // Carrega cotações iniciais
+  useEffect(() => {
+    updateRates();
+  }, []);
+
+  return { rates, updateRates, loading, lastUpdate };
 };
 
 export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps> = ({
@@ -183,7 +220,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     comprimento_cm: 0
   });
 
-  const { rates, updateRates } = useCurrencyRates();
+  const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
   const { toast } = useToast();
 
   // Função para calcular valores do produto
@@ -204,20 +241,40 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     };
   };
 
-  // Função para converter moedas
+  // Função para converter moedas usando API real
   const converterMoeda = (valor: number, moedaOrigem: string, fatorMultiplicador: number = 1) => {
     const valorComFator = valor * fatorMultiplicador;
     
-    let valorUSD = valorComFator;
-    if (moedaOrigem === 'CNY') {
-      valorUSD = valorComFator * rates.CNY_USD;
-    } else if (moedaOrigem === 'EUR') {
-      valorUSD = valorComFator * rates.EUR_USD;
-    } else if (moedaOrigem === 'JPY') {
-      valorUSD = valorComFator * rates.JPY_USD;
+    // Se não temos cotações ainda, usa valores padrão
+    if (!rates || Object.keys(rates).length === 0) {
+      return {
+        valorUSD: valorComFator * (moedaOrigem === 'USD' ? 1 : 0.14),
+        valorBRL: valorComFator * (moedaOrigem === 'USD' ? 5.20 : 0.14 * 5.20)
+      };
     }
     
-    const valorBRL = valorUSD * rates.USD_BRL;
+    let valorUSD = valorComFator;
+    
+    // Se a moeda origem é USD, não precisa converter
+    if (moedaOrigem === 'USD') {
+      valorUSD = valorComFator;
+    } else {
+      // Busca a taxa de conversão da moeda para USD
+      const rateKey = `${moedaOrigem}_USD`;
+      const rate = rates[rateKey];
+      
+      if (rate) {
+        valorUSD = valorComFator * rate;
+      } else {
+        // Fallback: tenta buscar diretamente nas rates
+        const directRate = rates[moedaOrigem];
+        if (directRate) {
+          valorUSD = valorComFator / directRate;
+        }
+      }
+    }
+    
+    const valorBRL = valorUSD * (rates.USD_BRL || 5.20);
     
     return { valorUSD, valorBRL };
   };
@@ -402,9 +459,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" onClick={updateRates} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Atualizar Cotações
+          <Button 
+            variant="outline" 
+            onClick={updateRates} 
+            className="gap-2"
+            disabled={ratesLoading}
+          >
+            <RefreshCw className={`h-4 w-4 ${ratesLoading ? 'animate-spin' : ''}`} />
+            {ratesLoading ? 'Atualizando...' : 'Atualizar Cotações'}
           </Button>
           <Button className="gap-2" onClick={() => { resetForm(); setShowModal(true); }}>
             <Plus className="h-4 w-4" />
@@ -422,24 +484,40 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">CNY → USD</div>
-              <div className="text-lg font-bold">{rates.CNY_USD.toFixed(4)}</div>
+          {ratesLoading ? (
+            <div className="text-center py-4">
+              <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+              <p className="text-muted-foreground">Carregando cotações...</p>
             </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">USD → BRL</div>
-              <div className="text-lg font-bold">{rates.USD_BRL.toFixed(2)}</div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {Object.entries(rates).slice(0, 12).map(([key, value]) => {
+                  if (key === 'lastUpdate' || typeof value !== 'number') return null;
+                  
+                  const [from, to] = key.split('_');
+                  const currency = AVAILABLE_CURRENCIES.find(c => c.code === from);
+                  
+                  return (
+                    <div key={key} className="text-center p-3 bg-muted rounded-lg">
+                      <div className="text-xs text-muted-foreground">
+                        {currency?.flag} {from} → {to}
+                      </div>
+                      <div className="text-sm font-bold">
+                        {typeof value === 'number' ? value.toFixed(4) : '---'}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {lastUpdate && (
+                <div className="text-center text-xs text-muted-foreground">
+                  Última atualização: {new Date(lastUpdate).toLocaleString('pt-BR')}
+                </div>
+              )}
             </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">EUR → USD</div>
-              <div className="text-lg font-bold">{rates.EUR_USD.toFixed(4)}</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-lg">
-              <div className="text-sm text-muted-foreground">Atualizado</div>
-              <div className="text-sm">{new Date(rates.lastUpdate).toLocaleTimeString('pt-BR')}</div>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -549,12 +627,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="CNY">CNY - Yuan Chinês</SelectItem>
-                          <SelectItem value="USD">USD - Dólar Americano</SelectItem>
-                          <SelectItem value="EUR">EUR - Euro</SelectItem>
-                          <SelectItem value="JPY">JPY - Yen Japonês</SelectItem>
-                          <SelectItem value="KRW">KRW - Won Sul-Coreano</SelectItem>
+                        <SelectContent className="max-h-60">
+                          {AVAILABLE_CURRENCIES.map((currency) => (
+                            <SelectItem key={currency.code} value={currency.code}>
+                              {currency.flag} {currency.code} - {currency.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

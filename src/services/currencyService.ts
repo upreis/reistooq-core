@@ -11,13 +11,21 @@ export class CurrencyService {
         throw new Error('Invalid API response');
       }
       
-      return {
-        CNY_USD: 1 / (data.rates.CNY || 7.1), // Fallback se não existir
+      // Criar objeto com todas as conversões para USD
+      const rates: any = {
         USD_BRL: data.rates.BRL || 5.20,
-        EUR_USD: 1 / (data.rates.EUR || 0.92),
-        JPY_USD: 1 / (data.rates.JPY || 149),
         lastUpdate: new Date().toISOString()
       };
+
+      // Adicionar conversões de todas as moedas para USD
+      Object.entries(data.rates).forEach(([currency, rate]) => {
+        if (currency !== 'USD' && typeof rate === 'number') {
+          rates[`${currency}_USD`] = 1 / rate;
+          rates[currency] = rate; // Manter também a taxa direta
+        }
+      });
+
+      return rates;
     } catch (error) {
       console.error('Erro ao buscar cotações:', error);
       // Retorna valores padrão em caso de erro
@@ -26,6 +34,10 @@ export class CurrencyService {
         USD_BRL: 5.20,
         EUR_USD: 1.08,
         JPY_USD: 0.0067,
+        GBP_USD: 1.27,
+        CAD_USD: 0.74,
+        AUD_USD: 0.67,
+        CHF_USD: 1.10,
         lastUpdate: new Date().toISOString()
       };
     }
