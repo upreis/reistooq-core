@@ -48,7 +48,6 @@ export const useProductImport = () => {
     'PREÇO': 'preco_venda',
     'UNIT': 'unit',
     'PCS/CTN': 'pcs_ctn',
-    'Quantidade': 'quantidade_atual',
     'PESO UNITARIO(g)': 'peso_unitario_g',
     'Peso cx Master (KG)': 'peso_cx_master_kg',
     'Comprimento': 'comprimento_cm',
@@ -75,9 +74,6 @@ export const useProductImport = () => {
       errors.push(`Preço deve ser um número válido`);
     }
     
-    if (row['Quantidade'] && (isNaN(parseInt(row['Quantidade'])) || parseInt(row['Quantidade']) < 0)) {
-      errors.push(`Quantidade deve ser um número inteiro válido`);
-    }
 
     return errors;
   };
@@ -99,7 +95,7 @@ export const useProductImport = () => {
       if (value !== undefined && value !== null && value !== '') {
         if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento_cm', 'largura_cm', 'altura_cm', 'cubagem_cm3'].includes(productField)) {
           product[productField] = parseFloat(value) || 0;
-        } else if (['quantidade_atual', 'pcs_ctn'].includes(productField)) {
+        } else if (['pcs_ctn'].includes(productField)) {
           product[productField] = parseInt(value) || 0;
         } else {
           product[productField] = value.toString();
@@ -238,7 +234,7 @@ export const useProductImport = () => {
     const templateColumns = [
       'SKU', 'IMAGEM', 'IMAGEM DO FORNECEDOR', 'MATERIAL', 'COR', 
       'Nome do Produto', 'DESCRIÇÃO', 'PACKAGE', 'PREÇO', 'UNIT', 
-      'PCS/CTN', 'Quantidade', 'PESO UNITARIO(g)', 'Peso cx Master (KG)', 
+      'PCS/CTN', 'PESO UNITARIO(g)', 'Peso cx Master (KG)', 
       'Comprimento', 'Largura', 'Altura', 'CBM CUBAGEM', 'OBS', 'Codigo de Barras', 'NCM'
     ];
 
@@ -255,7 +251,7 @@ export const useProductImport = () => {
         'PREÇO': '25.00',
         'UNIT': 'pç',
         'PCS/CTN': '240',
-        'Quantidade': '100',
+        
         'PESO UNITARIO(g)': '90',
         'Peso cx Master (KG)': '22.60',
         'Comprimento': '28',
