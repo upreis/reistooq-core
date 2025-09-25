@@ -764,10 +764,8 @@ export function ComposicoesEstoque() {
                 <Package className="h-4 w-4" />
               </Button>
             </div>
-            </div>
           </div>
-
-          </div>
+        </div>
           {/* Fim da seção consolidada de filtros */}
 
           {/* Grid de produtos com melhor espaçamento - lista completa no mobile */}
