@@ -23,6 +23,10 @@ export class AdminService {
     this.clearCache();
   }
 
+  private clearCache(): void {
+    this.cache.clear();
+  }
+
   // ==================== ROLES ====================
 
   async getRoles(): Promise<Role[]> {
@@ -44,8 +48,10 @@ export class AdminService {
             name,
             description
           )
-        )
+        ),
+        user_role_assignments!inner(count)
       `)
+      .eq('organization_id', await this.getCurrentOrgId())
       .order('name');
 
     if (error) {
@@ -58,7 +64,8 @@ export class AdminService {
       permissions: role.role_permissions?.map((rp: any) => ({
         ...rp.app_permissions,
         category: this.getCategoryFromKey(rp.app_permissions.key)
-      })) || []
+      })) || [],
+      user_count: role.user_role_assignments?.[0]?.count || 0
     })) as Role[];
 
     this.cache.set(cacheKey, { data: roles, timestamp: Date.now() });
@@ -97,9 +104,17 @@ export class AdminService {
     return categoryMap[key] || 'OUTROS';
   }
 
+  private async getCurrentOrgId(): Promise<string> {
+    const { data, error } = await supabase.rpc('get_current_org_id');
+    if (error || !data) {
+      throw new Error('Could not get current organization ID');
+    }
+    return data;
+  }
+
   async createRole(data: { name: string; permissions: string[] }): Promise<Role> {
     // Get current organization ID
-    const { data: orgData } = await supabase.rpc('get_current_org_id');
+    const orgId = await this.getCurrentOrgId();
     
     const { data: role, error: roleError } = await supabase
       .from('roles')
@@ -107,7 +122,7 @@ export class AdminService {
         name: data.name,
         slug: data.name.toLowerCase().replace(/\s+/g, '_'),
         is_system: false,
-        organization_id: orgData
+        organization_id: orgId
       })
       .select()
       .single();
@@ -214,10 +229,14 @@ export class AdminService {
   }
 
   async cleanupDuplicateRoles(): Promise<{ cleaned: number; kept: number }> {
-    // Get all roles to find duplicates
+    // Get current organization ID
+    const orgId = await this.getCurrentOrgId();
+    
+    // Get all roles to find duplicates (only from current org)
     const { data: allRoles, error } = await supabase
       .from('roles')
       .select('id, name, created_at')
+      .eq('organization_id', orgId)
       .order('created_at', { ascending: true });
     
     if (error) {
@@ -318,7 +337,7 @@ export class AdminService {
 
     // 2) Enrich with roles assigned in the current organization
     try {
-      const { data: orgId } = await supabase.rpc('get_current_org_id');
+      const orgId = await this.getCurrentOrgId();
       if (orgId) {
         const { data: assignments } = await supabase
           .from('user_role_assignments')
@@ -389,14 +408,14 @@ export class AdminService {
 
   async assignRole(userId: string, roleId: string): Promise<void> {
     // Get current organization ID
-    const { data: orgData } = await supabase.rpc('get_current_org_id');
+    const orgId = await this.getCurrentOrgId();
     
     // First, remove any existing role assignments for this user in this organization
     await supabase
       .from('user_role_assignments')
       .delete()
       .eq('user_id', userId)
-      .eq('organization_id', orgData);
+      .eq('organization_id', orgId);
     
     // Then, insert the new role assignment
     const { error } = await supabase
@@ -404,7 +423,7 @@ export class AdminService {
       .insert({
         user_id: userId,
         role_id: roleId,
-        organization_id: orgData
+        organization_id: orgId
       });
 
     if (error) {
@@ -673,10 +692,6 @@ export class AdminService {
   }
 
   // ==================== CACHE MANAGEMENT ====================
-
-  private clearCache(): void {
-    this.cache.clear();
-  }
 
   getCacheStats() {
     return {
