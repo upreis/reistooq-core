@@ -119,6 +119,7 @@ export interface UseRolesReturn {
   createRole: (data: { name: string; permissions: string[] }) => Promise<void>;
   updateRole: (id: string, data: { name?: string; permissions?: string[] }) => Promise<void>;
   deleteRole: (id: string) => Promise<void>;
+  cleanupDuplicates: () => Promise<{ cleaned: number; kept: number }>;
   refreshRoles: () => Promise<void>;
 }
 

@@ -106,6 +106,27 @@ export const useRoles = (): UseRolesReturn => {
     }
   }, [adminService, loadRoles, toast]);
 
+  const cleanupDuplicates = useCallback(async () => {
+    try {
+      const result = await adminService.cleanupDuplicateRoles();
+      await loadRoles();
+      toast({
+        title: "Duplicatas removidas",
+        description: `${result.cleaned} cargos duplicados foram removidos. ${result.kept} cargos únicos mantidos.`,
+        variant: "default"
+      });
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cleanup duplicates';
+      toast({
+        title: "Erro ao limpar duplicatas",
+        description: errorMessage,
+        variant: "destructive"
+      });
+      throw err;
+    }
+  }, [adminService, loadRoles, toast]);
+
   const refreshRoles = useCallback(async () => {
     await loadRoles();
   }, [loadRoles]);
@@ -121,6 +142,7 @@ export const useRoles = (): UseRolesReturn => {
     createRole,
     updateRole,
     deleteRole,
+    cleanupDuplicates,
     refreshRoles
   };
 };

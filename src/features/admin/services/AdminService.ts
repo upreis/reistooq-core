@@ -213,6 +213,60 @@ export class AdminService {
     this.clearCache();
   }
 
+  async cleanupDuplicateRoles(): Promise<{ cleaned: number; kept: number }> {
+    // Get all roles to find duplicates
+    const { data: allRoles, error } = await supabase
+      .from('roles')
+      .select('id, name, created_at')
+      .order('created_at', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching roles:', error);
+      throw new Error(`Failed to fetch roles: ${error.message}`);
+    }
+
+    // Group roles by name to find duplicates
+    const roleGroups = new Map<string, any[]>();
+    
+    allRoles?.forEach(role => {
+      if (!roleGroups.has(role.name)) {
+        roleGroups.set(role.name, []);
+      }
+      roleGroups.get(role.name)?.push(role);
+    });
+
+    let totalCleaned = 0;
+    let totalKept = 0;
+
+    // Process each group to remove duplicates
+    for (const [roleName, roles] of roleGroups) {
+      if (roles.length > 1) {
+        // Keep the oldest one (first in sorted array) and delete the rest
+        const toKeep = roles[0];
+        const toDelete = roles.slice(1);
+
+        // Delete duplicate roles
+        const { error: deleteError } = await supabase
+          .from('roles')
+          .delete()
+          .in('id', toDelete.map(r => r.id));
+
+        if (deleteError) {
+          console.error(`Error deleting duplicate roles for ${roleName}:`, deleteError);
+          continue; // Continue with next group
+        }
+
+        totalCleaned += toDelete.length;
+        totalKept += 1;
+      } else if (roles.length === 1) {
+        totalKept += 1;
+      }
+    }
+
+    this.clearCache();
+    return { cleaned: totalCleaned, kept: totalKept };
+  }
+
   // ==================== PERMISSIONS ====================
 
   async getPermissions(): Promise<Permission[]> {

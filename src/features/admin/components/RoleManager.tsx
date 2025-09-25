@@ -226,11 +226,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ role, permissions, onSave, onCancel
 };
 
 export const RoleManager: React.FC = () => {
-  const { roles, loading, createRole, updateRole, deleteRole } = useRoles();
+  const { roles, loading, createRole, updateRole, deleteRole, cleanupDuplicates } = useRoles();
   const { permissions, loading: permissionsLoading } = usePermissions();
   const [showForm, setShowForm] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | undefined>();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isCleaningDuplicates, setIsCleaningDuplicates] = useState(false);
 
   const filteredRoles = roles.filter(role =>
     role.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -252,6 +253,17 @@ export const RoleManager: React.FC = () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingRole(undefined);
+  };
+
+  const handleCleanupDuplicates = async () => {
+    setIsCleaningDuplicates(true);
+    try {
+      await cleanupDuplicates();
+    } catch (error) {
+      console.error('Error cleaning duplicates:', error);
+    } finally {
+      setIsCleaningDuplicates(false);
+    }
   };
 
   if (loading || permissionsLoading) {
@@ -281,30 +293,55 @@ export const RoleManager: React.FC = () => {
           </div>
         </div>
 
-        <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingRole(undefined)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Cargo
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="role-form-description">
-            <DialogHeader>
-              <DialogTitle>
-                {editingRole ? 'Editar Cargo' : 'Criar Novo Cargo'}
-              </DialogTitle>
-            </DialogHeader>
-            <div id="role-form-description" className="sr-only">
-              Formulário para {editingRole ? 'editar um cargo existente' : 'criar um novo cargo'} com suas respectivas permissões
-            </div>
-            <RoleForm
-              role={editingRole}
-              permissions={permissions}
-              onSave={handleSave}
-              onCancel={handleCloseForm}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" disabled={isCleaningDuplicates}>
+                {isCleaningDuplicates ? 'Limpando...' : 'Limpar Duplicatas'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Limpar Cargos Duplicados</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação irá remover todos os cargos com nomes duplicados, mantendo apenas o mais antigo de cada grupo.
+                  Esta operação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleCleanupDuplicates}>
+                  Limpar Duplicatas
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <Dialog open={showForm} onOpenChange={setShowForm}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingRole(undefined)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Cargo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="role-form-description">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingRole ? 'Editar Cargo' : 'Criar Novo Cargo'}
+                </DialogTitle>
+              </DialogHeader>
+              <div id="role-form-description" className="sr-only">
+                Formulário para {editingRole ? 'editar um cargo existente' : 'criar um novo cargo'} com suas respectivas permissões
+              </div>
+              <RoleForm
+                role={editingRole}
+                permissions={permissions}
+                onSave={handleSave}
+                onCancel={handleCloseForm}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Search */}
