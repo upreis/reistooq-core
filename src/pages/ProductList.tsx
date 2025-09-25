@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
-
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet } from "lucide-react";
+import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet, Check, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,13 +22,21 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
+interface EditingCell {
+  productId: string;
+  field: string;
+  value: string;
+}
+
 const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
-  const { getProducts, getCategories, deleteProduct } = useProducts();
+  const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -120,6 +127,153 @@ const ProductList = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  // Função para iniciar a edição de uma célula
+  const startEditing = (productId: string, field: string, currentValue: any) => {
+    setEditingCell({ productId, field, value: String(currentValue || '') });
+    setEditingValue(String(currentValue || ''));
+  };
+
+  // Função para cancelar a edição
+  const cancelEditing = () => {
+    setEditingCell(null);
+    setEditingValue("");
+  };
+
+  // Função para salvar a edição
+  const saveEdit = async () => {
+    if (!editingCell) return;
+
+    try {
+      const product = products.find(p => p.id === editingCell.productId);
+      if (!product) return;
+
+      // Validar o valor baseado no campo
+      let validatedValue: any = editingValue;
+      
+      if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento', 'largura', 'altura', 'pcs_ctn'].includes(editingCell.field)) {
+        const numValue = parseFloat(editingValue);
+        if (isNaN(numValue) || numValue < 0) {
+          toast({
+            title: "Valor inválido",
+            description: "Por favor, insira um número válido e positivo.",
+            variant: "destructive",
+          });
+          return;
+        }
+        validatedValue = numValue;
+      } else if (editingCell.field === 'quantidade_atual') {
+        const intValue = parseInt(editingValue);
+        if (isNaN(intValue) || intValue < 0) {
+          toast({
+            title: "Valor inválido",
+            description: "Por favor, insira um número inteiro válido e positivo.",
+            variant: "destructive",
+          });
+          return;
+        }
+        validatedValue = intValue;
+      }
+
+      // Atualizar o produto
+      await updateProduct(editingCell.productId, { [editingCell.field]: validatedValue });
+
+      // Atualizar o estado local
+      setProducts(prev => 
+        prev.map(p => p.id === editingCell.productId 
+          ? { ...p, [editingCell.field]: validatedValue }
+          : p
+        )
+      );
+
+      toast({
+        title: "Produto atualizado",
+        description: "As alterações foram salvas com sucesso.",
+      });
+
+      cancelEditing();
+    } catch (error) {
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as alterações.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Função para verificar se uma célula é editável
+  const isEditable = (field: string) => {
+    const nonEditableFields = [
+      'peso_sem_cx_master',
+      'peso_total_cx_master', 
+      'peso_total_sem_cx_master',
+      'cbm_cubagem',
+      'cbm_total',
+      'quantidade_total',
+      'valor_total'
+    ];
+    return !nonEditableFields.includes(field);
+  };
+
+  // Componente para célula editável
+  const EditableCell = ({ 
+    productId, 
+    field, 
+    value, 
+    displayValue, 
+    className = "",
+    children 
+  }: { 
+    productId: string; 
+    field: string; 
+    value: any; 
+    displayValue?: string;
+    className?: string;
+    children?: React.ReactNode;
+  }) => {
+    const isCurrentlyEditing = editingCell?.productId === productId && editingCell?.field === field;
+    const editable = isEditable(field);
+
+    if (isCurrentlyEditing) {
+      return (
+        <td className={`px-3 py-3 ${className}`}>
+          <div className="flex items-center gap-1">
+            <Input
+              value={editingValue}
+              onChange={(e) => setEditingValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveEdit();
+                if (e.key === 'Escape') cancelEditing();
+              }}
+              onBlur={saveEdit}
+              autoFocus
+              className="h-6 text-xs p-1"
+            />
+            <Button size="sm" variant="ghost" onClick={saveEdit} className="h-6 w-6 p-0">
+              <Check className="h-3 w-3 text-green-600" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={cancelEditing} className="h-6 w-6 p-0">
+              <X className="h-3 w-3 text-red-600" />
+            </Button>
+          </div>
+        </td>
+      );
+    }
+
+    return (
+      <td 
+        className={`px-3 py-3 ${className} ${editable ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+        onDoubleClick={() => editable && startEditing(productId, field, value)}
+        title={editable ? "Clique duplo para editar" : undefined}
+      >
+        {children || (
+          <span className="text-xs">
+            {displayValue !== undefined ? displayValue : (value || "-")}
+          </span>
+        )}
+      </td>
+    );
   };
 
   if (loading) {
@@ -276,9 +430,13 @@ const ProductList = () => {
                             }`}
                           >
                             {/* SKU */}
-                            <td className="px-3 py-3">
+                            <EditableCell 
+                              productId={product.id} 
+                              field="sku_interno" 
+                              value={product.sku_interno}
+                            >
                               <span className="font-mono font-medium text-xs">{product.sku_interno}</span>
-                            </td>
+                            </EditableCell>
 
                             {/* IMAGEM */}
                             <td className="px-3 py-3">
@@ -304,7 +462,11 @@ const ProductList = () => {
                             </td>
 
                             {/* IMAGEM DO FORNECEDOR */}
-                            <td className="px-3 py-3">
+                            <EditableCell 
+                              productId={product.id} 
+                              field="url_imagem_fornecedor" 
+                              value={(product as any).url_imagem_fornecedor}
+                            >
                               <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
                                 {(product as any).url_imagem_fornecedor ? (
                                   <img 
@@ -324,87 +486,124 @@ const ProductList = () => {
                                   <div className="w-4 h-4 bg-gray-300 rounded"></div>
                                 )}
                               </div>
-                            </td>
+                            </EditableCell>
 
                             {/* MATERIAL */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{(product as any).material || "-"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="material" 
+                              value={(product as any).material}
+                              displayValue={(product as any).material || "-"}
+                            />
 
                             {/* COR */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{(product as any).cor || "-"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="cor" 
+                              value={(product as any).cor}
+                              displayValue={(product as any).cor || "-"}
+                            />
 
                             {/* Nome do Produto */}
-                            <td className="px-3 py-3">
+                            <EditableCell 
+                              productId={product.id} 
+                              field="nome" 
+                              value={product.nome}
+                            >
                               <span className="text-xs font-medium" title={product.nome}>
                                 {product.nome.length > 30 ? `${product.nome.substring(0, 30)}...` : product.nome}
                               </span>
-                            </td>
+                            </EditableCell>
 
                             {/* DESCRIÇÃO */}
-                            <td className="px-3 py-3">
+                            <EditableCell 
+                              productId={product.id} 
+                              field="descricao" 
+                              value={product.descricao}
+                            >
                               <span className="text-xs" title={product.descricao || ""}>
                                 {product.descricao ? 
                                   (product.descricao.length > 20 ? `${product.descricao.substring(0, 20)}...` : product.descricao) 
                                   : "-"
                                 }
                               </span>
-                            </td>
+                            </EditableCell>
 
                             {/* PACKAGE */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{(product as any).package_info || "-"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="package_info" 
+                              value={(product as any).package_info}
+                              displayValue={(product as any).package_info || "-"}
+                            />
 
                             {/* PREÇO */}
-                            <td className="px-3 py-3">
+                            <EditableCell 
+                              productId={product.id} 
+                              field="preco_venda" 
+                              value={product.preco_venda}
+                            >
                               <span className="text-xs font-medium">
                                 {formatPrice(product.preco_venda)}
                               </span>
-                            </td>
+                            </EditableCell>
 
                             {/* UNIT */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{(product as any).unidade || "UN"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="unidade" 
+                              value={(product as any).unidade}
+                              displayValue={(product as any).unidade || "UN"}
+                            />
 
                             {/* PCS/CTN */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{pcsCtn || "-"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="pcs_ctn" 
+                              value={pcsCtn}
+                              displayValue={pcsCtn || "-"}
+                            />
 
                             {/* Quantidade */}
-                            <td className="px-3 py-3">
+                            <EditableCell 
+                              productId={product.id} 
+                              field="quantidade_atual" 
+                              value={quantidade}
+                            >
                               <span className="text-xs font-medium">{quantidade}</span>
-                            </td>
+                            </EditableCell>
 
                             {/* PESO UNITARIO(g) */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{(product as any).peso_unitario_g ? `${(product as any).peso_unitario_g}g` : "-"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="peso_unitario_g" 
+                              value={(product as any).peso_unitario_g}
+                              displayValue={(product as any).peso_unitario_g ? `${(product as any).peso_unitario_g}g` : "-"}
+                            />
 
                             {/* Peso cx Master (KG) */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{pesoCxMaster ? `${pesoCxMaster.toFixed(2)}kg` : "-"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="peso_cx_master_kg" 
+                              value={pesoCxMaster}
+                              displayValue={pesoCxMaster ? `${pesoCxMaster.toFixed(2)}kg` : "-"}
+                            />
 
-                            {/* Peso Sem cx Master (KG) - CALCULADO */}
+                            {/* Peso Sem cx Master (KG) - CALCULADO - NÃO EDITÁVEL */}
                             <td className="px-3 py-3">
                               <span className="text-xs font-medium text-blue-600">
                                 {pesoCxMaster > 0 ? `${pesoSemCxMaster.toFixed(2)}kg` : "-"}
                               </span>
                             </td>
 
-                            {/* Peso total cx Master (KG) - CALCULADO */}
+                            {/* Peso total cx Master (KG) - CALCULADO - NÃO EDITÁVEL */}
                             <td className="px-3 py-3">
                               <span className="text-xs font-medium text-green-600">
                                 {pesoCxMaster > 0 ? `${pesoTotalCxMaster.toFixed(2)}kg` : "-"}
                               </span>
                             </td>
 
-                            {/* Peso total sem cx Master (KG) - CALCULADO */}
+                            {/* Peso total sem cx Master (KG) - CALCULADO - NÃO EDITÁVEL */}
                             <td className="px-3 py-3">
                               <span className="text-xs font-medium text-green-600">
                                 {pesoCxMaster > 0 ? `${pesoTotalSemCxMaster.toFixed(2)}kg` : "-"}
@@ -412,42 +611,51 @@ const ProductList = () => {
                             </td>
 
                             {/* Comprimento */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{comprimento ? `${comprimento}cm` : "-"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="comprimento" 
+                              value={comprimento}
+                              displayValue={comprimento ? `${comprimento}cm` : "-"}
+                            />
 
                             {/* Largura */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{largura ? `${largura}cm` : "-"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="largura" 
+                              value={largura}
+                              displayValue={largura ? `${largura}cm` : "-"}
+                            />
 
                             {/* Altura */}
-                            <td className="px-3 py-3">
-                              <span className="text-xs">{altura ? `${altura}cm` : "-"}</span>
-                            </td>
+                            <EditableCell 
+                              productId={product.id} 
+                              field="altura" 
+                              value={altura}
+                              displayValue={altura ? `${altura}cm` : "-"}
+                            />
 
-                            {/* CBM Cubagem - CALCULADO */}
+                            {/* CBM Cubagem - CALCULADO - NÃO EDITÁVEL */}
                             <td className="px-3 py-3">
                               <span className="text-xs font-medium text-purple-600">
                                 {(comprimento && largura && altura) ? cbmCubagem.toFixed(6) : "-"}
                               </span>
                             </td>
 
-                            {/* CBM Total - CALCULADO */}
+                            {/* CBM Total - CALCULADO - NÃO EDITÁVEL */}
                             <td className="px-3 py-3">
                               <span className="text-xs font-medium text-purple-600">
                                 {(comprimento && largura && altura) ? cbmTotal.toFixed(6) : "-"}
                               </span>
                             </td>
 
-                            {/* Quantidade Total - CALCULADO */}
+                            {/* Quantidade Total - CALCULADO - NÃO EDITÁVEL */}
                             <td className="px-3 py-3">
                               <span className="text-xs font-medium text-orange-600">
                                 {pcsCtn > 0 ? quantidadeTotal : "-"}
                               </span>
                             </td>
 
-                            {/* Valor Total - CALCULADO */}
+                            {/* Valor Total - CALCULADO - NÃO EDITÁVEL */}
                             <td className="px-3 py-3">
                               <span className="text-xs font-medium text-red-600">
                                 {(pcsCtn > 0 && preco > 0) ? formatPrice(valorTotal) : "-"}
@@ -455,19 +663,27 @@ const ProductList = () => {
                             </td>
 
                             {/* OBS */}
-                            <td className="px-3 py-3">
+                            <EditableCell 
+                              productId={product.id} 
+                              field="observacoes" 
+                              value={(product as any).observacoes}
+                            >
                               <span className="text-xs" title={(product as any).observacoes || ""}>
                                 {(product as any).observacoes ? 
                                   ((product as any).observacoes.length > 15 ? `${(product as any).observacoes.substring(0, 15)}...` : (product as any).observacoes)
                                   : "-"
                                 }
                               </span>
-                            </td>
+                            </EditableCell>
 
                             {/* Codigo de Barras */}
-                            <td className="px-3 py-3">
+                            <EditableCell 
+                              productId={product.id} 
+                              field="codigo_barras" 
+                              value={product.codigo_barras}
+                            >
                               <span className="text-xs font-mono">{product.codigo_barras || "-"}</span>
-                            </td>
+                            </EditableCell>
 
                             {/* Actions */}
                             <td className="px-3 py-3">
@@ -504,32 +720,35 @@ const ProductList = () => {
                   </table>
                 </div>
                 
-                {/* Legenda das cores dos cálculos */}
+                {/* Legenda das cores dos cálculos e funcionalidades */}
                 <div className="text-xs text-muted-foreground mt-4 p-3 bg-muted/30 rounded-lg">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-600 rounded"></div>
-                      <span>Peso Sem cx Master (calculado)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-600 rounded"></div>
-                      <span>Pesos Totais (calculados)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-purple-600 rounded"></div>
-                      <span>CBM (calculado)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-orange-600 rounded"></div>
-                      <span>Quantidade Total (calculado)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-red-600 rounded"></div>
-                      <span>Valor Total (calculado)</span>
+                  <div className="mb-3">
+                    <h4 className="font-medium text-foreground mb-2">Colunas Calculadas Automaticamente:</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-blue-600 rounded"></div>
+                        <span>Peso Sem cx Master (calculado)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-600 rounded"></div>
+                        <span>Pesos Totais (calculados)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-purple-600 rounded"></div>
+                        <span>CBM (calculado)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-orange-600 rounded"></div>
+                        <span>Quantidade Total (calculado)</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-red-600 rounded"></div>
+                        <span>Valor Total (calculado)</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-2 text-center">
-                    <span>💡 Role horizontalmente para ver todas as colunas</span>
+                  <div className="text-center border-t pt-2">
+                    <span>💡 <strong>Clique duplo</strong> nas células editáveis para modificar os dados | Role horizontalmente para ver todas as colunas</span>
                   </div>
                 </div>
               </>
