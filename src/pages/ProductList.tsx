@@ -211,154 +211,213 @@ const ProductList = () => {
               </div>
             ) : (
               <>
-                {/* Table Header */}
-                <div className="grid grid-cols-12 gap-2 py-3 px-4 bg-muted/50 rounded-lg mb-4 text-xs font-medium overflow-x-auto">
-                  <div>SKU</div>
-                  <div>Produto</div>
-                  <div>Material</div>
-                  <div>Cor</div>
-                  <div>Preço</div>
-                  <div>Peso (g)</div>
-                  <div>Dimensões</div>
-                  <div>CBM</div>
-                  <div>NCM</div>
-                  <div>Código Barras</div>
-                  <div>Status</div>
-                  <div>Ações</div>
-                </div>
+                {/* Scrollable Table Container */}
+                <div className="overflow-x-auto border rounded-lg">
+                  <div className="min-w-[2400px]">
+                    {/* Table Header */}
+                    <div className="grid grid-cols-20 gap-2 py-3 px-4 bg-muted/50 text-xs font-medium sticky top-0 z-10">
+                      <div className="min-w-[80px]">SKU</div>
+                      <div className="min-w-[150px]">Produto</div>
+                      <div className="min-w-[120px]">Imagem</div>
+                      <div className="min-w-[100px]">Material</div>
+                      <div className="min-w-[80px]">Cor</div>
+                      <div className="min-w-[120px]">Descrição</div>
+                      <div className="min-w-[100px]">Package</div>
+                      <div className="min-w-[80px]">Preço</div>
+                      <div className="min-w-[60px]">Unit</div>
+                      <div className="min-w-[80px]">PCS/CTN</div>
+                      <div className="min-w-[80px]">Quantidade</div>
+                      <div className="min-w-[80px]">Peso (g)</div>
+                      <div className="min-w-[80px]">Peso Cx</div>
+                      <div className="min-w-[80px]">Comp.</div>
+                      <div className="min-w-[80px]">Larg.</div>
+                      <div className="min-w-[80px]">Alt.</div>
+                      <div className="min-w-[80px]">CBM</div>
+                      <div className="min-w-[100px]">Código Barras</div>
+                      <div className="min-w-[80px]">Status</div>
+                      <div className="min-w-[80px]">Ações</div>
+                    </div>
 
-                {/* Product List */}
-                <div className="space-y-3 overflow-x-auto">
-                  {products.map((product) => {
-                    const stockStatus = getStockStatus(product);
-                    return (
-                      <div
-                        key={product.id}
-                        className="grid grid-cols-12 gap-2 py-3 px-4 border rounded-lg hover:bg-muted/30 transition-colors text-xs"
-                      >
-                        {/* SKU */}
-                        <div className="flex items-center">
-                          <span className="font-mono font-medium">{product.sku_interno}</span>
-                        </div>
-
-                        {/* Produto */}
-                        <div className="flex items-center space-x-2">
-                          <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
-                            {product.url_imagem ? (
-                              <img 
-                                src={product.url_imagem} 
-                                alt={product.nome} 
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  target.parentElement!.innerHTML = '<Package class="w-4 h-4 text-muted-foreground" />';
-                                }}
-                              />
-                            ) : (
-                              <Package className="w-4 h-4 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">{product.nome}</p>
-                            <p className="text-muted-foreground truncate text-xs">
-                              {product.descricao?.substring(0, 30) || "Sem descrição"}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Material */}
-                        <div className="flex items-center">
-                          <span className="truncate">{(product as any).material || "N/A"}</span>
-                        </div>
-
-                        {/* Cor */}
-                        <div className="flex items-center">
-                          <span className="truncate">{(product as any).cor || "N/A"}</span>
-                        </div>
-
-                        {/* Preço */}
-                        <div className="flex items-center">
-                          <span className="font-medium">
-                            {formatPrice(product.preco_venda)}
-                          </span>
-                        </div>
-
-                        {/* Peso */}
-                        <div className="flex items-center">
-                          <span>{(product as any).peso_unitario_g || "N/A"}g</span>
-                        </div>
-
-                        {/* Dimensões */}
-                        <div className="flex items-center">
-                          <span className="text-xs">
-                            {(product as any).comprimento && (product as any).largura && (product as any).altura 
-                              ? `${(product as any).comprimento}×${(product as any).largura}×${(product as any).altura}cm`
-                              : "N/A"
-                            }
-                          </span>
-                        </div>
-
-                        {/* CBM */}
-                        <div className="flex items-center">
-                          <span>{(product as any).cbm_cubagem || "N/A"}</span>
-                        </div>
-
-                        {/* NCM */}
-                        <div className="flex items-center">
-                          <span className="font-mono">{(product as any).ncm || "N/A"}</span>
-                        </div>
-
-                        {/* Código de Barras */}
-                        <div className="flex items-center">
-                          <span className="font-mono text-xs">{product.codigo_barras || "N/A"}</span>
-                        </div>
-
-                        {/* Status/Estoque */}
-                        <div className="flex items-center space-x-1">
-                          <Badge
-                            variant={stockStatus.variant}
-                            className="text-xs px-2 py-0"
+                    {/* Product List */}
+                    <div className="space-y-0">
+                      {products.map((product, index) => {
+                        const stockStatus = getStockStatus(product);
+                        return (
+                          <div
+                            key={product.id}
+                            className={`grid grid-cols-20 gap-2 py-3 px-4 border-b hover:bg-muted/30 transition-colors text-xs ${
+                              index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
+                            }`}
                           >
-                            <div className={`w-1.5 h-1.5 rounded-full mr-1 ${stockStatus.color}`} />
-                            {product.quantidade_atual}
-                          </Badge>
-                          {product.quantidade_atual <= product.estoque_minimo && (
-                            <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                          )}
-                        </div>
+                            {/* SKU */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="font-mono font-medium truncate">{product.sku_interno}</span>
+                            </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                                <MoreVertical className="w-3 h-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem 
-                                onClick={() => navigate(`/apps/ecommerce/detail/${product.id}`)}
+                            {/* Produto */}
+                            <div className="flex items-center space-x-2 min-w-[150px]">
+                              <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden shrink-0">
+                                {product.url_imagem ? (
+                                  <img 
+                                    src={product.url_imagem} 
+                                    alt={product.nome} 
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      target.parentElement!.innerHTML = '<Package class="w-4 h-4 text-muted-foreground" />';
+                                    }}
+                                  />
+                                ) : (
+                                  <Package className="w-4 h-4 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-medium truncate">{product.nome}</p>
+                              </div>
+                            </div>
+
+                            {/* Imagem URL */}
+                            <div className="flex items-center min-w-[120px]">
+                              <span className="truncate text-xs">
+                                {product.url_imagem ? 
+                                  <Badge variant="secondary" className="text-xs">Sim</Badge> : 
+                                  <Badge variant="outline" className="text-xs">Não</Badge>
+                                }
+                              </span>
+                            </div>
+
+                            {/* Material */}
+                            <div className="flex items-center min-w-[100px]">
+                              <span className="truncate">{(product as any).material || "N/A"}</span>
+                            </div>
+
+                            {/* Cor */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="truncate">{(product as any).cor || "N/A"}</span>
+                            </div>
+
+                            {/* Descrição */}
+                            <div className="flex items-center min-w-[120px]">
+                              <span className="truncate text-xs">
+                                {product.descricao?.substring(0, 30) || "Sem descrição"}
+                              </span>
+                            </div>
+
+                            {/* Package */}
+                            <div className="flex items-center min-w-[100px]">
+                              <span className="truncate">{(product as any).package_info || "N/A"}</span>
+                            </div>
+
+                            {/* Preço */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="font-medium truncate">
+                                {formatPrice(product.preco_venda)}
+                              </span>
+                            </div>
+
+                            {/* Unit */}
+                            <div className="flex items-center min-w-[60px]">
+                              <span className="truncate">{(product as any).unidade || "UN"}</span>
+                            </div>
+
+                            {/* PCS/CTN */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="truncate">{(product as any).pcs_ctn || "N/A"}</span>
+                            </div>
+
+                            {/* Quantidade */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="font-medium">{product.quantidade_atual}</span>
+                            </div>
+
+                            {/* Peso Unitário */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="truncate">{(product as any).peso_unitario_g ? `${(product as any).peso_unitario_g}g` : "N/A"}</span>
+                            </div>
+
+                            {/* Peso Cx Master */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="truncate">{(product as any).peso_cx_master_kg ? `${(product as any).peso_cx_master_kg}kg` : "N/A"}</span>
+                            </div>
+
+                            {/* Comprimento */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="truncate">{(product as any).comprimento ? `${(product as any).comprimento}cm` : "N/A"}</span>
+                            </div>
+
+                            {/* Largura */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="truncate">{(product as any).largura ? `${(product as any).largura}cm` : "N/A"}</span>
+                            </div>
+
+                            {/* Altura */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="truncate">{(product as any).altura ? `${(product as any).altura}cm` : "N/A"}</span>
+                            </div>
+
+                            {/* CBM */}
+                            <div className="flex items-center min-w-[80px]">
+                              <span className="truncate">{(product as any).cbm_cubagem || "N/A"}</span>
+                            </div>
+
+                            {/* Código de Barras */}
+                            <div className="flex items-center min-w-[100px]">
+                              <span className="font-mono text-xs truncate">{product.codigo_barras || "N/A"}</span>
+                            </div>
+
+                            {/* Status/Estoque */}
+                            <div className="flex items-center space-x-1 min-w-[80px]">
+                              <Badge
+                                variant={stockStatus.variant}
+                                className="text-xs px-2 py-0"
                               >
-                                Ver Detalhes
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => navigate(`/apps/ecommerce/editproduct?id=${product.id}`)}
-                              >
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                className="text-destructive"
-                                onClick={() => handleDelete(product.id)}
-                              >
-                                Remover
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    );
-                  })}
+                                <div className={`w-1.5 h-1.5 rounded-full mr-1 ${stockStatus.color}`} />
+                                {product.quantidade_atual}
+                              </Badge>
+                              {product.quantidade_atual <= product.estoque_minimo && (
+                                <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center min-w-[80px]">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                    <MoreVertical className="w-3 h-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem 
+                                    onClick={() => navigate(`/apps/ecommerce/detail/${product.id}`)}
+                                  >
+                                    Ver Detalhes
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => navigate(`/apps/ecommerce/editproduct?id=${product.id}`)}
+                                  >
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="text-destructive"
+                                    onClick={() => handleDelete(product.id)}
+                                  >
+                                    Remover
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Scroll hint */}
+                <div className="text-xs text-muted-foreground mt-2 text-center">
+                  <span>💡 Role horizontalmente para ver todas as colunas</span>
                 </div>
               </>
             )}
