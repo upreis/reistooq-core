@@ -37,10 +37,12 @@ async function fetchShopeeOrders(accessToken: string, shopId: string, partnerId:
   const baseString = `${partnerId}${path}${timestamp}${accessToken}${shopId}`;
   const signature = await generateSignature(baseString, partnerSecret);
 
-  const url = `${baseUrl}${path}?${new URLSearchParams({
-    ...params,
-    sign: signature
-  })}`;
+  const urlParams = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    urlParams.append(key, String(value));
+  });
+  urlParams.append('sign', signature);
+  const url = `${baseUrl}${path}?${urlParams}`;
 
   console.log(`[Shopee Orders] Buscando pedidos para shop ${shopId}`);
 
@@ -302,7 +304,7 @@ Deno.serve(async (req) => {
     console.error('[Shopee Orders] Erro:', error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : String(error) 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

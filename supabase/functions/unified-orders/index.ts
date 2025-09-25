@@ -30,7 +30,7 @@ async function refreshIfNeeded(supabase: any, tokens: any, cid: string, authHead
         return { access_token: refreshData.access_token };
       }
     } catch (e) {
-      console.warn(`[unified-orders:${cid}] ⚠️ Erro no refresh preventivo (tentativa ${retryCount + 1}):`, e.message);
+      console.warn(`[unified-orders:${cid}] ⚠️ Erro no refresh preventivo (tentativa ${retryCount + 1}):`, e instanceof Error ? e.message : String(e));
       
       // Retry com backoff exponencial (máximo 3 tentativas)
       if (retryCount < 2) {
@@ -426,9 +426,9 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const orderTags = (order.tags || []).join(', ');
     
     // Dados financeiros detalhados
-    const marketplaceFees = payments.map((p: any) => p.marketplace_fee || 0).reduce((a, b) => a + b, 0);
-    const refundedAmount = payments.map((p: any) => p.transaction_amount_refunded || 0).reduce((a, b) => a + b, 0);
-    const overpaidAmount = payments.map((p: any) => p.overpaid_amount || 0).reduce((a, b) => a + b, 0);
+    const marketplaceFees = payments.map((p: any) => p.marketplace_fee || 0).reduce((a: number, b: number) => a + b, 0);
+    const refundedAmount = payments.map((p: any) => p.transaction_amount_refunded || 0).reduce((a: number, b: number) => a + b, 0);
+    const overpaidAmount = payments.map((p: any) => p.overpaid_amount || 0).reduce((a: number, b: number) => a + b, 0);
     
     return {
       id: order.id?.toString() || '',
@@ -592,7 +592,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       
       // Endereço completo
       rua: address.street_name || null,
-      numero: address.street_number || null,
+      numero_endereco: address.street_number || null,
       bairro: address.neighborhood?.name || null,
       cep: address.zip_code || null,
 
@@ -600,10 +600,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       
       // 🔹 TAGS DO PEDIDO (removido para evitar duplicação - já mapeado acima)
       conditions: orderItems.map((item: any) => item.item?.condition).filter(Boolean).join(', ') || null,
-      global_prices: orderItems.map((item: any) => item.global_price).filter((p) => p != null).join(', ') || null,
-      net_weights: orderItems.map((item: any) => item.item?.net_weight).filter((w) => w != null).join(', ') || null,
-      manufacturing_days_total: orderItems.map((item: any) => item.manufacturing_days).filter((d) => d != null).reduce((a, b) => a + b, 0) || null,
-      sale_fees_total: orderItems.map((item: any) => item.sale_fee || 0).reduce((a, b) => a + b, 0),
+      global_prices: orderItems.map((item: any) => item.global_price).filter((p: any) => p != null).join(', ') || null,
+      net_weights: orderItems.map((item: any) => item.item?.net_weight).filter((w: any) => w != null).join(', ') || null,
+      manufacturing_days_total: orderItems.map((item: any) => item.manufacturing_days).filter((d: any) => d != null).reduce((a: number, b: number) => a + b, 0) || null,
+      sale_fees_total: orderItems.map((item: any) => item.sale_fee || 0).reduce((a: number, b: number) => a + b, 0),
       listing_type_ids: orderItems.map((item: any) => item.listing_type_id).filter(Boolean).join(', ') || null,
       
       // 🆕 Dados de produtos detalhados
@@ -645,7 +645,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return fail('Missing Authorization header', 401, null, cid);
+      return fail('Missing Authorization header', 401);
     }
 
     let body = await req.json();
@@ -670,8 +670,8 @@ Deno.serve(async (req) => {
     try {
       body = validateRequest(body);
     } catch (error) {
-      console.error(`[unified-orders:${cid}] ❌ Validação falhou:`, error.message);
-      return fail(error.message, 400, null, cid);
+      console.error(`[unified-orders:${cid}] ❌ Validação falhou:`, error instanceof Error ? error.message : String(error));
+      return fail(error instanceof Error ? error.message : String(error), 400);
     }
     
     if (Deno.env.get("DEBUG_ENABLED") === "true") {
@@ -719,7 +719,7 @@ Deno.serve(async (req) => {
 
     if (!integration_account_id) {
       console.error(`[unified-orders:${cid}] ❌ integration_account_id ausente no body`);
-      return fail('integration_account_id é obrigatório. Verifique se uma conta ML está selecionada.', 400, null, cid);
+      return fail('integration_account_id é obrigatório. Verifique se uma conta ML está selecionada.', 400);
     }
 
     // ✅ 1. Busca account com validação de usuário (RLS ativo)
@@ -732,7 +732,7 @@ Deno.serve(async (req) => {
 
     if (accountError) {
       console.error(`[unified-orders:${cid}] FALHA: Busca account`, accountError);
-      return fail('Integration account not found', 404, accountError, cid);
+      return fail('Integration account not found', 404);
     }
 
     // 🛡️ NOVO: Detecção segura de provider
@@ -752,7 +752,7 @@ Deno.serve(async (req) => {
 
       if (shopeeSecretError || !shopeeSecrets) {
         console.error(`[unified-orders:${cid}] 🛒 Shopee credentials not found:`, shopeeSecretError);
-        return fail('Shopee credentials not found', 404, shopeeSecretError, cid);
+        return fail('Shopee credentials not found', 404);
       }
 
       try {
@@ -775,11 +775,11 @@ Deno.serve(async (req) => {
           ...shopeeResult,
           provider: 'shopee',
           account_id: integration_account_id
-        }, cid);
+        });
         
       } catch (shopeeError) {
         console.error(`[unified-orders:${cid}] 🛒 Erro Shopee:`, shopeeError);
-        return fail(`Shopee error: ${shopeeError.message}`, 500, shopeeError, cid);
+        return fail(`Shopee error: ${shopeeError instanceof Error ? shopeeError.message : String(shopeeError)}`, 500);
       }
     }
 
@@ -889,7 +889,7 @@ Deno.serve(async (req) => {
           fallbackUsed = 'bytea';
           console.log(`[unified-orders:${cid}] ✅ FALLBACK 1 bem-sucedido`);
         }
-      } catch (e) { console.warn(`[unified-orders:${cid}] ❌ Fallback 1 (bytea) falhou:`, e.message); }
+      } catch (e) { console.warn(`[unified-orders:${cid}] ❌ Fallback 1 (bytea) falhou:`, e instanceof Error ? e.message : String(e)); }
 
       // FALLBACK 2: Buffer objects (Node.js)
       if (!decrypted) {
@@ -901,7 +901,7 @@ Deno.serve(async (req) => {
             decrypted = await decryptAESGCM(b64String);
             fallbackUsed = 'buffer';
           }
-        } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 2 (buffer) falhou:`, e.message); }
+        } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 2 (buffer) falhou:`, e instanceof Error ? e.message : String(e)); }
       }
 
       // FALLBACK 3: Uint8Array direct
@@ -916,7 +916,7 @@ Deno.serve(async (req) => {
             decrypted = await decryptAESGCM(b64String);
             fallbackUsed = 'uint8array';
           }
-        } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 3 (uint8array) falhou:`, e.message); }
+        } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 3 (uint8array) falhou:`, e instanceof Error ? e.message : String(e)); }
       }
 
       // FALLBACK 4: String simples + validação de integridade
@@ -934,7 +934,7 @@ Deno.serve(async (req) => {
               console.warn(`[unified-orders:${cid}] Payload não parece base64 válido, ignorando`);
             }
           }
-        } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 4 (string) falhou:`, e.message); }
+        } catch (e) { console.warn(`[unified-orders:${cid}] Fallback 4 (string) falhou:`, e instanceof Error ? e.message : String(e)); }
       }
 
       // Processar resultado da decriptação
@@ -953,7 +953,7 @@ Deno.serve(async (req) => {
             fallbackUsed
           });
         } catch (e) {
-          console.error(`[unified-orders:${cid}] ❌ JSON inválido após decriptação via ${fallbackUsed}:`, e.message);
+          console.error(`[unified-orders:${cid}] ❌ JSON inválido após decriptação via ${fallbackUsed}:`, e instanceof Error ? e.message : String(e));
         }
       } else {
         console.error(`[unified-orders:${cid}] ❌ TODOS os 4 fallbacks falharam! - estado:`, {
@@ -973,36 +973,20 @@ Deno.serve(async (req) => {
       // Verificar se secrets estão configurados (sistema blindado exige)
       if (!CRYPTO_KEY || CRYPTO_KEY.length < 32) {
         console.error(`[unified-orders:${cid}] ❌ CRITICO: APP_ENCRYPTION_KEY ausente ou inválido`);
-        return fail("APP_ENCRYPTION_KEY not configured", 500, { 
-          error_type: 'config_missing',
-          required_secret: 'APP_ENCRYPTION_KEY'
-        }, cid);
+        return fail("APP_ENCRYPTION_KEY not configured", 500);
       }
 
       try {
-        const { clientId, clientSecret } = getMlConfig();
-        if (!clientId || !clientSecret) {
-          console.error(`[unified-orders:${cid}] ❌ CRITICO: ML_CLIENT_ID ou ML_CLIENT_SECRET ausentes`);
-          return fail("ML secrets not configured", 500, { 
-            error_type: 'config_missing',
-            required_secrets: ['ML_CLIENT_ID', 'ML_CLIENT_SECRET']
-          }, cid);
+        const mlConfig = await getMlConfig(serviceClient, integration_account_id);
+        if (!mlConfig) {
+          return fail("ML secrets not configured", 500);
         }
       } catch (e) {
-        console.error(`[unified-orders:${cid}] ❌ CRITICO: Erro ao verificar ML secrets:`, e.message);
-        return fail("ML configuration error", 500, { 
-          error_type: 'config_error',
-          message: e.message
-        }, cid);
+        console.error(`[unified-orders:${cid}] ❌ CRITICO: Erro ao verificar ML secrets:`, e instanceof Error ? e.message : String(e));
+        return fail("ML configuration error", 500);
       }
 
-      return fail("no_tokens", 401, { 
-        error_type: 'no_tokens',
-        message: 'Conta requer reconexão OAuth - todos os fallbacks de decriptação falharam',
-        account_id: integration_account_id,
-        payloadLen: secretRow?.secret_enc ? (typeof secretRow.secret_enc === 'string' ? secretRow.secret_enc.length : 'unknown') : 'null',
-        keyFp: keyFingerprint
-      }, cid);
+      return fail("no_tokens", 401);
     }
 
     // ✅ 6. VERIFICAÇÃO DE EXPIRAÇÃO (Sistema Blindado)
@@ -1017,7 +1001,7 @@ Deno.serve(async (req) => {
     // ✅ 7. Buscar pedidos no Mercado Livre
     const seller = accountData.account_identifier;
     if (!seller) {
-      return fail('Seller ID not found in account_identifier', 400, null, cid);
+      return fail('Seller ID not found in account_identifier', 400);
     }
 
     console.log(`[unified-orders:${cid}] Buscando pedidos ML para seller ${seller}`);
@@ -1069,10 +1053,7 @@ Deno.serve(async (req) => {
     if (!mlResponse.ok) {
       const errorText = await mlResponse.text();
       console.error(`[unified-orders:${cid}] ML API Error ${mlResponse.status}:`, errorText);
-      return fail(`ML API Error: ${mlResponse.status}`, mlResponse.status, { 
-        error: errorText,
-        url: mlUrl.toString()
-      }, cid);
+      return fail(`ML API Error: ${mlResponse.status}`, mlResponse.status);
     }
 
     const mlData = await mlResponse.json();
@@ -1168,10 +1149,10 @@ Deno.serve(async (req) => {
       provider: 'mercadolivre',
       account_id: integration_account_id,
       seller_id: seller
-    }, cid);
+    });
 
   } catch (error) {
     console.error(`[unified-orders:${cid}] Unexpected error:`, error);
-    return fail(String(error?.message ?? error), 500, null, cid);
+    return fail(error instanceof Error ? error.message : String(error), 500);
   }
 });

@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     const { partner_id, partner_key, shop_id } = await req.json();
 
     if (!partner_id || !partner_key) {
-      return fail('partner_id and partner_key are required', 400, null, cid);
+      return fail('partner_id and partner_key are required', 400);
     }
 
     console.log(`[shopee-validate:${cid}] 🛒 MOCK: Validando credenciais Shopee`);
@@ -38,10 +38,10 @@ Deno.serve(async (req) => {
       hasShopInfo: !!mockValidation.shop_info
     });
     
-    return ok(mockValidation, cid);
+    return ok(mockValidation);
 
   } catch (error) {
     console.error(`[shopee-validate:${cid}] Error:`, error);
-    return fail(String(error?.message ?? error), 500, null, cid);
+    return fail(error instanceof Error ? error.message : String(error), 500);
   }
 });

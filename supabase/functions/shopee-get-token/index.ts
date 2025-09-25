@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createHash, createHmac } from "https://deno.land/std@0.177.0/crypto/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,9 +58,18 @@ serve(async (req) => {
     console.log('🔐 Base string para assinatura:', baseString);
 
     // 3. Gerar HMAC-SHA256 signature
-    const key = new TextEncoder().encode(partnerKey);
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(partnerKey),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
     const message = new TextEncoder().encode(baseString);
-    const signature = createHmac("sha256", key).update(message).toString("hex");
+    const signatureBuffer = await crypto.subtle.sign("HMAC", key, message);
+    const signature = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
     
     console.log('✅ Signature gerada:', signature);
 
@@ -147,7 +155,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: 'Erro interno no servidor',
-        details: error.message 
+        details: error instanceof Error ? error.message : String(error) 
       }),
       { 
         status: 500, 
