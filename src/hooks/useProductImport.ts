@@ -91,8 +91,8 @@ export const useProductImport = () => {
       estoque_maximo: 1000,
       preco_custo: 0,
       localizacao: '',
-      unidade_medida_id: null,
-      categoria: null
+      categoria: null,
+      quantidade_atual: 0
     };
 
       Object.entries(columnMapping).forEach(([excelCol, productField]) => {
@@ -168,6 +168,23 @@ export const useProductImport = () => {
       console.error('Erro ao criar log de importação:', error);
     }
 
+    // Buscar ou garantir unidade de medida padrão antes de começar
+    let unidadePadraoId = null;
+    try {
+      const { data: unidadePadrao } = await supabase
+        .from('unidades_medida')
+        .select('id')
+        .or('abreviacao.eq.pç,abreviacao.eq.un,abreviacao.eq.pc')
+        .limit(1)
+        .single();
+      
+      if (unidadePadrao) {
+        unidadePadraoId = unidadePadrao.id;
+      }
+    } catch (error) {
+      console.warn('Unidade de medida padrão não encontrada');
+    }
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       
@@ -185,6 +202,15 @@ export const useProductImport = () => {
 
       try {
         const productData = convertRowToProduct(row);
+        
+        // Garantir que unidade_medida_id nunca seja null
+        if (!productData.unidade_medida_id) {
+          if (unidadePadraoId) {
+            productData.unidade_medida_id = unidadePadraoId;
+          } else {
+            throw new Error('Unidade de medida padrão não encontrada. Configure unidades de medida no sistema.');
+          }
+        }
         
         // Verificar se produto já existe pelo SKU
         const { data: existingProduct } = await supabase
