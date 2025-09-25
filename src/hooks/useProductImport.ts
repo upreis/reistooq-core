@@ -211,6 +211,11 @@ export const useProductImport = () => {
             throw new Error('Unidade de medida padrão não encontrada. Configure unidades de medida no sistema.');
           }
         }
+
+        // Gerar código de barras único se estiver vazio
+        if (!productData.codigo_barras || productData.codigo_barras.trim() === '') {
+          productData.codigo_barras = `AUTO-${productData.sku_interno}-${Date.now()}`;
+        }
         
         // Verificar se produto já existe pelo SKU
         const { data: existingProduct } = await supabase
