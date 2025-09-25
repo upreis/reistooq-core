@@ -224,6 +224,7 @@ const ProductList = () => {
         "IPI": product.ipi || "",
         "ICMS": product.icms || "",
         "UNIDADE": product.unidade || "",
+        "PCS/CTN": product.pcs_ctn || "",
         "PACKAGE INFO": product.package_info || "",
         "IMAGEM": product.url_imagem || "",
         "IMAGEM DO FORNECEDOR": product.url_imagem_fornecedor || ""
@@ -256,6 +257,7 @@ const ProductList = () => {
         { wch: 10 }, // IPI
         { wch: 10 }, // ICMS
         { wch: 10 }, // UNIDADE
+        { wch: 12 }, // PCS/CTN
         { wch: 30 }, // PACKAGE INFO
         { wch: 50 }, // IMAGEM
         { wch: 50 }, // IMAGEM DO FORNECEDOR
