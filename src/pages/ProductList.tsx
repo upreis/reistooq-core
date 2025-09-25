@@ -212,28 +212,38 @@ const ProductList = () => {
             ) : (
               <>
                 {/* Table Header */}
-                <div className="grid grid-cols-7 gap-4 py-3 px-4 bg-muted/50 rounded-lg mb-4 text-sm font-medium">
-                  <div>Produto</div>
+                <div className="grid grid-cols-12 gap-2 py-3 px-4 bg-muted/50 rounded-lg mb-4 text-xs font-medium overflow-x-auto">
                   <div>SKU</div>
-                  <div>Categoria</div>
-                  <div>Estoque</div>
+                  <div>Produto</div>
+                  <div>Material</div>
+                  <div>Cor</div>
                   <div>Preço</div>
-                  <div>Última Atualização</div>
+                  <div>Peso (g)</div>
+                  <div>Dimensões</div>
+                  <div>CBM</div>
+                  <div>NCM</div>
+                  <div>Código Barras</div>
+                  <div>Status</div>
                   <div>Ações</div>
                 </div>
 
                 {/* Product List */}
-                <div className="space-y-3">
+                <div className="space-y-3 overflow-x-auto">
                   {products.map((product) => {
                     const stockStatus = getStockStatus(product);
                     return (
                       <div
                         key={product.id}
-                        className="grid grid-cols-7 gap-4 py-4 px-4 border rounded-lg hover:bg-muted/30 transition-colors"
+                        className="grid grid-cols-12 gap-2 py-3 px-4 border rounded-lg hover:bg-muted/30 transition-colors text-xs"
                       >
-                        {/* Product */}
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                        {/* SKU */}
+                        <div className="flex items-center">
+                          <span className="font-mono font-medium">{product.sku_interno}</span>
+                        </div>
+
+                        {/* Produto */}
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 bg-muted rounded flex items-center justify-center overflow-hidden">
                             {product.url_imagem ? (
                               <img 
                                 src={product.url_imagem} 
@@ -242,63 +252,88 @@ const ProductList = () => {
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
                                   target.style.display = 'none';
-                                  target.parentElement!.innerHTML = '<Package class="w-6 h-6 text-muted-foreground" />';
+                                  target.parentElement!.innerHTML = '<Package class="w-4 h-4 text-muted-foreground" />';
                                 }}
                               />
                             ) : (
-                              <Package className="w-6 h-6 text-muted-foreground" />
+                              <Package className="w-4 h-4 text-muted-foreground" />
                             )}
                           </div>
-                          <div>
-                            <p className="font-medium">{product.nome}</p>
-                            <p className="text-sm text-muted-foreground truncate max-w-32">
-                              {product.descricao || "Sem descrição"}
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{product.nome}</p>
+                            <p className="text-muted-foreground truncate text-xs">
+                              {product.descricao?.substring(0, 30) || "Sem descrição"}
                             </p>
                           </div>
                         </div>
 
-                        {/* SKU */}
+                        {/* Material */}
                         <div className="flex items-center">
-                          <span className="text-sm font-mono">{product.sku_interno}</span>
+                          <span className="truncate">{(product as any).material || "N/A"}</span>
                         </div>
 
-                        {/* Category */}
+                        {/* Cor */}
                         <div className="flex items-center">
-                          <span className="text-sm">{product.categoria || "N/A"}</span>
+                          <span className="truncate">{(product as any).cor || "N/A"}</span>
                         </div>
 
-                        {/* Stock */}
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            variant={stockStatus.variant}
-                            className="text-xs"
-                          >
-                            <div className={`w-2 h-2 rounded-full mr-2 ${stockStatus.color}`} />
-                            {product.quantidade_atual}
-                          </Badge>
-                          {product.quantidade_atual <= product.estoque_minimo && (
-                            <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                          )}
-                        </div>
-
-                        {/* Price */}
+                        {/* Preço */}
                         <div className="flex items-center">
-                          <span className="text-sm font-medium">
+                          <span className="font-medium">
                             {formatPrice(product.preco_venda)}
                           </span>
                         </div>
 
-                        {/* Last Update */}
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          {formatDate(product.updated_at)}
+                        {/* Peso */}
+                        <div className="flex items-center">
+                          <span>{(product as any).peso_unitario_g || "N/A"}g</span>
+                        </div>
+
+                        {/* Dimensões */}
+                        <div className="flex items-center">
+                          <span className="text-xs">
+                            {(product as any).comprimento && (product as any).largura && (product as any).altura 
+                              ? `${(product as any).comprimento}×${(product as any).largura}×${(product as any).altura}cm`
+                              : "N/A"
+                            }
+                          </span>
+                        </div>
+
+                        {/* CBM */}
+                        <div className="flex items-center">
+                          <span>{(product as any).cbm_cubagem || "N/A"}</span>
+                        </div>
+
+                        {/* NCM */}
+                        <div className="flex items-center">
+                          <span className="font-mono">{(product as any).ncm || "N/A"}</span>
+                        </div>
+
+                        {/* Código de Barras */}
+                        <div className="flex items-center">
+                          <span className="font-mono text-xs">{product.codigo_barras || "N/A"}</span>
+                        </div>
+
+                        {/* Status/Estoque */}
+                        <div className="flex items-center space-x-1">
+                          <Badge
+                            variant={stockStatus.variant}
+                            className="text-xs px-2 py-0"
+                          >
+                            <div className={`w-1.5 h-1.5 rounded-full mr-1 ${stockStatus.color}`} />
+                            {product.quantidade_atual}
+                          </Badge>
+                          {product.quantidade_atual <= product.estoque_minimo && (
+                            <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                          )}
                         </div>
 
                         {/* Actions */}
                         <div className="flex items-center">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="w-4 h-4" />
+                              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                <MoreVertical className="w-3 h-3" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">

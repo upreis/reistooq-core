@@ -2,7 +2,8 @@ import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-export interface Product {
+// Base product interface matching database columns
+export interface BaseProduct {
   id: string;
   sku_interno: string;
   nome: string;
@@ -24,6 +25,30 @@ export interface Product {
   ultima_movimentacao: string | null;
   organization_id: string | null;
   integration_account_id: string | null;
+}
+
+// Extended interface with additional fields for template import
+export interface Product extends BaseProduct {
+  // Additional fields from import template (optional for backwards compatibility)
+  material?: string | null;
+  cor?: string | null;
+  peso_unitario_g?: number | null;
+  peso_cx_master_kg?: number | null;
+  comprimento?: number | null;
+  largura?: number | null;
+  altura?: number | null;
+  cbm_cubagem?: number | null;
+  ncm?: string | null;
+  pis?: number | null;
+  cofins?: number | null;
+  imposto_importacao?: number | null;
+  ipi?: number | null;
+  icms?: number | null;
+  url_imagem_fornecedor?: string | null;
+  package_info?: string | null;
+  observacoes?: string | null;
+  unidade?: string | null;
+  pcs_ctn?: number | null;
 }
 
 export const useProducts = () => {
@@ -89,7 +114,7 @@ export const useProducts = () => {
     }
     
     console.log(`✅ Produtos encontrados: ${data?.length || 0}`);
-    return data as Product[];
+    return data as unknown as Product[];
   }, []);
 
   const getProduct = useCallback(async (id: string) => {
@@ -104,10 +129,10 @@ export const useProducts = () => {
       throw error;
     }
 
-    return data as Product;
+    return data as unknown as Product;
   }, []);
 
-  const createProduct = useCallback(async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'>) => {
+  const createProduct = useCallback(async (product: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'> & Partial<Product>) => {
     const orgId = await getCurrentOrgId();
 
     // Buscar unidade padrão "un" para a organização atual
@@ -135,7 +160,7 @@ export const useProducts = () => {
       throw error;
     }
 
-    return data as Product;
+    return data as unknown as Product;
   }, [getCurrentOrgId]);
 
   const updateProduct = useCallback(async (id: string, updates: Partial<Product>) => {
@@ -169,7 +194,7 @@ export const useProducts = () => {
       }
 
       console.log('✅ Produto órfão corrigido e atualizado');
-      return fallbackData as Product;
+      return fallbackData as unknown as Product;
     }
 
     if (error) {
@@ -177,7 +202,7 @@ export const useProducts = () => {
       throw error;
     }
 
-    return data as Product;
+    return data as unknown as Product;
   }, [getCurrentOrgId]);
 
   const deleteProduct = useCallback(async (id: string) => {
