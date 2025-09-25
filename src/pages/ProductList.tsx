@@ -201,22 +201,14 @@ const ProductList = () => {
 
   const handleDownloadData = () => {
     try {
-      // Preparar dados para exportação
+      // Preparar dados para exportação - somente colunas do template
       const exportData = products.map(product => ({
-        ID: product.id,
         "NOME DO PRODUTO": product.nome,
         "SKU INTERNO": product.sku_interno,
         "CÓDIGO DE BARRAS": product.codigo_barras,
-        "CATEGORIA": product.categoria,
         "DESCRIÇÃO": product.descricao,
         "OBSERVAÇÕES": product.observacoes,
         "PREÇO DE CUSTO": product.preco_custo,
-        "PREÇO DE VENDA": product.preco_venda,
-        "QUANTIDADE ATUAL": product.quantidade_atual,
-        "ESTOQUE MÍNIMO": product.estoque_minimo,
-        "ESTOQUE MÁXIMO": product.estoque_maximo,
-        "LOCALIZAÇÃO": product.localizacao,
-        "STATUS": product.status,
         "COR": product.cor || "",
         "MATERIAL": product.material || "",
         "PESO UNITÁRIO (G)": product.peso_unitario_g || "",
@@ -234,11 +226,7 @@ const ProductList = () => {
         "UNIDADE": product.unidade || "",
         "PACKAGE INFO": product.package_info || "",
         "IMAGEM": product.url_imagem || "",
-        "IMAGEM DO FORNECEDOR": product.url_imagem_fornecedor || "",
-        "ATIVO": product.ativo ? "Sim" : "Não",
-        "DATA DE CRIAÇÃO": product.created_at ? new Date(product.created_at).toLocaleDateString('pt-BR') : "",
-        "ÚLTIMA ATUALIZAÇÃO": product.updated_at ? new Date(product.updated_at).toLocaleDateString('pt-BR') : "",
-        "ÚLTIMA MOVIMENTAÇÃO": product.ultima_movimentacao ? new Date(product.ultima_movimentacao).toLocaleDateString('pt-BR') : ""
+        "IMAGEM DO FORNECEDOR": product.url_imagem_fornecedor || ""
       }));
 
       // Criar workbook
@@ -247,40 +235,30 @@ const ProductList = () => {
 
       // Ajustar largura das colunas
       const colWidths = [
-        { wch: 36 }, // ID
         { wch: 30 }, // NOME DO PRODUTO
-        { wch: 15 }, // CÓDIGO
-        { wch: 15 }, // SKU
+        { wch: 15 }, // SKU INTERNO
         { wch: 18 }, // CÓDIGO DE BARRAS
-        { wch: 15 }, // CATEGORIA
-        { wch: 15 }, // SUBCATEGORIA
-        { wch: 15 }, // MARCA
-        { wch: 15 }, // MODELO
-        { wch: 10 }, // COR
-        { wch: 10 }, // TAMANHO
         { wch: 40 }, // DESCRIÇÃO
         { wch: 40 }, // OBSERVAÇÕES
         { wch: 15 }, // PREÇO DE CUSTO
-        { wch: 15 }, // PREÇO DE VENDA
-        { wch: 15 }, // MARGEM DE LUCRO
-        { wch: 15 }, // ESTOQUE ATUAL
-        { wch: 15 }, // ESTOQUE MÍNIMO
-        { wch: 15 }, // ESTOQUE MÁXIMO
-        { wch: 15 }, // LOCALIZAÇÃO
-        { wch: 10 }, // PESO
-        { wch: 10 }, // ALTURA
-        { wch: 10 }, // LARGURA
+        { wch: 10 }, // COR
+        { wch: 15 }, // MATERIAL
+        { wch: 15 }, // PESO UNITÁRIO (G)
+        { wch: 15 }, // PESO CX MASTER (KG)
         { wch: 15 }, // COMPRIMENTO
-        { wch: 10 }, // ORIGEM
+        { wch: 10 }, // LARGURA
+        { wch: 10 }, // ALTURA
+        { wch: 15 }, // CBM CUBAGEM
         { wch: 15 }, // NCM
-        { wch: 15 }, // CEST
-        { wch: 15 }, // CFOP
+        { wch: 10 }, // PIS
+        { wch: 10 }, // COFINS
+        { wch: 18 }, // IMPOSTO IMPORTAÇÃO
+        { wch: 10 }, // IPI
+        { wch: 10 }, // ICMS
         { wch: 10 }, // UNIDADE
+        { wch: 30 }, // PACKAGE INFO
         { wch: 50 }, // IMAGEM
         { wch: 50 }, // IMAGEM DO FORNECEDOR
-        { wch: 10 }, // ATIVO
-        { wch: 15 }, // DATA DE CRIAÇÃO
-        { wch: 15 }, // ÚLTIMA ATUALIZAÇÃO
       ];
       
       ws['!cols'] = colWidths;
