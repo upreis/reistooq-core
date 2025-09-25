@@ -4630,6 +4630,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_sales_rep_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_customer_secure: {
         Args: { p_customer_id: string }
         Returns: {
