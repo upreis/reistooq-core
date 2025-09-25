@@ -703,9 +703,9 @@ export function ComposicoesEstoque() {
           </div>
         )}
 
-        <div className="flex-1 min-w-0 space-y-0">
+        <div className="flex-1 min-w-0 space-y-6">
           {/* Filtros Desktop */}
-          <div className="hidden md:block mb-6">
+          <div className="hidden md:block">
             <ComposicoesFilters 
               filters={filters}
               onFiltersChange={setFilters}
@@ -714,7 +714,7 @@ export function ComposicoesEstoque() {
           </div>
 
           {/* Busca e Filtros Mobile/Desktop */}
-          <div className="mb-6">
+          <div>
             <div className="flex gap-2">
               {/* Campo de busca - ocupa maior parte da largura */}
               <div className="flex-1">
