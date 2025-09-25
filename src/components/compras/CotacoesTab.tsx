@@ -124,7 +124,7 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <FileText className="h-8 w-8 text-blue-600" />
+              <FileText className="h-8 w-8 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Total Cotações</p>
                 <p className="text-2xl font-bold">{cotacoes.length}</p>
@@ -136,7 +136,7 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <Clock className="h-8 w-8 text-orange-600" />
+              <Clock className="h-8 w-8 text-warning" />
               <div>
                 <p className="text-sm text-muted-foreground">Em Andamento</p>
                 <p className="text-2xl font-bold">
@@ -150,7 +150,7 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <CheckCircle className="h-8 w-8 text-success" />
               <div>
                 <p className="text-sm text-muted-foreground">Finalizadas</p>
                 <p className="text-2xl font-bold">
@@ -164,7 +164,7 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <DollarSign className="h-8 w-8 text-purple-600" />
+              <DollarSign className="h-8 w-8 text-accent" />
               <div>
                 <p className="text-sm text-muted-foreground">Valor Total</p>
                 <p className="text-2xl font-bold">

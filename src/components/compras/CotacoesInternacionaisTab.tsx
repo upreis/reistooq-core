@@ -712,19 +712,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <div className="text-center p-4 bg-primary/5 border border-primary/20 rounded-lg">
                         <div className="text-sm text-muted-foreground">Moeda Origem</div>
                         <div className="text-lg font-bold">
                           {formatCurrency(100, dadosBasicos.moeda_origem)}
                         </div>
                       </div>
-                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <div className="text-center p-4 bg-success/5 border border-success/20 rounded-lg">
                         <div className="text-sm text-muted-foreground">Em Dólares</div>
                         <div className="text-lg font-bold">
                           {formatCurrency(converterMoeda(100, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador).valorUSD, 'USD')}
                         </div>
                       </div>
-                      <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                      <div className="text-center p-4 bg-warning/5 border border-warning/20 rounded-lg">
                         <div className="text-sm text-muted-foreground">Em Reais</div>
                         <div className="text-lg font-bold">
                           {formatCurrency(converterMoeda(100, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador).valorBRL, 'BRL')}
@@ -951,19 +951,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                        <div className="text-center p-3 bg-primary/5 border border-primary/20 rounded-lg">
                           <div className="text-sm text-muted-foreground">Peso Total</div>
                           <div className="text-xl font-bold">{totaisGerais.total_peso_kg.toFixed(2)} kg</div>
                         </div>
-                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                        <div className="text-center p-3 bg-success/5 border border-success/20 rounded-lg">
                           <div className="text-sm text-muted-foreground">CBM Total</div>
                           <div className="text-xl font-bold">{totaisGerais.total_cbm.toFixed(4)} m³</div>
                         </div>
-                        <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                        <div className="text-center p-3 bg-warning/5 border border-warning/20 rounded-lg">
                           <div className="text-sm text-muted-foreground">Quantidade Total</div>
                           <div className="text-xl font-bold">{totaisGerais.total_quantidade} pcs</div>
                         </div>
-                        <div className="text-center p-3 bg-purple-50 rounded-lg">
+                        <div className="text-center p-3 bg-accent/5 border border-accent/20 rounded-lg">
                           <div className="text-sm text-muted-foreground">Produtos</div>
                           <div className="text-xl font-bold">{produtos.length}</div>
                         </div>
@@ -981,15 +981,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                        <div className="flex justify-between items-center p-3 bg-primary/5 border border-primary/20 rounded-lg">
                           <span className="text-sm text-muted-foreground">Valor em {dadosBasicos.moeda_origem}:</span>
                           <span className="font-bold">{formatCurrency(totaisGerais.total_valor_origem, dadosBasicos.moeda_origem)}</span>
                         </div>
-                        <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                        <div className="flex justify-between items-center p-3 bg-success/5 border border-success/20 rounded-lg">
                           <span className="text-sm text-muted-foreground">Valor em USD:</span>
                           <span className="font-bold">{formatCurrency(totaisGerais.total_valor_usd, 'USD')}</span>
                         </div>
-                        <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                        <div className="flex justify-between items-center p-3 bg-warning/5 border border-warning/20 rounded-lg">
                           <span className="text-sm text-muted-foreground">Valor em BRL:</span>
                           <span className="font-bold text-lg">{formatCurrency(totaisGerais.total_valor_brl, 'BRL')}</span>
                         </div>
@@ -1091,19 +1091,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <div className="space-y-4">
                         <h4 className="font-semibold">Resumo Executivo</h4>
                         <div className="space-y-3">
-                          <div className="p-3 bg-blue-50 rounded-lg">
+                          <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
                             <div className="text-sm text-muted-foreground">Total de Produtos</div>
                             <div className="text-xl font-bold">{produtos.length} itens</div>
                           </div>
-                          <div className="p-3 bg-green-50 rounded-lg">
+                          <div className="p-3 bg-success/5 border border-success/20 rounded-lg">
                             <div className="text-sm text-muted-foreground">Quantidade Total</div>
                             <div className="text-xl font-bold">{totaisGerais.total_quantidade} peças</div>
                           </div>
-                          <div className="p-3 bg-yellow-50 rounded-lg">
+                          <div className="p-3 bg-warning/5 border border-warning/20 rounded-lg">
                             <div className="text-sm text-muted-foreground">Peso Total</div>
                             <div className="text-xl font-bold">{totaisGerais.total_peso_kg.toFixed(2)} kg</div>
                           </div>
-                          <div className="p-3 bg-purple-50 rounded-lg">
+                          <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg">
                             <div className="text-sm text-muted-foreground">Volume Total</div>
                             <div className="text-xl font-bold">{totaisGerais.total_cbm.toFixed(4)} m³</div>
                           </div>
@@ -1117,28 +1117,28 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     <div className="space-y-4">
                       <h4 className="font-semibold">Resumo Financeiro</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Card className="border-blue-200">
+                        <Card className="border-primary/20">
                           <CardContent className="p-4 text-center">
                             <div className="text-sm text-muted-foreground">Valor em {dadosBasicos.moeda_origem}</div>
-                            <div className="text-2xl font-bold text-blue-600">
+                            <div className="text-2xl font-bold text-primary">
                               {formatCurrency(totaisGerais.total_valor_origem, dadosBasicos.moeda_origem)}
                             </div>
                             <div className="text-xs text-muted-foreground">Moeda de origem</div>
                           </CardContent>
                         </Card>
-                        <Card className="border-green-200">
+                        <Card className="border-success/20">
                           <CardContent className="p-4 text-center">
                             <div className="text-sm text-muted-foreground">Valor em USD</div>
-                            <div className="text-2xl font-bold text-green-600">
+                            <div className="text-2xl font-bold text-success">
                               {formatCurrency(totaisGerais.total_valor_usd, 'USD')}
                             </div>
                             <div className="text-xs text-muted-foreground">Dólar americano</div>
                           </CardContent>
                         </Card>
-                        <Card className="border-yellow-200">
+                        <Card className="border-warning/20">
                           <CardContent className="p-4 text-center">
                             <div className="text-sm text-muted-foreground">Valor em BRL</div>
-                            <div className="text-2xl font-bold text-yellow-600">
+                            <div className="text-2xl font-bold text-warning">
                               {formatCurrency(totaisGerais.total_valor_brl, 'BRL')}
                             </div>
                             <div className="text-xs text-muted-foreground">Real brasileiro</div>
@@ -1196,13 +1196,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                           </div>
                         )}
                         {produtos.length === 0 && (
-                          <div className="flex items-center gap-2 text-yellow-600">
+                          <div className="flex items-center gap-2 text-warning">
                             <AlertCircle className="h-3 w-3" />
                             <span>Nenhum produto adicionado</span>
                           </div>
                         )}
                         {dadosBasicos.numero_cotacao && dadosBasicos.descricao && produtos.length > 0 && (
-                          <div className="flex items-center gap-2 text-green-600">
+                          <div className="flex items-center gap-2 text-success">
                             <CheckCircle className="h-3 w-3" />
                             <span>Cotação pronta para ser salva</span>
                           </div>
