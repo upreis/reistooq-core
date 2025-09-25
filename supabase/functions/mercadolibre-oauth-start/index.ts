@@ -146,8 +146,9 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    const status = String(error?.message || '').includes('Missing ML_CLIENT') ? 500 : 400;
-    return new Response(JSON.stringify({ success: false, error: error?.message || String(error) }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const status = errorMessage.includes('Missing ML_CLIENT') ? 500 : 400;
+    return new Response(JSON.stringify({ success: false, error: errorMessage }), {
       status,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getErrorMessage } from '../_shared/error-handler.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS"
 };
 
-function ok(data, status = 200) {
+function ok(data: any, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -18,7 +19,7 @@ function ok(data, status = 200) {
   });
 }
 
-function fail(msg, status = 400, details) {
+function fail(msg: string, status = 400, details?: any) {
   return ok({
     ok: false,
     error: msg,
@@ -28,15 +29,15 @@ function fail(msg, status = 400, details) {
 
 const API_BASE = "https://api.mercadolibre.com";
 
-function dayStartISO(d) {
+function dayStartISO(d: string) {
   return new Date(`${d}T00:00:00.000Z`).toISOString();
 }
 
-function dayEndISO(d) {
+function dayEndISO(d: string) {
   return new Date(`${d}T23:59:59.999Z`).toISOString();
 }
 
-async function refreshTokenIfNeeded(integration_account_id, supabaseUrl, authHeader, internalToken) {
+async function refreshTokenIfNeeded(integration_account_id: string, supabaseUrl: string, authHeader: string, internalToken: string) {
   try {
     console.log(`🔄 [ML Devoluções] Tentando refresh do token para conta: ${integration_account_id}`);
     const r = await fetch(`${supabaseUrl}/functions/v1/mercadolibre-token-refresh`, {
@@ -67,12 +68,12 @@ async function refreshTokenIfNeeded(integration_account_id, supabaseUrl, authHea
     }
     return null;
   } catch (e) {
-    console.error("❌ [ML Devoluções] Erro crítico no refresh:", e?.message);
+    console.error("❌ [ML Devoluções] Erro crítico no refresh:", getErrorMessage(e));
     return null;
   }
 }
 
-async function fetchWithRetry(url, options, integration_account_id, supabaseUrl, authHeader, internalToken) {
+async function fetchWithRetry(url: string, options: any, integration_account_id: string, supabaseUrl: string, authHeader: string, internalToken: string) {
   let response = await fetch(url, options);
 
   if (response.status === 401) {
@@ -94,7 +95,7 @@ async function fetchWithRetry(url, options, integration_account_id, supabaseUrl,
   return response;
 }
 
-async function fetchAllPages(baseUrl, headers, integration_account_id, supabaseUrl, authHeader, internalToken, maxPages = 20) {
+async function fetchAllPages(baseUrl: string, headers: any, integration_account_id: string, supabaseUrl: string, authHeader: string, internalToken: string, maxPages = 20) {
   const allResults = [];
   let offset = 0;
   const limit = 50;
@@ -131,7 +132,7 @@ async function fetchAllPages(baseUrl, headers, integration_account_id, supabaseU
   return allResults;
 }
 
-async function fetchClaimsData(opts) {
+async function fetchClaimsData(opts: any) {
   const { accessToken, sellerId, dateFromISO, dateToISO, status, integration_account_id, supabaseUrl, authHeader, internalToken } = opts;
 
   console.log("🔍 [ML Devoluções] Buscando Claims...");
@@ -158,7 +159,7 @@ async function fetchClaimsData(opts) {
   }
 }
 
-async function fetchReturnsFromClaims(claims, opts) {
+async function fetchReturnsFromClaims(claims: any[], opts: any) {
   const { accessToken, integration_account_id, supabaseUrl, authHeader, internalToken } = opts;
 
   console.log("🔍 [ML Devoluções] Buscando Returns de cada Claim...");
@@ -214,7 +215,7 @@ async function fetchReturnsFromClaims(claims, opts) {
 
 // ===== ENRIQUECIMENTO DE DADOS =====
 
-async function enrichOrder(orderId, accessToken, opts) {
+async function enrichOrder(orderId: string, accessToken: string, opts: any) {
   const { integration_account_id, supabaseUrl, authHeader, internalToken, include_messages = true, include_shipping = true, include_buyer_details = true } = opts;
   
   console.log(`🔍 [ML Devoluções] Enriquecendo order ${orderId}...`);

@@ -174,7 +174,9 @@ Deno.serve(async (req: Request) => {
           let secretString = secretRow.secret_enc;
           if (typeof secretString === 'string' && secretString.startsWith('\\x')) {
             const hexString = secretString.slice(2);
-            const bytes = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+            const matches = hexString.match(/.{1,2}/g);
+            if (!matches) throw new Error('Invalid hex string format');
+            const bytes = new Uint8Array(matches.map(byte => parseInt(byte, 16)));
             secretString = new TextDecoder().decode(bytes);
           }
 

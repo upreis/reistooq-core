@@ -197,7 +197,6 @@ Deno.serve(async (req) => {
     console.log(`[Health Check] ${provider} health check result:`, healthResult);
 
     return new Response(JSON.stringify({
-      success: healthResult.success,
       provider,
       integration_account_id,
       ...healthResult,
@@ -208,9 +207,9 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('[Health Check] Error:', error);
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: error.message 
+    return new Response(JSON.stringify({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

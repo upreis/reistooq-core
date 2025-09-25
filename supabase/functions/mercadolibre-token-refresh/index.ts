@@ -109,12 +109,13 @@ Deno.serve(async (req) => {
           });
         }
       } catch (e) {
-        console.error('[ML Token Refresh] ❌ CRITICO: Erro ao verificar ML secrets:', e.message);
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error('[ML Token Refresh] ❌ CRITICO: Erro ao verificar ML secrets:', errorMessage);
         return new Response(JSON.stringify({ 
           success: false, 
           error: "ML configuration error",
           error_type: 'config_error',
-          message: e.message
+          message: errorMessage
         }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -224,11 +225,12 @@ Deno.serve(async (req) => {
 
   } catch (e) {
     console.error("[ML Token Refresh] Unexpected error:", e);
+    const errorMessage = e instanceof Error ? e.message : String(e);
     return new Response(JSON.stringify({
       success: false,
-      error: String(e?.message ?? e),
+      error: errorMessage,
       error_type: 'unexpected_error',
-      message: e?.message || 'Unknown error'
+      message: errorMessage
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
