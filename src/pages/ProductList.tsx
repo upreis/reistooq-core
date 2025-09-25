@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle } from "lucide-react";
+import { Search, Filter, MoreVertical, Plus, Package, AlertTriangle, FileSpreadsheet } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -150,10 +151,16 @@ const ProductList = () => {
               <Package className="h-5 w-5" />
               Lista de Produtos
             </CardTitle>
-            <Button onClick={() => navigate("/apps/ecommerce/addproduct")}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Produto
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => navigate("/apps/ecommerce/addproduct")}>
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Produto
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/apps/ecommerce/import")}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Importar
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {/* Search and Filter */}

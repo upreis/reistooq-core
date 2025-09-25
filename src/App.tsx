@@ -30,6 +30,7 @@ import ProductDetail from "./pages/ProductDetail";
 import ProductList from "./pages/ProductList";
 import Checkout from "./pages/Checkout";
 import AddProduct from "./pages/AddProduct";
+import ProductImport from "./pages/ProductImport";
 import EditProduct from "./pages/EditProduct";
 
 import Calendar from "./pages/Calendar";
@@ -149,6 +150,11 @@ function App() {
                     <Route path="/apps/ecommerce/addproduct" element={
                       <PermissionRoute requiredPermissions={['ecommerce:view']}>
                         <AddProduct />
+                      </PermissionRoute>
+                    } />
+                    <Route path="/apps/ecommerce/import" element={
+                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
+                        <ProductImport />
                       </PermissionRoute>
                     } />
                     <Route path="/apps/ecommerce/editproduct" element={
