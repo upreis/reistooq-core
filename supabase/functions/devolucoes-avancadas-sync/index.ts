@@ -78,12 +78,13 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Erro na edge function:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     // Return success even with errors to avoid breaking the UI
     return ok({
       success: false,
-      error: error.message,
-      message: `Erro interno: ${error.message}`,
+      error: errorMessage,
+      message: `Erro interno: ${errorMessage}`,
       processed_count: 0,
       total_found: 0
     });
@@ -153,13 +154,14 @@ async function handleTestConnection(supabase: any, integration_account_id: strin
       account_identifier: mlConfig.account_identifier,
       user_data: { nickname: account.name }
     });
-  } catch (error) {
-    console.error('❌ Erro no teste de conexão:', error);
-    return ok({ 
-      success: false, 
-      connection_status: 'failed', 
-      error: error.message 
-    });
+    } catch (error) {
+      console.error('❌ Erro no teste de conexão:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return ok({ 
+        success: false, 
+        connection_status: 'failed', 
+        error: errorMessage 
+      });
   }
 }
 
@@ -182,7 +184,7 @@ async function handleCheckMissingData(supabase: any, integration_account_id: str
       sem_anexos: 0
     };
 
-    records?.forEach(record => {
+    records?.forEach((record: any) => {
       if (!record.dados_mensagens || Object.keys(record.dados_mensagens || {}).length === 0) {
         missing.sem_mensagens++;
       }
@@ -215,7 +217,8 @@ async function handleCheckMissingData(supabase: any, integration_account_id: str
 
   } catch (error) {
     console.error('❌ Erro ao verificar dados faltantes:', error);
-    return ok({ success: false, error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return ok({ success: false, error: errorMessage });
   }
 }
 
@@ -253,7 +256,8 @@ async function handleRealEnrichClaims(supabase: any, integration_account_id: str
       // Usar EdgeRuntime.waitUntil para salvar em background
       for (const data of batchResults) {
         if (data) {
-          EdgeRuntime.waitUntil(upsertOrderData(supabase, data));
+          // Process in background without waiting
+          upsertOrderData(supabase, data).catch(console.error);
         }
       }
     }
@@ -270,7 +274,8 @@ async function handleRealEnrichClaims(supabase: any, integration_account_id: str
 
   } catch (error) {
     console.error('❌ Erro no enriquecimento real:', error);
-    return ok({ success: false, error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return ok({ success: false, error: errorMessage });
   }
 }
 
@@ -309,7 +314,7 @@ async function handleSyncAdvancedFields(supabase: any, integration_account_id: s
         updated_at: new Date().toISOString()
       })
       .eq('integration_account_id', integration_account_id)
-      .in('id', records.map(r => r.id));
+      .in('id', records.map((r: any) => r.id));
 
     if (updateError) throw updateError;
 
@@ -321,7 +326,8 @@ async function handleSyncAdvancedFields(supabase: any, integration_account_id: s
 
   } catch (error) {
     console.error('❌ Erro na sincronização:', error);
-    return ok({ success: false, error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return ok({ success: false, error: errorMessage });
   }
 }
 
@@ -365,30 +371,30 @@ async function handleFetchAdvancedMetrics(supabase: any, integration_account_id:
     const metrics = {
       total_claims: records.length,
       avg_response_time_minutes: Math.round(
-        records.filter(r => r.tempo_resposta_medio).reduce((sum, r) => sum + (r.tempo_resposta_medio || 0), 0) / 
-        records.filter(r => r.tempo_resposta_medio).length || 0
+        records.filter((r: any) => r.tempo_resposta_medio).reduce((sum: number, r: any) => sum + (r.tempo_resposta_medio || 0), 0) /
+        records.filter((r: any) => r.tempo_resposta_medio).length || 0
       ),
       avg_resolution_time_minutes: Math.round(
-        records.filter(r => r.tempo_total_resolucao).reduce((sum, r) => sum + (r.tempo_total_resolucao || 0), 0) / 
-        records.filter(r => r.tempo_total_resolucao).length || 0
+        records.filter((r: any) => r.tempo_total_resolucao).reduce((sum: number, r: any) => sum + (r.tempo_total_resolucao || 0), 0) /
+        records.filter((r: any) => r.tempo_total_resolucao).length || 0
       ),
       avg_satisfaction_rate: Math.round(
-        (records.filter(r => r.taxa_satisfacao).reduce((sum, r) => sum + (r.taxa_satisfacao || 0), 0) / 
-        records.filter(r => r.taxa_satisfacao).length || 0) * 100
+        (records.filter((r: any) => r.taxa_satisfacao).reduce((sum: number, r: any) => sum + (r.taxa_satisfacao || 0), 0) / 
+        records.filter((r: any) => r.taxa_satisfacao).length || 0) * 100
       ) / 100,
-      priority_distribution: records.reduce((acc, r) => {
+      priority_distribution: records.reduce((acc: any, r: any) => {
         const priority = r.nivel_prioridade || 'medium';
         acc[priority] = (acc[priority] || 0) + 1;
         return acc;
       }, {}),
-      status_distribution: records.reduce((acc, r) => {
+      status_distribution: records.reduce((acc: any, r: any) => {
         const status = r.status_devolucao || 'unknown';
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {}),
-      high_priority_count: records.filter(r => ['high', 'critical'].includes(r.nivel_prioridade)).length,
-      escalated_count: records.filter(r => r.escalado_para_ml).length,
-      mediation_count: records.filter(r => r.em_mediacao).length
+      high_priority_count: records.filter((r: any) => ['high', 'critical'].includes(r.nivel_prioridade)).length,
+      escalated_count: records.filter((r: any) => r.escalado_para_ml).length,
+      mediation_count: records.filter((r: any) => r.em_mediacao).length
     };
 
     return ok({
@@ -399,7 +405,8 @@ async function handleFetchAdvancedMetrics(supabase: any, integration_account_id:
 
   } catch (error) {
     console.error('❌ Erro ao buscar métricas:', error);
-    return ok({ success: false, error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return ok({ success: false, error: errorMessage });
   }
 }
 
@@ -444,7 +451,8 @@ async function handleUpdatePhase2Columns(supabase: any, integration_account_id: 
 
   } catch (error) {
     console.error('❌ Erro nas atualizações:', error);
-    return ok({ success: false, error: error.message });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return ok({ success: false, error: errorMessage });
   }
 }
 
@@ -599,6 +607,9 @@ async function upsertOrderData(supabase: any, processedClaim: any) {
     }
   } catch (error) {
     console.error(`❌ Erro crítico ao salvar ${processedClaim.order_id}:`, error);
-    console.error('🚨 Stack trace:', error.stack);
+    const stack = error instanceof Error ? error.stack : undefined;
+    if (stack) {
+      console.error('🚨 Stack trace:', stack);
+    }
   }
 }

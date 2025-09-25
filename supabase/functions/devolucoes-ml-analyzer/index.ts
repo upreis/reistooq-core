@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Erro na análise:', error);
-    return fail(`Erro na análise: ${error.message}`, 500);
+    return fail(`Erro na análise: ${getErrorMessage(error)}`, 500);
   }
 });
 
@@ -125,7 +125,7 @@ async function classifyPriority(supabase: any, body: AnalysisRequest) {
 
   } catch (error) {
     console.error('❌ Erro na classificação:', error);
-    return fail(`Erro na classificação: ${error.message}`, 500);
+    return fail(`Erro na classificação: ${getErrorMessage(error)}`, 500);
   }
 }
 
@@ -181,7 +181,7 @@ async function analyzeSentiment(supabase: any, body: AnalysisRequest) {
 
   } catch (error) {
     console.error('❌ Erro na análise de sentimento:', error);
-    return fail(`Erro na análise de sentimento: ${error.message}`, 500);
+    return fail(`Erro na análise de sentimento: ${getErrorMessage(error)}`, 500);
   }
 }
 
@@ -229,7 +229,7 @@ async function detectTrends(supabase: any, body: AnalysisRequest) {
 
   } catch (error) {
     console.error('❌ Erro na detecção de tendências:', error);
-    return fail(`Erro na detecção de tendências: ${error.message}`, 500);
+    return fail(`Erro na detecção de tendências: ${getErrorMessage(error)}`, 500);
   }
 }
 
@@ -294,7 +294,7 @@ async function assessRisk(supabase: any, body: AnalysisRequest) {
 
   } catch (error) {
     console.error('❌ Erro na avaliação de risco:', error);
-    return fail(`Erro na avaliação de risco: ${error.message}`, 500);
+    return fail(`Erro na avaliação de risco: ${getErrorMessage(error)}`, 500);
   }
 }
 

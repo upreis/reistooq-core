@@ -65,6 +65,16 @@ export function fail(message: string, status: number = 400) {
   );
 }
 
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'Unknown error';
+}
+
 export async function getMlConfig(supabase: any, accountId: string) {
   try {
     const { data, error } = await supabase.functions.invoke('get-ml-token', {
