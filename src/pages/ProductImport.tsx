@@ -9,251 +9,68 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Download, Upload, FileSpreadsheet, AlertCircle, CheckCircle2, X } from "lucide-react";
 import { toast } from "sonner";
-import { useProducts } from "@/hooks/useProducts";
-import * as XLSX from 'xlsx';
-
-interface ImportResult {
-  total: number;
-  success: number;
-  errors: Array<{
-    row: number;
-    field: string;
-    message: string;
-    data: any;
-  }>;
-}
+import { useProductImport, ImportResult } from "@/hooks/useProductImport";
 
 const ProductImport = () => {
-  const { createProduct } = useProducts();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { 
+    importing, 
+    progress, 
+    downloadTemplate, 
+    readExcelFile, 
+    processImport 
+  } = useProductImport();
   
-  const [importing, setImporting] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
   const [showPreview, setShowPreview] = useState(false);
 
-  // Template das colunas conforme a planilha da imagem
+  // Template das colunas conforme solicitado
   const templateColumns = [
     'SKU', 'IMAGEM', 'IMAGEM DO FORNECEDOR', 'MATERIAL', 'COR', 
     'Nome do Produto', 'DESCRIÇÃO', 'PACKAGE', 'PREÇO', 'UNIT', 
     'PCS/CTN', 'Quantidade', 'PESO UNITARIO(g)', 'Peso cx Master (KG)', 
-    'Comprimento', 'Largura', 'Altura', 'OBS', 'Codigo de Barras'
+    'Comprimento', 'Largura', 'Altura', 'CBM CUBAGEM', 'OBS', 'Codigo de Barras'
   ];
 
-  const columnMapping = {
-    'SKU': 'sku_interno',
-    'IMAGEM': 'url_imagem',
-    'IMAGEM DO FORNECEDOR': 'imagem_fornecedor',
-    'MATERIAL': 'material',
-    'COR': 'cor',
-    'Nome do Produto': 'nome',
-    'DESCRIÇÃO': 'descricao',
-    'PACKAGE': 'package',
-    'PREÇO': 'preco_venda',
-    'UNIT': 'unit',
-    'PCS/CTN': 'pcs_ctn',
-    'Quantidade': 'quantidade_atual',
-    'PESO UNITARIO(g)': 'peso_unitario_g',
-    'Peso cx Master (KG)': 'peso_cx_master_kg',
-    'Comprimento': 'comprimento_cm',
-    'Largura': 'largura_cm',
-    'Altura': 'altura_cm',
-    'OBS': 'observacoes',
-    'Codigo de Barras': 'codigo_barras'
-  };
-
-  const downloadTemplate = () => {
-    // Criar dados de exemplo
-    const exampleData = [
-      {
-        'SKU': 'PROD-001',
-        'IMAGEM': 'https://exemplo.com/imagem1.jpg',
-        'IMAGEM DO FORNECEDOR': 'https://fornecedor.com/img1.jpg',
-        'MATERIAL': 'Poliéster',
-        'COR': 'Azul',
-        'Nome do Produto': 'Chapéu Aeronáutica',
-        'DESCRIÇÃO': 'Chapéu aeronáutica 28*21*16cm',
-        'PACKAGE': 'Caixa',
-        'PREÇO': '25.00',
-        'UNIT': 'pç',
-        'PCS/CTN': '240',
-        'Quantidade': '100',
-        'PESO UNITARIO(g)': '90',
-        'Peso cx Master (KG)': '22.60',
-        'Comprimento': '28',
-        'Largura': '21',
-        'Altura': '16',
-        'OBS': 'Produto premium',
-        'Codigo de Barras': '7891234567890'
-      },
-      {
-        'SKU': 'PROD-002',
-        'IMAGEM': '',
-        'IMAGEM DO FORNECEDOR': '',
-        'MATERIAL': 'Algodão',
-        'COR': 'Preto',
-        'Nome do Produto': 'Camiseta Básica',
-        'DESCRIÇÃO': 'Camiseta 100% algodão',
-        'PACKAGE': 'Saco plástico',
-        'PREÇO': '15.00',
-        'UNIT': 'pç',
-        'PCS/CTN': '100',
-        'Quantidade': '200',
-        'PESO UNITARIO(g)': '150',
-        'Peso cx Master (KG)': '16.00',
-        'Comprimento': '30',
-        'Largura': '25',
-        'Altura': '2',
-        'OBS': '',
-        'Codigo de Barras': '7891234567891'
-      }
-    ];
-
-    const worksheet = XLSX.utils.json_to_sheet(exampleData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Produtos');
-    
-    // Ajustar largura das colunas
-    const colWidths = templateColumns.map(() => ({ wch: 15 }));
-    worksheet['!cols'] = colWidths;
-    
-    XLSX.writeFile(workbook, 'template_produtos.xlsx');
-    toast.success("Template baixado com sucesso!");
-  };
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
-        
-        setPreviewData(jsonData);
-        setShowPreview(true);
-        toast.success(`${jsonData.length} produtos encontrados no arquivo`);
-      } catch (error) {
-        toast.error("Erro ao ler o arquivo. Verifique se é um arquivo Excel válido.");
-      }
-    };
-    reader.readAsArrayBuffer(file);
+    try {
+      const data = await readExcelFile(file);
+      setPreviewData(data);
+      setShowPreview(true);
+      toast.success(`${data.length} produtos encontrados no arquivo`);
+    } catch (error) {
+      toast.error("Erro ao ler o arquivo. Verifique se é um arquivo Excel válido.");
+    }
   };
 
-  const validateRow = (row: any, index: number): string[] => {
-    const errors: string[] = [];
-    
-    if (!row['SKU'] || row['SKU'].toString().trim() === '') {
-      errors.push(`Linha ${index + 2}: SKU é obrigatório`);
-    }
-    
-    if (!row['Nome do Produto'] || row['Nome do Produto'].toString().trim() === '') {
-      errors.push(`Linha ${index + 2}: Nome do Produto é obrigatório`);
-    }
-    
-    if (row['PREÇO'] && (isNaN(parseFloat(row['PREÇO'])) || parseFloat(row['PREÇO']) < 0)) {
-      errors.push(`Linha ${index + 2}: Preço deve ser um número válido`);
-    }
-    
-    if (row['Quantidade'] && (isNaN(parseInt(row['Quantidade'])) || parseInt(row['Quantidade']) < 0)) {
-      errors.push(`Linha ${index + 2}: Quantidade deve ser um número inteiro válido`);
-    }
-
-    return errors;
-  };
-
-  const convertRowToProduct = (row: any) => {
-    const product: any = {
-      ativo: true,
-      status: 'ativo',
-      estoque_minimo: 0,
-      estoque_maximo: 1000,
-      preco_custo: 0,
-      localizacao: '',
-      unidade_medida_id: null
-    };
-
-    // Mapear campos do Excel para campos do produto
-    Object.entries(columnMapping).forEach(([excelCol, productField]) => {
-      const value = row[excelCol];
-      if (value !== undefined && value !== null && value !== '') {
-        if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento_cm', 'largura_cm', 'altura_cm'].includes(productField)) {
-          product[productField] = parseFloat(value) || 0;
-        } else if (['quantidade_atual', 'pcs_ctn'].includes(productField)) {
-          product[productField] = parseInt(value) || 0;
-        } else {
-          product[productField] = value.toString();
-        }
-      }
-    });
-
-    return product;
-  };
-
-  const processImport = async () => {
+  const handleImport = async () => {
     if (previewData.length === 0) {
       toast.error("Nenhum dado para importar");
       return;
     }
 
-    setImporting(true);
-    setProgress(0);
-    
-    const result: ImportResult = {
-      total: previewData.length,
-      success: 0,
-      errors: []
-    };
-
-    for (let i = 0; i < previewData.length; i++) {
-      const row = previewData[i];
-      
-      // Validar linha
-      const validationErrors = validateRow(row, i);
-      if (validationErrors.length > 0) {
-        result.errors.push({
-          row: i + 2,
-          field: 'validation',
-          message: validationErrors.join(', '),
-          data: row
-        });
-        setProgress(((i + 1) / previewData.length) * 100);
-        continue;
-      }
-
-      try {
-        const productData = convertRowToProduct(row);
-        await createProduct(productData);
-        result.success++;
-      } catch (error: any) {
-        result.errors.push({
-          row: i + 2,
-          field: 'creation',
-          message: error.message || 'Erro ao criar produto',
-          data: row
-        });
-      }
-      
-      setProgress(((i + 1) / previewData.length) * 100);
-      
-      // Pequena pausa para não sobrecarregar
-      await new Promise(resolve => setTimeout(resolve, 100));
+    if (!fileInputRef.current?.files?.[0]) {
+      toast.error("Arquivo não encontrado");
+      return;
     }
 
-    setImportResult(result);
-    setImporting(false);
-    
-    if (result.success > 0) {
-      toast.success(`${result.success} produtos importados com sucesso!`);
-    }
-    
-    if (result.errors.length > 0) {
-      toast.error(`${result.errors.length} erros encontrados na importação`);
+    try {
+      const result = await processImport(fileInputRef.current.files[0], previewData);
+      setImportResult(result);
+      
+      if (result.success > 0) {
+        toast.success(`${result.success} produtos importados com sucesso!`);
+      }
+      
+      if (result.errors.length > 0) {
+        toast.error(`${result.errors.length} erros encontrados na importação`);
+      }
+    } catch (error) {
+      toast.error("Erro durante a importação");
     }
   };
 
@@ -313,7 +130,7 @@ const ProductImport = () => {
 
                     <div className="flex gap-2">
                       <Button 
-                        onClick={processImport}
+                        onClick={handleImport}
                         disabled={!showPreview || previewData.length === 0 || importing}
                         className="flex items-center gap-2"
                       >
@@ -404,6 +221,7 @@ const ProductImport = () => {
                         <th className="text-left p-2">Nome</th>
                         <th className="text-left p-2">Preço</th>
                         <th className="text-left p-2">Quantidade</th>
+                        <th className="text-left p-2">CBM</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -414,6 +232,7 @@ const ProductImport = () => {
                           <td className="p-2">{row['Nome do Produto'] || '-'}</td>
                           <td className="p-2">{row['PREÇO'] || '-'}</td>
                           <td className="p-2">{row['Quantidade'] || '-'}</td>
+                          <td className="p-2">{row['CBM CUBAGEM'] || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -467,12 +286,12 @@ const ProductImport = () => {
                         <Alert key={index} variant="destructive">
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription className="text-xs">
-                            <strong>Linha {error.row}:</strong> {error.message}
+                            Linha {error.row}: {error.message}
                           </AlertDescription>
                         </Alert>
                       ))}
                       {importResult.errors.length > 10 && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground mt-2">
                           ... e mais {importResult.errors.length - 10} erros
                         </p>
                       )}
@@ -488,22 +307,22 @@ const ProductImport = () => {
             <CardHeader>
               <CardTitle>Instruções</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div>
-                <strong>1. Baixe o Template</strong>
-                <p className="text-muted-foreground">Use o template para ver a estrutura correta</p>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <h4 className="font-medium">1. Baixe o Template</h4>
+                <p className="text-sm text-muted-foreground">Use o template para ver a estrutura correta</p>
               </div>
-              <div>
-                <strong>2. Preencha os Dados</strong>
-                <p className="text-muted-foreground">SKU e Nome são campos obrigatórios</p>
+              <div className="space-y-2">
+                <h4 className="font-medium">2. Preencha os Dados</h4>
+                <p className="text-sm text-muted-foreground">SKU e Nome são campos obrigatórios</p>
               </div>
-              <div>
-                <strong>3. Faça o Upload</strong>
-                <p className="text-muted-foreground">Selecione o arquivo preenchido</p>
+              <div className="space-y-2">
+                <h4 className="font-medium">3. Faça o Upload</h4>
+                <p className="text-sm text-muted-foreground">Selecione o arquivo preenchido</p>
               </div>
-              <div>
-                <strong>4. Revise e Importe</strong>
-                <p className="text-muted-foreground">Confira os dados antes de importar</p>
+              <div className="space-y-2">
+                <h4 className="font-medium">4. Revise e Importe</h4>
+                <p className="text-sm text-muted-foreground">Confira os dados antes de importar</p>
               </div>
             </CardContent>
           </Card>
