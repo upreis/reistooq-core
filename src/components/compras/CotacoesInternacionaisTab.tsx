@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CurrencyService } from "@/services/currencyService";
+import { ProductSelector } from './ProductSelector';
 import { z } from 'zod';
 
 // Esquemas de validação com zod
@@ -190,6 +191,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [showModal, setShowModal] = useState(false);
   const [currentTab, setCurrentTab] = useState('basico');
   const [editingCotacao, setEditingCotacao] = useState<CotacaoInternacional | null>(null);
+  const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   
   // Estados do formulário
   const [dadosBasicos, setDadosBasicos] = useState({
@@ -222,6 +224,68 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
   const { toast } = useToast();
+
+  // Handler para produtos selecionados do seletor avançado
+  const handleProductSelectorConfirm = (selectedProducts: any[]) => {
+    const produtosAdicionados: string[] = [];
+    const produtosDuplicados: string[] = [];
+    
+    selectedProducts.forEach(product => {
+      // Verificar se já existe um produto com o mesmo SKU
+      const produtoExistente = produtos.find(p => p.sku === product.sku_interno);
+      
+      if (produtoExistente) {
+        produtosDuplicados.push(product.nome);
+        return;
+      }
+      
+      const novoProduto: ProdutoCotacao = {
+        id: `${Date.now()}-${Math.random()}`,
+        sku: product.sku_interno,
+        nome: product.nome,
+        material: '',
+        package_qtd: 1,
+        preco_unitario: product.preco_custo || 0,
+        unidade_medida: 'PCS',
+        pcs_ctn: 1,
+        qtd_caixas_pedido: product.quantidade || 1,
+        peso_unitario_g: 0,
+        largura_cm: 0,
+        altura_cm: 0,
+        comprimento_cm: 0
+      };
+      
+      try {
+        produtoSchema.parse(novoProduto);
+        setProdutos(prev => [...prev, novoProduto]);
+        produtosAdicionados.push(product.nome);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          toast({
+            title: "Erro de validação",
+            description: `${product.nome}: ${error.issues[0].message}`,
+            variant: "destructive"
+          });
+        }
+      }
+    });
+    
+    // Mostrar feedback dos resultados
+    if (produtosAdicionados.length > 0) {
+      toast({
+        title: "Produtos adicionados!",
+        description: `${produtosAdicionados.length} produto(s) adicionado(s) à cotação.`,
+      });
+    }
+    
+    if (produtosDuplicados.length > 0) {
+      toast({
+        title: "Produtos duplicados",
+        description: `${produtosDuplicados.length} produto(s) já existe(m) na cotação.`,
+        variant: "default"
+      });
+    }
+  };
 
   // Função para calcular valores do produto
   const calcularProduto = (produto: ProdutoCotacao): ProdutoCotacao => {
@@ -878,10 +942,31 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         </div>
                       </div>
 
-                      <Button onClick={adicionarProduto} className="w-full">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adicionar Produto
-                      </Button>
+                      <div className="space-y-3">
+                        <Button onClick={adicionarProduto} className="w-full">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Adicionar Produto
+                        </Button>
+                        
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">ou</span>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsProductSelectorOpen(true)}
+                          className="w-full gap-2"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Usar Seletor Avançado
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
 
@@ -897,7 +982,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       {produtos.length === 0 ? (
                         <div className="text-center py-8">
                           <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                          <p className="text-muted-foreground">Nenhum produto adicionado</p>
+                          <p className="text-muted-foreground mb-4">Nenhum produto adicionado</p>
+                          <Button 
+                            onClick={() => setIsProductSelectorOpen(true)}
+                            variant="outline"
+                            className="gap-2"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Usar Seletor Avançado
+                          </Button>
                         </div>
                       ) : (
                         <div className="space-y-3">
@@ -1239,6 +1332,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           </Tabs>
         </DialogContent>
       </Dialog>
+      
+      {/* Modal do Seletor de Produtos */}
+      <ProductSelector
+        isOpen={isProductSelectorOpen}
+        onOpenChange={setIsProductSelectorOpen}
+        onSelectProducts={handleProductSelectorConfirm}
+      />
     </div>
   );
 };
