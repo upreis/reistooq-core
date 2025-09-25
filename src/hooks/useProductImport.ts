@@ -272,7 +272,7 @@ export const useProductImport = () => {
     const colWidths = templateColumns.map(() => ({ wch: 15 }));
     worksheet['!cols'] = colWidths;
     
-    XLSX.writeFile(workbook, 'template_produtos.xlsx');
+    XLSX.writeFile(workbook, `template_produtos_${Date.now()}.xlsx`);
   }, []);
 
   const getImportHistory = useCallback(async () => {
