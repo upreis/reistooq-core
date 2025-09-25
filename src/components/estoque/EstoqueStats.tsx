@@ -172,7 +172,7 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
               const IconComponent = stat.icon;
               
               return (
-                <Card key={index} className="w-[140px] flex-shrink-0">
+                <Card key={index} className="w-[160px] flex-shrink-0">
                   <CardContent className="p-3">
                     <div className="space-y-2">
                       {/* Ícone e badge */}
@@ -187,7 +187,7 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
                               stat.trend === "warning" ? "secondary" : 
                               "default"
                             }
-                            className="text-[8px] px-1 py-0.5 h-3"
+                            className="text-[8px] px-1 py-0.5 h-3 flex-shrink-0"
                           >
                             {stat.trend === "critical" && <AlertTriangle className="w-1.5 h-1.5" />}
                             {stat.trend === "warning" && <TrendingDown className="w-1.5 h-1.5" />}
@@ -198,17 +198,17 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
                       </div>
                       
                       {/* Título */}
-                      <p className="text-xs font-medium text-muted-foreground leading-tight">
+                      <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2">
                         {stat.title}
                       </p>
                       
                       {/* Valor */}
-                      <p className="text-lg font-bold text-foreground leading-tight">
+                      <p className="text-base font-bold text-foreground leading-tight break-words">
                         {stat.value}
                       </p>
                       
                       {/* Subtitle */}
-                      <p className="text-[10px] text-muted-foreground/70 leading-tight line-clamp-2">
+                      <p className="text-[10px] text-muted-foreground/70 leading-tight line-clamp-2 break-words">
                         {stat.subtitle}
                       </p>
                     </div>
@@ -230,12 +230,12 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
         
         return (
           <Card key={index} className="relative overflow-hidden hover:shadow-lg transition-all duration-300 group">
-            <CardContent className="p-5">
-              <div className="space-y-4">
+            <CardContent className="p-4">
+              <div className="space-y-3">
                 {/* Header com ícone e trend */}
-                <div className="flex items-start justify-between">
-                  <div className={`p-2.5 rounded-lg ${stat.bgColor} group-hover:scale-105 transition-transform duration-200`}>
-                    <IconComponent className={`w-5 h-5 ${stat.color}`} />
+                <div className="flex items-start justify-between gap-2">
+                  <div className={`p-2 rounded-lg ${stat.bgColor} group-hover:scale-105 transition-transform duration-200 flex-shrink-0`}>
+                    <IconComponent className={`w-4 h-4 ${stat.color}`} />
                   </div>
                   {stat.trend && (
                     <Badge 
@@ -244,12 +244,12 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
                         stat.trend === "warning" ? "secondary" : 
                         "default"
                       }
-                      className="text-[10px] px-2 py-0.5 h-5 shadow-sm border-0"
+                      className="text-[9px] px-1.5 py-0.5 h-4 shadow-sm border-0 flex-shrink-0"
                     >
-                      {stat.trend === "critical" && <AlertTriangle className="w-2.5 h-2.5 mr-1" />}
-                      {stat.trend === "warning" && <TrendingDown className="w-2.5 h-2.5 mr-1" />}
-                      {stat.trend === "good" && <TrendingUp className="w-2.5 h-2.5 mr-1" />}
-                      {stat.trend === "up" && <TrendingUp className="w-2.5 h-2.5 mr-1" />}
+                      {stat.trend === "critical" && <AlertTriangle className="w-2 h-2 mr-1" />}
+                      {stat.trend === "warning" && <TrendingDown className="w-2 h-2 mr-1" />}
+                      {stat.trend === "good" && <TrendingUp className="w-2 h-2 mr-1" />}
+                      {stat.trend === "up" && <TrendingUp className="w-2 h-2 mr-1" />}
                       {stat.trend === "critical" ? "Crítico" : 
                        stat.trend === "warning" ? "Atenção" : 
                        stat.trend === "good" ? "Bom" : "Alta"}
@@ -258,16 +258,16 @@ export function EstoqueStats({ products }: EstoqueStatsProps) {
                 </div>
                 
                 {/* Conteúdo principal */}
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground/90 uppercase tracking-wide">
+                <div className="space-y-2 min-w-0">
+                  <p className="text-xs font-medium text-muted-foreground/90 uppercase tracking-wide line-clamp-2">
                     {stat.title}
                   </p>
                   
-                  <p className="text-2xl font-bold text-foreground tracking-tight leading-none">
+                  <p className="text-xl font-bold text-foreground tracking-tight leading-none break-words">
                     {stat.value}
                   </p>
                   
-                  <p className="text-xs text-muted-foreground/70 leading-relaxed">
+                  <p className="text-xs text-muted-foreground/70 leading-relaxed line-clamp-3 break-words">
                     {stat.subtitle}
                   </p>
                 </div>

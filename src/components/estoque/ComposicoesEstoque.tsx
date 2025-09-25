@@ -391,15 +391,15 @@ export function ComposicoesEstoque() {
                 <div className="bg-muted/30 rounded-lg border p-4 space-y-3">
                   {/* Informações principais */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       <span className="text-xs text-muted-foreground">Custo Total</span>
-                      <div className="text-sm font-semibold text-[var(--brand-yellow)]">
+                      <div className="text-sm font-semibold text-[var(--brand-yellow)] break-words">
                         {formatMoney(custoTotal)}
                       </div>
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       <span className="text-xs text-muted-foreground">Pode Produzir</span>
-                      <div className="text-sm font-semibold text-[var(--brand-yellow)]">
+                      <div className="text-sm font-semibold text-[var(--brand-yellow)] break-words">
                         {estoqueDisponivel} unid.
                       </div>
                     </div>
@@ -410,8 +410,8 @@ export function ComposicoesEstoque() {
                     <div className="text-xs font-medium text-muted-foreground">Componentes necessários:</div>
                     
                     {/* Cabeçalho das colunas */}
-                    <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-[10px] font-medium text-muted-foreground border-b pb-1">
-                      <div>SKU</div>
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-2 text-[10px] font-medium text-muted-foreground border-b pb-1">
+                      <div className="truncate">SKU</div>
                       <div className="text-right">Custo Uni</div>
                       <div className="text-right">Qtd</div>
                     </div>
@@ -427,7 +427,7 @@ export function ComposicoesEstoque() {
                           <div key={index} className="relative">
                             {/* Badge "NÃO CADASTRADO" no canto superior */}
                             <div 
-                              className={`grid grid-cols-[1fr_auto_auto] gap-3 items-center text-xs rounded px-2 py-1 ${
+                              className={`grid grid-cols-[1fr_auto_auto] gap-2 items-center text-xs rounded px-2 py-1 min-w-0 ${
                                 componenteNaoExiste
                                   ? 'bg-destructive text-destructive-foreground border border-destructive'
                                   : isLimitante 
@@ -436,31 +436,31 @@ export function ComposicoesEstoque() {
                               }`}
                             >
                               {componenteNaoExiste ? (
-                                <div className="col-span-3 flex items-center justify-between gap-2">
-                                  <Badge variant="outline" className="border-destructive-foreground text-destructive-foreground font-mono text-[11px] px-1.5 py-0.5 flex-shrink-0">
+                                <div className="col-span-3 flex items-center justify-between gap-2 min-w-0">
+                                  <Badge variant="outline" className="border-destructive-foreground text-destructive-foreground font-mono text-[10px] px-1 py-0.5 flex-shrink-0 truncate max-w-[80px]">
                                     {comp.sku_componente}
                                   </Badge>
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => abrirModalCadastroProduto(comp.sku_componente)}
-                                    className="h-5 px-2 text-[10px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary ml-auto"
+                                    className="h-5 px-2 text-[9px] bg-background/80 hover:bg-background border-primary/50 text-primary hover:text-primary flex-shrink-0"
                                   >
-                                    <Plus className="h-2.5 w-2.5 mr-1" />
+                                    <Plus className="h-2 w-2 mr-1" />
                                     Cadastrar
                                   </Button>
                                 </div>
                               ) : (
                                 <>
-                                  <div className="flex items-center gap-1">
-                                    <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0.5">
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <Badge variant="outline" className="font-mono text-[9px] px-1 py-0.5 truncate max-w-full">
                                       {comp.sku_componente}
                                     </Badge>
                                   </div>
-                                  <div className="text-right text-muted-foreground">
+                                  <div className="text-right text-muted-foreground text-[10px] flex-shrink-0">
                                     {formatMoney(custoUnitario)}
                                   </div>
-                                  <div className="text-right text-muted-foreground">
+                                  <div className="text-right text-muted-foreground text-[10px] flex-shrink-0">
                                     {comp.quantidade}x
                                   </div>
                                 </>
