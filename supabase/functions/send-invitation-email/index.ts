@@ -1,8 +1,8 @@
 import { corsHeaders, makeClient } from "../_shared/client.ts";
-import { Resend } from "https://esm.sh/resend@2.1.0";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const DEFAULT_FROM = "Sistema <no-reply@convite.reistoq.com.br>";
+const DEFAULT_FROM = "Sistema REISTOQ <no-reply@convite.reistoq.com.br>";
 const FROM_EMAIL = Deno.env.get("RESEND_FROM") || DEFAULT_FROM;
 
 const handler = async (req: Request): Promise<Response> => {
@@ -138,8 +138,9 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error('Error sending invitation email:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
+      JSON.stringify({ error: "Internal server error", details: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
