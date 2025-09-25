@@ -285,7 +285,7 @@ export const useProductImport = () => {
     const colWidths = templateColumns.map(() => ({ wch: 15 }));
     worksheet['!cols'] = colWidths;
     
-    XLSX.writeFile(workbook, `template_produtos_CBM_${Date.now()}.xlsx`);
+    XLSX.writeFile(workbook, 'cadastro_produtos.xlsx');
     toast.success('Template baixado com CBM CUBAGEM incluída!');
   }, []);
 
