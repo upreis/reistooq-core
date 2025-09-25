@@ -67,7 +67,7 @@ export function useCotacoesInternacionais() {
           moeda_origem: cotacao.moeda_origem,
           fator_multiplicador: cotacao.fator_multiplicador,
           data_abertura: cotacao.data_abertura,
-          data_fechamento: cotacao.data_fechamento,
+          data_fechamento: cotacao.data_fechamento || null, // Convert empty string to null
           status: cotacao.status,
           observacoes: cotacao.observacoes,
           produtos: cotacao.produtos,
