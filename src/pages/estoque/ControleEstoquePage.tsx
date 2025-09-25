@@ -325,45 +325,24 @@ export default function ControleEstoquePage() {
       />
 
       {/* Tabela de produtos */}
-      <Card className="shadow-sm border-border/40">
-            <CardHeader className="pb-4">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <CardTitle className="text-lg">
-                    Produtos em Estoque
-                    <Badge variant="secondary" className="ml-3">
-                      {finalFilteredProducts.length}
-                    </Badge>
-                  </CardTitle>
-                  {selectedProducts.length > 0 && (
-                    <Badge variant="outline" className="mt-2">
-                      {selectedProducts.length} selecionado(s)
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="px-0">
-              <TableWrapper>
-                {loading ? (
-                  <EstoqueSkeleton />
-                ) : (
-                  <EstoqueTable
-                    products={paginatedProducts}
-                    onSort={handleSort}
-                    sortBy={sortBy}
-                    sortOrder={sortOrder}
-                    selectedProducts={selectedProducts}
-                    onSelectProduct={handleSelectProduct}
-                    onSelectAll={handleSelectAll}
-                    onStockMovement={handleStockMovement}
-                    onEditProduct={handleEditProduct}
-                    onDeleteProduct={handleDeleteProduct}
-                  />
-                )}
-              </TableWrapper>
-            </CardContent>
-        </Card>
+      <TableWrapper>
+        {loading ? (
+          <EstoqueSkeleton />
+        ) : (
+          <EstoqueTable
+            products={paginatedProducts}
+            onSort={handleSort}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            selectedProducts={selectedProducts}
+            onSelectProduct={handleSelectProduct}
+            onSelectAll={handleSelectAll}
+            onStockMovement={handleStockMovement}
+            onEditProduct={handleEditProduct}
+            onDeleteProduct={handleDeleteProduct}
+          />
+        )}
+      </TableWrapper>
 
       {/* Modal de produto */}
       <ProductModal
