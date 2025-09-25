@@ -259,7 +259,7 @@ export const useProductImport = () => {
         'Comprimento': '28',
         'Largura': '21',
         'Altura': '16',
-        'CBM CUBAGEM': '',
+        'CBM CUBAGEM': '0.0118',
         'OBS': 'Produto premium',
         'Codigo de Barras': '7891234567890'
       }
