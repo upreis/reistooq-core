@@ -225,19 +225,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Função para calcular valores do produto
   const calcularProduto = (produto: ProdutoCotacao): ProdutoCotacao => {
-    const peso_total_kg = (produto.peso_unitario_g * produto.pcs_ctn * produto.qtd_caixas_pedido) / 1000;
-    const cbm_unitario = (produto.largura_cm * produto.altura_cm * produto.comprimento_cm) / 1000000;
-    const cbm_total = cbm_unitario * produto.qtd_caixas_pedido;
-    const quantidade_total = produto.pcs_ctn * produto.qtd_caixas_pedido;
-    const valor_total = produto.preco_unitario * quantidade_total;
+    const peso_total_kg = ((produto.peso_unitario_g || 0) * (produto.pcs_ctn || 1) * (produto.qtd_caixas_pedido || 1)) / 1000;
+    const cbm_unitario = ((produto.largura_cm || 0) * (produto.altura_cm || 0) * (produto.comprimento_cm || 0)) / 1000000;
+    const cbm_total = cbm_unitario * (produto.qtd_caixas_pedido || 1);
+    const quantidade_total = (produto.pcs_ctn || 1) * (produto.qtd_caixas_pedido || 1);
+    const valor_total = (produto.preco_unitario || 0) * quantidade_total;
 
     return {
       ...produto,
-      peso_total_kg,
-      cbm_unitario,
-      cbm_total,
-      quantidade_total,
-      valor_total
+      peso_total_kg: peso_total_kg || 0,
+      cbm_unitario: cbm_unitario || 0,
+      cbm_total: cbm_total || 0,
+      quantidade_total: quantidade_total || 0,
+      valor_total: valor_total || 0
     };
   };
 
@@ -295,12 +295,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     );
 
     return {
-      total_peso_kg,
-      total_cbm,
-      total_quantidade,
-      total_valor_origem,
-      total_valor_usd,
-      total_valor_brl,
+      total_peso_kg: total_peso_kg || 0,
+      total_cbm: total_cbm || 0,
+      total_quantidade: total_quantidade || 0,
+      total_valor_origem: total_valor_origem || 0,
+      total_valor_usd: total_valor_usd || 0,
+      total_valor_brl: total_valor_brl || 0,
       produtos: produtosCalculados
     };
   }, [produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates]);
@@ -923,9 +923,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                                 </div>
                                 
                                 <div className="grid grid-cols-2 gap-2 text-xs">
-                                  <div>Qtd Total: <strong>{produtoCalculado.quantidade_total}</strong></div>
-                                  <div>Peso Total: <strong>{produtoCalculado.peso_total_kg?.toFixed(2)} kg</strong></div>
-                                  <div>CBM: <strong>{produtoCalculado.cbm_total?.toFixed(4)} m³</strong></div>
+                                  <div>Qtd Total: <strong>{produtoCalculado.quantidade_total || 0}</strong></div>
+                                  <div>Peso Total: <strong>{(produtoCalculado.peso_total_kg || 0).toFixed(2)} kg</strong></div>
+                                  <div>CBM: <strong>{(produtoCalculado.cbm_total || 0).toFixed(4)} m³</strong></div>
                                   <div>Valor: <strong>{formatCurrency(produtoCalculado.valor_total || 0, dadosBasicos.moeda_origem)}</strong></div>
                                 </div>
                               </div>
@@ -953,15 +953,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="text-center p-3 bg-primary/5 border border-primary/20 rounded-lg">
                           <div className="text-sm text-muted-foreground">Peso Total</div>
-                          <div className="text-xl font-bold">{totaisGerais.total_peso_kg.toFixed(2)} kg</div>
+                          <div className="text-xl font-bold">{(totaisGerais.total_peso_kg || 0).toFixed(2)} kg</div>
                         </div>
                         <div className="text-center p-3 bg-success/5 border border-success/20 rounded-lg">
                           <div className="text-sm text-muted-foreground">CBM Total</div>
-                          <div className="text-xl font-bold">{totaisGerais.total_cbm.toFixed(4)} m³</div>
+                          <div className="text-xl font-bold">{(totaisGerais.total_cbm || 0).toFixed(4)} m³</div>
                         </div>
                         <div className="text-center p-3 bg-warning/5 border border-warning/20 rounded-lg">
                           <div className="text-sm text-muted-foreground">Quantidade Total</div>
-                          <div className="text-xl font-bold">{totaisGerais.total_quantidade} pcs</div>
+                          <div className="text-xl font-bold">{totaisGerais.total_quantidade || 0} pcs</div>
                         </div>
                         <div className="text-center p-3 bg-accent/5 border border-accent/20 rounded-lg">
                           <div className="text-sm text-muted-foreground">Produtos</div>
@@ -1030,8 +1030,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                                   <TableCell>{produto.qtd_caixas_pedido}</TableCell>
                                   <TableCell>{produto.pcs_ctn}</TableCell>
                                   <TableCell>{produto.quantidade_total}</TableCell>
-                                  <TableCell>{produto.peso_total_kg?.toFixed(2)}</TableCell>
-                                  <TableCell>{produto.cbm_total?.toFixed(4)}</TableCell>
+                                  <TableCell>{(produto.peso_total_kg || 0).toFixed(2)}</TableCell>
+                                  <TableCell>{(produto.cbm_total || 0).toFixed(4)}</TableCell>
                                   <TableCell>{formatCurrency(produto.valor_total || 0, dadosBasicos.moeda_origem)}</TableCell>
                                   <TableCell>{formatCurrency(valorBRL, 'BRL')}</TableCell>
                                 </TableRow>
@@ -1101,11 +1101,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                           </div>
                           <div className="p-3 bg-warning/5 border border-warning/20 rounded-lg">
                             <div className="text-sm text-muted-foreground">Peso Total</div>
-                            <div className="text-xl font-bold">{totaisGerais.total_peso_kg.toFixed(2)} kg</div>
+                            <div className="text-xl font-bold">{(totaisGerais.total_peso_kg || 0).toFixed(2)} kg</div>
                           </div>
                           <div className="p-3 bg-accent/5 border border-accent/20 rounded-lg">
                             <div className="text-sm text-muted-foreground">Volume Total</div>
-                            <div className="text-xl font-bold">{totaisGerais.total_cbm.toFixed(4)} m³</div>
+                            <div className="text-xl font-bold">{(totaisGerais.total_cbm || 0).toFixed(4)} m³</div>
                           </div>
                         </div>
                       </div>
@@ -1156,14 +1156,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         <div className="text-center p-3 bg-muted rounded-lg">
                           <div className="text-muted-foreground">Taxa {dadosBasicos.moeda_origem}/USD</div>
                           <div className="font-bold">
-                            {dadosBasicos.moeda_origem === 'CNY' ? rates.CNY_USD.toFixed(4) :
-                             dadosBasicos.moeda_origem === 'EUR' ? rates.EUR_USD.toFixed(4) :
-                             dadosBasicos.moeda_origem === 'JPY' ? rates.JPY_USD.toFixed(4) : '1.0000'}
+                            {dadosBasicos.moeda_origem === 'CNY' ? (rates.CNY_USD || 0).toFixed(4) :
+                             dadosBasicos.moeda_origem === 'EUR' ? (rates.EUR_USD || 0).toFixed(4) :
+                             dadosBasicos.moeda_origem === 'JPY' ? (rates.JPY_USD || 0).toFixed(4) : '1.0000'}
                           </div>
                         </div>
                         <div className="text-center p-3 bg-muted rounded-lg">
                           <div className="text-muted-foreground">Taxa USD/BRL</div>
-                          <div className="font-bold">{rates.USD_BRL.toFixed(2)}</div>
+                          <div className="font-bold">{(rates.USD_BRL || 0).toFixed(2)}</div>
                         </div>
                         <div className="text-center p-3 bg-muted rounded-lg">
                           <div className="text-muted-foreground">Fator Aplicado</div>
