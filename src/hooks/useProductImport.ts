@@ -31,7 +31,7 @@ export interface ImportResult {
 }
 
 export const useProductImport = () => {
-  const { createProduct } = useProducts();
+  const { createProduct, updateProduct } = useProducts();
   const { user } = useAuth();
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -185,13 +185,28 @@ export const useProductImport = () => {
 
       try {
         const productData = convertRowToProduct(row);
-        await createProduct(productData);
+        
+        // Verificar se produto já existe pelo SKU
+        const { data: existingProduct } = await supabase
+          .from('produtos')
+          .select('id')
+          .eq('sku_interno', productData.sku_interno)
+          .single();
+
+        if (existingProduct) {
+          // Produto existe, fazer UPDATE
+          await updateProduct(existingProduct.id, productData);
+        } else {
+          // Produto não existe, fazer INSERT
+          await createProduct(productData);
+        }
+        
         result.success++;
       } catch (error: any) {
         result.errors.push({
           row: i + 2,
           field: 'creation',
-          message: error.message || 'Erro ao criar produto',
+          message: error.message || 'Erro ao processar produto',
           data: row
         });
       }
