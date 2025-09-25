@@ -196,8 +196,22 @@ export function useOMSOrders() {
   const createOrder = async (orderData: any) => {
     setLoading(true);
     try {
-      // Gerar número do pedido
-      const orderNumber = `${String(orders.length + 1).padStart(6, '0')}/2025`;
+      // Gerar número do pedido - buscar o último número no banco
+      const { data: lastOrder } = await supabase
+        .from('oms_orders')
+        .select('number')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      let nextNumber = 1;
+      if (lastOrder?.number) {
+        // Extrair número da string "000002/2025" -> 2
+        const currentNumber = parseInt(lastOrder.number.split('/')[0]);
+        nextNumber = currentNumber + 1;
+      }
+      
+      const orderNumber = `${String(nextNumber).padStart(6, '0')}/2025`;
       
       // Criar pedido principal
       const { data: newOrder, error: orderError } = await supabase
