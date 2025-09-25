@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProducts } from "@/hooks/useProducts";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import * as XLSX from 'xlsx';
 
 export interface ImportLog {
@@ -272,7 +273,8 @@ export const useProductImport = () => {
     const colWidths = templateColumns.map(() => ({ wch: 15 }));
     worksheet['!cols'] = colWidths;
     
-    XLSX.writeFile(workbook, `template_produtos_${Date.now()}.xlsx`);
+    XLSX.writeFile(workbook, `template_produtos_CBM_${Date.now()}.xlsx`);
+    toast.success('Template baixado com CBM CUBAGEM incluída!');
   }, []);
 
   const getImportHistory = useCallback(async () => {
