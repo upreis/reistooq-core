@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, Users, Settings, Store } from "lucide-react";
+import { ShoppingCart, Users, Settings, Store, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Vendas Marketplace", href: "/pedidos", icon: Store },
   { name: "Vendas Direta/Atacado", href: "/oms/pedidos", icon: ShoppingCart },
   { name: "Clientes", href: "/oms/clientes", icon: Users },
+  { name: "Vendedores", href: "/oms/vendedores", icon: UserCheck },
   { name: "Configurações", href: "/oms/configuracoes", icon: Settings },
 ];
 
