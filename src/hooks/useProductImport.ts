@@ -53,6 +53,7 @@ export const useProductImport = () => {
     'Comprimento': 'comprimento_cm',
     'Largura': 'largura_cm',
     'Altura': 'altura_cm',
+    'CBM CUBAGEM': 'cubagem_cm3',
     'OBS': 'observacoes',
     'Codigo de Barras': 'codigo_barras'
   };
@@ -91,10 +92,10 @@ export const useProductImport = () => {
       categoria: null
     };
 
-    Object.entries(columnMapping).forEach(([excelCol, productField]) => {
+      Object.entries(columnMapping).forEach(([excelCol, productField]) => {
       const value = row[excelCol];
       if (value !== undefined && value !== null && value !== '') {
-        if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento_cm', 'largura_cm', 'altura_cm'].includes(productField)) {
+        if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento_cm', 'largura_cm', 'altura_cm', 'cubagem_cm3'].includes(productField)) {
           product[productField] = parseFloat(value) || 0;
         } else if (['quantidade_atual', 'pcs_ctn'].includes(productField)) {
           product[productField] = parseInt(value) || 0;
@@ -103,6 +104,11 @@ export const useProductImport = () => {
         }
       }
     });
+
+    // Se CBM não foi fornecido mas temos as dimensões, calcular automaticamente
+    if (!product.cubagem_cm3 && product.comprimento_cm && product.largura_cm && product.altura_cm) {
+      product.cubagem_cm3 = (product.comprimento_cm * product.largura_cm * product.altura_cm) / 1000000; // Converter para m³
+    }
 
     return product;
   };
@@ -231,7 +237,7 @@ export const useProductImport = () => {
       'SKU', 'IMAGEM', 'IMAGEM DO FORNECEDOR', 'MATERIAL', 'COR', 
       'Nome do Produto', 'DESCRIÇÃO', 'PACKAGE', 'PREÇO', 'UNIT', 
       'PCS/CTN', 'Quantidade', 'PESO UNITARIO(g)', 'Peso cx Master (KG)', 
-      'Comprimento', 'Largura', 'Altura', 'OBS', 'Codigo de Barras'
+      'Comprimento', 'Largura', 'Altura', 'CBM CUBAGEM', 'OBS', 'Codigo de Barras'
     ];
 
     const exampleData = [
@@ -253,6 +259,7 @@ export const useProductImport = () => {
         'Comprimento': '28',
         'Largura': '21',
         'Altura': '16',
+        'CBM CUBAGEM': '',
         'OBS': 'Produto premium',
         'Codigo de Barras': '7891234567890'
       }
