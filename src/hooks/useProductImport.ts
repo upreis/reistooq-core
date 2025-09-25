@@ -56,7 +56,8 @@ export const useProductImport = () => {
     'Altura': 'altura_cm',
     'CBM CUBAGEM': 'cubagem_cm3',
     'OBS': 'observacoes',
-    'Codigo de Barras': 'codigo_barras'
+    'Codigo de Barras': 'codigo_barras',
+    'NCM': 'ncm'
   };
 
   const validateRow = (row: any, index: number): string[] => {
@@ -238,7 +239,7 @@ export const useProductImport = () => {
       'SKU', 'IMAGEM', 'IMAGEM DO FORNECEDOR', 'MATERIAL', 'COR', 
       'Nome do Produto', 'DESCRIÇÃO', 'PACKAGE', 'PREÇO', 'UNIT', 
       'PCS/CTN', 'Quantidade', 'PESO UNITARIO(g)', 'Peso cx Master (KG)', 
-      'Comprimento', 'Largura', 'Altura', 'CBM CUBAGEM', 'OBS', 'Codigo de Barras'
+      'Comprimento', 'Largura', 'Altura', 'CBM CUBAGEM', 'OBS', 'Codigo de Barras', 'NCM'
     ];
 
     const exampleData = [
@@ -262,7 +263,8 @@ export const useProductImport = () => {
         'Altura': '16',
         'CBM CUBAGEM': '0.0118',
         'OBS': 'Produto premium',
-        'Codigo de Barras': '7891234567890'
+        'Codigo de Barras': '7891234567890',
+        'NCM': '6505.00.10'
       }
     ];
 
