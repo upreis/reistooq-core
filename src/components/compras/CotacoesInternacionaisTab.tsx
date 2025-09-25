@@ -1,0 +1,1158 @@
+// src/components/compras/CotacoesInternacionaisTab.tsx
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Plus, 
+  FileText, 
+  Calendar, 
+  DollarSign, 
+  Building, 
+  Eye,
+  Edit,
+  Trash2,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Search,
+  Calculator,
+  Globe,
+  Package,
+  Ruler,
+  Weight,
+  RefreshCw,
+  Image,
+  Save,
+  X
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { z } from 'zod';
+
+// Esquemas de validação com zod
+const produtoSchema = z.object({
+  sku: z.string().trim().min(1, { message: "SKU é obrigatório" }).max(50, { message: "SKU deve ter no máximo 50 caracteres" }),
+  nome: z.string().trim().min(1, { message: "Nome é obrigatório" }).max(200, { message: "Nome deve ter no máximo 200 caracteres" }),
+  material: z.string().max(100, { message: "Material deve ter no máximo 100 caracteres" }),
+  package_qtd: z.number().min(1, { message: "Package deve ser no mínimo 1" }),
+  preco_unitario: z.number().min(0, { message: "Preço deve ser positivo" }),
+  unidade_medida: z.string(),
+  pcs_ctn: z.number().min(1, { message: "PCS/CTN deve ser no mínimo 1" }),
+  qtd_caixas_pedido: z.number().min(1, { message: "Quantidade de caixas deve ser no mínimo 1" }),
+  peso_unitario_g: z.number().min(0, { message: "Peso deve ser positivo" }),
+  largura_cm: z.number().min(0, { message: "Largura deve ser positiva" }),
+  altura_cm: z.number().min(0, { message: "Altura deve ser positiva" }),
+  comprimento_cm: z.number().min(0, { message: "Comprimento deve ser positivo" })
+});
+
+const cotacaoSchema = z.object({
+  numero_cotacao: z.string().trim().min(1, { message: "Número da cotação é obrigatório" }).max(50, { message: "Número deve ter no máximo 50 caracteres" }),
+  descricao: z.string().trim().min(1, { message: "Descrição é obrigatória" }).max(500, { message: "Descrição deve ter no máximo 500 caracteres" }),
+  pais_origem: z.string(),
+  moeda_origem: z.string(),
+  fator_multiplicador: z.number().min(0.1, { message: "Fator deve ser no mínimo 0.1" }).max(10, { message: "Fator deve ser no máximo 10" }),
+  observacoes: z.string().max(1000, { message: "Observações devem ter no máximo 1000 caracteres" })
+});
+
+interface ProdutoCotacao {
+  id: string;
+  sku: string;
+  nome: string;
+  imagem?: string;
+  material: string;
+  package_qtd: number; // Quantidade por embalagem
+  preco_unitario: number;
+  unidade_medida: string;
+  pcs_ctn: number; // Peças por caixa master
+  qtd_caixas_pedido: number;
+  peso_unitario_g: number;
+  largura_cm: number;
+  altura_cm: number;
+  comprimento_cm: number;
+  // Campos calculados
+  peso_total_kg?: number;
+  cbm_unitario?: number;
+  cbm_total?: number;
+  quantidade_total?: number;
+  valor_total?: number;
+}
+
+interface CotacaoInternacional {
+  id?: string;
+  numero_cotacao: string;
+  descricao: string;
+  pais_origem: string;
+  moeda_origem: string;
+  fator_multiplicador: number;
+  data_abertura: string;
+  data_fechamento?: string;
+  status: 'rascunho' | 'aberta' | 'fechada' | 'cancelada';
+  observacoes: string;
+  produtos: ProdutoCotacao[];
+  // Totais gerais
+  total_peso_kg?: number;
+  total_cbm?: number;
+  total_quantidade?: number;
+  total_valor_origem?: number;
+  total_valor_usd?: number;
+  total_valor_brl?: number;
+}
+
+interface CotacoesInternacionaisTabProps {
+  cotacoes?: CotacaoInternacional[];
+  onRefresh: () => void;
+}
+
+// Serviço de cotação de moedas (simulado - você pode integrar com API real)
+const useCurrencyRates = () => {
+  const [rates, setRates] = useState({
+    CNY_USD: 0.14, // Yuan para Dólar
+    USD_BRL: 5.20, // Dólar para Real
+    EUR_USD: 1.08, // Euro para Dólar
+    JPY_USD: 0.0067, // Yen para Dólar
+    lastUpdate: new Date().toISOString()
+  });
+
+  const updateRates = async () => {
+    // Aqui você integraria com uma API real como exchangerate-api.com
+    // Por enquanto, simulo uma atualização
+    setRates(prev => ({
+      ...prev,
+      CNY_USD: 0.14 + (Math.random() - 0.5) * 0.01,
+      USD_BRL: 5.20 + (Math.random() - 0.5) * 0.20,
+      EUR_USD: 1.08 + (Math.random() - 0.5) * 0.05,
+      JPY_USD: 0.0067 + (Math.random() - 0.5) * 0.0005,
+      lastUpdate: new Date().toISOString()
+    }));
+  };
+
+  return { rates, updateRates };
+};
+
+export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps> = ({
+  cotacoes = [],
+  onRefresh
+}) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [currentTab, setCurrentTab] = useState('basico');
+  const [editingCotacao, setEditingCotacao] = useState<CotacaoInternacional | null>(null);
+  
+  // Estados do formulário
+  const [dadosBasicos, setDadosBasicos] = useState({
+    numero_cotacao: '',
+    descricao: '',
+    pais_origem: 'China',
+    moeda_origem: 'CNY',
+    fator_multiplicador: 1,
+    data_abertura: new Date().toISOString().split('T')[0],
+    data_fechamento: '',
+    status: 'rascunho' as const,
+    observacoes: ''
+  });
+
+  const [produtos, setProdutos] = useState<ProdutoCotacao[]>([]);
+  const [produtoTemp, setProdutoTemp] = useState<Partial<ProdutoCotacao>>({
+    sku: '',
+    nome: '',
+    material: '',
+    package_qtd: 1,
+    preco_unitario: 0,
+    unidade_medida: 'PCS',
+    pcs_ctn: 1,
+    qtd_caixas_pedido: 1,
+    peso_unitario_g: 0,
+    largura_cm: 0,
+    altura_cm: 0,
+    comprimento_cm: 0
+  });
+
+  const { rates, updateRates } = useCurrencyRates();
+  const { toast } = useToast();
+
+  // Função para calcular valores do produto
+  const calcularProduto = (produto: ProdutoCotacao): ProdutoCotacao => {
+    const peso_total_kg = (produto.peso_unitario_g * produto.pcs_ctn * produto.qtd_caixas_pedido) / 1000;
+    const cbm_unitario = (produto.largura_cm * produto.altura_cm * produto.comprimento_cm) / 1000000;
+    const cbm_total = cbm_unitario * produto.qtd_caixas_pedido;
+    const quantidade_total = produto.pcs_ctn * produto.qtd_caixas_pedido;
+    const valor_total = produto.preco_unitario * quantidade_total;
+
+    return {
+      ...produto,
+      peso_total_kg,
+      cbm_unitario,
+      cbm_total,
+      quantidade_total,
+      valor_total
+    };
+  };
+
+  // Função para converter moedas
+  const converterMoeda = (valor: number, moedaOrigem: string, fatorMultiplicador: number = 1) => {
+    const valorComFator = valor * fatorMultiplicador;
+    
+    let valorUSD = valorComFator;
+    if (moedaOrigem === 'CNY') {
+      valorUSD = valorComFator * rates.CNY_USD;
+    } else if (moedaOrigem === 'EUR') {
+      valorUSD = valorComFator * rates.EUR_USD;
+    } else if (moedaOrigem === 'JPY') {
+      valorUSD = valorComFator * rates.JPY_USD;
+    }
+    
+    const valorBRL = valorUSD * rates.USD_BRL;
+    
+    return { valorUSD, valorBRL };
+  };
+
+  // Cálculos totais da cotação
+  const totaisGerais = useMemo(() => {
+    const produtosCalculados = produtos.map(calcularProduto);
+    
+    const total_peso_kg = produtosCalculados.reduce((sum, p) => sum + (p.peso_total_kg || 0), 0);
+    const total_cbm = produtosCalculados.reduce((sum, p) => sum + (p.cbm_total || 0), 0);
+    const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
+    const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
+    
+    const { valorUSD: total_valor_usd, valorBRL: total_valor_brl } = converterMoeda(
+      total_valor_origem, 
+      dadosBasicos.moeda_origem, 
+      dadosBasicos.fator_multiplicador
+    );
+
+    return {
+      total_peso_kg,
+      total_cbm,
+      total_quantidade,
+      total_valor_origem,
+      total_valor_usd,
+      total_valor_brl,
+      produtos: produtosCalculados
+    };
+  }, [produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates]);
+
+  const adicionarProduto = () => {
+    try {
+      // Validação com zod
+      const produtoValidado = produtoSchema.parse(produtoTemp);
+
+      const novoProduto: ProdutoCotacao = {
+        id: Date.now().toString(),
+        ...produtoValidado
+      };
+
+      setProdutos([...produtos, novoProduto]);
+      setProdutoTemp({
+        sku: '',
+        nome: '',
+        material: '',
+        package_qtd: 1,
+        preco_unitario: 0,
+        unidade_medida: 'PCS',
+        pcs_ctn: 1,
+        qtd_caixas_pedido: 1,
+        peso_unitario_g: 0,
+        largura_cm: 0,
+        altura_cm: 0,
+        comprimento_cm: 0
+      });
+
+      toast({
+        title: "Produto adicionado",
+        description: `${novoProduto.nome} foi adicionado à cotação`
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Erro de validação",
+          description: error.issues[0].message,
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const removerProduto = (id: string) => {
+    setProdutos(produtos.filter(p => p.id !== id));
+  };
+
+  const resetForm = () => {
+    setDadosBasicos({
+      numero_cotacao: `COT-INT-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
+      descricao: '',
+      pais_origem: 'China',
+      moeda_origem: 'CNY',
+      fator_multiplicador: 1,
+      data_abertura: new Date().toISOString().split('T')[0],
+      data_fechamento: '',
+      status: 'rascunho',
+      observacoes: ''
+    });
+    setProdutos([]);
+    setProdutoTemp({
+      sku: '',
+      nome: '',
+      material: '',
+      package_qtd: 1,
+      preco_unitario: 0,
+      unidade_medida: 'PCS',
+      pcs_ctn: 1,
+      qtd_caixas_pedido: 1,
+      peso_unitario_g: 0,
+      largura_cm: 0,
+      altura_cm: 0,
+      comprimento_cm: 0
+    });
+    setCurrentTab('basico');
+    setEditingCotacao(null);
+  };
+
+  const handleSave = async () => {
+    try {
+      // Validação dos dados básicos
+      cotacaoSchema.parse(dadosBasicos);
+
+      if (produtos.length === 0) {
+        toast({
+          title: "Erro de validação",
+          description: "Adicione pelo menos um produto à cotação",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const cotacaoCompleta: CotacaoInternacional = {
+        ...dadosBasicos,
+        produtos,
+        ...totaisGerais
+      };
+
+      // Aqui você salvaria no banco de dados
+      console.log('Salvando cotação:', cotacaoCompleta);
+
+      toast({
+        title: "Cotação salva",
+        description: "Cotação internacional criada com sucesso!"
+      });
+
+      setShowModal(false);
+      resetForm();
+      onRefresh();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Erro de validação",
+          description: error.issues[0].message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Erro ao salvar",
+          description: "Não foi possível salvar a cotação",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const formatCurrency = (value: number, currency: string = 'BRL') => {
+    const configs = {
+      BRL: { locale: 'pt-BR', currency: 'BRL' },
+      USD: { locale: 'en-US', currency: 'USD' },
+      CNY: { locale: 'zh-CN', currency: 'CNY' },
+      EUR: { locale: 'de-DE', currency: 'EUR' },
+      JPY: { locale: 'ja-JP', currency: 'JPY' }
+    };
+    
+    const config = configs[currency as keyof typeof configs] || configs.BRL;
+    return new Intl.NumberFormat(config.locale, {
+      style: 'currency',
+      currency: config.currency
+    }).format(value);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Buscar cotações internacionais..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-md"
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={updateRates} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Atualizar Cotações
+          </Button>
+          <Button className="gap-2" onClick={() => { resetForm(); setShowModal(true); }}>
+            <Plus className="h-4 w-4" />
+            Nova Cotação Internacional
+          </Button>
+        </div>
+      </div>
+
+      {/* Painel de Cotações de Moedas */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            Cotações de Moedas em Tempo Real
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-muted rounded-lg">
+              <div className="text-sm text-muted-foreground">CNY → USD</div>
+              <div className="text-lg font-bold">{rates.CNY_USD.toFixed(4)}</div>
+            </div>
+            <div className="text-center p-3 bg-muted rounded-lg">
+              <div className="text-sm text-muted-foreground">USD → BRL</div>
+              <div className="text-lg font-bold">{rates.USD_BRL.toFixed(2)}</div>
+            </div>
+            <div className="text-center p-3 bg-muted rounded-lg">
+              <div className="text-sm text-muted-foreground">EUR → USD</div>
+              <div className="text-lg font-bold">{rates.EUR_USD.toFixed(4)}</div>
+            </div>
+            <div className="text-center p-3 bg-muted rounded-lg">
+              <div className="text-sm text-muted-foreground">Atualizado</div>
+              <div className="text-sm">{new Date(rates.lastUpdate).toLocaleTimeString('pt-BR')}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Lista de Cotações */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Cotações Internacionais</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {cotacoes.length === 0 ? (
+            <div className="text-center py-8">
+              <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Nenhuma cotação internacional</h3>
+              <p className="text-muted-foreground mb-4">
+                Comece criando sua primeira cotação internacional
+              </p>
+              <Button onClick={() => { resetForm(); setShowModal(true); }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Criar Primeira Cotação
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Aqui você listaria as cotações existentes */}
+              <p className="text-muted-foreground">Lista de cotações aparecerá aqui</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Modal de Nova Cotação */}
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              {editingCotacao ? 'Editar Cotação Internacional' : 'Nova Cotação Internacional'}
+              {dadosBasicos.numero_cotacao && (
+                <Badge variant="outline">{dadosBasicos.numero_cotacao}</Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          <Tabs value={currentTab} onValueChange={setCurrentTab} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="basico">Dados Básicos</TabsTrigger>
+              <TabsTrigger value="produtos">Produtos ({produtos.length})</TabsTrigger>
+              <TabsTrigger value="calculos">Cálculos</TabsTrigger>
+              <TabsTrigger value="revisao">Revisão</TabsTrigger>
+            </TabsList>
+
+            <div className="flex-1 overflow-y-auto">
+              {/* ABA 1: Dados Básicos */}
+              <TabsContent value="basico" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Informações Gerais</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Número da Cotação *</Label>
+                      <Input
+                        value={dadosBasicos.numero_cotacao}
+                        onChange={(e) => setDadosBasicos({ ...dadosBasicos, numero_cotacao: e.target.value })}
+                        placeholder="COT-INT-2024-001"
+                        maxLength={50}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Descrição *</Label>
+                      <Input
+                        value={dadosBasicos.descricao}
+                        onChange={(e) => setDadosBasicos({ ...dadosBasicos, descricao: e.target.value })}
+                        placeholder="Ex: Produtos eletrônicos da China"
+                        maxLength={500}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>País de Origem</Label>
+                      <Select 
+                        value={dadosBasicos.pais_origem} 
+                        onValueChange={(value) => setDadosBasicos({ ...dadosBasicos, pais_origem: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="China">🇨🇳 China</SelectItem>
+                          <SelectItem value="Estados Unidos">🇺🇸 Estados Unidos</SelectItem>
+                          <SelectItem value="Alemanha">🇩🇪 Alemanha</SelectItem>
+                          <SelectItem value="Japão">🇯🇵 Japão</SelectItem>
+                          <SelectItem value="Coreia do Sul">🇰🇷 Coreia do Sul</SelectItem>
+                          <SelectItem value="Itália">🇮🇹 Itália</SelectItem>
+                          <SelectItem value="França">🇫🇷 França</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Moeda de Origem</Label>
+                      <Select 
+                        value={dadosBasicos.moeda_origem} 
+                        onValueChange={(value) => setDadosBasicos({ ...dadosBasicos, moeda_origem: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="CNY">CNY - Yuan Chinês</SelectItem>
+                          <SelectItem value="USD">USD - Dólar Americano</SelectItem>
+                          <SelectItem value="EUR">EUR - Euro</SelectItem>
+                          <SelectItem value="JPY">JPY - Yen Japonês</SelectItem>
+                          <SelectItem value="KRW">KRW - Won Sul-Coreano</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label>Fator Multiplicador</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0.1"
+                        max="10"
+                        value={dadosBasicos.fator_multiplicador}
+                        onChange={(e) => setDadosBasicos({ ...dadosBasicos, fator_multiplicador: parseFloat(e.target.value) || 1 })}
+                        placeholder="1.00"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Fator para ajustar preços (ex: 1.1 para 10% de margem)
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <Label>Data de Abertura</Label>
+                      <Input
+                        type="date"
+                        value={dadosBasicos.data_abertura}
+                        onChange={(e) => setDadosBasicos({ ...dadosBasicos, data_abertura: e.target.value })}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Data de Fechamento</Label>
+                      <Input
+                        type="date"
+                        value={dadosBasicos.data_fechamento}
+                        onChange={(e) => setDadosBasicos({ ...dadosBasicos, data_fechamento: e.target.value })}
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label>Status</Label>
+                      <Select 
+                        value={dadosBasicos.status} 
+                        onValueChange={(value) => setDadosBasicos({ ...dadosBasicos, status: value as any })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="rascunho">Rascunho</SelectItem>
+                          <SelectItem value="aberta">Aberta</SelectItem>
+                          <SelectItem value="fechada">Fechada</SelectItem>
+                          <SelectItem value="cancelada">Cancelada</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="md:col-span-2">
+                      <Label>Observações</Label>
+                      <Textarea
+                        value={dadosBasicos.observacoes}
+                        onChange={(e) => setDadosBasicos({ ...dadosBasicos, observacoes: e.target.value })}
+                        placeholder="Observações sobre a cotação internacional..."
+                        rows={3}
+                        maxLength={1000}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Conversões em tempo real */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calculator className="h-5 w-5" />
+                      Simulador de Conversão
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <div className="text-sm text-muted-foreground">Moeda Origem</div>
+                        <div className="text-lg font-bold">
+                          {formatCurrency(100, dadosBasicos.moeda_origem)}
+                        </div>
+                      </div>
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <div className="text-sm text-muted-foreground">Em Dólares</div>
+                        <div className="text-lg font-bold">
+                          {formatCurrency(converterMoeda(100, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador).valorUSD, 'USD')}
+                        </div>
+                      </div>
+                      <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                        <div className="text-sm text-muted-foreground">Em Reais</div>
+                        <div className="text-lg font-bold">
+                          {formatCurrency(converterMoeda(100, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador).valorBRL, 'BRL')}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* ABA 2: Produtos */}
+              <TabsContent value="produtos" className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Formulário de Produto */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Plus className="h-5 w-5" />
+                        Adicionar Produto
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label>SKU *</Label>
+                          <Input
+                            value={produtoTemp.sku}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, sku: e.target.value })}
+                            placeholder="SKU001"
+                            maxLength={50}
+                          />
+                        </div>
+                        <div>
+                          <Label>Nome *</Label>
+                          <Input
+                            value={produtoTemp.nome}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, nome: e.target.value })}
+                            placeholder="Nome do produto"
+                            maxLength={200}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Material</Label>
+                        <Input
+                          value={produtoTemp.material}
+                          onChange={(e) => setProdutoTemp({ ...produtoTemp, material: e.target.value })}
+                          placeholder="Ex: Plástico ABS, Aço inox, Algodão"
+                          maxLength={100}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label>Package (pcs/embalagem)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={produtoTemp.package_qtd}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, package_qtd: parseInt(e.target.value) || 1 })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Preço Unitário</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={produtoTemp.preco_unitario}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, preco_unitario: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label>Unidade</Label>
+                          <Select 
+                            value={produtoTemp.unidade_medida} 
+                            onValueChange={(value) => setProdutoTemp({ ...produtoTemp, unidade_medida: value })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="PCS">PCS - Peças</SelectItem>
+                              <SelectItem value="KG">KG - Quilograma</SelectItem>
+                              <SelectItem value="M">M - Metro</SelectItem>
+                              <SelectItem value="M2">M² - Metro Quadrado</SelectItem>
+                              <SelectItem value="L">L - Litro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>PCS/CTN (pcs por caixa master)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={produtoTemp.pcs_ctn}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, pcs_ctn: parseInt(e.target.value) || 1 })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label>Qtd Caixas Pedido</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={produtoTemp.qtd_caixas_pedido}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, qtd_caixas_pedido: parseInt(e.target.value) || 1 })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Peso Unitário (g)</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={produtoTemp.peso_unitario_g}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, peso_unitario_g: parseInt(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Dimensões (cm)</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Largura"
+                            min="0"
+                            value={produtoTemp.largura_cm}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, largura_cm: parseFloat(e.target.value) || 0 })}
+                          />
+                          <Input
+                            type="number"
+                            placeholder="Altura"
+                            min="0"
+                            value={produtoTemp.altura_cm}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, altura_cm: parseFloat(e.target.value) || 0 })}
+                          />
+                          <Input
+                            type="number"
+                            placeholder="Comprimento"
+                            min="0"
+                            value={produtoTemp.comprimento_cm}
+                            onChange={(e) => setProdutoTemp({ ...produtoTemp, comprimento_cm: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+
+                      <Button onClick={adicionarProduto} className="w-full">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Produto
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Lista de Produtos */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="h-5 w-5" />
+                        Produtos Adicionados ({produtos.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="max-h-96 overflow-y-auto">
+                      {produtos.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-muted-foreground">Nenhum produto adicionado</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {produtos.map((produto, index) => {
+                            const produtoCalculado = calcularProduto(produto);
+                            return (
+                              <div key={produto.id} className="border rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div>
+                                    <div className="font-medium">{produto.nome}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      SKU: {produto.sku} | Material: {produto.material}
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => removerProduto(produto.id)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                  <div>Qtd Total: <strong>{produtoCalculado.quantidade_total}</strong></div>
+                                  <div>Peso Total: <strong>{produtoCalculado.peso_total_kg?.toFixed(2)} kg</strong></div>
+                                  <div>CBM: <strong>{produtoCalculado.cbm_total?.toFixed(4)} m³</strong></div>
+                                  <div>Valor: <strong>{formatCurrency(produtoCalculado.valor_total || 0, dadosBasicos.moeda_origem)}</strong></div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              {/* ABA 3: Cálculos */}
+              <TabsContent value="calculos" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Totais Físicos */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Weight className="h-5 w-5" />
+                        Totais Físicos
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-sm text-muted-foreground">Peso Total</div>
+                          <div className="text-xl font-bold">{totaisGerais.total_peso_kg.toFixed(2)} kg</div>
+                        </div>
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <div className="text-sm text-muted-foreground">CBM Total</div>
+                          <div className="text-xl font-bold">{totaisGerais.total_cbm.toFixed(4)} m³</div>
+                        </div>
+                        <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                          <div className="text-sm text-muted-foreground">Quantidade Total</div>
+                          <div className="text-xl font-bold">{totaisGerais.total_quantidade} pcs</div>
+                        </div>
+                        <div className="text-center p-3 bg-purple-50 rounded-lg">
+                          <div className="text-sm text-muted-foreground">Produtos</div>
+                          <div className="text-xl font-bold">{produtos.length}</div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Totais Financeiros */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <DollarSign className="h-5 w-5" />
+                        Totais Financeiros
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                          <span className="text-sm text-muted-foreground">Valor em {dadosBasicos.moeda_origem}:</span>
+                          <span className="font-bold">{formatCurrency(totaisGerais.total_valor_origem, dadosBasicos.moeda_origem)}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                          <span className="text-sm text-muted-foreground">Valor em USD:</span>
+                          <span className="font-bold">{formatCurrency(totaisGerais.total_valor_usd, 'USD')}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-yellow-50 rounded-lg">
+                          <span className="text-sm text-muted-foreground">Valor em BRL:</span>
+                          <span className="font-bold text-lg">{formatCurrency(totaisGerais.total_valor_brl, 'BRL')}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Tabela Detalhada de Produtos */}
+                {produtos.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Detalhamento por Produto</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>SKU</TableHead>
+                              <TableHead>Nome</TableHead>
+                              <TableHead>Qtd Caixas</TableHead>
+                              <TableHead>PCS/CTN</TableHead>
+                              <TableHead>Qtd Total</TableHead>
+                              <TableHead>Peso Total (kg)</TableHead>
+                              <TableHead>CBM Total</TableHead>
+                              <TableHead>Valor {dadosBasicos.moeda_origem}</TableHead>
+                              <TableHead>Valor BRL</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {totaisGerais.produtos.map((produto) => {
+                              const { valorBRL } = converterMoeda(produto.valor_total || 0, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador);
+                              return (
+                                <TableRow key={produto.id}>
+                                  <TableCell className="font-medium">{produto.sku}</TableCell>
+                                  <TableCell>{produto.nome}</TableCell>
+                                  <TableCell>{produto.qtd_caixas_pedido}</TableCell>
+                                  <TableCell>{produto.pcs_ctn}</TableCell>
+                                  <TableCell>{produto.quantidade_total}</TableCell>
+                                  <TableCell>{produto.peso_total_kg?.toFixed(2)}</TableCell>
+                                  <TableCell>{produto.cbm_total?.toFixed(4)}</TableCell>
+                                  <TableCell>{formatCurrency(produto.valor_total || 0, dadosBasicos.moeda_origem)}</TableCell>
+                                  <TableCell>{formatCurrency(valorBRL, 'BRL')}</TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              {/* ABA 4: Revisão */}
+              <TabsContent value="revisao" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Eye className="h-5 w-5" />
+                      Revisão da Cotação Internacional
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Dados Básicos */}
+                      <div className="space-y-4">
+                        <h4 className="font-semibold">Dados da Cotação</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Número:</span>
+                            <span>{dadosBasicos.numero_cotacao}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Descrição:</span>
+                            <span>{dadosBasicos.descricao}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">País:</span>
+                            <span>{dadosBasicos.pais_origem}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Moeda:</span>
+                            <span>{dadosBasicos.moeda_origem}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Fator:</span>
+                            <span>{dadosBasicos.fator_multiplicador}x</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Status:</span>
+                            <Badge variant="outline">{dadosBasicos.status}</Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Resumo Executivo */}
+                      <div className="space-y-4">
+                        <h4 className="font-semibold">Resumo Executivo</h4>
+                        <div className="space-y-3">
+                          <div className="p-3 bg-blue-50 rounded-lg">
+                            <div className="text-sm text-muted-foreground">Total de Produtos</div>
+                            <div className="text-xl font-bold">{produtos.length} itens</div>
+                          </div>
+                          <div className="p-3 bg-green-50 rounded-lg">
+                            <div className="text-sm text-muted-foreground">Quantidade Total</div>
+                            <div className="text-xl font-bold">{totaisGerais.total_quantidade} peças</div>
+                          </div>
+                          <div className="p-3 bg-yellow-50 rounded-lg">
+                            <div className="text-sm text-muted-foreground">Peso Total</div>
+                            <div className="text-xl font-bold">{totaisGerais.total_peso_kg.toFixed(2)} kg</div>
+                          </div>
+                          <div className="p-3 bg-purple-50 rounded-lg">
+                            <div className="text-sm text-muted-foreground">Volume Total</div>
+                            <div className="text-xl font-bold">{totaisGerais.total_cbm.toFixed(4)} m³</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator className="my-6" />
+
+                    {/* Resumo Financeiro */}
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Resumo Financeiro</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card className="border-blue-200">
+                          <CardContent className="p-4 text-center">
+                            <div className="text-sm text-muted-foreground">Valor em {dadosBasicos.moeda_origem}</div>
+                            <div className="text-2xl font-bold text-blue-600">
+                              {formatCurrency(totaisGerais.total_valor_origem, dadosBasicos.moeda_origem)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Moeda de origem</div>
+                          </CardContent>
+                        </Card>
+                        <Card className="border-green-200">
+                          <CardContent className="p-4 text-center">
+                            <div className="text-sm text-muted-foreground">Valor em USD</div>
+                            <div className="text-2xl font-bold text-green-600">
+                              {formatCurrency(totaisGerais.total_valor_usd, 'USD')}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Dólar americano</div>
+                          </CardContent>
+                        </Card>
+                        <Card className="border-yellow-200">
+                          <CardContent className="p-4 text-center">
+                            <div className="text-sm text-muted-foreground">Valor em BRL</div>
+                            <div className="text-2xl font-bold text-yellow-600">
+                              {formatCurrency(totaisGerais.total_valor_brl, 'BRL')}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Real brasileiro</div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+
+                    <Separator className="my-6" />
+
+                    {/* Informações de Cotação */}
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Informações de Cotação</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="text-center p-3 bg-muted rounded-lg">
+                          <div className="text-muted-foreground">Taxa {dadosBasicos.moeda_origem}/USD</div>
+                          <div className="font-bold">
+                            {dadosBasicos.moeda_origem === 'CNY' ? rates.CNY_USD.toFixed(4) :
+                             dadosBasicos.moeda_origem === 'EUR' ? rates.EUR_USD.toFixed(4) :
+                             dadosBasicos.moeda_origem === 'JPY' ? rates.JPY_USD.toFixed(4) : '1.0000'}
+                          </div>
+                        </div>
+                        <div className="text-center p-3 bg-muted rounded-lg">
+                          <div className="text-muted-foreground">Taxa USD/BRL</div>
+                          <div className="font-bold">{rates.USD_BRL.toFixed(2)}</div>
+                        </div>
+                        <div className="text-center p-3 bg-muted rounded-lg">
+                          <div className="text-muted-foreground">Fator Aplicado</div>
+                          <div className="font-bold">{dadosBasicos.fator_multiplicador}x</div>
+                        </div>
+                        <div className="text-center p-3 bg-muted rounded-lg">
+                          <div className="text-muted-foreground">Atualizado</div>
+                          <div className="font-bold text-xs">{new Date(rates.lastUpdate).toLocaleTimeString('pt-BR')}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Validações */}
+                    <div className="mt-6 p-4 bg-muted rounded-lg">
+                      <h4 className="font-semibold mb-2 flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4" />
+                        Validações
+                      </h4>
+                      <div className="space-y-1 text-sm">
+                        {!dadosBasicos.numero_cotacao && (
+                          <div className="flex items-center gap-2 text-destructive">
+                            <X className="h-3 w-3" />
+                            <span>Número da cotação é obrigatório</span>
+                          </div>
+                        )}
+                        {!dadosBasicos.descricao && (
+                          <div className="flex items-center gap-2 text-destructive">
+                            <X className="h-3 w-3" />
+                            <span>Descrição é obrigatória</span>
+                          </div>
+                        )}
+                        {produtos.length === 0 && (
+                          <div className="flex items-center gap-2 text-yellow-600">
+                            <AlertCircle className="h-3 w-3" />
+                            <span>Nenhum produto adicionado</span>
+                          </div>
+                        )}
+                        {dadosBasicos.numero_cotacao && dadosBasicos.descricao && produtos.length > 0 && (
+                          <div className="flex items-center gap-2 text-green-600">
+                            <CheckCircle className="h-3 w-3" />
+                            <span>Cotação pronta para ser salva</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </div>
+
+            {/* Botões de Ação */}
+            <div className="flex justify-between items-center pt-4 border-t">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={updateRates} size="sm">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Atualizar Cotações
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={() => setShowModal(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleSave} 
+                  disabled={!dadosBasicos.numero_cotacao || !dadosBasicos.descricao}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingCotacao ? 'Atualizar' : 'Salvar'} Cotação
+                </Button>
+              </div>
+            </div>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
