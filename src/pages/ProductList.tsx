@@ -367,7 +367,7 @@ const ProductList = () => {
               <>
                 {/* Scrollable Table Container */}
                 <div className="overflow-x-auto border rounded-lg">
-                  <table className="w-full min-w-[4000px] text-xs">
+                  <table className="w-full min-w-[5200px] text-xs">
                     {/* Table Header */}
                     <thead className="bg-muted/50 sticky top-0 z-10">
                       <tr>
@@ -397,6 +397,12 @@ const ProductList = () => {
                         <th className="px-3 py-3 text-left font-medium min-w-[90px]">Valor Total</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">OBS</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[120px]">Codigo de Barras</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">NCM</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[60px]">PIS (%)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[80px]">COFINS (%)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[120px]">IMPOSTO IMPORTAÇÃO (%)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[60px]">IPI (%)</th>
+                        <th className="px-3 py-3 text-left font-medium min-w-[70px]">ICMS (%)</th>
                         <th className="px-3 py-3 text-left font-medium min-w-[80px]">Ações</th>
                       </tr>
                     </thead>
@@ -409,9 +415,9 @@ const ProductList = () => {
                         const pcsCtn = (product as any).pcs_ctn || 0;
                         const preco = product.preco_venda || 0;
                         const pesoCxMaster = (product as any).peso_cx_master_kg || 0;
-                        const comprimento = (product as any).comprimento || 0;
-                        const largura = (product as any).largura || 0;
-                        const altura = (product as any).altura || 0;
+                        const comprimento = (product as any).comprimento_cm || 0;
+                        const largura = (product as any).largura_cm || 0;
+                        const altura = (product as any).altura_cm || 0;
                         
                         // Cálculos das colunas derivadas
                         const pesoSemCxMaster = pesoCxMaster > 0 ? pesoCxMaster - 1 : 0;
@@ -613,7 +619,7 @@ const ProductList = () => {
                             {/* Comprimento */}
                             <EditableCell 
                               productId={product.id} 
-                              field="comprimento" 
+                              field="comprimento_cm" 
                               value={comprimento}
                               displayValue={comprimento ? `${comprimento}cm` : "-"}
                             />
@@ -621,7 +627,7 @@ const ProductList = () => {
                             {/* Largura */}
                             <EditableCell 
                               productId={product.id} 
-                              field="largura" 
+                              field="largura_cm" 
                               value={largura}
                               displayValue={largura ? `${largura}cm` : "-"}
                             />
@@ -629,7 +635,7 @@ const ProductList = () => {
                             {/* Altura */}
                             <EditableCell 
                               productId={product.id} 
-                              field="altura" 
+                              field="altura_cm" 
                               value={altura}
                               displayValue={altura ? `${altura}cm` : "-"}
                             />
@@ -684,6 +690,54 @@ const ProductList = () => {
                             >
                               <span className="text-xs font-mono">{product.codigo_barras || "-"}</span>
                             </EditableCell>
+
+                            {/* NCM */}
+                            <EditableCell 
+                              productId={product.id} 
+                              field="ncm" 
+                              value={(product as any).ncm}
+                              displayValue={(product as any).ncm || "-"}
+                            />
+
+                            {/* PIS */}
+                            <EditableCell 
+                              productId={product.id} 
+                              field="pis" 
+                              value={(product as any).pis}
+                              displayValue={(product as any).pis ? `${((product as any).pis * 100).toFixed(2)}%` : "-"}
+                            />
+
+                            {/* COFINS */}
+                            <EditableCell 
+                              productId={product.id} 
+                              field="cofins" 
+                              value={(product as any).cofins}
+                              displayValue={(product as any).cofins ? `${((product as any).cofins * 100).toFixed(2)}%` : "-"}
+                            />
+
+                            {/* IMPOSTO DE IMPORTAÇÃO */}
+                            <EditableCell 
+                              productId={product.id} 
+                              field="imposto_importacao" 
+                              value={(product as any).imposto_importacao}
+                              displayValue={(product as any).imposto_importacao ? `${((product as any).imposto_importacao * 100).toFixed(2)}%` : "-"}
+                            />
+
+                            {/* IPI */}
+                            <EditableCell 
+                              productId={product.id} 
+                              field="ipi" 
+                              value={(product as any).ipi}
+                              displayValue={(product as any).ipi ? `${((product as any).ipi * 100).toFixed(2)}%` : "-"}
+                            />
+
+                            {/* ICMS */}
+                            <EditableCell 
+                              productId={product.id} 
+                              field="icms" 
+                              value={(product as any).icms}
+                              displayValue={(product as any).icms ? `${((product as any).icms * 100).toFixed(2)}%` : "-"}
+                            />
 
                             {/* Actions */}
                             <td className="px-3 py-3">
