@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -67,7 +67,7 @@ function App() {
   console.log('🔧 App component rendering...');
   
   // Validar configuração na inicialização
-  React.useEffect(() => {
+  useEffect(() => {
     console.log('🔧 App useEffect running...');
     try {
       const validation = validateConfig();
