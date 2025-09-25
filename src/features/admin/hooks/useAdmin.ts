@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { AdminService } from '../services/AdminService';
 import type {
   Role,
@@ -345,12 +346,29 @@ export const useInvitations = (): UseInvitationsReturn => {
   }, [adminService, loadInvitations, toast]);
 
   const resendInvitation = useCallback(async (id: string) => {
-    // TODO: Implement resend functionality
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "Reenvio de convites será implementado em breve",
-      variant: "default"
-    });
+    try {
+      // Call the edge function directly with the invitation ID
+      const { error } = await supabase.functions.invoke('send-invitation-email', {
+        body: { invitation_id: id }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Convite reenviado",
+        description: "O convite foi reenviado com sucesso",
+        variant: "default"
+      });
+    } catch (err: any) {
+      console.error('Error resending invitation:', err);
+      toast({
+        title: "Erro ao reenviar convite",
+        description: err.message || "Erro interno do servidor",
+        variant: "destructive"
+      });
+    }
   }, [toast]);
 
   const deleteInvitation = useCallback(async (id: string) => {
