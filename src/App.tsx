@@ -32,6 +32,7 @@ import ProductList from "./pages/ProductList";
 import AddProduct from "./pages/AddProduct";
 import ProductImport from "./pages/ProductImport";
 import EditProduct from "./pages/EditProduct";
+import Ecommerce from "./pages/Ecommerce";
 
 import Calendar from "./pages/Calendar";
 import Notes from "./pages/Notes";
@@ -126,37 +127,12 @@ function App() {
                        </PermissionRoute>
                      } />
                      
-                    {/* eCommerce App Routes */}
-                    <Route path="/apps/ecommerce/shop" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <Shop />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/detail/:id" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <ProductDetail />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/list" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <ProductList />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/addproduct" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <AddProduct />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/import" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <ProductImport />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/apps/ecommerce/editproduct" element={
-                      <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                        <EditProduct />
-                      </PermissionRoute>
-                    } />
+                     {/* eCommerce App Routes */}
+                     <Route path="/apps/ecommerce/*" element={
+                       <PermissionRoute requiredPermissions={['ecommerce:view']}>
+                         <Ecommerce />
+                       </PermissionRoute>
+                     } />
                     
                     {/* Aplicativos Routes */}
                     <Route path="/aplicativos/*" element={

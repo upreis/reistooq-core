@@ -108,38 +108,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         id: 'ecommerce-app',
         label: 'eCommerce',
         icon: 'ShoppingCart',
-        children: [
-          { 
-            id: 'shop', 
-            label: 'Loja', 
-            path: '/apps/ecommerce/shop', 
-            icon: 'ShoppingCart' 
-          },
-          { 
-            id: 'detail', 
-            label: 'Detalhes', 
-            path: '/apps/ecommerce/detail/1', 
-            icon: 'FileText' 
-          },
-          { 
-            id: 'product-list', 
-            label: 'Lista de Produtos', 
-            path: '/apps/ecommerce/list', 
-            icon: 'Package' 
-          },
-          { 
-            id: 'add-product', 
-            label: 'Adicionar Produto', 
-            path: '/apps/ecommerce/addproduct', 
-            icon: 'PlusSquare' 
-          },
-          { 
-            id: 'edit-product', 
-            label: 'Editar Produto', 
-            path: '/apps/ecommerce/editproduct', 
-            icon: 'Settings' 
-          }
-        ]
+        path: '/apps/ecommerce/shop'
       },
       {
         id: 'aplicativos',
