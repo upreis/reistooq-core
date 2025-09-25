@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Upload } from "lucide-react";
-import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useProducts } from "@/hooks/useProducts";
 
@@ -20,7 +19,15 @@ const AddProduct = () => {
     nome: "",
     descricao: "",
     preco_venda: 0,
+    preco_custo: 0,
     quantidade_atual: 0,
+    estoque_minimo: 0,
+    estoque_maximo: 0,
+    localizacao: "",
+    ativo: true,
+    unidade_medida_id: null as string | null,
+    status: "ativo" as const,
+    url_imagem: "",
     codigo_barras: "",
     categoria: "",
     imagem_fornecedor: "",
@@ -62,7 +69,7 @@ const AddProduct = () => {
       peso_sem_cx_master_kg: pesoSemCxMaster,
       peso_total_cx_master_kg: pesoTotalCxMaster,
       peso_total_sem_cx_master_kg: pesoTotalSemCxMaster,
-      cbm_cubagem,
+      cbm_cubagem: cbmCubagem,
       cbm_total: cbmTotal,
       quantidade_total: quantidadeTotal,
       valor_total: valorTotal
@@ -83,7 +90,7 @@ const AddProduct = () => {
         return;
       }
 
-      await createProduct.mutateAsync(formData);
+      await createProduct(formData);
       toast.success("Produto criado com sucesso!");
       
       // Reset form
@@ -92,7 +99,15 @@ const AddProduct = () => {
         nome: "",
         descricao: "",
         preco_venda: 0,
+        preco_custo: 0,
         quantidade_atual: 0,
+        estoque_minimo: 0,
+        estoque_maximo: 0,
+        localizacao: "",
+        ativo: true,
+        unidade_medida_id: null,
+        status: "ativo" as const,
+        url_imagem: "",
         codigo_barras: "",
         categoria: "",
         imagem_fornecedor: "",
