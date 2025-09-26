@@ -368,32 +368,39 @@ export function useCotacoesArquivos() {
           imagem_fornecedor: imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '',
           material: linha.MATERIAL || linha.material || '',
           cor: linha.COR || linha.cor || '',
-          nome_produto: linha.NOME_PRODUTO || linha.nome_produto || '',
+          nome_produto: linha.NOME_PRODUTO || linha.nome_produto || linha.NOME || linha.nome || '',
           package: linha.PACKAGE || linha.package || '',
           preco: parseFloat(String(linha.PRECO || linha.preco || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           unit: linha.UNIT || linha.unit || '',
           pcs_ctn: parseInt(String(linha.PCS_CTN || linha.pcs_ctn || '0').replace(/[^\d]/g, '')) || 0,
-          caixas: parseFloat(String(linha.CAIXAS || linha.caixas || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_unitario: parseFloat(String(linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_master: parseFloat(String(linha.PESO_MASTER_KG || linha.peso_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_sem_master: parseFloat(String(linha.PESO_SEM_MASTER_KG || linha.peso_sem_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_total_master: parseFloat(String(linha.PESO_TOTAL_MASTER_KG || linha.peso_total_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_total_sem_master: parseFloat(String(linha.PESO_TOTAL_SEM_MASTER_KG || linha.peso_total_sem_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          caixas: parseFloat(String(linha.CAIXAS || linha.caixas || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
+          peso_unitario: parseFloat(String(linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || linha.PESO_UNITARIO_G || linha.peso_unitario_g || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_master: parseFloat(String(linha.PESO_MASTER_KG || linha.peso_master_kg || linha.PESO_CX_MASTER_KG || linha.peso_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_sem_master: parseFloat(String(linha.PESO_SEM_MASTER_KG || linha.peso_sem_master_kg || linha.PESO_SEM_CX_MASTER_KG || linha.peso_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_total_master: parseFloat(String(linha.PESO_TOTAL_MASTER_KG || linha.peso_total_master_kg || linha.PESO_TOTAL_CX_MASTER_KG || linha.peso_total_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_total_sem_master: parseFloat(String(linha.PESO_TOTAL_SEM_MASTER_KG || linha.peso_total_sem_master_kg || linha.PESO_TOTAL_SEM_CX_MASTER_KG || linha.peso_total_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           comprimento: parseFloat(String(linha.COMPRIMENTO || linha.comprimento || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           largura: parseFloat(String(linha.LARGURA || linha.largura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           altura: parseFloat(String(linha.ALTURA || linha.altura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           cbm_cubagem: parseFloat(String(linha.CBM_CUBAGEM || linha.cbm_cubagem || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          cbm_total: parseFloat(String(linha.CBM_TOTAL || linha.cbm_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          quantidade_total: parseInt(String(linha.QUANTIDADE_TOTAL || linha.quantidade_total || '0').replace(/[^\d]/g, '')) || 0,
+          cbm_total: parseFloat(String(linha.CBM_TOTAL || linha.cbm_total || linha.CBM_TOTAL_CALC || linha.cbm_total_calc || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          quantidade_total: parseInt(String(linha.QUANTIDADE_TOTAL || linha.quantidade_total || linha.QUANTIDADE_TOTAL_CALC || linha.quantidade_total_calc || '0').replace(/[^\d]/g, '')) || 0,
           valor_total: parseFloat(String(linha.VALOR_TOTAL || linha.valor_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           obs: linha.OBS || linha.obs || '',
-          change_dolar: parseFloat(String(linha.CHANGE_DOLAR || linha.change_dolar || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          multiplicador_reais: parseFloat(String(linha.MULTIPLICADOR_REAIS || linha.multiplicador_reais || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          change_dolar: parseFloat(String(linha.CHANGE_DOLAR || linha.change_dolar || linha.CHANGE_DOLAR_TOTAL || linha.change_dolar_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          multiplicador_reais: parseFloat(String(linha.MULTIPLICADOR_REAIS || linha.multiplicador_reais || linha.MULTIPLICADOR_REAIS_TOTAL || linha.multiplicador_reais_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           // Campos calculados adicionais
           preco_unitario: 0, // Será calculado
           quantidade_total_calc: 0, // Será calculado
           cbm_total_calc: 0, // Será calculado
           peso_total_calc: 0, // Será calculado
+          peso_unitario_g: parseFloat(String(linha.PESO_UNITARIO_G || linha.peso_unitario_g || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_cx_master_kg: parseFloat(String(linha.PESO_CX_MASTER_KG || linha.peso_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_sem_cx_master_kg: parseFloat(String(linha.PESO_SEM_CX_MASTER_KG || linha.peso_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_total_cx_master_kg: parseFloat(String(linha.PESO_TOTAL_CX_MASTER_KG || linha.peso_total_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_total_sem_cx_master_kg: parseFloat(String(linha.PESO_TOTAL_SEM_CX_MASTER_KG || linha.peso_total_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          change_dolar_total: parseFloat(String(linha.CHANGE_DOLAR_TOTAL || linha.change_dolar_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          multiplicador_reais_total: parseFloat(String(linha.MULTIPLICADOR_REAIS_TOTAL || linha.multiplicador_reais_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           // Metadados das imagens
           imagem_extraida: imagemPrincipal ? true : false,
           imagem_fornecedor_extraida: imagemFornecedor ? true : false,
@@ -405,6 +412,7 @@ export function useCotacoesArquivos() {
         produto.peso_total_calc = produto.peso_unitario * produto.quantidade_total_calc;
         produto.preco_unitario = produto.quantidade_total_calc > 0 ? produto.valor_total / produto.quantidade_total_calc : 0;
 
+        console.log(`✅ [DEBUG] Produto ${index + 1} processado:`, produto);
         return produto;
       } catch (error) {
         console.error('Erro ao processar linha:', linha, error);

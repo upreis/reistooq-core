@@ -728,9 +728,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Usar productData se disponível, senão usar mockProducts
   const displayProducts = productData.length > 0 ? productData : mockProducts;
   
-  // Debug logs
+  // Debug logs detalhados
   console.log('🔍 [DEBUG] ProductData length:', productData.length);
+  console.log('🔍 [DEBUG] ProductData state:', productData);
   console.log('🔍 [DEBUG] DisplayProducts:', displayProducts);
+  console.log('🔍 [DEBUG] DisplayProducts length:', displayProducts.length);
+  console.log('🔍 [DEBUG] Primeiro produto em display:', displayProducts[0]);
   console.log('🔍 [DEBUG] Sample product data:', displayProducts[0]);
 
   // Função para atualizar dados do produto
@@ -832,45 +835,71 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Função para lidar com dados importados
   const handleImportSuccess = useCallback((dadosImportados: any[]) => {
     console.log('📥 [DEBUG] Dados recebidos na importação:', dadosImportados);
+    console.log('📥 [DEBUG] Estrutura do primeiro produto:', dadosImportados[0]);
+    console.log('📥 [DEBUG] Campos disponíveis:', Object.keys(dadosImportados[0] || {}));
+    
+    if (!dadosImportados || dadosImportados.length === 0) {
+      console.error('❌ [DEBUG] Nenhum dado para importar');
+      toast({
+        title: "Erro na importação",
+        description: "Nenhum dado foi recebido para importação.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Mapear dados importados para o formato esperado
-    const novosProdutos = dadosImportados.map((produto, index) => ({
-      ...produto,
-      id: `import-${index}`,
-      // Garantir que todas as propriedades necessárias existem
-      sku: produto.sku || `PROD-${index + 1}`,
-      imagem: produto.imagem || '',
-      imagem_fornecedor: produto.imagem_fornecedor || '',
-      nome_produto: produto.nome_produto || '',
-      material: produto.material || '',
-      cor: produto.cor || '',
-      package: produto.package || '',
-      preco: produto.preco || 0,
-      unit: produto.unit || 'pc',
-      pcs_ctn: produto.pcs_ctn || 0,
-      caixas: produto.caixas || 0,
-      peso_unitario_g: produto.peso_unitario_g || 0,
-      peso_cx_master_kg: produto.peso_cx_master_kg || 0,
-      peso_sem_cx_master_kg: produto.peso_sem_cx_master_kg || 0,
-      peso_total_cx_master_kg: produto.peso_total_cx_master_kg || 0,
-      peso_total_sem_cx_master_kg: produto.peso_total_sem_cx_master_kg || 0,
-      comprimento: produto.comprimento || 0,
-      largura: produto.largura || 0,
-      altura: produto.altura || 0,
-      cbm_cubagem: produto.cbm_cubagem || 0,
-      cbm_total: produto.cbm_total || 0,
-      quantidade_total: produto.quantidade_total || 0,
-      valor_total: produto.valor_total || 0,
-      obs: produto.obs || '',
-      change_dolar: produto.change_dolar || 0,
-      multiplicador_reais: produto.multiplicador_reais || 0,
-      // Campos calculados
-      change_dolar_total: produto.change_dolar_total || 0,
-      multiplicador_reais_total: produto.multiplicador_reais_total || 0,
-    }));
+    const novosProdutos = dadosImportados.map((produto, index) => {
+      console.log(`📋 [DEBUG] Processando produto ${index}:`, produto);
+      
+      const produtoMapeado = {
+        ...produto,
+        id: `import-${index}`,
+        // Garantir que todas as propriedades necessárias existem
+        sku: produto.sku || `PROD-${index + 1}`,
+        imagem: produto.imagem || '',
+        imagem_fornecedor: produto.imagem_fornecedor || '',
+        nome_produto: produto.nome_produto || produto.nome || '',
+        material: produto.material || '',
+        cor: produto.cor || '',
+        package: produto.package || '',
+        preco: Number(produto.preco) || Number(produto.preco_unitario) || 0,
+        unit: produto.unit || 'pc',
+        pcs_ctn: Number(produto.pcs_ctn) || 0,
+        caixas: Number(produto.caixas) || Number(produto.quantidade_total_calc) || 1,
+        peso_unitario_g: Number(produto.peso_unitario_g) || 0,
+        peso_cx_master_kg: Number(produto.peso_cx_master_kg) || 0,
+        peso_sem_cx_master_kg: Number(produto.peso_sem_cx_master_kg) || 0,
+        peso_total_cx_master_kg: Number(produto.peso_total_cx_master_kg) || 0,
+        peso_total_sem_cx_master_kg: Number(produto.peso_total_sem_cx_master_kg) || 0,
+        comprimento: Number(produto.comprimento) || 0,
+        largura: Number(produto.largura) || 0,
+        altura: Number(produto.altura) || 0,
+        cbm_cubagem: Number(produto.cbm_cubagem) || 0,
+        cbm_total: Number(produto.cbm_total) || Number(produto.cbm_total_calc) || 0,
+        quantidade_total: Number(produto.quantidade_total) || Number(produto.quantidade_total_calc) || 0,
+        valor_total: Number(produto.valor_total) || 0,
+        obs: produto.obs || '',
+        change_dolar: Number(produto.change_dolar) || 0,
+        multiplicador_reais: Number(produto.multiplicador_reais) || 0,
+        // Campos calculados
+        change_dolar_total: Number(produto.change_dolar_total) || 0,
+        multiplicador_reais_total: Number(produto.multiplicador_reais_total) || 0,
+      };
+      
+      console.log(`✅ [DEBUG] Produto ${index} mapeado:`, produtoMapeado);
+      return produtoMapeado;
+    });
     
     console.log('✅ [DEBUG] Produtos processados para exibição:', novosProdutos);
+    console.log('✅ [DEBUG] Total de produtos processados:', novosProdutos.length);
+    
     setProductData(novosProdutos);
+    
+    // Força atualização da UI
+    setTimeout(() => {
+      console.log('🔄 [DEBUG] Estado atual do productData após setProductData:', novosProdutos);
+    }, 100);
     
     toast({
       title: "Importação concluída!",
