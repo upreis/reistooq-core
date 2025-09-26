@@ -19,8 +19,15 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   maxVolume,
   maxWeight
 }) => {
+  // Calcular quantos containers são necessários
+  const containersNeeded = Math.ceil(Math.max(totalCBM / maxVolume, totalWeight / maxWeight));
+  
+  // Para o container atual (primeiro), limitar o percentual a 100%
+  const currentContainerVolumePercentage = Math.min(volumePercentage, 100);
+  const currentContainerWeightPercentage = Math.min(weightPercentage, 100);
+  
   // Calcular altura do enchimento baseado na cubagem
-  const fillHeight = Math.min(volumePercentage, 100);
+  const fillHeight = currentContainerVolumePercentage;
   
   // Determinar cores baseadas nos percentuais
   const getVolumeColor = () => {
@@ -36,9 +43,44 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   };
 
   return (
-    <div className="flex items-center justify-center gap-8 p-4">
-      {/* Container 3D Visual - Aumentado */}
-      <div className="relative">
+    <div className="space-y-6">
+      {/* Indicador de múltiplos containers */}
+      {containersNeeded > 1 && (
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-lg font-semibold text-blue-700 dark:text-blue-300">
+                📦 {containersNeeded} Containers necessários
+              </span>
+            </div>
+            <div className="text-sm text-blue-600 dark:text-blue-400">
+              Excesso: Volume {((totalCBM / maxVolume - 1) * 100).toFixed(1)}% | Peso {((totalWeight / maxWeight - 1) * 100).toFixed(1)}%
+            </div>
+          </div>
+          
+          {/* Mini containers indicator */}
+          <div className="flex items-center space-x-2 mt-3">
+            {Array.from({ length: containersNeeded }).map((_, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <div className={`w-8 h-6 rounded border-2 ${index === 0 ? 'bg-blue-500 border-blue-600' : 'bg-slate-300 border-slate-400'} relative`}>
+                  {index === 0 && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-blue-600 to-blue-400 rounded" 
+                         style={{ height: `${fillHeight}%` }} />
+                  )}
+                </div>
+                <span className="text-xs mt-1 text-slate-600 dark:text-slate-400">
+                  #{index + 1}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-center gap-8 p-4">
+        {/* Container 3D Visual - Aumentado */}
+        <div className="relative">
         {/* Container Base - Isometric view */}
         <div className="relative w-64 h-40">
           {/* Container walls */}
@@ -131,13 +173,18 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
             </span>
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            {totalCBM.toFixed(1)} / {maxVolume} m³
+            {Math.min(totalCBM, maxVolume).toFixed(1)} / {maxVolume} m³
+            {containersNeeded > 1 && (
+              <span className="text-blue-600 dark:text-blue-400 ml-1">
+                (Container 1/{containersNeeded})
+              </span>
+            )}
           </div>
           <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mt-2">
             <div 
               className="h-2 rounded-full transition-all duration-1000 ease-out"
               style={{
-                width: `${Math.min(volumePercentage, 100)}%`,
+                width: `${currentContainerVolumePercentage}%`,
                 backgroundColor: getVolumeColor()
               }}
             />
@@ -148,18 +195,23 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
         <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 border min-w-32">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Peso</span>
-            <span className={`text-sm font-bold ${weightPercentage >= 100 ? 'text-red-600' : weightPercentage >= 80 ? 'text-amber-600' : 'text-emerald-600'}`}>
-              {weightPercentage.toFixed(1)}%
+            <span className={`text-sm font-bold ${currentContainerWeightPercentage >= 100 ? 'text-red-600' : currentContainerWeightPercentage >= 80 ? 'text-amber-600' : 'text-emerald-600'}`}>
+              {currentContainerWeightPercentage.toFixed(1)}%
             </span>
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-400">
-            {totalWeight.toFixed(0)} / {maxWeight.toLocaleString()} kg
+            {Math.min(totalWeight, maxWeight).toFixed(0)} / {maxWeight.toLocaleString()} kg
+            {containersNeeded > 1 && (
+              <span className="text-blue-600 dark:text-blue-400 ml-1">
+                (Container 1/{containersNeeded})
+              </span>
+            )}
           </div>
           <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mt-2">
             <div 
               className="h-2 rounded-full transition-all duration-1000 ease-out"
               style={{
-                width: `${Math.min(weightPercentage, 100)}%`,
+                width: `${currentContainerWeightPercentage}%`,
                 backgroundColor: getWeightColor()
               }}
             />
@@ -167,29 +219,30 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
         </div>
       </div>
 
-      {/* Status Messages */}
-      <div className="flex flex-col gap-2">
-        {(volumePercentage >= 100 || weightPercentage >= 100) && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-red-700 dark:text-red-300">
-                ⚠️ Limite {volumePercentage >= 100 && weightPercentage >= 100 ? 'de volume e peso' : volumePercentage >= 100 ? 'de volume' : 'de peso'} excedido!
-              </span>
+        {/* Status Messages */}
+        <div className="flex flex-col gap-2">
+          {containersNeeded > 1 && (
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  📦 Múltiplos containers necessários ({containersNeeded} containers)
+                </span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {(volumePercentage >= 80 || weightPercentage >= 80) && (volumePercentage < 100 && weightPercentage < 100) && (
-          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                ⚡ Aproximando-se do limite
-              </span>
+          {(currentContainerVolumePercentage >= 80 || currentContainerWeightPercentage >= 80) && containersNeeded === 1 && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                  ⚡ Aproximando-se do limite
+                </span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
