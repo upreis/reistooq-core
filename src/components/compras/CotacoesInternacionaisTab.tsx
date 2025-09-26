@@ -193,6 +193,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [currentTab, setCurrentTab] = useState('basico');
   const [editingCotacao, setEditingCotacao] = useState<CotacaoInternacional | null>(null);
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
+  const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   
   // Estados do formulário
   const [dadosBasicos, setDadosBasicos] = useState({
@@ -517,20 +519,137 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }).format(value);
   };
 
+  // Funções para seleção de produtos na tabela Excel
+  const handleSelectProduct = (productId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProducts(prev => [...prev, productId]);
+    } else {
+      setSelectedProducts(prev => prev.filter(id => id !== productId));
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked && selectedCotacao?.produtos) {
+      setSelectedProducts(selectedCotacao.produtos.map((p: any, index: number) => index.toString()));
+    } else {
+      setSelectedProducts([]);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'rascunho': return 'bg-gray-500';
+      case 'aberta': return 'bg-blue-500';
+      case 'fechada': return 'bg-green-500';
+      case 'cancelada': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  // Mock data para exemplo da tabela Excel
+  const mockProducts = selectedCotacao?.produtos?.length > 0 ? selectedCotacao.produtos.map((p: any, index: number) => ({
+    sku: p.sku || `PL-${800 + index}`,
+    imagem: "",
+    imagem_fornecedor: "",
+    material: p.material || "Poliéster",
+    cor: "Azul Da Foto",
+    nome_produto: p.nome || `Produto ${index + 1}`,
+    package: `${p.package_qtd || 10}pcs/opp`,
+    preco: p.preco_unitario || 5.25,
+    unit: p.unidade_medida || "pc",
+    pcs_ctn: p.pcs_ctn || 240,
+    caixas: p.qtd_caixas_pedido || 1,
+    peso_unitario_g: p.peso_unitario_g || 90,
+    peso_cx_master_kg: (p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000,
+    peso_sem_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) - 1,
+    peso_total_cx_master_kg: (p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000,
+    peso_total_sem_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) - 1,
+    comprimento: p.comprimento_cm || 0,
+    largura: p.largura_cm || 0,
+    altura: p.altura_cm || 0,
+    cbm_cubagem: p.cbm_unitario || 0.21,
+    cbm_total: p.cbm_total || 0.21,
+    quantidade_total: p.quantidade_total || 240,
+    valor_total: p.valor_total || 1260.00,
+    obs: "",
+    change_dolar: 0.74,
+    multiplicador_reais: 5.44
+  })) : [
+    {
+      sku: "PL-800",
+      imagem: "",
+      imagem_fornecedor: "",
+      material: "Poliéster",
+      cor: "Azul Da Foto",
+      nome_produto: "Chapéu aeronáutica, 28*21*14cm",
+      package: "10pcs/opp",
+      preco: 5.25,
+      unit: "pc",
+      pcs_ctn: 240,
+      caixas: 1,
+      peso_unitario_g: 90,
+      peso_cx_master_kg: 22.60,
+      peso_sem_cx_master_kg: 21.60,
+      peso_total_cx_master_kg: 22.60,
+      peso_total_sem_cx_master_kg: 21.60,
+      comprimento: 0,
+      largura: 0,
+      altura: 0,
+      cbm_cubagem: 0.21,
+      cbm_total: 0.21,
+      quantidade_total: 240,
+      valor_total: 1260.00,
+      obs: "",
+      change_dolar: 0.74,
+      multiplicador_reais: 5.44
+    },
+    {
+      sku: "PL-801",
+      imagem: "",
+      imagem_fornecedor: "",
+      material: "Poliéster",
+      cor: "Azul Da Foto",
+      nome_produto: "Chapéu polícia, 23.5*21*14cm",
+      package: "10pcs/opp",
+      preco: 5.80,
+      unit: "pc",
+      pcs_ctn: 200,
+      caixas: 1,
+      peso_unitario_g: 70,
+      peso_cx_master_kg: 15.00,
+      peso_sem_cx_master_kg: 14.00,
+      peso_total_cx_master_kg: 15.00,
+      peso_total_sem_cx_master_kg: 14.00,
+      comprimento: 0,
+      largura: 0,
+      altura: 0,
+      cbm_cubagem: 0.21,
+      cbm_total: 0.21,
+      quantidade_total: 200,
+      valor_total: 1160.00,
+      obs: "",
+      change_dolar: 0.81,
+      multiplicador_reais: 6.00
+    }
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder="Buscar cotações internacionais..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-md"
-          />
+        <div>
+          <h2 className="text-2xl font-bold">Cotações Internacionais</h2>
+          <p className="text-muted-foreground">
+            Gerencie suas cotações de fornecedores internacionais
+          </p>
         </div>
         
         <div className="flex gap-2">
+          {selectedCotacao && (
+            <Button variant="outline" onClick={() => setSelectedCotacao(null)}>
+              Voltar aos Cards
+            </Button>
+          )}
           <Button 
             variant="outline" 
             onClick={updateRates} 
@@ -547,170 +666,259 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         </div>
       </div>
 
-      {/* Painel de Cotações de Moedas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
-            Cotações de Moedas em Tempo Real
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {ratesLoading ? (
-            <div className="text-center py-4">
-              <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-              <p className="text-muted-foreground">Carregando cotações...</p>
+      {!selectedCotacao ? (
+        <>
+          {/* Search */}
+          <div className="flex items-center space-x-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar cotações..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {Object.entries(rates).slice(0, 12).map(([key, value]) => {
-                  if (key === 'lastUpdate' || typeof value !== 'number') return null;
-                  
-                  const [from, to] = key.split('_');
-                  const currency = AVAILABLE_CURRENCIES.find(c => c.code === from);
-                  
-                  return (
-                    <div key={key} className="text-center p-3 bg-muted rounded-lg">
-                      <div className="text-xs text-muted-foreground">
-                        {currency?.flag} {from} → {to}
-                      </div>
-                      <div className="text-sm font-bold">
-                        {typeof value === 'number' ? value.toFixed(4) : '---'}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {lastUpdate && (
-                <div className="text-center text-xs text-muted-foreground">
-                  Última atualização: {new Date(lastUpdate).toLocaleString('pt-BR')}
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
 
-      {/* Lista de Cotações */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Cotações Internacionais</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {cotacoes.length === 0 ? (
-            <div className="text-center py-8">
-              <Globe className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhuma cotação internacional</h3>
-              <p className="text-muted-foreground mb-4">
-                Comece criando sua primeira cotação internacional
-              </p>
-              <Button onClick={() => { resetForm(); setShowModal(true); }}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeira Cotação
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Filtrar cotações baseado na busca */}
-              {cotacoes
-                .filter(cotacao => 
-                  cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((cotacao) => (
-                  <div key={cotacao.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h4 className="font-semibold text-lg">{cotacao.numero_cotacao}</h4>
-                        <p className="text-muted-foreground">{cotacao.descricao}</p>
+          {/* Cotações Grid - Cards Layout */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {cotacoes
+              .filter(cotacao => 
+                cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((cotacao) => (
+                <Card key={cotacao.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCotacao(cotacao)}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{cotacao.numero_cotacao}</CardTitle>
+                      <Badge className={`text-white ${getStatusColor(cotacao.status)}`}>
+                        {cotacao.status}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {cotacao.descricao}
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant={
-                          cotacao.status === 'aberta' ? 'default' :
-                          cotacao.status === 'fechada' ? 'secondary' :
-                          cotacao.status === 'rascunho' ? 'outline' : 'destructive'
-                        }>
-                          {cotacao.status === 'aberta' ? '🟢 Aberta' :
-                           cotacao.status === 'fechada' ? '✅ Fechada' :
-                           cotacao.status === 'rascunho' ? '📝 Rascunho' : '❌ Cancelada'}
-                        </Badge>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingCotacao(cotacao);
-                              setDadosBasicos({
-                                numero_cotacao: cotacao.numero_cotacao,
-                                descricao: cotacao.descricao,
-                                pais_origem: cotacao.pais_origem,
-                                moeda_origem: cotacao.moeda_origem,
-                                fator_multiplicador: cotacao.fator_multiplicador,
-                                data_abertura: cotacao.data_abertura,
-                                data_fechamento: cotacao.data_fechamento || '',
-                                status: cotacao.status,
-                                observacoes: cotacao.observacoes || ''
-                              } as any);
-                              setProdutos(cotacao.produtos || []);
-                              setShowModal(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span>{cotacao.total_quantidade || 0} itens</span>
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">País:</span>
-                        <p className="font-medium">{cotacao.pais_origem}</p>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Origem ({cotacao.moeda_origem}):</span>
+                        <span>{formatCurrency(cotacao.total_valor_origem || 0, cotacao.moeda_origem)}</span>
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Moeda:</span>
-                        <p className="font-medium">{cotacao.moeda_origem}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Produtos:</span>
-                        <p className="font-medium">{cotacao.produtos?.length || 0} itens</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Valor Total:</span>
-                        <p className="font-medium text-green-600">
-                          {formatCurrency(cotacao.total_valor_brl || 0, 'BRL')}
-                        </p>
+                      <div className="flex justify-between text-sm font-semibold">
+                        <span>Total BRL:</span>
+                        <span>{formatCurrency(cotacao.total_valor_brl || 0)}</span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>📅 Abertura: {new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
-                        {cotacao.data_fechamento && (
-                          <span>🏁 Fechamento: {new Date(cotacao.data_fechamento).toLocaleDateString('pt-BR')}</span>
-                        )}
-                        <span>🕐 Criada: {new Date((cotacao as any).created_at || cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
-                      </div>
-                      {cotacao.total_quantidade && (
-                        <div className="text-xs text-muted-foreground">
-                          📦 {cotacao.total_quantidade} pcs • ⚖️ {(cotacao.total_peso_kg || 0).toFixed(1)}kg • 📐 {(cotacao.total_cbm || 0).toFixed(3)}m³
-                        </div>
-                      )}
+                    <div className="flex gap-2 pt-2">
+                      <Button variant="outline" size="sm" className="flex-1">
+                        <Eye className="h-4 w-4 mr-1" />
+                        Ver Produtos
+                      </Button>
                     </div>
-                  </div>
-                ))
-              }
-            </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+
+          {cotacoes.filter(cotacao => 
+            cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+          ).length === 0 && (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhuma cotação encontrada</h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  {searchTerm ? 'Tente ajustar os filtros de busca' : 'Comece criando sua primeira cotação internacional'}
+                </p>
+                {!searchTerm && (
+                  <Button onClick={() => { resetForm(); setShowModal(true); }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nova Cotação
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+        </>
+      ) : (
+        <div className="space-y-4">
+          {/* Cabeçalho da Cotação Selecionada */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl">{selectedCotacao.numero_cotacao}</CardTitle>
+                  <p className="text-muted-foreground">{selectedCotacao.descricao}</p>
+                </div>
+                <Badge className={`text-white ${getStatusColor(selectedCotacao.status)}`}>
+                  {selectedCotacao.status}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">País:</span>
+                  <div className="font-semibold">{selectedCotacao.pais_origem}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Moeda:</span>
+                  <div className="font-semibold">{selectedCotacao.moeda_origem}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Fator:</span>
+                  <div className="font-semibold">{selectedCotacao.fator_multiplicador}x</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Total BRL:</span>
+                  <div className="font-semibold text-green-600">{formatCurrency(selectedCotacao.total_valor_brl || 0)}</div>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+
+          {/* Tabela estilo Excel */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Produtos da Cotação</CardTitle>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Importar
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-auto border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-[50px]">
+                        <input 
+                          type="checkbox"
+                          checked={selectedProducts.length === mockProducts.length && mockProducts.length > 0}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          className="rounded"
+                        />
+                      </TableHead>
+                      <TableHead className="min-w-[100px]">SKU</TableHead>
+                      <TableHead className="min-w-[80px]">IMAGEM</TableHead>
+                      <TableHead className="min-w-[120px]">IMAGEM DO FORNECEDOR</TableHead>
+                      <TableHead className="min-w-[100px]">MATERIAL</TableHead>
+                      <TableHead className="min-w-[80px]">COR</TableHead>
+                      <TableHead className="min-w-[200px]">Nome do Produto</TableHead>
+                      <TableHead className="min-w-[100px]">PACKAGE</TableHead>
+                      <TableHead className="min-w-[80px]">PREÇO</TableHead>
+                      <TableHead className="min-w-[60px]">UNIT</TableHead>
+                      <TableHead className="min-w-[80px]">PCS/CTN</TableHead>
+                      <TableHead className="min-w-[80px]">CAIXAS</TableHead>
+                      <TableHead className="min-w-[120px]">PESO UNITARIO(g)</TableHead>
+                      <TableHead className="min-w-[140px]">Peso cx Master (KG)</TableHead>
+                      <TableHead className="min-w-[160px]">Peso Sem cx Master (KG)</TableHead>
+                      <TableHead className="min-w-[160px]">Peso total cx Master (KG)</TableHead>
+                      <TableHead className="min-w-[180px]">Peso total sem cx Master (KG)</TableHead>
+                      <TableHead className="min-w-[100px]">Comprimento</TableHead>
+                      <TableHead className="min-w-[80px]">Largura</TableHead>
+                      <TableHead className="min-w-[80px]">Altura</TableHead>
+                      <TableHead className="min-w-[120px]">CBM Cubagem</TableHead>
+                      <TableHead className="min-w-[100px]">CBM Total</TableHead>
+                      <TableHead className="min-w-[120px]">Quantidade Total</TableHead>
+                      <TableHead className="min-w-[120px]">Valor Total</TableHead>
+                      <TableHead className="min-w-[100px]">OBS</TableHead>
+                      <TableHead className="min-w-[120px]">CHANGE DOLAR</TableHead>
+                      <TableHead className="min-w-[140px]">Multiplicador REAIS</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {mockProducts.map((product: any, index: number) => (
+                      <TableRow key={index} className="hover:bg-muted/50">
+                        <TableCell>
+                          <input 
+                            type="checkbox"
+                            checked={selectedProducts.includes(index.toString())}
+                            onChange={(e) => handleSelectProduct(index.toString(), e.target.checked)}
+                            className="rounded"
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">{product.sku}</TableCell>
+                        <TableCell>
+                          <div className="w-16 h-16 bg-muted rounded flex items-center justify-center cursor-pointer hover:bg-muted/80">
+                            {product.imagem ? (
+                              <img src={product.imagem} alt="Produto" className="w-full h-full object-cover rounded" />
+                            ) : (
+                              <Image className="h-6 w-6 text-muted-foreground" />
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="w-16 h-16 bg-muted rounded flex items-center justify-center cursor-pointer hover:bg-muted/80">
+                            {product.imagem_fornecedor ? (
+                              <img src={product.imagem_fornecedor} alt="Fornecedor" className="w-full h-full object-cover rounded" />
+                            ) : (
+                              <Image className="h-6 w-6 text-muted-foreground" />
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{product.material}</TableCell>
+                        <TableCell>{product.cor}</TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={product.nome_produto}>
+                          {product.nome_produto}
+                        </TableCell>
+                        <TableCell>{product.package}</TableCell>
+                        <TableCell>¥ {product.preco.toFixed(2)}</TableCell>
+                        <TableCell>{product.unit}</TableCell>
+                        <TableCell>{product.pcs_ctn}</TableCell>
+                        <TableCell>{product.caixas}</TableCell>
+                        <TableCell>{product.peso_unitario_g}</TableCell>
+                        <TableCell>{product.peso_cx_master_kg.toFixed(2)}</TableCell>
+                        <TableCell>{product.peso_sem_cx_master_kg.toFixed(2)}</TableCell>
+                        <TableCell>{product.peso_total_cx_master_kg.toFixed(2)}</TableCell>
+                        <TableCell>{product.peso_total_sem_cx_master_kg.toFixed(2)}</TableCell>
+                        <TableCell>{product.comprimento}</TableCell>
+                        <TableCell>{product.largura}</TableCell>
+                        <TableCell>{product.altura}</TableCell>
+                        <TableCell>{product.cbm_cubagem.toFixed(2)}</TableCell>
+                        <TableCell>{product.cbm_total.toFixed(2)}</TableCell>
+                        <TableCell>{product.quantidade_total}</TableCell>
+                        <TableCell>¥ {product.valor_total.toFixed(2)}</TableCell>
+                        <TableCell>{product.obs}</TableCell>
+                        <TableCell>$ {product.change_dolar.toFixed(2)}</TableCell>
+                        <TableCell>R$ {product.multiplicador_reais.toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {mockProducts.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhum produto encontrado nesta cotação
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Modal de Nova Cotação */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
