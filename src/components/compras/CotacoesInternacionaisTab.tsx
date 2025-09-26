@@ -197,8 +197,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [changeDolarDivisor, setChangeDolarDivisor] = useState<number>(1);
-  const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<number>(1);
+  const [changeDolarDivisor, setChangeDolarDivisor] = useState<string>("1");
+  const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>("1");
   
   // Estados do formulário
   const [dadosBasicos, setDadosBasicos] = useState({
@@ -550,6 +550,17 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
+  // Helpers para conversão segura dos divisores
+  const getChangeDolarDivisorValue = () => {
+    const value = parseFloat(changeDolarDivisor);
+    return value > 0 ? value : 1;
+  };
+
+  const getChangeDolarTotalDivisorValue = () => {
+    const value = parseFloat(changeDolarTotalDivisor);
+    return value > 0 ? value : 1;
+  };
+
   // Mock data para exemplo da tabela Excel
   const mockProducts = selectedCotacao?.produtos?.length > 0 ? selectedCotacao.produtos.map((p: any, index: number) => ({
     sku: p.sku || `PL-${800 + index}`,
@@ -576,8 +587,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     quantidade_total: p.quantidade_total || 240,
     valor_total: p.valor_total || 1260.00,
     obs: "",
-    change_dolar: changeDolarDivisor > 0 ? (p.preco_unitario || 5.25) / changeDolarDivisor : 0,
-    change_dolar_total: changeDolarTotalDivisor > 0 ? (p.valor_total || 1260.00) / changeDolarTotalDivisor : 0,
+    change_dolar: (p.preco_unitario || 5.25) / getChangeDolarDivisorValue(),
+    change_dolar_total: (p.valor_total || 1260.00) / getChangeDolarTotalDivisorValue(),
     multiplicador_reais: 5.44
   })) : [
     {
@@ -605,8 +616,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       quantidade_total: 240,
       valor_total: 1260.00,
       obs: "",
-      change_dolar: changeDolarDivisor > 0 ? 5.25 / changeDolarDivisor : 0,
-      change_dolar_total: changeDolarTotalDivisor > 0 ? 1260.00 / changeDolarTotalDivisor : 0,
+      change_dolar: 5.25 / getChangeDolarDivisorValue(),
+      change_dolar_total: 1260.00 / getChangeDolarTotalDivisorValue(),
       multiplicador_reais: 5.44
     },
     {
@@ -634,8 +645,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       quantidade_total: 200,
       valor_total: 1160.00,
       obs: "",
-      change_dolar: changeDolarDivisor > 0 ? 5.80 / changeDolarDivisor : 0,
-      change_dolar_total: changeDolarTotalDivisor > 0 ? 1160.00 / changeDolarTotalDivisor : 0,
+      change_dolar: 5.80 / getChangeDolarDivisorValue(),
+      change_dolar_total: 1160.00 / getChangeDolarTotalDivisorValue(),
       multiplicador_reais: 6.00
     }
   ];
@@ -871,7 +882,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             type="number"
                             placeholder="Divisor"
                             value={changeDolarDivisor}
-                            onChange={(e) => setChangeDolarDivisor(parseFloat(e.target.value) || 1)}
+                            onChange={(e) => setChangeDolarDivisor(e.target.value)}
                             className="h-6 text-xs"
                             step="0.01"
                             min="0.01"
@@ -897,7 +908,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             type="number"
                             placeholder="Divisor"
                             value={changeDolarTotalDivisor}
-                            onChange={(e) => setChangeDolarTotalDivisor(parseFloat(e.target.value) || 1)}
+                            onChange={(e) => setChangeDolarTotalDivisor(e.target.value)}
                             className="h-6 text-xs"
                             step="0.01"
                             min="0.01"
