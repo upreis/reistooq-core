@@ -588,12 +588,12 @@ export function useCotacoesArquivos() {
           // PCS/CTN - adicionar mais variações
           pcs_ctn: parseInt(String(linha['PCS/CTN'] || linha.PCS_CTN || linha.pcs_ctn || '0').replace(/[^\d]/g, '')) || 0,
           caixas: parseFloat(String(linha.CAIXAS || linha.caixas || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
-          // PESO UNITARIO(g) - mapear corretamente
-          peso_unitario: parseFloat(String(linha['PESO UNITARIO(g)'] || linha.PESO_UNITARIO_G || linha.peso_unitario_g || linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          // Peso embalado cx Master (KG)
-          peso_master: parseFloat(String(linha['Peso embalado cx Master (KG)'] || linha.PESO_MASTER_KG || linha.peso_master_kg || linha.PESO_CX_MASTER_KG || linha.peso_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          // Peso Sem embalagem cx Master (KG)
-          peso_sem_master: parseFloat(String(linha['Peso Sem embalagem cx Master (KG)'] || linha.PESO_SEM_MASTER_KG || linha.peso_sem_master_kg || linha.PESO_SEM_CX_MASTER_KG || linha.peso_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+           // PESO UNITARIO(g) - mapear corretamente
+           peso_unitario_g: parseFloat(String(linha['PESO UNITARIO(g)'] || linha.PESO_UNITARIO_G || linha.peso_unitario_g || linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+           // Peso embalado cx Master (KG)
+           peso_cx_master_kg: parseFloat(String(linha['Peso embalado cx Master (KG)'] || linha.PESO_MASTER_KG || linha.peso_master_kg || linha.PESO_CX_MASTER_KG || linha.peso_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+           // Peso Sem embalagem cx Master (KG)
+           peso_sem_cx_master_kg: parseFloat(String(linha['Peso Sem embalagem cx Master (KG)'] || linha.PESO_SEM_MASTER_KG || linha.peso_sem_master_kg || linha.PESO_SEM_CX_MASTER_KG || linha.peso_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           // Peso total embalado cx Master (KG) - CALCULADO
           peso_total_master: 0, // Será calculado
           // Peso total sem embalagem cx Master (KG) - CALCULADO
@@ -618,9 +618,6 @@ export function useCotacoesArquivos() {
           quantidade_total_calc: 0, // Será calculado
           cbm_total_calc: 0, // Será calculado
           peso_total_calc: 0, // Será calculado
-          peso_unitario_g: parseFloat(String(linha.PESO_UNITARIO_G || linha.peso_unitario_g || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_cx_master_kg: parseFloat(String(linha.PESO_CX_MASTER_KG || linha.peso_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_sem_cx_master_kg: parseFloat(String(linha.PESO_SEM_CX_MASTER_KG || linha.peso_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           peso_total_cx_master_kg: parseFloat(String(linha.PESO_TOTAL_CX_MASTER_KG || linha.peso_total_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           peso_total_sem_cx_master_kg: parseFloat(String(linha.PESO_TOTAL_SEM_CX_MASTER_KG || linha.peso_total_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           change_dolar_total: parseFloat(String(linha.CHANGE_DOLAR_TOTAL || linha.change_dolar_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
@@ -633,8 +630,8 @@ export function useCotacoesArquivos() {
         // Cálculos automáticos do sistema (ignorando valores da planilha)
         produto.quantidade_total = produto.caixas * produto.pcs_ctn;
         produto.cbm_total = produto.cbm_cubagem * produto.caixas;
-        produto.peso_total_master = produto.peso_master * produto.caixas; // Peso total embalado
-        produto.peso_total_sem_master = produto.peso_sem_master * produto.caixas; // Peso total sem embalagem
+        produto.peso_total_cx_master_kg = produto.peso_cx_master_kg * produto.caixas; // Peso total embalado
+        produto.peso_total_sem_cx_master_kg = produto.peso_sem_cx_master_kg * produto.caixas; // Peso total sem embalagem
         produto.valor_total = produto.preco * produto.quantidade_total;
         produto.preco_unitario = produto.quantidade_total > 0 ? produto.valor_total / produto.quantidade_total : 0;
 
