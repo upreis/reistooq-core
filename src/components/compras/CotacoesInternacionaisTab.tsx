@@ -1404,7 +1404,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             onDoubleClick={() => startEditing(index, 'caixas')}
                           />
                         </TableCell>
-                        <TableCell>{product.peso_unitario_g || 0}</TableCell>
+                        <TableCell>{(product.peso_unitario_g || 0).toFixed(0)}g</TableCell>
                         <TableCell>{(product.peso_cx_master_kg || 0).toFixed(2)}</TableCell>
                         <TableCell>{(product.peso_sem_cx_master_kg || 0).toFixed(2)}</TableCell>
                         <TableCell>{(product.peso_total_cx_master_kg || 0).toFixed(2)}</TableCell>
