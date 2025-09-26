@@ -852,7 +852,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <TableHead className="min-w-[100px]">OBS</TableHead>
                       <TableHead className="min-w-[120px]">
                         <div className="space-y-1">
-                          <div className="text-xs font-medium">CHANGE DOLAR</div>
+                          <div className="text-xs font-medium">CHANGE DOLAR UNITARIO</div>
                           <Input
                             type="number"
                             placeholder="Divisor"
