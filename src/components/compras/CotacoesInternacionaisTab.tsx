@@ -956,7 +956,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 <p className="text-sm text-slate-300 mb-3">{selectedCotacao.descricao}</p>
                 
                 {/* Grid de informações principais em layout compacto */}
-                <div className="grid grid-cols-6 gap-3 text-xs">
+                <div className="grid grid-cols-5 gap-3 text-xs">
                   <div>
                     <span className="text-slate-400">País:</span>
                     <div className="font-medium text-white">{selectedCotacao.pais_origem}</div>
@@ -978,10 +978,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Fator:</span>
-                    <div className="font-medium text-white">{selectedCotacao.fator_multiplicador}x</div>
                   </div>
                   <div>
                     <span className="text-slate-400">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
