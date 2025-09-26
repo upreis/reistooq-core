@@ -199,7 +199,7 @@ export function useCotacoesArquivos() {
     }
   }, [toast]);
 
-  const downloadTemplate = useCallback(() => {
+  const downloadTemplate = useCallback(async (formato: 'csv' | 'excel' = 'csv') => {
     try {
       // Colunas baseadas na imagem fornecida
       const headers = [
@@ -231,30 +231,58 @@ export function useCotacoesArquivos() {
         'MULTIPLICADOR_REAIS'
       ];
 
-      // Criar CSV com exemplo
-      const csvContent = [
-        headers.join(','),
-        'FL-800,"","","Poliéster","IGUAL DA FOTO","chapéu aeronáutica, 28*21*14cm","10pcs/opp","240","1","90","22,60","21,60","0,00","0,00","0","0","0","0,21","0,21","240","¥ 1.260,00","","","0,74","R$ 5,44"',
-        'FL-801,"","","Poliéster","IGUAL DA FOTO","chapéu policia, 26,5*25*14cm","10pcs/opp","200","1","70","15,00","14,00","0,00","0,00","0","0","0","0,21","0,21","200","¥ 1.160,00","","","0,81","R$ 6,00"'
-      ].join('\n');
+      // Dados de exemplo
+      const exemploData = [
+        ['FL-800', '', '', 'Poliéster', 'IGUAL DA FOTO', 'chapéu aeronáutica, 28*21*14cm', '10pcs/opp', '240', '1', '90', '22,60', '21,60', '0,00', '0,00', '0', '0', '0', '0,21', '0,21', '240', '¥ 1.260,00', '', '', '0,74', 'R$ 5,44'],
+        ['FL-801', '', '', 'Poliéster', 'IGUAL DA FOTO', 'chapéu policia, 26,5*25*14cm', '10pcs/opp', '200', '1', '70', '15,00', '14,00', '0,00', '0,00', '0', '0', '0', '0,21', '0,21', '200', '¥ 1.160,00', '', '', '0,81', 'R$ 6,00']
+      ];
 
-      // Criar e baixar arquivo
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'template_cotacao_internacional.csv');
-      link.style.visibility = 'hidden';
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      if (formato === 'excel') {
+        // Importar XLSX dinamicamente
+        const XLSX = await import('xlsx');
+        
+        // Criar workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Criar worksheet com headers e dados
+        const wsData = [headers, ...exemploData];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        
+        // Adicionar worksheet ao workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+        
+        // Gerar arquivo Excel
+        XLSX.writeFile(wb, 'template_cotacao_internacional.xlsx');
+        
+        toast({
+          title: "Template baixado!",
+          description: "Template Excel baixado com sucesso.",
+        });
+      } else {
+        // Criar CSV com exemplo
+        const csvContent = [
+          headers.join(','),
+          ...exemploData.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
 
-      toast({
-        title: "Template baixado!",
-        description: "Template CSV baixado com sucesso.",
-      });
+        // Criar e baixar arquivo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'template_cotacao_internacional.csv');
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast({
+          title: "Template baixado!",
+          description: "Template CSV baixado com sucesso.",
+        });
+      }
     } catch (error) {
       console.error('Erro ao baixar template:', error);
       toast({

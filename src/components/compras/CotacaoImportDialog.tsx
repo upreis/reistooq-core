@@ -311,10 +311,16 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
             <p className="text-sm text-muted-foreground mb-3">
               Baixe o template CSV com todas as colunas necessárias e exemplos de preenchimento.
             </p>
-            <Button onClick={downloadTemplate} variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Baixar Template CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={() => downloadTemplate('csv')} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Template CSV
+              </Button>
+              <Button onClick={() => downloadTemplate('excel')} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                Template Excel
+              </Button>
+            </div>
           </div>
 
           <Separator />
