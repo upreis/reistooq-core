@@ -192,6 +192,17 @@ export function useCotacoesArquivos() {
       
       console.log('📊 [DEBUG] Dados extraídos via XLSX:', dadosExtraidos.length);
       
+      // Debug: mostrar headers da planilha
+      if (dadosExtraidos.length > 0) {
+        const headers = Object.keys(dadosExtraidos[0]);
+        console.log('📋 [DEBUG] Headers detectados na planilha:', headers);
+        console.log('🎯 [DEBUG] Headers relacionados a peso:', headers.filter(h => 
+          h.toLowerCase().includes('peso') || 
+          h.toLowerCase().includes('master') ||
+          h.toLowerCase().includes('kg')
+        ));
+      }
+      
       // Método 2: Processar Excel como ZIP para extrair imagens embutidas
       await extrairImagensDoZip(file, imagens, worksheet);
       
@@ -578,8 +589,20 @@ export function useCotacoesArquivos() {
            'PESO UNITARIO(g)': linha['PESO UNITARIO(g)'],
            'Peso embalado cx Master (KG)': linha['Peso embalado cx Master (KG)'],
            'Peso Sem embalagem cx Master (KG)': linha['Peso Sem embalagem cx Master (KG)'],
-           todasAsChaves: Object.keys(linha)
+           todasAsChaves: Object.keys(linha),
+           linhaCompleta: linha
          });
+
+         // Debug específico: verificar todos os campos relacionados a peso
+         const camposPeso = Object.keys(linha).filter(key => 
+           key.toLowerCase().includes('peso') || 
+           key.toLowerCase().includes('master') ||
+           key.toLowerCase().includes('kg')
+         );
+         console.log(`🔍 [DEBUG] Campos relacionados a peso na linha ${index}:`, camposPeso.map(campo => ({
+           campo,
+           valor: linha[campo]
+         })));
 
          const produto = {
            sku: linha.SKU || linha.sku || `PROD-${index + 1}`,
