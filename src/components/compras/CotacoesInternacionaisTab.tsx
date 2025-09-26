@@ -613,8 +613,100 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Aqui você listaria as cotações existentes */}
-              <p className="text-muted-foreground">Lista de cotações aparecerá aqui</p>
+              {/* Filtrar cotações baseado na busca */}
+              {cotacoes
+                .filter(cotacao => 
+                  cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((cotacao) => (
+                  <div key={cotacao.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-semibold text-lg">{cotacao.numero_cotacao}</h4>
+                        <p className="text-muted-foreground">{cotacao.descricao}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={
+                          cotacao.status === 'aberta' ? 'default' :
+                          cotacao.status === 'fechada' ? 'secondary' :
+                          cotacao.status === 'rascunho' ? 'outline' : 'destructive'
+                        }>
+                          {cotacao.status === 'aberta' ? '🟢 Aberta' :
+                           cotacao.status === 'fechada' ? '✅ Fechada' :
+                           cotacao.status === 'rascunho' ? '📝 Rascunho' : '❌ Cancelada'}
+                        </Badge>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setEditingCotacao(cotacao);
+                              setDadosBasicos({
+                                numero_cotacao: cotacao.numero_cotacao,
+                                descricao: cotacao.descricao,
+                                pais_origem: cotacao.pais_origem,
+                                moeda_origem: cotacao.moeda_origem,
+                                fator_multiplicador: cotacao.fator_multiplicador,
+                                data_abertura: cotacao.data_abertura,
+                                data_fechamento: cotacao.data_fechamento || '',
+                                status: cotacao.status,
+                                observacoes: cotacao.observacoes || ''
+                              } as any);
+                              setProdutos(cotacao.produtos || []);
+                              setShowModal(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">País:</span>
+                        <p className="font-medium">{cotacao.pais_origem}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Moeda:</span>
+                        <p className="font-medium">{cotacao.moeda_origem}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Produtos:</span>
+                        <p className="font-medium">{cotacao.produtos?.length || 0} itens</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Valor Total:</span>
+                        <p className="font-medium text-green-600">
+                          {formatCurrency(cotacao.total_valor_brl || 0, 'BRL')}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>📅 Abertura: {new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
+                        {cotacao.data_fechamento && (
+                          <span>🏁 Fechamento: {new Date(cotacao.data_fechamento).toLocaleDateString('pt-BR')}</span>
+                        )}
+                        <span>🕐 Criada: {new Date((cotacao as any).created_at || cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      {cotacao.total_quantidade && (
+                        <div className="text-xs text-muted-foreground">
+                          📦 {cotacao.total_quantidade} pcs • ⚖️ {(cotacao.total_peso_kg || 0).toFixed(1)}kg • 📐 {(cotacao.total_cbm || 0).toFixed(3)}m³
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              }
             </div>
           )}
         </CardContent>
