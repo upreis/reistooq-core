@@ -335,7 +335,7 @@ const ProductList = () => {
         "COMPRIMENTO": product.comprimento || "",
         "LARGURA": product.largura || "",
         "ALTURA": product.altura || "",
-        "CBM CUBAGEM": product.cbm_cubagem || "",
+        "CBM CUBAGEM": (product as any).cubagem_cm3 || "",
         "NCM": product.ncm || "",
         "PIS": product.pis || "",
         "COFINS": product.cofins || "",
@@ -818,7 +818,7 @@ const ProductList = () => {
                         const pesoSemCxMaster = pesoCxMaster > 0 ? pesoCxMaster - 1 : 0;
                         const pesoTotalCxMaster = pesoCxMaster * quantidade;
                         const pesoTotalSemCxMaster = pesoSemCxMaster * quantidade;
-                        const cbmCubagem = (comprimento * largura * altura) / 1000000;
+                        const cbmCubagem = product.cubagem_cm3 || 0;
                         const cbmTotal = cbmCubagem * quantidade;
                         const quantidadeTotal = pcsCtn * quantidade;
                         const valorTotal = preco * quantidadeTotal;
@@ -1092,10 +1092,10 @@ const ProductList = () => {
                               displayValue={altura ? `${altura}cm` : "-"}
                             />
 
-                            {/* CBM Cubagem - CALCULADO - NÃO EDITÁVEL */}
+                            {/* CBM Cubagem - VALOR DO BANCO */}
                             <td className="px-3 py-3">
-                              <span className="text-xs font-medium text-purple-600">
-                                {(comprimento && largura && altura) ? cbmCubagem.toFixed(6) : "-"}
+                              <span className="text-xs font-medium text-blue-600">
+                                {product.cubagem_cm3 ? product.cubagem_cm3.toFixed(6) : "-"}
                               </span>
                             </td>
 

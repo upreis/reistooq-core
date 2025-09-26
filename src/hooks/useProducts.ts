@@ -38,6 +38,7 @@ export interface Product extends BaseProduct {
   largura?: number | null;
   altura?: number | null;
   cbm_cubagem?: number | null;
+  cubagem_cm3?: number | null;
   ncm?: string | null;
   pis?: number | null;
   cofins?: number | null;
