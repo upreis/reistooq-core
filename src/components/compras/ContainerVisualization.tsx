@@ -1,5 +1,4 @@
 import React from 'react';
-import containerImage from '@/assets/container-3d.png';
 
 interface ContainerVisualizationProps {
   containerType: string;
@@ -40,43 +39,44 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
     <div className="flex flex-col items-center space-y-4 p-4">
       {/* Container 3D Visual */}
       <div className="relative">
-        {/* Container Base - Real container image */}
-        <div className="relative w-64 h-40">
-          {/* Container image */}
-          <img 
-            src={containerImage} 
-            alt="Container 3D" 
-            className="w-full h-full object-contain"
-          />
-          
-          {/* Fill level overlay */}
-          <div 
-            className="absolute bottom-8 left-8 right-16 transition-all duration-1000 ease-out rounded-sm"
-            style={{
-              height: `${(fillHeight / 100) * 60}%`,
-              background: `linear-gradient(to top, ${getVolumeColor()}CC, ${getVolumeColor()}88, ${getVolumeColor()}44)`,
-              boxShadow: `inset 0 0 10px ${getVolumeColor()}66`,
-              transformOrigin: 'bottom',
-              transform: 'perspective(400px) rotateX(-10deg) rotateY(20deg)'
-            }}
-          >
-            {/* Cargo blocks simulation */}
-            {fillHeight > 0 && (
-              <div className="absolute inset-0 opacity-70">
-                <div className="grid grid-cols-6 gap-1 p-1 h-full">
-                  {Array.from({ length: Math.ceil((fillHeight / 100) * 12) }).map((_, i) => (
-                    <div 
-                      key={i}
-                      className="bg-gradient-to-br from-amber-400 to-amber-600 rounded-sm border border-amber-700 animate-fade-in"
-                      style={{ 
-                        animationDelay: `${i * 100}ms`,
-                        opacity: 0.8 
-                      }}
-                    />
-                  ))}
+        {/* Container Base - Isometric view */}
+        <div className="relative w-48 h-32">
+          {/* Container walls */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-300 to-slate-500 border-2 border-slate-600 rounded-lg shadow-lg transform rotate-12 skew-y-3">
+            {/* Container floor */}
+            <div className="absolute bottom-0 left-0 right-0 h-2 bg-slate-600 rounded-b-lg"></div>
+            
+            {/* Fill level animation */}
+            <div 
+              className="absolute bottom-0 left-0 right-0 rounded-b-lg transition-all duration-1000 ease-out"
+              style={{
+                height: `${fillHeight}%`,
+                background: `linear-gradient(to top, ${getVolumeColor()}CC, ${getVolumeColor()}88, ${getVolumeColor()}44)`,
+                boxShadow: `inset 0 0 20px ${getVolumeColor()}66`
+              }}
+            >
+              {/* Cargo blocks simulation */}
+              {fillHeight > 0 && (
+                <div className="absolute inset-0 opacity-60">
+                  <div className="grid grid-cols-4 gap-1 p-2 h-full">
+                    {Array.from({ length: Math.ceil((fillHeight / 100) * 8) }).map((_, i) => (
+                      <div 
+                        key={i}
+                        className="bg-gradient-to-br from-amber-400 to-amber-600 rounded-sm border border-amber-700 animate-fade-in"
+                        style={{ 
+                          animationDelay: `${i * 100}ms`,
+                          opacity: 0.8 
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Container door */}
+            <div className="absolute right-0 top-0 w-1 h-full bg-slate-700 rounded-r-lg"></div>
+            <div className="absolute right-1 top-2 bottom-2 w-0.5 bg-slate-800"></div>
           </div>
 
           {/* Container label */}
@@ -87,10 +87,10 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
           </div>
 
           {/* Volume indicator */}
-          <div className="absolute -left-16 top-4 bottom-8 flex flex-col justify-end">
-            <div className="w-4 bg-slate-200 rounded-full border border-slate-400 relative h-24">
+          <div className="absolute -left-16 top-0 bottom-0 flex flex-col justify-end">
+            <div className="w-4 bg-slate-200 rounded-full border border-slate-400 relative">
               <div 
-                className="w-full rounded-full transition-all duration-1000 ease-out absolute bottom-0"
+                className="w-full rounded-full transition-all duration-1000 ease-out"
                 style={{
                   height: `${fillHeight}%`,
                   backgroundColor: getVolumeColor()
@@ -103,10 +103,10 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
           </div>
 
           {/* Weight indicator */}
-          <div className="absolute -right-16 top-4 bottom-8 flex flex-col justify-end">
-            <div className="w-4 bg-slate-200 rounded-full border border-slate-400 relative h-24">
+          <div className="absolute -right-16 top-0 bottom-0 flex flex-col justify-end">
+            <div className="w-4 bg-slate-200 rounded-full border border-slate-400 relative">
               <div 
-                className="w-full rounded-full transition-all duration-1000 ease-out absolute bottom-0"
+                className="w-full rounded-full transition-all duration-1000 ease-out"
                 style={{
                   height: `${weightPercentage}%`,
                   backgroundColor: getWeightColor()
