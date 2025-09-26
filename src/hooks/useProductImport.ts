@@ -217,7 +217,9 @@ export const useProductImport = () => {
 
         if (existingProduct) {
           // Produto existe, fazer UPDATE de todos os campos do template
+          // GARANTIR que o produto seja reativado se estiver inativo
           const productData = convertRowToProduct(row, true);
+          productData.ativo = true; // GARANTIR QUE SEJA REATIVADO
           console.log(`🔄 Atualizando produto SKU: ${row['SKU']}`, productData);
           await updateProduct(existingProduct.id, productData);
         } else {
