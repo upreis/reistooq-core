@@ -267,7 +267,12 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
     console.log('🚀 [DEBUG] É array?:', Array.isArray(arquivo.dados_processados));
     
     if (arquivo.dados_processados && arquivo.dados_processados.length > 0) {
-      const totalImagens = arquivo.dados_processados.filter((p: any) => p.imagem_extraida || p.imagem_fornecedor_extraida).length;
+      // Contar imagens extraídas do arquivo OU preenchidas nas colunas
+      const totalImagens = arquivo.dados_processados.filter((p: any) => 
+        p.imagem_extraida || p.imagem_fornecedor_extraida || 
+        (p.imagem && p.imagem.trim() !== '') || 
+        (p.imagem_fornecedor && p.imagem_fornecedor.trim() !== '')
+      ).length;
       
       console.log('✅ [DEBUG] Dados para importar:', arquivo.dados_processados);
       console.log('📸 [DEBUG] Total de imagens extraídas:', totalImagens);
@@ -284,7 +289,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
         
         toast({
           title: "Dados importados!",
-          description: `${arquivo.dados_processados.length} produtos importados${totalImagens > 0 ? ` com ${totalImagens} imagens extraídas do Excel.` : '.'}`,
+          description: `${arquivo.dados_processados.length} produtos importados${totalImagens > 0 ? ` com ${totalImagens} produtos contendo imagens.` : '.'}`,
         });
       } catch (error) {
         console.error('❌ [DEBUG] Erro ao chamar onImportSuccess:', error);
@@ -502,7 +507,11 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
                         ✅ {arquivo.total_linhas} produtos processados
                         {arquivo.dados_processados && (
                           <span className="ml-2">
-                            ({arquivo.dados_processados.filter((p: any) => p.imagem_extraida || p.imagem_fornecedor_extraida).length} com imagens extraídas)
+                            ({arquivo.dados_processados.filter((p: any) => 
+                              p.imagem_extraida || p.imagem_fornecedor_extraida || 
+                              (p.imagem && p.imagem.trim() !== '') || 
+                              (p.imagem_fornecedor && p.imagem_fornecedor.trim() !== '')
+                            ).length} com imagens/referências)
                           </span>
                         )}
                       </div>
