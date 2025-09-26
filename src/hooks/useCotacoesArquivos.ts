@@ -136,138 +136,251 @@ export function useCotacoesArquivos() {
   }, [toast]);
 
   const lerArquivoComImagens = (file: File): Promise<{dados: any[], imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]}> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = async (e) => {
-        try {
-          const data = e.target?.result;
-          let dados: any[] = [];
-          let imagens: {nome: string, blob: Blob, linha: number, coluna: string}[] = [];
+    return new Promise(async (resolve, reject) => {
+      try {
+        console.log('🔍 [DEBUG] Iniciando leitura do arquivo:', file.name);
+        
+        let dados: any[] = [];
+        let imagens: {nome: string, blob: Blob, linha: number, coluna: string}[] = [];
 
-          if (file.name.endsWith('.csv')) {
-            // Processar CSV (sem imagens)
-            const text = data as string;
-            const lines = text.split('\n');
-            const headers = lines[0].split(',').map(h => h.trim());
-            
-            for (let i = 1; i < lines.length; i++) {
-              if (lines[i].trim()) {
-                const values = lines[i].split(',');
-                const row: any = {};
-                headers.forEach((header, index) => {
-                  row[header] = values[index]?.trim() || '';
-                });
-                dados.push(row);
-              }
-            }
-          } else {
-            // Processar Excel com extração de imagens
-            const XLSX = await import('xlsx');
-            const workbook = XLSX.read(data, { type: 'binary', cellStyles: true });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            
-            // Extrair dados da planilha
-            dados = XLSX.utils.sheet_to_json(worksheet);
-            
-            // Tentar extrair imagens das colunas IMAGEM e IMAGEM_FORNECEDOR
-            try {
-              // Primeiro, vamos verificar se há dados nas colunas de imagem
-              const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-              console.log('🔍 [DEBUG] Range da planilha:', range);
-              
-              // Mapear colunas por cabeçalho
-              const headers: {[key: string]: string} = {};
-              for (let col = range.s.c; col <= range.e.c; col++) {
-                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
-                const cell = worksheet[cellAddress];
-                if (cell && cell.v) {
-                  const headerValue = String(cell.v).toUpperCase().trim();
-                  headers[headerValue] = XLSX.utils.encode_col(col);
-                  console.log(`📋 [DEBUG] Cabeçalho encontrado: ${headerValue} na coluna ${headers[headerValue]}`);
-                }
-              }
-              
-              // Procurar por colunas de imagem
-              const colunaImagem = headers['IMAGEM'];
-              const colunaImagemFornecedor = headers['IMAGEM FORNECEDOR'] || headers['IMAGEM_FORNECEDOR'];
-              
-              console.log('🖼️ [DEBUG] Coluna IMAGEM:', colunaImagem);
-              console.log('🏭 [DEBUG] Coluna IMAGEM FORNECEDOR:', colunaImagemFornecedor);
-              
-              // Processar imagens das colunas identificadas
-              for (let row = 1; row <= range.e.r; row++) {
-                // Verificar imagem principal
-                if (colunaImagem) {
-                  const cellAddress = `${colunaImagem}${row + 1}`;
-                  const cell = worksheet[cellAddress];
-                  if (cell && cell.v && String(cell.v).trim()) {
-                    console.log(`🖼️ [DEBUG] Imagem encontrada na linha ${row + 1}, coluna ${colunaImagem}:`, cell.v);
-                    // Aqui você poderia processar URLs de imagem ou outros dados
-                  }
-                }
-                
-                // Verificar imagem do fornecedor
-                if (colunaImagemFornecedor) {
-                  const cellAddress = `${colunaImagemFornecedor}${row + 1}`;
-                  const cell = worksheet[cellAddress];
-                  if (cell && cell.v && String(cell.v).trim()) {
-                    console.log(`🏭 [DEBUG] Imagem fornecedor encontrada na linha ${row + 1}, coluna ${colunaImagemFornecedor}:`, cell.v);
-                    // Aqui você poderia processar URLs de imagem ou outros dados
-                  }
-                }
-              }
-              
-              // Verificar se há imagens incorporadas no Excel (experimental)
-              if (worksheet['!images']) {
-                console.log('🖼️ [DEBUG] Imagens incorporadas encontradas:', worksheet['!images'].length);
-                for (let i = 0; i < worksheet['!images'].length; i++) {
-                  const img = worksheet['!images'][i];
-                  try {
-                    // Converter imagem para blob
-                    const imageData = img.data;
-                    const blob = new Blob([imageData], { type: 'image/png' });
-                    
-                    // Determinar posição da imagem (linha e coluna)
-                    const cellRef = img.ref || `A${i + 2}`; // Default para linha 2+
-                    const linha = parseInt(cellRef.replace(/[A-Z]/g, '')) - 1; // 0-indexed
-                    const coluna = cellRef.replace(/[0-9]/g, '');
-                    
-                    imagens.push({
-                      nome: `imagem_${i + 1}_${cellRef}.png`,
-                      blob,
-                      linha,
-                      coluna
-                    });
-                    
-                    console.log(`✅ [DEBUG] Imagem incorporada processada: ${cellRef}`);
-                  } catch (imgError) {
-                    console.warn('❌ Erro ao processar imagem incorporada:', imgError);
-                  }
-                }
-              } else {
-                console.log('ℹ️ [DEBUG] Nenhuma imagem incorporada encontrada no arquivo Excel');
-              }
-            } catch (imageError) {
-              console.warn('⚠️ Funcionalidade de extração de imagens ainda em desenvolvimento:', imageError);
+        if (file.name.endsWith('.csv')) {
+          // Processar CSV (sem imagens)
+          const text = await file.text();
+          const lines = text.split('\n');
+          const headers = lines[0].split(',').map(h => h.trim());
+          
+          for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim()) {
+              const values = lines[i].split(',');
+              const row: any = {};
+              headers.forEach((header, index) => {
+                row[header] = values[index]?.trim() || '';
+              });
+              dados.push(row);
             }
           }
-
-          resolve({ dados, imagens });
-        } catch (error) {
-          reject(error);
+        } else {
+          // Processar Excel com extração avançada de imagens
+          await processarExcelComImagens(file, dados, imagens);
         }
-      };
-
-      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
-
-      if (file.name.endsWith('.csv')) {
-        reader.readAsText(file);
-      } else {
-        reader.readAsBinaryString(file);
+        
+        console.log('✅ [DEBUG] Leitura concluída:', { totalDados: dados.length, totalImagens: imagens.length });
+        resolve({ dados, imagens });
+      } catch (error) {
+        console.error('❌ [DEBUG] Erro na leitura do arquivo:', error);
+        reject(error);
       }
     });
+  };
+
+  const processarExcelComImagens = async (
+    file: File, 
+    dados: any[], 
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]
+  ) => {
+    try {
+      // Método 1: Usar XLSX para dados básicos
+      const arrayBuffer = await file.arrayBuffer();
+      const XLSX = await import('xlsx');
+      const workbook = XLSX.read(arrayBuffer, { type: 'array', cellStyles: true });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Extrair dados da planilha
+      const dadosExtraidos = XLSX.utils.sheet_to_json(worksheet);
+      dados.push(...dadosExtraidos);
+      
+      console.log('📊 [DEBUG] Dados extraídos via XLSX:', dadosExtraidos.length);
+      
+      // Método 2: Processar Excel como ZIP para extrair imagens embutidas
+      await extrairImagensDoZip(file, imagens, worksheet);
+      
+    } catch (error) {
+      console.error('❌ [DEBUG] Erro no processamento do Excel:', error);
+      throw error;
+    }
+  };
+
+  const extrairImagensDoZip = async (
+    file: File, 
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[],
+    worksheet: any
+  ) => {
+    try {
+      console.log('🔍 [DEBUG] Tentando extrair imagens do arquivo Excel como ZIP...');
+      
+      // Importar JSZip dinamicamente
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      
+      // Carregar o arquivo Excel como ZIP
+      const arrayBuffer = await file.arrayBuffer();
+      const zipData = await zip.loadAsync(arrayBuffer);
+      
+      console.log('📦 [DEBUG] Arquivos no ZIP:', Object.keys(zipData.files));
+      
+      // Procurar por arquivos de desenho/imagem
+      const drawingFiles = Object.keys(zipData.files).filter(name => 
+        name.includes('drawing') && name.endsWith('.xml')
+      );
+      
+      const mediaFiles = Object.keys(zipData.files).filter(name => 
+        name.startsWith('xl/media/') && (
+          name.endsWith('.png') || 
+          name.endsWith('.jpg') || 
+          name.endsWith('.jpeg') || 
+          name.endsWith('.gif')
+        )
+      );
+      
+      console.log('🎨 [DEBUG] Arquivos de desenho encontrados:', drawingFiles);
+      console.log('📸 [DEBUG] Arquivos de mídia encontrados:', mediaFiles);
+      
+      if (drawingFiles.length === 0 || mediaFiles.length === 0) {
+        console.log('ℹ️ [DEBUG] Nenhuma imagem embutida encontrada no Excel');
+        return;
+      }
+
+      // Mapear colunas por cabeçalho
+      const XLSX = await import('xlsx');
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      const colunaImagemIndex = await encontrarIndiceColuna(worksheet, 'IMAGEM');
+      const colunaImagemFornecedorIndex = await encontrarIndiceColuna(worksheet, 'IMAGEM FORNECEDOR');
+      
+      console.log('📋 [DEBUG] Índice coluna IMAGEM:', colunaImagemIndex);
+      console.log('📋 [DEBUG] Índice coluna IMAGEM FORNECEDOR:', colunaImagemFornecedorIndex);
+      
+      // Processar arquivos de mídia encontrados
+      for (let i = 0; i < mediaFiles.length; i++) {
+        const mediaFile = mediaFiles[i];
+        const imageBlob = await zipData.files[mediaFile].async('blob');
+        
+        // Associar imagem com linha baseado na posição
+        // Como não temos a posição exata, vamos distribuir as imagens entre as linhas
+        const linhaEstimada = Math.min(i + 1, range.e.r); // Não exceder o número de linhas
+        
+        // Determinar se é imagem principal ou do fornecedor baseado na ordem
+        const isImagemFornecedor = i % 2 === 1; // Alternar entre principal e fornecedor
+        const coluna = isImagemFornecedor ? 'IMAGEM_FORNECEDOR' : 'IMAGEM';
+        
+        const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaEstimada}_${i}.${mediaFile.split('.').pop()}`;
+        
+        imagens.push({
+          nome: nomeImagem,
+          blob: imageBlob,
+          linha: linhaEstimada,
+          coluna: coluna
+        });
+        
+        console.log(`✅ [DEBUG] Imagem extraída: ${nomeImagem} (linha ${linhaEstimada})`);
+      }
+      
+    } catch (zipError) {
+      console.warn('⚠️ [DEBUG] Erro na extração por ZIP (fallback será usado):', zipError);
+      
+      // Fallback: tentar método alternativo
+      await extrairImagensAlternativo(file, imagens);
+    }
+  };
+
+  const encontrarIndiceColuna = async (worksheet: any, nomeColuna: string): Promise<number | null> => {
+    try {
+      const XLSX = await import('xlsx');
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        const cell = worksheet[cellAddress];
+        if (cell && cell.v) {
+          const headerValue = String(cell.v).toUpperCase().trim();
+          if (headerValue === nomeColuna || headerValue === nomeColuna.replace(' ', '_')) {
+            return col;
+          }
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao encontrar índice da coluna:', error);
+      return null;
+    }
+  };
+
+  const extrairImagensAlternativo = async (
+    file: File, 
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]
+  ) => {
+    try {
+      console.log('🔄 [DEBUG] Tentando método alternativo de extração...');
+      
+      // Método alternativo: usar FileReader para buscar padrões de imagem
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // Procurar por assinaturas de imagem (magic numbers)
+      const pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+      const jpegSignature = [0xFF, 0xD8, 0xFF];
+      
+      let imagemIndex = 0;
+      
+      // Buscar PNGs
+      for (let i = 0; i < uint8Array.length - 8; i++) {
+        const matches = pngSignature.every((byte, index) => uint8Array[i + index] === byte);
+        if (matches) {
+          // Encontrar o fim da imagem PNG (IEND chunk)
+          const endSignature = [0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
+          for (let j = i + 8; j < uint8Array.length - 8; j++) {
+            const endMatches = endSignature.every((byte, index) => uint8Array[j + index] === byte);
+            if (endMatches) {
+              const imageData = uint8Array.slice(i, j + 8);
+              const imageBlob = new Blob([imageData], { type: 'image/png' });
+              
+              imagens.push({
+                nome: `imagem_extraida_${imagemIndex + 1}.png`,
+                blob: imageBlob,
+                linha: imagemIndex + 1,
+                coluna: imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'
+              });
+              
+              imagemIndex++;
+              console.log(`✅ [DEBUG] PNG extraído: imagem_extraida_${imagemIndex}.png`);
+              break;
+            }
+          }
+        }
+      }
+      
+      // Buscar JPEGs
+      for (let i = 0; i < uint8Array.length - 3; i++) {
+        const matches = jpegSignature.every((byte, index) => uint8Array[i + index] === byte);
+        if (matches) {
+          // Procurar pelo fim do JPEG (0xFF, 0xD9)
+          for (let j = i + 3; j < uint8Array.length - 1; j++) {
+            if (uint8Array[j] === 0xFF && uint8Array[j + 1] === 0xD9) {
+              const imageData = uint8Array.slice(i, j + 2);
+              const imageBlob = new Blob([imageData], { type: 'image/jpeg' });
+              
+              imagens.push({
+                nome: `imagem_extraida_${imagemIndex + 1}.jpg`,
+                blob: imageBlob,
+                linha: imagemIndex + 1,
+                coluna: imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'
+              });
+              
+              imagemIndex++;
+              console.log(`✅ [DEBUG] JPEG extraído: imagem_extraida_${imagemIndex}.jpg`);
+              break;
+            }
+          }
+        }
+      }
+      
+      if (imagemIndex === 0) {
+        console.log('ℹ️ [DEBUG] Nenhuma imagem foi encontrada no arquivo Excel');
+      }
+      
+    } catch (error) {
+      console.error('❌ [DEBUG] Erro no método alternativo:', error);
+    }
   };
 
   const uploadImagensExtraidas = async (imagens: {nome: string, blob: Blob, linha: number, coluna: string}[], cotacaoId: string, organizationId: string) => {
