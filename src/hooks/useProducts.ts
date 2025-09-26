@@ -135,6 +135,19 @@ export const useProducts = () => {
   const createProduct = useCallback(async (product: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'> & Partial<Product>) => {
     const orgId = await getCurrentOrgId();
 
+    // Verificar se já existe um produto com o mesmo SKU na organização
+    const { data: existingProduct } = await supabase
+      .from('produtos')
+      .select('id, sku_interno')
+      .eq('sku_interno', product.sku_interno)
+      .eq('organization_id', orgId)
+      .limit(1)
+      .single();
+
+    if (existingProduct) {
+      throw new Error(`Já existe um produto com o SKU "${product.sku_interno}" nesta organização.`);
+    }
+
     // Buscar unidade padrão "un" para a organização atual
     const { data: unidadePadrao } = await supabase
       .from('unidades_medida')
@@ -157,6 +170,12 @@ export const useProducts = () => {
 
     if (error) {
       console.error('Error creating product:', error);
+      
+      // Tratamento específico para violação de constraint única
+      if (error.code === '23505' && error.message?.includes('produtos_sku_interno_org_unique')) {
+        throw new Error(`Já existe um produto com o SKU "${product.sku_interno}" nesta organização.`);
+      }
+      
       throw error;
     }
 
@@ -165,6 +184,22 @@ export const useProducts = () => {
 
   const updateProduct = useCallback(async (id: string, updates: Partial<Product>) => {
     const orgId = await getCurrentOrgId();
+
+    // Se estiver atualizando o SKU, verificar se não está duplicado
+    if (updates.sku_interno) {
+      const { data: existingProduct } = await supabase
+        .from('produtos')
+        .select('id, sku_interno')
+        .eq('sku_interno', updates.sku_interno)
+        .eq('organization_id', orgId)
+        .neq('id', id) // Excluir o próprio produto
+        .limit(1)
+        .single();
+
+      if (existingProduct) {
+        throw new Error(`Já existe outro produto com o SKU "${updates.sku_interno}" nesta organização.`);
+      }
+    }
 
     // Primeiro, tentar atualizar com organization_id válido
     let { data, error } = await supabase
@@ -199,6 +234,12 @@ export const useProducts = () => {
 
     if (error) {
       console.error('Error updating product:', error);
+      
+      // Tratamento específico para violação de constraint única
+      if (error.code === '23505' && error.message?.includes('produtos_sku_interno_org_unique')) {
+        throw new Error(`Já existe outro produto com o SKU "${updates.sku_interno}" nesta organização.`);
+      }
+      
       throw error;
     }
 
