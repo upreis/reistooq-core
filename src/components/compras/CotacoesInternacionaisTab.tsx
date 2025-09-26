@@ -767,7 +767,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Função para calcular peso total
   const getTotalWeight = useCallback(() => {
     return displayProducts.reduce((total, product) => {
-      return total + (product.peso_total_cx_master || 0);
+      return total + (product.peso_total_cx_master_kg || 0);
     }, 0);
   }, [displayProducts]);
 
