@@ -58,17 +58,26 @@ const ProductList = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Limpar estado anterior para evitar dados misturados
+    setProducts([]);
     loadProducts();
     loadCategories();
   }, []);
 
+  useEffect(() => {
+    // Recarregar quando filtros mudarem
+    loadProducts();
+  }, [searchTerm, selectedCategory]);
+
   const loadProducts = async () => {
     try {
       setLoading(true);
+      // Forçar busca específica para lista de produtos com parâmetros exclusivos
       const data = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        limit: 50
+        limit: 50,
+        ativo: true // Apenas produtos ativos na lista
       });
       setProducts(data);
       // Limpar seleções quando recarregar produtos

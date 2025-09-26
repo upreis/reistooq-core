@@ -19,8 +19,8 @@ export function useShopProducts() {
   const debouncedSearch = useDebounce(filters.search, 300);
   
   const queryKey = useMemo(() => [
-    'shop-products',
-    { ...filters, search: debouncedSearch }
+    'shop-products-frontend',
+    { ...filters, search: debouncedSearch, _context: 'shop' }
   ], [filters, debouncedSearch]);
 
   const {
