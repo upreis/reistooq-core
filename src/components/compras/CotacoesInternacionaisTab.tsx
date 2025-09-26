@@ -944,9 +944,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         <div className="space-y-4">
           {/* Cabeçalho da Cotação Selecionada */}
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-3">
               {/* Header compacto com informações principais */}
-              <div className="bg-slate-800 text-white p-3 rounded-lg mb-4">
+              <div className="bg-slate-800 text-white p-3 rounded-lg mb-3">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold">{selectedCotacao.numero_cotacao}</h3>
                   <Badge className={`text-white ${getStatusColor(selectedCotacao.status)}`}>
@@ -998,13 +998,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 </div>
               </div>
               
-              {/* Container Visualization - Área principal */}
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-3">
+              {/* Container Visualization - Compacto */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
                   <h4 className="text-sm font-medium text-muted-foreground">Simulação de Contêiner</h4>
-                  <div className="w-40">
+                  <div className="w-36">
                     <Select value={selectedContainer} onValueChange={setSelectedContainer}>
-                      <SelectTrigger className="w-full h-7 text-xs">
+                      <SelectTrigger className="w-full h-6 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-background border border-border z-50">
