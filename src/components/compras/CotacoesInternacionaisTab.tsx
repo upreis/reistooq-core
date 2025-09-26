@@ -945,84 +945,87 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           {/* Cabeçalho da Cotação Selecionada */}
           <Card>
             <CardHeader className="pb-3">
-              {/* Header compacto com informações principais */}
-              <div className="bg-slate-800 text-white p-3 rounded-lg mb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-lg font-semibold">{selectedCotacao.numero_cotacao}</h3>
-                  <Badge className={`text-white ${getStatusColor(selectedCotacao.status)}`}>
-                    {selectedCotacao.status}
-                  </Badge>
-                </div>
-                <p className="text-sm text-slate-300 mb-3">{selectedCotacao.descricao}</p>
-                
-                {/* Grid de informações principais em layout compacto */}
-                <div className="grid grid-cols-5 gap-3 text-xs">
-                  <div>
-                    <span className="text-slate-400">País:</span>
-                    <div className="font-medium text-white">{selectedCotacao.pais_origem}</div>
+              {/* Layout em duas colunas */}
+              <div className="flex gap-6">
+                {/* Coluna esquerda - Informações */}
+                <div className="bg-slate-800 text-white p-3 rounded-lg w-80">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-semibold">{selectedCotacao.numero_cotacao}</h3>
+                    <Badge className={`text-white ${getStatusColor(selectedCotacao.status)}`}>
+                      {selectedCotacao.status}
+                    </Badge>
                   </div>
-                  <div>
-                    <span className="text-slate-400">Moeda:</span>
-                    <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                      <SelectTrigger className="w-20 h-6 mt-1 text-xs bg-slate-700 border-slate-600">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border border-border z-50">
-                        {AVAILABLE_CURRENCIES.map((currency) => (
-                          <SelectItem key={currency.code} value={currency.code}>
-                            <span className="flex items-center gap-2">
-                              <span>{currency.flag}</span>
-                              <span>{currency.code}</span>
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
-                    <div className="font-semibold text-blue-400">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toFixed(2)}</div>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Total USD:</span>
-                    <div className="font-semibold text-green-400">$ {getTotalChangeDolarTotal().toFixed(2)}</div>
-                  </div>
-                  <div>
-                    <span className="text-slate-400">Total BRL:</span>
-                    <div className="font-semibold text-orange-400">R$ {getTotalMultiplicadorReaisTotal().toFixed(2)}</div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Container Visualization - Compacto */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">Simulação de Contêiner</h4>
-                  <div className="w-36">
-                    <Select value={selectedContainer} onValueChange={setSelectedContainer}>
-                      <SelectTrigger className="w-full h-6 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-background border border-border z-50">
-                        {Object.entries(CONTAINER_TYPES).map(([key, container]) => (
-                          <SelectItem key={key} value={key}>
-                            {container.name} ({container.volume}m³, {container.maxWeight.toLocaleString()}kg)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <p className="text-sm text-slate-300 mb-3">{selectedCotacao.descricao}</p>
+                  
+                  {/* Informações organizadas verticalmente */}
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">País:</span>
+                      <div className="font-medium text-white">{selectedCotacao.pais_origem}</div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Moeda:</span>
+                      <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                        <SelectTrigger className="w-20 h-6 text-xs bg-slate-700 border-slate-600">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border border-border z-50">
+                          {AVAILABLE_CURRENCIES.map((currency) => (
+                            <SelectItem key={currency.code} value={currency.code}>
+                              <span className="flex items-center gap-2">
+                                <span>{currency.flag}</span>
+                                <span>{currency.code}</span>
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
+                      <div className="font-semibold text-blue-400">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toFixed(2)}</div>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Total USD:</span>
+                      <div className="font-semibold text-green-400">$ {getTotalChangeDolarTotal().toFixed(2)}</div>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Total BRL:</span>
+                      <div className="font-semibold text-orange-400">R$ {getTotalMultiplicadorReaisTotal().toFixed(2)}</div>
+                    </div>
                   </div>
                 </div>
                 
-                <ContainerVisualization
-                  containerType={CONTAINER_TYPES[selectedContainer].name}
-                  volumePercentage={getContainerUsage('volume')}
-                  weightPercentage={getContainerUsage('weight')}
-                  totalCBM={getTotalCBM()}
-                  totalWeight={getTotalWeight()}
-                  maxVolume={CONTAINER_TYPES[selectedContainer].volume}
-                  maxWeight={CONTAINER_TYPES[selectedContainer].maxWeight}
-                />
+                {/* Coluna direita - Container Visualization */}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Simulação de Contêiner</h4>
+                    <div className="w-36">
+                      <Select value={selectedContainer} onValueChange={setSelectedContainer}>
+                        <SelectTrigger className="w-full h-6 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border border-border z-50">
+                          {Object.entries(CONTAINER_TYPES).map(([key, container]) => (
+                            <SelectItem key={key} value={key}>
+                              {container.name} ({container.volume}m³, {container.maxWeight.toLocaleString()}kg)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <ContainerVisualization
+                    containerType={CONTAINER_TYPES[selectedContainer].name}
+                    volumePercentage={getContainerUsage('volume')}
+                    weightPercentage={getContainerUsage('weight')}
+                    totalCBM={getTotalCBM()}
+                    totalWeight={getTotalWeight()}
+                    maxVolume={CONTAINER_TYPES[selectedContainer].volume}
+                    maxWeight={CONTAINER_TYPES[selectedContainer].maxWeight}
+                  />
+                </div>
               </div>
             </CardHeader>
           </Card>
