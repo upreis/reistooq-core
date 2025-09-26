@@ -1088,7 +1088,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         />
                       </TableHead>
                       <TableHead className="min-w-[100px]">SKU</TableHead>
-                      <TableHead className="min-w-[120px]">IMAGENS</TableHead>
+                      <TableHead className="min-w-[80px]">IMAGEM</TableHead>
+                      <TableHead className="min-w-[120px]">IMAGEM FORNECEDOR</TableHead>
                       <TableHead className="min-w-[100px]">MATERIAL</TableHead>
                       <TableHead className="min-w-[80px]">COR</TableHead>
                       <TableHead className="min-w-[200px]">Nome do Produto</TableHead>
@@ -1240,6 +1241,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         <TableCell>
                           <ProdutoImagemPreview
                             imagemUrl={product.imagem}
+                            nomeProduto={product.nome_produto}
+                            sku={product.sku}
+                            className="mx-auto"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <ProdutoImagemPreview
                             imagemFornecedorUrl={product.imagem_fornecedor}
                             nomeProduto={product.nome_produto}
                             sku={product.sku}
