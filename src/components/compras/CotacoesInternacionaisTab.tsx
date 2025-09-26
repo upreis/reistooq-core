@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Plus, 
   FileText, 
@@ -32,7 +33,8 @@ import {
   RefreshCw,
   Image,
   Save,
-  X
+  X,
+  Info
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CurrencyService } from "@/services/currencyService";
@@ -852,7 +854,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <TableHead className="min-w-[100px]">OBS</TableHead>
                       <TableHead className="min-w-[120px]">
                         <div className="space-y-1">
-                          <div className="text-xs font-medium">CHANGE DOLAR UNITARIO</div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium">CHANGE DOLAR UNITARIO</span>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-3 w-3 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>PREÇO ÷ Divisor</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                           <Input
                             type="number"
                             placeholder="Divisor"
@@ -862,12 +876,23 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             step="0.01"
                             min="0.01"
                           />
-                          <div className="text-xs text-muted-foreground">PREÇO ÷ Divisor</div>
                         </div>
                       </TableHead>
                       <TableHead className="min-w-[140px]">
                         <div className="space-y-1">
-                          <div className="text-xs font-medium">CHANGE DOLAR TOTAL</div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium">CHANGE DOLAR TOTAL</span>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-3 w-3 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>VALOR TOTAL ÷ Divisor</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                           <Input
                             type="number"
                             placeholder="Divisor"
@@ -877,7 +902,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             step="0.01"
                             min="0.01"
                           />
-                          <div className="text-xs text-muted-foreground">VALOR TOTAL ÷ Divisor</div>
                         </div>
                       </TableHead>
                       <TableHead className="min-w-[140px]">Multiplicador REAIS</TableHead>
