@@ -641,7 +641,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     peso_unitario_g: p.peso_unitario_g || 90,
     peso_cx_master_kg: (p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000,
     peso_sem_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) - 1,
-    peso_total_cx_master_kg: (p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000,
+    peso_total_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) * (p.qtd_caixas_pedido || 1),
     peso_total_sem_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) - 1,
     comprimento: p.comprimento_cm || 0,
     largura: p.largura_cm || 0,
@@ -671,7 +671,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       peso_unitario_g: 90,
       peso_cx_master_kg: 22.60,
       peso_sem_cx_master_kg: 21.60,
-      peso_total_cx_master_kg: 22.60,
+      peso_total_cx_master_kg: 22.60 * 1, // Peso cx Master (KG) x CAIXAS
       peso_total_sem_cx_master_kg: 21.60,
       comprimento: 0,
       largura: 0,
@@ -701,7 +701,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       peso_unitario_g: 70,
       peso_cx_master_kg: 15.00,
       peso_sem_cx_master_kg: 14.00,
-      peso_total_cx_master_kg: 15.00,
+      peso_total_cx_master_kg: 15.00 * 1, // Peso cx Master (KG) x CAIXAS
       peso_total_sem_cx_master_kg: 14.00,
       comprimento: 0,
       largura: 0,
@@ -749,6 +749,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // Recalcular CBM Total quando CBM Cubagem ou CAIXAS mudarem
     if (['cbm_cubagem', 'caixas'].includes(field)) {
       product.cbm_total = product.cbm_cubagem * product.caixas;
+    }
+    
+    // Recalcular Peso Total cx Master quando Peso cx Master ou CAIXAS mudarem
+    if (['peso_cx_master_kg', 'caixas'].includes(field)) {
+      product.peso_total_cx_master_kg = product.peso_cx_master_kg * product.caixas;
     }
     
     // Recalcular campos calculados automaticamente
