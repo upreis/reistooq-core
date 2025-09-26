@@ -208,8 +208,23 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
-  const [productData, setProductData] = useState<any[]>([]);
-  const [hasImportedData, setHasImportedData] = useState(false);
+  const [productData, setProductData] = useState<any[]>(() => {
+    // Tentar recuperar dados do sessionStorage
+    try {
+      const savedData = sessionStorage.getItem('cotacao-produtos');
+      return savedData ? JSON.parse(savedData) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [hasImportedData, setHasImportedData] = useState(() => {
+    try {
+      const savedData = sessionStorage.getItem('cotacao-produtos');
+      return savedData ? JSON.parse(savedData).length > 0 : false;
+    } catch {
+      return false;
+    }
+  });
   
   // Estado para moeda selecionada no resumo
   const [selectedCurrency, setSelectedCurrency] = useState<string>('CNY');
@@ -594,6 +609,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // CRITICAL: Marcar que dados foram importados/editados para não voltar ao mock
     setHasImportedData(true);
     
+    // Salvar no sessionStorage
+    try {
+      sessionStorage.setItem('cotacao-produtos', JSON.stringify(updatedProducts));
+    } catch (error) {
+      console.warn('Erro ao salvar no sessionStorage:', error);
+    }
+    
     toast({
       title: "Produtos excluídos",
       description: `${selectedProducts.length} produto(s) foram excluídos com sucesso.`,
@@ -665,106 +687,47 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return currency?.symbol || currencyCode;
   }, []);
 
-  // Mock data para exemplo da tabela Excel
-  const mockProducts = selectedCotacao?.produtos?.length > 0 ? selectedCotacao.produtos.map((p: any, index: number) => ({
-    sku: p.sku || `PL-${800 + index}`,
-    imagem: "",
-    imagem_fornecedor: "",
-    material: p.material || "Poliéster",
-    cor: "Azul Da Foto",
-    nome_produto: p.nome || `Produto ${index + 1}`,
-    package: `${p.package_qtd || 10}pcs/opp`,
-    preco: p.preco_unitario || 5.25,
-    unit: p.unidade_medida || "pc",
-    pcs_ctn: p.pcs_ctn || 240,
-    caixas: p.qtd_caixas_pedido || 1,
-    peso_unitario_g: p.peso_unitario_g || 90,
-    peso_cx_master_kg: (p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000,
-    peso_sem_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) - 1,
-    peso_total_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) * (p.qtd_caixas_pedido || 1),
-    peso_total_sem_cx_master_kg: (((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) - 1) * (p.qtd_caixas_pedido || 1),
-    comprimento: p.comprimento_cm || 0,
-    largura: p.largura_cm || 0,
-    altura: p.altura_cm || 0,
-    cbm_cubagem: p.cbm_unitario || 0.21,
-    cbm_total: (p.cbm_unitario || 0.21) * (p.qtd_caixas_pedido || 1),
-    quantidade_total: p.quantidade_total || 240,
-    valor_total: p.valor_total || 1260.00,
-    obs: "",
-    change_dolar: (p.preco_unitario || 5.25) / getChangeDolarDivisorValue(),
-    change_dolar_total: (p.valor_total || 1260.00) / getChangeDolarTotalDivisorValue(),
-    multiplicador_reais: (p.preco_unitario || 5.25) * getMultiplicadorReaisValue(),
-    multiplicador_reais_total: ((p.valor_total || 1260.00) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
-  })) : [
+  // Produtos simples para exemplo
+  const simpleMockProducts = [
     {
-      sku: "PL-800",
+      sku: "EXEMPLO-001",
       imagem: "",
       imagem_fornecedor: "",
-      material: "Poliéster",
-      cor: "Azul Da Foto",
-      nome_produto: "Chapéu aeronáutica, 28*21*14cm",
-      package: "10pcs/opp",
-      preco: 5.25,
+      material: "Não especificado",
+      cor: "Não especificado",
+      nome_produto: "Produto de exemplo",
+      package: "1pcs/unidade",
+      preco: 0,
       unit: "pc",
-      pcs_ctn: 240,
-      caixas: 1,
-      peso_unitario_g: 90,
-      peso_cx_master_kg: 22.60,
-      peso_sem_cx_master_kg: 21.60,
-      peso_total_cx_master_kg: 22.60 * 1, // Peso cx Master (KG) x CAIXAS
-      peso_total_sem_cx_master_kg: (22.60 - 1) * 1, // Peso Sem embalagem cx Master (KG) x CAIXAS
+      pcs_ctn: 0,
+      caixas: 0,
+      peso_unitario_g: 0,
+      peso_cx_master_kg: 0,
+      peso_sem_cx_master_kg: 0,
+      peso_total_cx_master_kg: 0,
+      peso_total_sem_cx_master_kg: 0,
       comprimento: 0,
       largura: 0,
       altura: 0,
-      cbm_cubagem: 0.21,
-      cbm_total: 0.21 * 1, // CBM Cubagem x CAIXAS
-      quantidade_total: 240,
-      valor_total: 1260.00,
-      obs: "",
-      change_dolar: 5.25 / getChangeDolarDivisorValue(),
-      change_dolar_total: 1260.00 / getChangeDolarTotalDivisorValue(),
-      multiplicador_reais: 5.25 * getMultiplicadorReaisValue(),
-      multiplicador_reais_total: (1260.00 / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
-    },
-    {
-      sku: "PL-801",
-      imagem: "",
-      imagem_fornecedor: "",
-      material: "Poliéster",
-      cor: "Azul Da Foto",
-      nome_produto: "Chapéu polícia, 23.5*21*14cm",
-      package: "10pcs/opp",
-      preco: 5.80,
-      unit: "pc",
-      pcs_ctn: 200,
-      caixas: 1,
-      peso_unitario_g: 70,
-      peso_cx_master_kg: 15.00,
-      peso_sem_cx_master_kg: 14.00,
-      peso_total_cx_master_kg: 15.00 * 1, // Peso cx Master (KG) x CAIXAS
-      peso_total_sem_cx_master_kg: (15.00 - 1) * 1, // Peso Sem embalagem cx Master (KG) x CAIXAS
-      comprimento: 0,
-      largura: 0,
-      altura: 0,
-      cbm_cubagem: 0.21,
-      cbm_total: 0.21 * 1, // CBM Cubagem x CAIXAS
-      quantidade_total: 200,
-      valor_total: 1160.00,
-      obs: "",
-      change_dolar: 5.80 / getChangeDolarDivisorValue(),
-      change_dolar_total: 1160.00 / getChangeDolarTotalDivisorValue(),
-      multiplicador_reais: 5.80 * getMultiplicadorReaisValue(),
-      multiplicador_reais_total: (1160.00 / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+      cbm_cubagem: 0,
+      cbm_total: 0,
+      quantidade_total: 0,
+      valor_total: 0,
+      obs: "Importe um arquivo Excel para ver os dados",
+      change_dolar: 0,
+      change_dolar_total: 0,
+      multiplicador_reais: 0,
+      multiplicador_reais_total: 0,
+      id: "exemplo-1"
     }
   ];
 
-  // Usar productData se disponível ou se tiver dados importados, senão usar mockProducts
-  const displayProducts = (productData.length > 0 || hasImportedData) ? productData : mockProducts;
+  // SEMPRE usar apenas productData - remover qualquer dependência de banco de dados
+  const displayProducts = productData.length > 0 ? productData : simpleMockProducts;
   
   // Debug logs detalhados
   console.log('🔍 [DEBUG] ProductData length:', productData.length);
   console.log('🔍 [DEBUG] ProductData state:', productData);
-  console.log('🔍 [DEBUG] MockProducts length:', mockProducts.length);
   console.log('🔍 [DEBUG] DisplayProducts length:', displayProducts.length);
   console.log('🔍 [DEBUG] DisplayProducts:', displayProducts);
   console.log('🔍 [DEBUG] Primeiro produto em display:', displayProducts[0]);
@@ -786,7 +749,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Função para atualizar dados do produto
   const updateProductData = useCallback((rowIndex: number, field: string, value: string | number) => {
-    const currentProducts = productData.length > 0 ? productData : mockProducts;
+    const currentProducts = productData.length > 0 ? productData : simpleMockProducts;
     const updatedProducts = [...currentProducts];
     updatedProducts[rowIndex] = {
       ...updatedProducts[rowIndex],
@@ -828,7 +791,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     
     setProductData(updatedProducts);
     stopEditing();
-  }, [productData, mockProducts, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue, stopEditing]);
+    
+    // Salvar no sessionStorage
+    try {
+      sessionStorage.setItem('cotacao-produtos', JSON.stringify(updatedProducts));
+    } catch (error) {
+      console.warn('Erro ao salvar no sessionStorage:', error);
+    }
+  }, [productData, simpleMockProducts, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue, stopEditing]);
 
   // Funções para calcular totais das colunas
   const getTotalValorTotal = useCallback(() => {
@@ -945,6 +915,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     console.log('🎯 [DEBUG] Chamando setProductData com:', novosProdutos);
     setProductData(novosProdutos);
     setHasImportedData(true); // Marcar que dados foram importados
+    
+    // Salvar no sessionStorage para persistir entre navegações
+    try {
+      sessionStorage.setItem('cotacao-produtos', JSON.stringify(novosProdutos));
+    } catch (error) {
+      console.warn('Erro ao salvar no sessionStorage:', error);
+    }
     
     // Força atualização da UI com verificação mais robusta
     setTimeout(() => {
@@ -1205,6 +1182,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                           setProductData([]);
                           setHasImportedData(false);
                           setSelectedProducts([]);
+                          // Limpar também do sessionStorage
+                          try {
+                            sessionStorage.removeItem('cotacao-produtos');
+                          } catch (error) {
+                            console.warn('Erro ao limpar sessionStorage:', error);
+                          }
                           toast({
                             title: "Dados limpos",
                             description: "Todos os dados importados foram removidos.",
@@ -1219,7 +1202,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       variant="outline" 
                       size="sm"
                       onClick={() => setShowImportDialog(true)}
-                      disabled={!selectedCotacao}
                     >
                       <FileText className="h-4 w-4 mr-2" />
                       Importar
@@ -1522,9 +1504,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 </Table>
               </div>
               
-              {mockProducts.length === 0 && (
+              {displayProducts.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nenhum produto encontrado nesta cotação
+                  Nenhum produto importado. Use o botão "Importar" para carregar dados de um arquivo Excel.
                 </div>
               )}
             </CardContent>
@@ -2263,14 +2245,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         onSelectProducts={handleProductSelectorConfirm}
       />
       {/* Dialog de Importação */}
-      {selectedCotacao && (
-        <CotacaoImportDialog
-          open={showImportDialog}
-          onOpenChange={setShowImportDialog}
-          cotacao={selectedCotacao}
-          onImportSuccess={handleImportSuccess}
-        />
-      )}
+      <CotacaoImportDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        cotacao={null}
+        onImportSuccess={handleImportSuccess}
+      />
     </div>
   );
 };
