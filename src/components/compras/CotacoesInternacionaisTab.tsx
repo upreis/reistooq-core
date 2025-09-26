@@ -898,7 +898,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <TableHead className="min-w-[140px]">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1">
-                            <span className="text-xs font-medium">CHANGE DOLAR TOTAL</span>
+                            <span className="text-xs font-medium">Change DOLAR Total</span>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
