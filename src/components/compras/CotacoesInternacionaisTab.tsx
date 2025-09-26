@@ -1336,18 +1336,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             onDoubleClick={() => startEditing(index, 'caixas')}
                           />
                         </TableCell>
-                        <TableCell>{product.peso_unitario_g}</TableCell>
-                        <TableCell>{product.peso_cx_master_kg.toFixed(2)}</TableCell>
-                        <TableCell>{product.peso_sem_cx_master_kg.toFixed(2)}</TableCell>
-                        <TableCell>{product.peso_total_cx_master_kg.toFixed(2)}</TableCell>
-                        <TableCell>{product.peso_total_sem_cx_master_kg.toFixed(2)}</TableCell>
-                        <TableCell>{product.comprimento}</TableCell>
-                        <TableCell>{product.largura}</TableCell>
-                        <TableCell>{product.altura}</TableCell>
-                        <TableCell>{product.cbm_cubagem.toFixed(2)}</TableCell>
-                        <TableCell>{product.cbm_total.toFixed(2)}</TableCell>
-                        <TableCell>{product.quantidade_total}</TableCell>
-                        <TableCell>{getCurrencySymbol(selectedCurrency)} {product.valor_total.toFixed(2)}</TableCell>
+                        <TableCell>{product.peso_unitario_g || 0}</TableCell>
+                        <TableCell>{(product.peso_cx_master_kg || 0).toFixed(2)}</TableCell>
+                        <TableCell>{(product.peso_sem_cx_master_kg || 0).toFixed(2)}</TableCell>
+                        <TableCell>{(product.peso_total_cx_master_kg || 0).toFixed(2)}</TableCell>
+                        <TableCell>{(product.peso_total_sem_cx_master_kg || 0).toFixed(2)}</TableCell>
+                        <TableCell>{product.comprimento || 0}</TableCell>
+                        <TableCell>{product.largura || 0}</TableCell>
+                        <TableCell>{product.altura || 0}</TableCell>
+                        <TableCell>{(product.cbm_cubagem || 0).toFixed(2)}</TableCell>
+                        <TableCell>{(product.cbm_total || 0).toFixed(2)}</TableCell>
+                        <TableCell>{product.quantidade_total || 0}</TableCell>
+                        <TableCell>{getCurrencySymbol(selectedCurrency)} {(product.valor_total || 0).toFixed(2)}</TableCell>
                         <TableCell>{product.obs}</TableCell>
                         <TableCell>$ {product.change_dolar.toFixed(2)}</TableCell>
                         <TableCell>$ {product.change_dolar_total.toFixed(2)}</TableCell>
