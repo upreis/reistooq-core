@@ -604,6 +604,16 @@ export function useCotacoesArquivos() {
            valor: linha[campo]
          })));
 
+         // Debug: verificar especificamente os campos que estamos procurando
+         if (index === 0) {
+           console.log('🎯 [DEBUG] VERIFICAÇÃO ESPECÍFICA DOS CAMPOS DE PESO:');
+           console.log('Peso embalado cx Master (KG):', linha['Peso embalado cx Master (KG)']);
+           console.log('PESO EMBALADO CX MASTER (KG):', linha['PESO EMBALADO CX MASTER (KG)']);
+           console.log('Peso Sem embalagem cx Master (KG):', linha['Peso Sem embalagem cx Master (KG)']);
+           console.log('PESO SEM EMBALAGEM CX MASTER (KG):', linha['PESO SEM EMBALAGEM CX MASTER (KG)']);
+           console.log('📋 [DEBUG] TODAS AS CHAVES DA LINHA:', Object.keys(linha));
+         }
+
          const produto = {
            sku: linha.SKU || linha.sku || `PROD-${index + 1}`,
            imagem: imagemFinal,
@@ -621,10 +631,38 @@ export function useCotacoesArquivos() {
           caixas: parseFloat(String(linha.CAIXAS || linha.caixas || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
            // PESO UNITARIO(g) - mapear corretamente
            peso_unitario_g: parseFloat(String(linha['PESO UNITARIO(g)'] || linha.PESO_UNITARIO_G || linha.peso_unitario_g || linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-           // Peso embalado cx Master (KG)
-           peso_cx_master_kg: parseFloat(String(linha['Peso embalado cx Master (KG)'] || linha.PESO_MASTER_KG || linha.peso_master_kg || linha.PESO_CX_MASTER_KG || linha.peso_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-           // Peso Sem embalagem cx Master (KG)
-           peso_sem_cx_master_kg: parseFloat(String(linha['Peso Sem embalagem cx Master (KG)'] || linha.PESO_SEM_MASTER_KG || linha.peso_sem_master_kg || linha.PESO_SEM_CX_MASTER_KG || linha.peso_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+            // Peso embalado cx Master (KG) - TODAS AS VARIAÇÕES POSSÍVEIS
+            peso_cx_master_kg: parseFloat(String(
+              linha['Peso embalado cx Master (KG)'] || 
+              linha['PESO EMBALADO CX MASTER (KG)'] ||
+              linha['Peso embalado cx Master(KG)'] ||
+              linha['Peso embalado cx Master (Kg)'] ||
+              linha['Peso embalado cx Master'] ||
+              linha['PESO EMBALADO CX MASTER'] ||
+              linha['peso embalado cx master (kg)'] ||
+              linha['peso embalado cx master'] ||
+              linha.PESO_MASTER_KG || 
+              linha.peso_master_kg || 
+              linha.PESO_CX_MASTER_KG || 
+              linha.peso_cx_master_kg || 
+              '0'
+            ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+            // Peso Sem embalagem cx Master (KG) - TODAS AS VARIAÇÕES POSSÍVEIS
+            peso_sem_cx_master_kg: parseFloat(String(
+              linha['Peso Sem embalagem cx Master (KG)'] || 
+              linha['PESO SEM EMBALAGEM CX MASTER (KG)'] ||
+              linha['Peso Sem embalagem cx Master(KG)'] ||
+              linha['Peso Sem embalagem cx Master (Kg)'] ||
+              linha['Peso Sem embalagem cx Master'] ||
+              linha['PESO SEM EMBALAGEM CX MASTER'] ||
+              linha['peso sem embalagem cx master (kg)'] ||
+              linha['peso sem embalagem cx master'] ||
+              linha.PESO_SEM_MASTER_KG || 
+              linha.peso_sem_master_kg || 
+              linha.PESO_SEM_CX_MASTER_KG || 
+              linha.peso_sem_cx_master_kg || 
+              '0'
+            ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           // Peso total embalado cx Master (KG) - CALCULADO
           peso_total_master: 0, // Será calculado
           // Peso total sem embalagem cx Master (KG) - CALCULADO
