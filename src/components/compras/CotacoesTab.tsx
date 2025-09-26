@@ -19,8 +19,10 @@ import {
   Trash2,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  ShoppingCart
 } from "lucide-react";
+import { ProductSelectorShop } from "./ProductSelectorShop";
 
 interface CotacoesTabProps {
   cotacoes?: any[];
@@ -59,6 +61,8 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showProductSelector, setShowProductSelector] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState([]);
   const [formData, setFormData] = useState({
     descricao: '',
     valor_estimado: 0,
@@ -337,6 +341,64 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
                 rows={3}
               />
             </div>
+
+            {/* Seletor de Produtos */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label>Produtos para Cotação</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowProductSelector(true)}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Usar Seletor Avançado
+                </Button>
+              </div>
+              
+              {selectedProducts.length === 0 ? (
+                <div className="text-center py-8 border-2 border-dashed border-muted-foreground/25 rounded-lg">
+                  <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-4">Nenhum produto selecionado</p>
+                  <Button 
+                    onClick={() => setShowProductSelector(true)}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Selecionar Produtos
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {selectedProducts.map((product, index) => (
+                    <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{product.nome}</p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>SKU: {product.sku_interno}</span>
+                          <span>Qtd: {product.quantidade}</span>
+                          <span>Preço: R$ {product.preco_custo.toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedProducts(prev => prev.filter((_, i) => i !== index));
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="text-right text-sm font-medium">
+                    Total: R$ {selectedProducts.reduce((sum, p) => sum + (p.preco_custo * p.quantidade), 0).toFixed(2)}
+                  </div>
+                </div>
+              )}
+            </div>
             
             <div className="flex gap-2 pt-4">
               <Button 
@@ -364,6 +426,14 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Seletor de Produtos */}
+      <ProductSelectorShop
+        isOpen={showProductSelector}
+        onOpenChange={setShowProductSelector}
+        onSelectProducts={setSelectedProducts}
+        selectedProducts={selectedProducts}
+      />
     </div>
   );
 };
