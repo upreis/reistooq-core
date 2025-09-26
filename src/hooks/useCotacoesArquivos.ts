@@ -536,16 +536,26 @@ export function useCotacoesArquivos() {
         const linhaExcel = index + 2; // +2 porque o cabeçalho está na linha 1 e dados começam na 2
         
         const imagemPrincipal = imagensUpload.find(img => 
-          img.linha === linhaExcel && (img.coluna === 'IMAGEM' || img.coluna.includes('IMAGEM') && !img.coluna.includes('FORNECEDOR'))
+          img.linha === linhaExcel && (
+            img.coluna === 'IMAGEM' || 
+            img.coluna === 'B' || // Coluna B geralmente é IMAGEM
+            (img.coluna.includes('IMAGEM') && !img.coluna.includes('FORNECEDOR'))
+          )
         );
         const imagemFornecedor = imagensUpload.find(img => 
-          img.linha === linhaExcel && (img.coluna === 'IMAGEM_FORNECEDOR' || img.coluna.includes('FORNECEDOR'))
+          img.linha === linhaExcel && (
+            img.coluna === 'IMAGEM_FORNECEDOR' || 
+            img.coluna === 'IMAGEM FORNECEDOR' ||
+            img.coluna === 'C' || // Coluna C geralmente é IMAGEM FORNECEDOR
+            img.coluna.includes('FORNECEDOR')
+          )
         );
 
         console.log(`🔍 [DEBUG] Linha ${index} (Excel ${linhaExcel}):`, {
           imagemPrincipal: imagemPrincipal?.url,
           imagemFornecedor: imagemFornecedor?.url,
-          sku: linha.SKU || linha.sku
+          sku: linha.SKU || linha.sku,
+          colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna)
         });
 
         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
