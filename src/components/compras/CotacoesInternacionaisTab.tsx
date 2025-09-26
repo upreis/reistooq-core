@@ -1074,9 +1074,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <TableHead className="min-w-[80px]">PCS/CTN</TableHead>
                       <TableHead className="min-w-[80px]">CAIXAS</TableHead>
                       <TableHead className="min-w-[120px]">PESO UNITARIO(g)</TableHead>
-                      <TableHead className="min-w-[140px]">Peso cx Master (KG)</TableHead>
+                      <TableHead className="min-w-[140px]">Peso embalado cx Master (KG)</TableHead>
                       <TableHead className="min-w-[160px]">Peso Sem embalagem cx Master (KG)</TableHead>
-                      <TableHead className="min-w-[160px]">Peso total cx Master (KG)</TableHead>
+                      <TableHead className="min-w-[160px]">Peso total embalado cx Master (KG)</TableHead>
                       <TableHead className="min-w-[180px]">Peso total sem embalagem cx Master (KG)</TableHead>
                       <TableHead className="min-w-[100px]">Comprimento</TableHead>
                       <TableHead className="min-w-[80px]">Largura</TableHead>
