@@ -186,21 +186,67 @@ export function useCotacoesArquivos() {
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       
-      // Extrair dados da planilha
-      const dadosExtraidos = XLSX.utils.sheet_to_json(worksheet);
-      dados.push(...dadosExtraidos);
+      // Extrair dados da planilha - INCLUINDO VALORES EM BRANCO
+      const dadosExtraidos = XLSX.utils.sheet_to_json(worksheet, { 
+        defval: '', // Valor padrão para células vazias
+        raw: false // Converter tudo para string primeiro
+      });
       
-      console.log('📊 [DEBUG] Dados extraídos via XLSX:', dadosExtraidos.length);
+      // NOVO: Também extrair dados usando referências de coluna (M, N, etc.)
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      const dadosComIndices: any[] = [];
+      
+      // Processar linha por linha incluindo colunas M e N especificamente
+      for (let R = range.s.r + 1; R <= range.e.r; ++R) { // +1 para pular cabeçalho
+        const linha: any = {};
+        
+        // Ler TODAS as colunas
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+          const headerAddress = XLSX.utils.encode_cell({ r: range.s.r, c: C });
+          const cell = worksheet[cellAddress];
+          const headerCell = worksheet[headerAddress];
+          
+          const headerValue = headerCell ? headerCell.v : `COL_${String.fromCharCode(65 + C)}`;
+          const cellValue = cell ? cell.v : '';
+          
+          linha[headerValue] = cellValue;
+          
+          // MAPEAMENTO ESPECÍFICO PARA COLUNAS M E N
+          if (C === 12) { // Coluna M (índice 12, pois A=0)
+            linha['COLUNA_M'] = cellValue;
+            linha['Peso embalado cx Master (KG)'] = cellValue;
+          }
+          if (C === 13) { // Coluna N (índice 13)
+            linha['COLUNA_N'] = cellValue;
+            linha['Peso Sem embalagem cx Master (KG)'] = cellValue;
+          }
+        }
+        
+        dadosComIndices.push(linha);
+      }
+      
+      console.log('📊 [DEBUG] Dados extraídos via XLSX (método padrão):', dadosExtraidos.length);
+      console.log('📊 [DEBUG] Dados extraídos via índices (M/N):', dadosComIndices.length);
+      
+      // Usar dados com índices em vez dos dados padrão
+      dados.push(...dadosComIndices);
       
       // Debug: mostrar headers da planilha
-      if (dadosExtraidos.length > 0) {
-        const headers = Object.keys(dadosExtraidos[0]);
+      if (dadosComIndices.length > 0) {
+        const headers = Object.keys(dadosComIndices[0]);
         console.log('📋 [DEBUG] Headers detectados na planilha:', headers);
         console.log('🎯 [DEBUG] Headers relacionados a peso:', headers.filter(h => 
           h.toLowerCase().includes('peso') || 
           h.toLowerCase().includes('master') ||
-          h.toLowerCase().includes('kg')
+          h.toLowerCase().includes('kg') ||
+          h.includes('COLUNA_M') ||
+          h.includes('COLUNA_N')
         ));
+        
+        // DEBUG ESPECÍFICO PARA AS COLUNAS M e N
+        console.log('🔍 [DEBUG] Valor COLUNA_M (Peso embalado):', dadosComIndices[0]['COLUNA_M']);
+        console.log('🔍 [DEBUG] Valor COLUNA_N (Peso sem embalagem):', dadosComIndices[0]['COLUNA_N']);
       }
       
       // Método 2: Processar Excel como ZIP para extrair imagens embutidas
@@ -607,11 +653,25 @@ export function useCotacoesArquivos() {
          // Debug: verificar especificamente os campos que estamos procurando
          if (index === 0) {
            console.log('🎯 [DEBUG] VERIFICAÇÃO ESPECÍFICA DOS CAMPOS DE PESO:');
+           console.log('COLUNA_M (direto):', linha['COLUNA_M']);
+           console.log('COLUNA_N (direto):', linha['COLUNA_N']);
            console.log('Peso embalado cx Master (KG):', linha['Peso embalado cx Master (KG)']);
            console.log('PESO EMBALADO CX MASTER (KG):', linha['PESO EMBALADO CX MASTER (KG)']);
            console.log('Peso Sem embalagem cx Master (KG):', linha['Peso Sem embalagem cx Master (KG)']);
            console.log('PESO SEM EMBALAGEM CX MASTER (KG):', linha['PESO SEM EMBALAGEM CX MASTER (KG)']);
            console.log('📋 [DEBUG] TODAS AS CHAVES DA LINHA:', Object.keys(linha));
+           
+           // Verificar valores finais calculados
+           const pesoEmbalado = parseFloat(String(
+             linha['COLUNA_M'] || linha['Peso embalado cx Master (KG)'] || '0'
+           ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+           const pesoSemEmbalagem = parseFloat(String(
+             linha['COLUNA_N'] || linha['Peso Sem embalagem cx Master (KG)'] || '0'
+           ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+           
+           console.log('🔢 [DEBUG] VALORES FINAIS CALCULADOS:');
+           console.log('Peso embalado final:', pesoEmbalado);
+           console.log('Peso sem embalagem final:', pesoSemEmbalagem);
          }
 
          const produto = {
@@ -631,8 +691,9 @@ export function useCotacoesArquivos() {
           caixas: parseFloat(String(linha.CAIXAS || linha.caixas || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
            // PESO UNITARIO(g) - mapear corretamente
            peso_unitario_g: parseFloat(String(linha['PESO UNITARIO(g)'] || linha.PESO_UNITARIO_G || linha.peso_unitario_g || linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-            // Peso embalado cx Master (KG) - TODAS AS VARIAÇÕES POSSÍVEIS
+            // Peso embalado cx Master (KG) - INCLUINDO COLUNA M DIRETA
             peso_cx_master_kg: parseFloat(String(
+              linha['COLUNA_M'] ||  // ⭐ REFERÊNCIA DIRETA DA COLUNA M
               linha['Peso embalado cx Master (KG)'] || 
               linha['PESO EMBALADO CX MASTER (KG)'] ||
               linha['Peso embalado cx Master(KG)'] ||
@@ -647,8 +708,9 @@ export function useCotacoesArquivos() {
               linha.peso_cx_master_kg || 
               '0'
             ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-            // Peso Sem embalagem cx Master (KG) - TODAS AS VARIAÇÕES POSSÍVEIS
+            // Peso Sem embalagem cx Master (KG) - INCLUINDO COLUNA N DIRETA
             peso_sem_cx_master_kg: parseFloat(String(
+              linha['COLUNA_N'] ||  // ⭐ REFERÊNCIA DIRETA DA COLUNA N
               linha['Peso Sem embalagem cx Master (KG)'] || 
               linha['PESO SEM EMBALAGEM CX MASTER (KG)'] ||
               linha['Peso Sem embalagem cx Master(KG)'] ||
