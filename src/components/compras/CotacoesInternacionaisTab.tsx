@@ -872,7 +872,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <TableHead className="min-w-[120px]">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1">
-                            <span className="text-xs font-medium">CHANGE DOLAR UNITARIO</span>
+                            <span className="text-xs font-medium">Change DOLAR Uni</span>
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger>
