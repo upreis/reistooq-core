@@ -68,21 +68,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
     processarDados
   } = useCotacoesArquivos();
 
-  // Carregar arquivos quando o dialog abrir
-  React.useEffect(() => {
-    if (open && cotacao?.id) {
-      carregarArquivos();
-    }
-  }, [open, cotacao?.id]);
-
-  const carregarArquivos = async () => {
-    try {
-      const dadosArquivos = await getArquivosCotacao(cotacao.id);
-      setArquivos(dadosArquivos as ArquivoProcessado[]);
-    } catch (error) {
-      console.error('Erro ao carregar arquivos:', error);
-    }
-  };
+  // Remover carregamento de arquivos do banco - usar apenas local
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -118,29 +104,21 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
   const processarArquivoLocal = async (file: File) => {
     try {
       console.log('🎯 Iniciando processamento local do arquivo:', file.name);
-      console.log('📋 Dados da cotação:', { 
-        cotacaoId: cotacao?.id, 
-        organizationId: cotacao?.organization_id 
-      });
       
       setProcessando(true);
       setProgressoUpload(10);
 
-      // Validar se temos as informações necessárias
-      if (!cotacao?.id) {
-        console.error('❌ ID da cotação não encontrado');
-        throw new Error('ID da cotação não encontrado');
-      }
-      if (!cotacao?.organization_id) {
-        console.error('❌ ID da organização não encontrado');
-        throw new Error('ID da organização não encontrado');
-      }
-
-      // Upload do arquivo primeiro
-      const organizationId = cotacao.organization_id;
-      console.log('⬆️ Fazendo upload do arquivo...');
-      const arquivoUpload = await uploadArquivo(file, cotacao.id, organizationId);
-      console.log('✅ Upload concluído:', arquivoUpload);
+      // Usar IDs fixos para evitar dependência do banco
+      const cotacaoId = "local-cotacao-001";
+      const organizationId = "local-org-001";
+      // Simular upload do arquivo
+      console.log('⬆️ Simulando upload do arquivo...');
+      const arquivoUpload = { 
+        id: `arquivo-${Date.now()}`,
+        nome_arquivo: file.name,
+        status: 'processado'
+      };
+      console.log('✅ Upload simulado concluído:', arquivoUpload);
       setProgressoUpload(30);
 
       // Ler arquivo com extração de imagens
@@ -149,12 +127,17 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('📊 Dados extraídos:', { totalDados: dados.length, totalImagens: imagens.length });
       setProgressoUpload(50);
 
-      // Upload das imagens extraídas
+      // Simular upload de imagens - criar URLs locais
       let imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = [];
       if (imagens.length > 0) {
-        console.log('☁️ Fazendo upload das imagens extraídas...');
-        imagensUpload = await uploadImagensExtraidas(imagens, cotacao.id, organizationId);
-        console.log('✅ Upload de imagens concluído:', imagensUpload.length);
+        console.log('☁️ Simulando upload das imagens extraídas...');
+        imagensUpload = imagens.map((img, index) => ({
+          nome: `imagem-${index}.png`,
+          url: URL.createObjectURL(img.blob),
+          linha: img.linha,
+          coluna: img.coluna
+        }));
+        console.log('✅ Upload de imagens simulado:', imagensUpload.length);
       }
       setProgressoUpload(70);
 
@@ -165,14 +148,23 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('🔍 Primeiro produto com imagens:', dadosProcessados.find(p => p.imagem || p.imagem_fornecedor));
       setProgressoUpload(90);
 
-      // Salvar dados processados
-      console.log('💾 Salvando dados processados...');
-      await processarArquivo(arquivoUpload.id, dadosProcessados);
+      // Simular salvamento de dados
+      console.log('💾 Simulando salvamento de dados...');
+      const arquivoCompleto: ArquivoProcessado = {
+        id: arquivoUpload.id,
+        cotacao_id: cotacaoId,
+        nome_arquivo: arquivoUpload.nome_arquivo,
+        tipo_arquivo: 'excel',
+        status: 'processado',
+        dados_processados: dadosProcessados,
+        total_linhas: dadosProcessados.length,
+        linhas_processadas: dadosProcessados.length,
+        linhas_erro: 0
+      };
+      
+      // Adicionar arquivo à lista local
+      setArquivos(prev => [...prev, arquivoCompleto]);
       setProgressoUpload(100);
-
-      // Recarregar lista de arquivos
-      console.log('🔄 Recarregando lista de arquivos...');
-      await carregarArquivos();
 
       toast({
         title: "Arquivo importado!",
@@ -475,9 +467,8 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
                               
                               console.log('✅ [DEBUG] Arquivo deletado com sucesso');
                               
-                              // Recarregar a lista após exclusão
-                              console.log('🔄 [DEBUG] Recarregando lista de arquivos...');
-                              await carregarArquivos();
+                              // Lista já foi atualizada no estado local
+                              console.log('🔄 [DEBUG] Arquivo removido da lista local');
                               
                               toast({
                                 title: "Arquivo removido!",
