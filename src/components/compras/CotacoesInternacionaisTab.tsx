@@ -725,27 +725,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // SEMPRE usar apenas productData - remover qualquer dependência de banco de dados
   const displayProducts = productData.length > 0 ? productData : simpleMockProducts;
   
-  // Debug logs detalhados
-  console.log('🔍 [DEBUG] ProductData length:', productData.length);
-  console.log('🔍 [DEBUG] ProductData state:', productData);
-  console.log('🔍 [DEBUG] DisplayProducts length:', displayProducts.length);
-  console.log('🔍 [DEBUG] DisplayProducts:', displayProducts);
-  console.log('🔍 [DEBUG] Primeiro produto em display:', displayProducts[0]);
-  
-  // Force re-render quando productData muda
-  React.useEffect(() => {
-    console.log('🔄 [DEBUG] productData alterado, novo length:', productData.length);
-    if (productData.length > 0) {
-      console.log('🔄 [DEBUG] Dados de produto disponíveis:', productData);
-    }
-  }, [productData]);
-
-  // Debug quando selectedProducts muda
-  React.useEffect(() => {
-    console.log('🔘 [DEBUG] selectedProducts alterado:', selectedProducts);
-    console.log('🔘 [DEBUG] selectedProducts length:', selectedProducts.length);
-  }, [selectedProducts]);
-  console.log('🔍 [DEBUG] Sample product data:', displayProducts[0]);
+  // Remover logs excessivos que causam loop infinito
 
   // Função para atualizar dados do produto
   const updateProductData = useCallback((rowIndex: number, field: string, value: string | number) => {
@@ -905,14 +885,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         multiplicador_reais_total: Number(produto.multiplicador_reais_total) || 0,
       };
       
-      console.log(`✅ [DEBUG] Produto ${index} mapeado:`, produtoMapeado);
       return produtoMapeado;
     });
-    
-    console.log('✅ [DEBUG] Produtos processados para exibição:', novosProdutos);
-    console.log('✅ [DEBUG] Total de produtos processados:', novosProdutos.length);
-    
-    console.log('🎯 [DEBUG] Chamando setProductData com:', novosProdutos);
     setProductData(novosProdutos);
     setHasImportedData(true); // Marcar que dados foram importados
     
@@ -923,22 +897,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
     
-    // Força atualização da UI com verificação mais robusta
+    // Força atualização da UI
     setTimeout(() => {
-      console.log('🔄 [DEBUG] Estado atual do productData após setProductData:', productData);
-      console.log('🔄 [DEBUG] novosProdutos para comparação:', novosProdutos);
-      
-      // Se o estado não foi atualizado corretamente, tenta novamente
       if (productData.length === 0 && novosProdutos.length > 0) {
-        console.warn('⚠️ [DEBUG] Estado não atualizado, tentando novamente...');
         setProductData([...novosProdutos]); // força nova referência
       }
-    }, 200);
-    
-    // Verificação adicional após 500ms
-    setTimeout(() => {
-      console.log('🔄 [DEBUG] Verificação final do estado productData:', productData);
-    }, 500);
+    }, 100);
     
     toast({
       title: "Importação concluída!",
