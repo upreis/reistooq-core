@@ -11,7 +11,19 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +59,7 @@ const ProductList = () => {
   const [editingValue, setEditingValue] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   // Estados da paginação
   const [currentPage, setCurrentPage] = useState(1);
@@ -200,7 +213,7 @@ const ProductList = () => {
     }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedProducts.length === 0) {
       toast({
         title: "Atenção",
@@ -209,11 +222,11 @@ const ProductList = () => {
       });
       return;
     }
-    
-    if (!confirm(`Tem certeza que deseja excluir ${selectedProducts.length} produto(s) selecionado(s)?`)) {
-      return;
-    }
+    setShowDeleteDialog(true);
+  };
 
+  const confirmBulkDelete = async () => {
+    setShowDeleteDialog(false);
     const selectedCount = selectedProducts.length;
 
     try {
@@ -1546,6 +1559,41 @@ const ProductList = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmação para exclusão em massa */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" />
+              Confirmar Exclusão
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Você está prestes a excluir <strong>{selectedProducts.length} produto(s)</strong> selecionado(s).
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Esta ação irá desativar os produtos (não excluir permanentemente).
+                Eles poderão ser reativados posteriormente.
+              </p>
+              <div className="bg-muted p-3 rounded-md mt-3">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Produtos selecionados: {selectedProducts.length}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmBulkDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Sim, Excluir Produtos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
