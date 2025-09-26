@@ -23,6 +23,8 @@ import {
   ShoppingCart
 } from "lucide-react";
 import { ProductSelectorShop } from "./ProductSelectorShop";
+import { useCompras } from "@/hooks/useCompras";
+import { useToast } from "@/hooks/use-toast";
 
 interface CotacoesTabProps {
   cotacoes?: any[];
@@ -63,6 +65,9 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
   const [showForm, setShowForm] = useState(false);
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const { createCotacao } = useCompras();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     descricao: '',
     valor_estimado: 0,
@@ -102,6 +107,67 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  const handleCreateCotacao = async () => {
+    if (!formData.descricao) {
+      toast({
+        title: "Erro",
+        description: "A descrição é obrigatória.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedProducts.length === 0) {
+      toast({
+        title: "Erro", 
+        description: "Selecione pelo menos um produto para a cotação.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+      
+      // Gerar número da cotação único
+      const numeroCotacao = `COT-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
+      
+      const cotacaoData = {
+        numero_cotacao: numeroCotacao,
+        descricao: formData.descricao,
+        data_abertura: new Date().toISOString().split('T')[0],
+        data_fechamento: formData.data_fechamento || null,
+        status: 'aberta',
+        observacoes: formData.observacoes || null
+      };
+
+      console.log('Salvando cotação:', cotacaoData);
+      const result = await createCotacao(cotacaoData);
+      
+      if (result) {
+        toast({
+          title: "Sucesso",
+          description: "Cotação criada com sucesso!",
+        });
+        
+        // Limpar formulário
+        setFormData({ descricao: '', valor_estimado: 0, data_fechamento: '', observacoes: '' });
+        setSelectedProducts([]);
+        setShowForm(false);
+        onRefresh();
+      }
+    } catch (error) {
+      console.error('Erro ao salvar cotação:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar a cotação.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -402,23 +468,19 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
             
             <div className="flex gap-2 pt-4">
               <Button 
-                onClick={() => {
-                  // Aqui você pode chamar a função de criar cotação
-                  console.log('Criando cotação:', formData);
-                  setShowForm(false);
-                  setFormData({ descricao: '', valor_estimado: 0, data_fechamento: '', observacoes: '' });
-                  onRefresh();
-                }}
-                disabled={!formData.descricao}
+                onClick={handleCreateCotacao}
+                disabled={!formData.descricao || selectedProducts.length === 0 || saving}
               >
-                Criar Cotação
+                {saving ? 'Salvando...' : 'Criar Cotação'}
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => {
                   setShowForm(false);
                   setFormData({ descricao: '', valor_estimado: 0, data_fechamento: '', observacoes: '' });
+                  setSelectedProducts([]);
                 }}
+                disabled={saving}
               >
                 Cancelar
               </Button>
