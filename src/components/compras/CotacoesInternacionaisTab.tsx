@@ -687,49 +687,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return currency?.symbol || currencyCode;
   }, []);
 
-  // Produtos simples para exemplo
-  const simpleMockProducts = [
-    {
-      sku: "EXEMPLO-001",
-      imagem: "",
-      imagem_fornecedor: "",
-      material: "Não especificado",
-      cor: "Não especificado",
-      nome_produto: "Produto de exemplo",
-      package: "1pcs/unidade",
-      preco: 0,
-      unit: "pc",
-      pcs_ctn: 0,
-      caixas: 0,
-      peso_unitario_g: 0,
-      peso_cx_master_kg: 0,
-      peso_sem_cx_master_kg: 0,
-      peso_total_cx_master_kg: 0,
-      peso_total_sem_cx_master_kg: 0,
-      comprimento: 0,
-      largura: 0,
-      altura: 0,
-      cbm_cubagem: 0,
-      cbm_total: 0,
-      quantidade_total: 0,
-      valor_total: 0,
-      obs: "Importe um arquivo Excel para ver os dados",
-      change_dolar: 0,
-      change_dolar_total: 0,
-      multiplicador_reais: 0,
-      multiplicador_reais_total: 0,
-      id: "exemplo-1"
-    }
-  ];
-
-  // SEMPRE usar apenas productData - remover qualquer dependência de banco de dados
-  const displayProducts = productData.length > 0 ? productData : simpleMockProducts;
+  // Usar apenas productData - sem dados de exemplo
+  const displayProducts = productData;
   
   // Remover logs excessivos que causam loop infinito
 
   // Função para atualizar dados do produto
   const updateProductData = useCallback((rowIndex: number, field: string, value: string | number) => {
-    const currentProducts = productData.length > 0 ? productData : simpleMockProducts;
+    const currentProducts = productData;
     const updatedProducts = [...currentProducts];
     updatedProducts[rowIndex] = {
       ...updatedProducts[rowIndex],
@@ -778,7 +743,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     } catch (error) {
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
-  }, [productData, simpleMockProducts, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue, stopEditing]);
+  }, [productData, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue, stopEditing]);
 
   // Funções para calcular totais das colunas
   const getTotalValorTotal = useCallback(() => {
