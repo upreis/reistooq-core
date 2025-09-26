@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { EditableCell } from './EditableCell';
 import ContainerVisualization from './ContainerVisualization';
 import { CotacaoImportDialog } from './CotacaoImportDialog';
+import { ProdutoImagemPreview } from './ProdutoImagemPreview';
 import { 
   Plus, 
   FileText, 
@@ -1087,8 +1088,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         />
                       </TableHead>
                       <TableHead className="min-w-[100px]">SKU</TableHead>
-                      <TableHead className="min-w-[80px]">IMAGEM</TableHead>
-                      <TableHead className="min-w-[120px]">IMAGEM DO FORNECEDOR</TableHead>
+                      <TableHead className="min-w-[120px]">IMAGENS</TableHead>
                       <TableHead className="min-w-[100px]">MATERIAL</TableHead>
                       <TableHead className="min-w-[80px]">COR</TableHead>
                       <TableHead className="min-w-[200px]">Nome do Produto</TableHead>
@@ -1238,22 +1238,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                           />
                         </TableCell>
                         <TableCell>
-                          <div className="w-16 h-16 bg-muted rounded flex items-center justify-center cursor-pointer hover:bg-muted/80">
-                            {product.imagem ? (
-                              <img src={product.imagem} alt="Produto" className="w-full h-full object-cover rounded" />
-                            ) : (
-                              <Image className="h-6 w-6 text-muted-foreground" />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="w-16 h-16 bg-muted rounded flex items-center justify-center cursor-pointer hover:bg-muted/80">
-                            {product.imagem_fornecedor ? (
-                              <img src={product.imagem_fornecedor} alt="Fornecedor" className="w-full h-full object-cover rounded" />
-                            ) : (
-                              <Image className="h-6 w-6 text-muted-foreground" />
-                            )}
-                          </div>
+                          <ProdutoImagemPreview
+                            imagemUrl={product.imagem}
+                            imagemFornecedorUrl={product.imagem_fornecedor}
+                            nomeProduto={product.nome_produto}
+                            sku={product.sku}
+                            className="mx-auto"
+                          />
                         </TableCell>
                         <TableCell>
                           <EditableCell

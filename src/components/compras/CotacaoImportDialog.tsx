@@ -62,7 +62,10 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
     uploadArquivo,
     processarArquivo,
     deletarArquivo,
-    downloadTemplate
+    downloadTemplate,
+    lerArquivoComImagens,
+    uploadImagensExtraidas,
+    processarDados
   } = useCotacoesArquivos();
 
   // Carregar arquivos quando o dialog abrir
@@ -208,65 +211,18 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
     });
   };
 
-  const processarDados = (dados: any[]): any[] => {
-    return dados.map((linha, index) => {
-      try {
-        const produto = {
-          sku: linha.SKU || linha.sku || `PROD-${index + 1}`,
-          imagem: linha.IMAGEM || linha.imagem || '',
-          imagem_fornecedor: linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || '',
-          material: linha.MATERIAL || linha.material || '',
-          cor: linha.COR || linha.cor || '',
-          nome_produto: linha.NOME_PRODUTO || linha.nome_produto || '',
-          package: linha.PACKAGE || linha.package || '',
-          preco: parseFloat(String(linha.PRECO || linha.preco || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          unit: linha.UNIT || linha.unit || '',
-          pcs_ctn: parseInt(String(linha.PCS_CTN || linha.pcs_ctn || '0').replace(/[^\d]/g, '')) || 0,
-          caixas: parseFloat(String(linha.CAIXAS || linha.caixas || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_unitario: parseFloat(String(linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_master: parseFloat(String(linha.PESO_MASTER_KG || linha.peso_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_sem_master: parseFloat(String(linha.PESO_SEM_MASTER_KG || linha.peso_sem_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_total_master: parseFloat(String(linha.PESO_TOTAL_MASTER_KG || linha.peso_total_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_total_sem_master: parseFloat(String(linha.PESO_TOTAL_SEM_MASTER_KG || linha.peso_total_sem_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          comprimento: parseFloat(String(linha.COMPRIMENTO || linha.comprimento || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          largura: parseFloat(String(linha.LARGURA || linha.largura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          altura: parseFloat(String(linha.ALTURA || linha.altura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          cbm_cubagem: parseFloat(String(linha.CBM_CUBAGEM || linha.cbm_cubagem || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          cbm_total: parseFloat(String(linha.CBM_TOTAL || linha.cbm_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          quantidade_total: parseInt(String(linha.QUANTIDADE_TOTAL || linha.quantidade_total || '0').replace(/[^\d]/g, '')) || 0,
-          valor_total: parseFloat(String(linha.VALOR_TOTAL || linha.valor_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          obs: linha.OBS || linha.obs || '',
-          change_dolar: parseFloat(String(linha.CHANGE_DOLAR || linha.change_dolar || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          multiplicador_reais: parseFloat(String(linha.MULTIPLICADOR_REAIS || linha.multiplicador_reais || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          // Campos calculados adicionais
-          preco_unitario: 0, // Será calculado
-          quantidade_total_calc: 0, // Será calculado
-          cbm_total_calc: 0, // Será calculado
-          peso_total_calc: 0, // Será calculado
-        };
-
-        // Cálculos automáticos baseados na lógica existente
-        produto.quantidade_total_calc = produto.caixas * produto.pcs_ctn;
-        produto.cbm_total_calc = produto.cbm_cubagem * produto.caixas;
-        produto.peso_total_calc = produto.peso_unitario * produto.quantidade_total_calc;
-        produto.preco_unitario = produto.quantidade_total_calc > 0 ? produto.valor_total / produto.quantidade_total_calc : 0;
-
-        return produto;
-      } catch (error) {
-        console.error('Erro ao processar linha:', linha, error);
-        return null;
-      }
-    }).filter(Boolean);
-  };
+  // Função removida - agora está no hook
 
   const handleImportarDados = async (arquivo: ArquivoProcessado) => {
     if (arquivo.dados_processados && arquivo.dados_processados.length > 0) {
+      const totalImagens = arquivo.dados_processados.filter((p: any) => p.imagem_extraida || p.imagem_fornecedor_extraida).length;
+      
       onImportSuccess(arquivo.dados_processados);
       onOpenChange(false);
       
       toast({
         title: "Dados importados!",
-        description: `${arquivo.dados_processados.length} produtos importados para a cotação.`,
+        description: `${arquivo.dados_processados.length} produtos importados${totalImagens > 0 ? ` com ${totalImagens} imagens extraídas do Excel.` : '.'}`,
       });
     }
   };
@@ -309,7 +265,9 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
               Template de Importação
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Baixe o template CSV com todas as colunas necessárias e exemplos de preenchimento.
+              Baixe o template com todas as colunas necessárias e exemplos. 
+              <br />
+              <strong>Novidade:</strong> Imagens coladas diretamente nas células do Excel serão extraídas automaticamente!
             </p>
             <div className="flex gap-2">
               <Button onClick={() => downloadTemplate('csv')} variant="outline" size="sm">
@@ -439,7 +397,12 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
                     
                     {arquivo.status === 'processado' && arquivo.total_linhas && (
                       <div className="text-sm text-muted-foreground bg-green-50 dark:bg-green-900/20 p-2 rounded">
-                        ✅ {arquivo.total_linhas} produtos processados com sucesso
+                        ✅ {arquivo.total_linhas} produtos processados
+                        {arquivo.dados_processados && (
+                          <span className="ml-2">
+                            ({arquivo.dados_processados.filter((p: any) => p.imagem_extraida || p.imagem_fornecedor_extraida).length} com imagens extraídas)
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
