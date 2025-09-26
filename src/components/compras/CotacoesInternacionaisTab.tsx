@@ -647,7 +647,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     largura: p.largura_cm || 0,
     altura: p.altura_cm || 0,
     cbm_cubagem: p.cbm_unitario || 0.21,
-    cbm_total: p.cbm_total || 0.21,
+    cbm_total: (p.cbm_unitario || 0.21) * (p.qtd_caixas_pedido || 1),
     quantidade_total: p.quantidade_total || 240,
     valor_total: p.valor_total || 1260.00,
     obs: "",
@@ -677,7 +677,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       largura: 0,
       altura: 0,
       cbm_cubagem: 0.21,
-      cbm_total: 0.21,
+      cbm_total: 0.21 * 1, // CBM Cubagem x CAIXAS
       quantidade_total: 240,
       valor_total: 1260.00,
       obs: "",
@@ -707,7 +707,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       largura: 0,
       altura: 0,
       cbm_cubagem: 0.21,
-      cbm_total: 0.21,
+      cbm_total: 0.21 * 1, // CBM Cubagem x CAIXAS
       quantidade_total: 200,
       valor_total: 1160.00,
       obs: "",
@@ -744,6 +744,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     if (['preco', 'pcs_ctn', 'caixas'].includes(field)) {
       product.quantidade_total = product.pcs_ctn * product.caixas;
       product.valor_total = product.preco * product.quantidade_total;
+    }
+    
+    // Recalcular CBM Total quando CBM Cubagem ou CAIXAS mudarem
+    if (['cbm_cubagem', 'caixas'].includes(field)) {
+      product.cbm_total = product.cbm_cubagem * product.caixas;
     }
     
     // Recalcular campos calculados automaticamente
