@@ -196,6 +196,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [changeDolarDivisor, setChangeDolarDivisor] = useState<number>(1);
+  const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<number>(1);
   
   // Estados do formulário
   const [dadosBasicos, setDadosBasicos] = useState({
@@ -574,6 +575,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     valor_total: p.valor_total || 1260.00,
     obs: "",
     change_dolar: changeDolarDivisor > 0 ? (p.preco_unitario || 5.25) / changeDolarDivisor : 0,
+    change_dolar_total: changeDolarTotalDivisor > 0 ? (p.valor_total || 1260.00) / changeDolarTotalDivisor : 0,
     multiplicador_reais: 5.44
   })) : [
     {
@@ -602,6 +604,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       valor_total: 1260.00,
       obs: "",
       change_dolar: changeDolarDivisor > 0 ? 5.25 / changeDolarDivisor : 0,
+      change_dolar_total: changeDolarTotalDivisor > 0 ? 1260.00 / changeDolarTotalDivisor : 0,
       multiplicador_reais: 5.44
     },
     {
@@ -630,6 +633,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       valor_total: 1160.00,
       obs: "",
       change_dolar: changeDolarDivisor > 0 ? 5.80 / changeDolarDivisor : 0,
+      change_dolar_total: changeDolarTotalDivisor > 0 ? 1160.00 / changeDolarTotalDivisor : 0,
       multiplicador_reais: 6.00
     }
   ];
@@ -861,6 +865,21 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                           <div className="text-xs text-muted-foreground">PREÇO ÷ Divisor</div>
                         </div>
                       </TableHead>
+                      <TableHead className="min-w-[140px]">
+                        <div className="space-y-1">
+                          <div className="text-xs font-medium">CHANGE DOLAR TOTAL</div>
+                          <Input
+                            type="number"
+                            placeholder="Divisor"
+                            value={changeDolarTotalDivisor}
+                            onChange={(e) => setChangeDolarTotalDivisor(parseFloat(e.target.value) || 1)}
+                            className="h-6 text-xs"
+                            step="0.01"
+                            min="0.01"
+                          />
+                          <div className="text-xs text-muted-foreground">VALOR TOTAL ÷ Divisor</div>
+                        </div>
+                      </TableHead>
                       <TableHead className="min-w-[140px]">Multiplicador REAIS</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -918,6 +937,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         <TableCell>¥ {product.valor_total.toFixed(2)}</TableCell>
                         <TableCell>{product.obs}</TableCell>
                         <TableCell>$ {product.change_dolar.toFixed(2)}</TableCell>
+                        <TableCell>$ {product.change_dolar_total.toFixed(2)}</TableCell>
                         <TableCell>R$ {product.multiplicador_reais.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
