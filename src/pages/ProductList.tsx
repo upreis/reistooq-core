@@ -820,13 +820,17 @@ const ProductList = () => {
                                 aria-label={`Selecionar ${product.nome}`}
                               />
                             </td>
-                            {/* SKU */}
+                             {/* SKU */}
                             <EditableCell 
                               productId={product.id} 
                               field="sku_interno" 
                               value={product.sku_interno}
                             >
-                              <span className="font-mono font-medium text-xs">{product.sku_interno}</span>
+                              <span className="font-mono font-medium text-xs" title={product.sku_interno}>
+                                {product.sku_interno.length > 40 
+                                  ? `${product.sku_interno.substring(0, 40)}...` 
+                                  : product.sku_interno}
+                              </span>
                             </EditableCell>
 
                             {/* IMAGEM */}
