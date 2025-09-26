@@ -827,8 +827,8 @@ const ProductList = () => {
                               value={product.sku_interno}
                             >
                               <span className="font-mono font-medium text-xs" title={product.sku_interno}>
-                                {product.sku_interno.length > 40 
-                                  ? `${product.sku_interno.substring(0, 40)}...` 
+                                {product.sku_interno.length > 30 
+                                  ? `${product.sku_interno.substring(0, 30)}...` 
                                   : product.sku_interno}
                               </span>
                             </EditableCell>
@@ -915,21 +915,33 @@ const ProductList = () => {
                               </div>
                             </td>
 
-                            {/* MATERIAL */}
+                             {/* MATERIAL */}
                             <EditableCell 
                               productId={product.id} 
                               field="material" 
                               value={(product as any).material}
-                              displayValue={(product as any).material || "-"}
-                            />
+                            >
+                              <span className="text-xs" title={(product as any).material || ""}>
+                                {(product as any).material ? 
+                                  ((product as any).material.length > 30 ? `${(product as any).material.substring(0, 30)}...` : (product as any).material) 
+                                  : "-"
+                                }
+                              </span>
+                            </EditableCell>
 
-                            {/* COR */}
+                             {/* COR */}
                             <EditableCell 
                               productId={product.id} 
                               field="cor" 
                               value={(product as any).cor}
-                              displayValue={(product as any).cor || "-"}
-                            />
+                            >
+                              <span className="text-xs" title={(product as any).cor || ""}>
+                                {(product as any).cor ? 
+                                  ((product as any).cor.length > 30 ? `${(product as any).cor.substring(0, 30)}...` : (product as any).cor) 
+                                  : "-"
+                                }
+                              </span>
+                            </EditableCell>
 
                             {/* Nome do Produto */}
                             <EditableCell 
