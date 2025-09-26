@@ -201,28 +201,49 @@ const ProductList = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedProducts.length === 0) return;
+    if (selectedProducts.length === 0) {
+      toast({
+        title: "Atenção",
+        description: "Nenhum produto selecionado para exclusão.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (!confirm(`Tem certeza que deseja excluir ${selectedProducts.length} produto(s) selecionado(s)?`)) {
       return;
     }
 
+    const selectedCount = selectedProducts.length;
+
     try {
+      // Toast de loading
+      const loadingToast = toast({
+        title: "Excluindo produtos...",
+        description: `Processando ${selectedCount} produto(s)...`,
+      });
+
       for (const productId of selectedProducts) {
         await deleteProduct(productId);
       }
+
+      // Remove o toast de loading
+      loadingToast.dismiss();
+
       toast({
         title: "Produtos removidos",
-        description: `${selectedProducts.length} produto(s) foram removidos com sucesso.`,
+        description: `${selectedCount} produto(s) foram removidos com sucesso.`,
       });
+      
       setSelectedProducts([]);
       setSelectAll(false);
       loadProducts();
     } catch (error) {
+      console.error('Erro ao excluir produtos:', error);
       toast({
-        title: "Erro ao remover produtos",
-        description: "Não foi possível remover todos os produtos selecionados.",
-        variant: "destructive",
+        title: "Erro ao excluir",
+        description: "Ocorreu um erro ao excluir os produtos. Tente novamente.",
+        variant: "destructive"
       });
     }
   };
