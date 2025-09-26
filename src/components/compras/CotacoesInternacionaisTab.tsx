@@ -727,6 +727,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Usar productData se disponível, senão usar mockProducts
   const displayProducts = productData.length > 0 ? productData : mockProducts;
+  
+  // Debug logs
+  console.log('🔍 [DEBUG] ProductData length:', productData.length);
+  console.log('🔍 [DEBUG] DisplayProducts:', displayProducts);
+  console.log('🔍 [DEBUG] Sample product data:', displayProducts[0]);
 
   // Função para atualizar dados do produto
   const updateProductData = useCallback((rowIndex: number, field: string, value: string | number) => {
@@ -826,17 +831,50 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   
   // Função para lidar com dados importados
   const handleImportSuccess = useCallback((dadosImportados: any[]) => {
-    setProductData(dadosImportados);
-    // Atualizar totais automaticamente
+    console.log('📥 [DEBUG] Dados recebidos na importação:', dadosImportados);
+    
+    // Mapear dados importados para o formato esperado
     const novosProdutos = dadosImportados.map((produto, index) => ({
       ...produto,
       id: `import-${index}`,
+      // Garantir que todas as propriedades necessárias existem
+      sku: produto.sku || `PROD-${index + 1}`,
+      imagem: produto.imagem || '',
+      imagem_fornecedor: produto.imagem_fornecedor || '',
+      nome_produto: produto.nome_produto || '',
+      material: produto.material || '',
+      cor: produto.cor || '',
+      package: produto.package || '',
+      preco: produto.preco || 0,
+      unit: produto.unit || 'pc',
+      pcs_ctn: produto.pcs_ctn || 0,
+      caixas: produto.caixas || 0,
+      peso_unitario_g: produto.peso_unitario_g || 0,
+      peso_cx_master_kg: produto.peso_cx_master_kg || 0,
+      peso_sem_cx_master_kg: produto.peso_sem_cx_master_kg || 0,
+      peso_total_cx_master_kg: produto.peso_total_cx_master_kg || 0,
+      peso_total_sem_cx_master_kg: produto.peso_total_sem_cx_master_kg || 0,
+      comprimento: produto.comprimento || 0,
+      largura: produto.largura || 0,
+      altura: produto.altura || 0,
+      cbm_cubagem: produto.cbm_cubagem || 0,
+      cbm_total: produto.cbm_total || 0,
+      quantidade_total: produto.quantidade_total || 0,
+      valor_total: produto.valor_total || 0,
+      obs: produto.obs || '',
+      change_dolar: produto.change_dolar || 0,
+      multiplicador_reais: produto.multiplicador_reais || 0,
+      // Campos calculados
+      change_dolar_total: produto.change_dolar_total || 0,
+      multiplicador_reais_total: produto.multiplicador_reais_total || 0,
     }));
+    
+    console.log('✅ [DEBUG] Produtos processados para exibição:', novosProdutos);
     setProductData(novosProdutos);
     
     toast({
       title: "Importação concluída!",
-      description: `${dadosImportados.length} produtos importados com sucesso.`,
+      description: `${novosProdutos.length} produtos importados com sucesso.`,
     });
   }, [toast]);
   return (

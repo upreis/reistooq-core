@@ -171,9 +171,57 @@ export function useCotacoesArquivos() {
             // Extrair dados da planilha
             dados = XLSX.utils.sheet_to_json(worksheet);
             
-            // Tentar extrair imagens se existirem (funcionalidade experimental)
+            // Tentar extrair imagens das colunas IMAGEM e IMAGEM_FORNECEDOR
             try {
+              // Primeiro, vamos verificar se há dados nas colunas de imagem
+              const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+              console.log('🔍 [DEBUG] Range da planilha:', range);
+              
+              // Mapear colunas por cabeçalho
+              const headers: {[key: string]: string} = {};
+              for (let col = range.s.c; col <= range.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                const cell = worksheet[cellAddress];
+                if (cell && cell.v) {
+                  const headerValue = String(cell.v).toUpperCase().trim();
+                  headers[headerValue] = XLSX.utils.encode_col(col);
+                  console.log(`📋 [DEBUG] Cabeçalho encontrado: ${headerValue} na coluna ${headers[headerValue]}`);
+                }
+              }
+              
+              // Procurar por colunas de imagem
+              const colunaImagem = headers['IMAGEM'];
+              const colunaImagemFornecedor = headers['IMAGEM FORNECEDOR'] || headers['IMAGEM_FORNECEDOR'];
+              
+              console.log('🖼️ [DEBUG] Coluna IMAGEM:', colunaImagem);
+              console.log('🏭 [DEBUG] Coluna IMAGEM FORNECEDOR:', colunaImagemFornecedor);
+              
+              // Processar imagens das colunas identificadas
+              for (let row = 1; row <= range.e.r; row++) {
+                // Verificar imagem principal
+                if (colunaImagem) {
+                  const cellAddress = `${colunaImagem}${row + 1}`;
+                  const cell = worksheet[cellAddress];
+                  if (cell && cell.v && String(cell.v).trim()) {
+                    console.log(`🖼️ [DEBUG] Imagem encontrada na linha ${row + 1}, coluna ${colunaImagem}:`, cell.v);
+                    // Aqui você poderia processar URLs de imagem ou outros dados
+                  }
+                }
+                
+                // Verificar imagem do fornecedor
+                if (colunaImagemFornecedor) {
+                  const cellAddress = `${colunaImagemFornecedor}${row + 1}`;
+                  const cell = worksheet[cellAddress];
+                  if (cell && cell.v && String(cell.v).trim()) {
+                    console.log(`🏭 [DEBUG] Imagem fornecedor encontrada na linha ${row + 1}, coluna ${colunaImagemFornecedor}:`, cell.v);
+                    // Aqui você poderia processar URLs de imagem ou outros dados
+                  }
+                }
+              }
+              
+              // Verificar se há imagens incorporadas no Excel (experimental)
               if (worksheet['!images']) {
+                console.log('🖼️ [DEBUG] Imagens incorporadas encontradas:', worksheet['!images'].length);
                 for (let i = 0; i < worksheet['!images'].length; i++) {
                   const img = worksheet['!images'][i];
                   try {
@@ -192,13 +240,17 @@ export function useCotacoesArquivos() {
                       linha,
                       coluna
                     });
+                    
+                    console.log(`✅ [DEBUG] Imagem incorporada processada: ${cellRef}`);
                   } catch (imgError) {
-                    console.warn('Erro ao processar imagem:', imgError);
+                    console.warn('❌ Erro ao processar imagem incorporada:', imgError);
                   }
                 }
+              } else {
+                console.log('ℹ️ [DEBUG] Nenhuma imagem incorporada encontrada no arquivo Excel');
               }
             } catch (imageError) {
-              console.warn('Funcionalidade de extração de imagens ainda em desenvolvimento:', imageError);
+              console.warn('⚠️ Funcionalidade de extração de imagens ainda em desenvolvimento:', imageError);
             }
           }
 
@@ -312,8 +364,8 @@ export function useCotacoesArquivos() {
 
         const produto = {
           sku: linha.SKU || linha.sku || `PROD-${index + 1}`,
-          imagem: imagemPrincipal?.url || linha.IMAGEM || linha.imagem || '',
-          imagem_fornecedor: imagemFornecedor?.url || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || '',
+          imagem: imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '',
+          imagem_fornecedor: imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '',
           material: linha.MATERIAL || linha.material || '',
           cor: linha.COR || linha.cor || '',
           nome_produto: linha.NOME_PRODUTO || linha.nome_produto || '',
