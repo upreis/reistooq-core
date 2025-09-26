@@ -944,78 +944,67 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         <div className="space-y-4">
           {/* Cabeçalho da Cotação Selecionada */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl">{selectedCotacao.numero_cotacao}</CardTitle>
-                  <p className="text-muted-foreground">{selectedCotacao.descricao}</p>
+            <CardHeader className="pb-2">
+              {/* Header compacto com informações principais */}
+              <div className="bg-slate-800 text-white p-3 rounded-lg mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold">{selectedCotacao.numero_cotacao}</h3>
+                  <Badge className={`text-white ${getStatusColor(selectedCotacao.status)}`}>
+                    {selectedCotacao.status}
+                  </Badge>
                 </div>
-                <Badge className={`text-white ${getStatusColor(selectedCotacao.status)}`}>
-                  {selectedCotacao.status}
-                </Badge>
-              </div>
-              <div className="grid grid-cols-6 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">País:</span>
-                  <div className="font-semibold">{selectedCotacao.pais_origem}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Moeda:</span>
-                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                    <SelectTrigger className="w-24 h-8 mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-50">
-                      {AVAILABLE_CURRENCIES.map((currency) => (
-                        <SelectItem key={currency.code} value={currency.code}>
-                          <span className="flex items-center gap-2">
-                            <span>{currency.flag}</span>
-                            <span>{currency.code}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Fator:</span>
-                  <div className="font-semibold">{selectedCotacao.fator_multiplicador}x</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
-                  <div className="font-semibold text-blue-600">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toFixed(2)}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Total USD:</span>
-                  <div className="font-semibold text-green-600">$ {getTotalChangeDolarTotal().toFixed(2)}</div>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Total BRL:</span>
-                  <div className="font-semibold text-orange-600">R$ {getTotalMultiplicadorReaisTotal().toFixed(2)}</div>
+                <p className="text-sm text-slate-300 mb-3">{selectedCotacao.descricao}</p>
+                
+                {/* Grid de informações principais em layout compacto */}
+                <div className="grid grid-cols-6 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-400">País:</span>
+                    <div className="font-medium text-white">{selectedCotacao.pais_origem}</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Moeda:</span>
+                    <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                      <SelectTrigger className="w-20 h-6 mt-1 text-xs bg-slate-700 border-slate-600">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background border border-border z-50">
+                        {AVAILABLE_CURRENCIES.map((currency) => (
+                          <SelectItem key={currency.code} value={currency.code}>
+                            <span className="flex items-center gap-2">
+                              <span>{currency.flag}</span>
+                              <span>{currency.code}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Fator:</span>
+                    <div className="font-medium text-white">{selectedCotacao.fator_multiplicador}x</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
+                    <div className="font-semibold text-blue-400">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Total USD:</span>
+                    <div className="font-semibold text-green-400">$ {getTotalChangeDolarTotal().toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">Total BRL:</span>
+                    <div className="font-semibold text-orange-400">R$ {getTotalMultiplicadorReaisTotal().toFixed(2)}</div>
+                  </div>
                 </div>
               </div>
               
-              {/* Controle de Contêiner */}
-              <div className="mt-4 pt-4 border-t border-border">
-                <div className="text-sm font-medium text-muted-foreground mb-4 text-center">
-                  Simulação de Contêiner
-                </div>
-                <ContainerVisualization
-                  containerType={CONTAINER_TYPES[selectedContainer].name}
-                  volumePercentage={getContainerUsage('volume')}
-                  weightPercentage={getContainerUsage('weight')}
-                  totalCBM={getTotalCBM()}
-                  totalWeight={getTotalWeight()}
-                  maxVolume={CONTAINER_TYPES[selectedContainer].volume}
-                  maxWeight={CONTAINER_TYPES[selectedContainer].maxWeight}
-                />
-                
-                {/* Container Type Selector */}
-                <div className="mt-4 flex justify-center">
-                  <div className="w-48">
-                    <Label className="text-sm text-muted-foreground">Tipo de Contêiner:</Label>
+              {/* Container Visualization - Área principal */}
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-muted-foreground">Simulação de Contêiner</h4>
+                  <div className="w-40">
                     <Select value={selectedContainer} onValueChange={setSelectedContainer}>
-                      <SelectTrigger className="w-full h-8 mt-1">
+                      <SelectTrigger className="w-full h-7 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-background border border-border z-50">
@@ -1028,6 +1017,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     </Select>
                   </div>
                 </div>
+                
+                <ContainerVisualization
+                  containerType={CONTAINER_TYPES[selectedContainer].name}
+                  volumePercentage={getContainerUsage('volume')}
+                  weightPercentage={getContainerUsage('weight')}
+                  totalCBM={getTotalCBM()}
+                  totalWeight={getTotalWeight()}
+                  maxVolume={CONTAINER_TYPES[selectedContainer].volume}
+                  maxWeight={CONTAINER_TYPES[selectedContainer].maxWeight}
+                />
               </div>
             </CardHeader>
           </Card>
