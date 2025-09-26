@@ -118,8 +118,8 @@ export const useProductImport = () => {
       }
     });
 
-    // Se CBM não foi fornecido mas temos as dimensões, calcular automaticamente
-    if (!product.cubagem_cm3 && product.comprimento_cm && product.largura_cm && product.altura_cm) {
+    // Se CBM não foi fornecido ou é zero mas temos as dimensões, calcular automaticamente
+    if ((!product.cubagem_cm3 || product.cubagem_cm3 === 0) && product.comprimento_cm && product.largura_cm && product.altura_cm) {
       product.cubagem_cm3 = (product.comprimento_cm * product.largura_cm * product.altura_cm) / 1000000; // Converter para m³
     }
 
