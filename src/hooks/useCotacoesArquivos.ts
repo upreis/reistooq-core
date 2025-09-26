@@ -573,12 +573,20 @@ export function useCotacoesArquivos() {
           });
         }
 
-        const produto = {
-          sku: linha.SKU || linha.sku || `PROD-${index + 1}`,
-          imagem: imagemFinal,
-          imagem_fornecedor: imagemFornecedorFinal,
-          material: linha.MATERIAL || linha.material || '',
-          cor: linha.COR || linha.cor || '',
+         // Debug: verificar dados das colunas de peso
+         console.log(`🔍 [DEBUG] Linha ${index} dados originais:`, {
+           'PESO UNITARIO(g)': linha['PESO UNITARIO(g)'],
+           'Peso embalado cx Master (KG)': linha['Peso embalado cx Master (KG)'],
+           'Peso Sem embalagem cx Master (KG)': linha['Peso Sem embalagem cx Master (KG)'],
+           todasAsChaves: Object.keys(linha)
+         });
+
+         const produto = {
+           sku: linha.SKU || linha.sku || `PROD-${index + 1}`,
+           imagem: imagemFinal,
+           imagem_fornecedor: imagemFornecedorFinal,
+           material: linha.MATERIAL || linha.material || '',
+           cor: linha.COR || linha.cor || '',
           // Nome do Produto - adicionar mais variações
           nome_produto: linha['Nome do Produto'] || linha.NOME_PRODUTO || linha.nome_produto || linha.NOME || linha.nome || '',
           package: linha.PACKAGE || linha.package || '',
