@@ -552,19 +552,48 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Funções para seleção de produtos na tabela Excel
   const handleSelectProduct = (productId: string, checked: boolean) => {
+    console.log('🔘 [DEBUG] Selecionando produto:', { productId, checked, currentSelected: selectedProducts });
     if (checked) {
-      setSelectedProducts(prev => [...prev, productId]);
+      setSelectedProducts(prev => {
+        const newSelected = [...prev, productId];
+        console.log('✅ [DEBUG] Produtos selecionados após adicionar:', newSelected);
+        return newSelected;
+      });
     } else {
-      setSelectedProducts(prev => prev.filter(id => id !== productId));
+      setSelectedProducts(prev => {
+        const newSelected = prev.filter(id => id !== productId);
+        console.log('❌ [DEBUG] Produtos selecionados após remover:', newSelected);
+        return newSelected;
+      });
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
-    if (checked && selectedCotacao?.produtos) {
-      setSelectedProducts(selectedCotacao.produtos.map((p: any, index: number) => index.toString()));
+    if (checked) {
+      // Usar displayProducts em vez de selectedCotacao.produtos
+      setSelectedProducts(displayProducts.map((_, index) => index.toString()));
     } else {
       setSelectedProducts([]);
     }
+  };
+
+  // Função para excluir produtos selecionados
+  const handleDeleteSelectedProducts = () => {
+    if (selectedProducts.length === 0) return;
+    
+    // Filtrar produtos que não estão selecionados
+    const updatedProducts = displayProducts.filter((_, index) => 
+      !selectedProducts.includes(index.toString())
+    );
+    
+    // Atualizar o estado
+    setProductData(updatedProducts);
+    setSelectedProducts([]);
+    
+    toast({
+      title: "Produtos excluídos",
+      description: `${selectedProducts.length} produto(s) foram excluídos com sucesso.`,
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -743,6 +772,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.log('🔄 [DEBUG] Dados de produto disponíveis:', productData);
     }
   }, [productData]);
+
+  // Debug quando selectedProducts muda
+  React.useEffect(() => {
+    console.log('🔘 [DEBUG] selectedProducts alterado:', selectedProducts);
+    console.log('🔘 [DEBUG] selectedProducts length:', selectedProducts.length);
+  }, [selectedProducts]);
   console.log('🔍 [DEBUG] Sample product data:', displayProducts[0]);
 
   // Função para atualizar dados do produto
@@ -1144,24 +1179,34 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           {/* Tabela estilo Excel */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Produtos da Cotação</CardTitle>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setShowImportDialog(true)}
-                    disabled={!selectedCotacao}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Importar
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Produtos da Cotação</CardTitle>
+                  <div className="flex gap-2">
+                    {selectedProducts.length > 0 && (
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={handleDeleteSelectedProducts}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir Selecionados ({selectedProducts.length})
+                      </Button>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowImportDialog(true)}
+                      disabled={!selectedCotacao}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Importar
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
+                    </Button>
+                  </div>
                 </div>
-              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-auto border rounded-lg">
@@ -1169,12 +1214,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="w-[50px]">
-                        <input 
-                          type="checkbox"
-                          checked={selectedProducts.length === mockProducts.length && mockProducts.length > 0}
-                          onChange={(e) => handleSelectAll(e.target.checked)}
-                          className="rounded"
-                        />
+                         <input 
+                           type="checkbox"
+                           checked={selectedProducts.length === displayProducts.length && displayProducts.length > 0}
+                           onChange={(e) => handleSelectAll(e.target.checked)}
+                           className="rounded"
+                         />
                       </TableHead>
                       <TableHead className="min-w-[100px]">SKU</TableHead>
                       <TableHead className="min-w-[150px]">IMAGENS</TableHead>
