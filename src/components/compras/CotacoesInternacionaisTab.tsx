@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EditableCell } from './EditableCell';
+import ContainerVisualization from './ContainerVisualization';
 import { 
   Plus, 
   FileText, 
@@ -985,9 +986,23 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               
               {/* Controle de Contêiner */}
               <div className="mt-4 pt-4 border-t border-border">
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Tipo Contêiner:</span>
+                <div className="text-sm font-medium text-muted-foreground mb-4 text-center">
+                  Simulação de Contêiner
+                </div>
+                <ContainerVisualization
+                  containerType={CONTAINER_TYPES[selectedContainer].name}
+                  volumePercentage={getContainerUsage('volume')}
+                  weightPercentage={getContainerUsage('weight')}
+                  totalCBM={getTotalCBM()}
+                  totalWeight={getTotalWeight()}
+                  maxVolume={CONTAINER_TYPES[selectedContainer].volume}
+                  maxWeight={CONTAINER_TYPES[selectedContainer].maxWeight}
+                />
+                
+                {/* Container Type Selector */}
+                <div className="mt-4 flex justify-center">
+                  <div className="w-48">
+                    <Label className="text-sm text-muted-foreground">Tipo de Contêiner:</Label>
                     <Select value={selectedContainer} onValueChange={setSelectedContainer}>
                       <SelectTrigger className="w-full h-8 mt-1">
                         <SelectValue />
@@ -995,49 +1010,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <SelectContent className="bg-background border border-border z-50">
                         {Object.entries(CONTAINER_TYPES).map(([key, container]) => (
                           <SelectItem key={key} value={key}>
-                            {container.name}
+                            {container.name} ({container.volume}m³, {container.maxWeight.toLocaleString()}kg)
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-muted-foreground">Volume (CBM):</span>
-                      <span className={`text-xs font-medium ${isOverLimit('volume') ? 'text-red-600' : 'text-muted-foreground'}`}>
-                        {getTotalCBM().toFixed(1)} / {CONTAINER_TYPES[selectedContainer].volume} m³
-                      </span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          isOverLimit('volume') ? 'bg-red-500' : 
-                          getContainerUsage('volume') > 80 ? 'bg-yellow-500' : 'bg-green-500'
-                        }`}
-                        style={{ width: `${Math.min(getContainerUsage('volume'), 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-muted-foreground">{getContainerUsage('volume').toFixed(1)}%</span>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-muted-foreground">Peso (KG):</span>
-                      <span className={`text-xs font-medium ${isOverLimit('weight') ? 'text-red-600' : 'text-muted-foreground'}`}>
-                        {getTotalWeight().toFixed(0)} / {CONTAINER_TYPES[selectedContainer].maxWeight.toLocaleString()} kg
-                      </span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          isOverLimit('weight') ? 'bg-red-500' : 
-                          getContainerUsage('weight') > 80 ? 'bg-yellow-500' : 'bg-green-500'
-                        }`}
-                        style={{ width: `${Math.min(getContainerUsage('weight'), 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-muted-foreground">{getContainerUsage('weight').toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
