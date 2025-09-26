@@ -53,6 +53,13 @@ export function useCotacoesArquivos() {
 
   const uploadArquivo = useCallback(async (file: File, cotacaoId: string, organizationId: string) => {
     try {
+      console.log('🚀 Iniciando upload de arquivo:', { 
+        fileName: file.name, 
+        fileSize: file.size, 
+        cotacaoId, 
+        organizationId 
+      });
+      
       setLoading(true);
 
       // Gerar nome único para o arquivo
@@ -60,22 +67,31 @@ export function useCotacoesArquivos() {
       const fileName = `${cotacaoId}_${timestamp}_${file.name}`;
       const filePath = `${organizationId}/${cotacaoId}/${fileName}`;
 
+      console.log('📁 Caminho do arquivo gerado:', filePath);
+
       // Upload do arquivo para o storage
+      console.log('☁️ Fazendo upload para Supabase Storage...');
       const { error: uploadError } = await supabase.storage
         .from('cotacoes-arquivos')
         .upload(filePath, file);
 
       if (uploadError) {
-        console.error('Erro no upload do arquivo:', uploadError);
+        console.error('❌ Erro no upload do arquivo:', uploadError);
         throw uploadError;
       }
 
+      console.log('✅ Upload para storage concluído com sucesso');
+
       // Obter URL pública do arquivo
+      console.log('🔗 Obtendo URL pública...');
       const { data: urlData } = supabase.storage
         .from('cotacoes-arquivos')
         .getPublicUrl(filePath);
 
+      console.log('🔗 URL pública obtida:', urlData.publicUrl);
+
       // Registrar arquivo na tabela
+      console.log('💾 Registrando arquivo na tabela...');
       const { data, error } = await supabase
         .from('cotacoes_arquivos')
         .insert([{
@@ -89,13 +105,16 @@ export function useCotacoesArquivos() {
         .single();
 
       if (error) {
-        console.error('Erro ao registrar arquivo:', error);
+        console.error('❌ Erro ao registrar arquivo na tabela:', error);
         // Tentar remover o arquivo do storage se falhou o registro
+        console.log('🗑️ Removendo arquivo do storage devido ao erro...');
         await supabase.storage
           .from('cotacoes-arquivos')
           .remove([filePath]);
         throw error;
       }
+
+      console.log('✅ Arquivo registrado na tabela com sucesso:', data);
 
       toast({
         title: "Arquivo enviado!",
@@ -104,7 +123,7 @@ export function useCotacoesArquivos() {
 
       return data;
     } catch (error) {
-      console.error('Erro ao fazer upload do arquivo:', error);
+      console.error('💥 Erro completo no upload do arquivo:', error);
       toast({
         title: "Erro no upload",
         description: "Não foi possível enviar o arquivo.",

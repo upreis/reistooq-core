@@ -117,27 +117,51 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
 
   const processarArquivoLocal = async (file: File) => {
     try {
+      console.log('🎯 Iniciando processamento local do arquivo:', file.name);
+      console.log('📋 Dados da cotação:', { 
+        cotacaoId: cotacao?.id, 
+        organizationId: cotacao?.organization_id 
+      });
+      
       setProcessando(true);
       setProgressoUpload(10);
 
+      // Validar se temos as informações necessárias
+      if (!cotacao?.id) {
+        console.error('❌ ID da cotação não encontrado');
+        throw new Error('ID da cotação não encontrado');
+      }
+      if (!cotacao?.organization_id) {
+        console.error('❌ ID da organização não encontrado');
+        throw new Error('ID da organização não encontrado');
+      }
+
       // Upload do arquivo primeiro
       const organizationId = cotacao.organization_id;
+      console.log('⬆️ Fazendo upload do arquivo...');
       const arquivoUpload = await uploadArquivo(file, cotacao.id, organizationId);
+      console.log('✅ Upload concluído:', arquivoUpload);
       setProgressoUpload(30);
 
       // Ler e processar o arquivo
+      console.log('📖 Lendo arquivo...');
       const dados = await lerArquivo(file);
+      console.log('📊 Dados extraídos:', { totalDados: dados.length });
       setProgressoUpload(70);
 
       // Processar dados
+      console.log('⚙️ Processando dados...');
       const dadosProcessados = processarDados(dados);
+      console.log('✅ Dados processados:', { totalProdutos: dadosProcessados.length });
       setProgressoUpload(90);
 
       // Salvar dados processados
+      console.log('💾 Salvando dados processados...');
       await processarArquivo(arquivoUpload.id, dadosProcessados);
       setProgressoUpload(100);
 
       // Recarregar lista de arquivos
+      console.log('🔄 Recarregando lista de arquivos...');
       await carregarArquivos();
 
       toast({
@@ -149,11 +173,24 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+      
+      console.log('🎉 Processamento completo com sucesso!');
     } catch (error) {
-      console.error('Erro ao processar arquivo:', error);
+      console.error('💥 Erro detalhado no processamento:', error);
+      
+      // Log adicional para debug
+      console.error('📋 Contexto do erro:', {
+        arquivo: file.name,
+        tamanho: file.size,
+        tipo: file.type,
+        cotacao: cotacao?.id,
+        organizacao: cotacao?.organization_id,
+        stack: error instanceof Error ? error.stack : 'Stack não disponível'
+      });
+      
       toast({
         title: "Erro na importação",
-        description: "Não foi possível processar o arquivo.",
+        description: `Erro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         variant: "destructive",
       });
     } finally {
