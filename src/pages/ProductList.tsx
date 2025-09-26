@@ -47,6 +47,12 @@ const ProductList = () => {
   const [editingValue, setEditingValue] = useState("");
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  
+  // Estados da paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
   const { toast } = useToast();
   const { uploadImage, uploading } = useImageUpload();
@@ -65,21 +71,37 @@ const ProductList = () => {
   }, []);
 
   useEffect(() => {
-    // Recarregar quando filtros mudarem
+    // Recarregar quando filtros mudarem e resetar para primeira página
+    setCurrentPage(1);
     loadProducts();
   }, [searchTerm, selectedCategory]);
+
+  useEffect(() => {
+    // Recarregar quando página ou itens por página mudarem
+    loadProducts();
+  }, [currentPage, itemsPerPage]);
 
   const loadProducts = async () => {
     try {
       setLoading(true);
-      // Forçar busca específica para lista de produtos com parâmetros exclusivos
+      
+      // Calcular offset baseado na página atual
+      const offset = (currentPage - 1) * itemsPerPage;
+      
+      // Buscar produtos com paginação
       const data = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        limit: 50,
+        limit: itemsPerPage,
+        offset: offset,
         ativo: true // Apenas produtos ativos na lista
       });
+      
       setProducts(data);
+      
+      // Buscar total de produtos para calcular páginas
+      await loadTotalProducts();
+      
       // Limpar seleções quando recarregar produtos
       setSelectedProducts([]);
       setSelectAll(false);
@@ -94,6 +116,23 @@ const ProductList = () => {
     }
   };
 
+  const loadTotalProducts = async () => {
+    try {
+      // Buscar total sem limit/offset para calcular páginas
+      const data = await getProducts({
+        search: searchTerm || undefined,
+        categoria: selectedCategory === "all" ? undefined : selectedCategory,
+        ativo: true
+      });
+      
+      const total = data.length;
+      setTotalProducts(total);
+      setTotalPages(Math.ceil(total / itemsPerPage));
+    } catch (error) {
+      console.error("Error loading total products:", error);
+    }
+  };
+
   const loadCategories = async () => {
     try {
       const data = await getCategories();
@@ -104,7 +143,25 @@ const ProductList = () => {
   };
 
   const handleSearch = () => {
+    setCurrentPage(1);
     loadProducts();
+  };
+
+  // Funções de paginação
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const goToFirstPage = () => goToPage(1);
+  const goToLastPage = () => goToPage(totalPages);
+  const goToPreviousPage = () => goToPage(currentPage - 1);
+  const goToNextPage = () => goToPage(currentPage + 1);
+
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
   };
 
   const handleDelete = async (id: string) => {
@@ -536,10 +593,17 @@ const ProductList = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Lista de Produtos
-            </CardTitle>
+            <div className="flex flex-col gap-1">
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Lista de Produtos
+              </CardTitle>
+              {totalProducts > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {totalProducts} produtos • Página {currentPage} de {totalPages}
+                </p>
+              )}
+            </div>
             <div className="flex gap-2">
               <Button onClick={() => navigate("/apps/ecommerce/addproduct")}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -1093,6 +1157,134 @@ const ProductList = () => {
                   </table>
                 </div>
                 
+                {/* Controles de Paginação */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t">
+                  {/* Informações da página */}
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-muted-foreground">
+                      Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, totalProducts)} de {totalProducts} produtos
+                    </div>
+                    
+                    {/* Itens por página */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">Itens por página:</span>
+                      <Select value={itemsPerPage.toString()} onValueChange={handleItemsPerPageChange}>
+                        <SelectTrigger className="w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Controles de navegação */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToFirstPage}
+                      disabled={currentPage === 1}
+                      className="text-xs"
+                    >
+                      Primeira
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToPreviousPage}
+                      disabled={currentPage === 1}
+                      className="text-xs"
+                    >
+                      Anterior
+                    </Button>
+
+                    {/* Números das páginas */}
+                    <div className="flex items-center gap-1">
+                      {(() => {
+                        const pages = [];
+                        const startPage = Math.max(1, currentPage - 2);
+                        const endPage = Math.min(totalPages, currentPage + 2);
+
+                        if (startPage > 1) {
+                          pages.push(
+                            <Button
+                              key={1}
+                              variant={1 === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => goToPage(1)}
+                              className="w-8 h-8 p-0 text-xs"
+                            >
+                              1
+                            </Button>
+                          );
+                          if (startPage > 2) {
+                            pages.push(<span key="start-ellipsis" className="text-xs text-muted-foreground px-1">...</span>);
+                          }
+                        }
+
+                        for (let i = startPage; i <= endPage; i++) {
+                          pages.push(
+                            <Button
+                              key={i}
+                              variant={i === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => goToPage(i)}
+                              className="w-8 h-8 p-0 text-xs"
+                            >
+                              {i}
+                            </Button>
+                          );
+                        }
+
+                        if (endPage < totalPages) {
+                          if (endPage < totalPages - 1) {
+                            pages.push(<span key="end-ellipsis" className="text-xs text-muted-foreground px-1">...</span>);
+                          }
+                          pages.push(
+                            <Button
+                              key={totalPages}
+                              variant={totalPages === currentPage ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => goToPage(totalPages)}
+                              className="w-8 h-8 p-0 text-xs"
+                            >
+                              {totalPages}
+                            </Button>
+                          );
+                        }
+
+                        return pages;
+                      })()}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                      className="text-xs"
+                    >
+                      Próxima
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToLastPage}
+                      disabled={currentPage === totalPages}
+                      className="text-xs"
+                    >
+                      Última
+                    </Button>
+                  </div>
+                </div>
+
                 {/* Legenda das cores dos cálculos e funcionalidades */}
                 <div className="text-xs text-muted-foreground mt-4 p-3 bg-muted/30 rounded-lg">
                   <div className="mb-3">
