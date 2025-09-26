@@ -1,5 +1,5 @@
 // src/components/compras/CotacoesInternacionaisTab.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { EditableCell } from './EditableCell';
 import { 
   Plus, 
   FileText, 
@@ -201,6 +202,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>("1");
   const [multiplicadorReais, setMultiplicadorReais] = useState<string>("5.44");
   const [multiplicadorReaisTotal, setMultiplicadorReaisTotal] = useState<string>("5.44");
+  
+  // Estados para edição inline
+  const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
+  const [productData, setProductData] = useState<any[]>([]);
   
   // Estados do formulário
   const [dadosBasicos, setDadosBasicos] = useState({
@@ -573,6 +578,34 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return value > 0 ? value : 5.44;
   };
 
+  // Funções para edição inline
+  const startEditing = useCallback((rowIndex: number, field: string) => {
+    setEditingCell({ row: rowIndex, field });
+  }, []);
+
+  const stopEditing = useCallback(() => {
+    setEditingCell(null);
+  }, []);
+
+  // Identificar campos editáveis (excluir calculados)
+  const editableFields = [
+    'sku', 'material', 'cor', 'nome_produto', 'package', 'preco', 'unit', 
+    'pcs_ctn', 'caixas', 'peso_unitario_g', 'comprimento', 'largura', 
+    'altura', 'cbm_cubagem', 'cbm_total', 'obs'
+  ];
+
+  const isFieldEditable = useCallback((field: string) => {
+    return editableFields.includes(field);
+  }, []);
+
+  const getFieldType = useCallback((field: string) => {
+    const numberFields = [
+      'preco', 'pcs_ctn', 'caixas', 'peso_unitario_g', 'comprimento', 
+      'largura', 'altura', 'cbm_cubagem', 'cbm_total'
+    ];
+    return numberFields.includes(field) ? 'number' : 'text';
+  }, []);
+
   // Mock data para exemplo da tabela Excel
   const mockProducts = selectedCotacao?.produtos?.length > 0 ? selectedCotacao.produtos.map((p: any, index: number) => ({
     sku: p.sku || `PL-${800 + index}`,
@@ -665,6 +698,44 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       multiplicador_reais_total: (1160.00 / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
     }
   ];
+
+  // Usar productData se disponível, senão usar mockProducts
+  const displayProducts = productData.length > 0 ? productData : mockProducts;
+
+  // Função para atualizar dados do produto
+  const updateProductData = useCallback((rowIndex: number, field: string, value: string | number) => {
+    const currentProducts = productData.length > 0 ? productData : mockProducts;
+    const updatedProducts = [...currentProducts];
+    updatedProducts[rowIndex] = {
+      ...updatedProducts[rowIndex],
+      [field]: value
+    };
+    
+    // Recalcular campos automáticos
+    const product = updatedProducts[rowIndex];
+    
+    // Recalcular campos que dependem dos valores editados
+    if (['peso_unitario_g', 'pcs_ctn'].includes(field)) {
+      product.peso_cx_master_kg = (product.peso_unitario_g * product.pcs_ctn) / 1000;
+      product.peso_sem_cx_master_kg = product.peso_cx_master_kg - 1;
+      product.peso_total_cx_master_kg = product.peso_cx_master_kg;
+      product.peso_total_sem_cx_master_kg = product.peso_sem_cx_master_kg;
+    }
+    
+    if (['preco', 'pcs_ctn', 'caixas'].includes(field)) {
+      product.quantidade_total = product.pcs_ctn * product.caixas;
+      product.valor_total = product.preco * product.quantidade_total;
+    }
+    
+    // Recalcular campos calculados automaticamente
+    product.change_dolar = product.preco / getChangeDolarDivisorValue();
+    product.change_dolar_total = product.valor_total / getChangeDolarTotalDivisorValue();
+    product.multiplicador_reais = product.preco * getMultiplicadorReaisValue();
+    product.multiplicador_reais_total = (product.valor_total / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue();
+    
+    setProductData(updatedProducts);
+    stopEditing();
+  }, [productData, mockProducts, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue, stopEditing]);
 
   return (
     <div className="space-y-6">
@@ -985,7 +1056,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockProducts.map((product: any, index: number) => (
+                    {displayProducts.map((product: any, index: number) => (
                       <TableRow key={index} className="hover:bg-muted/50">
                         <TableCell>
                           <input 
@@ -995,7 +1066,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             className="rounded"
                           />
                         </TableCell>
-                        <TableCell className="font-medium">{product.sku}</TableCell>
+                        <TableCell className="font-medium">
+                          <EditableCell
+                            value={product.sku}
+                            type="text"
+                            onSave={(value) => updateProductData(index, 'sku', value)}
+                            onCancel={stopEditing}
+                            isEditing={editingCell?.row === index && editingCell?.field === 'sku'}
+                            onDoubleClick={() => startEditing(index, 'sku')}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="w-16 h-16 bg-muted rounded flex items-center justify-center cursor-pointer hover:bg-muted/80">
                             {product.imagem ? (
@@ -1014,16 +1094,88 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{product.material}</TableCell>
-                        <TableCell>{product.cor}</TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={product.nome_produto}>
-                          {product.nome_produto}
+                        <TableCell>
+                          <EditableCell
+                            value={product.material}
+                            type="text"
+                            onSave={(value) => updateProductData(index, 'material', value)}
+                            onCancel={stopEditing}
+                            isEditing={editingCell?.row === index && editingCell?.field === 'material'}
+                            onDoubleClick={() => startEditing(index, 'material')}
+                          />
                         </TableCell>
-                        <TableCell>{product.package}</TableCell>
-                        <TableCell>¥ {product.preco.toFixed(2)}</TableCell>
-                        <TableCell>{product.unit}</TableCell>
-                        <TableCell>{product.pcs_ctn}</TableCell>
-                        <TableCell>{product.caixas}</TableCell>
+                        <TableCell>
+                          <EditableCell
+                            value={product.cor}
+                            type="text"
+                            onSave={(value) => updateProductData(index, 'cor', value)}
+                            onCancel={stopEditing}
+                            isEditing={editingCell?.row === index && editingCell?.field === 'cor'}
+                            onDoubleClick={() => startEditing(index, 'cor')}
+                          />
+                        </TableCell>
+                        <TableCell className="max-w-[200px]">
+                          <EditableCell
+                            value={product.nome_produto}
+                            type="text"
+                            onSave={(value) => updateProductData(index, 'nome_produto', value)}
+                            onCancel={stopEditing}
+                            isEditing={editingCell?.row === index && editingCell?.field === 'nome_produto'}
+                            onDoubleClick={() => startEditing(index, 'nome_produto')}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <EditableCell
+                            value={product.package}
+                            type="text"
+                            onSave={(value) => updateProductData(index, 'package', value)}
+                            onCancel={stopEditing}
+                            isEditing={editingCell?.row === index && editingCell?.field === 'package'}
+                            onDoubleClick={() => startEditing(index, 'package')}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <EditableCell
+                            value={product.preco}
+                            type="number"
+                            prefix="¥ "
+                            step="0.01"
+                            onSave={(value) => updateProductData(index, 'preco', value)}
+                            onCancel={stopEditing}
+                            isEditing={editingCell?.row === index && editingCell?.field === 'preco'}
+                            onDoubleClick={() => startEditing(index, 'preco')}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <EditableCell
+                            value={product.unit}
+                            type="text"
+                            onSave={(value) => updateProductData(index, 'unit', value)}
+                            onCancel={stopEditing}
+                            isEditing={editingCell?.row === index && editingCell?.field === 'unit'}
+                            onDoubleClick={() => startEditing(index, 'unit')}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <EditableCell
+                            value={product.pcs_ctn}
+                            type="number"
+                            onSave={(value) => updateProductData(index, 'pcs_ctn', value)}
+                            onCancel={stopEditing}
+                            isEditing={editingCell?.row === index && editingCell?.field === 'pcs_ctn'}
+                            onDoubleClick={() => startEditing(index, 'pcs_ctn')}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <EditableCell
+                            value={product.caixas}
+                            type="number"
+                            onSave={(value) => updateProductData(index, 'caixas', value)}
+                            onCancel={stopEditing}
+                            isEditing={editingCell?.row === index && editingCell?.field === 'caixas'}
+                            onDoubleClick={() => startEditing(index, 'caixas')}
+                          />
+                        </TableCell>
                         <TableCell>{product.peso_unitario_g}</TableCell>
                         <TableCell>{product.peso_cx_master_kg.toFixed(2)}</TableCell>
                         <TableCell>{product.peso_sem_cx_master_kg.toFixed(2)}</TableCell>
