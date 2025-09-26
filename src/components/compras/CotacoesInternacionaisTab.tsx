@@ -746,7 +746,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     stopEditing();
   }, [productData, mockProducts, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue, stopEditing]);
 
-  // Função para calcular total da coluna Multiplicador REAIS Total
+  // Funções para calcular totais das colunas
+  const getTotalValorTotal = useCallback(() => {
+    return displayProducts.reduce((total, product) => {
+      return total + (product.valor_total || 0);
+    }, 0);
+  }, [displayProducts]);
+
+  const getTotalChangeDolarTotal = useCallback(() => {
+    return displayProducts.reduce((total, product) => {
+      return total + (product.change_dolar_total || 0);
+    }, 0);
+  }, [displayProducts]);
+
   const getTotalMultiplicadorReaisTotal = useCallback(() => {
     return displayProducts.reduce((total, product) => {
       return total + (product.multiplicador_reais_total || 0);
@@ -919,7 +931,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
-                  <div className="font-semibold text-green-600">{getCurrencySymbol(selectedCurrency)} {getTotalMultiplicadorReaisTotal().toFixed(2)}</div>
+                  <div className="font-semibold text-blue-600">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toFixed(2)}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Total USD:</span>
+                  <div className="font-semibold text-green-600">$ {getTotalChangeDolarTotal().toFixed(2)}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Total BRL:</span>
+                  <div className="font-semibold text-orange-600">R$ {getTotalMultiplicadorReaisTotal().toFixed(2)}</div>
                 </div>
               </div>
             </CardHeader>
