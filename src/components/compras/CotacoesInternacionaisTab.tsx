@@ -14,6 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EditableCell } from './EditableCell';
 import ContainerVisualization from './ContainerVisualization';
+import { CotacaoImportDialog } from './CotacaoImportDialog';
 import { 
   Plus, 
   FileText, 
@@ -38,10 +39,10 @@ import {
   X,
   Info
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { CurrencyService } from "@/services/currencyService";
 import { ProductSelector } from './ProductSelector';
 import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
+import { useToast } from "@/hooks/use-toast";
 import { z } from 'zod';
 
 // Esquemas de validação com zod
@@ -214,6 +215,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Estado para tipo de contêiner selecionado
   const [selectedContainer, setSelectedContainer] = useState<string>('20');
   
+  // Estado para dialog de importação
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  
+  // Hook do toast
+  const { toast } = useToast();
+  
   // Tipos de contêineres disponíveis
   const CONTAINER_TYPES = {
     '20': { name: "20' Dry", volume: 33.2, maxWeight: 28130 },
@@ -251,7 +258,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
   const { createCotacaoInternacional, updateCotacaoInternacional, loading: saveLoading } = useCotacoesInternacionais();
-  const { toast } = useToast();
 
   // Handler para produtos selecionados do seletor avançado
   const handleProductSelectorConfirm = (selectedProducts: any[]) => {
@@ -816,7 +822,22 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const isOverLimit = useCallback((type: 'volume' | 'weight') => {
     return getContainerUsage(type) >= 100;
   }, [getContainerUsage]);
-
+  
+  // Função para lidar com dados importados
+  const handleImportSuccess = useCallback((dadosImportados: any[]) => {
+    setProductData(dadosImportados);
+    // Atualizar totais automaticamente
+    const novosProdutos = dadosImportados.map((produto, index) => ({
+      ...produto,
+      id: `import-${index}`,
+    }));
+    setProductData(novosProdutos);
+    
+    toast({
+      title: "Importação concluída!",
+      description: `${dadosImportados.length} produtos importados com sucesso.`,
+    });
+  }, [toast]);
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1036,7 +1057,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               <div className="flex items-center justify-between">
                 <CardTitle>Produtos da Cotação</CardTitle>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowImportDialog(true)}
+                    disabled={!selectedCotacao}
+                  >
                     <FileText className="h-4 w-4 mr-2" />
                     Importar
                   </Button>
@@ -2074,6 +2100,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         onOpenChange={setIsProductSelectorOpen}
         onSelectProducts={handleProductSelectorConfirm}
       />
+      {/* Dialog de Importação */}
+      {selectedCotacao && (
+        <CotacaoImportDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          cotacao={selectedCotacao}
+          onImportSuccess={handleImportSuccess}
+        />
+      )}
     </div>
   );
 };

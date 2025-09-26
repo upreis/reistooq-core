@@ -676,6 +676,60 @@ export type Database = {
         }
         Relationships: []
       }
+      cotacoes_arquivos: {
+        Row: {
+          cotacao_id: string
+          created_at: string
+          created_by: string
+          dados_processados: Json | null
+          detalhes_erro: Json | null
+          id: string
+          linhas_erro: number | null
+          linhas_processadas: number | null
+          nome_arquivo: string
+          organization_id: string
+          status: string
+          tipo_arquivo: string
+          total_linhas: number | null
+          updated_at: string
+          url_arquivo: string | null
+        }
+        Insert: {
+          cotacao_id: string
+          created_at?: string
+          created_by?: string
+          dados_processados?: Json | null
+          detalhes_erro?: Json | null
+          id?: string
+          linhas_erro?: number | null
+          linhas_processadas?: number | null
+          nome_arquivo: string
+          organization_id?: string
+          status?: string
+          tipo_arquivo: string
+          total_linhas?: number | null
+          updated_at?: string
+          url_arquivo?: string | null
+        }
+        Update: {
+          cotacao_id?: string
+          created_at?: string
+          created_by?: string
+          dados_processados?: Json | null
+          detalhes_erro?: Json | null
+          id?: string
+          linhas_erro?: number | null
+          linhas_processadas?: number | null
+          nome_arquivo?: string
+          organization_id?: string
+          status?: string
+          tipo_arquivo?: string
+          total_linhas?: number | null
+          updated_at?: string
+          url_arquivo?: string | null
+        }
+        Relationships: []
+      }
       cotacoes_fornecedores: {
         Row: {
           cotacao_id: string | null
