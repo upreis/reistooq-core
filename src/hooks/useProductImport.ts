@@ -98,12 +98,12 @@ export const useProductImport = () => {
       product.quantidade_atual = 0;
     }
 
-    // Mapear TODOS os campos do Excel - para update, limpar campos vazios
+    // Mapear TODOS os campos do Excel - para update, sempre processar todos os campos
     Object.entries(columnMapping).forEach(([excelCol, productField]) => {
       const value = row[excelCol];
       
-      // Para updates, sempre incluir o campo (mesmo se vazio) para garantir atualização
-      if (isUpdate || (value !== undefined && value !== null && value !== '')) {
+      // Para updates, SEMPRE incluir todos os campos (mesmo se vazios) para garantir atualização completa
+      if (isUpdate) {
         if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento_cm', 'largura_cm', 'altura_cm', 'cubagem_cm3'].includes(productField)) {
           product[productField] = parseFloat(value) || 0;
         } else if (['pcs_ctn', 'package'].includes(productField)) {
@@ -112,8 +112,19 @@ export const useProductImport = () => {
           // Excel já converte porcentagem para decimal automaticamente
           product[productField] = parseFloat(value) || 0;
         } else {
-          // Para strings, limpar valores vazios em updates
-          product[productField] = value ? value.toString() : (isUpdate ? '' : value);
+          // Para strings, sempre atualizar com o valor da planilha (pode ser vazio para limpar)
+          product[productField] = value ? value.toString() : '';
+        }
+      } else if (value !== undefined && value !== null && value !== '') {
+        // Para novos produtos, só incluir se tem valor
+        if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento_cm', 'largura_cm', 'altura_cm', 'cubagem_cm3'].includes(productField)) {
+          product[productField] = parseFloat(value) || 0;
+        } else if (['pcs_ctn', 'package'].includes(productField)) {
+          product[productField] = parseInt(value) || 0;
+        } else if (['pis', 'cofins', 'imposto_importacao', 'ipi', 'icms'].includes(productField)) {
+          product[productField] = parseFloat(value) || 0;
+        } else {
+          product[productField] = value.toString();
         }
       }
     });
