@@ -1344,28 +1344,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         <TableCell>
                           <ProdutoImagemPreview
                             imagemUrl={product.imagem}
-                            imagemFornecedorUrl={product.imagem_fornecedor}
                             nomeProduto={product.nome_produto || product.sku}
                             sku={product.sku}
                             className="mx-auto"
                           />
                         </TableCell>
                         <TableCell>
-                          {(() => {
-                            console.log(`🔍 [DEBUG] Produto ${index} - Imagem Fornecedor:`, {
-                              sku: product.sku,
-                              imagem_fornecedor: product.imagem_fornecedor,
-                              temImagemFornecedor: !!product.imagem_fornecedor
-                            });
-                            return (
-                              <ProdutoImagemPreview
-                                imagemFornecedorUrl={product.imagem_fornecedor}
-                                nomeProduto={product.nome_produto || product.sku}
-                                sku={product.sku}
-                                className="mx-auto"
-                              />
-                            );
-                          })()}
+                          <ProdutoImagemPreview
+                            imagemUrl={product.imagem_fornecedor}
+                            nomeProduto={product.nome_produto || product.sku}
+                            sku={product.sku}
+                            className="mx-auto"
+                          />
                         </TableCell>
                         <TableCell>
                           <EditableCell
