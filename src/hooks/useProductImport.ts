@@ -109,8 +109,8 @@ export const useProductImport = () => {
         } else if (['pcs_ctn', 'package'].includes(productField)) {
           product[productField] = parseInt(value) || 0;
         } else if (['pis', 'cofins', 'imposto_importacao', 'ipi', 'icms'].includes(productField)) {
-          // Converter porcentagem para decimal (ex: 12.5 -> 0.125)
-          product[productField] = (parseFloat(value) || 0) / 100;
+          // Excel já converte porcentagem para decimal automaticamente
+          product[productField] = parseFloat(value) || 0;
         } else {
           // Para strings, limpar valores vazios em updates
           product[productField] = value ? value.toString() : (isUpdate ? '' : value);
