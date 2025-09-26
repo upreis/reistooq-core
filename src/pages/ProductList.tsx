@@ -344,7 +344,7 @@ const ProductList = () => {
         "ICMS": product.icms || "",
         "UNIDADE": product.unidade || "",
         "PCS/CTN": product.pcs_ctn || "",
-        "PACKAGE INFO": product.package_info || "",
+        "PACKAGE": (product as any).package || "",
         "IMAGEM": product.url_imagem || "",
         "IMAGEM DO FORNECEDOR": product.url_imagem_fornecedor || ""
       }));
@@ -377,7 +377,7 @@ const ProductList = () => {
         { wch: 10 }, // ICMS
         { wch: 10 }, // UNIDADE
         { wch: 12 }, // PCS/CTN
-        { wch: 30 }, // PACKAGE INFO
+        { wch: 12 }, // PACKAGE
         { wch: 50 }, // IMAGEM
         { wch: 50 }, // IMAGEM DO FORNECEDOR
       ];
@@ -987,13 +987,13 @@ const ProductList = () => {
                               </span>
                             </EditableCell>
 
-                            {/* PACKAGE */}
-                            <EditableCell 
-                              productId={product.id} 
-                              field="package_info" 
-                              value={(product as any).package_info}
-                              displayValue={(product as any).package_info || "-"}
-                            />
+            {/* PACKAGE */}
+            <EditableCell 
+              productId={product.id} 
+              field="package" 
+              value={(product as any).package}
+              displayValue={(product as any).package || "-"}
+            />
 
                             {/* PREÇO */}
                             <EditableCell 

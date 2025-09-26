@@ -45,6 +45,7 @@ export interface Product extends BaseProduct {
   ipi?: number | null;
   icms?: number | null;
   url_imagem_fornecedor?: string | null;
+  package?: string | null;
   package_info?: string | null;
   observacoes?: string | null;
   unidade?: string | null;
