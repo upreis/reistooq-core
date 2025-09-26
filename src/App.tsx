@@ -67,6 +67,7 @@ const queryClient = new QueryClient({
 
 function App() {
   console.log('🔧 App component rendering...');
+  console.log('🔧 React hooks available:', { useEffect: typeof useEffect });
   
   // Validar configuração na inicialização
   useEffect(() => {
@@ -92,7 +93,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
           <TooltipProvider>
-          <AuthProvider>
+            <AuthProvider>
             <MobileProvider>
               <SidebarUIProvider>
                 <InactivityTracker />
