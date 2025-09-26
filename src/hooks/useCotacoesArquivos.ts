@@ -255,9 +255,8 @@ export function useCotacoesArquivos() {
         const mediaFile = mediaFiles[i];
         const imageBlob = await zipData.files[mediaFile].async('blob');
         
-        // Associar imagem com linha baseado na posição
-        // Como não temos a posição exata, vamos distribuir as imagens entre as linhas
-        const linhaEstimada = Math.min(i + 1, range.e.r); // Não exceder o número de linhas
+        // Associar imagem com linha baseado na posição (começando da linha 2, pois linha 1 é cabeçalho)
+        const linhaEstimada = Math.min(i + 2, range.e.r + 1); // +2 para pular cabeçalho
         
         // Determinar se é imagem principal ou do fornecedor baseado na ordem
         const isImagemFornecedor = i % 2 === 1; // Alternar entre principal e fornecedor
@@ -465,20 +464,44 @@ export function useCotacoesArquivos() {
   }, [toast]);
 
   const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = []): any[] => {
+    console.log('🔍 [DEBUG] Processando dados:', { totalDados: dados.length, totalImagens: imagensUpload.length });
+    console.log('🔍 [DEBUG] Imagens disponíveis:', imagensUpload);
+    
     return dados.map((linha, index) => {
       try {
-        // Buscar imagens para esta linha
+        // Buscar imagens para esta linha (linha no Excel começa do 1, mas nosso array do 0)
+        const linhaExcel = index + 2; // +2 porque o cabeçalho está na linha 1 e dados começam na 2
+        
         const imagemPrincipal = imagensUpload.find(img => 
-          img.linha === index + 1 && (img.coluna === 'B' || img.coluna.includes('IMAGEM'))
+          img.linha === linhaExcel && (img.coluna === 'IMAGEM' || img.coluna.includes('IMAGEM') && !img.coluna.includes('FORNECEDOR'))
         );
         const imagemFornecedor = imagensUpload.find(img => 
-          img.linha === index + 1 && (img.coluna === 'C' || img.coluna.includes('FORNECEDOR'))
+          img.linha === linhaExcel && (img.coluna === 'IMAGEM_FORNECEDOR' || img.coluna.includes('FORNECEDOR'))
         );
+
+        console.log(`🔍 [DEBUG] Linha ${index} (Excel ${linhaExcel}):`, {
+          imagemPrincipal: imagemPrincipal?.url,
+          imagemFornecedor: imagemFornecedor?.url,
+          sku: linha.SKU || linha.sku
+        });
+
+        const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
+        const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
+
+        if (imagemFinal || imagemFornecedorFinal) {
+          console.log(`✅ [DEBUG] Produto ${index} tem imagens:`, {
+            sku: linha.SKU || linha.sku,
+            imagemFinal,
+            imagemFornecedorFinal,
+            fonteImagem: imagemPrincipal ? 'extraída' : 'coluna',
+            fonteFornecedor: imagemFornecedor ? 'extraída' : 'coluna'
+          });
+        }
 
         const produto = {
           sku: linha.SKU || linha.sku || `PROD-${index + 1}`,
-          imagem: imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '',
-          imagem_fornecedor: imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '',
+          imagem: imagemFinal,
+          imagem_fornecedor: imagemFornecedorFinal,
           material: linha.MATERIAL || linha.material || '',
           cor: linha.COR || linha.cor || '',
           nome_produto: linha.NOME_PRODUTO || linha.nome_produto || linha.NOME || linha.nome || '',

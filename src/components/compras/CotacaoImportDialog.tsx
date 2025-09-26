@@ -143,16 +143,26 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('✅ Upload concluído:', arquivoUpload);
       setProgressoUpload(30);
 
-      // Ler e processar o arquivo
-      console.log('📖 Lendo arquivo...');
-      const dados = await lerArquivo(file);
-      console.log('📊 Dados extraídos:', { totalDados: dados.length });
+      // Ler arquivo com extração de imagens
+      console.log('📖 Lendo arquivo com extração de imagens...');
+      const { dados, imagens } = await lerArquivoComImagens(file);
+      console.log('📊 Dados extraídos:', { totalDados: dados.length, totalImagens: imagens.length });
+      setProgressoUpload(50);
+
+      // Upload das imagens extraídas
+      let imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = [];
+      if (imagens.length > 0) {
+        console.log('☁️ Fazendo upload das imagens extraídas...');
+        imagensUpload = await uploadImagensExtraidas(imagens, cotacao.id, organizationId);
+        console.log('✅ Upload de imagens concluído:', imagensUpload.length);
+      }
       setProgressoUpload(70);
 
-      // Processar dados
-      console.log('⚙️ Processando dados...');
-      const dadosProcessados = processarDados(dados);
+      // Processar dados associando com imagens
+      console.log('⚙️ Processando dados e associando imagens...');
+      const dadosProcessados = processarDados(dados, imagensUpload);
       console.log('✅ Dados processados:', { totalProdutos: dadosProcessados.length });
+      console.log('🔍 Primeiro produto com imagens:', dadosProcessados.find(p => p.imagem || p.imagem_fornecedor));
       setProgressoUpload(90);
 
       // Salvar dados processados
