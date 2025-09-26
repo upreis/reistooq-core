@@ -761,10 +761,23 @@ export function useCotacoesArquivos() {
         // Cálculos automáticos do sistema (ignorando valores da planilha)
         produto.quantidade_total = produto.caixas * produto.pcs_ctn;
         produto.cbm_total = produto.cbm_cubagem * produto.caixas;
-        produto.peso_total_cx_master_kg = produto.peso_cx_master_kg * produto.caixas; // Peso total embalado
-        produto.peso_total_sem_cx_master_kg = produto.peso_sem_cx_master_kg * produto.caixas; // Peso total sem embalagem
         produto.valor_total = produto.preco * produto.quantidade_total;
         produto.preco_unitario = produto.quantidade_total > 0 ? produto.valor_total / produto.quantidade_total : 0;
+        
+        // CÁLCULO CORRETO: Peso total embalado cx Master (KG) = Peso embalado cx Master (KG) x CAIXAS
+        produto.peso_total_cx_master_kg = produto.peso_cx_master_kg * produto.caixas;
+        produto.peso_total_sem_cx_master_kg = produto.peso_sem_cx_master_kg * produto.caixas;
+
+        // Log específico do cálculo de peso
+        console.log(`🔢 [DEBUG] Cálculo de peso - Produto ${index + 1}:`, {
+          sku: produto.sku,
+          peso_cx_master_kg: produto.peso_cx_master_kg,
+          peso_sem_cx_master_kg: produto.peso_sem_cx_master_kg,
+          caixas: produto.caixas,
+          peso_total_cx_master_kg: produto.peso_total_cx_master_kg,
+          peso_total_sem_cx_master_kg: produto.peso_total_sem_cx_master_kg,
+          calculo: `${produto.peso_cx_master_kg} x ${produto.caixas} = ${produto.peso_total_cx_master_kg}`
+        });
 
         console.log(`✅ [DEBUG] Produto ${index + 1} processado:`, produto);
         return produto;
