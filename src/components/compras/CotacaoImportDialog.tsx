@@ -252,23 +252,41 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
 
   const handleImportarDados = async (arquivo: ArquivoProcessado) => {
     console.log('🚀 [DEBUG] Iniciando importação de dados:', arquivo);
+    console.log('🚀 [DEBUG] Arquivo.dados_processados:', arquivo.dados_processados);
+    console.log('🚀 [DEBUG] Tipo de dados_processados:', typeof arquivo.dados_processados);
+    console.log('🚀 [DEBUG] É array?:', Array.isArray(arquivo.dados_processados));
     
     if (arquivo.dados_processados && arquivo.dados_processados.length > 0) {
       const totalImagens = arquivo.dados_processados.filter((p: any) => p.imagem_extraida || p.imagem_fornecedor_extraida).length;
       
       console.log('✅ [DEBUG] Dados para importar:', arquivo.dados_processados);
       console.log('📸 [DEBUG] Total de imagens extraídas:', totalImagens);
+      console.log('🎯 [DEBUG] Chamando onImportSuccess com dados:', arquivo.dados_processados);
       
       // Chamar callback para importar dados na tela principal
-      onImportSuccess(arquivo.dados_processados);
-      onOpenChange(false);
-      
-      toast({
-        title: "Dados importados!",
-        description: `${arquivo.dados_processados.length} produtos importados${totalImagens > 0 ? ` com ${totalImagens} imagens extraídas do Excel.` : '.'}`,
-      });
+      try {
+        onImportSuccess(arquivo.dados_processados);
+        console.log('✅ [DEBUG] onImportSuccess chamado com sucesso');
+        
+        // Fechar modal apenas após sucesso
+        onOpenChange(false);
+        console.log('✅ [DEBUG] Modal fechado');
+        
+        toast({
+          title: "Dados importados!",
+          description: `${arquivo.dados_processados.length} produtos importados${totalImagens > 0 ? ` com ${totalImagens} imagens extraídas do Excel.` : '.'}`,
+        });
+      } catch (error) {
+        console.error('❌ [DEBUG] Erro ao chamar onImportSuccess:', error);
+        toast({
+          title: "Erro na importação",
+          description: "Erro ao processar os dados importados.",
+          variant: "destructive",
+        });
+      }
     } else {
       console.error('❌ [DEBUG] Nenhum dado processado encontrado no arquivo:', arquivo);
+      console.error('❌ [DEBUG] dados_processados é null/undefined ou vazio');
       toast({
         title: "Erro na importação",
         description: "Não há dados processados neste arquivo para importar.",
@@ -440,13 +458,24 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
                                 tipo_arquivo: (arquivo.tipo_arquivo || 'excel') as 'excel' | 'csv'
                               });
                               
+                              console.log('✅ [DEBUG] Arquivo deletado com sucesso');
+                              
                               // Recarregar a lista após exclusão
-                              if (cotacao?.id) {
-                                console.log('🔄 [DEBUG] Recarregando lista de arquivos...');
-                                await getArquivosCotacao(cotacao.id);
-                              }
+                              console.log('🔄 [DEBUG] Recarregando lista de arquivos...');
+                              await carregarArquivos();
+                              
+                              toast({
+                                title: "Arquivo removido!",
+                                description: "Arquivo deletado com sucesso.",
+                              });
+                              
                             } catch (error) {
                               console.error('❌ [DEBUG] Erro na exclusão:', error);
+                              toast({
+                                title: "Erro ao deletar",
+                                description: "Não foi possível deletar o arquivo.",
+                                variant: "destructive",
+                              });
                             }
                           }}
                           size="sm"

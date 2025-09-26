@@ -731,9 +731,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Debug logs detalhados
   console.log('🔍 [DEBUG] ProductData length:', productData.length);
   console.log('🔍 [DEBUG] ProductData state:', productData);
-  console.log('🔍 [DEBUG] DisplayProducts:', displayProducts);
+  console.log('🔍 [DEBUG] MockProducts length:', mockProducts.length);
   console.log('🔍 [DEBUG] DisplayProducts length:', displayProducts.length);
+  console.log('🔍 [DEBUG] DisplayProducts:', displayProducts);
   console.log('🔍 [DEBUG] Primeiro produto em display:', displayProducts[0]);
+  
+  // Force re-render quando productData muda
+  React.useEffect(() => {
+    console.log('🔄 [DEBUG] productData alterado, novo length:', productData.length);
+    if (productData.length > 0) {
+      console.log('🔄 [DEBUG] Dados de produto disponíveis:', productData);
+    }
+  }, [productData]);
   console.log('🔍 [DEBUG] Sample product data:', displayProducts[0]);
 
   // Função para atualizar dados do produto
@@ -894,12 +903,25 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     console.log('✅ [DEBUG] Produtos processados para exibição:', novosProdutos);
     console.log('✅ [DEBUG] Total de produtos processados:', novosProdutos.length);
     
+    console.log('🎯 [DEBUG] Chamando setProductData com:', novosProdutos);
     setProductData(novosProdutos);
     
-    // Força atualização da UI
+    // Força atualização da UI com verificação mais robusta
     setTimeout(() => {
-      console.log('🔄 [DEBUG] Estado atual do productData após setProductData:', novosProdutos);
-    }, 100);
+      console.log('🔄 [DEBUG] Estado atual do productData após setProductData:', productData);
+      console.log('🔄 [DEBUG] novosProdutos para comparação:', novosProdutos);
+      
+      // Se o estado não foi atualizado corretamente, tenta novamente
+      if (productData.length === 0 && novosProdutos.length > 0) {
+        console.warn('⚠️ [DEBUG] Estado não atualizado, tentando novamente...');
+        setProductData([...novosProdutos]); // força nova referência
+      }
+    }, 200);
+    
+    // Verificação adicional após 500ms
+    setTimeout(() => {
+      console.log('🔄 [DEBUG] Verificação final do estado productData:', productData);
+    }, 500);
     
     toast({
       title: "Importação concluída!",
