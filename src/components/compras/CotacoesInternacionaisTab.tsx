@@ -209,6 +209,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
   const [productData, setProductData] = useState<any[]>([]);
+  const [hasImportedData, setHasImportedData] = useState(false);
   
   // Estado para moeda selecionada no resumo
   const [selectedCurrency, setSelectedCurrency] = useState<string>('CNY');
@@ -590,6 +591,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(updatedProducts);
     setSelectedProducts([]);
     
+    // CRITICAL: Marcar que dados foram importados/editados para não voltar ao mock
+    setHasImportedData(true);
+    
     toast({
       title: "Produtos excluídos",
       description: `${selectedProducts.length} produto(s) foram excluídos com sucesso.`,
@@ -754,8 +758,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   ];
 
-  // Usar productData se disponível, senão usar mockProducts
-  const displayProducts = productData.length > 0 ? productData : mockProducts;
+  // Usar productData se disponível ou se tiver dados importados, senão usar mockProducts
+  const displayProducts = (productData.length > 0 || hasImportedData) ? productData : mockProducts;
   
   // Debug logs detalhados
   console.log('🔍 [DEBUG] ProductData length:', productData.length);
@@ -940,6 +944,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     
     console.log('🎯 [DEBUG] Chamando setProductData com:', novosProdutos);
     setProductData(novosProdutos);
+    setHasImportedData(true); // Marcar que dados foram importados
     
     // Força atualização da UI com verificação mais robusta
     setTimeout(() => {
@@ -1190,6 +1195,24 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Excluir Selecionados ({selectedProducts.length})
+                      </Button>
+                    )}
+                    {hasImportedData && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setProductData([]);
+                          setHasImportedData(false);
+                          setSelectedProducts([]);
+                          toast({
+                            title: "Dados limpos",
+                            description: "Todos os dados importados foram removidos.",
+                          });
+                        }}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Limpar Dados
                       </Button>
                     )}
                     <Button 
