@@ -207,6 +207,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
   const [productData, setProductData] = useState<any[]>([]);
   
+  // Estado para moeda selecionada no resumo
+  const [selectedCurrency, setSelectedCurrency] = useState<string>('CNY');
+  
   // Estados do formulário
   const [dadosBasicos, setDadosBasicos] = useState({
     numero_cotacao: '',
@@ -606,6 +609,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return numberFields.includes(field) ? 'number' : 'text';
   }, []);
 
+  // Função para obter símbolo da moeda
+  const getCurrencySymbol = useCallback((currencyCode: string) => {
+    const currency = AVAILABLE_CURRENCIES.find(c => c.code === currencyCode);
+    return currency?.symbol || currencyCode;
+  }, []);
+
   // Mock data para exemplo da tabela Excel
   const mockProducts = selectedCotacao?.produtos?.length > 0 ? selectedCotacao.produtos.map((p: any, index: number) => ({
     sku: p.sku || `PL-${800 + index}`,
@@ -736,6 +745,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(updatedProducts);
     stopEditing();
   }, [productData, mockProducts, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue, stopEditing]);
+
+  // Função para calcular total da coluna Multiplicador REAIS Total
+  const getTotalMultiplicadorReaisTotal = useCallback(() => {
+    return displayProducts.reduce((total, product) => {
+      return total + (product.multiplicador_reais_total || 0);
+    }, 0);
+  }, [displayProducts]);
 
   return (
     <div className="space-y-6">
@@ -881,15 +897,29 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Moeda:</span>
-                  <div className="font-semibold">{selectedCotacao.moeda_origem}</div>
+                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                    <SelectTrigger className="w-32 h-8 mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AVAILABLE_CURRENCIES.map((currency) => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          <span className="flex items-center gap-2">
+                            <span>{currency.flag}</span>
+                            <span>{currency.code}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Fator:</span>
                   <div className="font-semibold">{selectedCotacao.fator_multiplicador}x</div>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Total BRL:</span>
-                  <div className="font-semibold text-green-600">{formatCurrency(selectedCotacao.total_valor_brl || 0)}</div>
+                  <span className="text-muted-foreground">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
+                  <div className="font-semibold text-green-600">{getCurrencySymbol(selectedCurrency)} {getTotalMultiplicadorReaisTotal().toFixed(2)}</div>
                 </div>
               </div>
             </CardHeader>
@@ -1138,7 +1168,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                           <EditableCell
                             value={product.preco}
                             type="number"
-                            prefix="¥ "
+                            prefix={`${getCurrencySymbol(selectedCurrency)} `}
                             step="0.01"
                             onSave={(value) => updateProductData(index, 'preco', value)}
                             onCancel={stopEditing}
@@ -1187,7 +1217,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         <TableCell>{product.cbm_cubagem.toFixed(2)}</TableCell>
                         <TableCell>{product.cbm_total.toFixed(2)}</TableCell>
                         <TableCell>{product.quantidade_total}</TableCell>
-                        <TableCell>¥ {product.valor_total.toFixed(2)}</TableCell>
+                        <TableCell>{getCurrencySymbol(selectedCurrency)} {product.valor_total.toFixed(2)}</TableCell>
                         <TableCell>{product.obs}</TableCell>
                         <TableCell>$ {product.change_dolar.toFixed(2)}</TableCell>
                         <TableCell>$ {product.change_dolar_total.toFixed(2)}</TableCell>
