@@ -579,24 +579,37 @@ export function useCotacoesArquivos() {
           imagem_fornecedor: imagemFornecedorFinal,
           material: linha.MATERIAL || linha.material || '',
           cor: linha.COR || linha.cor || '',
-          nome_produto: linha.NOME_PRODUTO || linha.nome_produto || linha.NOME || linha.nome || '',
+          // Nome do Produto - adicionar mais variações
+          nome_produto: linha['Nome do Produto'] || linha.NOME_PRODUTO || linha.nome_produto || linha.NOME || linha.nome || '',
           package: linha.PACKAGE || linha.package || '',
-          preco: parseFloat(String(linha.PRECO || linha.preco || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // PREÇO - adicionar mais variações
+          preco: parseFloat(String(linha.PREÇO || linha.PRECO || linha.preco || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           unit: linha.UNIT || linha.unit || '',
-          pcs_ctn: parseInt(String(linha.PCS_CTN || linha.pcs_ctn || '0').replace(/[^\d]/g, '')) || 0,
+          // PCS/CTN - adicionar mais variações
+          pcs_ctn: parseInt(String(linha['PCS/CTN'] || linha.PCS_CTN || linha.pcs_ctn || '0').replace(/[^\d]/g, '')) || 0,
           caixas: parseFloat(String(linha.CAIXAS || linha.caixas || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
-          peso_unitario: parseFloat(String(linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || linha.PESO_UNITARIO_G || linha.peso_unitario_g || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_master: parseFloat(String(linha.PESO_MASTER_KG || linha.peso_master_kg || linha.PESO_CX_MASTER_KG || linha.peso_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_sem_master: parseFloat(String(linha.PESO_SEM_MASTER_KG || linha.peso_sem_master_kg || linha.PESO_SEM_CX_MASTER_KG || linha.peso_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_total_master: parseFloat(String(linha.PESO_TOTAL_MASTER_KG || linha.peso_total_master_kg || linha.PESO_TOTAL_CX_MASTER_KG || linha.peso_total_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          peso_total_sem_master: parseFloat(String(linha.PESO_TOTAL_SEM_MASTER_KG || linha.peso_total_sem_master_kg || linha.PESO_TOTAL_SEM_CX_MASTER_KG || linha.peso_total_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          comprimento: parseFloat(String(linha.COMPRIMENTO || linha.comprimento || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          largura: parseFloat(String(linha.LARGURA || linha.largura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          altura: parseFloat(String(linha.ALTURA || linha.altura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          cbm_cubagem: parseFloat(String(linha.CBM_CUBAGEM || linha.cbm_cubagem || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          cbm_total: parseFloat(String(linha.CBM_TOTAL || linha.cbm_total || linha.CBM_TOTAL_CALC || linha.cbm_total_calc || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-          quantidade_total: parseInt(String(linha.QUANTIDADE_TOTAL || linha.quantidade_total || linha.QUANTIDADE_TOTAL_CALC || linha.quantidade_total_calc || '0').replace(/[^\d]/g, '')) || 0,
-          valor_total: parseFloat(String(linha.VALOR_TOTAL || linha.valor_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // PESO UNITARIO(g) - mapear corretamente
+          peso_unitario: parseFloat(String(linha['PESO UNITARIO(g)'] || linha.PESO_UNITARIO_G || linha.peso_unitario_g || linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // Peso embalado cx Master (KG)
+          peso_master: parseFloat(String(linha['Peso embalado cx Master (KG)'] || linha.PESO_MASTER_KG || linha.peso_master_kg || linha.PESO_CX_MASTER_KG || linha.peso_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // Peso Sem embalagem cx Master (KG)
+          peso_sem_master: parseFloat(String(linha['Peso Sem embalagem cx Master (KG)'] || linha.PESO_SEM_MASTER_KG || linha.peso_sem_master_kg || linha.PESO_SEM_CX_MASTER_KG || linha.peso_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // Peso total embalado cx Master (KG) - CALCULADO
+          peso_total_master: 0, // Será calculado
+          // Peso total sem embalagem cx Master (KG) - CALCULADO
+          peso_total_sem_master: 0, // Será calculado
+          // Comprimento, Largura, Altura
+          comprimento: parseFloat(String(linha.Comprimento || linha.COMPRIMENTO || linha.comprimento || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          largura: parseFloat(String(linha.Largura || linha.LARGURA || linha.largura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          altura: parseFloat(String(linha.Altura || linha.ALTURA || linha.altura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // CBM Cubagem
+          cbm_cubagem: parseFloat(String(linha['CBM Cubagem'] || linha.CBM_CUBAGEM || linha.cbm_cubagem || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // CBM Total - CALCULADO (ignora planilha)
+          cbm_total: 0, // Será calculado
+          // Quantidade Total - CALCULADO (ignora planilha)
+          quantidade_total: 0, // Será calculado
+          // Valor Total - CALCULADO (ignora planilha) 
+          valor_total: 0, // Será calculado
           obs: linha.OBS || linha.obs || '',
           change_dolar: parseFloat(String(linha.CHANGE_DOLAR || linha.change_dolar || linha.CHANGE_DOLAR_TOTAL || linha.change_dolar_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           multiplicador_reais: parseFloat(String(linha.MULTIPLICADOR_REAIS || linha.multiplicador_reais || linha.MULTIPLICADOR_REAIS_TOTAL || linha.multiplicador_reais_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
@@ -617,11 +630,13 @@ export function useCotacoesArquivos() {
           imagem_fornecedor_extraida: imagemFornecedor ? true : (imagemFornecedorFinal && imagemFornecedorFinal.trim() !== '' ? true : false),
         };
 
-        // Cálculos automáticos baseados na lógica existente
-        produto.quantidade_total_calc = produto.caixas * produto.pcs_ctn;
-        produto.cbm_total_calc = produto.cbm_cubagem * produto.caixas;
-        produto.peso_total_calc = produto.peso_unitario * produto.quantidade_total_calc;
-        produto.preco_unitario = produto.quantidade_total_calc > 0 ? produto.valor_total / produto.quantidade_total_calc : 0;
+        // Cálculos automáticos do sistema (ignorando valores da planilha)
+        produto.quantidade_total = produto.caixas * produto.pcs_ctn;
+        produto.cbm_total = produto.cbm_cubagem * produto.caixas;
+        produto.peso_total_master = produto.peso_master * produto.caixas; // Peso total embalado
+        produto.peso_total_sem_master = produto.peso_sem_master * produto.caixas; // Peso total sem embalagem
+        produto.valor_total = produto.preco * produto.quantidade_total;
+        produto.preco_unitario = produto.quantidade_total > 0 ? produto.valor_total / produto.quantidade_total : 0;
 
         console.log(`✅ [DEBUG] Produto ${index + 1} processado:`, produto);
         return produto;
@@ -714,31 +729,31 @@ export function useCotacoesArquivos() {
 
   const downloadTemplate = useCallback(async (formato: 'csv' | 'excel' = 'csv') => {
     try {
-      // Colunas baseadas na imagem fornecida
+      // Colunas baseadas na planilha do usuário
       const headers = [
         'SKU',
         'IMAGEM',
-        'IMAGEM_FORNECEDOR',
+        'IMAGEM FORNECEDOR',
         'MATERIAL',
         'COR',
-        'NOME_PRODUTO',
+        'Nome do Produto',
         'PACKAGE',
-        'PRECO',
+        'PREÇO',
         'UNIT',
-        'PCS_CTN',
+        'PCS/CTN',
         'CAIXAS',
-        'PESO_UNITARIO_KG',
-        'PESO_MASTER_KG',
-        'PESO_SEM_MASTER_KG',
-        'PESO_TOTAL_MASTER_KG',
-        'PESO_TOTAL_SEM_MASTER_KG',
-        'COMPRIMENTO',
-        'LARGURA',
-        'ALTURA',
-        'CBM_CUBAGEM',
-        'CBM_TOTAL',
-        'QUANTIDADE_TOTAL',
-        'VALOR_TOTAL',
+        'PESO UNITARIO(g)',
+        'Peso embalado cx Master (KG)',
+        'Peso Sem embalagem cx Master (KG)',
+        'Peso total embalado cx Master (KG)',
+        'Peso total sem embalagem cx Master (KG)',
+        'Comprimento',
+        'Largura',
+        'Altura',
+        'CBM Cubagem',
+        'CBM Total',
+        'Quantidade Total',
+        'Valor Total',
         'OBS',
         'CHANGE_DOLAR',
         'MULTIPLICADOR_REAIS'
