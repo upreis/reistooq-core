@@ -295,6 +295,9 @@ export function useCotacoesArquivos() {
       console.log('📋 [DEBUG] Índice coluna IMAGEM FORNECEDOR:', colunaImagemFornecedorIndex);
       
       // Processar arquivos de mídia encontrados
+      // Cada linha deve ter potencialmente 2 imagens (uma em cada coluna)
+      const imagensPorLinha = Math.floor(todosArquivosImagem.length / (range.e.r)); // Dividir pelas linhas de dados
+      
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
         const imageBlob = await zipData.files[mediaFile].async('blob');
@@ -305,24 +308,23 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // Associar imagem com linha baseado na posição (começando da linha 2, pois linha 1 é cabeçalho)
-        const linhaEstimada = Math.min(i + 2, range.e.r + 1); // +2 para pular cabeçalho
-        
-        // Determinar se é imagem principal ou do fornecedor baseado na ordem
-        const isImagemFornecedor = i % 2 === 1; // Alternar entre principal e fornecedor
+        // Associar imagem com linha de forma mais inteligente
+        // Assumindo que as imagens vêm em pares por linha: [linha1_imagem, linha1_fornecedor, linha2_imagem, linha2_fornecedor...]
+        const linhaExcel = Math.floor(i / 2) + 2; // +2 para pular cabeçalho
+        const isImagemFornecedor = i % 2 === 1; // Par = IMAGEM, Ímpar = IMAGEM_FORNECEDOR
         const coluna = isImagemFornecedor ? 'IMAGEM_FORNECEDOR' : 'IMAGEM';
         
         const extensao = mediaFile.split('.').pop() || 'png';
-        const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaEstimada}_${i}.${extensao}`;
+        const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaExcel}_${i}.${extensao}`;
         
         imagens.push({
           nome: nomeImagem,
           blob: imageBlob,
-          linha: linhaEstimada,
+          linha: linhaExcel,
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] Imagem extraída: ${nomeImagem} (linha ${linhaEstimada}, tamanho: ${imageBlob.size} bytes)`);
+        console.log(`✅ [DEBUG] Imagem extraída: ${nomeImagem} (linha ${linhaExcel}, coluna ${coluna}, tamanho: ${imageBlob.size} bytes)`);
       }
       
     } catch (zipError) {
