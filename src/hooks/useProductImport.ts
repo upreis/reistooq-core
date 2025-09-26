@@ -106,7 +106,7 @@ export const useProductImport = () => {
       if (isUpdate || (value !== undefined && value !== null && value !== '')) {
         if (['preco_venda', 'peso_unitario_g', 'peso_cx_master_kg', 'comprimento_cm', 'largura_cm', 'altura_cm', 'cubagem_cm3'].includes(productField)) {
           product[productField] = parseFloat(value) || 0;
-        } else if (['pcs_ctn'].includes(productField)) {
+        } else if (['pcs_ctn', 'package'].includes(productField)) {
           product[productField] = parseInt(value) || 0;
         } else if (['pis', 'cofins', 'imposto_importacao', 'ipi', 'icms'].includes(productField)) {
           // Converter porcentagem para decimal (ex: 12.5 -> 0.125)
