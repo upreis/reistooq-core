@@ -97,19 +97,21 @@ const ProductList = () => {
   const loadProducts = async () => {
     try {
       setLoading(true);
+      console.log('📋 Carregando produtos - página:', currentPage, 'filtros:', { searchTerm, selectedCategory });
       
       // Calcular offset baseado na página atual
       const offset = (currentPage - 1) * itemsPerPage;
       
-      // Buscar produtos com paginação
+      // Buscar produtos com paginação - APENAS PRODUTOS ATIVOS
       const data = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         limit: itemsPerPage,
         offset: offset,
-        ativo: 'all' // Mostrar todos os produtos (ativos e inativos)
+        ativo: true // Mostrar apenas produtos ativos
       });
       
+      console.log('📋 Produtos carregados:', data.length, 'produtos ativos');
       setProducts(data);
       
       // Buscar total de produtos para calcular páginas
@@ -119,6 +121,7 @@ const ProductList = () => {
       setSelectedProducts([]);
       setSelectAll(false);
     } catch (error) {
+      console.error('❌ Erro ao carregar produtos:', error);
       toast({
         title: "Erro ao carregar produtos",
         description: "Não foi possível carregar a lista de produtos.",
@@ -131,18 +134,20 @@ const ProductList = () => {
 
   const loadTotalProducts = async () => {
     try {
-      // Buscar total sem limit/offset para calcular páginas
+      console.log('🔢 Contando total de produtos ativos...');
+      // Buscar total sem limit/offset para calcular páginas - APENAS PRODUTOS ATIVOS
       const data = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        ativo: 'all' // Contar todos os produtos
+        ativo: true // Contar apenas produtos ativos
       });
       
       const total = data.length;
+      console.log('🔢 Total de produtos ativos encontrados:', total);
       setTotalProducts(total);
       setTotalPages(Math.ceil(total / itemsPerPage));
     } catch (error) {
-      console.error("Error loading total products:", error);
+      console.error("❌ Error loading total products:", error);
     }
   };
 
@@ -230,29 +235,43 @@ const ProductList = () => {
     const selectedCount = selectedProducts.length;
 
     try {
+      console.log('🗑️ Iniciando exclusão em lote de', selectedCount, 'produtos');
+      
       // Toast de loading
       const loadingToast = toast({
         title: "Excluindo produtos...",
         description: `Processando ${selectedCount} produto(s)...`,
       });
 
-      for (const productId of selectedProducts) {
-        await deleteProduct(productId);
+      // Processar exclusões em lotes menores para melhor performance
+      const batchSize = 10;
+      for (let i = 0; i < selectedProducts.length; i += batchSize) {
+        const batch = selectedProducts.slice(i, i + batchSize);
+        console.log(`🗑️ Processando lote ${Math.floor(i/batchSize) + 1}: ${batch.length} produtos`);
+        
+        await Promise.all(batch.map(productId => deleteProduct(productId)));
       }
 
       // Remove o toast de loading
       loadingToast.dismiss();
+
+      console.log('✅ Exclusão concluída, recarregando lista de produtos');
 
       toast({
         title: "Produtos removidos",
         description: `${selectedCount} produto(s) foram removidos com sucesso.`,
       });
       
+      // Limpar seleção e recarregar
       setSelectedProducts([]);
       setSelectAll(false);
-      loadProducts();
+      
+      // Forçar recarregamento completo
+      setLoading(true);
+      await loadProducts();
+      
     } catch (error) {
-      console.error('Erro ao excluir produtos:', error);
+      console.error('❌ Erro ao excluir produtos:', error);
       toast({
         title: "Erro ao excluir",
         description: "Ocorreu um erro ao excluir os produtos. Tente novamente.",
