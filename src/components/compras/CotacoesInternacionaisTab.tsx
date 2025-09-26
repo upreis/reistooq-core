@@ -476,6 +476,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         await createCotacaoInternacional(cotacaoCompleta);
       }
 
+      toast({
+        title: "✅ Cotação salva com sucesso!",
+        description: `Cotação ${cotacaoCompleta.numero_cotacao} foi criada na aba "Cotações Internacionais"`,
+      });
+
       setShowModal(false);
       resetForm();
       onRefresh();

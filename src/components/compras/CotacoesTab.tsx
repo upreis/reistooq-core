@@ -356,11 +356,11 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
 
       {/* Dialog para criar nova cotação */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl" aria-describedby="cotacao-dialog-description">
           <DialogHeader>
             <DialogTitle>Nova Cotação</DialogTitle>
-            <DialogDescription>
-              Preencha os dados para criar uma nova cotação
+            <DialogDescription id="cotacao-dialog-description">
+              Preencha os dados para criar uma nova cotação nacional
             </DialogDescription>
           </DialogHeader>
           

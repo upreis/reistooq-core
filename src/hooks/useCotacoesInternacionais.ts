@@ -86,10 +86,7 @@ export function useCotacoesInternacionais() {
         throw error;
       }
 
-      toast({
-        title: "Cotação salva!",
-        description: "Cotação internacional criada com sucesso!",
-      });
+      console.log('✅ Cotação internacional salva com sucesso:', data);
 
       return data;
     } catch (error) {
