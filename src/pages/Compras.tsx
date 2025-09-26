@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ComprasGuard } from '@/core/compras/guards/ComprasGuard';
 import { ComprasNav } from "@/features/compras/components/ComprasNav";
-import { ComprasStats } from "@/components/compras/ComprasStats";
+
 import { useCompras } from "@/hooks/useCompras";
 import { useToast } from "@/hooks/use-toast";
 import FornecedoresPage from "@/pages/compras/FornecedoresPage";
@@ -57,12 +57,6 @@ const ComprasContent = () => {
 
       <ComprasNav />
 
-      {/* Cards de Resumo */}
-      <ComprasStats 
-        fornecedores={fornecedores}
-        pedidosCompra={pedidosCompra}
-        cotacoes={cotacoes}
-      />
       
       <div className="mt-6">
         <Routes>
