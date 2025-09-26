@@ -199,6 +199,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [changeDolarDivisor, setChangeDolarDivisor] = useState<string>("1");
   const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>("1");
+  const [multiplicadorReais, setMultiplicadorReais] = useState<string>("5.44");
   
   // Estados do formulário
   const [dadosBasicos, setDadosBasicos] = useState({
@@ -561,6 +562,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return value > 0 ? value : 1;
   };
 
+  const getMultiplicadorReaisValue = () => {
+    const value = parseFloat(multiplicadorReais);
+    return value > 0 ? value : 5.44;
+  };
+
   // Mock data para exemplo da tabela Excel
   const mockProducts = selectedCotacao?.produtos?.length > 0 ? selectedCotacao.produtos.map((p: any, index: number) => ({
     sku: p.sku || `PL-${800 + index}`,
@@ -589,7 +595,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     obs: "",
     change_dolar: (p.preco_unitario || 5.25) / getChangeDolarDivisorValue(),
     change_dolar_total: (p.valor_total || 1260.00) / getChangeDolarTotalDivisorValue(),
-    multiplicador_reais: 5.44
+    multiplicador_reais: (p.preco_unitario || 5.25) * getMultiplicadorReaisValue()
   })) : [
     {
       sku: "PL-800",
@@ -618,7 +624,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       obs: "",
       change_dolar: 5.25 / getChangeDolarDivisorValue(),
       change_dolar_total: 1260.00 / getChangeDolarTotalDivisorValue(),
-      multiplicador_reais: 5.44
+      multiplicador_reais: 5.25 * getMultiplicadorReaisValue()
     },
     {
       sku: "PL-801",
@@ -647,7 +653,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       obs: "",
       change_dolar: 5.80 / getChangeDolarDivisorValue(),
       change_dolar_total: 1160.00 / getChangeDolarTotalDivisorValue(),
-      multiplicador_reais: 6.00
+      multiplicador_reais: 5.80 * getMultiplicadorReaisValue()
     }
   ];
 
@@ -915,7 +921,32 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                           />
                         </div>
                       </TableHead>
-                      <TableHead className="min-w-[140px]">Multiplicador REAIS</TableHead>
+                      <TableHead className="min-w-[140px]">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-medium">Multiplicador REAIS</span>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-3 w-3 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>PREÇO × Multiplicador</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <Input
+                            type="number"
+                            placeholder="Multiplicador"
+                            value={multiplicadorReais}
+                            onChange={(e) => setMultiplicadorReais(e.target.value)}
+                            className="h-6 text-xs"
+                            step="0.01"
+                            min="0.01"
+                          />
+                        </div>
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
