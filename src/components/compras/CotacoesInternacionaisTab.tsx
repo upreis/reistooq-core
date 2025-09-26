@@ -642,7 +642,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     peso_cx_master_kg: (p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000,
     peso_sem_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) - 1,
     peso_total_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) * (p.qtd_caixas_pedido || 1),
-    peso_total_sem_cx_master_kg: ((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) - 1,
+    peso_total_sem_cx_master_kg: (((p.peso_unitario_g || 90) * (p.pcs_ctn || 240) / 1000) - 1) * (p.qtd_caixas_pedido || 1),
     comprimento: p.comprimento_cm || 0,
     largura: p.largura_cm || 0,
     altura: p.altura_cm || 0,
@@ -672,7 +672,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       peso_cx_master_kg: 22.60,
       peso_sem_cx_master_kg: 21.60,
       peso_total_cx_master_kg: 22.60 * 1, // Peso cx Master (KG) x CAIXAS
-      peso_total_sem_cx_master_kg: 21.60,
+      peso_total_sem_cx_master_kg: (22.60 - 1) * 1, // Peso Sem embalagem cx Master (KG) x CAIXAS
       comprimento: 0,
       largura: 0,
       altura: 0,
@@ -702,7 +702,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       peso_cx_master_kg: 15.00,
       peso_sem_cx_master_kg: 14.00,
       peso_total_cx_master_kg: 15.00 * 1, // Peso cx Master (KG) x CAIXAS
-      peso_total_sem_cx_master_kg: 14.00,
+      peso_total_sem_cx_master_kg: (15.00 - 1) * 1, // Peso Sem embalagem cx Master (KG) x CAIXAS
       comprimento: 0,
       largura: 0,
       altura: 0,
@@ -737,8 +737,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     if (['peso_unitario_g', 'pcs_ctn'].includes(field)) {
       product.peso_cx_master_kg = (product.peso_unitario_g * product.pcs_ctn) / 1000;
       product.peso_sem_cx_master_kg = product.peso_cx_master_kg - 1;
-      product.peso_total_cx_master_kg = product.peso_cx_master_kg;
-      product.peso_total_sem_cx_master_kg = product.peso_sem_cx_master_kg;
+      product.peso_total_cx_master_kg = product.peso_cx_master_kg * product.caixas;
+      product.peso_total_sem_cx_master_kg = (product.peso_cx_master_kg - 1) * product.caixas;
     }
     
     if (['preco', 'pcs_ctn', 'caixas'].includes(field)) {
@@ -754,6 +754,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // Recalcular Peso Total cx Master quando Peso cx Master ou CAIXAS mudarem
     if (['peso_cx_master_kg', 'caixas'].includes(field)) {
       product.peso_total_cx_master_kg = product.peso_cx_master_kg * product.caixas;
+      product.peso_total_sem_cx_master_kg = (product.peso_cx_master_kg - 1) * product.caixas;
     }
     
     // Recalcular campos calculados automaticamente
@@ -1074,9 +1075,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <TableHead className="min-w-[80px]">CAIXAS</TableHead>
                       <TableHead className="min-w-[120px]">PESO UNITARIO(g)</TableHead>
                       <TableHead className="min-w-[140px]">Peso cx Master (KG)</TableHead>
-                      <TableHead className="min-w-[160px]">Peso Sem cx Master (KG)</TableHead>
+                      <TableHead className="min-w-[160px]">Peso Sem embalagem cx Master (KG)</TableHead>
                       <TableHead className="min-w-[160px]">Peso total cx Master (KG)</TableHead>
-                      <TableHead className="min-w-[180px]">Peso total sem cx Master (KG)</TableHead>
+                      <TableHead className="min-w-[180px]">Peso total sem embalagem cx Master (KG)</TableHead>
                       <TableHead className="min-w-[100px]">Comprimento</TableHead>
                       <TableHead className="min-w-[80px]">Largura</TableHead>
                       <TableHead className="min-w-[80px]">Altura</TableHead>
