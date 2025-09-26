@@ -251,15 +251,28 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
   // Função removida - agora está no hook
 
   const handleImportarDados = async (arquivo: ArquivoProcessado) => {
+    console.log('🚀 [DEBUG] Iniciando importação de dados:', arquivo);
+    
     if (arquivo.dados_processados && arquivo.dados_processados.length > 0) {
       const totalImagens = arquivo.dados_processados.filter((p: any) => p.imagem_extraida || p.imagem_fornecedor_extraida).length;
       
+      console.log('✅ [DEBUG] Dados para importar:', arquivo.dados_processados);
+      console.log('📸 [DEBUG] Total de imagens extraídas:', totalImagens);
+      
+      // Chamar callback para importar dados na tela principal
       onImportSuccess(arquivo.dados_processados);
       onOpenChange(false);
       
       toast({
         title: "Dados importados!",
         description: `${arquivo.dados_processados.length} produtos importados${totalImagens > 0 ? ` com ${totalImagens} imagens extraídas do Excel.` : '.'}`,
+      });
+    } else {
+      console.error('❌ [DEBUG] Nenhum dado processado encontrado no arquivo:', arquivo);
+      toast({
+        title: "Erro na importação",
+        description: "Não há dados processados neste arquivo para importar.",
+        variant: "destructive",
       });
     }
   };
@@ -418,11 +431,24 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
                         )}
                         
                         <Button
-                          onClick={() => deletarArquivo({
-                            ...arquivo,
-                            status: arquivo.status as 'pendente' | 'processado' | 'erro',
-                            tipo_arquivo: (arquivo.tipo_arquivo || 'excel') as 'excel' | 'csv'
-                          })}
+                          onClick={async () => {
+                            try {
+                              console.log('🗑️ [DEBUG] Tentando deletar arquivo:', arquivo);
+                              await deletarArquivo({
+                                ...arquivo,
+                                status: arquivo.status as 'pendente' | 'processado' | 'erro',
+                                tipo_arquivo: (arquivo.tipo_arquivo || 'excel') as 'excel' | 'csv'
+                              });
+                              
+                              // Recarregar a lista após exclusão
+                              if (cotacao?.id) {
+                                console.log('🔄 [DEBUG] Recarregando lista de arquivos...');
+                                await getArquivosCotacao(cotacao.id);
+                              }
+                            } catch (error) {
+                              console.error('❌ [DEBUG] Erro na exclusão:', error);
+                            }
+                          }}
                           size="sm"
                           variant="outline"
                           className="text-red-600 hover:text-red-700"

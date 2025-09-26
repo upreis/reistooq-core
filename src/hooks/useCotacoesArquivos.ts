@@ -444,35 +444,44 @@ export function useCotacoesArquivos() {
 
   const deletarArquivo = useCallback(async (arquivo: CotacaoArquivo) => {
     try {
+      console.log('🗑️ [DEBUG] Iniciando exclusão do arquivo:', arquivo);
       setLoading(true);
 
       // Deletar arquivo do storage se existir URL
       if (arquivo.url_arquivo) {
         const path = arquivo.url_arquivo.split('/cotacoes-arquivos/')[1];
         if (path) {
-          await supabase.storage
+          console.log('📂 [DEBUG] Removendo arquivo do storage:', path);
+          const { error: storageError } = await supabase.storage
             .from('cotacoes-arquivos')
             .remove([path]);
+            
+          if (storageError) {
+            console.warn('⚠️ [DEBUG] Erro ao remover do storage (continuando):', storageError);
+          }
         }
       }
 
       // Deletar registro da tabela
+      console.log('🗄️ [DEBUG] Removendo registro da tabela, ID:', arquivo.id);
       const { error } = await supabase
         .from('cotacoes_arquivos')
         .delete()
         .eq('id', arquivo.id);
 
       if (error) {
-        console.error('Erro ao deletar arquivo:', error);
+        console.error('❌ [DEBUG] Erro ao deletar arquivo da tabela:', error);
         throw error;
       }
 
+      console.log('✅ [DEBUG] Arquivo deletado com sucesso');
       toast({
         title: "Arquivo removido!",
         description: "Arquivo deletado com sucesso.",
       });
+      
     } catch (error) {
-      console.error('Erro ao deletar arquivo:', error);
+      console.error('❌ [DEBUG] Erro ao deletar arquivo:', error);
       toast({
         title: "Erro ao deletar",
         description: "Não foi possível deletar o arquivo.",
