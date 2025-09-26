@@ -107,7 +107,7 @@ const ProductList = () => {
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         limit: itemsPerPage,
         offset: offset,
-        ativo: true // Apenas produtos ativos na lista
+        ativo: 'all' // Mostrar todos os produtos (ativos e inativos)
       });
       
       setProducts(data);
@@ -135,7 +135,7 @@ const ProductList = () => {
       const data = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        ativo: true
+        ativo: 'all' // Contar todos os produtos
       });
       
       const total = data.length;
