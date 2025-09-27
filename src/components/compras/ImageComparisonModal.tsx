@@ -60,7 +60,7 @@ export function ImageComparisonModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-xl font-semibold">
             Comparação de Imagens
@@ -85,22 +85,26 @@ export function ImageComparisonModal({
           )}
 
           {/* Comparação de Imagens */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             {/* Imagem Principal */}
-            <div className="space-y-2">
-              <Label className="text-xs font-medium">Imagem Principal</Label>
-              <div className="border rounded-lg p-2 bg-muted/10">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Imagem Principal</Label>
+              <div className="border rounded-lg p-3 bg-background">
                 {imagemPrincipal ? (
-                  <div className="aspect-square relative max-h-[250px]">
+                  <div className="relative">
                     <img
                       src={imagemPrincipal}
                       alt="Imagem Principal"
-                      className="w-full h-full object-contain rounded-md"
+                      className="w-full h-auto max-h-[500px] object-contain rounded-md mx-auto block"
                       style={{ 
                         imageRendering: 'auto',
-                        filter: 'contrast(1.1) saturate(1.1)'
+                        maxWidth: '100%',
+                        height: 'auto',
+                        objectFit: 'contain',
+                        objectPosition: 'center'
                       }}
                       loading="eager"
+                      decoding="sync"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = '/placeholder.svg';
@@ -108,28 +112,32 @@ export function ImageComparisonModal({
                     />
                   </div>
                 ) : (
-                  <div className="aspect-square max-h-[250px] flex items-center justify-center text-muted-foreground bg-muted/20 rounded-md">
-                    <span className="text-xs">Sem imagem principal</span>
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground bg-muted/20 rounded-md">
+                    <span className="text-sm">Sem imagem principal</span>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Imagem do Fornecedor */}
-            <div className="space-y-2">
-              <Label className="text-xs font-medium">Imagem do Fornecedor</Label>
-              <div className="border rounded-lg p-2 bg-muted/10">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Imagem do Fornecedor</Label>
+              <div className="border rounded-lg p-3 bg-background">
                 {imagemFornecedor ? (
-                  <div className="aspect-square relative max-h-[250px]">
+                  <div className="relative">
                     <img
                       src={imagemFornecedor}
                       alt="Imagem do Fornecedor"
-                      className="w-full h-full object-contain rounded-md"
+                      className="w-full h-auto max-h-[500px] object-contain rounded-md mx-auto block"
                       style={{ 
                         imageRendering: 'auto',
-                        filter: 'contrast(1.1) saturate(1.1)'
+                        maxWidth: '100%',
+                        height: 'auto',
+                        objectFit: 'contain',
+                        objectPosition: 'center'
                       }}
                       loading="eager"
+                      decoding="sync"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = '/placeholder.svg';
@@ -137,8 +145,8 @@ export function ImageComparisonModal({
                     />
                   </div>
                 ) : (
-                  <div className="aspect-square max-h-[250px] flex items-center justify-center text-muted-foreground bg-muted/20 rounded-md">
-                    <span className="text-xs">Sem imagem do fornecedor</span>
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground bg-muted/20 rounded-md">
+                    <span className="text-sm">Sem imagem do fornecedor</span>
                   </div>
                 )}
               </div>
