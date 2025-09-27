@@ -1721,7 +1721,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          <TableCell className="text-center py-3">{(product.cbm_cubagem || 0).toFixed(2)}</TableCell>
                          <TableCell className="text-center py-3">{(product.cbm_total || 0).toFixed(2)}</TableCell>
                          <TableCell className="text-center py-3 font-medium">{product.quantidade_total || 0}</TableCell>
-                         <TableCell className="text-right py-3 font-medium">{getCurrencySymbol(selectedCurrency)} {(product.valor_total || 0).toFixed(2)}</TableCell>
+                         <TableCell className="text-right py-3 font-medium">{getCurrencySymbol(selectedCurrency)} {(product.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                          <TableCell className="text-center py-3">{product.obs}</TableCell>
                           <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                          <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
