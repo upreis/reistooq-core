@@ -1723,10 +1723,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          <TableCell className="text-center py-3 font-medium">{product.quantidade_total || 0}</TableCell>
                          <TableCell className="text-right py-3 font-medium">{getCurrencySymbol(selectedCurrency)} {(product.valor_total || 0).toFixed(2)}</TableCell>
                          <TableCell className="text-center py-3">{product.obs}</TableCell>
-                         <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar.toFixed(2)}</TableCell>
-                        <TableCell>$ {product.change_dolar_total.toFixed(2)}</TableCell>
-                        <TableCell>R$ {product.multiplicador_reais.toFixed(2)}</TableCell>
-                        <TableCell>R$ {product.multiplicador_reais_total.toFixed(2)}</TableCell>
+                          <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                         <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                         <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                         <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                       </TableRow>
                      ))}
                   </TableBody>
@@ -1754,12 +1754,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <TableCell></TableCell> {/* CBM Cubagem */}
                       <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.cbm_total || 0), 0).toFixed(2)}</TableCell> {/* CBM Total */}
                       <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.quantidade_total || 0), 0)}</TableCell> {/* Qtd. Total */}
-                      <TableCell className="text-right font-bold">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toFixed(2)}</TableCell> {/* Valor Total */}
-                      <TableCell></TableCell> {/* Obs. */}
-                      <TableCell className="text-right font-bold">$ {displayProducts.reduce((sum, p) => sum + (p.change_dolar || 0), 0).toFixed(2)}</TableCell> {/* Change DOLAR Uni */}
-                      <TableCell className="text-right font-bold">$ {getTotalChangeDolarTotal().toFixed(2)}</TableCell> {/* Change DOLAR Total */}
-                      <TableCell className="text-right font-bold">R$ {displayProducts.reduce((sum, p) => sum + (p.multiplicador_reais || 0), 0).toFixed(2)}</TableCell> {/* Multiplicador REAIS Uni */}
-                      <TableCell className="text-right font-bold">R$ {getTotalMultiplicadorReaisTotal().toFixed(2)}</TableCell> {/* Multiplicador REAIS Total */}
+                       <TableCell className="text-right font-bold">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Valor Total */}
+                       <TableCell></TableCell> {/* Obs. */}
+                       <TableCell className="text-right font-bold">$ {displayProducts.reduce((sum, p) => sum + (p.change_dolar || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Change DOLAR Uni */}
+                       <TableCell className="text-right font-bold">$ {getTotalChangeDolarTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Change DOLAR Total */}
+                       <TableCell className="text-right font-bold">R$ {displayProducts.reduce((sum, p) => sum + (p.multiplicador_reais || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Multiplicador REAIS Uni */}
+                       <TableCell className="text-right font-bold">R$ {getTotalMultiplicadorReaisTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Multiplicador REAIS Total */}
                     </TableRow>
                   </TableFooter>
                 </Table>
