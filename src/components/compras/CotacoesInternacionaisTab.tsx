@@ -47,6 +47,7 @@ import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
 import { useToast } from "@/hooks/use-toast";
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 // Esquemas de validação com zod
 const produtoSchema = z.object({
@@ -950,47 +951,102 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         description: "Processando imagens e gerando planilha Excel.",
       });
 
-      // Preparar dados para o Excel
-      const dadosParaExcel = await Promise.all(
-        displayProducts.map(async (product, index) => {
-          // Processar imagens em paralelo
-          const [imagemBase64, imagemFornecedorBase64] = await Promise.all([
-            product.imagem ? imageUrlToBase64(product.imagem) : Promise.resolve(''),
-            product.imagem_fornecedor ? imageUrlToBase64(product.imagem_fornecedor) : Promise.resolve('')
-          ]);
-          
-          return {
-            'SKU': product.sku || '',
-            'Imagem': product.imagem ? '✓ Imagem disponível' : 'Sem imagem',
-            'Imagem Fornecedor': product.imagem_fornecedor ? '✓ Imagem disponível' : 'Sem imagem',
-            'Material': product.material || '',
-            'Cor': product.cor || '',
-            'Nome do Produto': product.nome_produto || '',
-            'Package': product.package || '',
-            'Preço': typeof product.preco === 'number' ? product.preco.toFixed(2) : product.preco || '',
-            'Unid.': product.unit || '',
-            'PCS/CTN': product.pcs_ctn || 0,
-            'Caixas': product.caixas || 0,
-            'Peso Unit. (g)': typeof product.peso_unitario_g === 'number' ? product.peso_unitario_g.toFixed(0) : product.peso_unitario_g || '',
-            'Peso Emb. Master (KG)': typeof product.peso_cx_master_kg === 'number' ? product.peso_cx_master_kg.toFixed(2) : product.peso_cx_master_kg || '',
-            'Peso S/ Emb. Master (KG)': typeof product.peso_sem_cx_master_kg === 'number' ? product.peso_sem_cx_master_kg.toFixed(2) : product.peso_sem_cx_master_kg || '',
-            'Peso Total Emb. (KG)': typeof product.peso_total_cx_master_kg === 'number' ? product.peso_total_cx_master_kg.toFixed(2) : product.peso_total_cx_master_kg || '',
-            'Peso Total S/ Emb. (KG)': typeof product.peso_total_sem_cx_master_kg === 'number' ? product.peso_total_sem_cx_master_kg.toFixed(2) : product.peso_total_sem_cx_master_kg || '',
-            'Comp. (cm)': product.comprimento || 0,
-            'Larg. (cm)': product.largura || 0,
-            'Alt. (cm)': product.altura || 0,
-            'CBM Cubagem': typeof product.cbm_cubagem === 'number' ? product.cbm_cubagem.toFixed(2) : product.cbm_cubagem || '',
-            'CBM Total': typeof product.cbm_total === 'number' ? product.cbm_total.toFixed(2) : product.cbm_total || '',
-            'Qtd. Total': product.quantidade_total || 0,
-            'Valor Total': typeof product.valor_total === 'number' ? product.valor_total.toFixed(2) : product.valor_total || '',
-            'Obs.': product.obs || ''
-          };
-        })
-      );
+      // Preparar dados para o Excel com imagens
+      const dadosParaExcel = [];
+      const imagensParaInserir: {[key: string]: {base64: string, ext: string, url?: string}} = {};
+      
+      for (let index = 0; index < displayProducts.length; index++) {
+        const product = displayProducts[index];
+        
+        // Processar imagens e criar dados para o Excel
+        let imagemInfo = 'Sem imagem';
+        let imagemFornecedorInfo = 'Sem imagem';
+        
+        if (product.imagem) {
+          try {
+            const base64 = await imageUrlToBase64(product.imagem);
+            if (base64) {
+              imagemInfo = '🖼️ CLIQUE PARA VER IMAGEM'; // Texto claro para o usuário
+              imagensParaInserir[`B${index + 2}`] = {
+                base64: base64.split(',')[1] || base64,
+                ext: 'png',
+                url: product.imagem
+              };
+            }
+          } catch (error) {
+            console.warn('Erro ao processar imagem:', error);
+            imagemInfo = 'Erro ao carregar';
+          }
+        }
+        
+        if (product.imagem_fornecedor) {
+          try {
+            const base64 = await imageUrlToBase64(product.imagem_fornecedor);
+            if (base64) {
+              imagemFornecedorInfo = '🖼️ CLIQUE PARA VER IMAGEM'; // Texto claro para o usuário
+              imagensParaInserir[`C${index + 2}`] = {
+                base64: base64.split(',')[1] || base64,
+                ext: 'png',
+                url: product.imagem_fornecedor
+              };
+            }
+          } catch (error) {
+            console.warn('Erro ao processar imagem fornecedor:', error);
+            imagemFornecedorInfo = 'Erro ao carregar';
+          }
+        }
+        
+        dadosParaExcel.push({
+          'SKU': product.sku || '',
+          'Imagem': imagemInfo,
+          'Imagem Fornecedor': imagemFornecedorInfo,
+          'Material': product.material || '',
+          'Cor': product.cor || '',
+          'Nome do Produto': product.nome_produto || '',
+          'Package': product.package || '',
+          'Preço': typeof product.preco === 'number' ? product.preco.toFixed(2) : product.preco || '',
+          'Unid.': product.unit || '',
+          'PCS/CTN': product.pcs_ctn || 0,
+          'Caixas': product.caixas || 0,
+          'Peso Unit. (g)': typeof product.peso_unitario_g === 'number' ? product.peso_unitario_g.toFixed(0) : product.peso_unitario_g || '',
+          'Peso Emb. Master (KG)': typeof product.peso_cx_master_kg === 'number' ? product.peso_cx_master_kg.toFixed(2) : product.peso_cx_master_kg || '',
+          'Peso S/ Emb. Master (KG)': typeof product.peso_sem_cx_master_kg === 'number' ? product.peso_sem_cx_master_kg.toFixed(2) : product.peso_sem_cx_master_kg || '',
+          'Peso Total Emb. (KG)': typeof product.peso_total_cx_master_kg === 'number' ? product.peso_total_cx_master_kg.toFixed(2) : product.peso_total_cx_master_kg || '',
+          'Peso Total S/ Emb. (KG)': typeof product.peso_total_sem_cx_master_kg === 'number' ? product.peso_total_sem_cx_master_kg.toFixed(2) : product.peso_total_sem_cx_master_kg || '',
+          'Comp. (cm)': product.comprimento || 0,
+          'Larg. (cm)': product.largura || 0,
+          'Alt. (cm)': product.altura || 0,
+          'CBM Cubagem': typeof product.cbm_cubagem === 'number' ? product.cbm_cubagem.toFixed(2) : product.cbm_cubagem || '',
+          'CBM Total': typeof product.cbm_total === 'number' ? product.cbm_total.toFixed(2) : product.cbm_total || '',
+          'Qtd. Total': product.quantidade_total || 0,
+          'Valor Total': typeof product.valor_total === 'number' ? product.valor_total.toFixed(2) : product.valor_total || '',
+          'Obs.': product.obs || ''
+        });
+      }
 
       // Criar workbook
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(dadosParaExcel);
+
+      // Adicionar links para imagens nas células correspondentes
+      Object.entries(imagensParaInserir).forEach(([cellRef, imageData]) => {
+        if (imageData.url && ws[cellRef]) {
+          // Adicionar hyperlink para a imagem
+          ws[cellRef].l = { 
+            Target: imageData.url, 
+            Tooltip: 'Clique para ver a imagem em uma nova aba' 
+          };
+          
+          // Aplicar estilo especial para células com imagem
+          if (!ws[cellRef].s) ws[cellRef].s = {};
+          ws[cellRef].s = {
+            ...ws[cellRef].s,
+            font: { color: { rgb: "0066CC" }, underline: true, bold: true },
+            alignment: { horizontal: "center", vertical: "center" },
+            fill: { fgColor: { rgb: "E8F4FD" } }
+          };
+        }
+      });
 
       // Configurar larguras das colunas
       const colWidths = [
@@ -1060,12 +1116,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         ws[cellRef].s = caixasStyle;
       }
 
-      // Configurar altura das linhas para acomodar melhor o conteúdo
-      const rowHeights = [];
-      for (let i = 0; i <= dadosParaExcel.length; i++) {
-        rowHeights.push({ hpt: i === 0 ? 25 : 20 }); // Cabeçalho um pouco maior
+      // Configurar altura das linhas para acomodar melhor o conteúdo e imagens
+      if (!ws['!rows']) {
+        const rowHeights = [];
+        for (let i = 0; i <= dadosParaExcel.length; i++) {
+          rowHeights.push({ hpt: i === 0 ? 25 : 80 }); // Cabeçalho menor, linhas maiores para imagens
+        }
+        ws['!rows'] = rowHeights;
       }
-      ws['!rows'] = rowHeights;
 
       // Adicionar planilha ao workbook
       XLSX.utils.book_append_sheet(wb, ws, "Cotação");
