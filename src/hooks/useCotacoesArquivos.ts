@@ -352,8 +352,9 @@ export function useCotacoesArquivos() {
       console.log('📋 [DEBUG] Índice coluna IMAGEM FORNECEDOR:', colunaImagemFornecedorIndex);
       
       // Processar arquivos de mídia encontrados
-      // Cada linha deve ter potencialmente 2 imagens (uma em cada coluna)
-      const imagensPorLinha = Math.floor(todosArquivosImagem.length / (range.e.r)); // Dividir pelas linhas de dados
+      // CORREÇÃO: Mapear sequencialmente linha por linha
+      let linhaAtual = 2; // Começar na linha 2 (primeira linha de dados)
+      let colunaAtual = 'IMAGEM'; // Alternar entre IMAGEM e IMAGEM_FORNECEDOR
       
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
@@ -365,11 +366,13 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO DEFINITIVA: Mapear imagens exatamente como os dados são processados
-        // dados.map com index 0,1,2... -> Excel linha 2,3,4... (index + 2)
-        // imagens par/ímpar -> linha = Math.floor(i/2) deve resultar no mesmo index dos dados
-        const indiceDados = Math.floor(i / 2); // 0,0,1,1,2,2... para corresponder ao index dos dados
-        const linhaExcel = indiceDados + 2; // +2 para corresponder exatamente ao processamento dos dados
+        // MAPEAMENTO SEQUENCIAL CORRETO:
+        // Imagem 0 -> Linha 2, IMAGEM
+        // Imagem 1 -> Linha 2, IMAGEM_FORNECEDOR  
+        // Imagem 2 -> Linha 3, IMAGEM
+        // Imagem 3 -> Linha 3, IMAGEM_FORNECEDOR
+        // etc.
+        const linhaExcel = Math.floor(i / 2) + 2;
         const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
         
         const extensao = mediaFile.split('.').pop() || 'png';
