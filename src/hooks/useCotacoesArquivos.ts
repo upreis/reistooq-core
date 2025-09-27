@@ -355,6 +355,7 @@ export function useCotacoesArquivos() {
       // CORREÇÃO DEFINITIVA: Mapear diretamente pela posição no array de dados
       console.log('📊 [DEBUG] Total de imagens encontradas:', todosArquivosImagem.length);
       console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
+      console.log('📊 [DEBUG] Arquivos de imagem encontrados:', todosArquivosImagem);
       
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
@@ -366,13 +367,25 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // MAPEAMENTO CORRETO BASEADO NO ÍNDICE DO ARRAY DE DADOS:
-        // A chave é que o índice 'i' das imagens deve corresponder ao índice dos dados
-        // Dados[0] = linha Excel 2, Dados[1] = linha Excel 3, etc.
-        // Para cada linha de dados, temos 2 imagens: principal e fornecedor
-        const indiceDados = Math.floor(i / 2); // 0,0,1,1,2,2,3,3... (par de imagens por linha)
-        const linhaExcel = indiceDados + 2; // Linha Excel correspondente (2,2,3,3,4,4...)
-        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+        // CORREÇÃO: As imagens são organizadas por coluna, não por linha
+        // Se existem N linhas de dados, teremos:
+        // - Primeiras N imagens: coluna IMAGEM (B) das linhas 2 até N+1
+        // - Próximas N imagens: coluna IMAGEM_FORNECEDOR (C) das linhas 2 até N+1
+        const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
+        const metadeImagens = Math.ceil(todosArquivosImagem.length / 2);
+        
+        let linhaExcel: number;
+        let coluna: string;
+        
+        if (i < metadeImagens) {
+          // Primeira metade: coluna IMAGEM
+          linhaExcel = i + 2; // +2 para pular cabeçalho (linha 1 do Excel)
+          coluna = 'IMAGEM';
+        } else {
+          // Segunda metade: coluna IMAGEM_FORNECEDOR  
+          linhaExcel = (i - metadeImagens) + 2;
+          coluna = 'IMAGEM_FORNECEDOR';
+        }
         
         const extensao = mediaFile.split('.').pop() || 'png';
         const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaExcel}_${i}.${extensao}`;
@@ -384,7 +397,7 @@ export function useCotacoesArquivos() {
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] Imagem mapeada CORRETAMENTE: ${nomeImagem} (linha Excel ${linhaExcel}, coluna ${coluna}, índice imagem: ${i}, índice dados: ${indiceDados}, tamanho: ${imageBlob.size} bytes)`);
+        console.log(`✅ [DEBUG] Imagem mapeada CORRETAMENTE: ${nomeImagem} (linha Excel ${linhaExcel}, coluna ${coluna}, índice imagem: ${i}, tamanho: ${imageBlob.size} bytes)`);
       }
       
     } catch (zipError) {
@@ -613,13 +626,18 @@ export function useCotacoesArquivos() {
           )
         );
 
-         console.log(`🔍 [AUDIT] Linha ${index} (Excel ${linhaExcel}):`, {
-           imagemPrincipal: imagemPrincipal?.url,
-           imagemFornecedor: imagemFornecedor?.url,
-           sku: linha.SKU || linha.sku,
-           colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna),
-           todasImagensDisponiveis: imagensUpload.map(img => ({ linha: img.linha, coluna: img.coluna, nome: img.nome }))
-         });
+         console.log(`🔍 [AUDIT] Produto ${index}: linha Excel ${linhaExcel}, imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
+         
+         // Log detalhado apenas se não encontrar imagens
+         if (!imagemPrincipal?.url || !imagemFornecedor?.url) {
+           console.log(`🔍 [AUDIT] DETALHES Linha ${index} (Excel ${linhaExcel}):`, {
+             imagemPrincipal: imagemPrincipal?.url,
+             imagemFornecedor: imagemFornecedor?.url,
+             sku: linha.SKU || linha.sku,
+             colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna),
+             todasImagensDisponiveis: imagensUpload.map(img => ({ linha: img.linha, coluna: img.coluna, nome: img.nome }))
+           });
+         }
 
         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
         const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
