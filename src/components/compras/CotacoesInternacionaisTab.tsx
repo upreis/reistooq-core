@@ -876,8 +876,46 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       return;
     }
     
+    // Função para corrigir desalinhamento de imagens
+    const corrigirDesalinhamentoImagens = (produtos: any[]) => {
+      // Verificar se há desalinhamento comparando padrões de nomenclatura
+      const produtosCorrigidos = produtos.map((produto, index) => {
+        // Se existe um próximo produto e a imagem atual parece pertencer ao próximo
+        if (index < produtos.length - 1) {
+          const proximoProduto = produtos[index + 1];
+          
+          // Lógica para detectar desalinhamento baseado em padrões do SKU
+          if (produto.imagem && proximoProduto && produto.sku && proximoProduto.sku) {
+            // Se a imagem do produto atual contém parte do SKU do próximo produto
+            const skuAtual = produto.sku.toLowerCase();
+            const skuProximo = proximoProduto.sku.toLowerCase();
+            const imagemAtual = produto.imagem.toLowerCase();
+            
+            // Se a imagem contém referência ao próximo SKU, pode estar desalinhada
+            if (imagemAtual.includes(skuProximo) && !imagemAtual.includes(skuAtual)) {
+              console.log(`🔧 Detectado possível desalinhamento em ${produto.sku} - imagem parece ser do ${proximoProduto.sku}`);
+              
+              // Tentar corrigir trocando as imagens
+              return {
+                ...produto,
+                imagem: proximoProduto.imagem || '',
+                imagem_fornecedor: produto.imagem_fornecedor // Manter a imagem do fornecedor
+              };
+            }
+          }
+        }
+        
+        return produto;
+      });
+      
+      return produtosCorrigidos;
+    };
+    
     // Mapear dados importados para o formato esperado
-    const novosProdutos = dadosImportados.map((produto, index) => {
+    // Aplicar correção de desalinhamento antes do mapeamento final
+    const dadosCorrigidos = corrigirDesalinhamentoImagens(dadosImportados);
+    
+    const novosProdutos = dadosCorrigidos.map((produto, index) => {
       console.log(`📋 [DEBUG] Processando produto ${index}:`, produto);
       
       const produtoMapeado = {
@@ -1592,8 +1630,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {displayProducts.map((product: any, index: number) => (
-                      <TableRow key={index} className="hover:bg-muted/30 border-b border-border/50">
+                     {displayProducts.map((product: any, index: number) => (
+                       <TableRow key={index} className="hover:bg-muted/30 border-b border-border/50">
                          <TableCell className="text-center py-3">
                            <input 
                              type="checkbox"
@@ -1725,12 +1763,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          <TableCell className="text-center py-3">{product.obs}</TableCell>
                           <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                          <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                         <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                         <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                      </TableRow>
+                          <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                           <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                       </TableRow>
                      ))}
-                  </TableBody>
-                  <TableFooter>
+                   </TableBody>
+                   <TableFooter>
                     <TableRow className="bg-accent/50 font-bold text-sm">
                       <TableCell></TableCell> {/* Checkbox */}
                       <TableCell></TableCell> {/* SKU */}
