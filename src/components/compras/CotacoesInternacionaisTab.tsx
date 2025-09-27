@@ -906,15 +906,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         console.log(`  ${index}: SKU=${produto.sku}, Imagem=${produto.imagem?.substring(0, 30) || 'SEM IMAGEM'}...`);
       });
       
-      // NOVA ABORDAGEM: Rotacionar as imagens para corrigir o desalinhamento
-      // Criar array temporário das imagens
+      // CORREÇÃO FINAL: Rotacionar as imagens na direção correta
+      // Se as imagens estão "descendo" uma posição, precisamos "subir" elas
       const imagensOriginais = produtos.map(p => p.imagem);
       console.log('📋 [AUTO-CORREÇÃO] Imagens originais coletadas:', imagensOriginais.length);
       
-      // Rotacionar: mover a primeira imagem para o final
-      const imagensCorrigidas = [...imagensOriginais.slice(1), imagensOriginais[0]];
+      // Rotacionar para CIMA: mover a última imagem para o início
+      const imagensCorrigidas = [imagensOriginais[imagensOriginais.length - 1], ...imagensOriginais.slice(0, -1)];
       
-      console.log('📋 [AUTO-CORREÇÃO] Mapeamento das imagens:');
+      console.log('📋 [AUTO-CORREÇÃO] Mapeamento das imagens (rotação para CIMA):');
       imagensOriginais.forEach((img, i) => {
         console.log(`  Original[${i}]: ${img?.substring(0, 40) || 'SEM IMAGEM'} -> Corrigida[${i}]: ${imagensCorrigidas[i]?.substring(0, 40) || 'SEM IMAGEM'}`);
       });
