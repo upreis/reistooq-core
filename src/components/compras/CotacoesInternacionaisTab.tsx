@@ -1051,14 +1051,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   </div>
                   <p className="text-sm text-slate-300 mb-3">{selectedCotacao.descricao}</p>
                   
-                   {/* Informações organizadas em grid compacto */}
-                   <div className="space-y-1.5 text-xs">
-                     <div className="grid grid-cols-2 gap-4">
-                       <div className="flex justify-between">
+                   {/* Informações organizadas de forma clara */}
+                   <div className="space-y-3 text-xs">
+                     {/* País e Moeda em linha única com espaçamento adequado */}
+                     <div className="flex items-center justify-between gap-6">
+                       <div className="flex items-center gap-2">
                          <span className="text-slate-400">País:</span>
-                         <div className="font-medium text-white">{selectedCotacao.pais_origem}</div>
+                         <span className="font-medium text-white">{selectedCotacao.pais_origem}</span>
                        </div>
-                       <div className="flex justify-between items-center">
+                       <div className="flex items-center gap-2">
                          <span className="text-slate-400">Moeda:</span>
                          <Select value={selectedCurrency} onValueChange={(value) => {
                            setSelectedCurrency(value);
@@ -1068,7 +1069,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                              console.warn('Erro ao salvar moeda no sessionStorage:', error);
                            }
                          }}>
-                           <SelectTrigger className="w-16 h-5 text-xs bg-slate-700 border-slate-600">
+                           <SelectTrigger className="w-20 h-6 text-xs bg-slate-700 border-slate-600">
                              <SelectValue />
                            </SelectTrigger>
                            <SelectContent className="bg-background border border-border z-50">
@@ -1084,18 +1085,22 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          </Select>
                        </div>
                      </div>
-                     <div className="flex justify-between">
+                     
+                     {/* Total na moeda selecionada */}
+                     <div className="flex justify-between items-center">
                        <span className="text-slate-400">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
-                       <div className="font-semibold text-blue-400">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                       <div className="font-semibold text-blue-400 text-sm">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                      </div>
-                     <div className="grid grid-cols-2 gap-4">
-                       <div className="flex justify-between">
+                     
+                     {/* USD e BRL em linha única com espaçamento adequado */}
+                     <div className="flex items-center justify-between gap-6">
+                       <div className="flex items-center gap-2">
                          <span className="text-slate-400">Total USD:</span>
-                         <div className="font-semibold text-green-400">$ {getTotalChangeDolarTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                         <span className="font-semibold text-green-400">$ {getTotalChangeDolarTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                        </div>
-                       <div className="flex justify-between">
+                       <div className="flex items-center gap-2">
                          <span className="text-slate-400">Total BRL:</span>
-                         <div className="font-semibold text-orange-400">R$ {getTotalMultiplicadorReaisTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                         <span className="font-semibold text-orange-400">R$ {getTotalMultiplicadorReaisTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                        </div>
                      </div>
                    </div>
