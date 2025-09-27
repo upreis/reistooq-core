@@ -345,13 +345,78 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
         {/* Status Messages */}
         <div className="flex flex-col gap-2">
           {containersNeeded > 1 && (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  📦 Múltiplos containers necessários ({containersNeeded} containers)
-                </span>
-              </div>
+            <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
+              {/* Mostrar apenas o último container não cheio */}
+              {(() => {
+                const lastIncompleteContainer = containers.find(c => !c.isFull) || containers[containers.length - 1];
+                const fullContainersCount = containers.filter(c => c.isFull).length;
+                
+                return (
+                  <div className="flex items-center space-x-4">
+                    {/* Mini container visual */}
+                    <div className="flex flex-col items-center min-w-max">
+                      <div className="w-12 h-8 rounded border-2 border-slate-400 relative overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300">
+                        <div 
+                          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-500 to-amber-400 transition-all duration-500"
+                          style={{ height: `${lastIncompleteContainer.fillLevel}%` }}
+                        />
+                      </div>
+                      <span className="text-xs mt-1 font-medium text-slate-600 dark:text-slate-400">
+                        Container #{lastIncompleteContainer.index}
+                      </span>
+                    </div>
+                    
+                    {/* Volume info */}
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Volume: {lastIncompleteContainer.containerVolume.toFixed(1)}m³ ({lastIncompleteContainer.volumePercent.toFixed(1)}%)
+                      </div>
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${lastIncompleteContainer.volumePercent}%`,
+                            backgroundColor: getVolumeColor(lastIncompleteContainer.volumePercent)
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Weight info */}
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Peso: {lastIncompleteContainer.containerWeight.toFixed(0)}kg ({lastIncompleteContainer.weightPercent.toFixed(1)}%)
+                      </div>
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                        <div 
+                          className="h-2 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${lastIncompleteContainer.weightPercent}%`,
+                            backgroundColor: getWeightColor(lastIncompleteContainer.weightPercent)
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Percentage badge */}
+                    <div className="min-w-max">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold text-white"
+                            style={{ backgroundColor: getVolumeColor(lastIncompleteContainer.volumePercent) }}>
+                        {lastIncompleteContainer.volumePercent.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+              
+              {/* Summary info */}
+              {containers.filter(c => c.isFull).length > 0 && (
+                <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {containers.filter(c => c.isFull).length} containers cheios + 1 container em preenchimento
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
