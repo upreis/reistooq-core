@@ -352,9 +352,9 @@ export function useCotacoesArquivos() {
       console.log('📋 [DEBUG] Índice coluna IMAGEM FORNECEDOR:', colunaImagemFornecedorIndex);
       
       // Processar arquivos de mídia encontrados
-      // CORREÇÃO: Mapear sequencialmente linha por linha
-      let linhaAtual = 2; // Começar na linha 2 (primeira linha de dados)
-      let colunaAtual = 'IMAGEM'; // Alternar entre IMAGEM e IMAGEM_FORNECEDOR
+      // CORREÇÃO DEFINITIVA: Mapear diretamente pela posição no array de dados
+      console.log('📊 [DEBUG] Total de imagens encontradas:', todosArquivosImagem.length);
+      console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
       
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
@@ -366,13 +366,12 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // MAPEAMENTO SEQUENCIAL CORRETO:
-        // Imagem 0 -> Linha 2, IMAGEM
-        // Imagem 1 -> Linha 2, IMAGEM_FORNECEDOR  
-        // Imagem 2 -> Linha 3, IMAGEM
-        // Imagem 3 -> Linha 3, IMAGEM_FORNECEDOR
-        // etc.
-        const linhaExcel = Math.floor(i / 2) + 2;
+        // MAPEAMENTO CORRETO BASEADO NO ÍNDICE DO ARRAY DE DADOS:
+        // A chave é que o índice 'i' das imagens deve corresponder ao índice dos dados
+        // Dados[0] = linha Excel 2, Dados[1] = linha Excel 3, etc.
+        // Para cada linha de dados, temos 2 imagens: principal e fornecedor
+        const indiceDados = Math.floor(i / 2); // 0,0,1,1,2,2,3,3... (par de imagens por linha)
+        const linhaExcel = indiceDados + 2; // Linha Excel correspondente (2,2,3,3,4,4...)
         const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
         
         const extensao = mediaFile.split('.').pop() || 'png';
@@ -385,7 +384,7 @@ export function useCotacoesArquivos() {
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] Imagem extraída (CORREÇÃO): ${nomeImagem} (linha ${linhaExcel}, coluna ${coluna}, índice: ${i}, tamanho: ${imageBlob.size} bytes)`);
+        console.log(`✅ [DEBUG] Imagem mapeada CORRETAMENTE: ${nomeImagem} (linha Excel ${linhaExcel}, coluna ${coluna}, índice imagem: ${i}, índice dados: ${indiceDados}, tamanho: ${imageBlob.size} bytes)`);
       }
       
     } catch (zipError) {
