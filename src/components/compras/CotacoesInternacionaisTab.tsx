@@ -914,9 +914,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         if (index === 0) {
           // Para o primeiro produto, usar a imagem do segundo produto
           novaImagem = produtos[1]?.imagem || produto.imagem;
+        } else if (index === produtos.length - 1) {
+          // Para o ÚLTIMO produto, usar a imagem do primeiro produto (que estava na posição errada)
+          novaImagem = produtos[0]?.imagem || produto.imagem;
         } else {
           // Para os outros produtos, usar a imagem do produto seguinte
-          novaImagem = produtos[index + 1]?.imagem || '';
+          novaImagem = produtos[index + 1]?.imagem || produto.imagem;
         }
         
         return {
