@@ -684,6 +684,33 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return value > 0 ? value : 5.44;
   };
 
+  // Effect para recalcular produtos quando divisores/multiplicadores mudarem
+  useEffect(() => {
+    if (productData.length > 0) {
+      const updatedProducts = productData.map(product => ({
+        ...product,
+        change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
+        change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
+        multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
+        multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+      }));
+      
+      setProductData(updatedProducts);
+      
+      // Salvar no sessionStorage
+      try {
+        const cleanedProducts = updatedProducts.map(product => ({
+          ...product,
+          imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
+          imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
+        }));
+        sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
+      } catch (error) {
+        console.warn('Erro ao salvar no sessionStorage:', error);
+      }
+    }
+  }, [changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
+
   // Funções para edição inline
   const startEditing = useCallback((rowIndex: number, field: string) => {
     setEditingCell({ row: rowIndex, field });
@@ -792,7 +819,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const total = displayProducts.reduce((total, product) => {
       return total + (product.change_dolar_total || 0);
     }, 0);
-    console.log('📊 getTotalChangeDolarTotal:', total, displayProducts.length);
     return total;
   }, [displayProducts]);
 
@@ -800,7 +826,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const total = displayProducts.reduce((total, product) => {
       return total + (product.multiplicador_reais_total || 0);
     }, 0);
-    console.log('📊 getTotalMultiplicadorReaisTotal:', total, displayProducts.length);
     return total;
   }, [displayProducts]);
 
@@ -892,12 +917,21 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       
       return produtoMapeado;
     });
-    setProductData(novosProdutos);
+    // Recalcular campos automaticamente para todos os produtos
+    const produtosComCalculos = novosProdutos.map(produto => ({
+      ...produto,
+      change_dolar: (produto.preco || 0) / getChangeDolarDivisorValue(),
+      change_dolar_total: (produto.valor_total || 0) / getChangeDolarTotalDivisorValue(),
+      multiplicador_reais: (produto.preco || 0) * getMultiplicadorReaisValue(),
+      multiplicador_reais_total: ((produto.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+    }));
+    
+    setProductData(produtosComCalculos);
     setHasImportedData(true); // Marcar que dados foram importados
     
     // Salvar no sessionStorage para persistir entre navegações (removendo URLs blob inválidas)
     try {
-      const cleanedProducts = novosProdutos.map(product => ({
+      const cleanedProducts = produtosComCalculos.map(product => ({
         ...product,
         imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
         imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
