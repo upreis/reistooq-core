@@ -1051,50 +1051,54 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   </div>
                   <p className="text-sm text-slate-300 mb-3">{selectedCotacao.descricao}</p>
                   
-                  {/* Informações organizadas verticalmente */}
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">País:</span>
-                      <div className="font-medium text-white">{selectedCotacao.pais_origem}</div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400">Moeda:</span>
-                      <Select value={selectedCurrency} onValueChange={(value) => {
-                        setSelectedCurrency(value);
-                        try {
-                          sessionStorage.setItem('cotacao-selected-currency', value);
-                        } catch (error) {
-                          console.warn('Erro ao salvar moeda no sessionStorage:', error);
-                        }
-                      }}>
-                        <SelectTrigger className="w-20 h-6 text-xs bg-slate-700 border-slate-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background border border-border z-50">
-                          {AVAILABLE_CURRENCIES.map((currency) => (
-                            <SelectItem key={currency.code} value={currency.code}>
-                              <span className="flex items-center gap-2">
-                                <span>{currency.flag}</span>
-                                <span>{currency.code}</span>
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
-                      <div className="font-semibold text-blue-400">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toFixed(2)}</div>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Total USD:</span>
-                      <div className="font-semibold text-green-400">$ {getTotalChangeDolarTotal().toFixed(2)}</div>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Total BRL:</span>
-                      <div className="font-semibold text-orange-400">R$ {getTotalMultiplicadorReaisTotal().toFixed(2)}</div>
-                    </div>
-                  </div>
+                   {/* Informações organizadas em grid compacto */}
+                   <div className="space-y-1.5 text-xs">
+                     <div className="grid grid-cols-2 gap-4">
+                       <div className="flex justify-between">
+                         <span className="text-slate-400">País:</span>
+                         <div className="font-medium text-white">{selectedCotacao.pais_origem}</div>
+                       </div>
+                       <div className="flex justify-between items-center">
+                         <span className="text-slate-400">Moeda:</span>
+                         <Select value={selectedCurrency} onValueChange={(value) => {
+                           setSelectedCurrency(value);
+                           try {
+                             sessionStorage.setItem('cotacao-selected-currency', value);
+                           } catch (error) {
+                             console.warn('Erro ao salvar moeda no sessionStorage:', error);
+                           }
+                         }}>
+                           <SelectTrigger className="w-16 h-5 text-xs bg-slate-700 border-slate-600">
+                             <SelectValue />
+                           </SelectTrigger>
+                           <SelectContent className="bg-background border border-border z-50">
+                             {AVAILABLE_CURRENCIES.map((currency) => (
+                               <SelectItem key={currency.code} value={currency.code}>
+                                 <span className="flex items-center gap-2">
+                                   <span>{currency.flag}</span>
+                                   <span>{currency.code}</span>
+                                 </span>
+                               </SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+                       </div>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-slate-400">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
+                       <div className="font-semibold text-blue-400">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                       <div className="flex justify-between">
+                         <span className="text-slate-400">Total USD:</span>
+                         <div className="font-semibold text-green-400">$ {getTotalChangeDolarTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-slate-400">Total BRL:</span>
+                         <div className="font-semibold text-orange-400">R$ {getTotalMultiplicadorReaisTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                       </div>
+                     </div>
+                   </div>
                 </div>
                 
                 {/* Coluna direita - Container Visualization */}
