@@ -1373,8 +1373,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     const produtosFiltrados = productData.filter(produto => 
                       produto.sku && 
                       produto.sku !== 'PROD-29' && 
-                      !produto.sku.startsWith('PROD-') || 
-                      (produto.sku.startsWith('PROD-') && produto.nome_produto && produto.nome_produto.trim() !== '')
+                      (
+                        !produto.sku.startsWith('PROD-') || 
+                        (produto.sku.startsWith('PROD-') && produto.nome_produto && produto.nome_produto.trim() !== '')
+                      )
                     );
                     
                     setProductData(produtosFiltrados);
