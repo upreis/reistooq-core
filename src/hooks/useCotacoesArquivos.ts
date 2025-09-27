@@ -367,7 +367,7 @@ export function useCotacoesArquivos() {
         
         // CORREÇÃO FINAL: Mapear imagens baseado na estrutura do Excel
         // Coluna B (índice par) = IMAGEM, Coluna C (índice ímpar) = IMAGEM_FORNECEDOR
-        const linhaExcel = Math.floor(i / 2) + 1; // +1 para começar na linha 1 dos dados
+        const linhaExcel = Math.floor(i / 2) + 2; // +2 para corresponder aos dados (linha 2, 3, 4...)
         const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
         
         const extensao = mediaFile.split('.').pop() || 'png';
