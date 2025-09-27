@@ -48,7 +48,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import * as ExcelJS from 'exceljs';
+
 
 // Esquemas de validação com zod
 const produtoSchema = z.object({
@@ -944,19 +944,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
-  // Função para download do Excel com imagens
-  const handleDownloadExcel = async () => {
+  // Função para download do Excel simples e funcional
+  const handleDownloadExcel = () => {
     try {
       toast({
         title: "Preparando download...",
-        description: "Processando imagens e gerando planilha Excel.",
+        description: "Gerando planilha Excel com os dados da cotação.",
       });
 
-      // Criar workbook usando ExcelJS
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Cotação');
-
-      // Definir cabeçalhos
+      // Preparar dados para o Excel
       const headers = [
         'SKU', 'Imagem', 'Imagem Fornecedor', 'Material', 'Cor', 'Nome do Produto', 
         'Package', 'Preço', 'Unid.', 'PCS/CTN', 'Caixas', 'Peso Unit. (g)', 
@@ -965,35 +961,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         'CBM Cubagem', 'CBM Total', 'Qtd. Total', 'Valor Total', 'Obs.'
       ];
 
-      // Adicionar cabeçalho
-      worksheet.addRow(headers);
-
-      // Estilizar cabeçalho
-      const headerRow = worksheet.getRow(1);
-      headerRow.font = { bold: true, size: 12 };
-      headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFE5F3FF' }
-      };
-      headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-
-      // Configurar larguras das colunas
-      const colWidths = [15, 15, 20, 12, 10, 25, 12, 10, 8, 10, 10, 15, 18, 20, 18, 20, 12, 12, 12, 15, 12, 12, 15, 20];
-      headers.forEach((_, index) => {
-        worksheet.getColumn(index + 1).width = colWidths[index];
-      });
-
-      // Adicionar dados e imagens
-      for (let index = 0; index < displayProducts.length; index++) {
-        const product = displayProducts[index];
-        const rowNumber = index + 2;
-
-        // Criar linha com dados
-        const rowData = [
+      // Transformar produtos em dados para o Excel
+      const excelData = displayProducts.map(product => {
+        return [
           product.sku || '',
-          '', // Imagem - será preenchida após inserir a imagem
-          '', // Imagem Fornecedor - será preenchida após inserir a imagem  
+          product.imagem ? 'VER IMAGEM NO SISTEMA' : '',
+          product.imagem_fornecedor ? 'VER IMAGEM NO SISTEMA' : '',
           product.material || '',
           product.cor || '',
           product.nome_produto || '',
@@ -1016,105 +989,36 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           typeof product.valor_total === 'number' ? product.valor_total.toFixed(2) : product.valor_total || '',
           product.obs || ''
         ];
-
-        worksheet.addRow(rowData);
-
-        // Configurar altura da linha para acomodar imagens
-        worksheet.getRow(rowNumber).height = 80;
-
-        // Inserir imagem principal
-        if (product.imagem) {
-          try {
-            const base64 = await imageUrlToBase64(product.imagem);
-            if (base64) {
-              const imageData = base64.split(',')[1] || base64;
-              const imageBuffer = Buffer.from(imageData, 'base64');
-              
-              const imageId = workbook.addImage({
-                buffer: imageBuffer,
-                extension: 'png',
-              });
-
-              worksheet.addImage(imageId, {
-                tl: { col: 1, row: rowNumber - 1 }, // coluna B (index 1)
-                ext: { width: 100, height: 60 }
-              });
-
-              // Adicionar texto indicativo na célula
-              worksheet.getCell(rowNumber, 2).value = '[IMAGEM]';
-            }
-          } catch (error) {
-            console.warn('Erro ao processar imagem:', error);
-            worksheet.getCell(rowNumber, 2).value = 'Erro ao carregar';
-          }
-        }
-
-        // Inserir imagem do fornecedor
-        if (product.imagem_fornecedor) {
-          try {
-            const base64 = await imageUrlToBase64(product.imagem_fornecedor);
-            if (base64) {
-              const imageData = base64.split(',')[1] || base64;
-              const imageBuffer = Buffer.from(imageData, 'base64');
-              
-              const imageId = workbook.addImage({
-                buffer: imageBuffer,
-                extension: 'png',
-              });
-
-              worksheet.addImage(imageId, {
-                tl: { col: 2, row: rowNumber - 1 }, // coluna C (index 2)
-                ext: { width: 100, height: 60 }
-              });
-
-              // Adicionar texto indicativo na célula
-              worksheet.getCell(rowNumber, 3).value = '[IMAGEM]';
-            }
-          } catch (error) {
-            console.warn('Erro ao processar imagem fornecedor:', error);
-            worksheet.getCell(rowNumber, 3).value = 'Erro ao carregar';
-          }
-        }
-
-        // Destacar coluna Caixas (coluna K)
-        const caixasCell = worksheet.getCell(rowNumber, 11);
-        caixasCell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFFFF9C4' }
-        };
-        caixasCell.alignment = { horizontal: 'center', vertical: 'middle' };
-      }
-
-      // Aplicar bordas a todas as células
-      worksheet.eachRow((row, rowNumber) => {
-        row.eachCell({ includeEmpty: true }, (cell) => {
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' }
-          };
-        });
       });
 
-      // Gerar arquivo Excel
-      const buffer = await workbook.xlsx.writeBuffer();
-      
+      // Criar planilha
+      const worksheetData = [headers, ...excelData];
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+      // Definir larguras das colunas
+      const colWidths = [
+        { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 12 }, { wch: 10 }, { wch: 25 },
+        { wch: 12 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 15 },
+        { wch: 18 }, { wch: 20 }, { wch: 18 }, { wch: 20 }, { wch: 12 }, { wch: 12 },
+        { wch: 12 }, { wch: 15 }, { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 20 }
+      ];
+      worksheet['!cols'] = colWidths;
+
+      // Criar workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Cotação');
+
       // Gerar nome do arquivo com data/hora
       const agora = new Date();
       const dataHora = agora.toISOString().slice(0, 19).replace(/:/g, '-').replace('T', '_');
       const nomeArquivo = `cotacao_internacional_${dataHora}.xlsx`;
 
-      // Criar blob e fazer download
-      const blob = new Blob([buffer], { 
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-      });
-      saveAs(blob, nomeArquivo);
+      // Fazer download
+      XLSX.writeFile(workbook, nomeArquivo);
 
       toast({
         title: "Download concluído!",
-        description: `Planilha ${nomeArquivo} baixada com sucesso.`,
+        description: `Planilha ${nomeArquivo} baixada com sucesso. Para ver as imagens, consulte o sistema.`,
       });
 
     } catch (error) {
