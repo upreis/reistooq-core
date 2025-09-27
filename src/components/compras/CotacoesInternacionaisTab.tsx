@@ -1364,45 +1364,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                        <span className="text-slate-400">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
                        <div className="font-semibold text-blue-400 text-sm">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                      </div>
-              {hasImportedData && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    // Filtrar e remover itens inválidos como PROD-29
-                    const produtosFiltrados = productData.filter(produto => 
-                      produto.sku && 
-                      produto.sku !== 'PROD-29' && 
-                      (
-                        !produto.sku.startsWith('PROD-') || 
-                        (produto.sku.startsWith('PROD-') && produto.nome_produto && produto.nome_produto.trim() !== '')
-                      )
-                    );
-                    
-                    setProductData(produtosFiltrados);
-                    
-                    // Atualizar sessionStorage
-                    try {
-                      const cleanedProducts = produtosFiltrados.map(product => ({
-                        ...product,
-                        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-                        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-                      }));
-                      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
-                    } catch (error) {
-                      console.warn('Erro ao salvar no sessionStorage:', error);
-                    }
-                    
-                    toast({
-                      title: "Limpeza concluída",
-                      description: `Produtos inválidos removidos. ${produtosFiltrados.length} produtos restantes.`
-                    });
-                  }}
-                  className="gap-1"
-                >
-                  🧹 Limpar Dados Inválidos
-                </Button>
-              )}
               
                       {/* Total USD em linha separada */}
                       <div className="flex justify-between items-center">
