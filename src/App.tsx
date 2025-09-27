@@ -75,14 +75,17 @@ function App() {
   // Validar configuração na inicialização
   useEffect(() => {
     console.log('🔧 App useEffect running...');
-    try {
-      const validation = validateConfig();
-      if (!validation.valid) {
-        console.error('❌ Configuration errors:', validation.errors);
+    // Simplificado para evitar problemas de inicialização
+    if (typeof validateConfig === 'function') {
+      try {
+        const validation = validateConfig();
+        if (!validation.valid) {
+          console.error('❌ Configuration errors:', validation.errors);
+        }
+        console.log('✅ Configuration validation complete');
+      } catch (error) {
+        console.error('🚨 Error in configuration validation:', error);
       }
-      console.log('✅ Configuration validation complete');
-    } catch (error) {
-      console.error('🚨 Error in App useEffect:', error);
     }
   }, []);
 

@@ -23,27 +23,6 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // ✅ FIX CRÍTICO: Verificar se React está disponível antes de usar hooks
-  if (typeof useState !== 'function') {
-    console.error('🚨 React hooks não disponíveis no AuthProvider! useState:', typeof useState);
-    // Fallback para situações onde React não está inicializado
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#1a1a1a', 
-        color: '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'system-ui, sans-serif'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <h1>🔄 Inicializando Auth...</h1>
-          <p>Carregando sistema de autenticação</p>
-        </div>
-      </div>
-    );
-  }
 
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
