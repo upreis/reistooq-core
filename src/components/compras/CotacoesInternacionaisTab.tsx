@@ -1163,30 +1163,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         Excluir Selecionados ({selectedProducts.length})
                       </Button>
                     )}
-                    {hasImportedData && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setProductData([]);
-                          setHasImportedData(false);
-                          setSelectedProducts([]);
-                          // Limpar também do sessionStorage
-                          try {
-                            sessionStorage.removeItem('cotacao-produtos');
-                          } catch (error) {
-                            console.warn('Erro ao limpar sessionStorage:', error);
-                          }
-                          toast({
-                            title: "Dados limpos",
-                            description: "Todos os dados importados foram removidos.",
-                          });
-                        }}
-                      >
-                        <X className="h-4 w-4 mr-2" />
-                        Limpar Dados
-                      </Button>
-                    )}
                     <Button 
                       variant="outline" 
                       size="sm"
