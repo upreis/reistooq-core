@@ -237,10 +237,22 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   });
   
   // Estado para moeda selecionada no resumo
-  const [selectedCurrency, setSelectedCurrency] = useState<string>('CNY');
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
+    try {
+      return sessionStorage.getItem('cotacao-selected-currency') || 'CNY';
+    } catch {
+      return 'CNY';
+    }
+  });
   
-  // Estado para tipo de contêiner selecionado
-  const [selectedContainer, setSelectedContainer] = useState<string>('20');
+  // Estado para tipo de contêiner selecionado com persistência
+  const [selectedContainer, setSelectedContainer] = useState<string>(() => {
+    try {
+      return sessionStorage.getItem('cotacao-selected-container') || '20';
+    } catch {
+      return '20';
+    }
+  });
   
   // Estado para dialog de importação
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -1047,7 +1059,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-slate-400">Moeda:</span>
-                      <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                      <Select value={selectedCurrency} onValueChange={(value) => {
+                        setSelectedCurrency(value);
+                        try {
+                          sessionStorage.setItem('cotacao-selected-currency', value);
+                        } catch (error) {
+                          console.warn('Erro ao salvar moeda no sessionStorage:', error);
+                        }
+                      }}>
                         <SelectTrigger className="w-20 h-6 text-xs bg-slate-700 border-slate-600">
                           <SelectValue />
                         </SelectTrigger>
@@ -1083,7 +1102,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-sm font-medium text-muted-foreground">Simulação de Contêiner</h4>
                     <div className="w-36">
-                      <Select value={selectedContainer} onValueChange={setSelectedContainer}>
+                      <Select value={selectedContainer} onValueChange={(value) => {
+                        setSelectedContainer(value);
+                        try {
+                          sessionStorage.setItem('cotacao-selected-container', value);
+                        } catch (error) {
+                          console.warn('Erro ao salvar container no sessionStorage:', error);
+                        }
+                      }}>
                         <SelectTrigger className="w-full h-6 text-xs">
                           <SelectValue />
                         </SelectTrigger>
