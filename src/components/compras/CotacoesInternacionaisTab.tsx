@@ -47,9 +47,6 @@ import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
 import { useToast } from "@/hooks/use-toast";
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
-
 
 // Esquemas de validação com zod
 const produtoSchema = z.object({
@@ -210,7 +207,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>("1");
   const [multiplicadorReais, setMultiplicadorReais] = useState<string>("5.44");
   const [multiplicadorReaisTotal, setMultiplicadorReaisTotal] = useState<string>("5.44");
-  const [isDownloading, setIsDownloading] = useState(false);
   
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
@@ -946,174 +942,154 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
-  // Função para download do Excel com imagens embutidas
+  // Função para download do Excel
   const handleDownloadExcel = async () => {
     try {
-      setIsDownloading(true);
-      
       toast({
         title: "Preparando download...",
-        description: "Gerando planilha Excel com imagens embutidas...",
+        description: "Processando imagens e gerando planilha Excel.",
       });
 
-      // Criar workbook do ExcelJS
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Cotação');
+      // Preparar dados para o Excel
+      const dadosParaExcel = await Promise.all(
+        displayProducts.map(async (product, index) => {
+          // Processar imagens em paralelo
+          const [imagemBase64, imagemFornecedorBase64] = await Promise.all([
+            product.imagem ? imageUrlToBase64(product.imagem) : Promise.resolve(''),
+            product.imagem_fornecedor ? imageUrlToBase64(product.imagem_fornecedor) : Promise.resolve('')
+          ]);
+          
+          return {
+            'SKU': product.sku || '',
+            'Imagem': product.imagem ? '✓ Imagem disponível' : 'Sem imagem',
+            'Imagem Fornecedor': product.imagem_fornecedor ? '✓ Imagem disponível' : 'Sem imagem',
+            'Material': product.material || '',
+            'Cor': product.cor || '',
+            'Nome do Produto': product.nome_produto || '',
+            'Package': product.package || '',
+            'Preço': typeof product.preco === 'number' ? product.preco.toFixed(2) : product.preco || '',
+            'Unid.': product.unit || '',
+            'PCS/CTN': product.pcs_ctn || 0,
+            'Caixas': product.caixas || 0,
+            'Peso Unit. (g)': typeof product.peso_unitario_g === 'number' ? product.peso_unitario_g.toFixed(0) : product.peso_unitario_g || '',
+            'Peso Emb. Master (KG)': typeof product.peso_cx_master_kg === 'number' ? product.peso_cx_master_kg.toFixed(2) : product.peso_cx_master_kg || '',
+            'Peso S/ Emb. Master (KG)': typeof product.peso_sem_cx_master_kg === 'number' ? product.peso_sem_cx_master_kg.toFixed(2) : product.peso_sem_cx_master_kg || '',
+            'Peso Total Emb. (KG)': typeof product.peso_total_cx_master_kg === 'number' ? product.peso_total_cx_master_kg.toFixed(2) : product.peso_total_cx_master_kg || '',
+            'Peso Total S/ Emb. (KG)': typeof product.peso_total_sem_cx_master_kg === 'number' ? product.peso_total_sem_cx_master_kg.toFixed(2) : product.peso_total_sem_cx_master_kg || '',
+            'Comp. (cm)': product.comprimento || 0,
+            'Larg. (cm)': product.largura || 0,
+            'Alt. (cm)': product.altura || 0,
+            'CBM Cubagem': typeof product.cbm_cubagem === 'number' ? product.cbm_cubagem.toFixed(2) : product.cbm_cubagem || '',
+            'CBM Total': typeof product.cbm_total === 'number' ? product.cbm_total.toFixed(2) : product.cbm_total || '',
+            'Qtd. Total': product.quantidade_total || 0,
+            'Valor Total': typeof product.valor_total === 'number' ? product.valor_total.toFixed(2) : product.valor_total || '',
+            'Obs.': product.obs || ''
+          };
+        })
+      );
 
-      // Definir headers
-      const headers = [
-        'SKU', 'Imagem', 'Imagem Fornecedor', 'Material', 'Cor', 'Nome do Produto', 
-        'Package', 'Preço', 'Unid.', 'PCS/CTN', 'Caixas', 'Peso Unit. (g)', 
-        'Peso Emb. Master (KG)', 'Peso S/ Emb. Master (KG)', 'Peso Total Emb. (KG)', 
-        'Peso Total S/ Emb. (KG)', 'Comp. (cm)', 'Larg. (cm)', 'Alt. (cm)', 
-        'CBM Cubagem', 'CBM Total', 'Qtd. Total', 'Valor Total', 'Obs.'
+      // Criar workbook
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dadosParaExcel);
+
+      // Configurar larguras das colunas
+      const colWidths = [
+        { wch: 15 }, // SKU
+        { wch: 15 }, // Imagem
+        { wch: 20 }, // Imagem Fornecedor
+        { wch: 12 }, // Material
+        { wch: 10 }, // Cor
+        { wch: 25 }, // Nome do Produto
+        { wch: 12 }, // Package
+        { wch: 10 }, // Preço
+        { wch: 8 },  // Unid.
+        { wch: 10 }, // PCS/CTN
+        { wch: 10 }, // Caixas
+        { wch: 15 }, // Peso Unit. (g)
+        { wch: 18 }, // Peso Emb. Master (KG)
+        { wch: 20 }, // Peso S/ Emb. Master (KG)
+        { wch: 18 }, // Peso Total Emb. (KG)
+        { wch: 20 }, // Peso Total S/ Emb. (KG)
+        { wch: 12 }, // Comp. (cm)
+        { wch: 12 }, // Larg. (cm)
+        { wch: 12 }, // Alt. (cm)
+        { wch: 15 }, // CBM Cubagem
+        { wch: 12 }, // CBM Total
+        { wch: 12 }, // Qtd. Total
+        { wch: 15 }, // Valor Total
+        { wch: 20 }  // Obs.
       ];
+      ws['!cols'] = colWidths;
 
-      // Adicionar header
-      const headerRow = worksheet.addRow(headers);
-      
-      // Estilizar header
-      headerRow.font = { bold: true };
-      headerRow.fill = {
-        type: 'pattern',
-        pattern: 'solid',
-        fgColor: { argb: 'FFE6E6FA' }
+      // Aplicar estilos ao cabeçalho e célula especial da coluna Caixas
+      const headerStyle = {
+        font: { bold: true, size: 12 },
+        fill: { fgColor: { rgb: "E5F3FF" } },
+        border: {
+          top: { style: "thin" },
+          bottom: { style: "thin" },
+          left: { style: "thin" },
+          right: { style: "thin" }
+        },
+        alignment: { horizontal: "center", vertical: "center" }
       };
 
-      // Ajustar larguras das colunas
-      worksheet.columns = [
-        { width: 15 }, { width: 20 }, { width: 20 }, { width: 12 }, { width: 10 }, 
-        { width: 25 }, { width: 12 }, { width: 10 }, { width: 8 }, { width: 10 }, 
-        { width: 10 }, { width: 15 }, { width: 18 }, { width: 20 }, { width: 18 }, 
-        { width: 20 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 15 }, 
-        { width: 12 }, { width: 12 }, { width: 15 }, { width: 20 }
-      ];
+      // Aplicar estilo ao cabeçalho
+      const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1', 'M1', 'N1', 'O1', 'P1', 'Q1', 'R1', 'S1', 'T1', 'U1', 'V1', 'W1', 'X1'];
+      headerCells.forEach(cell => {
+        if (!ws[cell]) ws[cell] = { t: 's', v: '' };
+        ws[cell].s = headerStyle;
+      });
 
-      // Função para baixar imagem e converter para buffer
-      const downloadImage = async (imageUrl: string): Promise<Buffer | null> => {
-        try {
-          if (!imageUrl || !imageUrl.startsWith('http')) return null;
-          
-          const response = await fetch(imageUrl);
-          if (!response.ok) return null;
-          
-          const arrayBuffer = await response.arrayBuffer();
-          return Buffer.from(arrayBuffer);
-        } catch (error) {
-          console.error('Erro ao baixar imagem:', error);
-          return null;
-        }
+      // Destacar coluna Caixas (coluna K)
+      const caixasStyle = {
+        fill: { fgColor: { rgb: "FFF9C4" } },
+        border: {
+          top: { style: "thin" },
+          bottom: { style: "thin" },
+          left: { style: "thin" },
+          right: { style: "thin" }
+        },
+        alignment: { horizontal: "center", vertical: "center" }
       };
 
-      // Processar cada produto
-      for (let i = 0; i < displayProducts.length; i++) {
-        const product = displayProducts[i];
-        const rowIndex = i + 2; // +2 porque o header está na linha 1
-        
-        // Dados da linha
-        const rowData = [
-          product.sku || '',
-          '', // Imagem - será preenchida depois
-          '', // Imagem Fornecedor - será preenchida depois  
-          product.material || '',
-          product.cor || '',
-          product.nome_produto || '',
-          product.package || '',
-          typeof product.preco === 'number' ? product.preco.toFixed(2) : product.preco || '',
-          product.unit || '',
-          product.pcs_ctn || 0,
-          product.caixas || 0,
-          typeof product.peso_unitario_g === 'number' ? product.peso_unitario_g.toFixed(0) : product.peso_unitario_g || '',
-          typeof product.peso_cx_master_kg === 'number' ? product.peso_cx_master_kg.toFixed(2) : product.peso_cx_master_kg || '',
-          typeof product.peso_sem_cx_master_kg === 'number' ? product.peso_sem_cx_master_kg.toFixed(2) : product.peso_sem_cx_master_kg || '',
-          typeof product.peso_total_cx_master_kg === 'number' ? product.peso_total_cx_master_kg.toFixed(2) : product.peso_total_cx_master_kg || '',
-          typeof product.peso_total_sem_cx_master_kg === 'number' ? product.peso_total_sem_cx_master_kg.toFixed(2) : product.peso_total_sem_cx_master_kg || '',
-          product.comprimento || 0,
-          product.largura || 0,
-          product.altura || 0,
-          typeof product.cbm_cubagem === 'number' ? product.cbm_cubagem.toFixed(2) : product.cbm_cubagem || '',
-          typeof product.cbm_total === 'number' ? product.cbm_total.toFixed(2) : product.cbm_total || '',
-          product.quantidade_total || 0,
-          typeof product.valor_total === 'number' ? product.valor_total.toFixed(2) : product.valor_total || '',
-          product.obs || ''
-        ];
-
-        const row = worksheet.addRow(rowData);
-        
-        // Ajustar altura da linha para acomodar imagens
-        row.height = 80;
-
-        // Processar imagem principal
-        if (product.imagem) {
-          try {
-            const imageBuffer = await downloadImage(product.imagem);
-            if (imageBuffer) {
-              const imageId = workbook.addImage({
-                buffer: imageBuffer,
-                extension: 'png',
-              });
-              
-              worksheet.addImage(imageId, {
-                tl: { col: 1, row: rowIndex - 1 }, // Coluna B (index 1), linha atual
-                ext: { width: 100, height: 75 }
-              });
-            }
-          } catch (error) {
-            console.error(`Erro ao processar imagem do produto ${product.sku}:`, error);
-          }
-        }
-
-        // Processar imagem do fornecedor
-        if (product.imagem_fornecedor) {
-          try {
-            const imageBuffer = await downloadImage(product.imagem_fornecedor);
-            if (imageBuffer) {
-              const imageId = workbook.addImage({
-                buffer: imageBuffer,
-                extension: 'png',
-              });
-              
-              worksheet.addImage(imageId, {
-                tl: { col: 2, row: rowIndex - 1 }, // Coluna C (index 2), linha atual
-                ext: { width: 100, height: 75 }
-              });
-            }
-          } catch (error) {
-            console.error(`Erro ao processar imagem do fornecedor ${product.sku}:`, error);
-          }
-        }
+      // Aplicar estilo especial à coluna Caixas
+      for (let rowIndex = 2; rowIndex <= dadosParaExcel.length + 1; rowIndex++) {
+        const cellRef = `K${rowIndex}`;
+        if (!ws[cellRef]) ws[cellRef] = { t: 'n', v: 0 };
+        ws[cellRef].s = caixasStyle;
       }
 
-      // Gerar o arquivo
-      const buffer = await workbook.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      
-      // Download
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      // Configurar altura das linhas para acomodar melhor o conteúdo
+      const rowHeights = [];
+      for (let i = 0; i <= dadosParaExcel.length; i++) {
+        rowHeights.push({ hpt: i === 0 ? 25 : 20 }); // Cabeçalho um pouco maior
+      }
+      ws['!rows'] = rowHeights;
+
+      // Adicionar planilha ao workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Cotação");
+
+      // Gerar nome do arquivo com data/hora
       const agora = new Date();
       const dataHora = agora.toISOString().slice(0, 19).replace(/:/g, '-').replace('T', '_');
       const nomeArquivo = `cotacao_internacional_${dataHora}.xlsx`;
-      a.download = nomeArquivo;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+
+      // Fazer download
+      XLSX.writeFile(wb, nomeArquivo);
 
       toast({
         title: "Download concluído!",
-        description: `Planilha ${nomeArquivo} com imagens embutidas baixada com sucesso.`,
+        description: `Planilha ${nomeArquivo} baixada com sucesso.`,
       });
+
     } catch (error) {
-      console.error('Erro ao gerar Excel:', error);
+      console.error('Erro no download do Excel:', error);
       toast({
         title: "Erro no download",
-        description: "Ocorreu um erro ao gerar a planilha Excel com imagens.",
+        description: "Ocorreu um erro ao gerar a planilha Excel.",
         variant: "destructive",
       });
-    } finally {
-      setIsDownloading(false);
     }
   };
   return (
@@ -1380,10 +1356,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       variant="outline" 
                       size="sm"
                       onClick={handleDownloadExcel}
-                      disabled={displayProducts.length === 0 || isDownloading}
+                      disabled={displayProducts.length === 0}
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      {isDownloading ? "Gerando..." : "Download"}
+                      Download
                     </Button>
                     <Button variant="outline" size="sm">
                       <Edit className="h-4 w-4 mr-2" />

@@ -19,26 +19,21 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   maxVolume,
   maxWeight
 }) => {
-  // Verificar se os valores são válidos
-  const safeTotalCBM = isNaN(totalCBM) || totalCBM <= 0 ? 0.1 : totalCBM;
-  const safeMaxVolume = isNaN(maxVolume) || maxVolume <= 0 ? 1 : maxVolume;
-  const safeTotalWeight = isNaN(totalWeight) || totalWeight < 0 ? 0 : totalWeight;
-  
   // Calcular quantos containers são necessários baseado apenas no VOLUME
-  const containersNeeded = Math.ceil(safeTotalCBM / safeMaxVolume);
+  const containersNeeded = Math.ceil(totalCBM / maxVolume);
   
   // Calcular detalhes de cada container
   const getContainerDetails = () => {
     const containers = [];
-    let remainingVolume = safeTotalCBM;
+    let remainingVolume = totalCBM;
     
     for (let i = 0; i < containersNeeded; i++) {
-      const containerVolume = Math.min(remainingVolume, safeMaxVolume);
-      const volumePercent = (containerVolume / safeMaxVolume) * 100;
+      const containerVolume = Math.min(remainingVolume, maxVolume);
+      const volumePercent = (containerVolume / maxVolume) * 100;
       
       // Calcular peso proporcional ao volume ocupado neste container
-      const volumeRatio = containerVolume / safeTotalCBM;
-      const containerWeight = safeTotalWeight * volumeRatio;
+      const volumeRatio = containerVolume / totalCBM;
+      const containerWeight = totalWeight * volumeRatio;
       const weightPercent = (containerWeight / maxWeight) * 100;
       
       const isFull = volumePercent >= 100;
@@ -63,22 +58,17 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   // Sempre usar o último container que não está cheio (o que está sendo preenchido)
   const currentContainer = containers.find(c => !c.isFull) || containers[containers.length - 1];
   
-  // Verificar se existe container válido
-  if (!currentContainer) {
-    return <div className="p-4 text-center text-slate-500">Nenhum dado de container disponível</div>;
-  }
-  
   // Calcular altura do enchimento baseado no maior percentual do primeiro container
-  const fillHeight = Math.min(currentContainer.fillLevel || 0, 100);
+  const fillHeight = Math.min(currentContainer.fillLevel, 100);
   
   // Determinar cores baseadas nos percentuais
-  const getVolumeColor = (percent: number = currentContainer?.volumePercent || 0) => {
+  const getVolumeColor = (percent: number = currentContainer.volumePercent) => {
     if (percent >= 100) return '#ef4444'; // red-500
     if (percent >= 80) return '#f59e0b'; // amber-500
     return '#10b981'; // emerald-500
   };
 
-  const getWeightColor = (percent: number = currentContainer?.weightPercent || 0) => {
+  const getWeightColor = (percent: number = currentContainer.weightPercent) => {
     if (percent >= 100) return '#ef4444'; // red-500
     if (percent >= 80) return '#f59e0b'; // amber-500
     return '#10b981'; // emerald-500
@@ -132,7 +122,7 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
             {/* Container label */}
             <div className="absolute -top-6 left-0 right-0 text-center">
               <span className="inline-block bg-slate-700 text-white px-3 py-1 rounded-full text-xs font-mono">
-                {containerType} - Container #{currentContainer?.index || 1}
+                {containerType} - Container #{currentContainer.index}
               </span>
             </div>
 
@@ -149,25 +139,25 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
                 <div className="w-12 h-8 rounded border-2 border-slate-400 relative overflow-hidden bg-gradient-to-br from-slate-200 to-slate-300">
                   <div 
                     className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-amber-500 to-amber-400 transition-all duration-500"
-                    style={{ height: `${currentContainer?.fillLevel || 0}%` }}
+                    style={{ height: `${currentContainer.fillLevel}%` }}
                   />
                 </div>
                 <span className="text-xs mt-1 font-medium text-slate-600 dark:text-slate-400">
-                  Container #{currentContainer?.index || 1}
+                  Container #{currentContainer.index}
                 </span>
               </div>
               
               {/* Volume info */}
               <div className="flex-1">
                 <div className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Volume: {(currentContainer?.containerVolume || 0).toFixed(1)}m³ ({(currentContainer?.volumePercent || 0).toFixed(1)}%)
+                  Volume: {currentContainer.containerVolume.toFixed(1)}m³ ({currentContainer.volumePercent.toFixed(1)}%)
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                   <div 
                     className="h-2 rounded-full transition-all duration-500"
                     style={{
-                      width: `${currentContainer?.volumePercent || 0}%`,
-                      backgroundColor: getVolumeColor(currentContainer?.volumePercent || 0)
+                      width: `${currentContainer.volumePercent}%`,
+                      backgroundColor: getVolumeColor(currentContainer.volumePercent)
                     }}
                   />
                 </div>
@@ -176,14 +166,14 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
               {/* Weight info */}
               <div className="flex-1">
                 <div className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Peso: {(currentContainer?.containerWeight || 0).toFixed(0)}kg ({(currentContainer?.weightPercent || 0).toFixed(1)}%)
+                  Peso: {currentContainer.containerWeight.toFixed(0)}kg ({currentContainer.weightPercent.toFixed(1)}%)
                 </div>
                 <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
                   <div 
                     className="h-2 rounded-full transition-all duration-500"
                     style={{
-                      width: `${currentContainer?.weightPercent || 0}%`,
-                      backgroundColor: getWeightColor(currentContainer?.weightPercent || 0)
+                      width: `${currentContainer.weightPercent}%`,
+                      backgroundColor: getWeightColor(currentContainer.weightPercent)
                     }}
                   />
                 </div>
@@ -192,8 +182,8 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
               {/* Percentage badge */}
               <div className="min-w-max">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold text-white"
-                      style={{ backgroundColor: getVolumeColor(currentContainer?.volumePercent || 0) }}>
-                  {(currentContainer?.volumePercent || 0).toFixed(1)}%
+                      style={{ backgroundColor: getVolumeColor(currentContainer.volumePercent) }}>
+                  {currentContainer.volumePercent.toFixed(1)}%
                 </span>
               </div>
             </div>
