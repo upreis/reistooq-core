@@ -209,6 +209,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>("1");
   const [multiplicadorReais, setMultiplicadorReais] = useState<string>("5.44");
   const [multiplicadorReaisTotal, setMultiplicadorReaisTotal] = useState<string>("5.44");
+  const [isDownloading, setIsDownloading] = useState(false);
   
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
@@ -944,15 +945,17 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
-  // Função para download do Excel simples e funcional
-  const handleDownloadExcel = () => {
+  // Função para download do Excel
+  const handleDownloadExcel = async () => {
     try {
+      setIsDownloading(true);
+      
       toast({
         title: "Preparando download...",
         description: "Gerando planilha Excel com os dados da cotação.",
       });
 
-      // Preparar dados para o Excel
+      // Preparar dados simples para o Excel (sem imagens embutidas)
       const headers = [
         'SKU', 'Imagem', 'Imagem Fornecedor', 'Material', 'Cor', 'Nome do Produto', 
         'Package', 'Preço', 'Unid.', 'PCS/CTN', 'Caixas', 'Peso Unit. (g)', 
@@ -1028,6 +1031,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         description: "Ocorreu um erro ao gerar a planilha Excel.",
         variant: "destructive",
       });
+    } finally {
+      setIsDownloading(false);
     }
   };
   return (
@@ -1294,10 +1299,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       variant="outline" 
                       size="sm"
                       onClick={handleDownloadExcel}
-                      disabled={displayProducts.length === 0}
+                      disabled={displayProducts.length === 0 || isDownloading}
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Download
+                      {isDownloading ? "Gerando..." : "Download"}
                     </Button>
                     <Button variant="outline" size="sm">
                       <Edit className="h-4 w-4 mr-2" />
