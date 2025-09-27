@@ -219,14 +219,17 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       if (savedData) {
         const data = JSON.parse(savedData);
         
-        // Filtrar dados inválidos incluindo PROD-29
+        // Filtrar dados inválidos de forma mais rigorosa
         const cleanedData = data
-          .filter((product: any) => 
-            product.sku && 
-            product.sku !== 'PROD-29' && 
-            (!product.sku.startsWith('PROD-') || 
-             (product.sku.startsWith('PROD-') && product.nome_produto && product.nome_produto.trim() !== ''))
-          )
+          .filter((product: any) => {
+            // Remover produtos com SKU inválido ou vazio
+            if (!product.sku || product.sku.trim() === '') return false;
+            // Remover produtos órfãos como PROD-29
+            if (product.sku === 'PROD-29') return false;
+            // Remover produtos PROD-* sem nome ou nome vazio
+            if (product.sku.startsWith('PROD-') && (!product.nome_produto || product.nome_produto.trim() === '')) return false;
+            return true;
+          })
           .map((product: any) => ({
             ...product,
             imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
@@ -1645,10 +1648,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       </TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
-                     {displayProducts.map((product: any, index: number) => (
-                       <TableRow key={index} className="hover:bg-muted/30 border-b border-border/50">
-                         <TableCell className="text-center py-3">
+                   <TableBody>
+                     {(() => {
+                       console.log('🔍 [AUDIT] displayProducts:', displayProducts.length, displayProducts.map((p, i) => ({ index: i, sku: p.sku, imagem: p.imagem })));
+                       return displayProducts.map((product: any, index: number) => (
+                        <TableRow key={index} className="hover:bg-muted/30 border-b border-border/50">
+                          <TableCell className="text-center py-3">
                            <input 
                              type="checkbox"
                              checked={selectedProducts.includes(index.toString())}
@@ -1666,14 +1671,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                              onDoubleClick={() => startEditing(index, 'sku')}
                            />
                          </TableCell>
-                          <TableCell className="text-center py-3">
-                            <ProdutoImagemPreview
-                              imagemUrl={product.imagem}
-                              nomeProduto={product.nome_produto || product.sku}
-                              sku={product.sku}
-                              className="mx-auto"
-                            />
-                          </TableCell>
+                           <TableCell className="text-center py-3">
+                             {(() => {
+                               console.log(`🔍 [AUDIT] Produto ${index}: imagem=${product.imagem}, sku=${product.sku}`);
+                               return (
+                                 <ProdutoImagemPreview
+                                   imagemUrl={product.imagem}
+                                   nomeProduto={product.nome_produto || product.sku}
+                                   sku={product.sku}
+                                   className="mx-auto"
+                                 />
+                               );
+                             })()}
+                           </TableCell>
                          <TableCell className="text-center py-3">
                            <ProdutoImagemPreview
                              imagemUrl={product.imagem_fornecedor}
@@ -1781,9 +1791,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                           <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                            <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                       </TableRow>
-                     ))}
-                   </TableBody>
+                        </TableRow>
+                      ));
+                     })()}
+                    </TableBody>
                    <TableFooter>
                     <TableRow className="bg-accent/50 font-bold text-sm">
                       <TableCell></TableCell> {/* Checkbox */}

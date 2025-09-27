@@ -365,9 +365,11 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO FINAL: Mapear imagens baseado na estrutura do Excel
-        // Coluna B (índice par) = IMAGEM, Coluna C (índice ímpar) = IMAGEM_FORNECEDOR
-        const linhaExcel = Math.floor(i / 2) + 2; // +2 para corresponder aos dados (linha 2, 3, 4...)
+        // CORREÇÃO DEFINITIVA: Mapear imagens exatamente como os dados são processados
+        // dados.map com index 0,1,2... -> Excel linha 2,3,4... (index + 2)
+        // imagens par/ímpar -> linha = Math.floor(i/2) deve resultar no mesmo index dos dados
+        const indiceDados = Math.floor(i / 2); // 0,0,1,1,2,2... para corresponder ao index dos dados
+        const linhaExcel = indiceDados + 2; // +2 para corresponder exatamente ao processamento dos dados
         const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
         
         const extensao = mediaFile.split('.').pop() || 'png';
@@ -609,12 +611,13 @@ export function useCotacoesArquivos() {
           )
         );
 
-        console.log(`🔍 [DEBUG] Linha ${index} (Excel ${linhaExcel}):`, {
-          imagemPrincipal: imagemPrincipal?.url,
-          imagemFornecedor: imagemFornecedor?.url,
-          sku: linha.SKU || linha.sku,
-          colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna)
-        });
+         console.log(`🔍 [AUDIT] Linha ${index} (Excel ${linhaExcel}):`, {
+           imagemPrincipal: imagemPrincipal?.url,
+           imagemFornecedor: imagemFornecedor?.url,
+           sku: linha.SKU || linha.sku,
+           colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna),
+           todasImagensDisponiveis: imagensUpload.map(img => ({ linha: img.linha, coluna: img.coluna, nome: img.nome }))
+         });
 
         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
         const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
