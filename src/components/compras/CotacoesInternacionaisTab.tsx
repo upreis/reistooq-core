@@ -1206,8 +1206,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               <div className="overflow-auto border rounded-lg">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-background">
-                      <TableHead className="w-[50px]">
+                    <TableRow className="bg-muted/50 border-b-2 border-border">
+                      <TableHead className="w-[50px] h-12 text-center">
                          <input 
                            type="checkbox"
                            checked={selectedProducts.length === displayProducts.length && displayProducts.length > 0}
@@ -1215,30 +1215,30 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                            className="rounded"
                          />
                       </TableHead>
-                      <TableHead className="min-w-[100px]">SKU</TableHead>
-                      <TableHead className="min-w-[120px]">IMAGEM</TableHead>
-                      <TableHead className="min-w-[150px]">IMAGEM FORNECEDOR</TableHead>
-                      <TableHead className="min-w-[100px]">MATERIAL</TableHead>
-                      <TableHead className="min-w-[80px]">COR</TableHead>
-                      <TableHead className="min-w-[200px]">Nome do Produto</TableHead>
-                      <TableHead className="min-w-[100px]">PACKAGE</TableHead>
-                      <TableHead className="min-w-[80px]">PREÇO</TableHead>
-                      <TableHead className="min-w-[60px]">UNIT</TableHead>
-                      <TableHead className="min-w-[80px]">PCS/CTN</TableHead>
-                      <TableHead className="min-w-[80px]">CAIXAS</TableHead>
-                      <TableHead className="min-w-[120px]">PESO UNITARIO(g)</TableHead>
-                      <TableHead className="min-w-[140px]">Peso embalado cx Master (KG)</TableHead>
-                      <TableHead className="min-w-[160px]">Peso Sem embalagem cx Master (KG)</TableHead>
-                      <TableHead className="min-w-[160px]">Peso total embalado cx Master (KG)</TableHead>
-                      <TableHead className="min-w-[180px]">Peso total sem embalagem cx Master (KG)</TableHead>
-                      <TableHead className="min-w-[100px]">Comprimento</TableHead>
-                      <TableHead className="min-w-[80px]">Largura</TableHead>
-                      <TableHead className="min-w-[80px]">Altura</TableHead>
-                      <TableHead className="min-w-[120px]">CBM Cubagem</TableHead>
-                      <TableHead className="min-w-[100px]">CBM Total</TableHead>
-                      <TableHead className="min-w-[120px]">Quantidade Total</TableHead>
-                      <TableHead className="min-w-[120px]">Valor Total</TableHead>
-                      <TableHead className="min-w-[100px]">OBS</TableHead>
+                      <TableHead className="min-w-[100px] h-12 font-semibold text-sm">SKU</TableHead>
+                      <TableHead className="min-w-[120px] h-12 font-semibold text-sm text-center">Imagem</TableHead>
+                      <TableHead className="min-w-[150px] h-12 font-semibold text-sm text-center">Imagem Fornecedor</TableHead>
+                      <TableHead className="min-w-[100px] h-12 font-semibold text-sm">Material</TableHead>
+                      <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-center">Cor</TableHead>
+                      <TableHead className="min-w-[200px] h-12 font-semibold text-sm">Nome do Produto</TableHead>
+                      <TableHead className="min-w-[100px] h-12 font-semibold text-sm text-center">Package</TableHead>
+                      <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-right">Preço</TableHead>
+                      <TableHead className="min-w-[60px] h-12 font-semibold text-sm text-center">Unid.</TableHead>
+                      <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-center">PCS/CTN</TableHead>
+                      <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-center bg-accent/20">Caixas</TableHead>
+                      <TableHead className="min-w-[120px] h-12 font-semibold text-sm text-right">Peso Unit. (g)</TableHead>
+                      <TableHead className="min-w-[140px] h-12 font-semibold text-xs text-center">Peso Emb. Master (KG)</TableHead>
+                      <TableHead className="min-w-[160px] h-12 font-semibold text-xs text-center">Peso S/ Emb. Master (KG)</TableHead>
+                      <TableHead className="min-w-[160px] h-12 font-semibold text-xs text-center">Peso Total Emb. (KG)</TableHead>
+                      <TableHead className="min-w-[180px] h-12 font-semibold text-xs text-center">Peso Total S/ Emb. (KG)</TableHead>
+                      <TableHead className="min-w-[100px] h-12 font-semibold text-sm text-center">Comp. (cm)</TableHead>
+                      <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-center">Larg. (cm)</TableHead>
+                      <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-center">Alt. (cm)</TableHead>
+                      <TableHead className="min-w-[120px] h-12 font-semibold text-sm text-center">CBM Cubagem</TableHead>
+                      <TableHead className="min-w-[100px] h-12 font-semibold text-sm text-center">CBM Total</TableHead>
+                      <TableHead className="min-w-[120px] h-12 font-semibold text-sm text-center">Qtd. Total</TableHead>
+                      <TableHead className="min-w-[120px] h-12 font-semibold text-sm text-right">Valor Total</TableHead>
+                      <TableHead className="min-w-[100px] h-12 font-semibold text-sm text-center">Obs.</TableHead>
                       <TableHead className="min-w-[120px]">
                         <div className="space-y-1">
                           <div className="flex items-center gap-1">
@@ -1454,7 +1454,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             onDoubleClick={() => startEditing(index, 'pcs_ctn')}
                           />
                         </TableCell>
-                        <TableCell className="bg-background">
+                        <TableCell className="bg-accent/20 text-center">
                           <EditableCell
                             value={product.caixas}
                             type="number"
