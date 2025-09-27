@@ -876,43 +876,49 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       return;
     }
     
-    // Função para corrigir desalinhamento de imagens - CORREÇÃO SIMPLIFICADA
+    // Função para corrigir desalinhamento de imagens - CORREÇÃO AUTOMÁTICA
     const corrigirDesalinhamentoImagens = (produtos: any[]) => {
-      console.log('🔧 [AUDIT] Iniciando correção de desalinhamento. Total de produtos:', produtos.length);
+      console.log('🔧 [AUTO-CORREÇÃO] Iniciando correção automática de desalinhamento. Total de produtos:', produtos.length);
       
-      if (produtos.length < 2) return produtos;
+      if (!produtos || produtos.length < 2) {
+        console.log('🔧 [AUTO-CORREÇÃO] Poucos produtos para corrigir, mantendo como está');
+        return produtos;
+      }
       
-      // Primeiro, vamos verificar o padrão atual das imagens
+      // Log do estado atual antes da correção
+      console.log('📋 [AUTO-CORREÇÃO] Estado ANTES da correção:');
       produtos.forEach((produto, index) => {
-        console.log(`📋 [AUDIT] Produto ${index} - SKU: ${produto.sku}, Imagem: ${produto.imagem?.substring(0, 50)}...`);
+        console.log(`  ${index}: SKU=${produto.sku}, Imagem=${produto.imagem?.substring(0, 30) || 'SEM IMAGEM'}...`);
       });
       
       // CORREÇÃO DIRETA: Deslocar todas as imagens uma posição para cima
+      // Isso corrige o problema onde cada linha mostra a imagem que deveria estar na linha de baixo
       const produtosCorrigidos = produtos.map((produto, index) => {
+        let novaImagem = produto.imagem;
+        
         if (index === 0) {
-          // Para o primeiro produto, usar a imagem do segundo produto (que estava sendo exibida nele)
-          const proximoProduto = produtos[1];
-          return {
-            ...produto,
-            imagem: proximoProduto?.imagem || produto.imagem
-          };
+          // Para o primeiro produto, usar a imagem do segundo produto
+          novaImagem = produtos[1]?.imagem || produto.imagem;
         } else {
           // Para os outros produtos, usar a imagem do produto seguinte
-          const proximoProduto = produtos[index + 1];
-          return {
-            ...produto,
-            imagem: proximoProduto?.imagem || '' // Se não há próximo, deixar vazio
-          };
+          novaImagem = produtos[index + 1]?.imagem || '';
         }
+        
+        return {
+          ...produto,
+          imagem: novaImagem,
+          // Manter a imagem do fornecedor original (esta está correta)
+          imagem_fornecedor: produto.imagem_fornecedor
+        };
       });
       
-      console.log('🔧 [AUDIT] Correção aplicada - deslocamento corrigido');
-      
-      // Log dos resultados
+      // Log do estado após a correção
+      console.log('✅ [AUTO-CORREÇÃO] Estado APÓS a correção:');
       produtosCorrigidos.forEach((produto, index) => {
-        console.log(`✅ [AUDIT] Produto corrigido ${index} - SKU: ${produto.sku}, Nova Imagem: ${produto.imagem?.substring(0, 50)}...`);
+        console.log(`  ${index}: SKU=${produto.sku}, Nova Imagem=${produto.imagem?.substring(0, 30) || 'SEM IMAGEM'}...`);
       });
       
+      console.log('🔧 [AUTO-CORREÇÃO] Correção automática finalizada!');
       return produtosCorrigidos;
     };
     
@@ -927,9 +933,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         ...produto,
         id: `import-${index}`,
         // Garantir que todas as propriedades necessárias existem
-        sku: produto.sku || `PROD-${index + 1}`,
-        imagem: produto.imagem || '',
-        imagem_fornecedor: produto.imagem_fornecedor || '',
+         sku: produto.sku || `PROD-${index + 1}`,
+         imagem: produto.imagem || '', // Usar a imagem já corrigida
+         imagem_fornecedor: produto.imagem_fornecedor || '', // Manter a original do fornecedor
         nome_produto: produto.nome_produto || produto.nome || '',
         material: produto.material || '',
         cor: produto.cor || '',
@@ -1381,38 +1387,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          </Select>
                        </div>
                      </div>
-              {hasImportedData && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    console.log('🔧 Aplicando correção manual de imagens...');
-                    const produtosCorrigidos = productData.map((produto, index) => {
-                      if (index === 0) {
-                        const proximoProduto = productData[1];
-                        return {
-                          ...produto,
-                          imagem: proximoProduto?.imagem || produto.imagem
-                        };
-                      } else {
-                        const proximoProduto = productData[index + 1];
-                        return {
-                          ...produto,
-                          imagem: proximoProduto?.imagem || ''
-                        };
-                      }
-                    });
-                    setProductData(produtosCorrigidos);
-                    toast({
-                      title: "Correção aplicada",
-                      description: "Desalinhamento de imagens corrigido!"
-                    });
-                  }}
-                  className="gap-1"
-                >
-                  🔧 Corrigir Imagens
-                </Button>
-              )}
               
                      {/* Total na moeda selecionada */}
                      <div className="flex justify-between items-center">
