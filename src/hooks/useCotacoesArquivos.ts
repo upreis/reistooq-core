@@ -358,15 +358,26 @@ export function useCotacoesArquivos() {
       console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       
       // IMPORTANTE: Ordenar arquivos para garantir a sequência correta
-      // Os arquivos podem vir em ordem aleatória do ZIP
+      // Os arquivos podem vir em ordem aleatória do ZIP, especialmente quando não estão fixos nas células
       todosArquivosImagem.sort((a, b) => {
-        // Extrair números dos nomes dos arquivos para ordenação
+        // Estratégia de ordenação múltipla para máxima compatibilidade
+        
+        // 1. Tentar extrair números dos nomes dos arquivos
         const numA = parseInt(a.match(/\d+/)?.[0] || '0');
         const numB = parseInt(b.match(/\d+/)?.[0] || '0');
-        return numA - numB;
+        
+        // 2. Se os números forem diferentes, usar ordenação numérica
+        if (numA !== numB) {
+          return numA - numB;
+        }
+        
+        // 3. Se números iguais ou ausentes, usar ordenação alfabética como fallback
+        // Isso garante consistência mesmo para arquivos com nomenclatura irregular
+        return a.localeCompare(b);
       });
       
-      console.log('📊 [DEBUG] Arquivos ORDENADOS:', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
+      console.log('📊 [DEBUG] Arquivos ORDENADOS (versão robusta):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
+      console.log('🎯 [DEBUG] Estratégia de ordenação aplicada para imagens não fixas nas células');
       
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
@@ -378,15 +389,27 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO FINAL: Mapeamento baseado no total de linhas de dados
-        // Cada linha tem 2 imagens (IMAGEM e IMAGEM_FORNECEDOR)
-        // Imagens vêm em pares: img0,img1 = linha 2; img2,img3 = linha 3, etc.
+        // CORREÇÃO FINAL ROBUSTA: Mapeamento baseado no total de linhas de dados
+        // Para imagens não fixas nas células, usamos mapeamento sequencial mais inteligente
         const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
         
-        // Calcular linha e coluna baseado no índice da imagem
-        const linhaDados = Math.floor(i / 2); // Par de imagens por linha de dados
+        // Estratégia de mapeamento: 
+        // - Se tivermos 2 imagens por linha: pares (img0,img1 = linha 1; img2,img3 = linha 2)
+        // - Se tivermos 1 imagem por linha: sequencial (img0 = linha 1; img1 = linha 2)
+        const imagensPorLinha = todosArquivosImagem.length <= totalLinhasDados ? 1 : 2;
+        
+        let linhaDados, coluna;
+        if (imagensPorLinha === 2) {
+          // Modo 2 imagens por linha (IMAGEM + IMAGEM_FORNECEDOR)
+          linhaDados = Math.floor(i / 2);
+          coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+        } else {
+          // Modo 1 imagem por linha (apenas IMAGEM)
+          linhaDados = i;
+          coluna = 'IMAGEM';
+        }
+        
         const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2 (linha 1 = cabeçalho)
-        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Par/ímpar para determinar coluna
         
         // Verificar se não excede o número de linhas de dados
         if (linhaDados >= totalLinhasDados) {
@@ -404,7 +427,7 @@ export function useCotacoesArquivos() {
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Tamanho: ${imageBlob.size} bytes`);
+        console.log(`✅ [DEBUG] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Modo: ${imagensPorLinha} img/linha, Tamanho: ${imageBlob.size} bytes`);
       }
       
     } catch (zipError) {
