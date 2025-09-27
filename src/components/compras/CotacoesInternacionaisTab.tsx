@@ -916,7 +916,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       
       console.log('📋 [AUTO-CORREÇÃO] Mapeamento das imagens (rotação para CIMA):');
       imagensOriginais.forEach((img, i) => {
-        console.log(`  Original[${i}]: ${img?.substring(0, 40) || 'SEM IMAGEM'} -> Corrigida[${i}]: ${imagensCorrigidas[i]?.substring(0, 40) || 'SEM IMAGEM'}`);
+        const produto = produtos[i];
+        const isLastProduct = i === produtos.length - 1;
+        console.log(`  Original[${i}]: SKU=${produto?.sku} - ${img?.substring(0, 40) || 'SEM IMAGEM'} -> Corrigida[${i}]: ${imagensCorrigidas[i]?.substring(0, 40) || 'SEM IMAGEM'}${isLastProduct ? ' [ÚLTIMA LINHA]' : ''}`);
       });
       
       // Aplicar as imagens corrigidas aos produtos
@@ -932,8 +934,22 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       // Log do estado após a correção
       console.log('✅ [AUTO-CORREÇÃO] Estado APÓS a correção:');
       produtosCorrigidos.forEach((produto, index) => {
-        console.log(`  ${index}: SKU=${produto.sku}, Nova Imagem=${produto.imagem?.substring(0, 30) || 'SEM IMAGEM'}...`);
+        const isLastProduct = index === produtosCorrigidos.length - 1;
+        console.log(`  ${index}: SKU=${produto.sku}, Nova Imagem=${produto.imagem?.substring(0, 30) || 'SEM IMAGEM'}${isLastProduct ? ' [ÚLTIMA LINHA]' : ''}`);
       });
+      
+      // Validação especial para a última linha
+      const ultimoProduto = produtosCorrigidos[produtosCorrigidos.length - 1];
+      if (ultimoProduto && !ultimoProduto.imagem) {
+        console.warn('⚠️ [AUTO-CORREÇÃO] ERRO: Última linha sem imagem detectada. Tentando correção emergencial...');
+        
+        // Buscar a primeira imagem disponível para a última linha
+        const primeiraImagemDisponivel = imagensOriginais.find(img => img && img.trim() !== '');
+        if (primeiraImagemDisponivel) {
+          ultimoProduto.imagem = primeiraImagemDisponivel;
+          console.log(`🔧 [AUTO-CORREÇÃO] Correção emergencial aplicada na última linha: ${primeiraImagemDisponivel.substring(0, 30)}...`);
+        }
+      }
       
       console.log('🔧 [AUTO-CORREÇÃO] Correção automática finalizada!');
       return produtosCorrigidos;
@@ -1715,14 +1731,25 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                              onDoubleClick={() => startEditing(index, 'sku')}
                            />
                          </TableCell>
-                         <TableCell className="text-center py-3">
-                           <ProdutoImagemPreview
-                             imagemUrl={product.imagem}
-                             nomeProduto={product.nome_produto || product.sku}
-                             sku={product.sku}
-                             className="mx-auto"
-                           />
-                         </TableCell>
+                          <TableCell className="text-center py-3">
+                            {(() => {
+                              const isLastProduct = index === displayProducts.length - 1;
+                              const imagemUrl = product.imagem;
+                              
+                              if (isLastProduct) {
+                                console.log(`🔍 [AUDITORIA] Última linha (${index}): SKU=${product.sku}, Imagem="${imagemUrl}"`);
+                              }
+                              
+                              return (
+                                <ProdutoImagemPreview
+                                  imagemUrl={imagemUrl}
+                                  nomeProduto={product.nome_produto || product.sku}
+                                  sku={product.sku}
+                                  className="mx-auto"
+                                />
+                              );
+                            })()}
+                          </TableCell>
                          <TableCell className="text-center py-3">
                            <ProdutoImagemPreview
                              imagemUrl={product.imagem_fornecedor}
