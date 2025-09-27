@@ -1206,7 +1206,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               <div className="overflow-auto border rounded-lg">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
+                    <TableRow style={{ backgroundColor: '#22ebfd' }}>
                       <TableHead className="w-[50px]">
                          <input 
                            type="checkbox"
@@ -1454,7 +1454,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                             onDoubleClick={() => startEditing(index, 'pcs_ctn')}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell style={{ backgroundColor: '#fdfd00' }}>
                           <EditableCell
                             value={product.caixas}
                             type="number"
