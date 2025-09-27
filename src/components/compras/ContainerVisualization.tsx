@@ -20,7 +20,21 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   maxWeight
 }) => {
   // Calcular quantos containers são necessários
-  const containersNeeded = Math.ceil(Math.max(totalCBM / maxVolume, totalWeight / maxWeight));
+  const volumeRatio = totalCBM / maxVolume;
+  const weightRatio = totalWeight / maxWeight;
+  const containersNeeded = Math.ceil(Math.max(volumeRatio, weightRatio));
+  
+  // Debug logs para identificar o problema
+  console.log('🐛 [DEBUG] Container calculation:', {
+    totalCBM,
+    maxVolume,
+    volumeRatio,
+    totalWeight,
+    maxWeight,
+    weightRatio,
+    containersNeeded,
+    containerType
+  });
   
   // Para o container atual (primeiro), limitar o percentual a 100%
   const currentContainerVolumePercentage = Math.min(volumePercentage, 100);
