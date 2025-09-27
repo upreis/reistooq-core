@@ -355,7 +355,18 @@ export function useCotacoesArquivos() {
       // CORREÇÃO DEFINITIVA: Mapear diretamente pela posição no array de dados
       console.log('📊 [DEBUG] Total de imagens encontradas:', todosArquivosImagem.length);
       console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
-      console.log('📊 [DEBUG] Arquivos de imagem encontrados:', todosArquivosImagem);
+      console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
+      
+      // IMPORTANTE: Ordenar arquivos para garantir a sequência correta
+      // Os arquivos podem vir em ordem aleatória do ZIP
+      todosArquivosImagem.sort((a, b) => {
+        // Extrair números dos nomes dos arquivos para ordenação
+        const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+        const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+        return numA - numB;
+      });
+      
+      console.log('📊 [DEBUG] Arquivos ORDENADOS:', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
@@ -393,7 +404,7 @@ export function useCotacoesArquivos() {
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] Imagem ${i}: ${nomeImagem} → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Tamanho: ${imageBlob.size} bytes`);
+        console.log(`✅ [DEBUG] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Tamanho: ${imageBlob.size} bytes`);
       }
       
     } catch (zipError) {
