@@ -365,11 +365,18 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // Associar imagem com linha de forma mais inteligente
-        // Assumindo que as imagens vêm em pares por linha: [linha1_imagem, linha1_fornecedor, linha2_imagem, linha2_fornecedor...]
-        const linhaExcel = Math.floor(i / 2) + 2; // +2 para pular cabeçalho
-        const isImagemFornecedor = i % 2 === 1; // Par = IMAGEM, Ímpar = IMAGEM_FORNECEDOR
-        const coluna = isImagemFornecedor ? 'IMAGEM_FORNECEDOR' : 'IMAGEM';
+        // CORREÇÃO: Associar imagens sequencialmente com linhas
+        // Se temos 29 produtos e 29 imagens, cada produto deve ter 1 imagem na coluna IMAGEM
+        const totalLinhas = range.e.r; // Total de linhas de dados
+        const linhaExcel = (i % totalLinhas) + 2; // +2 para pular cabeçalho, distribui sequencialmente
+        
+        // Para debug: verificar se esta é uma correção de coluna IMAGEM vs IMAGEM_FORNECEDOR
+        let coluna = 'IMAGEM'; // Por padrão, usar coluna IMAGEM
+        
+        // Se tivermos mais imagens que linhas, as extras vão para IMAGEM_FORNECEDOR
+        if (i >= totalLinhas) {
+          coluna = 'IMAGEM_FORNECEDOR';
+        }
         
         const extensao = mediaFile.split('.').pop() || 'png';
         const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaExcel}_${i}.${extensao}`;
@@ -381,7 +388,7 @@ export function useCotacoesArquivos() {
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] Imagem extraída: ${nomeImagem} (linha ${linhaExcel}, coluna ${coluna}, tamanho: ${imageBlob.size} bytes)`);
+        console.log(`✅ [DEBUG] Imagem extraída (CORREÇÃO): ${nomeImagem} (linha ${linhaExcel}, coluna ${coluna}, índice: ${i}, tamanho: ${imageBlob.size} bytes)`);
       }
       
     } catch (zipError) {
