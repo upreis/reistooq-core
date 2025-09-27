@@ -876,36 +876,41 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       return;
     }
     
-    // Função para corrigir desalinhamento de imagens
+    // Função para corrigir desalinhamento de imagens - CORREÇÃO SIMPLIFICADA
     const corrigirDesalinhamentoImagens = (produtos: any[]) => {
-      // Verificar se há desalinhamento comparando padrões de nomenclatura
+      console.log('🔧 [AUDIT] Iniciando correção de desalinhamento. Total de produtos:', produtos.length);
+      
+      if (produtos.length < 2) return produtos;
+      
+      // Primeiro, vamos verificar o padrão atual das imagens
+      produtos.forEach((produto, index) => {
+        console.log(`📋 [AUDIT] Produto ${index} - SKU: ${produto.sku}, Imagem: ${produto.imagem?.substring(0, 50)}...`);
+      });
+      
+      // CORREÇÃO DIRETA: Deslocar todas as imagens uma posição para cima
       const produtosCorrigidos = produtos.map((produto, index) => {
-        // Se existe um próximo produto e a imagem atual parece pertencer ao próximo
-        if (index < produtos.length - 1) {
+        if (index === 0) {
+          // Para o primeiro produto, usar a imagem do segundo produto (que estava sendo exibida nele)
+          const proximoProduto = produtos[1];
+          return {
+            ...produto,
+            imagem: proximoProduto?.imagem || produto.imagem
+          };
+        } else {
+          // Para os outros produtos, usar a imagem do produto seguinte
           const proximoProduto = produtos[index + 1];
-          
-          // Lógica para detectar desalinhamento baseado em padrões do SKU
-          if (produto.imagem && proximoProduto && produto.sku && proximoProduto.sku) {
-            // Se a imagem do produto atual contém parte do SKU do próximo produto
-            const skuAtual = produto.sku.toLowerCase();
-            const skuProximo = proximoProduto.sku.toLowerCase();
-            const imagemAtual = produto.imagem.toLowerCase();
-            
-            // Se a imagem contém referência ao próximo SKU, pode estar desalinhada
-            if (imagemAtual.includes(skuProximo) && !imagemAtual.includes(skuAtual)) {
-              console.log(`🔧 Detectado possível desalinhamento em ${produto.sku} - imagem parece ser do ${proximoProduto.sku}`);
-              
-              // Tentar corrigir trocando as imagens
-              return {
-                ...produto,
-                imagem: proximoProduto.imagem || '',
-                imagem_fornecedor: produto.imagem_fornecedor // Manter a imagem do fornecedor
-              };
-            }
-          }
+          return {
+            ...produto,
+            imagem: proximoProduto?.imagem || '' // Se não há próximo, deixar vazio
+          };
         }
-        
-        return produto;
+      });
+      
+      console.log('🔧 [AUDIT] Correção aplicada - deslocamento corrigido');
+      
+      // Log dos resultados
+      produtosCorrigidos.forEach((produto, index) => {
+        console.log(`✅ [AUDIT] Produto corrigido ${index} - SKU: ${produto.sku}, Nova Imagem: ${produto.imagem?.substring(0, 50)}...`);
       });
       
       return produtosCorrigidos;
@@ -1376,7 +1381,39 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          </Select>
                        </div>
                      </div>
-                     
+              {hasImportedData && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    console.log('🔧 Aplicando correção manual de imagens...');
+                    const produtosCorrigidos = productData.map((produto, index) => {
+                      if (index === 0) {
+                        const proximoProduto = productData[1];
+                        return {
+                          ...produto,
+                          imagem: proximoProduto?.imagem || produto.imagem
+                        };
+                      } else {
+                        const proximoProduto = productData[index + 1];
+                        return {
+                          ...produto,
+                          imagem: proximoProduto?.imagem || ''
+                        };
+                      }
+                    });
+                    setProductData(produtosCorrigidos);
+                    toast({
+                      title: "Correção aplicada",
+                      description: "Desalinhamento de imagens corrigido!"
+                    });
+                  }}
+                  className="gap-1"
+                >
+                  🔧 Corrigir Imagens
+                </Button>
+              )}
+              
                      {/* Total na moeda selecionada */}
                      <div className="flex justify-between items-center">
                        <span className="text-slate-400">Total {AVAILABLE_CURRENCIES.find(c => c.code === selectedCurrency)?.name || selectedCurrency}:</span>
