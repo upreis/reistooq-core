@@ -1053,7 +1053,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   
                    {/* Informações organizadas de forma clara */}
                    <div className="space-y-3 text-xs">
-                     {/* País e Moeda em linha única com espaçamento adequado */}
+                     {/* País e Moeda em linha única */}
                      <div className="flex items-center justify-between gap-6">
                        <div className="flex items-center gap-2">
                          <span className="text-slate-400">País:</span>
@@ -1092,16 +1092,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                        <div className="font-semibold text-blue-400 text-sm">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                      </div>
                      
-                     {/* USD e BRL em linha única com espaçamento adequado */}
-                     <div className="flex items-center justify-between gap-6">
-                       <div className="flex items-center gap-2">
-                         <span className="text-slate-400">Total USD:</span>
-                         <span className="font-semibold text-green-400">$ {getTotalChangeDolarTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                       </div>
-                       <div className="flex items-center gap-2">
-                         <span className="text-slate-400">Total BRL:</span>
-                         <span className="font-semibold text-orange-400">R$ {getTotalMultiplicadorReaisTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                       </div>
+                     {/* Total USD em linha separada */}
+                     <div className="flex justify-between items-center">
+                       <span className="text-slate-400">Total USD:</span>
+                       <div className="font-semibold text-green-400 text-sm">$ {getTotalChangeDolarTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                     </div>
+                     
+                     {/* Total BRL em linha separada */}
+                     <div className="flex justify-between items-center">
+                       <span className="text-slate-400">Total BRL:</span>
+                       <div className="font-semibold text-orange-400 text-sm">R$ {getTotalMultiplicadorReaisTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                      </div>
                    </div>
                 </div>
