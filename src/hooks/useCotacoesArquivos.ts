@@ -365,18 +365,10 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO: Associar imagens sequencialmente com linhas
-        // Se temos 29 produtos e 29 imagens, cada produto deve ter 1 imagem na coluna IMAGEM
-        const totalLinhas = range.e.r; // Total de linhas de dados
-        const linhaExcel = (i % totalLinhas) + 2; // +2 para pular cabeçalho, distribui sequencialmente
-        
-        // Para debug: verificar se esta é uma correção de coluna IMAGEM vs IMAGEM_FORNECEDOR
-        let coluna = 'IMAGEM'; // Por padrão, usar coluna IMAGEM
-        
-        // Se tivermos mais imagens que linhas, as extras vão para IMAGEM_FORNECEDOR
-        if (i >= totalLinhas) {
-          coluna = 'IMAGEM_FORNECEDOR';
-        }
+        // CORREÇÃO FINAL: Mapear imagens baseado na estrutura do Excel
+        // Coluna B (índice par) = IMAGEM, Coluna C (índice ímpar) = IMAGEM_FORNECEDOR
+        const linhaExcel = Math.floor(i / 2) + 2; // +2 para pular cabeçalho
+        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
         
         const extensao = mediaFile.split('.').pop() || 'png';
         const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaExcel}_${i}.${extensao}`;
