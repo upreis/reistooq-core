@@ -122,7 +122,7 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
             {/* Container label */}
             <div className="absolute -top-6 left-0 right-0 text-center">
               <span className="inline-block bg-slate-700 text-white px-3 py-1 rounded-full text-xs font-mono">
-                {containerType} - Container #1
+                {containerType} - Container #{currentContainer.index}
               </span>
             </div>
 
