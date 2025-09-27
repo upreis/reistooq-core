@@ -38,13 +38,15 @@ import {
   Image,
   Save,
   X,
-  Info
+  Info,
+  Download
 } from "lucide-react";
 import { CurrencyService } from "@/services/currencyService";
 import { ProductSelector } from './ProductSelector';
 import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
 import { useToast } from "@/hooks/use-toast";
 import { z } from 'zod';
+import * as XLSX from 'xlsx';
 
 // Esquemas de validação com zod
 const produtoSchema = z.object({
@@ -911,6 +913,185 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       description: `${novosProdutos.length} produtos importados com sucesso.`,
     });
   }, [toast]);
+
+  // Função para converter imagem URL para base64
+  const imageUrlToBase64 = async (url: string): Promise<string> => {
+    try {
+      if (!url || url.startsWith('blob:')) return '';
+      
+      // Se a URL já é base64, extrair apenas os dados
+      if (url.startsWith('data:')) {
+        return url.split(',')[1];
+      }
+      
+      const response = await fetch(url);
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          resolve(base64String.split(',')[1]); // Remove o prefixo data:image/...;base64,
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.warn('Erro ao converter imagem para base64:', error);
+      return '';
+    }
+  };
+
+  // Função para download do Excel
+  const handleDownloadExcel = async () => {
+    try {
+      toast({
+        title: "Preparando download...",
+        description: "Processando imagens e gerando planilha Excel.",
+      });
+
+      // Preparar dados para o Excel
+      const dadosParaExcel = await Promise.all(
+        displayProducts.map(async (product, index) => {
+          // Processar imagens em paralelo
+          const [imagemBase64, imagemFornecedorBase64] = await Promise.all([
+            product.imagem ? imageUrlToBase64(product.imagem) : Promise.resolve(''),
+            product.imagem_fornecedor ? imageUrlToBase64(product.imagem_fornecedor) : Promise.resolve('')
+          ]);
+          
+          return {
+            'SKU': product.sku || '',
+            'Imagem': product.imagem ? '✓ Imagem disponível' : 'Sem imagem',
+            'Imagem Fornecedor': product.imagem_fornecedor ? '✓ Imagem disponível' : 'Sem imagem',
+            'Material': product.material || '',
+            'Cor': product.cor || '',
+            'Nome do Produto': product.nome_produto || '',
+            'Package': product.package || '',
+            'Preço': typeof product.preco === 'number' ? product.preco.toFixed(2) : product.preco || '',
+            'Unid.': product.unit || '',
+            'PCS/CTN': product.pcs_ctn || 0,
+            'Caixas': product.caixas || 0,
+            'Peso Unit. (g)': typeof product.peso_unitario_g === 'number' ? product.peso_unitario_g.toFixed(0) : product.peso_unitario_g || '',
+            'Peso Emb. Master (KG)': typeof product.peso_cx_master_kg === 'number' ? product.peso_cx_master_kg.toFixed(2) : product.peso_cx_master_kg || '',
+            'Peso S/ Emb. Master (KG)': typeof product.peso_sem_cx_master_kg === 'number' ? product.peso_sem_cx_master_kg.toFixed(2) : product.peso_sem_cx_master_kg || '',
+            'Peso Total Emb. (KG)': typeof product.peso_total_cx_master_kg === 'number' ? product.peso_total_cx_master_kg.toFixed(2) : product.peso_total_cx_master_kg || '',
+            'Peso Total S/ Emb. (KG)': typeof product.peso_total_sem_cx_master_kg === 'number' ? product.peso_total_sem_cx_master_kg.toFixed(2) : product.peso_total_sem_cx_master_kg || '',
+            'Comp. (cm)': product.comprimento || 0,
+            'Larg. (cm)': product.largura || 0,
+            'Alt. (cm)': product.altura || 0,
+            'CBM Cubagem': typeof product.cbm_cubagem === 'number' ? product.cbm_cubagem.toFixed(2) : product.cbm_cubagem || '',
+            'CBM Total': typeof product.cbm_total === 'number' ? product.cbm_total.toFixed(2) : product.cbm_total || '',
+            'Qtd. Total': product.quantidade_total || 0,
+            'Valor Total': typeof product.valor_total === 'number' ? product.valor_total.toFixed(2) : product.valor_total || '',
+            'Obs.': product.obs || ''
+          };
+        })
+      );
+
+      // Criar workbook
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dadosParaExcel);
+
+      // Configurar larguras das colunas
+      const colWidths = [
+        { wch: 15 }, // SKU
+        { wch: 15 }, // Imagem
+        { wch: 20 }, // Imagem Fornecedor
+        { wch: 12 }, // Material
+        { wch: 10 }, // Cor
+        { wch: 25 }, // Nome do Produto
+        { wch: 12 }, // Package
+        { wch: 10 }, // Preço
+        { wch: 8 },  // Unid.
+        { wch: 10 }, // PCS/CTN
+        { wch: 10 }, // Caixas
+        { wch: 15 }, // Peso Unit. (g)
+        { wch: 18 }, // Peso Emb. Master (KG)
+        { wch: 20 }, // Peso S/ Emb. Master (KG)
+        { wch: 18 }, // Peso Total Emb. (KG)
+        { wch: 20 }, // Peso Total S/ Emb. (KG)
+        { wch: 12 }, // Comp. (cm)
+        { wch: 12 }, // Larg. (cm)
+        { wch: 12 }, // Alt. (cm)
+        { wch: 15 }, // CBM Cubagem
+        { wch: 12 }, // CBM Total
+        { wch: 12 }, // Qtd. Total
+        { wch: 15 }, // Valor Total
+        { wch: 20 }  // Obs.
+      ];
+      ws['!cols'] = colWidths;
+
+      // Aplicar estilos ao cabeçalho e célula especial da coluna Caixas
+      const headerStyle = {
+        font: { bold: true, size: 12 },
+        fill: { fgColor: { rgb: "E5F3FF" } },
+        border: {
+          top: { style: "thin" },
+          bottom: { style: "thin" },
+          left: { style: "thin" },
+          right: { style: "thin" }
+        },
+        alignment: { horizontal: "center", vertical: "center" }
+      };
+
+      // Aplicar estilo ao cabeçalho
+      const headerCells = ['A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1', 'I1', 'J1', 'K1', 'L1', 'M1', 'N1', 'O1', 'P1', 'Q1', 'R1', 'S1', 'T1', 'U1', 'V1', 'W1', 'X1'];
+      headerCells.forEach(cell => {
+        if (!ws[cell]) ws[cell] = { t: 's', v: '' };
+        ws[cell].s = headerStyle;
+      });
+
+      // Destacar coluna Caixas (coluna K)
+      const caixasStyle = {
+        fill: { fgColor: { rgb: "FFF9C4" } },
+        border: {
+          top: { style: "thin" },
+          bottom: { style: "thin" },
+          left: { style: "thin" },
+          right: { style: "thin" }
+        },
+        alignment: { horizontal: "center", vertical: "center" }
+      };
+
+      // Aplicar estilo especial à coluna Caixas
+      for (let rowIndex = 2; rowIndex <= dadosParaExcel.length + 1; rowIndex++) {
+        const cellRef = `K${rowIndex}`;
+        if (!ws[cellRef]) ws[cellRef] = { t: 'n', v: 0 };
+        ws[cellRef].s = caixasStyle;
+      }
+
+      // Configurar altura das linhas para acomodar melhor o conteúdo
+      const rowHeights = [];
+      for (let i = 0; i <= dadosParaExcel.length; i++) {
+        rowHeights.push({ hpt: i === 0 ? 25 : 20 }); // Cabeçalho um pouco maior
+      }
+      ws['!rows'] = rowHeights;
+
+      // Adicionar planilha ao workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Cotação");
+
+      // Gerar nome do arquivo com data/hora
+      const agora = new Date();
+      const dataHora = agora.toISOString().slice(0, 19).replace(/:/g, '-').replace('T', '_');
+      const nomeArquivo = `cotacao_internacional_${dataHora}.xlsx`;
+
+      // Fazer download
+      XLSX.writeFile(wb, nomeArquivo);
+
+      toast({
+        title: "Download concluído!",
+        description: `Planilha ${nomeArquivo} baixada com sucesso.`,
+      });
+
+    } catch (error) {
+      console.error('Erro no download do Excel:', error);
+      toast({
+        title: "Erro no download",
+        description: "Ocorreu um erro ao gerar a planilha Excel.",
+        variant: "destructive",
+      });
+    }
+  };
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1170,6 +1351,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     >
                       <FileText className="h-4 w-4 mr-2" />
                       Importar
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleDownloadExcel}
+                      disabled={displayProducts.length === 0}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
                     </Button>
                     <Button variant="outline" size="sm">
                       <Edit className="h-4 w-4 mr-2" />
