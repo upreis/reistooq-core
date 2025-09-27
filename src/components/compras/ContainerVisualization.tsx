@@ -19,24 +19,24 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   maxVolume,
   maxWeight
 }) => {
-  // Calcular quantos containers são necessários baseado no volume e peso
-  const containersNeededByVolume = Math.ceil(totalCBM / maxVolume);
-  const containersNeededByWeight = Math.ceil(totalWeight / maxWeight);
-  const containersNeeded = Math.max(containersNeededByVolume, containersNeededByWeight);
+  // Calcular quantos containers são necessários baseado apenas no VOLUME
+  const containersNeeded = Math.ceil(totalCBM / maxVolume);
   
   // Calcular detalhes de cada container
   const getContainerDetails = () => {
     const containers = [];
+    let remainingVolume = totalCBM;
     
     for (let i = 0; i < containersNeeded; i++) {
-      const remainingVolume = Math.max(0, totalCBM - (i * maxVolume));
-      const remainingWeight = Math.max(0, totalWeight - (i * maxWeight));
-      
       const containerVolume = Math.min(remainingVolume, maxVolume);
-      const containerWeight = Math.min(remainingWeight, maxWeight);
-      
       const volumePercent = (containerVolume / maxVolume) * 100;
+      
+      // Calcular peso proporcional ao volume ocupado neste container
+      const volumeRatio = containerVolume / totalCBM;
+      const containerWeight = totalWeight * volumeRatio;
       const weightPercent = (containerWeight / maxWeight) * 100;
+      
+      const isFull = volumePercent >= 100;
       
       containers.push({
         index: i + 1,
@@ -44,9 +44,11 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
         weightPercent,
         containerVolume,
         containerWeight,
-        isFull: volumePercent >= 100 || weightPercent >= 100,
-        fillLevel: Math.max(volumePercent, weightPercent)
+        isFull,
+        fillLevel: volumePercent // O fill level é sempre baseado no volume
       });
+      
+      remainingVolume -= containerVolume;
     }
     
     return containers;
@@ -72,13 +74,13 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   };
 
   const getContainerStatus = (container: any) => {
-    const criticalFactor = container.volumePercent > container.weightPercent ? 'volume' : 'peso';
-    const percentage = Math.max(container.volumePercent, container.weightPercent);
-    
-    if (percentage >= 100) return { status: 'cheio', color: 'bg-red-500', text: 'Cheio' };
-    if (percentage >= 80) return { status: 'quase-cheio', color: 'bg-amber-500', text: `${percentage.toFixed(1)}%` };
-    if (percentage > 0) return { status: 'parcial', color: 'bg-blue-500', text: `${percentage.toFixed(1)}%` };
-    return { status: 'vazio', color: 'bg-slate-300', text: 'Vazio' };
+    if (container.isFull) {
+      return { status: 'cheio', color: 'bg-slate-600', text: 'Cheio' };
+    } else {
+      const percentage = container.volumePercent;
+      if (percentage >= 80) return { status: 'quase-cheio', color: 'bg-amber-500', text: `${percentage.toFixed(1)}%` };
+      return { status: 'parcial', color: 'bg-blue-500', text: `${percentage.toFixed(1)}%` };
+    }
   };
 
   return (
@@ -98,94 +100,104 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
             </div>
           </div>
           
-          {/* Visualização detalhada de cada container */}
+          {/* Visualização apenas dos containers não cheios */}
           <div className="grid grid-cols-1 gap-3">
-            {containers.map((container, index) => {
-              const status = getContainerStatus(container);
-              return (
-                <div key={index} className="flex items-center space-x-4 p-3 bg-white dark:bg-slate-800 rounded-lg border">
-                  {/* Mini container visual */}
-                  <div className="flex flex-col items-center">
-                    <div className={`w-12 h-8 rounded border-2 ${status.color} border-slate-400 relative overflow-hidden`}>
-                      <div 
-                        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-600 to-slate-400 transition-all duration-500"
-                        style={{ height: `${Math.min(container.fillLevel, 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-xs mt-1 font-medium text-slate-600 dark:text-slate-400">
-                      Container #{container.index}
-                    </span>
-                  </div>
-                  
-                  {/* Detalhes do container */}
-                  <div className="flex-1 grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-slate-700 dark:text-slate-300">Volume:</span>
-                      <div className="text-slate-600 dark:text-slate-400">
-                        {container.containerVolume.toFixed(1)}m³ ({container.volumePercent.toFixed(1)}%)
-                      </div>
-                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mt-1">
+            {containers
+              .filter(container => !container.isFull) // Mostrar apenas containers não cheios
+              .map((container, index) => {
+                const status = getContainerStatus(container);
+                return (
+                  <div key={container.index} className="flex items-center space-x-4 p-3 bg-white dark:bg-slate-800 rounded-lg border">
+                    {/* Mini container visual */}
+                    <div className="flex flex-col items-center">
+                      <div className={`w-12 h-8 rounded border-2 ${status.color} border-slate-400 relative overflow-hidden`}>
                         <div 
-                          className="h-1.5 rounded-full transition-all duration-500"
-                          style={{
-                            width: `${Math.min(container.volumePercent, 100)}%`,
-                            backgroundColor: getVolumeColor(container.volumePercent)
-                          }}
+                          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-600 to-slate-400 transition-all duration-500"
+                          style={{ height: `${container.fillLevel}%` }}
                         />
                       </div>
-                    </div>
-                    
-                    <div>
-                      <span className="font-medium text-slate-700 dark:text-slate-300">Peso:</span>
-                      <div className="text-slate-600 dark:text-slate-400">
-                        {container.containerWeight.toFixed(0)}kg ({container.weightPercent.toFixed(1)}%)
-                      </div>
-                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mt-1">
-                        <div 
-                          className="h-1.5 rounded-full transition-all duration-500"
-                          style={{
-                            width: `${Math.min(container.weightPercent, 100)}%`,
-                            backgroundColor: getWeightColor(container.weightPercent)
-                          }}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${status.color}`}>
-                        {status.text}
+                      <span className="text-xs mt-1 font-medium text-slate-600 dark:text-slate-400">
+                        Container #{container.index}
                       </span>
                     </div>
+                    
+                    {/* Detalhes do container */}
+                    <div className="flex-1 grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium text-slate-700 dark:text-slate-300">Volume:</span>
+                        <div className="text-slate-600 dark:text-slate-400">
+                          {container.containerVolume.toFixed(1)}m³ ({container.volumePercent.toFixed(1)}%)
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mt-1">
+                          <div 
+                            className="h-1.5 rounded-full transition-all duration-500"
+                            style={{
+                              width: `${container.volumePercent}%`,
+                              backgroundColor: getVolumeColor(container.volumePercent)
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <span className="font-medium text-slate-700 dark:text-slate-300">Peso:</span>
+                        <div className="text-slate-600 dark:text-slate-400">
+                          {container.containerWeight.toFixed(0)}kg ({container.weightPercent.toFixed(1)}%)
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mt-1">
+                          <div 
+                            className="h-1.5 rounded-full transition-all duration-500"
+                            style={{
+                              width: `${container.weightPercent}%`,
+                              backgroundColor: getWeightColor(container.weightPercent)
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${status.color}`}>
+                          {status.text}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-          
-          {/* Resumo do que falta para o próximo container (se aplicável) */}
-          {containers.length > 0 && (
-            <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
-              <div className="text-sm text-slate-600 dark:text-slate-400">
-                <div className="flex justify-between items-center">
-                  <span>Eficiência de empacotamento:</span>
-                  <span className="font-medium">
-                    Volume: {((totalCBM / (containersNeeded * maxVolume)) * 100).toFixed(1)}% | 
-                    Peso: {((totalWeight / (containersNeeded * maxWeight)) * 100).toFixed(1)}%
+                );
+              })}
+            
+            {/* Mostrar containers cheios de forma resumida */}
+            {containers.filter(c => c.isFull).length > 0 && (
+              <div className="flex items-center space-x-4 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg border">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-6 rounded bg-slate-600 border border-slate-400"></div>
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    {containers.filter(c => c.isFull).length} containers cheios
                   </span>
                 </div>
-                {containersNeeded > 1 && (
-                  <div className="mt-2 text-xs">
-                    <span className="text-amber-600 dark:text-amber-400">
-                      💡 Última container: {containers[containers.length - 1].fillLevel.toFixed(1)}% preenchido
-                      {containers[containers.length - 1].fillLevel < 100 && 
-                        ` - Espaço disponível: ${(100 - containers[containers.length - 1].fillLevel).toFixed(1)}%`
-                      }
-                    </span>
-                  </div>
-                )}
               </div>
+            )}
+          </div>
+          
+          {/* Resumo melhorado */}
+          <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg">
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              <div className="flex justify-between items-center">
+                <span>Eficiência de empacotamento:</span>
+                <span className="font-medium">
+                  Volume: {((totalCBM / (containersNeeded * maxVolume)) * 100).toFixed(1)}% | 
+                  Peso: {((totalWeight / (containersNeeded * maxWeight)) * 100).toFixed(1)}%
+                </span>
+              </div>
+              {/* Mostrar apenas informações do último container se não estiver cheio */}
+              {containers.length > 0 && !containers[containers.length - 1].isFull && (
+                <div className="mt-2 text-xs">
+                  <span className="text-amber-600 dark:text-amber-400">
+                    💡 Último container: {containers[containers.length - 1].fillLevel.toFixed(1)}% preenchido - Espaço disponível: {(100 - containers[containers.length - 1].fillLevel).toFixed(1)}%
+                  </span>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       )}
 
