@@ -55,7 +55,8 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
   };
   
   const containers = getContainerDetails();
-  const currentContainer = containers[0]; // Primeiro container para a visualização principal
+  // Sempre usar o último container que não está cheio (o que está sendo preenchido)
+  const currentContainer = containers.find(c => !c.isFull) || containers[containers.length - 1];
   
   // Calcular altura do enchimento baseado no maior percentual do primeiro container
   const fillHeight = Math.min(currentContainer.fillLevel, 100);
