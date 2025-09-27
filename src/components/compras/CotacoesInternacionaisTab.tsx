@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -1682,8 +1682,26 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         <TableCell>R$ {product.multiplicador_reais.toFixed(2)}</TableCell>
                         <TableCell>R$ {product.multiplicador_reais_total.toFixed(2)}</TableCell>
                       </TableRow>
-                    ))}
+                     ))}
                   </TableBody>
+                  <TableFooter>
+                    <TableRow className="bg-accent/50 font-bold text-sm">
+                      <TableCell colSpan={14} className="text-right font-bold">TOTAIS:</TableCell>
+                      <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.peso_total_cx_master_kg || 0), 0).toFixed(2)}</TableCell>
+                      <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.peso_total_sem_cx_master_kg || 0), 0).toFixed(2)}</TableCell>
+                      <TableCell></TableCell>
+                      <TableCell></TableCell>
+                      <TableCell></TableCell>
+                      <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.cbm_total || 0), 0).toFixed(2)}</TableCell>
+                      <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.quantidade_total || 0), 0)}</TableCell>
+                      <TableCell className="text-right font-bold">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toFixed(2)}</TableCell>
+                      <TableCell></TableCell>
+                      <TableCell className="text-right font-bold">$ {displayProducts.reduce((sum, p) => sum + (p.change_dolar || 0), 0).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-bold">$ {getTotalChangeDolarTotal().toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-bold">R$ {displayProducts.reduce((sum, p) => sum + (p.multiplicador_reais || 0), 0).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-bold">R$ {getTotalMultiplicadorReaisTotal().toFixed(2)}</TableCell>
+                    </TableRow>
+                  </TableFooter>
                 </Table>
               </div>
               
