@@ -367,24 +367,20 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO: As imagens são organizadas por coluna, não por linha
-        // Se existem N linhas de dados, teremos:
-        // - Primeiras N imagens: coluna IMAGEM (B) das linhas 2 até N+1
-        // - Próximas N imagens: coluna IMAGEM_FORNECEDOR (C) das linhas 2 até N+1
+        // CORREÇÃO FINAL: Mapeamento baseado no total de linhas de dados
+        // Cada linha tem 2 imagens (IMAGEM e IMAGEM_FORNECEDOR)
+        // Imagens vêm em pares: img0,img1 = linha 2; img2,img3 = linha 3, etc.
         const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
-        const metadeImagens = Math.ceil(todosArquivosImagem.length / 2);
         
-        let linhaExcel: number;
-        let coluna: string;
+        // Calcular linha e coluna baseado no índice da imagem
+        const linhaDados = Math.floor(i / 2); // Par de imagens por linha de dados
+        const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2 (linha 1 = cabeçalho)
+        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Par/ímpar para determinar coluna
         
-        if (i < metadeImagens) {
-          // Primeira metade: coluna IMAGEM
-          linhaExcel = i + 2; // +2 para pular cabeçalho (linha 1 do Excel)
-          coluna = 'IMAGEM';
-        } else {
-          // Segunda metade: coluna IMAGEM_FORNECEDOR  
-          linhaExcel = (i - metadeImagens) + 2;
-          coluna = 'IMAGEM_FORNECEDOR';
+        // Verificar se não excede o número de linhas de dados
+        if (linhaDados >= totalLinhasDados) {
+          console.warn(`⚠️ [DEBUG] Imagem ${i} excede linhas de dados (${totalLinhasDados}), pulando...`);
+          continue;
         }
         
         const extensao = mediaFile.split('.').pop() || 'png';
@@ -397,7 +393,7 @@ export function useCotacoesArquivos() {
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] Imagem mapeada CORRETAMENTE: ${nomeImagem} (linha Excel ${linhaExcel}, coluna ${coluna}, índice imagem: ${i}, tamanho: ${imageBlob.size} bytes)`);
+        console.log(`✅ [DEBUG] Imagem ${i}: ${nomeImagem} → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Tamanho: ${imageBlob.size} bytes`);
       }
       
     } catch (zipError) {
