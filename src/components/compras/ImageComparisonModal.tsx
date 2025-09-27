@@ -102,9 +102,10 @@ export function ImageComparisonModal({
                         height: 'auto',
                         objectFit: 'contain',
                         objectPosition: 'center'
-                      }}
+                      } as React.CSSProperties}
                       loading="eager"
                       decoding="sync"
+                      crossOrigin="anonymous"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = '/placeholder.svg';
@@ -135,9 +136,10 @@ export function ImageComparisonModal({
                         height: 'auto',
                         objectFit: 'contain',
                         objectPosition: 'center'
-                      }}
+                      } as React.CSSProperties}
                       loading="eager"
                       decoding="sync"
+                      crossOrigin="anonymous"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.src = '/placeholder.svg';
