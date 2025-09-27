@@ -8,37 +8,7 @@ import { setupGlobalToast } from "@/utils/toast-bridge";
 import { toast } from "sonner";
 import './index.css'
 
-// ✅ FIX CRÍTICO: Verificar se React está disponível antes de inicializar
-if (typeof React === 'undefined' || typeof React.useState !== 'function') {
-  console.error('🚨 ERRO CRÍTICO: React não está disponível!');
-  document.body.innerHTML = `
-    <div style="
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background-color: #1a1a1a;
-      color: #ffffff;
-      font-family: system-ui, sans-serif;
-    ">
-      <div style="text-align: center;">
-        <h1>🚨 Erro Crítico</h1>
-        <p>React não foi carregado corretamente</p>
-        <button onclick="window.location.reload()" style="
-          padding: 10px 20px;
-          margin-top: 10px;
-          background-color: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-        ">Recarregar</button>
-      </div>
-    </div>
-  `;
-  throw new Error('React não disponível');
-}
+// React será carregado normalmente pelo bundler
 
 // Setup do toast global
 setupGlobalToast((options) => {

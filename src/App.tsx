@@ -68,40 +68,7 @@ const queryClient = new QueryClient({
 function App() {
   console.log('🔧 App component rendering...');
   
-  // ✅ FIX CRÍTICO: Verificar se React está corretamente inicializado
-  if (typeof React === 'undefined' || typeof React.useState !== 'function') {
-    console.error('🚨 React não está corretamente inicializado!');
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#1a1a1a', 
-        color: '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'system-ui, sans-serif'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <h1>🚨 Erro de Inicialização</h1>
-          <p>React não está disponível</p>
-          <button 
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '10px 20px',
-              marginTop: '10px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Recarregar
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Permitir que React seja carregado normalmente
   
   console.log('🔧 React hooks available:', { useEffect: typeof useEffect });
   

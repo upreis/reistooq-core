@@ -30,27 +30,7 @@ export function ThemeProvider({
   storageKey = "reistoq.theme",
   ...props
 }: ThemeProviderProps) {
-  // ✅ FIX CRÍTICO: Verificar se React está disponível antes de usar hooks
-  if (typeof useState !== 'function') {
-    console.error('🚨 React hooks não disponíveis! useState:', typeof useState);
-    // Fallback para situações onde React não está inicializado
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#1a1a1a', 
-        color: '#ffffff',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: 'system-ui, sans-serif'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <h1>🔄 Inicializando...</h1>
-          <p>Carregando sistema de temas</p>
-        </div>
-      </div>
-    );
-  }
+  // React hooks são carregados normalmente pelo React
   const [theme, setTheme] = useState<ThemeName>(() => {
     // ✅ FIX CRÍTICO: Verificação mais robusta para evitar erro de React
     if (typeof window === 'undefined' || typeof document === 'undefined') {
