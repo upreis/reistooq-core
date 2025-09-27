@@ -1796,40 +1796,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                         </TableRow>
                       ));
                      })()}
-                    </TableBody>
-                   <TableFooter>
-                    <TableRow className="bg-accent/50 font-bold text-sm">
-                      <TableCell></TableCell> {/* Checkbox */}
-                      <TableCell></TableCell> {/* SKU */}
-                      <TableCell></TableCell> {/* Imagem */}
-                      <TableCell></TableCell> {/* Imagem Fornecedor */}
-                      <TableCell></TableCell> {/* Material */}
-                      <TableCell></TableCell> {/* Cor */}
-                      <TableCell></TableCell> {/* Nome do Produto */}
-                      <TableCell></TableCell> {/* Package */}
-                      <TableCell></TableCell> {/* Preço */}
-                      <TableCell></TableCell> {/* Unid. */}
-                      <TableCell></TableCell> {/* PCS/CTN */}
-                      <TableCell></TableCell> {/* Caixas */}
-                      <TableCell></TableCell> {/* Peso Unit. (g) */}
-                      <TableCell></TableCell> {/* Peso Emb. Master (KG) */}
-                      <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.peso_total_cx_master_kg || 0), 0).toFixed(2)}</TableCell> {/* Peso Total Emb. (KG) */}
-                      <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.peso_total_sem_cx_master_kg || 0), 0).toFixed(2)}</TableCell> {/* Peso Total S/ Emb. (KG) */}
-                      <TableCell></TableCell> {/* Comp. (cm) */}
-                      <TableCell></TableCell> {/* Larg. (cm) */}
-                      <TableCell></TableCell> {/* Alt. (cm) */}
-                      <TableCell></TableCell> {/* CBM Cubagem */}
-                      <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.cbm_total || 0), 0).toFixed(2)}</TableCell> {/* CBM Total */}
-                      <TableCell className="text-center font-bold">{displayProducts.reduce((sum, p) => sum + (p.quantidade_total || 0), 0)}</TableCell> {/* Qtd. Total */}
-                       <TableCell className="text-right font-bold">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Valor Total */}
-                       <TableCell></TableCell> {/* Obs. */}
-                       <TableCell className="text-right font-bold">$ {displayProducts.reduce((sum, p) => sum + (p.change_dolar || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Change DOLAR Uni */}
-                       <TableCell className="text-right font-bold">$ {getTotalChangeDolarTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Change DOLAR Total */}
-                       <TableCell className="text-right font-bold">R$ {displayProducts.reduce((sum, p) => sum + (p.multiplicador_reais || 0), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Multiplicador REAIS Uni */}
-                       <TableCell className="text-right font-bold">R$ {getTotalMultiplicadorReaisTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell> {/* Multiplicador REAIS Total */}
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+                     </TableBody>
+                 </Table>
               </div>
               
               {displayProducts.length === 0 && (
