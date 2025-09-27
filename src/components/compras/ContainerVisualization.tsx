@@ -170,61 +170,6 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
         </div>
       </div>
 
-      {/* Stats Grid - Aumentado */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Volume Stats */}
-        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 border min-w-32">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Volume</span>
-            <span className={`text-sm font-bold ${currentContainer.volumePercent >= 100 ? 'text-red-600' : currentContainer.volumePercent >= 80 ? 'text-amber-600' : 'text-emerald-600'}`}>
-              {currentContainer.volumePercent.toFixed(1)}%
-            </span>
-          </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            {currentContainer.containerVolume.toFixed(1)} / {maxVolume} m³
-            {containersNeeded > 1 && (
-              <span className="text-blue-600 dark:text-blue-400 ml-1">
-                (Container 1/{containersNeeded})
-              </span>
-            )}
-          </div>
-          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mt-2">
-            <div 
-              className="h-2 rounded-full transition-all duration-1000 ease-out"
-              style={{
-                width: `${Math.min(currentContainer.volumePercent, 100)}%`,
-                backgroundColor: getVolumeColor()
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Weight Stats */}
-        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 border min-w-32">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Peso</span>
-            <span className={`text-sm font-bold ${currentContainer.weightPercent >= 100 ? 'text-red-600' : currentContainer.weightPercent >= 80 ? 'text-amber-600' : 'text-emerald-600'}`}>
-              {currentContainer.weightPercent.toFixed(1)}%
-            </span>
-          </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            {currentContainer.containerWeight.toFixed(0)} / {maxWeight.toLocaleString()} kg
-            {containersNeeded > 1 && (
-              <span className="text-blue-600 dark:text-blue-400 ml-1">
-                (Container 1/{containersNeeded})
-              </span>
-            )}
-          </div>
-          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mt-2">
-            <div 
-              className="h-2 rounded-full transition-all duration-1000 ease-out"
-              style={{
-                width: `${Math.min(currentContainer.weightPercent, 100)}%`,
-                backgroundColor: getWeightColor(currentContainer.weightPercent)
-              }}
-            />
-          </div>
-        </div>
       </div>
 
         {/* Status Messages */}
@@ -317,7 +262,6 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
           )}
         </div>
       </div>
-    </div>
   );
 };
 
