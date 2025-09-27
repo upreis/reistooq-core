@@ -789,15 +789,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   }, [displayProducts]);
 
   const getTotalChangeDolarTotal = useCallback(() => {
-    return displayProducts.reduce((total, product) => {
+    const total = displayProducts.reduce((total, product) => {
       return total + (product.change_dolar_total || 0);
     }, 0);
+    console.log('📊 getTotalChangeDolarTotal:', total, displayProducts.length);
+    return total;
   }, [displayProducts]);
 
   const getTotalMultiplicadorReaisTotal = useCallback(() => {
-    return displayProducts.reduce((total, product) => {
+    const total = displayProducts.reduce((total, product) => {
       return total + (product.multiplicador_reais_total || 0);
     }, 0);
+    console.log('📊 getTotalMultiplicadorReaisTotal:', total, displayProducts.length);
+    return total;
   }, [displayProducts]);
 
   // Função para calcular peso total
@@ -1307,17 +1311,25 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                        <div className="font-semibold text-blue-400 text-sm">{getCurrencySymbol(selectedCurrency)} {getTotalValorTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                      </div>
                      
-                     {/* Total USD em linha separada */}
-                     <div className="flex justify-between items-center">
-                       <span className="text-slate-400">Total USD:</span>
-                       <div className="font-semibold text-green-400 text-sm">$ {getTotalChangeDolarTotal().toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                     </div>
-                     
-                     {/* Total BRL em linha separada */}
-                     <div className="flex justify-between items-center">
-                       <span className="text-slate-400">Total BRL:</span>
-                       <div className="font-semibold text-orange-400 text-sm">R$ {getTotalMultiplicadorReaisTotal().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                     </div>
+                      {/* Total USD em linha separada */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Total USD:</span>
+                        <div className="font-semibold text-green-400 text-sm">$ {(() => {
+                          const totalOrigemValue = getTotalValorTotal();
+                          const { valorUSD } = converterMoeda(totalOrigemValue, selectedCurrency, 1);
+                          return valorUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        })()}</div>
+                      </div>
+                      
+                      {/* Total BRL em linha separada */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Total BRL:</span>
+                        <div className="font-semibold text-orange-400 text-sm">R$ {(() => {
+                          const totalOrigemValue = getTotalValorTotal();
+                          const { valorBRL } = converterMoeda(totalOrigemValue, selectedCurrency, 1);
+                          return valorBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        })()}</div>
+                      </div>
                    </div>
                 </div>
                 
