@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { EditableCell } from './EditableCell';
 import ContainerVisualization from './ContainerVisualization';
 import { CotacaoImportDialog } from './CotacaoImportDialog';
+import { ImageComparisonModal } from './ImageComparisonModal';
 import { ProdutoImagemPreview } from './ProdutoImagemPreview';
 import { 
   Plus, 
@@ -279,6 +280,25 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Estado para dialog de importação
   const [showImportDialog, setShowImportDialog] = useState(false);
   
+  // Estado para modal de comparação de imagens
+  const [imageComparisonModal, setImageComparisonModal] = useState<{
+    isOpen: boolean;
+    imagemPrincipal?: string;
+    imagemFornecedor?: string;
+    observacoes?: string;
+    produtoInfo?: {
+      sku?: string;
+      nome_produto?: string;
+      rowIndex: number;
+    };
+  }>({
+    isOpen: false,
+    imagemPrincipal: '',
+    imagemFornecedor: '',
+    observacoes: '',
+    produtoInfo: undefined
+  });
+  
   // Hook do toast
   const { toast } = useToast();
   
@@ -319,6 +339,55 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
   const { createCotacaoInternacional, updateCotacaoInternacional, loading: saveLoading } = useCotacoesInternacionais();
+
+  // Funções para modal de comparação de imagens
+  const openImageComparisonModal = (
+    imagemPrincipal: string,
+    imagemFornecedor: string,
+    observacoes: string,
+    produtoInfo: { sku?: string; nome_produto?: string; rowIndex: number }
+  ) => {
+    setImageComparisonModal({
+      isOpen: true,
+      imagemPrincipal,
+      imagemFornecedor,
+      observacoes,
+      produtoInfo
+    });
+  };
+
+  const closeImageComparisonModal = () => {
+    setImageComparisonModal({
+      isOpen: false,
+      imagemPrincipal: '',
+      imagemFornecedor: '',
+      observacoes: '',
+      produtoInfo: undefined
+    });
+  };
+
+  const saveObservacoes = (rowIndex: number, observacoes: string) => {
+    setProductData(prevData => {
+      const newData = [...prevData];
+      if (newData[rowIndex]) {
+        newData[rowIndex] = { ...newData[rowIndex], obs: observacoes };
+      }
+      
+      // Salvar no sessionStorage
+      try {
+        const cleanedProducts = newData.map(product => ({
+          ...product,
+          imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
+          imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
+        }));
+        sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
+      } catch (error) {
+        console.warn('Erro ao salvar no sessionStorage:', error);
+      }
+      
+      return newData;
+    });
+  };
 
   // Handler para produtos selecionados do seletor avançado
   const handleProductSelectorConfirm = (selectedProducts: any[]) => {
@@ -1634,27 +1703,55 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                              onDoubleClick={() => startEditing(index, 'sku')}
                            />
                          </TableCell>
-                           <TableCell className="text-center py-3">
-                             {(() => {
-                               console.log(`🔍 [AUDIT] Produto ${index}: imagem=${product.imagem}, sku=${product.sku}`);
-                               return (
-                                 <ProdutoImagemPreview
-                                   imagemUrl={product.imagem}
-                                   nomeProduto={product.nome_produto || product.sku}
-                                   sku={product.sku}
-                                   className="mx-auto"
-                                 />
-                               );
-                             })()}
-                           </TableCell>
-                         <TableCell className="text-center py-3">
-                           <ProdutoImagemPreview
-                             imagemUrl={product.imagem_fornecedor}
-                             nomeProduto={product.nome_produto || product.sku}
-                             sku={product.sku}
-                             className="mx-auto"
-                           />
-                         </TableCell>
+                            <TableCell className="text-center py-3">
+                              {(() => {
+                                console.log(`🔍 [AUDIT] Produto ${index}: imagem=${product.imagem}, sku=${product.sku}`);
+                                return (
+                                  <div 
+                                    className="cursor-pointer hover:opacity-80 transition-opacity"
+                                    onClick={() => openImageComparisonModal(
+                                      product.imagem || '',
+                                      product.imagem_fornecedor || '',
+                                      product.obs || '',
+                                      {
+                                        sku: product.sku,
+                                        nome_produto: product.nome_produto,
+                                        rowIndex: index
+                                      }
+                                    )}
+                                  >
+                                    <ProdutoImagemPreview
+                                      imagemUrl={product.imagem}
+                                      nomeProduto={product.nome_produto || product.sku}
+                                      sku={product.sku}
+                                      className="mx-auto"
+                                    />
+                                  </div>
+                                );
+                              })()}
+                            </TableCell>
+                          <TableCell className="text-center py-3">
+                            <div 
+                              className="cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => openImageComparisonModal(
+                                product.imagem || '',
+                                product.imagem_fornecedor || '',
+                                product.obs || '',
+                                {
+                                  sku: product.sku,
+                                  nome_produto: product.nome_produto,
+                                  rowIndex: index
+                                }
+                              )}
+                            >
+                              <ProdutoImagemPreview
+                                imagemUrl={product.imagem_fornecedor}
+                                nomeProduto={product.nome_produto || product.sku}
+                                sku={product.sku}
+                                className="mx-auto"
+                              />
+                            </div>
+                          </TableCell>
                          <TableCell className="py-3">
                            <EditableCell
                              value={product.material}
@@ -2501,12 +2598,24 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         onOpenChange={setIsProductSelectorOpen}
         onSelectProducts={handleProductSelectorConfirm}
       />
+      
       {/* Dialog de Importação */}
       <CotacaoImportDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
         cotacao={null}
         onImportSuccess={handleImportSuccess}
+      />
+      
+      {/* Modal de Comparação de Imagens */}
+      <ImageComparisonModal
+        isOpen={imageComparisonModal.isOpen}
+        onClose={closeImageComparisonModal}
+        imagemPrincipal={imageComparisonModal.imagemPrincipal}
+        imagemFornecedor={imageComparisonModal.imagemFornecedor}
+        observacoes={imageComparisonModal.observacoes}
+        produtoInfo={imageComparisonModal.produtoInfo}
+        onSaveObservacoes={saveObservacoes}
       />
     </div>
   );
