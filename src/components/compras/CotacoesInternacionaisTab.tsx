@@ -1227,10 +1227,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-center">PCS/CTN</TableHead>
                       <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-center bg-accent/20">Caixas</TableHead>
                       <TableHead className="min-w-[120px] h-12 font-semibold text-sm text-right">Peso Unit. (g)</TableHead>
-                      <TableHead className="min-w-[140px] h-12 font-semibold text-xs text-center">Peso Emb. Master (KG)</TableHead>
-                      <TableHead className="min-w-[160px] h-12 font-semibold text-xs text-center">Peso S/ Emb. Master (KG)</TableHead>
-                      <TableHead className="min-w-[160px] h-12 font-semibold text-xs text-center">Peso Total Emb. (KG)</TableHead>
-                      <TableHead className="min-w-[180px] h-12 font-semibold text-xs text-center">Peso Total S/ Emb. (KG)</TableHead>
+                      <TableHead className="min-w-[100px] h-12 font-semibold text-xs text-center">Peso Emb. Master (KG)</TableHead>
+                      <TableHead className="min-w-[110px] h-12 font-semibold text-xs text-center">Peso S/ Emb. Master (KG)</TableHead>
+                      <TableHead className="min-w-[110px] h-12 font-semibold text-xs text-center">Peso Total Emb. (KG)</TableHead>
+                      <TableHead className="min-w-[120px] h-12 font-semibold text-xs text-center">Peso Total S/ Emb. (KG)</TableHead>
                       <TableHead className="min-w-[100px] h-12 font-semibold text-sm text-center">Comp. (cm)</TableHead>
                       <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-center">Larg. (cm)</TableHead>
                       <TableHead className="min-w-[80px] h-12 font-semibold text-sm text-center">Alt. (cm)</TableHead>
