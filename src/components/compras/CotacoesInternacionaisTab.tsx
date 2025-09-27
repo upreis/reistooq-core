@@ -891,75 +891,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       return;
     }
     
-    // Função para corrigir desalinhamento de imagens - CORREÇÃO AUTOMÁTICA
-    const corrigirDesalinhamentoImagens = (produtos: any[]) => {
-      console.log('🔧 [AUTO-CORREÇÃO] Iniciando correção automática de desalinhamento. Total de produtos:', produtos.length);
-      
-      if (!produtos || produtos.length < 2) {
-        console.log('🔧 [AUTO-CORREÇÃO] Poucos produtos para corrigir, mantendo como está');
-        return produtos;
-      }
-      
-      // Log do estado atual antes da correção
-      console.log('📋 [AUTO-CORREÇÃO] Estado ANTES da correção:');
-      produtos.forEach((produto, index) => {
-        console.log(`  ${index}: SKU=${produto.sku}, Imagem=${produto.imagem?.substring(0, 30) || 'SEM IMAGEM'}...`);
-      });
-      
-      // CORREÇÃO FINAL: Rotacionar as imagens na direção correta
-      // Se as imagens estão "descendo" uma posição, precisamos "subir" elas
-      const imagensOriginais = produtos.map(p => p.imagem);
-      console.log('📋 [AUTO-CORREÇÃO] Imagens originais coletadas:', imagensOriginais.length);
-      
-      // Rotacionar para CIMA: mover a última imagem para o início
-      const imagensCorrigidas = [imagensOriginais[imagensOriginais.length - 1], ...imagensOriginais.slice(0, -1)];
-      
-      console.log('📋 [AUTO-CORREÇÃO] Mapeamento das imagens (rotação para CIMA):');
-      imagensOriginais.forEach((img, i) => {
-        const produto = produtos[i];
-        const isLastProduct = i === produtos.length - 1;
-        console.log(`  Original[${i}]: SKU=${produto?.sku} - ${img?.substring(0, 40) || 'SEM IMAGEM'} -> Corrigida[${i}]: ${imagensCorrigidas[i]?.substring(0, 40) || 'SEM IMAGEM'}${isLastProduct ? ' [ÚLTIMA LINHA]' : ''}`);
-      });
-      
-      // Aplicar as imagens corrigidas aos produtos
-      const produtosCorrigidos = produtos.map((produto, index) => {
-        return {
-          ...produto,
-          imagem: imagensCorrigidas[index] || '',
-          // Manter a imagem do fornecedor original (esta está correta)
-          imagem_fornecedor: produto.imagem_fornecedor
-        };
-      });
-      
-      // Log do estado após a correção
-      console.log('✅ [AUTO-CORREÇÃO] Estado APÓS a correção:');
-      produtosCorrigidos.forEach((produto, index) => {
-        const isLastProduct = index === produtosCorrigidos.length - 1;
-        console.log(`  ${index}: SKU=${produto.sku}, Nova Imagem=${produto.imagem?.substring(0, 30) || 'SEM IMAGEM'}${isLastProduct ? ' [ÚLTIMA LINHA]' : ''}`);
-      });
-      
-      // Validação especial para a última linha
-      const ultimoProduto = produtosCorrigidos[produtosCorrigidos.length - 1];
-      if (ultimoProduto && !ultimoProduto.imagem) {
-        console.warn('⚠️ [AUTO-CORREÇÃO] ERRO: Última linha sem imagem detectada. Tentando correção emergencial...');
-        
-        // Buscar a primeira imagem disponível para a última linha
-        const primeiraImagemDisponivel = imagensOriginais.find(img => img && img.trim() !== '');
-        if (primeiraImagemDisponivel) {
-          ultimoProduto.imagem = primeiraImagemDisponivel;
-          console.log(`🔧 [AUTO-CORREÇÃO] Correção emergencial aplicada na última linha: ${primeiraImagemDisponivel.substring(0, 30)}...`);
-        }
-      }
-      
-      console.log('🔧 [AUTO-CORREÇÃO] Correção automática finalizada!');
-      return produtosCorrigidos;
-    };
+    console.log('📋 [IMPORT] Processando dados sem correção de desalinhamento. Total de produtos:', dadosImportados.length);
     
-    // Mapear dados importados para o formato esperado
-    // Aplicar correção de desalinhamento antes do mapeamento final
-    const dadosCorrigidos = corrigirDesalinhamentoImagens(dadosImportados);
-    
-    const novosProdutos = dadosCorrigidos.map((produto, index) => {
+    // Mapear dados importados para o formato esperado (SEM correção de desalinhamento)
+    const novosProdutos = dadosImportados.map((produto, index) => {
       console.log(`📋 [DEBUG] Processando produto ${index}:`, produto);
       
       const produtoMapeado = {
@@ -967,7 +902,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         id: `import-${index}`,
         // Garantir que todas as propriedades necessárias existem
          sku: produto.sku || `PROD-${index + 1}`,
-         imagem: produto.imagem || '', // Usar a imagem já corrigida
+         imagem: produto.imagem || '', // Usar imagem original sem correção
          imagem_fornecedor: produto.imagem_fornecedor || '', // Manter a original do fornecedor
         nome_produto: produto.nome_produto || produto.nome || '',
         material: produto.material || '',
@@ -1732,23 +1667,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                            />
                          </TableCell>
                           <TableCell className="text-center py-3">
-                            {(() => {
-                              const isLastProduct = index === displayProducts.length - 1;
-                              const imagemUrl = product.imagem;
-                              
-                              if (isLastProduct) {
-                                console.log(`🔍 [AUDITORIA] Última linha (${index}): SKU=${product.sku}, Imagem="${imagemUrl}"`);
-                              }
-                              
-                              return (
-                                <ProdutoImagemPreview
-                                  imagemUrl={imagemUrl}
-                                  nomeProduto={product.nome_produto || product.sku}
-                                  sku={product.sku}
-                                  className="mx-auto"
-                                />
-                              );
-                            })()}
+                            <ProdutoImagemPreview
+                              imagemUrl={product.imagem}
+                              nomeProduto={product.nome_produto || product.sku}
+                              sku={product.sku}
+                              className="mx-auto"
+                            />
                           </TableCell>
                          <TableCell className="text-center py-3">
                            <ProdutoImagemPreview
