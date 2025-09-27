@@ -127,17 +127,28 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('📊 Dados extraídos:', { totalDados: dados.length, totalImagens: imagens.length });
       setProgressoUpload(50);
 
-      // Simular upload de imagens - criar URLs locais
+      // Converter imagens para Data URLs para persistir além do reload
       let imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = [];
       if (imagens.length > 0) {
-        console.log('☁️ Simulando upload das imagens extraídas...');
-        imagensUpload = imagens.map((img, index) => ({
-          nome: `imagem-${index}.png`,
-          url: URL.createObjectURL(img.blob),
-          linha: img.linha,
-          coluna: img.coluna
-        }));
-        console.log('✅ Upload de imagens simulado:', imagensUpload.length);
+        console.log('☁️ Convertendo imagens para Data URLs...');
+        imagensUpload = await Promise.all(
+          imagens.map(async (img, index) => {
+            // Converter blob para data URL para persistir
+            const reader = new FileReader();
+            const dataUrl = await new Promise<string>((resolve) => {
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(img.blob);
+            });
+            
+            return {
+              nome: `imagem-${index}.png`,
+              url: dataUrl,
+              linha: img.linha,
+              coluna: img.coluna
+            };
+          })
+        );
+        console.log('✅ Imagens convertidas para Data URLs:', imagensUpload.length);
       }
       setProgressoUpload(70);
 

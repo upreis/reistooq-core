@@ -212,7 +212,17 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // Tentar recuperar dados do sessionStorage
     try {
       const savedData = sessionStorage.getItem('cotacao-produtos');
-      return savedData ? JSON.parse(savedData) : [];
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        // Verificar se há URLs blob inválidas e limpá-las
+        const cleanedData = data.map((product: any) => ({
+          ...product,
+          imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
+          imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
+        }));
+        return cleanedData;
+      }
+      return [];
     } catch {
       return [];
     }
@@ -609,9 +619,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // CRITICAL: Marcar que dados foram importados/editados para não voltar ao mock
     setHasImportedData(true);
     
-    // Salvar no sessionStorage
+    // Salvar no sessionStorage (removendo URLs blob inválidas)
     try {
-      sessionStorage.setItem('cotacao-produtos', JSON.stringify(updatedProducts));
+      const cleanedProducts = updatedProducts.map(product => ({
+        ...product,
+        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
+        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
+      }));
+      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
     } catch (error) {
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
@@ -737,9 +752,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(updatedProducts);
     stopEditing();
     
-    // Salvar no sessionStorage
+    // Salvar no sessionStorage (removendo URLs blob inválidas)
     try {
-      sessionStorage.setItem('cotacao-produtos', JSON.stringify(updatedProducts));
+      const cleanedProducts = updatedProducts.map(product => ({
+        ...product,
+        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
+        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
+      }));
+      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
     } catch (error) {
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
@@ -855,9 +875,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(novosProdutos);
     setHasImportedData(true); // Marcar que dados foram importados
     
-    // Salvar no sessionStorage para persistir entre navegações
+    // Salvar no sessionStorage para persistir entre navegações (removendo URLs blob inválidas)
     try {
-      sessionStorage.setItem('cotacao-produtos', JSON.stringify(novosProdutos));
+      const cleanedProducts = novosProdutos.map(product => ({
+        ...product,
+        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
+        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
+      }));
+      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
     } catch (error) {
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
