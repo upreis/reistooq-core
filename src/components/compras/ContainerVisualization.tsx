@@ -126,37 +126,6 @@ const ContainerVisualization: React.FC<ContainerVisualizationProps> = ({
               </span>
             </div>
 
-            {/* Volume indicator */}
-            <div className="absolute -left-12 top-0 bottom-0 flex flex-col justify-end">
-              <div className="w-4 bg-slate-200 rounded-full border border-slate-400 relative">
-                <div 
-                  className="w-full rounded-full transition-all duration-1000 ease-out"
-                  style={{
-                    height: `${Math.min(currentContainer.volumePercent, 100)}%`,
-                    backgroundColor: getVolumeColor()
-                  }}
-                />
-                <div className="absolute -left-8 top-1/2 transform -translate-y-1/2">
-                  <span className="text-xs font-medium text-slate-600">VOL</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Weight indicator */}
-            <div className="absolute -right-12 top-0 bottom-0 flex flex-col justify-end">
-              <div className="w-4 bg-slate-200 rounded-full border border-slate-400 relative">
-                <div 
-                  className="w-full rounded-full transition-all duration-1000 ease-out"
-                  style={{
-                    height: `${Math.min(currentContainer.weightPercent, 100)}%`,
-                    backgroundColor: getWeightColor(currentContainer.weightPercent)
-                  }}
-                />
-                <div className="absolute -right-8 top-1/2 transform -translate-y-1/2">
-                  <span className="text-xs font-medium text-slate-600">PESO</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
