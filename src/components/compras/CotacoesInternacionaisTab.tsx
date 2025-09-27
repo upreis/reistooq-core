@@ -906,25 +906,24 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         console.log(`  ${index}: SKU=${produto.sku}, Imagem=${produto.imagem?.substring(0, 30) || 'SEM IMAGEM'}...`);
       });
       
-      // CORREÇÃO DIRETA: Deslocar todas as imagens uma posição para cima
-      // Isso corrige o problema onde cada linha mostra a imagem que deveria estar na linha de baixo
+      // NOVA ABORDAGEM: Rotacionar as imagens para corrigir o desalinhamento
+      // Criar array temporário das imagens
+      const imagensOriginais = produtos.map(p => p.imagem);
+      console.log('📋 [AUTO-CORREÇÃO] Imagens originais coletadas:', imagensOriginais.length);
+      
+      // Rotacionar: mover a primeira imagem para o final
+      const imagensCorrigidas = [...imagensOriginais.slice(1), imagensOriginais[0]];
+      
+      console.log('📋 [AUTO-CORREÇÃO] Mapeamento das imagens:');
+      imagensOriginais.forEach((img, i) => {
+        console.log(`  Original[${i}]: ${img?.substring(0, 40) || 'SEM IMAGEM'} -> Corrigida[${i}]: ${imagensCorrigidas[i]?.substring(0, 40) || 'SEM IMAGEM'}`);
+      });
+      
+      // Aplicar as imagens corrigidas aos produtos
       const produtosCorrigidos = produtos.map((produto, index) => {
-        let novaImagem = produto.imagem;
-        
-        if (index === 0) {
-          // Para o primeiro produto, usar a imagem do segundo produto
-          novaImagem = produtos[1]?.imagem || produto.imagem;
-        } else if (index === produtos.length - 1) {
-          // Para o ÚLTIMO produto, usar a imagem do primeiro produto (que estava na posição errada)
-          novaImagem = produtos[0]?.imagem || produto.imagem;
-        } else {
-          // Para os outros produtos, usar a imagem do produto seguinte
-          novaImagem = produtos[index + 1]?.imagem || produto.imagem;
-        }
-        
         return {
           ...produto,
-          imagem: novaImagem,
+          imagem: imagensCorrigidas[index] || '',
           // Manter a imagem do fornecedor original (esta está correta)
           imagem_fornecedor: produto.imagem_fornecedor
         };
