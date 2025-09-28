@@ -738,11 +738,13 @@ export function useCotacoesArquivos() {
         // 🚨 CORREÇÃO: Usar linha Excel correta
         const linhaExcel = linha._linhaExcel;
         
-        // 🚨 BUSCA CORRIGIDA: Imagens para a linha Excel correta
+        // 🚨 BUSCA CORRIGIDA: Imagens para a linha Excel correta usando SKU
+        const skuAtual = linha.SKU || linha.sku || `PROD-${index + 1}`;
+        
         const imagemPrincipal = imagensUpload.find(img => {
           const match = img.linha === linhaExcel && img.coluna === 'IMAGEM';
           if (match) {
-            console.log(`✅ [BUSCA] Imagem Principal encontrada: linha=${img.linha}, coluna=${img.coluna}`);
+            console.log(`✅ [BUSCA] Imagem Principal encontrada: SKU=${skuAtual}, linha=${img.linha}, coluna=${img.coluna}, arquivo=${img.nome}`);
           }
           return match;
         });
@@ -750,14 +752,16 @@ export function useCotacoesArquivos() {
         const imagemFornecedor = imagensUpload.find(img => {
           const match = img.linha === linhaExcel && img.coluna === 'IMAGEM FORNECEDOR';
           if (match) {
-            console.log(`✅ [BUSCA] Imagem Fornecedor encontrada: linha=${img.linha}, coluna=${img.coluna}`);
+            console.log(`✅ [BUSCA] Imagem Fornecedor encontrada: SKU=${skuAtual}, linha=${img.linha}, coluna=${img.coluna}, arquivo=${img.nome}`);
           }
           return match;
         });
 
          const sku = linha.SKU || linha.sku || `PROD-${index + 1}`;
          
-         // 🚨 LOGS CORREÇÃO TOTAL
+         // 🚨 AUDITORIA CRÍTICA: Verificar se está mapeando corretamente
+         console.log(`🔍 [CRÍTICO] Processando SKU: ${sku} (linha Excel ${linhaExcel})`);
+         console.log(`📍 [CORREÇÃO] Array index: ${index}, Excel linha: ${linhaExcel}, SKU: ${sku}`);
          console.log(`✅ [CORREÇÃO] Produto Array[${index}] → Excel Linha ${linhaExcel} → SKU: ${sku}`);
          console.log(`📍 [CORREÇÃO] Imagem Principal: ${imagemPrincipal?.url ? 'ENCONTRADA' : 'VAZIA'}`);
          console.log(`📍 [CORREÇÃO] Imagem Fornecedor: ${imagemFornecedor?.url ? 'ENCONTRADA' : 'VAZIA'}`);
@@ -767,9 +771,17 @@ export function useCotacoesArquivos() {
              nome: img.nome.substring(0, 30),
              url: img.url.substring(img.url.lastIndexOf('/') + 1, img.url.lastIndexOf('/') + 15)
            }))
-         );
+          );
+          
+          // 🚨 AUDITORIA CRÍTICA ESPECÍFICA
+          if (sku === 'FL-800' || sku === 'FL-803') {
+            console.error(`🚨 [CRÍTICO] Auditando SKU ${sku}:`);
+            console.error(`🚨 [CRÍTICO] Array index: ${index}, Excel linha: ${linhaExcel}`);
+            console.error(`🚨 [CRÍTICO] Imagem Principal encontrada:`, imagemPrincipal?.nome || 'NENHUMA');
+            console.error(`🚨 [CRÍTICO] Imagem Fornecedor encontrada:`, imagemFornecedor?.nome || 'NENHUMA');
+          }
 
-        const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
+         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
         const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
 
         if (imagemFinal || imagemFornecedorFinal) {
