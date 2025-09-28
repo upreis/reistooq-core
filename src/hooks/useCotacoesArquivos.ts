@@ -138,7 +138,10 @@ export function useCotacoesArquivos() {
   const lerArquivoComImagens = (file: File): Promise<{dados: any[], imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]}> => {
     return new Promise(async (resolve, reject) => {
       try {
-        console.log('🔍 [DEBUG] Iniciando leitura do arquivo:', file.name);
+        console.log('🚀 [CRITICAL AUDIT] === INICIANDO LEITURA ARQUIVO ===');
+        console.log('🚀 [CRITICAL AUDIT] Arquivo:', file.name, 'Tamanho:', file.size, 'bytes');
+        console.log('🚀 [CRITICAL AUDIT] Cotação: COT-INT-2025-742759');
+        console.log('🚀 [CRITICAL AUDIT] Página: /compras/cotacoes aba=cotacoes-internacionais');
         
         let dados: any[] = [];
         let imagens: {nome: string, blob: Blob, linha: number, coluna: string}[] = [];
@@ -164,7 +167,11 @@ export function useCotacoesArquivos() {
           await processarExcelComImagens(file, dados, imagens);
         }
         
-        console.log('✅ [DEBUG] Leitura concluída:', { totalDados: dados.length, totalImagens: imagens.length });
+        console.log('✅ [CRITICAL AUDIT] === LEITURA CONCLUÍDA ===');
+        console.log('✅ [CRITICAL AUDIT] Total de dados:', dados.length);
+        console.log('✅ [CRITICAL AUDIT] Total de imagens:', imagens.length);
+        console.log('✅ [CRITICAL AUDIT] Primeiros 3 dados:', dados.slice(0, 3));
+        console.log('✅ [CRITICAL AUDIT] Primeiras 3 imagens:', imagens.slice(0, 3));
         resolve({ dados, imagens });
       } catch (error) {
         console.error('❌ [DEBUG] Erro na leitura do arquivo:', error);
@@ -454,8 +461,12 @@ export function useCotacoesArquivos() {
               coluna: coluna
             });
             
-            console.log(`✅ [CORREÇÃO] MAPEADO FIXO: imagem[${imagemIndex}]="${mediaFile}" → SKU=${sku}, Linha Excel=${linhaExcel}, Coluna=${coluna}`);
-            console.log(`📍 [CORREÇÃO] Detalhes: Array[${linhaDados}] → ExcelB${linhaExcel} e ExcelC${linhaExcel}`);
+            console.log(`🚀 [CRITICAL FIX] MAPEAMENTO DIRETO:`);
+            console.log(`🚀 [CRITICAL FIX] Imagem[${imagemIndex}] = "${mediaFile}"`);
+            console.log(`🚀 [CRITICAL FIX] SKU = ${sku}`);
+            console.log(`🚀 [CRITICAL FIX] Excel Linha = ${linhaExcel}`);
+            console.log(`🚀 [CRITICAL FIX] Coluna = ${coluna}`);
+            console.log(`🚀 [CRITICAL FIX] Sequência: Array[${linhaDados}] → Excel ${coluna.substring(0,6)}${linhaExcel}`);
             
             imagemIndex++;
           } catch (error) {
@@ -690,8 +701,15 @@ export function useCotacoesArquivos() {
   }, [toast]);
 
   const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = []): any[] => {
-    console.log('🔍 [DEBUG] Processando dados:', { totalDados: dados.length, totalImagens: imagensUpload.length });
-    console.log('🔍 [DEBUG] Imagens disponíveis:', imagensUpload);
+    console.log('🚀 [FINAL AUDIT] === PROCESSANDO DADOS FINAIS ===');
+    console.log('🚀 [FINAL AUDIT] Total dados:', dados.length);
+    console.log('🚀 [FINAL AUDIT] Total imagens upload:', imagensUpload.length);
+    console.log('🚀 [FINAL AUDIT] Imagens disponíveis:', imagensUpload.map(img => ({ 
+      linha: img.linha, 
+      coluna: img.coluna, 
+      nome: img.nome,
+      url: img.url.substring(img.url.lastIndexOf('/') + 1)
+    })));
     
     // 🚨 CORREÇÃO TOTAL: Mapear corretamente array ↔ Excel
     const dadosComLinhaExcel = dados.map((linha, index) => {
