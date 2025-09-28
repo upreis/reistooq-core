@@ -357,73 +357,120 @@ export function useCotacoesArquivos() {
       console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
       console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       
-      // CORREÇÃO DEFINITIVA: Simplificar ordenação e mapeamento
-      console.log('🔍 [AUDIT] ARQUIVOS ANTES DA ORDENAÇÃO:', todosArquivosImagem);
-      
-      // Ordenação mais simples e robusta - apenas por nome do arquivo
-      todosArquivosImagem.sort((a, b) => a.localeCompare(b));
-      
-      console.log('🔍 [AUDIT] ARQUIVOS APÓS ORDENAÇÃO:', todosArquivosImagem);
-      console.log('🔍 [AUDIT] INÍCIO DO MAPEAMENTO DE IMAGENS');
-      console.log('📊 [AUDIT] Total de imagens encontradas:', todosArquivosImagem.length);
+      // AUDITORIA COMPLETA - MAPEAR IMAGENS CORRETAMENTE
+      console.log('🔍 [AUDIT] INÍCIO DA ANÁLISE DETALHADA');
+      console.log('📊 [AUDIT] Total de imagens:', todosArquivosImagem.length);
       console.log('📊 [AUDIT] Total de linhas de dados:', range.e.r - range.s.r);
-      console.log('📊 [AUDIT] Range da planilha:', `${range.s.r}-${range.e.r} (${range.e.r - range.s.r} linhas de dados)`);
+      console.log('📊 [AUDIT] Arquivos de imagem encontrados:', todosArquivosImagem);
       
-      // ESTRATÉGIA SIMPLES E DIRETA
-      const totalLinhasDados = range.e.r - range.s.r;
+      // Primeira etapa: ler todos os dados da planilha para mapear corretamente
+      const dadosPlanilha = [];
       
-      // Se temos mais imagens que linhas, assumir 2 por linha. Caso contrário, 1 por linha.
-      const estrategiaFinal = todosArquivosImagem.length > totalLinhasDados ? 2 : 1;
-      
-      console.log(`🎯 [AUDIT] ESTRATÉGIA SIMPLES: ${todosArquivosImagem.length} imagens vs ${totalLinhasDados} linhas = ${estrategiaFinal} img/linha`);
-      
-      for (let i = 0; i < todosArquivosImagem.length; i++) {
-        const mediaFile = todosArquivosImagem[i];
-        const imageBlob = await zipData.files[mediaFile].async('blob');
-        
-        // Verificar se o blob tem conteúdo válido
-        if (imageBlob.size === 0) {
-          console.warn(`⚠️ [DEBUG] Arquivo ${mediaFile} está vazio, pulando...`);
-          continue;
+      for (let row = range.s.r + 1; row <= range.e.r; row++) {
+        const dadosLinha: any = {};
+        for (let col = range.s.c; col <= range.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+          const cell = worksheet[cellAddress];
+          
+          // Obter o nome da coluna do cabeçalho
+          const headerAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col });
+          const headerCell = worksheet[headerAddress];
+          const headerName = headerCell ? String(headerCell.v).trim() : `Col${col}`;
+          
+          dadosLinha[headerName] = cell ? cell.v : '';
         }
-        
-        // LOG INDIVIDUAL POR IMAGEM  
-        console.log(`🔍 [AUDIT] Processando imagem ${i}/${todosArquivosImagem.length-1}: ${mediaFile}`);
-        
-        let linhaDados, coluna;
-        
-        if (estrategiaFinal === 2) {
-          // Modo 2 imagens por linha: IMAGEM (índices pares) e IMAGEM_FORNECEDOR (índices ímpares)
-          linhaDados = Math.floor(i / 2);
-          coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
-        } else {
-          // Modo 1 imagem por linha: todas vão para IMAGEM
-          linhaDados = i;
-          coluna = 'IMAGEM';
-        }
-        
-        const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2 (linha 1 = cabeçalho)
-        
-        // Verificar se não excede o número de linhas de dados
-        if (linhaDados >= totalLinhasDados) {
-          console.warn(`⚠️ [AUDIT] ERRO: Imagem ${i} excede linhas de dados (${totalLinhasDados}), pulando...`);
-          continue;
-        }
-        
-        const extensao = mediaFile.split('.').pop() || 'png';
-        const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaExcel}_${i}.${extensao}`;
-        
-        imagens.push({
-          nome: nomeImagem,
-          blob: imageBlob,
-          linha: linhaExcel,
-          coluna: coluna
+        dadosPlanilha.push({
+          linha: row,
+          dados: dadosLinha
         });
-        
-        // LOG FINAL DE CONFIRMAÇÃO
-        console.log(`✅ [AUDIT] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Estratégia: ${estrategiaFinal} img/linha, Tamanho: ${imageBlob.size} bytes`);
-        console.log(`🎯 [AUDIT] MAPEAMENTO: img[${i}] → dados[${linhaDados}] → excel[${linhaExcel}] → coluna[${coluna}]`);
       }
+      
+      console.log('📋 [AUDIT] Dados da planilha extraídos:', dadosPlanilha.length, 'linhas');
+      console.log('📋 [AUDIT] Primeira linha de dados:', dadosPlanilha[0]);
+      
+      // Estratégia de mapeamento inteligente:
+      // 1. Tentar identificar o padrão nos nomes dos arquivos
+      // 2. Mapear pela ordem sequencial se não houver padrão claro
+      
+      // Ordenar arquivos de forma mais inteligente
+      const arquivosOrdenados = [...todosArquivosImagem].sort((a, b) => {
+        // Extrair números dos nomes dos arquivos
+        const numA = parseInt(a.match(/(\d+)/)?.[1] || '0');
+        const numB = parseInt(b.match(/(\d+)/)?.[1] || '0');
+        
+        if (numA !== numB) {
+          return numA - numB;
+        }
+        
+        // Se números iguais, ordem alfabética
+        return a.localeCompare(b);
+      });
+      
+      console.log('🔍 [AUDIT] Arquivos ordenados:', arquivosOrdenados);
+      
+      // Determinar estratégia baseada na análise dos dados
+      const totalLinhasDados = dadosPlanilha.length;
+      const totalImagens = arquivosOrdenados.length;
+      const imagensPorLinha = Math.ceil(totalImagens / totalLinhasDados);
+      
+      console.log(`🎯 [AUDIT] ANÁLISE: ${totalImagens} imagens ÷ ${totalLinhasDados} linhas = ${imagensPorLinha} imagens por linha`);
+      
+      let imagemIndex = 0;
+      
+      // Processar cada linha de dados sequencialmente
+      for (let linhaDados = 0; linhaDados < totalLinhasDados && imagemIndex < totalImagens; linhaDados++) {
+        const dadosAtual = dadosPlanilha[linhaDados];
+        const linhaExcel = dadosAtual.linha;
+        
+        console.log(`🔍 [AUDIT] Processando linha de dados ${linhaDados} (Excel linha ${linhaExcel})`);
+        console.log(`📊 [AUDIT] Dados da linha:`, dadosAtual.dados);
+        
+        // Mapear imagens para esta linha
+        const imagensParaEstaLinha = Math.min(imagensPorLinha, totalImagens - imagemIndex);
+        
+        for (let imgLocal = 0; imgLocal < imagensParaEstaLinha && imagemIndex < totalImagens; imgLocal++) {
+          const mediaFile = arquivosOrdenados[imagemIndex];
+          
+          try {
+            const imageBlob = await zipData.files[mediaFile].async('blob');
+            
+            if (imageBlob.size === 0) {
+              console.warn(`⚠️ [AUDIT] Arquivo ${mediaFile} vazio, pulando...`);
+              imagemIndex++;
+              continue;
+            }
+            
+            // Determinar coluna baseada na posição local na linha
+            let coluna;
+            if (imagensParaEstaLinha === 1) {
+              coluna = 'IMAGEM';
+            } else {
+              coluna = imgLocal === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+            }
+            
+            const extensao = mediaFile.split('.').pop() || 'png';
+            const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaExcel}_${imagemIndex}.${extensao}`;
+            
+            imagens.push({
+              nome: nomeImagem,
+              blob: imageBlob,
+              linha: linhaExcel,
+              coluna: coluna
+            });
+            
+            console.log(`✅ [AUDIT] MAPEADO: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}`);
+            console.log(`🎯 [AUDIT] Contexto: imagemGlobal[${imagemIndex}] → linhaDados[${linhaDados}] → imagemLocal[${imgLocal}]`);
+            console.log(`📊 [AUDIT] Dados da linha:`, Object.keys(dadosAtual.dados).slice(0, 3));
+            
+            imagemIndex++;
+          } catch (error) {
+            console.error(`❌ [AUDIT] Erro ao processar imagem ${mediaFile}:`, error);
+            imagemIndex++;
+          }
+        }
+      }
+      
+      console.log(`🏁 [AUDIT] FINALIZADO: ${imagens.length} imagens processadas de ${totalImagens} disponíveis`);
       
     } catch (zipError) {
       console.warn('⚠️ [DEBUG] Erro na extração por ZIP (fallback será usado):', zipError);
