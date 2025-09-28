@@ -825,7 +825,7 @@ const ProductList = () => {
 
                         return (
                           <tr
-                            key={`${product.id}-${product.sku_interno || 'unknown'}-${index}`}
+                            key={product.id}
                             className={`border-b hover:bg-muted/30 transition-colors cursor-pointer ${
                               index % 2 === 0 ? 'bg-background' : 'bg-muted/20'
                             }`}

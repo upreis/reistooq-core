@@ -138,10 +138,7 @@ export function useCotacoesArquivos() {
   const lerArquivoComImagens = (file: File): Promise<{dados: any[], imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]}> => {
     return new Promise(async (resolve, reject) => {
       try {
-        console.log('🚀 [CRITICAL AUDIT] === INICIANDO LEITURA ARQUIVO ===');
-        console.log('🚀 [CRITICAL AUDIT] Arquivo:', file.name, 'Tamanho:', file.size, 'bytes');
-        console.log('🚀 [CRITICAL AUDIT] Cotação: COT-INT-2025-742759');
-        console.log('🚀 [CRITICAL AUDIT] Página: /compras/cotacoes aba=cotacoes-internacionais');
+        console.log('🔍 [DEBUG] Iniciando leitura do arquivo:', file.name);
         
         let dados: any[] = [];
         let imagens: {nome: string, blob: Blob, linha: number, coluna: string}[] = [];
@@ -167,11 +164,7 @@ export function useCotacoesArquivos() {
           await processarExcelComImagens(file, dados, imagens);
         }
         
-        console.log('✅ [CRITICAL AUDIT] === LEITURA CONCLUÍDA ===');
-        console.log('✅ [CRITICAL AUDIT] Total de dados:', dados.length);
-        console.log('✅ [CRITICAL AUDIT] Total de imagens:', imagens.length);
-        console.log('✅ [CRITICAL AUDIT] Primeiros 3 dados:', dados.slice(0, 3));
-        console.log('✅ [CRITICAL AUDIT] Primeiras 3 imagens:', imagens.slice(0, 3));
+        console.log('✅ [DEBUG] Leitura concluída:', { totalDados: dados.length, totalImagens: imagens.length });
         resolve({ dados, imagens });
       } catch (error) {
         console.error('❌ [DEBUG] Erro na leitura do arquivo:', error);
@@ -230,19 +223,11 @@ export function useCotacoesArquivos() {
           }
         }
         
-        // 🚨 CORREÇÃO: Preservar referência da linha Excel original
-        dadosComIndices.push({
-          ...linha,
-          _linhaOriginalExcel: R // Preservar linha Excel original
-        });
+        dadosComIndices.push(linha);
       }
       
       console.log('📊 [DEBUG] Dados extraídos via XLSX (método padrão):', dadosExtraidos.length);
       console.log('📊 [DEBUG] Dados extraídos via índices (M/N):', dadosComIndices.length);
-      console.log('📊 [DEBUG] Primeiras 3 linhas com referência Excel:', dadosComIndices.slice(0, 3).map(d => ({
-        excel: d._linhaOriginalExcel,
-        sku: d.SKU || d.sku
-      })));
       
       // Usar dados com índices em vez dos dados padrão
       dados.push(...dadosComIndices);
@@ -372,125 +357,55 @@ export function useCotacoesArquivos() {
       console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
       console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       
-      // CORREÇÃO TOTAL: Mapear imagens respeitando ordem EXATA do upload
-      console.log('🔍 [AUDIT] INÍCIO DA CORREÇÃO TOTAL DE MAPEAMENTO');
-      console.log('📊 [AUDIT] Total de imagens encontradas:', todosArquivosImagem.length);
-      console.log('📊 [AUDIT] Total de linhas de dados:', range.e.r - range.s.r);
-      console.log('📊 [AUDIT] Arquivos de imagem (ordem original):', todosArquivosImagem);
+      // IMPORTANTE: Ordenar arquivos para garantir a sequência correta
+      // Os arquivos podem vir em ordem aleatória do ZIP
+      todosArquivosImagem.sort((a, b) => {
+        // Extrair números dos nomes dos arquivos para ordenação
+        const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+        const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+        return numA - numB;
+      });
       
-      // Ler dados da planilha para mapear SKUs
-      const dadosPlanilha = [];
-      for (let row = range.s.r + 1; row <= range.e.r; row++) {
-        const dadosLinha: any = {};
-        for (let col = range.s.c; col <= range.e.c; col++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
-          const cell = worksheet[cellAddress];
-          const headerAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col });
-          const headerCell = worksheet[headerAddress];
-          const headerName = headerCell ? String(headerCell.v).trim() : `Col${col}`;
-          dadosLinha[headerName] = cell ? cell.v : '';
+      console.log('📊 [DEBUG] Arquivos ORDENADOS:', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
+      
+      for (let i = 0; i < todosArquivosImagem.length; i++) {
+        const mediaFile = todosArquivosImagem[i];
+        const imageBlob = await zipData.files[mediaFile].async('blob');
+        
+        // Verificar se o blob tem conteúdo válido
+        if (imageBlob.size === 0) {
+          console.warn(`⚠️ [DEBUG] Arquivo ${mediaFile} está vazio, pulando...`);
+          continue;
         }
-        dadosPlanilha.push({
-          linha: row, // ✅ CORRETO: row já é a linha real do Excel (2, 3, 4...)
-          dados: dadosLinha,
-          sku: dadosLinha.SKU || dadosLinha.sku || `PROD-${row}`, // 🚨 CORREÇÃO: Usar linha real
-          _indiceArray: dadosPlanilha.length // ✅ NOVO: Preservar índice do array
+        
+        // CORREÇÃO FINAL: Mapeamento baseado no total de linhas de dados
+        // Cada linha tem 2 imagens (IMAGEM e IMAGEM_FORNECEDOR)
+        // Imagens vêm em pares: img0,img1 = linha 2; img2,img3 = linha 3, etc.
+        const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
+        
+        // Calcular linha e coluna baseado no índice da imagem
+        const linhaDados = Math.floor(i / 2); // Par de imagens por linha de dados
+        const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2 (linha 1 = cabeçalho)
+        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Par/ímpar para determinar coluna
+        
+        // Verificar se não excede o número de linhas de dados
+        if (linhaDados >= totalLinhasDados) {
+          console.warn(`⚠️ [DEBUG] Imagem ${i} excede linhas de dados (${totalLinhasDados}), pulando...`);
+          continue;
+        }
+        
+        const extensao = mediaFile.split('.').pop() || 'png';
+        const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaExcel}_${i}.${extensao}`;
+        
+        imagens.push({
+          nome: nomeImagem,
+          blob: imageBlob,
+          linha: linhaExcel,
+          coluna: coluna
         });
+        
+        console.log(`✅ [DEBUG] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Tamanho: ${imageBlob.size} bytes`);
       }
-      
-      console.log('📋 [AUDIT] ESTRUTURA CONFIRMADA:');
-      console.log(`📋 [AUDIT] Cabeçalho na linha Excel ${range.s.r + 1} (linha ${range.s.r} no índice XLSX)`);
-      console.log(`📋 [AUDIT] Primeira linha de dados na linha Excel ${range.s.r + 2}`);
-      console.log('📋 [AUDIT] Dados extraídos (primeiras 3 linhas):');
-      dadosPlanilha.slice(0, 3).forEach(d => {
-        console.log(`📊 [AUDIT] Excel Linha ${d.linha} → SKU: ${d.sku} (Array índice: ${d._indiceArray})`);
-      });
-      
-      // ESTRATÉGIA SIMPLES: manter ordem original dos arquivos
-      // NÃO ordenar - usar exatamente como vieram no ZIP
-      const arquivosNaOrdemOriginal = [...todosArquivosImagem];
-      
-      console.log('🔍 [AUDIT] Mantendo ordem original dos arquivos:', arquivosNaOrdemOriginal);
-      
-      // Determinar estratégia de distribuição INTELIGENTE
-      const totalLinhasDados = dadosPlanilha.length;
-      const totalImagens = arquivosNaOrdemOriginal.length;
-      
-      console.log(`🎯 [AUDIT] NOVA ESTRATÉGIA: ${totalImagens} imagens ÷ ${totalLinhasDados} linhas`);
-      
-      // 🚨 NOVA ESTRATÉGIA FIXA: Mapeamento 2 a 2 CORRETO
-      let imagemIndex = 0;
-      
-      console.log('🚨 [CORREÇÃO DEFINITIVA] NOVA ESTRATÉGIA DE MAPEAMENTO 2x2');
-      console.log(`📊 [CORREÇÃO] Total imagens: ${totalImagens}, Total linhas: ${totalLinhasDados}`);
-      
-      // Para cada linha de dados, mapear EXATAMENTE 2 imagens
-      for (let linhaDados = 0; linhaDados < totalLinhasDados; linhaDados++) {
-        const dadosAtual = dadosPlanilha[linhaDados];
-        const linhaExcel = dadosAtual.linha;
-        const sku = dadosAtual.sku;
-        
-        console.log(`🔍 [CORREÇÃO] Processando linha ${linhaDados}: Excel=${linhaExcel}, SKU=${sku}`);
-        
-        // 🚨 MAPEAMENTO FIXO: 2 imagens por linha, não importa o total
-        const imagensParaEstaLinha = 2; // SEMPRE 2 imagens por linha
-        
-        // Mapear IMAGEM (coluna B) e IMAGEM FORNECEDOR (coluna C)
-        for (let imgLocal = 0; imgLocal < imagensParaEstaLinha && imagemIndex < totalImagens; imgLocal++) {
-          const mediaFile = arquivosNaOrdemOriginal[imagemIndex];
-          
-          try {
-            const imageBlob = await zipData.files[mediaFile].async('blob');
-            
-            if (imageBlob.size === 0) {
-              console.warn(`⚠️ [CORREÇÃO] Arquivo ${mediaFile} vazio, pulando...`);
-              imagemIndex++;
-              continue;
-            }
-            
-            // 🚨 CORREÇÃO FIXA: SEMPRE alternando entre as 2 colunas
-            const coluna = imgLocal === 0 ? 'IMAGEM' : 'IMAGEM FORNECEDOR';
-            
-            const extensao = mediaFile.split('.').pop() || 'png';
-            const nomeImagem = `${sku}_${coluna.replace(' ', '_').toLowerCase()}_linha${linhaExcel}_seq${imagemIndex}.${extensao}`;
-            
-            imagens.push({
-              nome: nomeImagem,
-              blob: imageBlob,
-              linha: linhaExcel,
-              coluna: coluna
-            });
-            
-            console.log(`🚀 [CRITICAL FIX] MAPEAMENTO DIRETO:`);
-            console.log(`🚀 [CRITICAL FIX] Imagem[${imagemIndex}] = "${mediaFile}"`);
-            console.log(`🚀 [CRITICAL FIX] SKU = ${sku}`);
-            console.log(`🚀 [CRITICAL FIX] Excel Linha = ${linhaExcel}`);
-            console.log(`🚀 [CRITICAL FIX] Coluna = ${coluna}`);
-            console.log(`🚀 [CRITICAL FIX] Sequência: Array[${linhaDados}] → Excel ${coluna.substring(0,6)}${linhaExcel}`);
-            
-            imagemIndex++;
-          } catch (error) {
-            console.error(`❌ [CORREÇÃO] Erro ao processar imagem ${mediaFile}:`, error);
-            imagemIndex++;
-          }
-        }
-        
-        console.log(`📋 [CORREÇÃO] Linha concluída: ${linhaDados} (Excel ${linhaExcel}) - ${sku} - Imagens mapeadas`);
-      }
-      
-      console.log(`🏁 [CORREÇÃO] FINALIZADO: ${imagens.length} imagens processadas de ${totalImagens} disponíveis`);
-      
-      // 🚨 AUDITORIA FINAL COMPLETA
-      console.log('🔍 [AUDITORIA FINAL] MAPEAMENTO CORRIGIDO:');
-      imagens.forEach((img, idx) => {
-        console.log(`📊 [AUDITORIA] Imagem[${idx}]: linha=${img.linha}, coluna=${img.coluna}, nome=${img.nome}`);
-      });
-      
-      console.log('📋 [AUDITORIA] ESTRUTURA ESPERADA:');
-      console.log('📋 [AUDITORIA] ✅ Excel B2 + C2 = SKU FL-800 (linha 2)');
-      console.log('📋 [AUDITORIA] ✅ Excel B3 + C3 = SKU FL-801 (linha 3)');
-      console.log('📋 [AUDITORIA] ✅ Excel B4 + C4 = SKU FL-802 (linha 4)');
-      console.log('📋 [AUDITORIA] ✅ E assim por diante...');
       
     } catch (zipError) {
       console.warn('⚠️ [DEBUG] Erro na extração por ZIP (fallback será usado):', zipError);
@@ -505,14 +420,12 @@ export function useCotacoesArquivos() {
       const XLSX = await import('xlsx');
       const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
       
-      // 🚨 CORREÇÃO: Usar linha de cabeçalho correta, não hardcoded
       for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col }); // ✅ Usa linha de cabeçalho real
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
         const cell = worksheet[cellAddress];
         if (cell && cell.v) {
           const headerValue = String(cell.v).toUpperCase().trim();
           if (headerValue === nomeColuna || headerValue === nomeColuna.replace(' ', '_')) {
-            console.log(`📍 [DEBUG] Coluna "${nomeColuna}" encontrada no índice ${col} (letra ${String.fromCharCode(65 + col)})`);
             return col;
           }
         }
@@ -553,16 +466,11 @@ export function useCotacoesArquivos() {
               const imageData = uint8Array.slice(i, j + 8);
               const imageBlob = new Blob([imageData], { type: 'image/png' });
               
-              // 🚨 CORREÇÃO: Mapear corretamente linha Excel e coluna
-              const linhaArray = Math.floor(imagemIndex / 2); // Cada 2 imagens = 1 linha
-              const linhaExcel = linhaArray + 2; // +2 para contar cabeçalho
-              const colunaLocal = imagemIndex % 2; // 0 = IMAGEM, 1 = IMAGEM FORNECEDOR
-              
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.png`,
                 blob: imageBlob,
-                linha: linhaExcel,
-                coluna: colunaLocal === 0 ? 'IMAGEM' : 'IMAGEM FORNECEDOR'
+                linha: imagemIndex + 1,
+                coluna: imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'
               });
               
               imagemIndex++;
@@ -701,87 +609,44 @@ export function useCotacoesArquivos() {
   }, [toast]);
 
   const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = []): any[] => {
-    console.log('🚀 [FINAL AUDIT] === PROCESSANDO DADOS FINAIS ===');
-    console.log('🚀 [FINAL AUDIT] Total dados:', dados.length);
-    console.log('🚀 [FINAL AUDIT] Total imagens upload:', imagensUpload.length);
-    console.log('🚀 [FINAL AUDIT] Imagens disponíveis:', imagensUpload.map(img => ({ 
-      linha: img.linha, 
-      coluna: img.coluna, 
-      nome: img.nome,
-      url: img.url.substring(img.url.lastIndexOf('/') + 1)
-    })));
+    console.log('🔍 [DEBUG] Processando dados:', { totalDados: dados.length, totalImagens: imagensUpload.length });
+    console.log('🔍 [DEBUG] Imagens disponíveis:', imagensUpload);
     
-    // 🚨 CORREÇÃO TOTAL: Mapear corretamente array ↔ Excel
-    const dadosComLinhaExcel = dados.map((linha, index) => {
-      // Se já temos a linha original do Excel, usar ela; senão calcular
-      const linhaExcelReal = linha._linhaOriginalExcel || (index + 2); // index 0 = linha 2 Excel
-      
-      return {
-        ...linha,
-        _linhaArray: index,            // Posição no array (0, 1, 2...)
-        _linhaExcel: linhaExcelReal   // Linha real do Excel (2, 3, 4...)
-      };
-    });
-    
-    console.log('🔍 [AUDIT] MAPEAMENTO CORRETO Array ↔ Excel:');
-    dadosComLinhaExcel.slice(0, 5).forEach(d => {
-      console.log(`📊 [AUDIT] Array[${d._linhaArray}] ↔ Excel Linha ${d._linhaExcel} ↔ SKU: ${d.SKU || d.sku}`);
-    });
-    
-    console.log('🔍 [AUDIT] ESTRUTURA DO EXCEL:');
-    console.log('📋 [AUDIT] Linha 1: CABEÇALHO (SKU, IMAGEM, IMAGEM FORNECEDOR, ...)');
-    console.log('📋 [AUDIT] Linha 2: PRIMEIRA linha de dados (FL-800, imagem1, imagem2, ...)');
-    console.log('📋 [AUDIT] Linha 3: SEGUNDA linha de dados (FL-801, imagem3, imagem4, ...)');
-    
-    return dadosComLinhaExcel.map((linha, index) => {
+    return dados.map((linha, index) => {
       try {
-        // 🚨 CORREÇÃO: Usar linha Excel correta
-        const linhaExcel = linha._linhaExcel;
+        // Buscar imagens para esta linha (linha no Excel começa do 1, mas nosso array do 0)
+        const linhaExcel = index + 2; // +2 porque o cabeçalho está na linha 1 e dados começam na 2
         
-        // 🚨 BUSCA CORRIGIDA: Imagens para a linha Excel correta usando SKU
-        const skuAtual = linha.SKU || linha.sku || `PROD-${index + 1}`;
-        
-        const imagemPrincipal = imagensUpload.find(img => {
-          const match = img.linha === linhaExcel && img.coluna === 'IMAGEM';
-          if (match) {
-            console.log(`✅ [BUSCA] Imagem Principal encontrada: SKU=${skuAtual}, linha=${img.linha}, coluna=${img.coluna}, arquivo=${img.nome}`);
-          }
-          return match;
-        });
-        
-        const imagemFornecedor = imagensUpload.find(img => {
-          const match = img.linha === linhaExcel && img.coluna === 'IMAGEM FORNECEDOR';
-          if (match) {
-            console.log(`✅ [BUSCA] Imagem Fornecedor encontrada: SKU=${skuAtual}, linha=${img.linha}, coluna=${img.coluna}, arquivo=${img.nome}`);
-          }
-          return match;
-        });
+        const imagemPrincipal = imagensUpload.find(img => 
+          img.linha === linhaExcel && (
+            img.coluna === 'IMAGEM' || 
+            img.coluna === 'B' || // Coluna B geralmente é IMAGEM
+            (img.coluna.includes('IMAGEM') && !img.coluna.includes('FORNECEDOR'))
+          )
+        );
+        const imagemFornecedor = imagensUpload.find(img => 
+          img.linha === linhaExcel && (
+            img.coluna === 'IMAGEM_FORNECEDOR' || 
+            img.coluna === 'IMAGEM FORNECEDOR' ||
+            img.coluna === 'C' || // Coluna C geralmente é IMAGEM FORNECEDOR
+            img.coluna.includes('FORNECEDOR')
+          )
+        );
 
-         const sku = linha.SKU || linha.sku || `PROD-${index + 1}`;
+         console.log(`🔍 [AUDIT] Produto ${index}: linha Excel ${linhaExcel}, imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
          
-         // 🚨 AUDITORIA CRÍTICA: Verificar se está mapeando corretamente
-         console.log(`🔍 [CRÍTICO] Processando SKU: ${sku} (linha Excel ${linhaExcel})`);
-         console.log(`📍 [CORREÇÃO] Array index: ${index}, Excel linha: ${linhaExcel}, SKU: ${sku}`);
-         console.log(`✅ [CORREÇÃO] Produto Array[${index}] → Excel Linha ${linhaExcel} → SKU: ${sku}`);
-         console.log(`📍 [CORREÇÃO] Imagem Principal: ${imagemPrincipal?.url ? 'ENCONTRADA' : 'VAZIA'}`);
-         console.log(`📍 [CORREÇÃO] Imagem Fornecedor: ${imagemFornecedor?.url ? 'ENCONTRADA' : 'VAZIA'}`);
-         console.log(`📋 [CORREÇÃO] Imagens disponíveis para linha Excel ${linhaExcel}:`, 
-           imagensUpload.filter(img => img.linha === linhaExcel).map(img => ({ 
-             coluna: img.coluna, 
-             nome: img.nome.substring(0, 30),
-             url: img.url.substring(img.url.lastIndexOf('/') + 1, img.url.lastIndexOf('/') + 15)
-           }))
-          );
-          
-          // 🚨 AUDITORIA CRÍTICA ESPECÍFICA
-          if (sku === 'FL-800' || sku === 'FL-803') {
-            console.error(`🚨 [CRÍTICO] Auditando SKU ${sku}:`);
-            console.error(`🚨 [CRÍTICO] Array index: ${index}, Excel linha: ${linhaExcel}`);
-            console.error(`🚨 [CRÍTICO] Imagem Principal encontrada:`, imagemPrincipal?.nome || 'NENHUMA');
-            console.error(`🚨 [CRÍTICO] Imagem Fornecedor encontrada:`, imagemFornecedor?.nome || 'NENHUMA');
-          }
+         // Log detalhado apenas se não encontrar imagens
+         if (!imagemPrincipal?.url || !imagemFornecedor?.url) {
+           console.log(`🔍 [AUDIT] DETALHES Linha ${index} (Excel ${linhaExcel}):`, {
+             imagemPrincipal: imagemPrincipal?.url,
+             imagemFornecedor: imagemFornecedor?.url,
+             sku: linha.SKU || linha.sku,
+             colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna),
+             todasImagensDisponiveis: imagensUpload.map(img => ({ linha: img.linha, coluna: img.coluna, nome: img.nome }))
+           });
+         }
 
-         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
+        const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
         const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
 
         if (imagemFinal || imagemFornecedorFinal) {

@@ -1043,14 +1043,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     });
   }, [toast]);
 
-  // Função para converter imagem URL para base64 mantendo qualidade original
+  // Função para converter imagem URL para base64
   const imageUrlToBase64 = async (url: string): Promise<string> => {
     try {
       if (!url || url.startsWith('blob:')) return '';
       
-      // Se a URL já é base64, retornar a URL completa para manter qualidade
+      // Se a URL já é base64, extrair apenas os dados
       if (url.startsWith('data:')) {
-        return url;
+        return url.split(',')[1];
       }
       
       const response = await fetch(url);
@@ -1060,7 +1060,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64String = reader.result as string;
-          resolve(base64String); // Retorna a URL completa com prefixo para manter qualidade
+          resolve(base64String.split(',')[1]); // Remove o prefixo data:image/...;base64,
         };
         reader.onerror = reject;
         reader.readAsDataURL(blob);
@@ -1152,26 +1152,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         // Inserir imagem principal
         if (product.imagem) {
           try {
-            const base64Data = await imageUrlToBase64(product.imagem);
-            if (base64Data) {
-              // Se já tem o prefixo, extrair apenas os dados base64
-              const imageData = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
+            const base64 = await imageUrlToBase64(product.imagem);
+            if (base64) {
+              const imageData = base64.split(',')[1] || base64;
               const imageBuffer = Buffer.from(imageData, 'base64');
-              
-              // Detectar formato da imagem a partir do cabeçalho base64
-              let extension: 'png' | 'jpeg' | 'gif' = 'png';
-              if (base64Data.includes('data:image/jpeg') || base64Data.includes('data:image/jpg')) {
-                extension = 'jpeg';
-              }
               
               const imageId = workbook.addImage({
                 buffer: imageBuffer,
-                extension: extension,
+                extension: 'png',
               });
 
               worksheet.addImage(imageId, {
                 tl: { col: 1, row: rowNumber - 1 }, // coluna B (index 1)
-                ext: { width: 120, height: 80 } // Aumentar tamanho para melhor qualidade
+                ext: { width: 100, height: 60 }
               });
 
               // Adicionar texto indicativo na célula
@@ -1186,26 +1179,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         // Inserir imagem do fornecedor
         if (product.imagem_fornecedor) {
           try {
-            const base64Data = await imageUrlToBase64(product.imagem_fornecedor);
-            if (base64Data) {
-              // Se já tem o prefixo, extrair apenas os dados base64
-              const imageData = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
+            const base64 = await imageUrlToBase64(product.imagem_fornecedor);
+            if (base64) {
+              const imageData = base64.split(',')[1] || base64;
               const imageBuffer = Buffer.from(imageData, 'base64');
-              
-              // Detectar formato da imagem a partir do cabeçalho base64
-              let extension: 'png' | 'jpeg' | 'gif' = 'png';
-              if (base64Data.includes('data:image/jpeg') || base64Data.includes('data:image/jpg')) {
-                extension = 'jpeg';
-              }
               
               const imageId = workbook.addImage({
                 buffer: imageBuffer,
-                extension: extension,
+                extension: 'png',
               });
 
               worksheet.addImage(imageId, {
                 tl: { col: 2, row: rowNumber - 1 }, // coluna C (index 2)
-                ext: { width: 120, height: 80 } // Aumentar tamanho para melhor qualidade
+                ext: { width: 100, height: 60 }
               });
 
               // Adicionar texto indicativo na célula

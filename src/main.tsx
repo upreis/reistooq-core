@@ -1,6 +1,7 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App'
+import { BrowserRouter } from "react-router-dom"
+import App from './App.safe'
 import { ErrorBoundary } from './components/ErrorBoundary'
 
 import { setupGlobalToast } from "@/utils/toast-bridge";
@@ -36,7 +37,9 @@ function AppWithErrorBoundary() {
     return (
       <ErrorBoundary>
         <React.Suspense fallback={<div style={{padding: '20px', textAlign: 'center'}}>Carregando...</div>}>
-          <App />
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
         </React.Suspense>
       </ErrorBoundary>
     );
