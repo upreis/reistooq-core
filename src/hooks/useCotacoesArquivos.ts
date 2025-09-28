@@ -66,6 +66,14 @@ export function useCotacoesArquivos() {
       const fileName = `${cotacaoId}_${timestamp}_${sanitizedFileName}`;
       const filePath = `${organizationId}/${cotacaoId}/${fileName}`;
 
+      console.log('🔍 [DEBUG] Upload path:', {
+        organizationId,
+        cotacaoId,
+        fileName,
+        filePath,
+        userId: 'c3785644-8d13-4a9d-9e43-9b2589499c50'
+      });
+
       // Upload do arquivo para o storage
       const { error: uploadError } = await supabase.storage
         .from('cotacoes-arquivos')
