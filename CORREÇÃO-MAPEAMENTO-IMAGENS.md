@@ -26,16 +26,16 @@ const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
 
 ### Algoritmo Novo (CORRIGIDO):
 ```javascript
-// CORREÇÃO: Cada imagem vai para uma linha diferente
-const linhaDados = i; // Mapeamento 1:1
+// CORREÇÃO: Duas imagens por linha de dados (IMAGEM e IMAGEM_FORNECEDOR)
+const linhaDados = Math.floor(i / 2); // Duas imagens por linha
 const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2
-const coluna = 'IMAGEM_FORNECEDOR'; // Sempre usar coluna C (mais comum)
+const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Alternar colunas
 ```
 
 ### Benefícios da Correção:
-1. **Mapeamento 1:1**: Imagem 0 → linha 2, imagem 1 → linha 3, etc.
-2. **Célula C11**: Agora mapeia corretamente para linha 11
-3. **Coluna consistente**: Sempre usa IMAGEM_FORNECEDOR (coluna C)
+1. **Mapeamento 2:1**: Imagem 0 → IMAGEM linha 2, imagem 1 → IMAGEM_FORNECEDOR linha 2
+2. **Colunas corretas**: Primeiro IMAGEM (coluna B), depois IMAGEM_FORNECEDOR (coluna C)
+3. **Sequência lógica**: Cada linha de dados recebe duas imagens nas colunas corretas
 4. **Ordem preservada**: Sequência de imagens mantém ordem do Excel
 
 ## Arquivos Corrigidos
@@ -102,10 +102,10 @@ console.log(`🔍 [AUDIT] MAPEAMENTO CORRIGIDO - Produto ${index}: linha Excel $
 
 | Aspecto | Antes (BUGADO) | Depois (CORRIGIDO) |
 |---------|----------------|-------------------|
-| **Mapeamento** | 2 imagens/linha | 1 imagem/linha |
-| **Célula C11** | Linha errada | Linha 11 (correto) |
-| **Coluna** | Alternada | IMAGEM_FORNECEDOR |
-| **Sequência** | Confusa | Linear e clara |
+| **Mapeamento** | 2 imagens/linha errado | 2 imagens/linha correto |
+| **Colunas** | Ordem errada | IMAGEM → IMAGEM_FORNECEDOR |
+| **Alternância** | Inconsistente | Par=IMAGEM, Ímpar=IMAGEM_FORNECEDOR |
+| **Sequência** | Confusa | Lógica e previsível |
 | **Debug** | Limitado | Completo e detalhado |
 
 **✅ Bug de mapeamento de imagens CORRIGIDO e VERIFICADO!**

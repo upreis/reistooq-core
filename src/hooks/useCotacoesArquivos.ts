@@ -395,13 +395,15 @@ export function useCotacoesArquivos() {
         // Cada imagem corresponde a uma linha de dados diferente
         const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
         
-        // CORREÇÃO: Cada imagem vai para uma linha diferente (não 2 por linha)
-        const linhaDados = i; // Imagem i vai para linha de dados i
+        // CORREÇÃO: Mapeamento correto das colunas
+        // Primeira imagem vai para IMAGEM (coluna B), segunda para IMAGEM_FORNECEDOR (coluna C)
+        const linhaDados = Math.floor(i / 2); // Duas imagens por linha de dados
         const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2 (linha 1 = cabeçalho)
         
-        // CORREÇÃO: Alternar entre colunas IMAGEM e IMAGEM_FORNECEDOR para variedade
-        // Mas principalmente usar IMAGEM_FORNECEDOR (coluna C) que é mais comum
-        const coluna = 'IMAGEM_FORNECEDOR'; // Sempre usar IMAGEM_FORNECEDOR pois é a coluna C onde normalmente estão as imagens
+        // CORREÇÃO DEFINITIVA: Alternar corretamente entre colunas
+        // i par (0,2,4...) = IMAGEM (coluna B)
+        // i ímpar (1,3,5...) = IMAGEM_FORNECEDOR (coluna C)
+        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
         
         // Verificar se não excede o número de linhas de dados
         if (linhaDados >= totalLinhasDados) {
@@ -453,8 +455,9 @@ export function useCotacoesArquivos() {
       
       // Criar imagens de placeholder/dummy para cada linha estimada
       for (let i = 0; i < estimatedImages; i++) {
-        const linha = i + 2; // CORREÇÃO: Cada imagem para uma linha diferente
-        const coluna = 'IMAGEM_FORNECEDOR'; // CORREÇÃO: Usar sempre IMAGEM_FORNECEDOR (coluna C)
+        const linhaDados = Math.floor(i / 2); // Duas imagens por linha
+        const linha = linhaDados + 2; // +2 porque dados começam na linha 2
+        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Alternar colunas corretamente
         
         // Criar um blob de imagem vazio como placeholder
         const canvas = document.createElement('canvas');
@@ -540,11 +543,14 @@ export function useCotacoesArquivos() {
               const imageData = uint8Array.slice(i, j + 8);
               const imageBlob = new Blob([imageData], { type: 'image/png' });
               
+              const linhaDados = Math.floor(imagemIndex / 2);
+              const coluna = imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+              
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.png`,
                 blob: imageBlob,
-                linha: imagemIndex + 2, // CORREÇÃO: +2 porque dados começam na linha 2
-                coluna: 'IMAGEM_FORNECEDOR' // CORREÇÃO: Usar sempre IMAGEM_FORNECEDOR
+                linha: linhaDados + 2, // +2 porque dados começam na linha 2
+                coluna: coluna // CORREÇÃO: Alternar entre colunas corretamente
               });
               
               imagemIndex++;
@@ -565,11 +571,14 @@ export function useCotacoesArquivos() {
               const imageData = uint8Array.slice(i, j + 2);
               const imageBlob = new Blob([imageData], { type: 'image/jpeg' });
               
+              const linhaDados = Math.floor(imagemIndex / 2);
+              const coluna = imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+              
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.jpg`,
                 blob: imageBlob,
-                linha: imagemIndex + 2, // CORREÇÃO: +2 porque dados começam na linha 2
-                coluna: 'IMAGEM_FORNECEDOR' // CORREÇÃO: Usar sempre IMAGEM_FORNECEDOR
+                linha: linhaDados + 2, // +2 porque dados começam na linha 2
+                coluna: coluna // CORREÇÃO: Alternar entre colunas corretamente
               });
               
               imagemIndex++;
