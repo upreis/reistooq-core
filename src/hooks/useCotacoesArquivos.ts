@@ -357,79 +357,64 @@ export function useCotacoesArquivos() {
       console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
       console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       
-      // AUDITORIA COMPLETA - MAPEAR IMAGENS CORRETAMENTE
-      console.log('🔍 [AUDIT] INÍCIO DA ANÁLISE DETALHADA');
-      console.log('📊 [AUDIT] Total de imagens:', todosArquivosImagem.length);
+      // CORREÇÃO TOTAL: Mapear imagens respeitando ordem EXATA do upload
+      console.log('🔍 [AUDIT] INÍCIO DA CORREÇÃO TOTAL DE MAPEAMENTO');
+      console.log('📊 [AUDIT] Total de imagens encontradas:', todosArquivosImagem.length);
       console.log('📊 [AUDIT] Total de linhas de dados:', range.e.r - range.s.r);
-      console.log('📊 [AUDIT] Arquivos de imagem encontrados:', todosArquivosImagem);
+      console.log('📊 [AUDIT] Arquivos de imagem (ordem original):', todosArquivosImagem);
       
-      // Primeira etapa: ler todos os dados da planilha para mapear corretamente
+      // Ler dados da planilha para mapear SKUs
       const dadosPlanilha = [];
-      
       for (let row = range.s.r + 1; row <= range.e.r; row++) {
         const dadosLinha: any = {};
         for (let col = range.s.c; col <= range.e.c; col++) {
           const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
           const cell = worksheet[cellAddress];
-          
-          // Obter o nome da coluna do cabeçalho
           const headerAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col });
           const headerCell = worksheet[headerAddress];
           const headerName = headerCell ? String(headerCell.v).trim() : `Col${col}`;
-          
           dadosLinha[headerName] = cell ? cell.v : '';
         }
         dadosPlanilha.push({
           linha: row,
-          dados: dadosLinha
+          dados: dadosLinha,
+          sku: dadosLinha.SKU || dadosLinha.sku || `PROD-${row-1}`
         });
       }
       
-      console.log('📋 [AUDIT] Dados da planilha extraídos:', dadosPlanilha.length, 'linhas');
-      console.log('📋 [AUDIT] Primeira linha de dados:', dadosPlanilha[0]);
+      console.log('📋 [AUDIT] Dados extraídos:', dadosPlanilha.map(d => ({ linha: d.linha, sku: d.sku })));
       
-      // Estratégia de mapeamento inteligente:
-      // 1. Tentar identificar o padrão nos nomes dos arquivos
-      // 2. Mapear pela ordem sequencial se não houver padrão claro
+      // ESTRATÉGIA SIMPLES: manter ordem original dos arquivos
+      // NÃO ordenar - usar exatamente como vieram no ZIP
+      const arquivosNaOrdemOriginal = [...todosArquivosImagem];
       
-      // Ordenar arquivos de forma mais inteligente
-      const arquivosOrdenados = [...todosArquivosImagem].sort((a, b) => {
-        // Extrair números dos nomes dos arquivos
-        const numA = parseInt(a.match(/(\d+)/)?.[1] || '0');
-        const numB = parseInt(b.match(/(\d+)/)?.[1] || '0');
-        
-        if (numA !== numB) {
-          return numA - numB;
-        }
-        
-        // Se números iguais, ordem alfabética
-        return a.localeCompare(b);
-      });
+      console.log('🔍 [AUDIT] Mantendo ordem original dos arquivos:', arquivosNaOrdemOriginal);
       
-      console.log('🔍 [AUDIT] Arquivos ordenados:', arquivosOrdenados);
-      
-      // Determinar estratégia baseada na análise dos dados
+      // Determinar estratégia de distribuição
       const totalLinhasDados = dadosPlanilha.length;
-      const totalImagens = arquivosOrdenados.length;
-      const imagensPorLinha = Math.ceil(totalImagens / totalLinhasDados);
+      const totalImagens = arquivosNaOrdemOriginal.length;
       
-      console.log(`🎯 [AUDIT] ANÁLISE: ${totalImagens} imagens ÷ ${totalLinhasDados} linhas = ${imagensPorLinha} imagens por linha`);
+      // Se temos mais imagens que linhas, assumir 2 por linha; caso contrário, 1 por linha
+      let imagensPorLinha = 1;
+      if (totalImagens > totalLinhasDados) {
+        imagensPorLinha = 2;
+      }
+      
+      console.log(`🎯 [AUDIT] ESTRATÉGIA FINAL: ${totalImagens} imagens ÷ ${totalLinhasDados} linhas = ${imagensPorLinha} imagens por linha`);
       
       let imagemIndex = 0;
       
-      // Processar cada linha de dados sequencialmente
+      // Mapear imagens sequencialmente para cada linha
       for (let linhaDados = 0; linhaDados < totalLinhasDados && imagemIndex < totalImagens; linhaDados++) {
         const dadosAtual = dadosPlanilha[linhaDados];
         const linhaExcel = dadosAtual.linha;
+        const sku = dadosAtual.sku;
         
-        console.log(`🔍 [AUDIT] Processando linha de dados ${linhaDados} (Excel linha ${linhaExcel})`);
-        console.log(`📊 [AUDIT] Dados da linha:`, dadosAtual.dados);
+        console.log(`🔍 [AUDIT] Processando linha ${linhaDados}: Excel=${linhaExcel}, SKU=${sku}`);
         
-        // Mapear imagens para esta linha
-        const imagensParaEstaLinha = Math.min(imagensPorLinha, totalImagens - imagemIndex);
-        
-        for (let imgLocal = 0; imgLocal < imagensParaEstaLinha && imagemIndex < totalImagens; imgLocal++) {
-          const mediaFile = arquivosOrdenados[imagemIndex];
+        // Mapear as imagens desta linha
+        for (let imgLocal = 0; imgLocal < imagensPorLinha && imagemIndex < totalImagens; imgLocal++) {
+          const mediaFile = arquivosNaOrdemOriginal[imagemIndex];
           
           try {
             const imageBlob = await zipData.files[mediaFile].async('blob');
@@ -440,16 +425,11 @@ export function useCotacoesArquivos() {
               continue;
             }
             
-            // Determinar coluna baseada na posição local na linha
-            let coluna;
-            if (imagensParaEstaLinha === 1) {
-              coluna = 'IMAGEM';
-            } else {
-              coluna = imgLocal === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
-            }
+            // Determinar coluna: primeira imagem = IMAGEM, segunda = IMAGEM_FORNECEDOR
+            const coluna = imgLocal === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
             
             const extensao = mediaFile.split('.').pop() || 'png';
-            const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaExcel}_${imagemIndex}.${extensao}`;
+            const nomeImagem = `${sku}_${coluna.toLowerCase()}_${imagemIndex}.${extensao}`;
             
             imagens.push({
               nome: nomeImagem,
@@ -458,9 +438,7 @@ export function useCotacoesArquivos() {
               coluna: coluna
             });
             
-            console.log(`✅ [AUDIT] MAPEADO: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}`);
-            console.log(`🎯 [AUDIT] Contexto: imagemGlobal[${imagemIndex}] → linhaDados[${linhaDados}] → imagemLocal[${imgLocal}]`);
-            console.log(`📊 [AUDIT] Dados da linha:`, Object.keys(dadosAtual.dados).slice(0, 3));
+            console.log(`✅ [AUDIT] MAPEADO: arquivo[${imagemIndex}]="${mediaFile}" → SKU=${sku}, Linha=${linhaExcel}, Coluna=${coluna}`);
             
             imagemIndex++;
           } catch (error) {
@@ -698,18 +676,18 @@ export function useCotacoesArquivos() {
           )
         );
 
-         console.log(`🔍 [AUDIT] Produto ${index}: linha Excel ${linhaExcel}, imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
+         const sku = linha.SKU || linha.sku || `PROD-${index + 1}`;
+         console.log(`🔍 [AUDIT] Produto ${index}: imagem=${imagemPrincipal?.url || 'VAZIO'}, sku=${sku}`);
          
-         // Log detalhado apenas se não encontrar imagens
-         if (!imagemPrincipal?.url || !imagemFornecedor?.url) {
-           console.log(`🔍 [AUDIT] DETALHES Linha ${index} (Excel ${linhaExcel}):`, {
-             imagemPrincipal: imagemPrincipal?.url,
-             imagemFornecedor: imagemFornecedor?.url,
-             sku: linha.SKU || linha.sku,
-             colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna),
-             todasImagensDisponiveis: imagensUpload.map(img => ({ linha: img.linha, coluna: img.coluna, nome: img.nome }))
-           });
-         }
+         // Log detalhado para debugging
+         console.log(`🔍 [AUDIT] Produto ${index} - SKU: ${sku}, Linha Excel: ${linhaExcel}`);
+         console.log(`🔍 [AUDIT] Imagens disponíveis para linha ${linhaExcel}:`, 
+           imagensUpload.filter(img => img.linha === linhaExcel).map(img => ({ 
+             coluna: img.coluna, 
+             nome: img.nome, 
+             url: img.url.substring(img.url.lastIndexOf('/') + 1) 
+           }))
+         );
 
         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
         const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
