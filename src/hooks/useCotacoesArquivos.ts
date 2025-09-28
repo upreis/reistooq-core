@@ -390,15 +390,18 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO FINAL: Mapeamento baseado no total de linhas de dados
-        // Cada linha tem 2 imagens (IMAGEM e IMAGEM_FORNECEDOR)
-        // Imagens vêm em pares: img0,img1 = linha 2; img2,img3 = linha 3, etc.
+        // CORREÇÃO CRÍTICA: Mapeamento sequencial linha por linha
+        // Dados começam na linha 2 (linha 1 = cabeçalho)
+        // Cada imagem corresponde a uma linha de dados diferente
         const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
         
-        // Calcular linha e coluna baseado no índice da imagem
-        const linhaDados = Math.floor(i / 2); // Par de imagens por linha de dados
+        // CORREÇÃO: Cada imagem vai para uma linha diferente (não 2 por linha)
+        const linhaDados = i; // Imagem i vai para linha de dados i
         const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2 (linha 1 = cabeçalho)
-        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Par/ímpar para determinar coluna
+        
+        // CORREÇÃO: Alternar entre colunas IMAGEM e IMAGEM_FORNECEDOR para variedade
+        // Mas principalmente usar IMAGEM_FORNECEDOR (coluna C) que é mais comum
+        const coluna = 'IMAGEM_FORNECEDOR'; // Sempre usar IMAGEM_FORNECEDOR pois é a coluna C onde normalmente estão as imagens
         
         // Verificar se não excede o número de linhas de dados
         if (linhaDados >= totalLinhasDados) {
@@ -416,7 +419,7 @@ export function useCotacoesArquivos() {
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Tamanho: ${imageBlob.size} bytes`);
+        console.log(`✅ [DEBUG] CORREÇÃO: Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Tamanho: ${imageBlob.size} bytes`);
       }
       
     } catch (zipError) {
@@ -450,8 +453,8 @@ export function useCotacoesArquivos() {
       
       // Criar imagens de placeholder/dummy para cada linha estimada
       for (let i = 0; i < estimatedImages; i++) {
-        const linha = Math.floor(i / 2) + 2; // 2 imagens por linha de dados
-        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+        const linha = i + 2; // CORREÇÃO: Cada imagem para uma linha diferente
+        const coluna = 'IMAGEM_FORNECEDOR'; // CORREÇÃO: Usar sempre IMAGEM_FORNECEDOR (coluna C)
         
         // Criar um blob de imagem vazio como placeholder
         const canvas = document.createElement('canvas');
@@ -540,8 +543,8 @@ export function useCotacoesArquivos() {
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.png`,
                 blob: imageBlob,
-                linha: imagemIndex + 1,
-                coluna: imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'
+                linha: imagemIndex + 2, // CORREÇÃO: +2 porque dados começam na linha 2
+                coluna: 'IMAGEM_FORNECEDOR' // CORREÇÃO: Usar sempre IMAGEM_FORNECEDOR
               });
               
               imagemIndex++;
@@ -565,8 +568,8 @@ export function useCotacoesArquivos() {
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.jpg`,
                 blob: imageBlob,
-                linha: imagemIndex + 1,
-                coluna: imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'
+                linha: imagemIndex + 2, // CORREÇÃO: +2 porque dados começam na linha 2
+                coluna: 'IMAGEM_FORNECEDOR' // CORREÇÃO: Usar sempre IMAGEM_FORNECEDOR
               });
               
               imagemIndex++;
@@ -704,18 +707,17 @@ export function useCotacoesArquivos() {
           )
         );
 
-         console.log(`🔍 [AUDIT] Produto ${index}: linha Excel ${linhaExcel}, imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
+         console.log(`🔍 [AUDIT] MAPEAMENTO CORRIGIDO - Produto ${index}: linha Excel ${linhaExcel}, imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
          
-         // Log detalhado apenas se não encontrar imagens
-         if (!imagemPrincipal?.url || !imagemFornecedor?.url) {
-           console.log(`🔍 [AUDIT] DETALHES Linha ${index} (Excel ${linhaExcel}):`, {
-             imagemPrincipal: imagemPrincipal?.url,
-             imagemFornecedor: imagemFornecedor?.url,
-             sku: linha.SKU || linha.sku,
-             colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna),
-             todasImagensDisponiveis: imagensUpload.map(img => ({ linha: img.linha, coluna: img.coluna, nome: img.nome }))
-           });
-         }
+         // Log detalhado para auditoria do mapeamento
+         console.log(`🔍 [AUDIT] DETALHES CORREÇÃO Linha ${index} (Excel ${linhaExcel}):`, {
+           imagemPrincipal: imagemPrincipal?.url,
+           imagemFornecedor: imagemFornecedor?.url,
+           sku: linha.SKU || linha.sku,
+           colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna),
+           todasImagensDisponiveis: imagensUpload.map(img => ({ linha: img.linha, coluna: img.coluna, nome: img.nome })),
+           mapeamentoEsperado: `Produto ${index} deve usar imagem da linha Excel ${linhaExcel}`
+         });
 
         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
         const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
