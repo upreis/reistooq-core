@@ -398,21 +398,16 @@ export function useCotacoesArquivos() {
       
       console.log('🔍 [AUDIT] Mantendo ordem original dos arquivos:', arquivosNaOrdemOriginal);
       
-      // Determinar estratégia de distribuição
+      // Determinar estratégia de distribuição INTELIGENTE
       const totalLinhasDados = dadosPlanilha.length;
       const totalImagens = arquivosNaOrdemOriginal.length;
       
-      // Se temos mais imagens que linhas, assumir 2 por linha; caso contrário, 1 por linha
-      let imagensPorLinha = 1;
-      if (totalImagens > totalLinhasDados) {
-        imagensPorLinha = 2;
-      }
+      console.log(`🎯 [AUDIT] NOVA ESTRATÉGIA: ${totalImagens} imagens ÷ ${totalLinhasDados} linhas`);
       
-      console.log(`🎯 [AUDIT] ESTRATÉGIA FINAL: ${totalImagens} imagens ÷ ${totalLinhasDados} linhas = ${imagensPorLinha} imagens por linha`);
-      
+      // 🚨 CORREÇÃO: Mapear imagens sequencialmente respeitando ORDEM REAL
       let imagemIndex = 0;
       
-      // Mapear imagens sequencialmente para cada linha
+      // Para cada linha de dados, mapear as imagens na ordem correta
       for (let linhaDados = 0; linhaDados < totalLinhasDados && imagemIndex < totalImagens; linhaDados++) {
         const dadosAtual = dadosPlanilha[linhaDados];
         const linhaExcel = dadosAtual.linha;
@@ -420,8 +415,24 @@ export function useCotacoesArquivos() {
         
         console.log(`🔍 [AUDIT] Processando linha ${linhaDados}: Excel=${linhaExcel}, SKU=${sku}`);
         
-        // Mapear as imagens desta linha
-        for (let imgLocal = 0; imgLocal < imagensPorLinha && imagemIndex < totalImagens; imgLocal++) {
+        // 🚨 CORREÇÃO: Verificar quantas imagens desta linha temos
+        // Se temos pelo menos 2 imagens restantes, mapear ambas; senão, só uma
+        const imagensRestantes = totalImagens - imagemIndex;
+        const linhasRestantes = totalLinhasDados - linhaDados;
+        
+        // Decidir quantas imagens mapear para esta linha
+        let imagensParaEstaLinha = 1; // Padrão: 1 imagem por linha
+        
+        if (imagensRestantes >= 2 && linhasRestantes > 0) {
+          // Se temos múltiplas imagens, distribuir igualmente
+          const imagensPorLinhaMedia = Math.ceil(imagensRestantes / linhasRestantes);
+          imagensParaEstaLinha = Math.min(2, imagensPorLinhaMedia); // Máximo 2 por linha
+        }
+        
+        console.log(`🎯 [AUDIT] Linha ${linhaDados}: ${imagensParaEstaLinha} imagens (restantes: ${imagensRestantes})`);
+        
+        // Mapear as imagens desta linha NA ORDEM SEQUENCIAL
+        for (let imgLocal = 0; imgLocal < imagensParaEstaLinha && imagemIndex < totalImagens; imgLocal++) {
           const mediaFile = arquivosNaOrdemOriginal[imagemIndex];
           
           try {
@@ -433,11 +444,13 @@ export function useCotacoesArquivos() {
               continue;
             }
             
-            // Determinar coluna: primeira imagem = IMAGEM, segunda = IMAGEM_FORNECEDOR
+            // 🚨 CORREÇÃO DEFINITIVA: Mapear por ordem sequencial, não por posição local
+            // Se é a primeira imagem desta linha → IMAGEM
+            // Se é a segunda imagem desta linha → IMAGEM_FORNECEDOR
             const coluna = imgLocal === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
             
             const extensao = mediaFile.split('.').pop() || 'png';
-            const nomeImagem = `${sku}_${coluna.toLowerCase()}_${imagemIndex}.${extensao}`;
+            const nomeImagem = `${sku}_${coluna.toLowerCase()}_linha${linhaExcel}_img${imagemIndex}.${extensao}`;
             
             imagens.push({
               nome: nomeImagem,
@@ -446,7 +459,7 @@ export function useCotacoesArquivos() {
               coluna: coluna
             });
             
-            console.log(`✅ [AUDIT] MAPEADO: arquivo[${imagemIndex}]="${mediaFile}" → SKU=${sku}, Linha=${linhaExcel}, Coluna=${coluna}`);
+            console.log(`✅ [AUDIT] MAPEADO SEQUENCIAL: arquivo[${imagemIndex}]="${mediaFile}" → SKU=${sku}, Linha=${linhaExcel}, Coluna=${coluna}, Local=${imgLocal}`);
             
             imagemIndex++;
           } catch (error) {
