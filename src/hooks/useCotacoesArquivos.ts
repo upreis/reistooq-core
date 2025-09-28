@@ -223,11 +223,19 @@ export function useCotacoesArquivos() {
           }
         }
         
-        dadosComIndices.push(linha);
+        // 🚨 CORREÇÃO: Preservar referência da linha Excel original
+        dadosComIndices.push({
+          ...linha,
+          _linhaOriginalExcel: R // Preservar linha Excel original
+        });
       }
       
       console.log('📊 [DEBUG] Dados extraídos via XLSX (método padrão):', dadosExtraidos.length);
       console.log('📊 [DEBUG] Dados extraídos via índices (M/N):', dadosComIndices.length);
+      console.log('📊 [DEBUG] Primeiras 3 linhas com referência Excel:', dadosComIndices.slice(0, 3).map(d => ({
+        excel: d._linhaOriginalExcel,
+        sku: d.SKU || d.sku
+      })));
       
       // Usar dados com índices em vez dos dados padrão
       dados.push(...dadosComIndices);
@@ -655,10 +663,23 @@ export function useCotacoesArquivos() {
     console.log('🔍 [DEBUG] Processando dados:', { totalDados: dados.length, totalImagens: imagensUpload.length });
     console.log('🔍 [DEBUG] Imagens disponíveis:', imagensUpload);
     
-    return dados.map((linha, index) => {
+    // 🚨 CORREÇÃO: Mapear array de dados para suas linhas Excel correspondentes
+    const dadosComLinhaExcel = dados.map((linha, index) => ({
+      ...linha,
+      _linhaArray: index,
+      _linhaExcel: (linha._linhaOriginalExcel || (index + 2)) // Usar linha original se disponível
+    }));
+    
+    console.log('🔍 [AUDIT] Mapeamento array → Excel:', dadosComLinhaExcel.slice(0, 3).map(d => ({
+      array: d._linhaArray,
+      excel: d._linhaExcel,
+      sku: d.SKU || d.sku
+    })));
+    
+    return dadosComLinhaExcel.map((linha, index) => {
       try {
-        // Buscar imagens para esta linha (linha no Excel começa do 1, mas nosso array do 0)
-        const linhaExcel = index + 2; // +2 porque o cabeçalho está na linha 1 e dados começam na 2
+        // 🚨 CORREÇÃO: Usar linha Excel correta
+        const linhaExcel = linha._linhaExcel;
         
         const imagemPrincipal = imagensUpload.find(img => 
           img.linha === linhaExcel && (
