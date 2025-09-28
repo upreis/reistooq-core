@@ -357,39 +357,25 @@ export function useCotacoesArquivos() {
       console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
       console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       
-      // IMPORTANTE: Ordenar arquivos para garantir a sequência correta
-      // Os arquivos podem vir em ordem aleatória do ZIP, especialmente quando não estão fixos nas células
-      todosArquivosImagem.sort((a, b) => {
-        // Estratégia de ordenação múltipla para máxima compatibilidade
-        
-        // 1. Tentar extrair números dos nomes dos arquivos
-        const numA = parseInt(a.match(/\d+/)?.[0] || '0');
-        const numB = parseInt(b.match(/\d+/)?.[0] || '0');
-        
-        // 2. Se os números forem diferentes, usar ordenação numérica
-        if (numA !== numB) {
-          return numA - numB;
-        }
-        
-        // 3. Se números iguais ou ausentes, usar ordenação alfabética como fallback
-        // Isso garante consistência mesmo para arquivos com nomenclatura irregular
-        return a.localeCompare(b);
-      });
+      // CORREÇÃO DEFINITIVA: Simplificar ordenação e mapeamento
+      console.log('🔍 [AUDIT] ARQUIVOS ANTES DA ORDENAÇÃO:', todosArquivosImagem);
       
-      console.log('📊 [DEBUG] Arquivos ORDENADOS (versão robusta):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
-      console.log('🎯 [DEBUG] Estratégia de ordenação aplicada para imagens não fixas nas células');
+      // Ordenação mais simples e robusta - apenas por nome do arquivo
+      todosArquivosImagem.sort((a, b) => a.localeCompare(b));
       
+      console.log('🔍 [AUDIT] ARQUIVOS APÓS ORDENAÇÃO:', todosArquivosImagem);
       console.log('🔍 [AUDIT] INÍCIO DO MAPEAMENTO DE IMAGENS');
       console.log('📊 [AUDIT] Total de imagens encontradas:', todosArquivosImagem.length);
       console.log('📊 [AUDIT] Total de linhas de dados:', range.e.r - range.s.r);
       console.log('📊 [AUDIT] Range da planilha:', `${range.s.r}-${range.e.r} (${range.e.r - range.s.r} linhas de dados)`);
       
-      // CORREÇÃO FUNDAMENTAL: Calcular estratégia ANTES do loop
+      // ESTRATÉGIA SIMPLES E DIRETA
       const totalLinhasDados = range.e.r - range.s.r;
-      const imagensPorLinha = Math.round(todosArquivosImagem.length / totalLinhasDados);
-      const estrategiaFinal = imagensPorLinha <= 1 ? 1 : 2;
       
-      console.log(`🎯 [AUDIT] ESTRATÉGIA GLOBAL: ${todosArquivosImagem.length} imagens ÷ ${totalLinhasDados} linhas = ${imagensPorLinha} → estratégia final: ${estrategiaFinal} img/linha`);
+      // Se temos mais imagens que linhas, assumir 2 por linha. Caso contrário, 1 por linha.
+      const estrategiaFinal = todosArquivosImagem.length > totalLinhasDados ? 2 : 1;
+      
+      console.log(`🎯 [AUDIT] ESTRATÉGIA SIMPLES: ${todosArquivosImagem.length} imagens vs ${totalLinhasDados} linhas = ${estrategiaFinal} img/linha`);
       
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
