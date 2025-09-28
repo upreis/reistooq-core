@@ -15,7 +15,9 @@ interface CotacaoCardProps {
     data_abertura: string;
     data_fechamento?: string;
     total_quantidade?: number;
+    total_valor_origem?: number;
     total_valor_usd?: number;
+    total_valor_brl?: number;
     total_peso_kg?: number;
     total_cbm?: number;
   };
@@ -51,12 +53,19 @@ export const CotacaoCard = memo<CotacaoCardProps>(({
     }
   };
 
-  const formatCurrency = (value?: number, currency = 'USD') => {
-    if (!value) return 'N/A';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: currency
-    }).format(value);
+  const formatCurrency = (value?: number, currency = 'BRL') => {
+    if (!value) return currency === 'CNY' ? '¥0.00' : currency === 'USD' ? '$0.00' : 'R$0.00';
+    
+    if (currency === 'CNY') {
+      return `¥${new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
+    } else if (currency === 'USD') {
+      return `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
+    } else {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(value);
+    }
   };
 
   const formatNumber = (value?: number, unit = '') => {
@@ -109,10 +118,18 @@ export const CotacaoCard = memo<CotacaoCardProps>(({
               <Package className="w-4 h-4 mr-2" />
               <span>{formatNumber(cotacao.total_quantidade)} itens</span>
             </div>
-            <div className="flex items-center justify-end text-sm font-medium text-foreground">
-              <DollarSign className="w-4 h-4 mr-1" />
-              <span>{formatCurrency(cotacao.total_valor_usd)}</span>
-            </div>
+          </div>
+        </div>
+
+        {/* Valores financeiros */}
+        <div className="space-y-1 mb-4">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Origem ({cotacao.moeda_origem}):</span>
+            <span className="font-medium">{formatCurrency(cotacao.total_valor_origem, cotacao.moeda_origem)}</span>
+          </div>
+          <div className="flex justify-between text-sm font-semibold">
+            <span>Total BRL:</span>
+            <span className="text-primary">{formatCurrency(cotacao.total_valor_brl, 'BRL')}</span>
           </div>
         </div>
 
